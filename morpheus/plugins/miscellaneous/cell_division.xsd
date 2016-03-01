@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="CellDivision"	type="CellDivision"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="CellDivision">
+		<xs:annotation>
+			<xs:appinfo>Population</xs:appinfo>
+		</xs:annotation>
+
+		<xs:all>
+			<xs:element name="Condition" type="cpmMathExpression" use="required"/>
+			
+			<xs:element name="Triggers" type="TriggeredSystem" />
+<!--					
+					<xs:element name="TargetVolume" type="cpmDoublePropertyRef">
+						<xs:annotation>
+							<xs:documentation>
+								Target volume of mother and daughter cells. 
+								After division, target volume will be reset by the DaughterVolume.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:element> 
+					
+					<xs:element name="DaughterVolume" type="cpmPluginParameter_Double">
+						<xs:annotation>
+						  <xs:documentation>Default (initial) volume of daughter cells. Target volume will be reset to this amount.</xs:documentation>
+						</xs:annotation>
+					</xs:element> -->
+					
+<!--					<xs:element name="Divisions"  minOccurs="0"	>					
+						<xs:annotation>
+						  <xs:documentation>Optional. The amount will be incremented with every division.</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="optional"/>
+						</xs:complexType>
+					</xs:element> -->
+					
+				</xs:all>
+				<xs:attribute name="division-plane" type="cpmDivisionMode" use="required"/>
+				<xs:attribute name="name" type="cpmString" use="optional" />
+				<xs:attribute name="write-log" type="cpmBoolean" use="optional"/>
+				<xs:attribute name="daughterID" type="cpmString" use="optional"/>
+
+	</xs:complexType>
+	
+	<xs:simpleType name="cpmDivisionMode">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="major"/>
+			<xs:enumeration value="minor"/>
+			<xs:enumeration value="random"/>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>
+
+<!-- 07.07.2010: Done -->

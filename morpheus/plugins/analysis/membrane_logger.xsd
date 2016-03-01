@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+			<xs:element name="MembraneLogger" type="MembraneLogger"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="MembraneLogger">
+		<xs:annotation>
+			<xs:appinfo>Data analysis</xs:appinfo>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="MembraneProperty" type="cpmMembraneLoggerProperty" minOccurs="1" maxOccurs="unbounded" />
+			<xs:element name="Plot" 	type="cpmMembraneLoggerPlot" minOccurs="0" maxOccurs="1" />
+		</xs:all>
+
+		<xs:attribute name="time-step" use="required" type="cpmDouble"/>
+		<xs:attribute name="timename" use="optional" type="cpmBoolean"/>
+		<xs:attribute name="celltype" use="required" type="cpmCellTypeRef"/>
+		<xs:attribute name="cellids" type="cpmString" use="optional"/>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmMembraneLoggerProperty" >
+		<xs:attribute name="symbol-ref" use="required" type="cpmDoubleSymbolRef"/>
+	</xs:complexType>
+   
+	<xs:complexType name="cpmMembraneLoggerPlot" >
+		<xs:attribute name="terminal" type="cpmGnuplotTerminalEnum" use="required" />
+		<xs:attribute name="time-step" type="cpmDouble" use="optional" />
+		<xs:attribute name="log-commands-sphere" type="cpmBoolean" use="optional" />
+		<xs:attribute name="log-commands" type="cpmBoolean" use="optional" />
+		<xs:attribute name="superimpose" type="cpmBoolean" use="optional" />
+		<xs:attribute name="pointsize" type="cpmDouble" use="optional" />
+		<xs:attribute name="pointsize" type="cpmBoolean" use="optional" />
+	</xs:complexType>
+        
+</xs:schema>
+
+

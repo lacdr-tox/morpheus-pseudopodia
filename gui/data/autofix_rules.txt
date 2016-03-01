@@ -1,0 +1,193 @@
+###### Space && Time
+
+MorpheusModel/Space/MembraneLattice/@resolution
+MorpheusModel/Space/MembraneLattice/Resolution/@value
+
+MorpheusModel/Space/MembraneLattice/@symbol
+MorpheusModel/Space/MembraneLattice/Resolution/@symbol
+
+###### PDE -> Global/Fields ####
+
+MorpheusModel/PDE/Layer
+MorpheusModel/Global/Field
+
+### BUG: This does not work: how to get the Expression/text into an attribute
+MorpheusModel/Global/Field/Initial/InitPDEExpression/Expression/@text
+MorpheusModel/Global/Field/@value
+
+MorpheusModel/PDE/Constant
+MorpheusModel/Global/Constant
+
+MorpheusModel/PDE/Function
+MorpheusModel/Global/Function
+
+MorpheusModel/PDE/System
+MorpheusModel/Global/System
+
+
+###### CellType Plugins ####
+
+MorpheusModel/CellTypes/CellType/MembraneProperty/Initial/InitPDEExpression/Expression/@text
+MorpheusModel/CellTypes/CellType/MembraneProperty/@value
+
+MorpheusModel/CellTypes/CellType/Global
+MorpheusModel/CellTypes/CellType/Variable
+
+### Shape plugins ###
+
+# VolumeConstraint
+### BUG: Only the value of the first occurrence are properly moved
+
+MorpheusModel/CellTypes/CellType/VolumeConstraint/Strength/@value
+MorpheusModel/CellTypes/CellType/VolumeConstraint/@strength
+
+MorpheusModel/CellTypes/CellType/VolumeConstraint/Strength/@symbol-ref
+MorpheusModel/CellTypes/CellType/VolumeConstraint/@strength
+
+MorpheusModel/CellTypes/CellType/VolumeConstraint/Target/@value
+MorpheusModel/CellTypes/CellType/VolumeConstraint/@target
+
+MorpheusModel/CellTypes/CellType/VolumeConstraint/Target/@symbol-ref
+MorpheusModel/CellTypes/CellType/VolumeConstraint/@target
+
+
+# SurfaceConstraint
+MorpheusModel/CellTypes/CellType/SurfaceConstraint/Strength/@value
+MorpheusModel/CellTypes/CellType/SurfaceConstraint/@strength
+
+MorpheusModel/CellTypes/CellType/SurfaceConstraint/Strength/@symbol-ref
+MorpheusModel/CellTypes/CellType/SurfaceConstraint/@strength
+
+MorpheusModel/CellTypes/CellType/SurfaceConstraint/Target/@value
+MorpheusModel/CellTypes/CellType/SurfaceConstraint/@target
+
+MorpheusModel/CellTypes/CellType/SurfaceConstraint/Target/@symbol-ref
+MorpheusModel/CellTypes/CellType/SurfaceConstraint/@target
+
+
+# LengthConstraint
+MorpheusModel/CellTypes/CellType/LengthConstraint/Strength/@value
+MorpheusModel/CellTypes/CellType/LengthConstraint/@strength
+
+MorpheusModel/CellTypes/CellType/LengthConstraint/Strength/@symbol-ref
+MorpheusModel/CellTypes/CellType/LengthConstraint/@strength
+
+MorpheusModel/CellTypes/CellType/LengthConstraint/Target/@value
+MorpheusModel/CellTypes/CellType/LengthConstraint/@target
+
+MorpheusModel/CellTypes/CellType/LengthConstraint/Target/@symbol-ref
+MorpheusModel/CellTypes/CellType/LengthConstraint/@target
+
+
+### Motility plugins ###
+
+MorpheusModel/CellTypes/CellType/Chemotaxis/Layer/@symbol-ref
+MorpheusModel/CellTypes/CellType/Chemotaxis/@value
+
+MorpheusModel/CellTypes/CellType/Chemotaxis/Strength/@symbol-ref
+MorpheusModel/CellTypes/CellType/Chemotaxis/@strength
+
+MorpheusModel/CellTypes/CellType/Freezer
+MorpheusModel/CellTypes/CellType/FreezeMotion
+
+MorpheusModel/CellTypes/CellType/Persistence
+MorpheusModel/CellTypes/CellType/PersistentMotion
+
+MorpheusModel/CellTypes/CellType/FlipCells
+MorpheusModel/CellTypes/CellType/FlipCellMotion
+
+
+### Miscellaneous plugins ###
+
+MorpheusModel/CellTypes/CellType/Proliferation
+MorpheusModel/CellTypes/CellType/CellDivision
+
+MorpheusModel/CellTypes/CellType/Apoptosis
+MorpheusModel/CellTypes/CellType/CellDeath
+
+
+### Reporters plugins ###
+
+MorpheusModel/CellTypes/CellType/NeighborsReporter/Input/@symbol-ref
+MorpheusModel/CellTypes/CellType/NeighborhoodReporter/Input/@value
+
+MorpheusModel/CellTypes/CellType/NeighborsReporter/Output/@symbol-ref
+MorpheusModel/CellTypes/CellType/NeighborhoodReporter/Output/@value
+
+MorpheusModel/CellTypes/CellType/NeighborsReporter
+MorpheusModel/CellTypes/CellType/NeighborhoodReporter
+
+MorpheusModel/CellTypes/CellType/PopulationReporter/Input/@symbol-ref
+MorpheusModel/CellTypes/CellType/PopulationReporter/Input/@value
+
+MorpheusModel/CellTypes/CellType/PopulationReporter/@mapping
+MorpheusModel/CellTypes/CellType/PopulationReporter/Output/@mapping
+
+MorpheusModel/CellTypes/CellType/PopulationReporter
+MorpheusModel/CellTypes/CellType/CellReporter
+
+MorpheusModel/CellTypes/CellType/CellReporter/Polarisation/Input/@symbol-ref
+MorpheusModel/CellTypes/CellType/CellReporter/Input/@value
+
+MorpheusModel/CellTypes/CellType/CellReporter/Polarisation/Output/@symbol-ref
+MorpheusModel/CellTypes/CellType/CellReporter/Polarity/@symbol-ref
+
+###### Initialization Plugins ####
+
+MorpheusModel/CellPopulations/Population/InitLattice
+MorpheusModel/CellPopulations/Population/InitCellLattice
+
+MorpheusModel/CellPopulations/Population/InitRectangle/@cells
+MorpheusModel/CellPopulations/Population/InitRectangle/@number-of-cells
+
+MorpheusModel/CellPopulations/Population/InitRectangle/@type
+MorpheusModel/CellPopulations/Population/InitRectangle/@mode
+
+MorpheusModel/CellPopulations/Population/InitCircle/@cells
+MorpheusModel/CellPopulations/Population/InitCircle/@number-of-cells
+
+MorpheusModel/CellPopulations/Population/InitCircle/@type
+MorpheusModel/CellPopulations/Population/InitCircle/@mode
+
+MorpheusModel/CellPopulations/Population/InitCircle/Dimensions/@size
+MorpheusModel/CellPopulations/Population/InitCircle/Dimensions/@radius
+
+
+###### Analysis Plugins ####
+
+# Gnuplotter
+MorpheusModel/Analysis/Gnuplotter/@interval
+MorpheusModel/Analysis/Gnuplotter/@time-step
+
+## note: ORDER OF RULES MATTERS. here the attribute is changed within the old element first, while the next rule moves the whole element
+## if we would immediately write this to the new node, the other attribute are not copied.add_custom_command
+## but in this way, the other attributes are safely copied.
+MorpheusModel/Analysis/Gnuplotter/Cells/@symbol-ref
+MorpheusModel/Analysis/Gnuplotter/Cells/@value
+
+MorpheusModel/Analysis/Gnuplotter/Cells
+MorpheusModel/Analysis/Gnuplotter/Plot/Cells
+
+MorpheusModel/Analysis/Gnuplotter/PDE
+MorpheusModel/Analysis/Gnuplotter/Plot/Field
+
+MorpheusModel/Analysis/Gnuplotter/Arrows/@symbol-rev
+MorpheusModel/Analysis/Gnuplotter/Arrows/@orientation
+
+MorpheusModel/Analysis/Gnuplotter/Arrows
+MorpheusModel/Analysis/Gnuplotter/Plot/CellArrows
+
+MorpheusModel/Analysis/Gnuplotter/Labels
+MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels
+
+# Logger
+MorpheusModel/Analysis/Logger/@interval
+MorpheusModel/Analysis/Logger/@time-step
+
+# HistogramLogger
+MorpheusModel/Analysis/HistogramLogger/@interval
+MorpheusModel/Analysis/HistogramLogger/@time-step
+
+# TiffPlotter
+MorpheusModel/Analysis/TiffPlotter/@interval
+MorpheusModel/Analysis/TiffPlotter/@time-step

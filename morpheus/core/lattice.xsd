@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+	<xs:complexType name="Lattice">
+		<xs:annotation>
+			<xs:documentation>Specifies the lattice by size, structure and boundary conditions.</xs:documentation>
+		</xs:annotation>	
+		<xs:all>
+			<xs:element name="Size" minOccurs="1" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Specifies length of lattice site.
+Defines a symbol with accessible x, y and z coordinates.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:attribute name="value" use="required" type="cpmIntegerVector"/>
+					<xs:attribute name="symbol" use="required" type="cpmVectorSymbolDef" default="size"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="NodeLength" type="cpmLength" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Length of a lattice node.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="BoundaryConditions" type="cpmLatticeBoundaryConditions" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Specify boundary conditions.
+						
+						For each boundary (x, y, z, -x, -y, -z), choose one of the following types:
+						- Periodic, a.k.a. wrap-around
+						- Constant, a.k.a. Dirichlet
+						- Noflux, a.k.a. Neumann
+						
+						Default: periodic boundaries.
+						
+						With constant boundaries, the value should be specified in:
+						- CPM/BoundaryValue for cell-based models, default is "medium"
+						- PDE/Layer/BoundaryValue for PDE models, default is "0".
+
+						Note, in case of periodic boundary condition, only one of x and -x should be specified.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Domain" type="cpmDomain" minOccurs="0" maxOccurs="1" >
+				<xs:annotation>
+					<xs:documentation>Specify a custom non-rectangular lattice domain using a predefined structure (cirle) or TIFF image.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Neighborhood" type="cpmNeighborhood" minOccurs="0" maxOccurs="1"/>
+		</xs:all>
+		<xs:attribute name="class" use="required" type="cpmLatticeStructure">
+			<xs:annotation>
+				<xs:documentation>Lattice structure.
+					
+					For non-spatial (ODE) models:
+					
+					1D: linear
+					2D: square or hexagonal
+					3D: cubic
+					
+					Caution: 
+					- Some features may not work correctly with hexagonal lattices.
+					
+					Note: 
+					- For non-spatial (ODE) models, choose 'linear' with size: 1 0 0.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmLatticeBoundaryConditions">
+		<xs:choice maxOccurs="unbounded">
+			<xs:element name="Condition">
+				<xs:complexType>
+					<xs:attribute name="type" use="required" type="cpmBoundaryTypes"/>
+					<xs:attribute name="boundary" use="required" type="cpmBoundary"/>
+<!-- 					<xs:attribute name="value" use="optional" type="cpmDouble" /> -->
+				</xs:complexType>
+			</xs:element>
+		</xs:choice>	
+
+	</xs:complexType>
+	<xs:complexType name="cpmDomain">
+		<xs:choice maxOccurs="1">
+			<xs:element name="Circle">
+				<xs:complexType>
+					<xs:attribute name="diameter" use="required" type="cpmDouble"/>
+				</xs:complexType>
+			</xs:element>
+				
+			<xs:element name="Image">
+				<xs:complexType>
+					<xs:attribute name="path" use="required" type="cpmSystemFile"/>
+				</xs:complexType>
+				<xs:annotation>
+					<xs:documentation>TIFF image (or image stack for 3D) that specifies the shape of domain.
+						
+						Note:
+						- Non-zero pixels are interpreted as foreground, zero pixels are background.
+						- Only 8-bit TIFF format is supported.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:choice>
+		<xs:attribute name="boundary-type" use="required" type="cpmDomainBoundaryTypes"/>
+	</xs:complexType>
+	
+	<xs:simpleType name="cpmBoundaryTypes">
+		<xs:annotation>
+			<xs:documentation>Boundary conditions.
+- Periodic (aka toroidal, wrap-around): specifies that the simulation domain is assumed to be replicated to form an infinite lattice.
+- No-flux (aka Neumann): specifies the zero flux across the interface which leads to mass conservation within the simulation domain.
+- Constant (aka Dirichlet): specifies a specific value to be fixed for the solution on the boundary point.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="periodic"/>
+			<xs:enumeration value="constant"/>
+			<xs:enumeration value="noflux"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="cpmDomainBoundaryTypes">
+		<xs:annotation>
+			<xs:documentation>Domain Boundary conditions.
+- No-flux (aka Neumann): specifies the zero flux across the interface which leads to mass conservation within the simulation domain.
+- Constant (aka Dirichlet): specifies a specific value to be fixed for the solution on the boundary point.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="constant"/>
+			<xs:enumeration value="noflux"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	
+	<xs:simpleType name="cpmBoundary">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="x"/>
+			<xs:enumeration value="-x"/>
+			<xs:enumeration value="y"/>
+			<xs:enumeration value="-y"/>
+			<xs:enumeration value="z"/>
+			<xs:enumeration value="-z"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="cpmBoundaryRef">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="x"/>
+			<xs:enumeration value="-x"/>
+			<xs:enumeration value="y"/>
+			<xs:enumeration value="-y"/>
+			<xs:enumeration value="z"/>
+			<xs:enumeration value="-z"/>
+			<xs:enumeration value="domain"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="cpmLatticeStructure">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="linear" />
+			<xs:enumeration value="square" />
+			<xs:enumeration value="hexagonal"/>
+			<xs:enumeration value="cubic"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="cpmNeighborhood">
+		<xs:annotation>
+			<xs:documentation>Number of neighboring lattice sites to take into account.</xs:documentation>
+		</xs:annotation>
+		<xs:choice>
+			<xs:element name="Order" type="cpmUnsignedInteger">
+				<xs:annotation>
+					<xs:documentation>Assuming a two dim. lattice order means
+1: 4 neighbors (von Neumann)
+2: 8 neighbors (Moore)
+etc...</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Distance" type="cpmUnsignedDouble">
+				<xs:annotation>
+					<xs:documentation>Maximal distance to neighbor to take into account (in units of lattice nodes).</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Name" type="cpmString">
+				<xs:annotation>
+					<xs:documentation>The only named neighborhood is "FCHC" for cubic lattices.
+						This means: Face Centered HyperCube
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:choice>
+	</xs:complexType> 
+	
+</xs:schema>

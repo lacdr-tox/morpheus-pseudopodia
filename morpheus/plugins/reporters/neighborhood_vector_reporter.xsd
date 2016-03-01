@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="NeighborhoodVectorReporter"	type="NeighborhoodVectorReporter"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="NeighborhoodVectorReporter" mixed="false" >
+		<xs:annotation>
+			<xs:appinfo>Reporter</xs:appinfo>
+		</xs:annotation>
+			
+		<xs:all>
+			<xs:element name="Input">
+				<xs:complexType>	
+					<xs:attribute name="scaling" type="cpmNeighborsReporterInputMode" use="required" />
+					<xs:attribute name="value" type="cpmMathExpression" use="required" />
+					<xs:attribute name="exclude-medium" type="cpmBoolean" use="optional" />
+				</xs:complexType>	
+
+			</xs:element>
+			
+			<xs:element name="Output">
+				<xs:complexType>
+					<xs:attribute name="mapping" type="cpmVectorArrayStatistics" use="required" />
+					<xs:attribute name="symbol-ref" type="cpmVectorSymbolRef" use="required" />
+				</xs:complexType>
+			</xs:element>
+
+		</xs:all>
+		
+		
+		<xs:attribute name="name" type="cpmString" use="optional" />
+	</xs:complexType>
+	
+	
+	<xs:simpleType name="cpmVectorArrayStatistics">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="average"/>
+			<xs:enumeration value="sum"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+</xs:schema>
+

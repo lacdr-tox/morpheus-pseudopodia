@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+		
+	<xs:group name="FieldInitPlugins">
+		<xs:choice>
+			<xs:element name="InitField" 	type="InitField"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="InitField">
+		<xs:annotation>
+			<xs:appinfo>Initialization</xs:appinfo>
+		</xs:annotation>
+		<xs:all >
+			<xs:element name="Expression" 	type="cpmMathExpression" 	minOccurs="1"  />
+		</xs:all>
+	</xs:complexType>
+</xs:schema>
+
+<!--
+<xs:annotation>
+	<xs:documentation>Initializes a PDE layer with a given expression.
+				
+Note: use x and y symbols defined in Simulation/SpaceScale.
+
+Examples: 
+
+Gaussian: 
+	(x0, y0) = center of gaussian
+	sigma = distribution width
+	
+	exp(1- ( (( x-x0 )^2)/(2*sigma)^2  + (( y-y0 )^2)/(2*sigma)^2 ))
+	
+	</xs:documentation>
+</xs:annotation>
+-->

@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+	<xs:complexType name="cpmPluginParameter_Double">
+		<xs:attribute name="value" type="cpmDouble" use="optional" default="0"/>
+		<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="optional" default=""/>
+	</xs:complexType> 
+	
+	<xs:complexType name="cpmPluginParameter_DoubleVector">
+		<xs:attribute name="value" type="cpmDoubleVector" use="optional" default="1 0 0"/>
+		<xs:attribute name="symbol-ref" type="cpmVectorSymbolRef" use="optional" default=""/>
+	</xs:complexType> 
+	
+	
+	<xs:complexType name="cpmTime">
+		<xs:attribute name="value" type="cpmUnsignedDouble" use="required" default="0" />
+		<xs:attribute name="unit" type="cpmTimeUnit" use="optional" default="sec"/>
+		<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="optional" />
+	</xs:complexType> 
+	
+	<xs:complexType name="cpmLength">
+		<xs:attribute name="value" type="cpmUnsignedDouble" use="required" />
+		<xs:attribute name="unit" type="cpmLengthUnit" use="optional" default="micron"/>
+		<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="optional" />
+	</xs:complexType> 
+
+
+	<!-- SYMBOLIC TYPES -->
+	
+	<xs:simpleType name="cpmDoubleSymbolDef">
+		<xs:restriction base="xs:token" />
+	</xs:simpleType> 
+
+	<xs:simpleType name="cpmDoubleSymbolRef">
+		<xs:restriction base="xs:token">
+			<xs:enumeration value="cell.id"/>
+			<xs:enumeration value="cell.super_id"/>
+			<xs:enumeration value="cell.sub_id"/>
+			<xs:enumeration value="cell.type"/>
+			<xs:enumeration value="cell.volume"/>
+			<xs:enumeration value="cell.length"/>
+			<xs:enumeration value="cell.surface"/>
+		</xs:restriction>
+	</xs:simpleType> 
+
+
+	<xs:simpleType name="cpmVectorSymbolDef">
+		<xs:restriction base="xs:token" />
+	</xs:simpleType> 
+
+	<xs:simpleType name="cpmVectorSymbolRef">
+		<xs:restriction base="xs:token">
+			<xs:enumeration value="cell.center"/>
+			<xs:enumeration value="cell.orientation"/>
+		</xs:restriction>
+	</xs:simpleType> 
+	
+	<xs:simpleType name="cpmQueueSymbolDef">
+		<xs:restriction base="xs:token" />
+	</xs:simpleType> 
+
+	<xs:simpleType name="cpmQueueSymbolRef">
+		<xs:restriction base="xs:token">
+		</xs:restriction>
+	</xs:simpleType> 
+
+
+	<!-- CELL TYPES DEF AND REF-->
+
+	<xs:simpleType name="cpmCellTypeDef">
+		<xs:restriction base="xs:token" />
+	</xs:simpleType> 
+
+	<xs:simpleType name="cpmCellTypeRef">
+		<xs:restriction base="xs:token" />
+	</xs:simpleType> 
+
+
+	<!-- NUMERIC TYPES -->
+	
+	<xs:simpleType name="cpmInteger">
+		<xs:restriction base="xs:integer"/>
+	</xs:simpleType>
+	
+	<xs:simpleType name="cpmBoolean">
+		<xs:restriction base="xs:boolean"/>
+	</xs:simpleType>
+	
+	<xs:simpleType name="cpmDouble">
+		<xs:restriction base="xs:double"/>
+	</xs:simpleType>
+	
+	<xs:simpleType name="cpmString">
+		<xs:restriction base="xs:normalizedString"/>
+	</xs:simpleType>
+
+	<xs:simpleType name="cpmText">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
+
+
+	<xs:simpleType name="cpmUnsignedInteger">
+		<xs:restriction base="xs:integer">
+			<xs:minInclusive value="0"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="cpmUnsignedDouble">
+			<xs:restriction base="xs:double">
+				<xs:minInclusive value="0.0"/>
+			</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="cpmDoubleVector">
+		<xs:restriction base="xs:string">
+			<!-- This pattern specifies a generic 3D coordinate type with whitespaces as separators (allowing for commas, decimal) -->
+			<!--<xs:pattern value="-?[\d]+([\.¦,][\d]+)?\s+-?[\d]+([\.¦,][\d]+)?\s+-?[\d]+([\.¦,][\d]+)?"/>-->
+			 <xs:pattern value="-?\d+(\.\d+)?(e[-\+]\d{2})?\s*[\s,]\s*-?\d+(\.\d+)?(e[-\+]\d{2})?\s*[\s,]\s*-?\d+(\.\d+)?(e[-\+]\d{2})?"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="cpmDoubleQueue">
+		<xs:restriction base="xs:string">
+			<!-- This pattern specifies a generic 3D coordinate type with whitespaces as separators (allowing for commas, decimal) -->
+			<!--<xs:pattern value="-?[\d]+([\.¦,][\d]+)?\s+-?[\d]+([\.¦,][\d]+)?\s+-?[\d]+([\.¦,][\d]+)?"/>-->
+			 <xs:pattern value="(-?\d+(\.\d+)?\s*[\s,]\s*)*-?\d+(\.\d+)?"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="cpmIntegerVector">
+		<xs:restriction base="xs:string">
+			<!-- This pattern specifies a generic 3D coordinate type with whitespaces as separators (allowing for commas, decimal) -->
+<!-- 			<xs:pattern value="-?[\d]+\s+-?[\d]+\s+-?[\d]+"/> -->
+			<xs:pattern value="-?\d+\s*[\s,]\s*-?\d+\s*[\s,]\s*-?\d+"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="cpmArrayStatistics">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="average"/>
+			<xs:enumeration value="sum"/>
+			<xs:enumeration value="variance"/>
+			<xs:enumeration value="minimum"/>
+			<xs:enumeration value="maximum"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	
+	<xs:complexType name="cpmAdhesive">
+		<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required"/>
+	</xs:complexType>
+	
+	
+<!--	<xs:simpleType name="cpmValueTypes">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Double"/>
+			<xs:enumeration value="Integer"/>
+			<xs:enumeration value="Boolean"/>
+			<xs:enumeration value="Vector"/>
+		</xs:restriction>
+	</xs:simpleType>-->
+	
+	<xs:group name="cpmValueTypes">
+		<xs:choice>
+			<xs:element name="Double"  type="cpmDouble"/>
+			<xs:element name="Vector"  type="cpmDoubleVector"/>
+			<xs:element name="Boolean" type="cpmBoolean"/>
+			<xs:element name="Integer" type="cpmInteger"/>
+			<xs:element name="DoubleQueue" type="cpmDoubleQueue"/>
+		</xs:choice>
+	</xs:group>
+
+	<xs:simpleType name="cpmTimeUnit">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="sec"/>
+			<xs:enumeration value="msec"/>
+			<xs:enumeration value="min"/>
+			<xs:enumeration value="hour"/>
+			<xs:enumeration value="days"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="cpmLengthUnit">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="micron"/>
+			<xs:enumeration value="nanon"/>
+			<xs:enumeration value="meter"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	
+	<xs:simpleType name="cpmColors">
+		<xs:restriction base="xs:normalizedString">
+			<xs:enumeration value="red"/>
+			<xs:enumeration value="green"/>
+			<xs:enumeration value="blue"/>
+			<xs:enumeration value="yellow"/>
+			<xs:enumeration value="black"/>
+			<xs:enumeration value="gray"/>
+			<xs:enumeration value="white"/>
+			<xs:enumeration value="light-blue"/>
+			<xs:enumeration value="light-green"/>
+			<xs:enumeration value="light-red"/>
+			<xs:enumeration value="dark-green"/>
+			<xs:enumeration value="dark-blue"/>
+			<xs:enumeration value="beige"/>
+			<xs:enumeration value="bisque"/>
+			<xs:enumeration value="brown4"/>
+			<xs:enumeration value="chartreuse"/>
+			<xs:enumeration value="coral"/>
+			<xs:enumeration value="cyan"/>
+			<xs:enumeration value="dark-goldenrod"/>
+			<xs:enumeration value="dark-gray"/>
+			<xs:enumeration value="dark-khaki"/>
+			<xs:enumeration value="dark-olivegreen"/>
+			<xs:enumeration value="dark-pink"/>
+			<xs:enumeration value="dark-plum"/>
+			<xs:enumeration value="dark-salmon"/>
+			<xs:enumeration value="dark-turquoise"/>
+			<xs:enumeration value="dark-violet"/>
+			<xs:enumeration value="forest-green"/>
+			<xs:enumeration value="gold"/>
+			<xs:enumeration value="gray0"/>
+			<xs:enumeration value="gray10"/>
+			<xs:enumeration value="gray100"/>
+			<xs:enumeration value="gray20"/>
+			<xs:enumeration value="gray30"/>
+			<xs:enumeration value="gray40"/>
+			<xs:enumeration value="gray50"/>
+			<xs:enumeration value="gray60"/>
+			<xs:enumeration value="gray70"/>
+			<xs:enumeration value="gray80"/>
+			<xs:enumeration value="gray90"/>
+			<xs:enumeration value="green"/>
+			<xs:enumeration value="greenyellow"/>
+			<xs:enumeration value="grey"/>
+			<xs:enumeration value="grey100"/>
+			<xs:enumeration value="grey70"/>
+			<xs:enumeration value="grey80"/>
+			<xs:enumeration value="grey90"/>
+			<xs:enumeration value="honeydew"/>
+			<xs:enumeration value="khaki"/>
+			<xs:enumeration value="khaki1"/>
+			<xs:enumeration value="lemonchiffon"/>
+			<xs:enumeration value="light-coral"/>
+			<xs:enumeration value="light-cyan"/>
+			<xs:enumeration value="light-goldenrod"/>
+			<xs:enumeration value="light-gray"/>
+			<xs:enumeration value="light-grey"/>
+			<xs:enumeration value="light-magenta"/>
+			<xs:enumeration value="light-pink"/>
+			<xs:enumeration value="light-salmon"/>
+			<xs:enumeration value="light-turquoise"/>
+			<xs:enumeration value="magenta"/>
+			<xs:enumeration value="medium-blue"/>
+			<xs:enumeration value="mediumpurple3"/>
+			<xs:enumeration value="midnight-blue"/>
+			<xs:enumeration value="navy"/>
+			<xs:enumeration value="olive"/>
+			<xs:enumeration value="orange"/>
+			<xs:enumeration value="orange-red"/>
+			<xs:enumeration value="orangered4"/>
+			<xs:enumeration value="orchid4"/>
+			<xs:enumeration value="pink"/>
+			<xs:enumeration value="plum"/>
+			<xs:enumeration value="salmon"/>
+			<xs:enumeration value="sandybrown"/>
+			<xs:enumeration value="seagreen"/>
+			<xs:enumeration value="sea-green"/>
+			<xs:enumeration value="sienna1"/>
+			<xs:enumeration value="sienna4"/>
+			<xs:enumeration value="skyblue"/>
+			<xs:enumeration value="slateblue1"/>
+			<xs:enumeration value="slategray"/>
+			<xs:enumeration value="slategrey"/>
+			<xs:enumeration value="spring-green"/>
+			<xs:enumeration value="tan1"/>
+			<xs:enumeration value="violet"/>
+			<xs:enumeration value="white"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="cpmFilename">
+		<xs:annotation>
+			<xs:documentation>File name.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:normalizedString"  />
+	</xs:simpleType>
+	
+	<xs:simpleType name="cpmSystemFile">
+		<xs:annotation>
+			<xs:documentation>Path to an existing file.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:normalizedString"  />
+	</xs:simpleType>
+	
+	<xs:simpleType name="cpmSystemPath">
+		<xs:annotation>
+			<xs:documentation>Existing system path.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:normalizedString"  />
+	</xs:simpleType>
+	
+	
+	<xs:simpleType name="cpmMathExpression">
+		<xs:annotation>
+			<xs:documentation>Expression to be evaluated during run-time.
+
+Operators:
++, -, *, /, ^, =, >=, !=, ==, &lt;, >
+
+Functions:
+if([condition], [then], [else]), and, or, xor, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh, log2, log10, ln, exp, pow, sqrt, sign, rint, abs, min, max, sum, avg, mod
+
+Random number generators:
+rand_uni([min], [max])
+rand_norm([mean], [stdev])
+rand_gamma([shape], [scale])
+rand_bool()
+
+
+</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:normalizedString"  />
+	</xs:simpleType>
+	
+	<xs:simpleType name="cpmVectorMathExpression">
+		<xs:annotation>
+			<xs:documentation>Vector Expression to be evaluated during run-time.
+				
+				Vectors Expressions consist of three comma separated scalar expressions (a, b, c).
+				Either, they represent euclidian x,y,z coordinates or spherical phi,theta, radius coordinates,
+				in case the spherical attribute was set to true.
+				
+				Operators:
+				+, -, *, /, ^, =, >=, !=, ==, &lt;, >
+				
+				Functions:
+				if([condition], [then], [else]), and, or, xor, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh, log2, log10, ln, exp, pow, sqrt, sign, rint, abs, min, max, sum, avg, mod
+				
+				Random number generators:
+				rand_uni([min], [max])
+				rand_norm([mean], [stdev])
+				rand_gamma([shape], [scale])
+				rand_bool()
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:normalizedString"  />
+	</xs:simpleType>
+	
+	<xs:complexType name="cpmLayerRef">
+		<xs:annotation>
+			<xs:documentation>Symbol referring to a PDE reaction-diffusion layer.</xs:documentation>
+		</xs:annotation>	
+		<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required"/>
+	</xs:complexType>
+
+	<xs:complexType name="cpmDoublePropertyRef">
+		<xs:annotation>
+			<xs:documentation>Symbol referring to a cell property.</xs:documentation>
+		</xs:annotation>	
+		<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required"/>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmVectorPropertyRef">
+		<xs:annotation>
+			<xs:documentation>Symbol referring to a vector cell property.</xs:documentation>
+		</xs:annotation>	
+		<xs:attribute name="symbol-ref" type="cpmVectorSymbolRef" use="required"/>
+	</xs:complexType>
+	
+		<xs:complexType name="cpmDoubleGlobalRef">
+		<xs:annotation>
+			<xs:documentation>Symbol referring to a Global.</xs:documentation>
+		</xs:annotation>	
+		<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required"/>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmVectorGlobalRef">
+		<xs:annotation>
+			<xs:documentation>Symbol referring to a vector Global.</xs:documentation>
+		</xs:annotation>	
+		<xs:attribute name="symbol-ref" type="cpmVectorSymbolRef" use="required"/>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmMembraneRef">
+		<xs:annotation>
+			<xs:documentation>Symbol referring to a cell membrane property.</xs:documentation>
+		</xs:annotation>	
+		<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required"/>
+	</xs:complexType>
+	
+</xs:schema>

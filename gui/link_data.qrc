@@ -1,0 +1,43 @@
+<RCC>
+    <qresource prefix="/">
+        <file>data/processProxy.sh</file>
+        <file>data/autofix_rules.txt</file>
+        <file alias="task-done.png">icons/16x16/task-complete.png</file>
+        <file alias="task-running.png">icons/16x16/task-ongoing.png</file>
+        <file alias="task-pending.png">icons/16x16/task-pending.png</file>
+        <file alias="task-exit.png">icons/16x16/task-reject.png</file>
+        <file alias="task-unknown.png">icons/16x16/unknown.png</file>
+        <file alias="folder.png">icons/16x16/folder.png</file>
+        <file alias="seek.png">icons/16x16/seek.png</file>
+        <file alias="edit-copy.png">icons/16x16/edit-copy.png</file>
+        <file alias="edit-paste.png">icons/16x16/edit-paste.png</file>
+        <file alias="edit-cut.png">icons/16x16/edit-cut.png</file>
+        <file alias="list-add.png">icons/16x16/list-add.png</file>
+        <file alias="list-remove.png">icons/16x16/list-remove.png</file>
+        <file alias="applications-science.png">icons/16x16/applications-science.png</file>
+        <file alias="application-exit.png">icons/16x16/application-exit.png</file>
+        <file alias="text-xml.png">icons/16x16/text-xml.png</file>
+        <file alias="text-generic.png">icons/16x16/text-generic.png</file>
+        <file alias="document-close.png">icons/16x16/document-close.png</file>
+        <file alias="document-revert.png">icons/16x16/document-revert.png</file>
+        <file alias="document-import.png">icons/16x16/document-import.png</file>
+        <file alias="edit-delete.png">icons/16x16/edit-delete.png</file>
+        <file alias="mail-attach.png">icons/16x16/mail-attach.png</file>
+        <file alias="settings.png">icons/16x16/settings.png</file>
+        <file alias="string.png">icons/16x16/string_type.png</file>
+        <file alias="float.png">icons/16x16/float_type.png</file>
+        <file alias="ufloat.png">icons/16x16/ufloat_type.png</file>
+        <file alias="int.png">icons/16x16/int_type.png</file>
+        <file alias="uint.png">icons/16x16/uint_type.png</file>
+        <file alias="unknown_type.png">icons/16x16/unknown_type.png</file>
+        <file alias="debug.png">icons/48x48/debug.png</file>
+        <file alias="terminal.png">icons/48x48/terminal.png</file>
+        <file alias="morpheus-running.png">icons/512x512/morpheus-running.png</file>
+        <file alias="morpheus.png">icons/512x512/morpheus.png</file>
+        <file alias="logo.png">icons/48x48/morpheus.png</file>
+        <file alias="morpheus-sweep.png">icons/512x512/morpheus-sweep.png</file>
+        <file alias="movie.png">icons/48x48/movie.png</file>
+        <file alias="start.png">icons/22x22/start.png</file>
+        <file alias="stop.png">icons/22x22/stop.png</file>
+    </qresource>
+</RCC>

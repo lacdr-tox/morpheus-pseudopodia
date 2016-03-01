@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+		
+	<xs:group name="PopulationInitPlugins">
+		<xs:choice>
+			<xs:element name="InitRectangle" 		type="InitRectangle"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="InitRectangle">
+		<xs:annotation>
+			<xs:appinfo>Initialization</xs:appinfo>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="Dimensions" 	type="cpmInitRectDimension" minOccurs="1" />
+		</xs:all>
+        <xs:attribute name="number-of-cells" use="required" type="cpmMathExpression" default="100" />
+		<xs:attribute name="random-offset" use="optional" type="cpmMathExpression" default="0" />
+		<xs:attribute name="mode" use="required" type="cpmInitRectangleMode" default="regular" />
+	</xs:complexType>
+	
+	<xs:complexType name="cpmInitRectDimension">	
+		<xs:attribute name="size" type="cpmVectorMathExpression" use="required" default="1.0, 1.0, 1.0" />
+		<xs:attribute name="origin" type="cpmVectorMathExpression" use="required" default="0.0, 0.0, 0.0"/>
+	</xs:complexType>
+		
+	<xs:simpleType name="cpmInitRectangleMode">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="regular"/>
+			<xs:enumeration value="random"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+</xs:schema>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+	<xs:group name="ContactPlugins">
+		<xs:choice>
+			<xs:element name="AddonAdhesion" type="AddonAdhesion"/>
+		</xs:choice>
+	</xs:group>
+
+	<xs:complexType name="AddonAdhesion">
+		<xs:annotation>
+			<xs:appinfo>Interaction</xs:appinfo>
+		</xs:annotation>
+		<xs:attribute name="adhesive" type="cpmMathExpression" use="required"/>
+		<xs:attribute name="strength" type="cpmMathExpression" use="required"/> 
+		<xs:attribute name="name" type="cpmString" use="optional"/> 
+	</xs:complexType>
+</xs:schema>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+			<xs:element name="NetworkLogger" 			type="NetworkLogger"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="NetworkLogger">
+		<xs:annotation>
+			<xs:appinfo>Data Export</xs:appinfo>
+		</xs:annotation>
+		
+		<xs:attribute name="interval" use="required" type="cpmDouble">
+			<xs:annotation>
+				<xs:documentation>Number of Monte Carlo steps between logging updates.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="endstate" use="optional" type="cpmBoolean">
+			<xs:annotation>
+				<xs:documentation>Only execute analysis plugin at the end of the simulation.
+
+Note: This overrides the specified 'interval'.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>		
+		<xs:attribute name="celltype" type="cpmCellTypeRef" use="required">			
+			<xs:annotation>
+				<xs:documentation>Name of celltype to record network structure of.</xs:documentation>
+			</xs:annotation>	
+		</xs:attribute>
+
+   </xs:complexType>
+</xs:schema>

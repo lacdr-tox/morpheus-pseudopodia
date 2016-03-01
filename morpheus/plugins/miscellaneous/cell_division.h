@@ -1,0 +1,101 @@
+//////
+//
+// This file is part of the modelling and simulation framework 'Morpheus',
+// and is made available under the terms of the BSD 3-clause license (see LICENSE
+// file that comes with the distribution or https://opensource.org/licenses/BSD-3-Clause).
+//
+// Authors:  Joern Starruss and Walter de Back
+// Copyright 2009-2016, Technische Universität Dresden, Germany
+//
+//////
+
+#ifndef CELLDIVISION_H
+#define CELLDIVISION_H
+
+#include "core/interfaces.h"
+#include "core/plugin_parameter.h"
+#include "core/system.h" // TriggeredSystem
+
+/** \defgroup CellDivision
+\ingroup MiscellaneousPlugins
+\brief Divide cell based on condition
+
+Triggers cell division when condition is satisfied.
+
+First, a division plane is calculated, through the cell center of mass.
+- \b random: random orientation
+- \b major: longest axis in elliptic approximation of cell shape
+- \b minor: shortest axis in elliptic approximation of cell shape
+
+Then, the nodes of the mother cell on either side of this plane are allocated to two new daughter cells.
+
+By default, all property values are copied from the mother to the two daughter cells. 
+This can be overridden using Triggers to set or initialize the properties of daughter cells. See example below.
+
+To specify daughter-specific properties (to model e.g. asymmetric cell division), you can use the daughterID option.
+This defines a symbolic handle (value 1 or 2) for the two daughters that can be used in the Triggers. See example below.
+
+- \b condition: Expression describing condition under a cell should divide
+- \b division_plane: Plane of division, through cell center of mass. 
+  - major: longest axis in ellipsoid approximation of cell shape
+  - minor: shortest axis in ellipsoid approximation of cell shape
+  - random: randomly oriented division plane
+
+- \b write_log (default false): Boolean value specifying whether or not to create a log file 'celldivisions.log' that holds information (Time, cell IDs) per cell division.
+- \b daughterID (optional): Local symbol that provides unique IDs (1 or 2) for the two daughter cells to be used in Triggers. E.g. to model asymmetric cell division
+- \b Triggers (optional): a System of Rules that are triggered for both daughter cells after cell division.
+
+\section Example
+
+Divide with random orientation when a certain condition is statisfied.
+\verbatim
+<CellDivision condition="V >= (2.0 * V0)" division_plane="random"/>
+\endverbatim
+
+Using Triggers to specify properties after cell division. Symbol 'Vt' is here set to a daughter-specific value with 'daughterID', 
+\verbatim
+<CellDivision condition="V >= (2.0 * V0)" division_plane="major" daughterID="daughter">
+	<Triggers>
+		<Rule symbol-ref="Vt">
+			<Expression>
+				if( daughter == 1, 100, 50 )
+			</Expression>
+		</Rule>
+		<Rule symbol-ref="divisions">
+			<Expression>
+				divisions + 1
+			</Expression>
+		</Rule>
+	</Triggers>
+</CellDivision>
+\endverbatim
+*/
+
+
+class CellDivision : public InstantaneousProcessPlugin
+{
+private:
+	PluginParameter2<double, XMLEvaluator, RequiredPolicy> condition;
+	PluginParameter2<CellType::division, XMLNamedValueReader, RequiredPolicy> division_plane;
+	
+	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> write_log;
+
+	CellType* celltype;
+	ofstream fout; // output stream to log divisions
+	
+	// Local symbol (inside TriggeredSystem) giving either 1 or 2
+	// This enables one to distinguish between daughter cells , for asymmetric cell division
+	string daughterID_symbol;
+	SymbolRWAccessor<double> daughterID;
+	shared_ptr<TriggeredSystem> trigger_system;
+	
+public:
+	CellDivision();
+	~CellDivision();
+	DECLARE_PLUGIN("CellDivision");
+	void loadFromXML (const XMLNode);
+	void init(const Scope* scope);
+	void executeTimeStep();
+};
+
+#endif // CELLDIVISION_H

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+	<xs:group name="GlobalPlugins">
+		<xs:choice>
+			<xs:element name="Field" type="Field" />
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="Field">
+		<xs:annotation>
+			<xs:appinfo>Container</xs:appinfo>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="Diffusion" type="cpmDiffusion" />
+<!-- 			<xs:element name="BoundaryConditions"  type="cpmPDEBoundaryConditions" minOccurs="0" /> -->
+			<xs:element name="BoundaryValue" type="cpmPDEBoundaryValue" minOccurs="0" maxOccurs="unbounded" />
+			<xs:element name="Reduction" type="cpmBoundary" minOccurs="0" />
+<!-- 			<xs:element name="Initial" minOccurs="0">
+				<xs:group  ref="FieldInitPlugins" />
+			</xs:element>-->
+			<xs:element name="Data" type="cpmFieldData" minOccurs="0" />
+ 			<xs:element name="TIFFReader" type="TIFFReaderField" minOccurs="0" />
+			
+		</xs:all>
+		<xs:attribute name="name" 	type="cpmString" 	use="optional" />
+		<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required" />
+		<xs:attribute name="value"	type="cpmMathExpression" use="required" />
+	</xs:complexType>
+	
+	<xs:group  name="FieldInitPlugins">
+		<xs:choice>
+			<xs:element name="Data" type="cpmFieldData" />
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="cpmDiffusion">
+		<xs:annotation>
+			<xs:documentation>Diffusion coefficient</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="rate" type="cpmUnsignedDouble"/>
+		<xs:attribute name="unit" type="cpmDiffusionUnit" use="optional" />
+		<xs:attribute name="well-mixed" type="cpmBoolean" use="optional">
+			<xs:annotation>
+				<xs:documentation>Complete spatial mixing, while conserving mass.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	
+	<xs:simpleType name="cpmDiffusionUnit">
+		<xs:annotation>
+			<xs:documentation>Unit of diffusion constant</xs:documentation>
+		</xs:annotation>
+        <xs:restriction base="cpmString">
+				<xs:enumeration value="m²/s"/>
+				<xs:enumeration value="mm²/s"/>
+				<xs:enumeration value="µm²/s"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+	<xs:complexType name="cpmPDEBoundaryConditions">
+		<xs:choice maxOccurs="unbounded">
+			<xs:element name="Condition">
+				<xs:complexType>
+					<xs:attribute name="boundary" use="required" type="cpmBoundaryRef"/>
+					<xs:attribute name="value" use="required" type="cpmDouble" />
+				</xs:complexType>
+			</xs:element>
+		</xs:choice>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmPDEBoundaryValue">
+		<xs:attribute name="boundary" use="required" type="cpmBoundaryRef"/>
+		<xs:attribute name="value" use="required" type="cpmDouble" />
+	</xs:complexType>
+
+
+
+		<xs:complexType name="cpmFieldData">
+		<xs:annotation>
+				<xs:documentation>Initializes a PDE layer with ascii data read from file.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="filename" use="required" type="cpmSystemFile" >
+			<xs:annotation>
+				<xs:documentation>Absolute path to file containing data.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="name" type="cpmString" use="optional" >
+			<xs:annotation>
+				<xs:documentation>Ignored by simulator. Only for use convenience.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+
+	</xs:complexType>
+	
+</xs:schema>

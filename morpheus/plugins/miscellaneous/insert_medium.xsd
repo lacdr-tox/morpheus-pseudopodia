@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="InsertMedium"	type="InsertMedium"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="InsertMedium">
+		<xs:annotation>
+			<xs:appinfo>Miscellaneous</xs:appinfo>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="Condition" type="cpmExpression" minOccurs="0"/>
+		</xs:all>
+		<xs:attribute name="name" type="cpmString" use="optional" />
+	</xs:complexType>
+
+</xs:schema>
+

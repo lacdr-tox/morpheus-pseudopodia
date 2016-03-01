@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+			<xs:element name="HistogramLogger" 			type="HistogramLogger"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="HistogramLogger">
+		<xs:all>
+			<xs:element name="Column" type="cpmHistogramColumn"	minOccurs="1" maxOccurs="unbounded"/>
+			<xs:element name="Plot" type="cpmHistogramPlot"	minOccurs="0" maxOccurs="1"/>		
+		</xs:all>
+		<xs:attribute name="time-step" use="required" type="cpmDouble" default="1"/>
+		<xs:attribute name="number-of-bins" use="required" type="cpmUnsignedInteger" default="10"/>
+		<xs:attribute name="normalized" use="required" type="cpmBoolean" />
+		<xs:attribute name="minimum" use="optional" type="cpmDouble" />
+		<xs:attribute name="maximum" use="optional" type="cpmDouble" />
+		<xs:attribute name="logarithmic-bins" use="optional" type="cpmBoolean" />
+		<xs:attribute name="logarithmic-freq" use="optional" type="cpmBoolean" />
+	</xs:complexType>
+
+	<xs:complexType name="cpmHistogramColumn">	
+		<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required" />
+		<xs:attribute name="label" type="cpmString" use="optional" />
+		<xs:attribute name="celltype" type="cpmCellTypeRef" use="required" />
+	</xs:complexType>
+
+	<xs:complexType name="cpmHistogramPlot">
+		<xs:attribute name="terminal" type="cpmGnuplotTerminalEnum" use="required" />
+		<xs:attribute name="minimum" use="optional" type="cpmDouble" />
+		<xs:attribute name="maximum" use="optional" type="cpmDouble" />
+		<xs:attribute name="log-commands" use="optional" type="cpmBoolean" />
+	</xs:complexType>
+
+</xs:schema>

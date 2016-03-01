@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="NeighborhoodReporter"	type="NeighborhoodReporter"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="NeighborhoodReporter" mixed="false" >
+		<xs:annotation>
+			<xs:appinfo>Reporter</xs:appinfo>
+		</xs:annotation>
+			
+		<xs:all>
+			<xs:element name="Input" minOccurs="1">
+				<xs:complexType>
+					<xs:annotation>
+					<xs:documentation>Symbol referring to a cell property of the neighboring cell! The weighted average of this property will be reported in Output symbol-ref</xs:documentation>
+					</xs:annotation>		
+					<xs:attribute name="scaling" type="cpmNeighborsReporterInputMode" use="required" />
+					<xs:attribute name="value" type="cpmMathExpression" use="required" />
+				</xs:complexType>
+			</xs:element>
+			
+			<xs:element name="Output" minOccurs="1" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:attribute name="mapping" type="cpmArrayStatistics" use="required" />
+					<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required" />
+				</xs:complexType>
+			</xs:element>
+		</xs:all>
+		
+		<xs:attribute name="name" type="cpmString" use="optional" />
+<!-- 		<xs:attribute name="time-step" type="cpmDouble" use="optional" /> -->
+	</xs:complexType>
+	
+	<xs:simpleType name="cpmNeighborsReporterInputMode">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="length"/>
+			<xs:enumeration value="cell"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+</xs:schema>
+

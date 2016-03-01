@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+			<xs:element name="DependencyGraph" 			type="DependencyGraph"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="DependencyGraph">
+		<xs:attribute name="format" use="required" type="GraphVizFormat" />
+	</xs:complexType>
+	
+	<xs:simpleType name="GraphVizFormat">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="svg"/>
+			<xs:enumeration value="png"/>
+			<xs:enumeration value="pdf"/>
+			<xs:enumeration value="dot"/>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

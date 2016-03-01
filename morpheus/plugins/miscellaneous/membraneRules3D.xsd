@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="MembraneRules3D"	type="MembraneRules3D"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="MembraneRules3D" >
+		<xs:annotation>
+			<xs:appinfo>Miscellaneous</xs:appinfo>
+			<xs:documentation>
+				Membrane rules for liver project, without mapping to membraneproperties
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="Output_basal" type="cpmMembraneRef" minOccurs="1"/>
+			<xs:element name="Output_distance" type="cpmMembraneRef" minOccurs="1"/>
+			<xs:element name="Output_potential" type="cpmMembraneRef" minOccurs="1"/>
+			<xs:element name="Output_apical" type="cpmMembraneRef" minOccurs="1"/>
+		</xs:all>
+		<xs:attribute name="basal_celltype" type="cpmCellTypeRef" use="required" />
+		<xs:attribute name="distance_mode" type="cpmMembraneRules3DDistanceMethod" use="required" />
+		<xs:attribute name="communication_mode" type="cpmMembraneRules3DCommunicationMethod" use="required" />
+		<xs:attribute name="max_distance" type="cpmDouble" use="required" />
+		<xs:attribute name="threshold" type="cpmDouble" use="required" />
+		
+	</xs:complexType>
+	
+	<xs:simpleType name="cpmMembraneRules3DDistanceMethod">
+		<xs:annotation>
+			<xs:documentation>Method of distance calculation.
+				
+				Cytosol: Geodesic distance through all nodes of the cell.
+				Membrane: Geodesic distance over the cell membrane.
+				None: No distance is calculated.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:normalizedString">
+			<xs:enumeration value="cytosol"/>
+			<xs:enumeration value="membrane"/>
+			<xs:enumeration value="none"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="cpmMembraneRules3DCommunicationMethod">
+		<xs:annotation>
+			<xs:documentation>With or without intercelular communication
+				
+				Cell autonomous: No intercellular communication (apical is directly based on distance)
+				Communication  : With intercellular communication (apical is based on potential)
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:normalizedString">
+			<xs:enumeration value="cell_autonomous"/>
+			<xs:enumeration value="communication"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+</xs:schema>
+

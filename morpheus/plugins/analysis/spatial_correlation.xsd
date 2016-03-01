@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+			<xs:element name="SpatialCorrelation" 			type="SpatialCorrelation"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="SpatialCorrelation">
+		<xs:annotation>
+				<xs:appinfo>Analysis</xs:appinfo>
+				<xs:documentation>Computes spatial correlation between cell properties using Geary's C index.
+				
+Geary’s C ranges from zero to infinity, with an expected value of 1 under no autocorrelation. Values from zero to one indicate positive spatial autocorrelation, values above 1 negative spatial autocorrelation. 				
+				</xs:documentation>
+		</xs:annotation>
+		
+		<xs:attribute name="interval" use="required" type="cpmDouble">
+			<xs:annotation>
+				<xs:documentation>Number of Monte Carlo steps between updates.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="endstate" use="optional" type="cpmBoolean">
+			<xs:annotation>
+				<xs:documentation>Only execute analysis plugin at the end of the simulation.
+
+Note: This overrides the specified 'interval'.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+
+		<xs:attribute name="celltype" use="required" type="cpmCellTypeRef">
+			<xs:annotation>
+				<xs:documentation>Name of celltype to track displacement of.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+
+		<xs:attribute name="symbol-ref" use="required" type="cpmDoubleSymbolRef">
+			<xs:annotation>
+				<xs:documentation>Symbol of cell property to compute spatial correlation of.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		
+		<xs:attribute name="mode" use="required" type="cpmSpatialCorrelationModes">
+			<xs:annotation>
+				<xs:documentation>Type of spatial correlation metric.
+
+"Global" computes single Geary's C value for whole lattice.
+
+"Classes" computes Geary's C for various classes of distance (e.g. 0-10, 10-20, etc.) which can be plotted as a correlogram.
+Requires non-zero option "classes" specifying the number of classes.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+
+		<xs:attribute name="classes" use="optional" type="cpmUnsignedInteger">
+			<xs:annotation>
+				<xs:documentation>Number of distance classes between 0 and lattice_size:
+				
+Geary's C is computed for each class separately. To result (C as a function of distance) can be plotted in a correlogram.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+
+	<xs:simpleType name="cpmSpatialCorrelationModes">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="global"/>
+			<xs:enumeration value="classes"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	</xs:complexType>
+	
+		
+</xs:schema>

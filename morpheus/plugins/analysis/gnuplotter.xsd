@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+			<xs:element name="Gnuplotter" 			type="Gnuplotter"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="Gnuplotter">
+		<xs:annotation>
+			<xs:appinfo>Visualization</xs:appinfo>
+			<xs:documentation>Gnuplotter is a versatile interface for 2D visualization of cells, properties and reaction-diffusion fields.
+
+Supports multiple output terminals for on-screen (wxt, aqua, x11) as well as file-based (png, pdf, etc.) graphics.
+
+Note: this plugin requires stand-alone installation of Gnuplot 4.4+. When not found on in PATH environment variable, the gnuplot executable can be specified in Settings/Local.
+			</xs:documentation>
+		</xs:annotation>
+	
+		<xs:choice maxOccurs="unbounded">
+			<xs:element name="Terminal" 	type="cpmGnuplotTerminal" 	minOccurs="1" maxOccurs="1" />
+			<xs:element name="Plot"			type="morphGnuplotPlot"		minOccurs="1" maxOccurs="unbounded" />
+<!-- 			<xs:element name="Membrane" 	type="cpmMembraneRef" 		minOccurs="0" /> -->
+		</xs:choice>
+
+		<xs:attribute name="time-step" use="required" type="cpmDouble">
+			<xs:annotation>
+				<xs:documentation>Time interval of plots.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+<!--		<xs:attribute name="endstate" use="optional" type="cpmBoolean">
+			<xs:annotation>
+				<xs:documentation>
+					Only execute analysis plugin at the end of the simulation.
+					
+					Note: This overrides the specified 'interval'.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>-->
+		<xs:attribute name="log-commands"   use="optional" type="cpmBoolean" default="false" >
+			<xs:annotation>
+				<xs:documentation> Save commands and data of each plot to disk.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="file-numbering"   use="optional" type="cpmFileNumbering" default="time" />
+		<xs:attribute name="decorate" 		type="cpmBoolean" 		use="optional" default="true" />
+		<xs:attribute name="interpolation" type="cpmBoolean" use="optional" default="true">
+			<xs:annotation>
+				<xs:documentation>Interpolation using pm3d.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+
+	</xs:complexType>
+	
+	<xs:complexType name="morphGnuplotPlot">
+		<xs:annotation>
+			<xs:documentation>
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all maxOccurs="1">
+			<xs:element name="Cells" 		type="cpmCellPlotRef"		minOccurs="0"  maxOccurs="1"/>
+			<xs:element name="CellLabels" 		type="cpmLabelPlotRef"		minOccurs="0"  maxOccurs="1"/>
+			<xs:element name="CellArrows" 		type="cpmArrowPlotRef"		minOccurs="0"  maxOccurs="1"/>
+			<xs:element name="VectorField" 	type="cpmVectorPlotRef"		minOccurs="0"  maxOccurs="1"/>
+			<xs:element name="Field" 		type="cpmFieldPlotRef"		minOccurs="0"  maxOccurs="1"/>
+		</xs:all>
+		<xs:attribute name="title"   use="optional" type="cpmString" />
+	</xs:complexType>
+	
+	<xs:complexType name="cpmCellPlotRef">
+		<xs:annotation>
+			<xs:documentation>
+				Plots cells. Color can indicate cell type, cell ID, a property or membrane property. Colors can be specified by colormap.
+				
+				(Only) when (membrane) property is selected, you must provide a symbol-ref to this (membrane) property.
+			</xs:documentation>
+		</xs:annotation>
+		
+		
+		<xs:choice maxOccurs="unbounded">
+			<xs:element name="ColorMap" type="cpmColorMap" minOccurs="0" maxOccurs="1"/>
+			<!--<xs:element name="Labels" 	type="cpmGnuplotCellLabels" 	minOccurs="0" maxOccurs="1" />		-->
+		</xs:choice>
+		<xs:attribute name="value" type="cpmDoubleSymbolRef" use="optional" >
+			<xs:annotation>
+				<xs:documentation>Value/Expression to be used to color the cell area</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="min" 	type="cpmDouble" use="optional">			
+			<xs:annotation>
+				<xs:documentation>Minimum of colorbox.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="max"	type="cpmDouble" use="optional">
+			<xs:annotation>
+				<xs:documentation>Maximum of colorbox.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<!--<xs:attribute name="mode"	type="cpmcpmCellPlotModeEnum" use="required">
+			<xs:annotation>
+				<xs:documentation>Mode of plotting cells: cell type (default), cell id, property, membrane property.
+
+Note: when (membrane) property has been selected, you MUST provide a symbol-ref to this property.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>-->
+		<xs:attribute name="flooding" type="cpmBoolean" 		use="optional" >
+			<xs:annotation>
+				<xs:documentation>Default is True. If true the inner of the cell is flooded with a color, if False individual points of the cell are drawn with the given pointsize. Membrane properties can only be plotted with flooding set to False.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="per-frame-range" type="cpmBoolean" 		use="optional" default="false" >
+			<xs:annotation>
+				<xs:documentation>Default is False. Per frame reset of the value range of the referred symbol .</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="slice"	type="cpmUnsignedInteger" use="optional">
+			<xs:annotation>
+				<xs:documentation>Z-slice of 3D lattice to plot (for z-stack plots).</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	
+		<xs:simpleType name="cpmcpmCellPlotModeEnum"> 
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="cell type"/>
+			<xs:enumeration value="cell id"/>
+			<xs:enumeration value="property"/>
+			<xs:enumeration value="membrane property"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="cpmGnuplotCellLabels">
+		<xs:annotation>
+			<xs:documentation>Plots values of cell ID, type or property in the center of cells.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="fontsize"	type="cpmUnsignedInteger" use="optional"/>
+		<xs:attribute name="fontcolor"	type="cpmColors" use="optional"/>
+		<xs:attribute name="precision"	type="cpmInteger" use="optional">
+			<xs:annotation>
+				<xs:documentation>When printing double-valued property, this sets the decimal precision (e.g. 1, 1.0 or 1.00).</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>	
+		<xs:attribute name="scientific"	type="cpmBoolean" use="optional">
+			<xs:annotation>
+				<xs:documentation>Prints values in scientific notation (e.g. 1e-3).</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>	
+	</xs:complexType>
+	
+		
+	<xs:complexType name="cpmLabelPlotRef">
+		<xs:annotation>
+			<xs:documentation>Plots values of cell ID, type or property in the center of cells.</xs:documentation>
+		</xs:annotation>
+				<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required" >
+			<xs:annotation>
+				<xs:documentation>Symbol referring to a cell property or membrane property.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="fontsize"	type="cpmUnsignedInteger" use="optional"/>
+		<xs:attribute name="fontcolor"	type="cpmColors" use="optional"/>
+		<xs:attribute name="precision"	type="cpmInteger" use="optional">
+			<xs:annotation>
+				<xs:documentation>When printing double-valued property, this sets the decimal precision (e.g. 1, 1.0 or 1.00).</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>	
+		<xs:attribute name="scientific"	type="cpmBoolean" use="optional">
+			<xs:annotation>
+				<xs:documentation>Prints values in scientific notation (e.g. 1e-3).</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>	
+	</xs:complexType>
+	
+	<xs:complexType name="cpmArrowPlotRef">
+		<xs:annotation>
+			<xs:documentation>Plots arrows representing cell properties at the center of cells.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="orientation" type="cpmVectorMathExpression" use="required" >
+		</xs:attribute>
+<!--		<xs:attribute name="scaling" type="cpmDouble" use="optional" default="1" >
+			<xs:annotation>
+				<xs:documentation>Scaling factor for the arrow length.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>-->
+		<xs:attribute name="style" type="cpmArrowStyle" use="optional" default="1">
+			<xs:annotation>
+				<xs:documentation>Choose from one of 8 predefined styles.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="cpmVectorPlotRef">
+		<xs:annotation>
+			<xs:documentation>Plots arrows representing two pde layers as x and y axis of a vector.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="x-symbol-ref" type="cpmDoubleSymbolRef" use="required" >
+			<xs:annotation>
+				<xs:documentation>Symbol referring to a x-axis of the vectors.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="y-symbol-ref" type="cpmDoubleSymbolRef" use="required" >
+			<xs:annotation>
+				<xs:documentation>Symbol referring to a the y-axis of the vectors.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="scaling" type="cpmDouble" use="optional" default="1">
+			<xs:annotation>
+				<xs:documentation>Scaling factor for the arrow length.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="style" type="cpmArrowStyle" use="optional" default="1">
+			<xs:annotation>
+				<xs:documentation>Choose from one of 8 predefined styles.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="coarsening" type="cpmInteger" use="optional" default="1">
+			<xs:annotation>
+				<xs:documentation>
+					Reduces the density of vectors to be plotted.
+
+					No averaging is performed, rather values are skipped.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="color" type="cpmColors" use="required" default="black"/>
+
+	</xs:complexType>
+	
+	<xs:simpleType name="cpmArrowStyle">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="1"/>
+			<xs:enumeration value="2"/>
+			<xs:enumeration value="3"/>
+			<xs:enumeration value="4"/>
+			<xs:enumeration value="5"/>
+			<xs:enumeration value="6"/>
+			<xs:enumeration value="7"/>
+			<xs:enumeration value="8"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="cpmFieldPlotRef">
+		<xs:annotation>
+				<xs:documentation>Plots values of a PDE layer specified by symbol-ref using colors. Colors can be specified by colormap.</xs:documentation>
+		</xs:annotation>
+		<xs:choice minOccurs="0">
+			<xs:element name="ColorMap" type="cpmColorMap" />
+		</xs:choice>
+		<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required">			
+			<xs:annotation>
+				<xs:documentation>Symbol referring to a PDE reaction-diffusion layer.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="min" 	type="cpmDouble" use="optional" />
+		<xs:attribute name="max" 	type="cpmDouble" use="optional" />
+		<xs:attribute name="data-cropping" 	type="cpmBoolean" use="optional" />
+		<xs:attribute name="slice"	type="cpmUnsignedInteger" use="optional"/>
+		<xs:attribute name="resolution" type="cpmInteger" use="optional">
+			<xs:annotation>
+				<xs:documentation>Reduce resolution of PDE layer (for faster output, smaller files).</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="isolines" 	type="cpmUnsignedInteger" use="optional" />
+		<xs:attribute name="surface"	type="cpmBoolean" use="optional" />
+	</xs:complexType>
+	
+	<xs:complexType name="cpmGnuplotTerminal">
+		<xs:annotation>
+			<xs:documentation>Gnuplot terminals to plot to screen or file. Note: availability of terminals depends solely on local Gnuplot installation!
+Plot to screen: x11 (default), wxt (unix), aqua (MacOS).
+Plot to file  : png, jpeg, gif, postscript, pdf.</xs:documentation>
+		</xs:annotation>	
+		<xs:attribute name="name" type="cpmGnuplotTerminalEnum" use="required" default="png"/>		
+		<xs:attribute name="pointsize" use="optional" type="cpmUnsignedDouble" default="1">
+			<xs:annotation>
+				<xs:documentation>Size of pixel in plot. Varies for various terminals.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="persist" use="optional" type="cpmBoolean">
+			<xs:annotation>
+				<xs:documentation>If true, plot will persist (i.e. not closed) after simulation has finished.
+
+Note: This option is only applicable when plotting on-screen (using x11, wxt, or aqua terminals).</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="opacity" 		type="cpmDouble" 		use="optional" default="1.0">
+			<xs:annotation>
+				<xs:documentation>Make cells gradually transparant, useful for superimposed frames. 
+				
+((NOTE WdB)) I don't think this works at the moment. Gnuplot support transparency in filled curves, but not in points. Currently, however, cells are not not floodfilled but filled using points.
+((NOTE JS))  That feature is exclusively working with the flooding option in cell plots.
+</xs:documentation>
+			</xs:annotation>
+		</xs:attribute> 
+		<xs:attribute name="size" 		type="cpmIntegerVector" 		use="optional">
+			<xs:annotation>
+				<xs:documentation>Overrides the default output size of the terminal.
+</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+
+	</xs:complexType>
+	
+	<xs:simpleType name="cpmGnuplotTerminalEnum">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="x11"/>
+			<xs:enumeration value="wxt"/>
+			<xs:enumeration value="aqua"/>
+			<xs:enumeration value="png"/>
+			<xs:enumeration value="jpeg"/>
+			<xs:enumeration value="gif"/>
+			<xs:enumeration value="svg"/>
+			<xs:enumeration value="postscript"/>
+			<xs:enumeration value="pdf"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="cpmColorMap">
+		<xs:annotation>
+			<xs:documentation>Defines a mapping from values to colors. Gnuplot will create a gradual colorscale between the colors defined here.</xs:documentation>
+		</xs:annotation>
+		<xs:choice maxOccurs="unbounded">
+			<xs:element name="Color" type="cpmColorMapColor" minOccurs="2"/>
+		</xs:choice>		
+	</xs:complexType>
+	
+	<xs:complexType name="cpmColorMapColor">
+		<xs:attribute name="value" type="cpmDouble" use="required"/>
+		<xs:attribute name="color" type="cpmColors" use="required"/>
+	</xs:complexType>
+	
+</xs:schema>

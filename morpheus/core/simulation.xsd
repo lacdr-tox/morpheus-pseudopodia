@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+	<xs:element name="MorpheusModel" type="MorpheusModel" />
+	
+	<xs:complexType name="MorpheusModel">
+		<xs:all>
+			<xs:element name="Time" type="Time" />
+			<xs:element name="Space" type="Space" />
+			<xs:element name="Global" type="morphGlobals" />
+			<xs:element name="CPM" type="CPMType" minOccurs="0" />
+			<xs:element name="CellTypes" type="CellTypes" minOccurs="0" />
+			<xs:element name="Analysis" type="Analysis" minOccurs="0" />
+			<xs:element name="CellPopulations" type="CellPopulations" minOccurs="0" />
+			<xs:element name="Description" type="Description" />
+		</xs:all>
+		<xs:attribute name="version" type="cpmInteger" use="optional" />
+	</xs:complexType>
+	
+	<xs:complexType name="morphGlobals">
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:group ref="GlobalPlugins" />
+		</xs:choice>
+		<xs:annotation>
+			<xs:documentation>Define globally available Constants and Variables (Globals / Fields)
+			</xs:documentation>°
+		</xs:annotation>
+	</xs:complexType>
+	
+	<xs:complexType name="CPMType">
+		<xs:annotation>
+			<xs:documentation>Let's you define all ingredients for a CPM simulation.</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+<!-- 			<xs:element name="BoundaryConditions" type="cpmCPMBoundaryConditions" minOccurs="0" /> -->
+			<xs:element name="MetropolisKinetics" type="MetropolisKinetics" />
+			<xs:element name="MCSDuration" type="cpmTime">
+				<xs:annotation>
+					<xs:documentation>Simulation time passing during one Monte Carlo step of the cpm simulation.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Interaction" type="Interaction" />
+		</xs:all>
+		<xs:attribute name="default-type" use="optional" type="cpmCellTypeRef"/>
+		
+	</xs:complexType>
+	
+	<xs:complexType name="cpmCPMBoundaryConditions">
+		<xs:choice maxOccurs="unbounded">
+			<xs:element name="Condition">
+				<xs:complexType>
+					<xs:attribute name="boundary" use="required" type="cpmBoundary" />
+					<xs:attribute name="value" use="required" type="cpmCellTypeRef" />
+				</xs:complexType>
+			</xs:element>
+		</xs:choice>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmCPMBoundaryValue">
+		<xs:attribute name="boundary" use="required" type="cpmBoundaryRef"/>
+		<xs:attribute name="value" use="required" type="cpmCellTypeRef" />
+	</xs:complexType>
+
+	
+	
+	<xs:complexType name="CellTypes">
+		<xs:choice minOccurs="1" maxOccurs="unbounded">
+			<xs:element name="CellType" type="CellType">
+				<xs:annotation>
+					<xs:documentation>Specification of cell state and behaviors, for cell-based models.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:choice>
+	</xs:complexType>
+	
+	<xs:complexType name="CellType">
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:group  ref="CellTypePlugins"/>
+		</xs:choice>
+		<xs:attribute name="class" type="cpmCelltypeClass"  use="required" default="biological"/>
+		<xs:attribute name="name" type="cpmCellTypeDef"  use="required" />
+<!-- 		<xs:attribute name="subtype" type="cpmCellTypeRef"  use="optional" /> -->
+	</xs:complexType>
+	
+    <xs:simpleType name="cpmCelltypeClass">
+        <xs:restriction base="cpmString">
+			<xs:enumeration value="biological"/>
+			<xs:enumeration value="medium"/>
+			<xs:enumeration value="supercell"/>
+        </xs:restriction>
+    </xs:simpleType>
+	
+	<xs:complexType name="CellPopulations">
+		<xs:choice minOccurs="1" maxOccurs="unbounded">
+			<xs:element name="Population" type="Population" minOccurs="1" />
+			<xs:element name="BoundaryValue" type="cpmCPMBoundaryValue" minOccurs="0" maxOccurs="unbounded" />
+		</xs:choice>
+	</xs:complexType>
+	
+	<xs:complexType name="Population">
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:group ref="PopulationInitPlugins"/>
+			<xs:element name="Cell" type="cpmCell"/>
+			<xs:element name="InitProperty" type="cpmPopulationProperty">
+				<xs:annotation>
+					<xs:documentation>Initial value of a cell Property.
+						
+					Note:
+					- May contain a random number to generate a heterogenous initial population.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:choice>
+		
+		<xs:attribute name="type" type="cpmCellTypeRef" use="required">
+			<xs:annotation>
+				<xs:documentation>Cell type to create at initialization.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="size" type="cpmUnsignedInteger" use="required" default="1">
+			<xs:annotation>
+				<xs:documentation>Number of cells to create at initialization.
+				
+				Note:
+				- By default, cells are created in random locations, unless initializers such as 'InitRectangle' are used.
+				- If the number of cells created by initializers such as 'InitRectangle' is smaller than the number specified here, the remaining cells are created in random locations.
+				
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="name" type="cpmString"  use="optional" >
+			<xs:annotation>
+				<xs:documentation>Name of population.
+					
+					For user convenience, used in GUI only.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:complexType name="cpmPopulationProperty">
+		<xs:annotation>
+			<xs:documentation>Initializes a cell property of a population of cells with a particular value or evaluated function.
+
+This allows the user to create populations a heterogeneous initial population. That is, a population of cells that share the celltype, but differ in some property value. Or simply to create a (random) distribution among cell properties.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="Expression" type="cpmMathExpression"/>
+		</xs:all>
+		<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef"/>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmCell">
+	  <xs:choice maxOccurs="unbounded" minOccurs="0">
+		<xs:group  ref="PropertyDataGroup"/>
+		<xs:element name="MembranePropertyData" type="MembranePropertyData" minOccurs="0">
+			<xs:annotation>
+				<xs:documentation>Sets values for MembraneProperty. Overrides initial values.</xs:documentation>
+			</xs:annotation>
+		</xs:element>
+		<xs:element name="Center" type="cpmDoubleVector" minOccurs="0"/>
+		<xs:element name="Nodes" type="cpmNodes" minOccurs="0"/>
+		<xs:element name="SubCell" minOccurs="0">
+			<xs:complexType>
+				<xs:attribute name="cell-id" type="cpmUnsignedInteger" />
+			</xs:complexType>
+		</xs:element>
+	  </xs:choice>	  
+	  <!--<xs:attribute name="volume" type="cpmUnsignedInteger"/>-->
+	  <xs:attribute name="name" type="cpmString"/>
+	</xs:complexType>
+
+	<xs:simpleType name="cpmNodes">
+		<xs:restriction base="xs:string">
+		  <!-- This pattern specifies a generic 3D coordinate type with whitespaces as separators (allowing for commas, decimal) 
+			NOTE: The regular expression is commented out to speed up loading of large populations (or large 3D cells).
+		  -->  
+<!-- 		  <xs:pattern value="(-?\d+\s-?\d+\s-?\d+;)*(-?\d+\s-?\d+\s-?\d+)"/> -->
+		</xs:restriction>
+	</xs:simpleType>
+
+
+	<xs:complexType name="Interaction">
+<!--		<xs:all>
+			<xs:element name="Neighborhood" type="cpmNeighborhood" />-->
+			<xs:choice minOccurs="0" maxOccurs="unbounded">
+				<xs:group ref="InteractionPlugins"/>
+				<xs:element name="Contact">
+					<xs:complexType>
+						<xs:choice minOccurs="0" maxOccurs="unbounded">
+							<xs:group ref="ContactPlugins"/>
+						</xs:choice>
+						<xs:attribute name="type1" use="required" type="cpmCellTypeRef" />
+						<xs:attribute name="type2" use="required" type="cpmCellTypeRef" />
+						<xs:attribute name="value" use="required" type="cpmDouble" />
+					</xs:complexType>
+				</xs:element>
+			</xs:choice>
+		<xs:attribute name="default" use="optional" type="cpmDouble"/>
+		<xs:attribute name="collapse" use="optional" type="cpmBoolean" default="true" />
+		<xs:attribute name="negative" use="optional" type="cpmBoolean" default="false">
+			<xs:annotation>
+				<xs:documentation>Use negative surface values when using SurfaceConstraint (Ouchi, 2003)</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		
+	</xs:complexType>
+	
+	<xs:complexType name="Analysis">
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:group  ref="AnalysisPlugins"/>
+		</xs:choice>
+	</xs:complexType>
+
+	<xs:complexType name="Description">
+		<xs:all minOccurs="1">
+			<xs:element name="Details" type="cpmText" >
+				<xs:annotation>
+					<xs:documentation>Text to describe and annotate model, put references and track changes.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Title" type="cpmString" >
+				<xs:annotation>
+					<xs:documentation>Model title.
+						
+						Used as name for output directory.
+						</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:all>
+	</xs:complexType>
+	
+	<xs:complexType name="MetropolisKinetics">
+		<xs:annotation>
+			<xs:documentation>Specifies the modified Metropolis algorithm used to stochastically find the minimal energy configuration.</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="Neighborhood" minOccurs="1" type="cpmNeighborhood" />
+<!-- MOVED BACK TO ATTRIBUTE
+                        <xs:element name="Yield" minOccurs="0" type="cpmPluginParameter_Double" >
+                        <xs:annotation>
+                        <xs:documentation>Modification to Boltzmann distribution such that energetically unfavourable configurations are accepted with lower probablity.
+This can be used to model the resistance of cell membrane to fluctuations.
+</xs:documentation>
+                        </xs:annotation>
+			</xs:element>
+-->
+		</xs:all>
+
+		<xs:attribute name="stepper" type="cpmStepper" use="required" />
+		<xs:attribute name="temperature" type="cpmDouble" use="required" default="1">
+			<xs:annotation>
+				<xs:documentation>Boltzmann temperature in Metropolis algorithm.
+Controls the probability of accepting a configuration that is energetically unfavorable.
+Determines the amount of membrane fluctuation (cell motility).</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="yield" type="cpmDouble" use="optional" default="0.0">
+			<xs:annotation>
+				<xs:documentation>Modification to Boltzmann distribution such that energetically unfavourable configurations are accepted with lower probablity. This avoids energetically neutral updated (with dH=0) to be accepted with probability 1.0.
+	Can be used to model the resistance of cell membrane to fluctuations.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+
+    <xs:simpleType name="cpmStepper">
+		<xs:annotation>
+			<xs:documentation>Monte Carlo sampling is done randomly (1) over whole lattice ("random"), or (2) on edges only ("edgelist"). 
+Typically, "edgelist" is computationally much more efficient since updates can only take place at the interfaces of different domains (cell interfaces).</xs:documentation>
+		</xs:annotation>
+        <xs:restriction base="cpmString">
+                <xs:enumeration value="edgelist"/>
+                <xs:enumeration value="random"/>
+        </xs:restriction>
+    </xs:simpleType>
+	
+	<xs:complexType name="Time">
+	
+		<xs:annotation>
+			<xs:documentation>Specifies global time of simulation. 
+			
+- Length of simulation, when and where to write output. 
+- Interpretation of spatial and temporal spaces.</xs:documentation>
+		</xs:annotation>
+		
+		<xs:all >		
+			<xs:element name="RandomSeed"  minOccurs="0" >
+				<xs:annotation>
+					<xs:documentation>Seed for the random number generator (RNG).
+
+If not specified, the seed is set randomly (using ctime).
+
+To exactly reproduce simulation results, choose the same random seed. Note that in multicore simulations (number of openMP threads > 1), the random numbers also depend on the number of threads, as each threads has its own RNG (see File->Settings/Preferences->Threads per job).
+ 
+</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>					
+					<xs:attribute name="value" type="cpmInteger" use="required"/>
+				</xs:complexType>
+			</xs:element>
+			
+			<xs:element name="TimeSymbol" minOccurs="1">
+			
+				<xs:annotation>
+					<xs:documentation>Specifies the symbol used for simulation time.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required" default="time"/>
+					<xs:attribute name="name" type="cpmString" use="optional" default="Time"/>
+				</xs:complexType>
+			</xs:element>
+			
+			<xs:element name="StartTime" minOccurs="1" type="cpmTime" >
+				<xs:annotation>
+					<xs:documentation>Initial time of the simulation.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="StopTime" minOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Termination time of simulation.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:attribute name="value" type="cpmUnsignedDouble" use="required" default="1" />
+					<xs:attribute name="unit" type="cpmTimeUnit" use="optional" default="sec"/>
+					<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="optional" />
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="StopCondition" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Terminate simulation when condition is satisfied.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:all>
+						<xs:element name="Condition" type="cpmMathExpression" />
+					</xs:all>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="SaveInterval" minOccurs="0" type="cpmTime" >
+				<xs:annotation>
+					<xs:documentation>Interval to save simulation state for checkpointing. 
+
+Filename = [title][time].xml.gz
+
+Special cases:
+  0: Write only at start and end
+ -1: Do not save simulation state
+ 
+ Note:
+  - 3D simulations can generate large checkpointing files.
+  - Large PDE simulations can generate large checkpointing files.
+</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:all>
+	</xs:complexType> 
+	
+	<xs:complexType name="Space">
+
+		<xs:all>
+			<xs:element name="SpaceSymbol" minOccurs="1" >
+				<xs:annotation>
+					<xs:documentation>Symbol representing the current lattice position.</xs:documentation>
+				</xs:annotation>
+
+				<xs:complexType>
+					<xs:attribute name="symbol" type="cpmVectorSymbolDef" use="required" default="space" />
+					<xs:attribute name="name" type="cpmString" use="optional" />
+				</xs:complexType>
+			</xs:element>
+			
+			<xs:element name="Lattice" minOccurs="1" type="Lattice" />
+			
+			<xs:element name="MembraneLattice" type="MembraneLattice" minOccurs="0"/>
+		</xs:all>
+	</xs:complexType>
+	
+	<xs:complexType name="MembraneLattice">
+						<xs:annotation>
+					<xs:documentation>Resolution of spatial discretization of MembraneProperties. 
+					
+Defines the size of 1D/2D lattice on which the PDEs of MembraneProperties are modeled. Is identical for all MembraneProperties of all cells defining one.
+
+The NodeLength of each lattice node is computed from the length scale set for the CPM and the volume of the cell (under the assumption of a spherical cell).
+
+Note: 
+- high resolution can seriously impact performance.
+</xs:documentation>
+				</xs:annotation>	
+		<xs:all>
+			<xs:element name="SpaceSymbol" minOccurs="1" >
+				<xs:annotation>
+					<xs:documentation>Symbol representing the current lattice position.</xs:documentation>
+				</xs:annotation>
+
+				<xs:complexType>
+					<xs:attribute name="symbol" type="cpmVectorSymbolDef" use="required" />
+					<xs:attribute name="name" type="cpmString" use="optional" />
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Resolution" minOccurs="1" >
+				<xs:complexType>
+					<xs:attribute name="value" type="cpmUnsignedInteger" use="required" default="100" />
+					<xs:attribute name="symbol" type="cpmVectorSymbolDef" use="optional" />
+					
+				</xs:complexType>
+			</xs:element>
+		</xs:all>
+	</xs:complexType>
+
+</xs:schema>

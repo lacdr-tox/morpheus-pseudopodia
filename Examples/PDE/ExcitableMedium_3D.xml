@@ -1,0 +1,62 @@
+<MorpheusModel version="1">
+    <Description>
+        <Title>Example-ExcitableMedium-3D</Title>
+        <Details>Simulates the Barkley model of an excitable medium, see: http://www.scholarpedia.org/article/Barkley_model
+Derived from FitzHugh-Nagumo model and Hogdkin-Huxley model.
+
+TIFF images can be viewed with external tools such as Fiji / ImageJ (http://fiji.sc/Fiji) or BioView3D (http://www.dimin.net/software/bioview3d/). The latter also reads the OME header for 3D,4D and 5D images.
+ </Details>
+    </Description>
+    <Global>
+        <Field symbol="u" value="if( l.x>=s.x/2-5 and l.x&lt;=s.x/2+5 and l.z>=s.z/2-5 and l.z&lt;=s.z/2+5 and l.y&lt;=s.y/4 , 1, 0 )">
+            <Diffusion rate="0.5"/>
+        </Field>
+        <Field symbol="v" value="if(l.x&lt;=s.x/2 and l.z&lt;=(3*s.z)/4, 1, 0)">
+            <Diffusion rate="0.5"/>
+        </Field>
+        <System solver="runge-kutta" time-step="0.05">
+            <DiffEqn symbol-ref="u">
+                <Expression>(1/e)*u*(1-u)*(u-((v+b)/a))</Expression>
+            </DiffEqn>
+            <DiffEqn symbol-ref="v">
+                <Expression>u-v</Expression>
+            </DiffEqn>
+            <Constant symbol="e" value="0.02"/>
+            <Constant symbol="a" value="0.8"/>
+            <Constant symbol="b" value="0.01"/>
+        </System>
+    </Global>
+    <Space>
+        <Lattice class="cubic">
+            <Size symbol="s" value="50 50 50"/>
+            <BoundaryConditions>
+                <Condition boundary="x" type="noflux"/>
+                <Condition boundary="y" type="noflux"/>
+                <Condition boundary="z" type="noflux"/>
+                <Condition boundary="-x" type="noflux"/>
+                <Condition boundary="-y" type="noflux"/>
+                <Condition boundary="-z" type="noflux"/>
+            </BoundaryConditions>
+            <NodeLength value="1.0"/>
+        </Lattice>
+        <SpaceSymbol symbol="l" name="position in space"/>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="25"/>
+        <SaveInterval value="0"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <Analysis>
+        <Gnuplotter time-step="5">
+            <Terminal size="600 600 0" name="png"/>
+            <Plot>
+                <Field symbol-ref="u" slice="25"/>
+            </Plot>
+        </Gnuplotter>
+        <TiffPlotter timelapse="false" format="32bit" OME-header="true" compression="false" time-step="0.5">
+            <Channel symbol-ref="u"/>
+            <Channel symbol-ref="v"/>
+        </TiffPlotter>
+    </Analysis>
+</MorpheusModel>

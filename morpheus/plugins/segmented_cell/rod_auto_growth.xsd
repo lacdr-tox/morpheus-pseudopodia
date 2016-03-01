@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="RodAutoGrowth"	type="RodAutoGrowth"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="RodAutoGrowth">
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>SuperCell</xs:appinfo>
+			
+			<xs:documentation>Lets a supercell bud off new subcells until size is reached
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all maxOccurs="1">
+			<xs:element type="cpmPluginParameter_Double" name="Segments" />
+		</xs:all>
+		<xs:attribute name="name" type="cpmString" use="optional" />
+		<xs:attribute name="delay" type="cpmUnsignedInteger"/>
+	</xs:complexType>
+
+</xs:schema>

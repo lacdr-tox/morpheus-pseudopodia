@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="Haptotaxis"	type="Haptotaxis"/>
+		</xs:choice>
+	</xs:group>
+	<xs:complexType name="Haptotaxis">		
+		<xs:annotation>
+			<xs:appinfo>Motility</xs:appinfo>
+		</xs:annotation>
+		<xs:all maxOccurs="1">
+			<xs:element name="Layer" 				type="cpmLayerRef" 								/>
+			<xs:element name="Strength"  			type="cpmDoublePropertyRef"			 				/>
+		</xs:all>
+		<xs:attribute name="name" type="cpmString" use="optional" />
+	</xs:complexType>
+
+</xs:schema>

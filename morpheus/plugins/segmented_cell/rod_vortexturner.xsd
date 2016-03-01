@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+	<xs:complexType name="VortexTurner">
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>SuperCell</xs:appinfo>
+			
+			<xs:documentation>Changes the orientation of cells to follow a counterclockwise orientation.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="Orientation" 			type="cpmVectorPropertyRef" />
+			<xs:element name="Reversal" 			type="cpmDoublePropertyRef" />
+		</xs:all>
+		<xs:attribute name="name" type="cpmString" use="optional" />
+		<xs:attribute name="frequency" type="cpmInteger" use="optional" /> 
+	</xs:complexType>
+
+</xs:schema>

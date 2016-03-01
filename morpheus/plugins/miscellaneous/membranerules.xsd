@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="MembraneRules"	type="MembraneRules"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="MembraneRules" >
+		<xs:annotation>
+			<xs:appinfo>Miscellaneous</xs:appinfo>
+			<xs:documentation>
+Applies transformation to a MembraneProperty, using methods from image processing.
+
+Currently supports:
+- Eucledian Distance Threshold (EDT)
+- Thresholding
+- Thinning
+
+ToDo:
+- Medial Axis Transform (MAT) for greyscale 
+- Two-pass algorithm for thinning (instead of iterative)
+			</xs:documentation>
+		</xs:annotation>
+			
+		<xs:choice>
+			<xs:element name="CellShapeReporter" type="cpmMembraneRulesCellShapeReporter" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="NeighborhoodSizeReporter" type="cpmMembraneRulesNeighborhoodSizeReporter" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="GaussianFilter" type="cpmMembraneRulesGaussianFilter" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="LocalThreshold" type="cpmMembraneRulesLocalThreshold" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="Imputation" type="cpmMembraneRulesImputation" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="NeighborsReporter" type="cpmMembraneRulesNeighborsReporter" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="DistanceTransform" type="cpmMembraneRulesDistanceTransform" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="Threshold" type="cpmMembraneRulesThreshold" minOccurs="0" maxOccurs="1"/>  
+		</xs:choice>
+		<xs:attribute name="name" type="cpmString" use="optional" />
+		<xs:attribute name="time-step" type="cpmDouble" use="optional" />
+	</xs:complexType>
+		
+	<xs:complexType name="cpmMembraneRulesImputation" >
+		<xs:all>
+			<xs:element name="Input" type="cpmMembraneRulesInput" minOccurs="1"/>
+			<xs:element name="Mask" type="cpmMembraneRulesInput" minOccurs="1"/>
+			<xs:element name="Output" type="cpmMembraneRulesOutput" minOccurs="1"/>
+		</xs:all>
+	</xs:complexType>
+
+	<xs:complexType name="cpmMembraneRulesNeighborsReporter" >
+		<xs:all>
+			<xs:element name="Input" type="cpmMembraneRulesInput" minOccurs="1">
+				<xs:annotation>
+					<xs:documentation>
+				   Membrane with cell IDs of neighboring cells.
+				   Obtained through MembraneReporter, followed by a step of MembraneRules/Imputation.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Output" type="cpmMembraneRulesOutput" minOccurs="1"/>
+		</xs:all>
+		<xs:attribute name="symbol" type="cpmDoubleSymbolRef" use="required">
+		   <xs:annotation>
+			   <xs:documentation>
+				   Symbol of cell property of neighbors to report on membrane
+			   </xs:documentation>
+		   </xs:annotation>
+	   </xs:attribute>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmMembraneRulesCellShapeReporter" >
+		<xs:annotation>
+			<xs:documentation>
+				Reports the radii from the cell center to the membrane.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="Output" type="cpmMembraneRulesOutput" minOccurs="1"/>
+		</xs:all>
+	</xs:complexType>
+
+   <xs:complexType name="cpmMembraneRulesNeighborhoodSizeReporter" >
+	   <xs:annotation>
+		<xs:documentation>
+			   Reports the size of the local neighborhoods, in terms of pixels.
+			   
+			   This can be used to estimate whether artefacts in local thresholding are due to stochasticity by small neighborhoods (like Yannis argues).
+		</xs:documentation>
+	   </xs:annotation>
+	   <xs:all>
+		   <xs:element name="Output" type="cpmMembraneRulesOutput" minOccurs="1"/>
+	   </xs:all>
+	   <xs:attribute name="cell_shape" type="cpmBoolean" use="required">
+		   <xs:annotation>
+			   <xs:documentation>
+				   If true, cell shape is approximated as a deformed sphere.
+				   
+				   In local thresholding operation, this cell shape is taken into acount while determining the local neighborhoods. 
+				   
+				   Note: this is much more computationally intensive, because neighborhoods need to be computed for each pixels in theta/phi lattice for each cell. Therefore it is best to keep the resolution low.
+				   
+			   </xs:documentation>
+		   </xs:annotation>
+	   </xs:attribute>
+	   	   <xs:attribute name="distance" type="cpmDouble" use="required">
+		   <xs:annotation>
+			   <xs:documentation>
+				   Defines the size of the local neighborhood. 
+				   In the same units as used in 3D space.
+			   </xs:documentation>
+		   </xs:annotation>
+	   </xs:attribute>
+   </xs:complexType>
+   
+   <xs:complexType name="cpmMembraneRulesGaussianFilter" >
+	   <xs:all>
+		   <xs:element name="Input" type="cpmMembraneRulesInput" minOccurs="1"/>
+		   <xs:element name="Output" type="cpmMembraneRulesOutput" minOccurs="1"/>
+	   </xs:all>
+	   <xs:attribute name="amount" type="cpmDouble" use="required"/>
+   </xs:complexType>
+   
+      <xs:complexType name="cpmMembraneRulesDistanceTransform" >
+	   <xs:all>
+		   <xs:element name="Input" type="cpmMembraneRulesInput" minOccurs="1">
+			   <xs:annotation>
+			   <xs:documentation>
+				   MembraneProperty containing BOOLEAN mask. 
+				   
+				   Distances are calculated from all NON-ZERO pixels.
+				   
+				   Assumption:
+				   - Foreground = 1
+				   - Background = 0
+				   
+			   </xs:documentation>
+		   </xs:annotation>
+	   </xs:element>
+		   <xs:element name="Output" type="cpmMembraneRulesOutput" minOccurs="1"/>
+	   </xs:all>
+	   <xs:attribute name="cell_shape" type="cpmBoolean" use="required">
+		   <xs:annotation>
+			   <xs:documentation>
+				   If true, cell shape is approximated as a deformed sphere.
+				   
+				   Distances are calculated over the surface of the deformed sphere.
+			   </xs:documentation>
+		   </xs:annotation>
+	   </xs:attribute>
+   </xs:complexType>
+   
+   <xs:complexType name="cpmMembraneRulesLocalThreshold" >
+	   <xs:all>
+		   <xs:element name="Input" type="cpmMembraneRulesInput" minOccurs="1"/>
+		   <xs:element name="Output" type="cpmMembraneRulesOutput" minOccurs="1"/>
+	   </xs:all>
+	   <xs:attribute name="threshold" type="cpmDouble" use="required">
+		   <xs:annotation>
+			   <xs:documentation>
+				   Defines the threshold to separate 'foreground' and 'background'.
+			   </xs:documentation>
+		   </xs:annotation>
+	   </xs:attribute>
+	   <xs:attribute name="distance" type="cpmDouble" use="required">
+		   <xs:annotation>
+			   <xs:documentation>
+				   Defines the size of the local neighborhood. 
+				   In the same units as used in 3D space.
+			   </xs:documentation>
+		   </xs:annotation>
+	   </xs:attribute>
+		   
+	   <xs:attribute name="method" type="cpmMembraneRulesLocalThresholdMethods" use="required"/>
+	   <xs:attribute name="binary" type="cpmBoolean" use="optional"/>
+	   <xs:attribute name="cell_shape" type="cpmBoolean" use="required">
+		   <xs:annotation>
+			   <xs:documentation>
+				   If true, cell shape is approximated as a deformed sphere.
+				   
+				   In local thresholding operation, this cell shape is taken into acount while determining the local neighborhoods. 
+				   
+				   Note: this is much more computationally intensive, because neighborhoods need to be computed for each pixels in theta/phi lattice for each cell. Therefore it is best to keep the resolution low.
+				   
+			   </xs:documentation>
+		   </xs:annotation>
+	   </xs:attribute>
+   </xs:complexType>
+   
+   <xs:complexType name="cpmMembraneRulesThreshold" >
+	   <xs:all>
+		   <xs:element name="Input" type="cpmMembraneRulesInput" minOccurs="1"/>
+		   <xs:element name="Output" type="cpmMembraneRulesOutput" minOccurs="1"/>
+	   </xs:all>
+	   <xs:attribute name="mode" type="cpmMembraneRulesThresholdMode" use="required"/>
+	   <xs:attribute name="threshold" type="cpmDouble" use="required"/>
+   </xs:complexType>
+   
+	<xs:complexType name="cpmMembraneRulesInput" >
+		<xs:choice>
+			<xs:element name="MembraneProperty" type="cpmMembraneRef" minOccurs="1"/>
+		</xs:choice>
+	</xs:complexType>
+
+	<xs:complexType name="cpmCellTypeInput" >
+		<xs:attribute name="celltype" use="required" type="cpmCellTypeRef" />
+	</xs:complexType>
+	
+	<xs:complexType name="cpmMembraneRulesOutput" >
+		<xs:choice>
+			<xs:element name="MembraneProperty" type="cpmMembraneRef" minOccurs="1"/>
+		</xs:choice>
+	</xs:complexType>	
+	
+	<xs:simpleType name="cpmMembraneRulesThresholdMode">
+		<xs:annotation>
+			<xs:documentation>Method of thresholding.
+				
+				Absolute: (value > threshold ? value : 0)
+				Relative to minimum: ((value - global_minimum) &lt; threshold ? value : 0)
+				Relative to maximum: ((global_maximum - value) &lt; threshold ? value : 0)
+				
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:normalizedString">
+			<xs:enumeration value="absolute"/>
+			<xs:enumeration value="relative to maximum"/>
+			<xs:enumeration value="relative to minimum"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+
+   <xs:simpleType name="cpmMembraneRulesLocalThresholdMethods">
+	   <xs:annotation>
+		   <xs:documentation>Method of local thresholding.
+			   
+			   See: http://fiji.sc/wiki/index.php/Auto_Local_Threshold
+		   </xs:documentation>
+	   </xs:annotation>
+	   <xs:restriction base="xs:normalizedString">
+		   <xs:enumeration value="average"/>
+		   <xs:enumeration value="maximum"/>
+		   <xs:enumeration value="standard_deviation"/>
+		   <xs:enumeration value="midpoint"/>
+		   <xs:enumeration value="median"/>
+	   </xs:restriction>
+   </xs:simpleType>
+   
+	
+</xs:schema>
+

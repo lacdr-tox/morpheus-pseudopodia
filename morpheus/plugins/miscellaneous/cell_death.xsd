@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="CellDeath"	type="CellDeath"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="CellDeath">
+		<xs:annotation>
+			<xs:appinfo>Population</xs:appinfo>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="Condition" type="cpmMathExpression" />
+			<xs:element name="Shrinkage" minOccurs="0" >
+				<xs:complexType>
+					<xs:attribute name="target-volume" type="cpmDoubleSymbolRef" use="required" />
+				</xs:complexType>
+			</xs:element>
+		</xs:all>
+		<xs:attribute name="name" type="cpmString" use="optional" />
+		
+	</xs:complexType>
+</xs:schema>

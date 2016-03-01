@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="MembraneRules3D"	type="MembraneRules3D"/>
+		</xs:choice>
+	</xs:group>
+	
+<!-- 	<MembraneRules3D>
+// 		<Input basal_celltype="[cellType]" apical_symbol="[symbol]" />
+// 		<PositionInformation mode="[cytosolic/membrane]" shape="[linear/exponential]" />
+// 		<IntercellularCommunication mode="[none/geometric_mean]" />
+// 		<Thresholding />
+// 			<Global threshold="[double]" />
+// 			<Local threshold="[double]" max_distance="[double]" weighted="[boolean]" />
+// 		</Thresholding>
+// 		<Analysis>
+// 			<Cells tolerance="[double]" writeTIFF="[boolean]"  />
+// 			<Tissue tolerance="[double]" writeTIFF="[boolean]" border="[double]" />
+// 		</Analysis>
+// 		<Output basal="[symbol]" apical_predicted="[symbol]" apical_segmented="[symbol]" posinfo="[symbol]" potential="[symbol]" lateral="[symbol]"/>
+// 	<MembraneRules3D>
+-->
+	
+	<xs:complexType name="MembraneRules3D" >
+		<xs:annotation>
+			<xs:appinfo>Miscellaneous</xs:appinfo>
+			<xs:documentation>
+				Membrane rules for liver project, without mapping to membraneproperties
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="Input" type="MembraneRules3D_Input" minOccurs="1"/>
+			<xs:element name="PositionInformation" type="MembraneRules3D_PositionInformation" minOccurs="1"/>
+			<xs:element name="IntercellularCommunication" type="MembraneRules3D_IntercellularCommunication" minOccurs="1"/>
+			<xs:element name="Thresholding" type="MembraneRules3D_Thresholding" minOccurs="1"/>
+			<xs:element name="Analysis" type="MembraneRules3D_Analysis" minOccurs="1"/>
+			<xs:element name="Pruning" type="MembraneRules3D_Pruning" minOccurs="1"/>
+			<xs:element name="Output" type="MembraneRules3D_Output" minOccurs="1"/>
+		</xs:all>
+	</xs:complexType>
+			
+			
+<!--			<xs:element name="Output_basal" type="cpmMembraneRef" minOccurs="1"/>
+			<xs:element name="Output_lateral" type="cpmMembraneRef" minOccurs="1"/>
+			<xs:element name="Output_distance" type="cpmMembraneRef" minOccurs="1"/>
+			<xs:element name="Output_potential" type="cpmMembraneRef" minOccurs="1"/>
+			<xs:element name="Output_apical" type="cpmMembraneRef" minOccurs="1"/>
+			<xs:element name="Output_apical_segmented" type="cpmMembraneRef" minOccurs="1"/>
+		</xs:all>-->
+<!--		<xs:attribute name="basal_celltype" type="cpmCellTypeRef" use="required" />
+		<xs:attribute name="apical_pde" type="cpmDoubleSymbolRef" use="required" />
+		<xs:attribute name="distance_mode" type="cpmMembraneRules3DDistanceMethod" use="required" />
+		<xs:attribute name="communication_mode" type="cpmMembraneRules3DCommunicationMethod" use="required" />
+		<xs:attribute name="max_distance" type="cpmDouble" use="required" />
+		<xs:attribute name="threshold" type="cpmDouble" use="required" />-->
+		
+	<xs:complexType name="MembraneRules3D_Input">
+		<xs:annotation>
+			<xs:documentation>
+				Celltype for basal cues.
+				Symbol of PDE layer that stores segmented apical.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="basal_celltype" type="cpmCellTypeRef" use="required" />
+		<xs:attribute name="apical_symbol" type="cpmDoubleSymbolRef" use="required" />
+	</xs:complexType>
+	
+<!-- 	 -->
+
+	<xs:complexType name="MembraneRules3D_PositionInformation">
+		<xs:annotation>
+			<xs:documentation>
+				mode="[cytosolic/membrane]"
+				shape="[linear/exponential]"
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="mode" type="MembraneRules3D_PositionInformation_Method" use="required" />
+		<xs:attribute name="shape" type="MembraneRules3D_PositionInformation_Shape" use="required" />
+		<xs:attribute name="exponent" type="cpmDouble" use="optional" />
+	</xs:complexType>
+
+	<xs:simpleType name="MembraneRules3D_PositionInformation_Method">
+		<xs:annotation>
+			<xs:documentation>
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:normalizedString">
+			<xs:enumeration value="cytosolic"/>
+			<xs:enumeration value="membrane"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="MembraneRules3D_PositionInformation_Shape">
+		<xs:annotation>
+			<xs:documentation>
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:normalizedString">
+			<xs:enumeration value="linear"/>
+			<xs:enumeration value="exponential"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+<!-- 	 -->
+
+	<xs:complexType name="MembraneRules3D_IntercellularCommunication">
+		<xs:annotation>
+			<xs:documentation>
+				mode="[none/geometric_mean]"
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="mode" type="MembraneRules3D_IntercellularCommunication_Mode" use="required" />
+	</xs:complexType>
+	
+	<xs:simpleType name="MembraneRules3D_IntercellularCommunication_Mode">
+		<xs:annotation>
+			<xs:documentation>
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:normalizedString">
+			<xs:enumeration value="none"/>
+			<xs:enumeration value="geometric_mean"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	
+<!-- 	 -->
+
+	<xs:complexType name="MembraneRules3D_Pruning">
+		<xs:annotation>
+			<xs:documentation>
+				Rule: after thresholding of apical domain, remove unwanted apical domains.
+				
+				- Unilateral domains: remove those apical domains that do not have a corresponding apical domain on adjacent membrane(s). (These cannot exist because apical domains involve intercellular junctional complexes.)
+				- Isolated domains: remove apical domain on lateral domains shared with single neighboring cell and surrounded by basal contacts. (These cannot exist because hte apical needs to be connected to the BC for bile to flow away.)
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="unilateral_domains" type="cpmBoolean" use="required" />
+		<xs:attribute name="isolated_domains" type="cpmBoolean" use="required" />
+	</xs:complexType>
+
+<!-- 	 -->
+
+	<xs:complexType name="MembraneRules3D_Thresholding">
+		<xs:choice>
+			<xs:element name="Global" type="MembraneRules3D_Thresholding_Global" />
+			<xs:element name="Local" type="MembraneRules3D_Thresholding_Local" />
+		</xs:choice>
+	</xs:complexType>
+	
+	<xs:complexType name="MembraneRules3D_Thresholding_Global">
+		<xs:annotation>
+			<xs:documentation>
+				Global thresholding
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="threshold" type="cpmDouble" use="required" />
+	</xs:complexType>
+
+	<xs:complexType name="MembraneRules3D_Thresholding_Local">
+		<xs:annotation>
+			<xs:documentation>
+				Local thresholding
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="threshold" type="cpmDouble" use="required" />
+		<xs:attribute name="max_distance" type="cpmDouble" use="required" />
+		<xs:attribute name="local_distance" type="cpmDouble" use="required" />
+		<xs:attribute name="weighted" type="cpmBoolean" use="required" />
+	</xs:complexType>
+
+<!-- 	 -->
+
+	<xs:complexType name="MembraneRules3D_Analysis">
+		<xs:annotation>
+			<xs:documentation>
+				Specifies parameters for analyse (F-scores) and visualization at the cellular and tissue levels.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="Cells" type="MembraneRules3D_Analysis_Cells" minOccurs="1"/>
+			<xs:element name="Tissue" type="MembraneRules3D_Analysis_Tissue" minOccurs="1"/>
+		</xs:all>
+	</xs:complexType>
+	
+	<xs:complexType name="MembraneRules3D_Analysis_Cells">
+		<xs:annotation>
+			<xs:documentation>
+			</xs:documentation>
+		</xs:annotation>
+<!-- 		<xs:attribute name="tolerance" type="cpmDouble" use="required" /> -->
+		<xs:attribute name="writeTIFF" type="cpmBoolean" use="required" />
+		<xs:attribute name="writeMembraneMaps" type="cpmBoolean" use="required" />
+	</xs:complexType>
+	
+	<xs:complexType name="MembraneRules3D_Analysis_Tissue">
+		<xs:annotation>
+			<xs:documentation>
+			</xs:documentation>
+		</xs:annotation>
+<!-- 		<xs:attribute name="tolerance" type="cpmDouble" use="required" /> -->
+		<xs:attribute name="border" type="cpmUnsignedInteger" use="required" />
+		<xs:attribute name="writeTIFF" type="cpmBoolean" use="required" />
+	</xs:complexType>
+	
+<!-- 	 -->
+
+	<xs:complexType name="MembraneRules3D_Output">
+		<xs:annotation>
+			<xs:documentation>
+				Specify symbols for the multichannel TIFF that is written as output.tif
+				basal="[symbol]" apical_predicted="[symbol]" apical_segmented="[symbol]" posinfo="[symbol]" potential="[symbol]" lateral="[symbol]"
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="basal" type="cpmDoubleSymbolRef" use="required" />
+		<xs:attribute name="apical_predicted" type="cpmDoubleSymbolRef" use="required" />
+		<xs:attribute name="apical_segmented" type="cpmDoubleSymbolRef" use="required" />
+		<xs:attribute name="distance" type="cpmDoubleSymbolRef" use="required" />
+		<xs:attribute name="potential" type="cpmDoubleSymbolRef" use="required" />
+		<xs:attribute name="lateral" type="cpmDoubleSymbolRef" use="required" />
+	</xs:complexType>
+	
+<!--	<xs:simpleType name="cpmMembraneRules3DDistanceMethod">
+		<xs:annotation>
+			<xs:documentation>Method of distance calculation.
+				
+				Cytosol: Geodesic distance through all nodes of the cell.
+				Membrane: Geodesic distance over the cell membrane.
+				None: No distance is calculated.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:normalizedString">
+			<xs:enumeration value="cytosol"/>
+			<xs:enumeration value="membrane"/>
+			<xs:enumeration value="none"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="cpmMembraneRules3DCommunicationMethod">
+		<xs:annotation>
+			<xs:documentation>With or without intercelular communication
+				
+				Cell autonomous: No intercellular communication (apical is directly based on distance)
+				Communication  : With intercellular communication (apical is based on potential)
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:normalizedString">
+			<xs:enumeration value="cell_autonomous"/>
+			<xs:enumeration value="communication"/>
+		</xs:restriction>
+	</xs:simpleType>-->
+
+</xs:schema>
+

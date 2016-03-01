@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+            <xs:element name="CellTracker" 			type="CellTracker"/>
+		</xs:choice>
+	</xs:group>
+	
+    <xs:complexType name="CellTracker">
+		<xs:annotation>
+			<xs:appinfo>Data analysis</xs:appinfo>
+		</xs:annotation>
+		<xs:attribute name="name" type="cpmString" use="optional"/>
+		<xs:attribute name="time-step" type="cpmDouble" use="optional"/>
+        <xs:attribute name="format" type="cpmCellTrackerFormat" use="required"/>
+        <!-- <xs:attribute name="celltype" type="cpmCellTypeRef" /> -->
+    </xs:complexType>
+
+
+    <xs:simpleType name="cpmCellTrackerFormat">
+        <xs:restriction base="cpmString">
+            <xs:enumeration value="ISBI 2012 (XML)"/>
+            <xs:enumeration value="MTrackJ (MDF)"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

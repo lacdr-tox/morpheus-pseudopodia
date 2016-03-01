@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="PopulationInitPlugins">
+		<xs:choice>
+			<xs:element name="InitCellLattice" 		type="InitCellLattice"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="InitCellLattice">
+		<xs:annotation>
+			<xs:appinfo>Initialization</xs:appinfo>
+		</xs:annotation>
+	</xs:complexType>
+</xs:schema>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="MargolusDiffusion"	type="MargolusDiffusion"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="MargolusDiffusion">		
+		<xs:annotation>
+			<xs:appinfo>Motility</xs:appinfo>
+		</xs:annotation>
+		<xs:attribute name="time-step" type="cpmUnsignedDouble" use="required" />
+		<xs:attribute name="iterations" type="cpmUnsignedInteger" use="required" default="1" />
+	</xs:complexType>
+
+</xs:schema>

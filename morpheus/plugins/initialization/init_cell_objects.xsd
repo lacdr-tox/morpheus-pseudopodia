@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="PopulationInitPlugins">
+		<xs:choice>
+			<xs:element name="InitCellObjects" 		type="InitCellObjects"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="InitCellObjects">
+		<xs:annotation>
+			<xs:appinfo>Initialization</xs:appinfo>
+		</xs:annotation>
+		<xs:choice maxOccurs="unbounded">
+			<xs:element name="Arrangement" type="cpmInitObjectArrangement" minOccurs="1" />
+		</xs:choice>
+		<xs:attribute name="mode" use="required" type="cpmInitializationMode"/>
+	</xs:complexType>
+	
+	<xs:simpleType name="cpmInitializationMode">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="distance" />
+			<xs:enumeration value="order" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="cpmInitObjectArrangement">
+		<xs:all>
+			<xs:element name="Object" 	type="cpmInitObject" minOccurs="1" maxOccurs="1"/>
+		</xs:all>
+		<xs:attribute name="repetitions" type="cpmIntegerVector" use="required" default="1, 1, 1"/>
+		<xs:attribute name="displacements" type="cpmIntegerVector" use="required" default="1, 1, 1" />
+		<xs:attribute name="random_displacement" type="cpmDouble" use="optional" />
+	</xs:complexType>	
+
+   <xs:complexType name="cpmInitObject">
+		<xs:choice minOccurs="1" default="Sphere" >
+			<xs:element name="Sphere"   	type="cpmSphere" />
+            <xs:element name="Ellipsoid"   	type="cpmEllipsoid" />
+            <xs:element name="Cylinder" 	type="cpmCylinder" />
+			<xs:element name="Box" 			type="cpmBoxObject" />
+			<xs:element name="Point" 		type="cpmPointObject" />
+		</xs:choice>
+	</xs:complexType>
+		
+	<xs:complexType name="cpmPointObject">
+		<xs:attribute name="position"	type="cpmIntegerVector" use="required" />
+	</xs:complexType>
+	
+	<xs:complexType name="cpmBoxObject">
+		<xs:attribute name="origin" 	type="cpmIntegerVector" use="required" />
+		<xs:attribute name="size" 		type="cpmIntegerVector" use="required" />
+	</xs:complexType>
+   
+	<xs:complexType name="cpmSphere">
+		<xs:attribute name="center" 	type="cpmDoubleVector" use="required" />
+		<xs:attribute name="radius"		type="cpmDouble" use="required" />
+	</xs:complexType>
+
+	<xs:complexType name="cpmEllipsoid">
+		<xs:attribute name="center" type="cpmDoubleVector" use="required" />
+		<xs:attribute name="axes"	 	type="cpmDoubleVector" use="required" />
+	</xs:complexType>
+
+	<xs:complexType name="cpmCylinder">
+		<xs:attribute name="center"		type="cpmDoubleVector" use="required" />
+		<xs:attribute name="center2"	type="cpmDoubleVector" use="optional" />
+		<xs:attribute name="radius"	 	type="cpmDouble" use="required" />
+		<xs:attribute name="orientation" type="cpmCylinderOrientation" use="required" />
+	</xs:complexType>
+
+	<xs:simpleType name="cpmCylinderOrientation">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="x" />
+			<xs:enumeration value="y" />
+			<xs:enumeration value="z" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+</xs:schema>

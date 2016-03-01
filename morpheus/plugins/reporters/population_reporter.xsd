@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="PopulationReporter"	type="PopulationReporter"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="PopulationReporter">
+		<xs:annotation>
+			<xs:appinfo>Reporter</xs:appinfo>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="Input" type="cpmDoublePropertyRef"  minOccurs="0">
+				<xs:annotation>
+				  <xs:documentation>Symbol referring to a cell Property.</xs:documentation>
+				</xs:annotation>		
+			</xs:element>
+			<xs:element name="InputVector" type="cpmVectorPropertyRef"  minOccurs="0">
+				<xs:annotation>
+				  <xs:documentation>Symbol referring to a cell Property.</xs:documentation>
+				</xs:annotation>		
+			</xs:element>
+			<xs:element name="Output" type="cpmDoubleGlobalRef"  minOccurs="1">
+				<xs:annotation>
+				  <xs:documentation>Symbol referring to a Global that will hold the statistic for the Population.</xs:documentation>
+				</xs:annotation>		
+			</xs:element>
+		</xs:all>
+		<xs:attribute name="mapping" type="cpmArrayStatisticsPopRep" use="required"/>
+		<xs:attribute name="name" type="cpmString" use="optional" />
+	</xs:complexType>
+
+
+	<xs:simpleType name="cpmArrayStatisticsPopRep">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="average"/>
+			<xs:enumeration value="ave_direction"/>
+			<xs:enumeration value="var_direction"/>
+			<xs:enumeration value="sum"/>
+			<xs:enumeration value="variance"/>
+			<xs:enumeration value="minimum"/>
+			<xs:enumeration value="maximum"/>
+			<xs:enumeration value="positional_regularity"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+</xs:schema>

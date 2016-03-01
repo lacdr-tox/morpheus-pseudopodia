@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="ContactPlugins">
+		<xs:choice>
+			<xs:element name="HeterophilicAdhesion" type="HeterophilicAdhesion"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="HeterophilicAdhesion">
+		<xs:annotation>
+			<xs:appinfo>Interaction</xs:appinfo>
+		</xs:annotation>
+		<xs:attribute name="adhesive1" type="cpmMathExpression" use="required"/>
+		<xs:attribute name="adhesive2" type="cpmMathExpression" use="required"/>
+		<xs:attribute name="strength" type="cpmMathExpression" use="required"/> 
+		<xs:attribute name="name" type="cpmString" use="optional"/> 
+	</xs:complexType>
+</xs:schema>

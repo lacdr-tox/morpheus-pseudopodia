@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+			<xs:element name="vtkPlotter" 			type="vtkPlotter"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="vtkPlotter">
+		<xs:annotation>
+			<xs:appinfo>Visualization</xs:appinfo>
+		</xs:annotation>
+		<xs:annotation>
+			<xs:appinfo>Visualization</xs:appinfo>
+			<xs:documentation>Writes VTK files of CPM and PDE fields for post-hoc 3D visualization.
+				
+By default, VtkPlotter writes the cell types and cell IDs of CPM cells. 
+
+Optionally, cell properties and PDE fields can be written.
+
+</xs:documentation>
+		</xs:annotation>
+
+		<xs:choice maxOccurs="unbounded">
+			<xs:element name="CellProperty" type="cpmVtkCellProp" 	minOccurs="0" />
+			<xs:element name="PDE" 			type="cpmVtkPDEField" 	minOccurs="0" />
+		</xs:choice>
+
+<!-- 		<xs:attribute name="name" 	  use="required" type="cpmString"/> -->
+		<xs:attribute name="interval" use="required" type="cpmDouble"/>
+		<xs:attribute name="endstate" use="optional" type="cpmBoolean">
+			<xs:annotation>
+				<xs:documentation>Only execute analysis plugin at the end of the simulation.
+
+Note: This overrides the specified 'interval'.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmVtkCellProp">
+		<xs:annotation>
+			<xs:documentation>Symbol referring to cell property to write to VTK file.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="symbol-ref" use="required" type="cpmDoubleSymbolRef"/>
+	</xs:complexType>	
+
+	<xs:complexType name="cpmVtkPDEField">
+		<xs:annotation>
+			<xs:documentation>Symbol referring to PDE field to write to VTK file.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="symbol-ref" use="required" type="cpmDoubleSymbolRef"/>
+	</xs:complexType>	
+
+</xs:schema>

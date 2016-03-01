@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="LengthConstraint"	type="LengthConstraint"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="LengthConstraint">
+		<xs:annotation>
+			<xs:appinfo>Shape</xs:appinfo>
+		</xs:annotation>
+
+		<xs:attribute	name="target"	type="cpmMathExpression" use="required" default="1" />
+		<xs:attribute	name="strength"	type="cpmMathExpression" use="required" default="1" />
+		<xs:attribute	name="name" 	type="cpmString" use="optional" />
+	</xs:complexType>
+
+</xs:schema>

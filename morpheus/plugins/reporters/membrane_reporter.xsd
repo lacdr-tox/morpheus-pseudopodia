@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="MembraneReporter"	type="MembraneReporter"/>
+		</xs:choice>
+	</xs:group>
+	
+
+	<xs:complexType name="MembraneReporter" >
+		<xs:annotation>
+			<xs:appinfo>Reporter</xs:appinfo>
+		</xs:annotation>
+			
+		<xs:choice minOccurs="1" maxOccurs="unbounded" >
+			<xs:element name="Reporter" type="cpmMembraneReporter" />  
+		</xs:choice>
+			<xs:attribute name="name" type="cpmString" use="optional" />
+			<xs:attribute name="time-step" type="cpmDouble" use="optional" />
+	</xs:complexType>
+	
+	
+	<xs:complexType name="cpmMembraneReporter" >
+		<xs:all>
+			<xs:element name="Input" type="cpmMembraneReporterInput" minOccurs="1"/>
+			<xs:element name="Output" type="cpmMembraneReporterOutput" minOccurs="1"/>
+		</xs:all>
+	</xs:complexType>
+
+
+	<xs:complexType name="cpmMembraneReporterInput" >
+		<xs:choice minOccurs="1">
+			<xs:element name="Contact" type="cpmCellTypeInput" minOccurs="0"/>
+			<xs:element name="ContactDistance" type="cpmMembraneReporterContactDistance" minOccurs="0"/>
+			<xs:element name="PDE" type="cpmLayerRef" minOccurs="0"/>
+			<xs:element name="MembraneProperty" type="cpmMembraneReporterMembraneInput" minOccurs="0"/>
+		</xs:choice>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmMembraneReporterContactDistance" >
+		<xs:attribute name="celltype" use="required" type="cpmCellTypeRef" />
+		<xs:attribute name="cell_shape" type="cpmBoolean" use="optional">
+			<xs:annotation>
+				<xs:documentation>
+					If false, cell shape is approximated as a unit sphere.
+					If true, cell shape is approximated as a deformed sphere.
+					
+					Distance transform calculates distance over the membrane of this deformed sphere.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	
+		
+	<xs:complexType name="cpmMembraneReporterMembraneInput" >
+		<xs:attribute name="symbol-ref" use="required" type="cpmDoubleSymbolRef" />
+		<xs:attribute name="data" use="optional" type="cpmMembraneReporterEnum" />
+	</xs:complexType>
+
+   <xs:simpleType name="cpmMembraneReporterEnum">
+		<xs:annotation>
+			<xs:documentation>Specify the data type for interpolation
+			
+				Continuous (default): bicubic interpolation
+				Discrete: no interpolation. In case of doubt, majority voting.
+				Boolean: not interpolation. In case of doubt, randomly assigned.
+			</xs:documentation>
+		</xs:annotation>
+	   <xs:restriction base="xs:normalizedString">
+		   <xs:enumeration value="boolean"/>
+           <xs:enumeration value="discrete"/>
+		   <xs:enumeration value="continuous"/>
+	   </xs:restriction>
+   </xs:simpleType>
+   
+	<xs:complexType name="cpmCellTypeInput" >
+		<xs:attribute name="celltype" use="required" type="cpmCellTypeRef" />
+	</xs:complexType>
+	
+	<xs:complexType name="cpmMembraneReporterOutput" >
+		<xs:choice>
+			<xs:element name="MembraneProperty" type="cpmMembraneRef" minOccurs="0"/>
+			<xs:element name="CellProperty" 	type="cpmMembraneReporterPropertyRef" minOccurs="0"/>
+			<xs:element name="CellPropertyVector" 	type="cpmMembraneReporterPropertyVectorRef" minOccurs="0"/>
+		</xs:choice>
+		<xs:attribute name="distance" type="cpmBoolean" use="optional">
+			<xs:annotation>
+				<xs:documentation>For debugging purposes!
+					
+					Report Euclidean distance to cell-cell contacts rather than contacts themselves.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="sources" type="cpmBoolean" use="optional">	
+		<xs:annotation>
+			<xs:documentation>For debugging purposes!
+				
+				Report the sources of information before bicubic interpolation (before fillGaps()).
+				Each non-zero point in theta,phi space contains information from x,y,z space. These points are used as sources for the interpolation.
+			</xs:documentation>
+		</xs:annotation>
+	</xs:attribute>
+</xs:complexType>
+
+
+	<xs:complexType name="cpmMembraneReporterPropertyRef">
+		<xs:annotation>
+			<xs:documentation>Symbol referring to a cell property.</xs:documentation>
+		</xs:annotation>	
+		<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required"/>
+		<xs:attribute name="mapping" 	type="cpmMembraneReporterPropertyMapping" use="required"/>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmMembraneReporterPropertyVectorRef">
+		<xs:annotation>
+			<xs:documentation>Symbol referring to a vector property. 
+
+				Vector will be set from cell center to the direction of concentration on the membrane.
+				
+</xs:documentation>
+		</xs:annotation>	
+		<xs:attribute name="symbol-ref" type="cpmVectorSymbolRef" use="required"/>
+	</xs:complexType>
+		
+	
+	<xs:simpleType name="cpmMembraneReporterPropertyMapping">
+		<xs:restriction base="xs:normalizedString">
+			<xs:enumeration value="sum"/>
+			<xs:enumeration value="average"/>
+			<xs:enumeration value="difference"/>
+			<xs:enumeration value="variance"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+</xs:schema>
+

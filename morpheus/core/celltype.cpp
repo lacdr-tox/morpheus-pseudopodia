@@ -1,0 +1,648 @@
+#include "celltype.h"
+#include "expression_evaluator.h"
+#include "function.h"
+#include "diffusion.h"
+#include "symbol_accessor.h"
+#include "focusrange.h"
+
+
+
+CPM::INDEX CellIndexStorage::emptyIndex()
+{
+	CPM::INDEX  t;
+	t.celltype = 0;
+	t.status = CPM::NO_CELL;
+	t.sub_cell_id = 0;
+	t.super_cell_id = 0;
+	return t;
+}
+
+// Cell& CellIndexStorage::cell( cell_id) { 
+// 	assert( cell_id < cell_by_id.size() );
+// 	assert( cell_by_id[cell_id]);
+// 	
+// // 	if ( ! cell_by_id[cell_id] ) {
+// // 		if (cell_index_by_id[cell_id].status == SIM::VIRTUAL_CELL)
+// // 			cerr << "A virtual cell is associated with cell id " << cell_id << endl;
+// // 		else //  if (cell_index_by_id[cell_id].status = SIM::NO_CELL)
+// // 			cerr << "No cell is associated with cell id " << cell_id << endl;
+// // 		assert(0); exit(-1);
+// // 	}
+// 	return *cell_by_id[cell_id];
+// };
+
+
+shared_ptr<Cell> CellIndexStorage::addCell(shared_ptr<Cell> c, CPM::INDEX idx)
+{
+	if (cell_by_id.size() <= c->getID()) {
+		cell_by_id.resize(c->getID()+5);
+		cell_index_by_id.resize(c->getID()+5, emptyIndex());
+	}
+	cell_by_id[c->getID()] = c;
+	cell_index_by_id[c->getID()] = idx;
+	if (c->getID()>=free_cell_name) 
+		free_cell_name = c->getID()+1;
+	
+	used_cell_names.insert(c->getID());
+// 	cout << " Storage: added Cell " << c->getID()  << endl;
+	return cell_by_id[c->getID()];
+};
+
+shared_ptr<Cell> CellIndexStorage::removeCell(CPM::CELL_ID id)
+{
+	used_cell_names.erase(id);
+	shared_ptr<Cell> c = cell_by_id[id];
+	cell_by_id[id].reset();
+	cell_index_by_id[id] = emptyIndex();
+// 	cout << " Storage: removed Cell " << c->getID()  << endl;
+	return c;
+}
+
+
+using namespace SIM;
+// string CellType::XMLClassName() const { return string("abstract prototype"); };
+registerCellType(CellType);
+
+CellIndexStorage CellType::storage;
+
+CellType::CellType(uint ct_id) :  default_properties(_default_properties), default_membranes(_default_membranePDEs)
+{
+	id= ct_id;
+	name ="";
+	xml_pop_size = 0;
+};
+
+CellType* CellType::createInstance(uint ct_id) {
+	return new CellType(ct_id);
+};
+
+XMLNode CellType::saveToXML() const {
+	XMLNode xNode = XMLNode::createXMLTopNode("CellType");
+	xNode.addAttribute("class",XMLClassName().c_str());
+	xNode.addAttribute("name",name.c_str());
+
+	for(uint i=0;i<plugins.size();i++) {
+		xNode.addChild(plugins[i]->saveToXML());
+	}
+	return xNode;
+}
+
+void CellType::loadFromXML(const XMLNode xCTNode) {
+	getXMLAttribute(xCTNode,"name",name);
+	string classname;
+	getXMLAttribute(xCTNode,"class",classname,false);
+	if (classname != XMLClassName()) {
+//		throw string("wrong celltype classname ")+classname+", expected "+ XMLClassName();
+	}
+	
+	local_scope = SIM::createSubScope(string("CellType[")+name + "]",this);
+	SIM::enterScope(local_scope);
+
+	int nPlugins = xCTNode.nChildNode();
+	for(int i=0; i<nPlugins; i++) {
+		XMLNode xNode = xCTNode.getChildNode(i);
+		try {
+			string xml_tag_name(xNode.getName());
+// 			if (xml_tag_name=="Segment") continue; // for compatibility with the segmented celltype
+			shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
+			if (! p.get()) 
+				throw(string("Unknown plugin " + xml_tag_name));
+			
+			p->loadFromXML(xNode);
+			uint n_interfaces=0;
+			
+			if ( dynamic_pointer_cast< AbstractProperty >(p) ) {
+				// note that the AbstractProperty is still maintained by the Plugin
+				shared_ptr<AbstractProperty> property( dynamic_pointer_cast< AbstractProperty >(p) ); 
+				
+				if (!property->isConstant()) {
+					if (property_by_symbol.find( property->getName() ) != property_by_symbol.end()) {
+						cerr << "Redefinition of Property " << property->getSymbol() << endl;
+						exit(-1);
+					}
+					_default_properties.push_back(property);
+					property_by_name[property->getName()]=_default_properties.size()-1;
+					property_by_symbol[property->getSymbol()] = _default_properties.size()-1;
+				}
+				defineSymbol(property);
+				n_interfaces++; 
+			}
+			 
+			if ( dynamic_pointer_cast< MembraneProperty >(p) ) {
+				shared_ptr< MembraneProperty > membrane(dynamic_pointer_cast< MembraneProperty >(p));
+// 				if (membrane_by_name.find( membrane->getName() ) != membrane_by_name.end()) {
+// 					cerr << "Redefinition of Membrane " << membrane->getName() << endl;
+// 					exit(-1);
+// 				}
+				_default_membranePDEs.push_back( membrane->getPDE() );
+// 				membrane_by_name[membrane->getName()] = _default_membranePDEs.size()-1;
+				if (membrane->getPDE()->getDiffusionRate() > 0.0)
+					plugins.push_back(shared_ptr<Plugin>(new Diffusion(CellMembraneAccessor(this,_default_membranePDEs.size()-1))));
+				
+				// registering global symbol
+				SymbolData symbol;
+				symbol.name = membrane->getSymbolName();
+				symbol.fullname = membrane->getName();
+                symbol.link = SymbolData::CellMembraneLink;
+				symbol.granularity = Granularity::MembraneNode;
+                symbol.type_name = TypeInfo<double>::name();
+				symbol.writable = true;
+                SIM::defineSymbol(symbol);
+				membrane_by_symbol[symbol.name] = _default_membranePDEs.size()-1;
+				n_interfaces++;
+				cout << "Registered Membrane " << _default_membranePDEs.size() << " " << membrane->getName() << " with diffusion rate " << membrane->getPDE()->getDiffusionRate() << endl;
+			}
+			if ( dynamic_pointer_cast< Function >(p) ) { defineSymbol(dynamic_pointer_cast< Function >(p)); n_interfaces++; }
+			if ( dynamic_pointer_cast< VectorFunction >(p) ) { defineSymbol(dynamic_pointer_cast< VectorFunction >(p)); n_interfaces++; }
+			if ( dynamic_pointer_cast< CPM_Energy >(p) ) { energies.push_back(dynamic_pointer_cast< CPM_Energy >(p) ); n_interfaces++; }
+			if ( dynamic_pointer_cast< CPM_Check_Update >(p) ) { check_update_listener.push_back(dynamic_pointer_cast< CPM_Check_Update >(p) ); n_interfaces++; }
+			if ( dynamic_pointer_cast< CPM_Update_Listener >(p) ) { update_listener.push_back(dynamic_pointer_cast< CPM_Update_Listener >(p) ); n_interfaces++; }
+			if ( dynamic_pointer_cast< TimeStepListener >(p) ) { timestep_listener.push_back(dynamic_pointer_cast< TimeStepListener >(p) ); n_interfaces++; }
+			if ( ! n_interfaces ) 
+				throw(xml_tag_name + " is not a valid celltype plugin");
+			plugins.push_back( p );
+		}
+		catch(string er) { 
+			cerr << er << " - leaving you alone ..." << endl; exit(-1);
+		}
+	}
+	SIM::leaveScope();
+}
+
+void CellType::init() {
+	if (!local_scope)
+		local_scope = SIM::createSubScope(string("CellType[")+name + "]",this);
+	SIM::enterScope(local_scope);
+	
+	for (auto plug : plugins) {
+		if ( dynamic_pointer_cast<AbstractProperty>( plug) ) {
+// 			plug->init(local_scope);
+			try { 
+				plug->init(local_scope); } catch (...) {/* There might be errors due to the fact that there is no real cell present !!!*/ }
+		}
+	}
+
+	for (auto mem: default_membranes) {
+		try { mem->init(local_scope); } catch (...) {/* There might be errors due to the fact that there is no real cell present !!!*/ }
+	}
+
+
+	for (auto ini : pop_initializers) {
+		ini->init(local_scope);
+		ini->run(this);
+	}
+	
+	// create all yet undefined cells at random positions
+	if (cell_ids.size() < xml_pop_size) {
+		cout << "CellType \'" << name << "\': " << xml_pop_size - cell_ids.size() << " uninitialized cells. Creating them at random positions." << endl ;
+		for (int i=cell_ids.size(); i < xml_pop_size; i++) {
+			//cout << " - Creating cell "<< i <<" at random position" << endl ;
+			createRandomCell();
+		}
+	}
+	
+	for ( const auto& ip : init_properties) {
+		
+		SymbolRWAccessor<double> symbol;
+		symbol = local_scope->findRWSymbol<double>(ip.symbol);
+
+		ExpressionEvaluator<double> init_expression(ip.expression);
+		init_expression.init(local_scope);
+		
+		// Apply InitProperty expressions for all cells
+		FocusRange range(symbol,local_scope);
+		cout << "Initializers for range "  << range.size() << endl;
+		for (auto focus : range) {
+			symbol.set(focus, init_expression.get(focus));
+		}
+	}
+	
+	for (uint i=0;i<plugins.size();i++) {
+		if ( dynamic_pointer_cast<AbstractProperty>( plugins[i]) )
+			continue;
+		plugins[i]->init(local_scope);
+	}
+	SIM::leaveScope();
+}
+
+set< SymbolDependency > CellType::cpmDependSymbols() const
+{
+	set<SymbolDependency> s;
+	for (uint i=0; i<energies.size();i++) {
+		set<SymbolDependency> s2 = energies[i]->getDependSymbols();
+		if (!s2.empty()) s.insert(s2.begin(),s2.end());
+	}
+	for (uint i=0; i<check_update_listener.size();i++) {
+		set<SymbolDependency> s2 = check_update_listener[i]->getDependSymbols();
+		if (!s2.empty()) s.insert(s2.begin(),s2.end());
+	}
+	for (uint i=0; i<update_listener.size();i++) {
+		set<SymbolDependency> s2 = update_listener[i]->getDependSymbols();
+		if (!s2.empty()) s.insert(s2.begin(),s2.end());
+	}
+	
+	return s;
+}
+
+
+XMLNode  CellType::savePopulationToXML() const {
+	XMLNode xCPNode = XMLNode::createXMLTopNode("Population");
+
+	xCPNode.addAttribute("type",name.c_str());
+	xCPNode.addAttribute("size", to_cstr(cell_ids.size()) );
+	for (uint i=0; i<cell_ids.size();i++) {
+		xCPNode.addChild( storage.cell(cell_ids[i]).saveToXML() );
+	}
+	return xCPNode;
+}
+
+void CellType::loadPopulationFromXML(const XMLNode xNode) {
+
+	SIM::enterScope(local_scope);
+	
+	// ensure the type is my name
+	string type; getXMLAttribute(xNode,"type",type,false);
+	if ( type != name) throw string("wrong type name in cell population");
+	if ( ! cell_ids.empty() && !dynamic_cast<MediumCellType*>(this) ) throw string("CellType ") + this->name + " has a second CellPopulations defined.\nCurrently, only one Population per CellType is supported";
+
+	xml_pop_size=1; 
+	getXMLAttribute(xNode,"size",xml_pop_size);
+	// parse for all Cell nodes and create a cell
+	if (xNode.nChildNode("Cell")>0) {
+		cout << "CellType \'" << name << "\': loading " << xNode.nChildNode("Cell") << " cells from XML" << endl;
+	}
+	for (int i=0; i < xNode.nChildNode("Cell"); i++) {
+		//cout << "Cell " << i  << endl;
+		XMLNode xcpNode = xNode.getChildNode("Cell",i);
+		uint cell_id;
+		if ( getXMLAttribute(xcpNode, "name", cell_id) )
+			cell_id =  createCell(cell_id);
+		else
+			cell_id =  createCell();
+		storage.cell(cell_id).loadFromXML( xcpNode );
+		if( storage.cell(cell_id).getNodes().size() == 0){
+			cout << "Created empty cell, removing it again" << endl;
+			removeCell( cell_id );
+		}
+	}
+
+// 	vector< CPM::CELL_ID > oldcellids = getCellIDs();
+
+	// parse for all Initializers and run them
+	for (int i=0; i < xNode.nChildNode(); i++) {
+		XMLNode xcpNode = xNode.getChildNode(i);
+		if (strcmp(xcpNode.getName(),"Cell")==0) continue;
+		if (strcmp(xcpNode.getName(),"InitProperty")==0) continue;
+		// assume its an initilizer
+		shared_ptr<Plugin> p = PluginFactory::CreateInstance(string(xcpNode.getName()));
+		if ( dynamic_pointer_cast<Population_Initializer>( p ) ) {
+			pop_initializers.push_back(dynamic_pointer_cast<Population_Initializer>( p ));
+			pop_initializers.back()->loadFromXML(xcpNode);
+		}
+		// the Initializer is destroyed by the destructor of p
+	}
+
+// 	// make vector of cellids of cells that have been added to population
+// 	vector< CPM::CELL_ID > newcellids = getCellIDs();
+// 	vector< CPM::CELL_ID > newcells;
+// 	for(uint i=0; i<newcellids.size();i++){
+// 		vector<CPM::CELL_ID>::iterator p;
+// 		p = find(oldcellids.begin(), oldcellids.end(), newcellids[i]);
+// 		if(p == oldcellids.end()) // cell is not found in old cell population
+// 			newcells.push_back(newcellids[i]);
+// 	}
+	
+	// set properties for cells of population
+	// This allows the user to create various population of the same celltype, but
+	//  that differ in some property value
+	for (int i=0; i < xNode.nChildNode("InitProperty"); i++) {
+		XMLNode xProp = xNode.getChildNode("InitProperty",i);
+		IntitPropertyDesc ip;
+		
+		if ( ! getXMLAttribute(xProp, "symbol-ref", ip.symbol)) {
+			throw string ("Missing symbol in Population[") + this->name + "]/InitProperty";
+		}
+		if ( ! getXMLAttribute(xProp,"Expression/text",ip.expression)) {
+			throw string ("Missing expression in Population[") + this->name + "]/InitProperty["+ip.symbol+"]";
+		}
+		
+		init_properties.push_back(ip);
+	}
+	SIM::leaveScope();
+}
+
+
+
+CPM::CELL_ID  CellType::createCell(CPM::CELL_ID cell_id) {
+	// maintaining unique cell_ids
+	if ( ! storage.isFree(cell_id) ) {
+		cout << "!! Warning !! Given cell id " << cell_id << " is already used" << endl;
+		cell_id = storage.getFreeID();
+		cout << "!! Warning !! Overriding id with " << cell_id << "." << endl;
+	}
+// 	cout << "creating real cell "<< cell_id << endl;
+	shared_ptr<Cell> c(new Cell(cell_id, this ) );
+	if ( ! c ) 
+		throw string("unable to create cell");
+
+	//	maintain local associations
+	cell_ids.push_back(cell_id);
+	
+	CPM::INDEX t = storage.emptyIndex();
+	t.celltype = id;
+	t.status = CPM::REGULAR_CELL;
+	storage.addCell(c,t);
+	
+	c->init();
+	
+	return cell_id;
+}
+
+
+pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID cell_id, division mode) {
+	VDOUBLE division_plane_normal = VDOUBLE(0,0,0);
+
+	const EllipsoidShape& shape = storage.cell(cell_id).getCellShape();
+	if( mode == CellType::MAJOR ){
+		division_plane_normal = shape.axes[1];
+	}
+	else if( mode == CellType::MINOR ){
+		division_plane_normal = shape.axes[0];
+	}
+	else if( mode == CellType::RANDOM ){
+		if ( SIM::getLattice()->getDimensions()==3) {
+			division_plane_normal = VDOUBLE::from_radial(VDOUBLE(getRandom01()*2*M_PI,0,1));
+		}
+		else if ( SIM::getLattice()->getDimensions()==2){
+			division_plane_normal = VDOUBLE::from_radial(VDOUBLE(getRandom01()*2*M_PI,(getRandom01()-0.5)*M_PI,1));
+		}
+	}
+	else {
+		throw string("Unknown division plane specification in CellType::divideCell2");
+	}
+	
+	return divideCell2(cell_id, division_plane_normal, shape.center);
+}
+
+pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID mother_id, VDOUBLE split_plane_normal,  VDOUBLE split_plane_center ) {
+	
+	CPM::CELL_ID daughter1_id = createCell();
+	Cell& daughter1 = storage.cell(daughter1_id);
+	CPM::CELL_ID daughter2_id = createCell();
+	Cell& daughter2 = storage.cell(daughter2_id);
+
+	Cell& mother = storage.cell(mother_id);
+	daughter1.assignMatchingProperties(mother.properties);
+	daughter1.assignMatchingMembranes(mother.membranes);
+	daughter2.assignMatchingProperties(mother.properties);
+	daughter2.assignMatchingMembranes(mother.membranes);
+	
+	shared_ptr <const Lattice > lattice = SIM::getLattice();
+
+	// choose a random orientation, split orientation is given 
+	if (split_plane_normal.abs()==0) {
+		double angle=getRandom01()*2*M_PI;
+		split_plane_normal = VDOUBLE(sin(angle),cos(angle),0);
+	}
+	
+	// redistribute the Nodes following the split plane rules.
+	Cell::Nodes mother_nodes =  mother.getNodes();
+	Cell::Nodes deferred_nodes;
+	for (Cell::Nodes::const_iterator node = mother_nodes.begin(); node != mother_nodes.end();node++) {
+		double distance = distance_plane_point( split_plane_normal, split_plane_center, lattice->to_orth(*node) );
+// 		cout << "Distance d" << distance << "\tn" << split_plane_normal << "\tc" << split_plane_center << "\tnode" << VDOUBLE(*node) << endl;
+		if ( distance > 0 ) {
+			if (! CPM::setNode(*(node), daughter1_id))
+				cerr << "unable to set Cell " << daughter1_id << " at position " << *node << endl;
+		}
+		else if (distance == 0) {
+			deferred_nodes.insert(*(node));
+		}
+		else
+			if (! CPM::setNode(*(node), daughter2_id))
+				cerr << "unable to set Cell " << daughter2_id << " at position " << *node << endl;
+	}
+	
+	// Distribute Nodes lying right on the split plane
+	int current_cell = (daughter1.nNodes()>daughter2.nNodes());
+	for (auto const & n : deferred_nodes) {
+		if (current_cell == 0) {
+			if (! CPM::setNode(n, daughter1_id))
+				cerr << "unable to set Cell " << daughter1_id << " at position " << n << endl;
+			current_cell=1;
+		}
+		else {
+		if (! CPM::setNode(n, daughter2_id))
+				cerr << "unable to set Cell " << daughter2_id << " at position " << n << endl;
+			current_cell=0;
+		}
+	}
+
+	//cout << "Cell division: mother: " << mother.nNodes() << ", daughter1: " << daughter1.nNodes() << ", daughter2: " << daughter2.nNodes() << endl;	
+	
+	if( mother.nNodes() == 0 ){
+		removeCell( mother_id );
+	}
+	else{
+		cerr << "divideCell2: Mother cell ("<<  mother_id << ") is not empty after cell division (nodes: " <<  mother.nNodes() << " ) and cannot be removed!" << endl;
+		exit(-1);
+	}
+	
+	return pair<CPM::CELL_ID, CPM::CELL_ID>(daughter1_id, daughter2_id);
+}
+
+
+CPM::CELL_ID CellType::addCell(CPM::CELL_ID cell_id) 
+{
+	
+	Cell& old_cell = storage.cell(cell_id);
+	CPM::INDEX old_index = storage.index(cell_id);
+	
+	if( this->id == old_index.celltype) return cell_id;
+	
+	// create a cell with the same properties and id, that also owns the same nodes.
+	shared_ptr<Cell> new_cell = shared_ptr<Cell>( new Cell(old_cell, this ) );
+	cell_ids.push_back(new_cell->getID());
+	
+	// change storage associations
+	shared_ptr<Cell> old_cell_ptr = storage.removeCell(cell_id);
+	
+	//update cell accessors
+	CPM::INDEX t = storage.emptyIndex();
+	t.celltype = id;
+	t.status = CPM::REGULAR_CELL;
+	storage.addCell(new_cell, t);
+
+	assert( old_cell_ptr.unique() );
+	return new_cell->getID();
+};
+
+void CellType::removeCell(CPM::CELL_ID cell_id) {
+	// Remove global registration in case cell_id is still associated with this celltype
+	if (! storage.isFree(cell_id)  && storage.index(cell_id).celltype == this->id) {
+		shared_ptr<Cell> cell = storage.removeCell(cell_id);
+		assert(cell->getNodes().empty());
+		assert(cell.unique());
+	}
+		
+	cell_ids.erase(remove(cell_ids.begin(), cell_ids.end(), cell_id), cell_ids.end());
+}
+
+CPM::CELL_ID CellType::createRandomCell() {
+// add n cells and initializes them with a single random node.
+
+	CPM::CELL_ID cell_id = createCell();
+	CPM::setNode(CPM::findEmptyNode(), cell_id);
+	return cell_id;
+}
+
+double CellType::hamiltonian() const {
+	vector<CPM_Energy*>::iterator e;
+	vector<Cell*>::iterator c;
+	double hamil=0;
+	for (uint ic=0; ic<cell_ids.size(); ic++) {
+		for ( uint ie = 0; ie < energies.size(); ie++) {
+// 			energies[ie]->attachTo(cell_ids[ic]);
+			hamil += energies[ie]->hamiltonian( cell_ids[ic] );
+		}
+	}
+	return hamil;
+}
+
+bool CellType::check_update(const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const
+{
+	if ((todo & CPM::REMOVE) && storage.cell(update.remove_state.cell_id).nNodes() == 1)
+		return false;;
+
+	for ( uint c=0; c < check_update_listener.size(); c++ ) {
+		if (todo & CPM::REMOVE)
+			if ( ! check_update_listener[c] -> update_check( update.remove_state.cell_id , update, CPM::REMOVE)) {
+// 				cout << "Update prevented by " << check_update_listener[c]->XMLName() << endl;
+				return false;
+			}
+		if (todo & CPM::ADD)
+			if ( ! check_update_listener[c] -> update_check( update.add_state.cell_id , update, CPM::ADD)){
+// 				cout << "Update prevented by " << check_update_listener[c]->XMLName() << endl;
+				return false;
+			}
+	}
+	return true;
+}
+
+double CellType::delta(const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const
+{
+	// Maybe it's better to put add cell focus at the position of the node to be aquired
+// 	SymbolFocus add_focus(update.source.cellID(), update.add_state.pos);
+	
+	double delta=0;
+	if (todo & CPM::ADD) {
+
+		for (uint e = 0; e<energies.size(); ++e) {
+			delta += energies[e]->delta(update.source, update, CPM::ADD);
+		}
+	}
+	if (todo & CPM::REMOVE) {
+		for (uint e = 0; e<energies.size(); ++e) {
+// 			energies[e]->attachTo(update.remove_state);
+			delta += energies[e]->delta(update.focus, update, CPM::REMOVE );
+		}
+	}
+	return delta;
+}
+
+void CellType::set_update(const CPM::UPDATE& update, CPM::UPDATE_TODO todo) {
+	
+	if (todo & CPM::ADD) {
+		storage.cell(update.add_state.cell_id) . setUpdate(update, CPM::ADD);
+		for (uint i=0; i<update_listener.size(); i++) {
+			update_listener[i]->set_update_notify(update.add_state.cell_id, update, CPM::ADD);
+		}
+	}
+	if (todo & CPM::REMOVE) {
+		storage.cell(update.remove_state.cell_id) . setUpdate(update, CPM::REMOVE);
+		for (uint i=0; i<update_listener.size(); i++) {
+			update_listener[i]->set_update_notify(update.remove_state.cell_id,update, CPM::REMOVE);
+		}
+	}
+}
+
+void CellType::apply_update(const CPM::UPDATE& update, CPM::UPDATE_TODO todo) {
+	if (todo & CPM::ADD) {
+		storage.cell(update.add_state.cell_id) . applyUpdate(update, CPM::ADD);
+		for (uint i=0; i<update_listener.size(); i++) {
+			update_listener[i]->update_notify(update.add_state.cell_id,update, CPM::ADD);
+		}
+	}
+	if (todo & CPM::REMOVE) {
+		storage.cell(update.remove_state.cell_id) . applyUpdate(update, CPM::REMOVE);
+		for (uint i=0; i<update_listener.size(); i++) {
+			update_listener[i]->update_notify(update.remove_state.cell_id,update, CPM::REMOVE);
+		}
+	}
+}
+
+// void CellType::execute_once_each_mcs(int mcs) {
+// 	for (uint i=0; i<mcs_listener.size(); i++) {
+// 		mcs_listener[i]->mcs_notify(mcs);
+// 	}
+// }
+
+
+CellType* MediumCellType::createInstance(uint ct_id) {
+	return new MediumCellType(ct_id);
+}
+
+registerCellType(MediumCellType);
+
+MediumCellType::MediumCellType(uint ct_id) :  CellType(ct_id) {}
+
+CPM::CELL_ID MediumCellType::createCell(CPM::CELL_ID name) {
+	if ( ! cell_ids.empty() ) 
+		return *(cell_ids.begin());
+	
+	CPM::CELL_ID cell_id = CellType::createCell(name);
+	storage.cell(cell_id).disableNodeTracking();
+	return cell_id;
+};
+
+CPM::CELL_ID MediumCellType::addCell(CPM::CELL_ID cell_id) {
+	// don't copy the cell, just soak off the nodes and then unregister the cell id.
+	
+	Cell& other_cell = storage.cell(cell_id);
+	while ( ! other_cell.getNodes().empty()) {
+		CPM::setNode( *other_cell.getNodes().begin(), cell_ids[0] );
+	}
+	// now that we don't overtake the cell_id we should clear its global references
+	shared_ptr<Cell> other_cell_ptr = storage.removeCell(cell_id);
+	assert( other_cell_ptr.unique());
+	return cell_ids[0];
+}
+
+void MediumCellType::removeCell(CPM::CELL_ID cell_id) {
+	// We use just one cell and never remove it ...
+}
+
+CellMembraneAccessor CellType::findMembrane(string symbol, bool required) const
+{
+	map<string,uint>::const_iterator membrane_idx = membrane_by_symbol.find(symbol);
+	
+	if ( membrane_idx != membrane_by_symbol.end() ) {
+		return CellMembraneAccessor(this,membrane_idx->second );
+	}
+	if (required){
+		cerr << (string("CellType[\"") + name + string("\"].findMembrane: requested membrane [")+symbol+string("] not found")) << endl;
+		exit(-1);
+		//throw (string("CellType[\"") + name + string("\"].findMembrane: requested membrane [")+symbol+string("] not found"));
+	}
+	return CellMembraneAccessor();
+}
+
+// CellMembraneAccessor CellType::findMembraneByName(string name) const
+// {
+// 	map<string,uint>::const_iterator membrane_idx = membrane_by_name.find(name);
+// 	
+// 	if ( membrane_idx != membrane_by_name.end() ) {
+// 		return CellMembraneAccessor(this,membrane_idx->second );
+// 	}
+// 	return CellMembraneAccessor();
+// }

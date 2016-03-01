@@ -1,0 +1,683 @@
+#include "focusrange.h"
+
+
+FocusRangeIterator::FocusRangeIterator(shared_ptr<const FocusRangeDescriptor> data, uint index) : data(data) {
+	setIndex(index);
+};
+
+void FocusRangeIterator::setIndex(int index) {
+	if (!data) {
+		if (idx!=0)
+            throw std::out_of_range("out of FocusRange");
+		return;
+	}
+	
+    if ( index<0 || index>=data->size ) {
+//         throw std::out_of_range("out of FocusRange");
+		idx = data->size;
+		focus.unset();
+		return;
+	}
+	
+	idx = index;
+	switch (data->iter_mode) {
+		case FocusRangeDescriptor::IT_CellNodes :
+		{
+			if (idx==0) {
+				cell = 0;
+				focus = SymbolFocus(data->cell_range[0]);
+				current_cellnode = focus.cell().getNodes().begin();
+				pos = *current_cellnode;
+				focus.setCell(data->cell_range[0],pos);
+			}
+			else {
+				//find the cell the index belongs to
+				uint fcs_left = idx;
+				for (cell=0; 1; cell++) {
+					if (data->cell_sizes[cell] > fcs_left) {
+						focus = SymbolFocus(data->cell_range[cell]);
+						current_cellnode = focus.cell().getNodes().begin();
+						while (fcs_left>0)  { current_cellnode++; fcs_left--; }
+						pos = *current_cellnode;
+						focus.setCell(data->cell_range[cell], pos);
+						break;
+					}
+					else {
+						fcs_left-=data->cell_sizes[cell];
+						if ( (cell+1)>=data->cell_sizes.size() ) {
+							// throw string("FocusRange: Index aut of range");
+							// don't throw on out of range index
+							// just set beyond end state !! 
+							focus.unset();
+							break;
+						}
+					}
+				}
+			}
+			break;
+		}
+		case FocusRangeDescriptor::IT_CellNodes_int:
+		{
+			if (idx==0) {
+				cell = 0;
+				current_cellnode = data->cell_nodes[cell].begin();
+				pos = *current_cellnode;
+				focus.setCell(data->cell_range[0],pos);
+			}
+			else {
+				//find the cell the index belongs to
+				uint fcs_left = idx;
+				for (cell=0; 1; cell++) {
+					if (data->cell_sizes[cell] > fcs_left) {
+						current_cellnode = data->cell_nodes[cell].begin();
+						while (fcs_left>0)  { current_cellnode++; fcs_left--; }
+						pos = *current_cellnode;
+						focus.setCell(data->cell_range[cell], pos);
+						break;
+					}
+					else {
+						fcs_left-=data->cell_sizes[cell];
+						if ( (cell+1)>=data->cell_sizes.size() ) {
+							// throw string("FocusRange: Index aut of range");
+							// don't throw on out of range index
+							// just set beyond end state !! 
+							focus.unset();
+							break;
+						}
+					}
+				}
+			}
+			break;
+		}
+		case FocusRangeDescriptor::IT_Cell :
+		{
+            cell = idx /*/ data->c_div*/;
+			focus.setCell(data->cell_range[cell]);
+			break;
+		}
+		case FocusRangeDescriptor::IT_CellMembrane :
+		{
+			int remainder = idx;
+
+			cell = remainder / data->c_div;
+			remainder = remainder %data->c_div;
+			
+			pos.z = 0;
+			
+			pos.y = remainder / data->y_div;
+			remainder = remainder % data->y_div;
+			
+			pos.x = remainder / data->x_div;
+			remainder = remainder % data->x_div;
+			
+			focus.setMembrane(data->cell_range[cell], pos + data->pos_offset);
+			
+			break;
+		}
+			
+		case FocusRangeDescriptor::IT_Space :
+		{
+			int remainder = idx;
+			if (idx>=data->size) {
+				focus.unset();
+				break;
+			}
+			
+			pos.z = remainder / data->z_div;
+			remainder = remainder % data->z_div;
+			
+			pos.y = remainder / data->y_div;
+			remainder = remainder % data->y_div;
+			
+			pos.x = remainder / data->x_div;
+			remainder = remainder % data->x_div;
+			
+			focus.setPosition(pos + data->pos_offset);
+			
+			break;
+		}
+
+		case FocusRangeDescriptor::IT_Domain :
+		{
+			if (idx>=data->domain_enumeration->size()) {
+				focus.unset();
+				break;
+			}
+			pos = data->domain_enumeration->at(idx);
+			
+			focus.setPosition(pos);
+			
+			break;
+		}
+		
+		case FocusRangeDescriptor::IT_Domain_int :
+		{
+			if (idx>=data->domain_nodes.size()) {
+				focus.unset();
+				break;
+			}
+			pos = data->domain_nodes.at(idx);
+			
+			focus.setPosition(pos);
+			
+			break;
+		}
+	}
+
+}
+FocusRangeIterator& FocusRangeIterator::operator++()
+{
+	idx++;
+	
+	if (idx>=data->size) {
+		focus.unset();
+		return *this;
+	}
+	
+	switch (data->iter_mode) {
+		case FocusRangeDescriptor::IT_Cell:
+			cell++;
+			focus.setCell(data->cell_range[cell]);
+			break;
+		case FocusRangeDescriptor::IT_CellNodes:
+			current_cellnode++;
+			if ( current_cellnode == focus.cell().getNodes().end() ) {
+				cell++;
+// 				cout << "cell " << cell << " is id=" <<  data->cell_range[cell] << endl;;
+				focus.setCell(data->cell_range[cell]);
+				current_cellnode = focus.cell().getNodes().begin();
+				pos = *current_cellnode;
+				focus.setCell(data->cell_range[cell], pos);
+			}
+			else {
+				pos = *current_cellnode;
+				focus.setCell(data->cell_range[cell], pos);
+			}
+			break;
+		case FocusRangeDescriptor::IT_CellNodes_int:
+			current_cellnode++;
+			if ( current_cellnode == data->cell_nodes[cell].end() ) {
+				cell++;
+// 				cout << "cell " << cell << " is id=" <<  data->cell_range[cell] << endl;;
+				current_cellnode = data->cell_nodes[cell].begin();
+				pos = *current_cellnode;
+				focus.setCell(data->cell_range[cell], pos);
+			}
+			else {
+				pos = *current_cellnode;
+				focus.setCell(data->cell_range[cell], pos);
+			}
+			break;	
+		case FocusRangeDescriptor::IT_CellMembrane :
+			pos.x++;
+			if (pos.x >= data->pos_range.x) {
+				pos.x=0;
+				pos.y++;
+				if (pos.y >= data->pos_range.y) {
+					pos.y=0;
+					cell++;
+				}
+			}
+			focus.setMembrane(data->cell_range[cell], pos + data->pos_offset);
+			break;
+			
+		case FocusRangeDescriptor::IT_Space :
+			pos.x++;
+			if (pos.x >= data->pos_range.x) {
+				pos.x=0;
+				pos.y++;
+				if (pos.y >= data->pos_range.y) {
+					pos.y=0;
+					pos.z++;
+				}
+			}
+			focus.setPosition(pos + data->pos_offset);
+			break;
+			
+		case FocusRangeDescriptor::IT_Domain :
+			focus.setPosition(data->domain_enumeration->at(idx));
+			break;
+		case FocusRangeDescriptor::IT_Domain_int :
+			focus.setPosition(data->domain_nodes[idx]);
+			break;
+	}
+	return *this;
+}
+
+
+FocusRangeIterator operator+(int n, const FocusRangeIterator& iter) {
+	return FocusRangeIterator(iter) + n;
+}
+
+FocusRangeIterator operator-(int n, const FocusRangeIterator& iter){
+	return FocusRangeIterator(iter) - n;
+}
+
+FocusRange::FocusRange(Granularity granularity, const Scope* scope) {
+	const CellType* ct = nullptr;
+    multimap<FocusRangeAxis, int> restrictions;
+	// Extract the default range for the Granularity
+	if (scope) {
+		ct = scope->getCellType();
+		while(scope->getParent() && ! ct) {
+			scope =  scope->getParent();
+			ct = scope->getCellType();
+		}
+		if (ct)
+			restrictions.insert( make_pair(FocusRangeAxis::CellType,ct->getID()) );
+	}
+	
+	init_range(granularity, restrictions, true);
+}
+
+FocusRange::FocusRange(Granularity granularity, multimap<FocusRangeAxis, int> restrictions, bool writable_only)
+{
+	init_range(granularity, restrictions, writable_only);
+};
+
+FocusRange::FocusRange(Granularity granularity, CPM::CELL_ID cell_id )
+{
+    multimap<FocusRangeAxis, int> restrictions;
+	restrictions.insert(make_pair(FocusRangeAxis::CELL, cell_id));
+	init_range(granularity, restrictions, true);
+};
+
+void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, int > restrictions, bool writable_only) {
+	if (granularity == Granularity::Undef) {
+		return;
+	}
+	
+	shared_ptr<FocusRangeDescriptor> range = make_shared<FocusRangeDescriptor>();
+	
+	shared_ptr<const CellType> ct;
+	range->spatial_restriction = FocusRangeDescriptor::RESTR_GLOBAL;
+	range->granularity = granularity;
+	
+	if (!restrictions.empty()) {
+		
+		if (restrictions.count(FocusRangeAxis::CELL)) {
+			
+			range->spatial_restriction = FocusRangeDescriptor::RESTR_CELL;
+// 			cout << "Read Restriction to cell " << restrictions[FocusRangeAxis::CELL] << endl;
+		}
+		else if (restrictions.count(FocusRangeAxis::CellType) == 1) {
+			ct = CPM::getCellTypes()[restrictions.find(FocusRangeAxis::CellType)->second].lock();
+			if (ct && !ct->isMedium()) {
+				range->spatial_restriction = FocusRangeDescriptor::RESTR_CELLPOP;
+// 				cout << "Read Restriction to celltype " << ct->getName() << endl;
+			}
+			else {
+				throw string( "Invalid CellType for FocusRangeLimits provided.");
+			}
+		}
+		
+	}
+	
+	switch (range->granularity) {
+		case  Granularity::Cell :
+			range->iter_mode = FocusRangeDescriptor::IT_Cell;
+			if (range->spatial_restriction == FocusRangeDescriptor::RESTR_CELL) {
+				auto cell_range = restrictions.equal_range(FocusRangeAxis::CELL);
+				for (auto cell  = cell_range.first; cell != cell_range.second; cell++ ) {
+					range->cell_range.push_back(cell->second);
+				}
+				if (range->cell_range.size()>1)
+					range->data_axis.push_back(FocusRangeAxis::CELL);
+				range->pos_range = VINT(1,1,1);
+			}
+			else if (range->spatial_restriction == FocusRangeDescriptor::RESTR_CELLPOP) {
+				range->data_axis.push_back(FocusRangeAxis::CELL);
+				range->cell_range = ct->getCellIDs();
+				range->pos_range = VINT(1,1,1);
+			}
+			else {
+				range->data_axis.push_back(FocusRangeAxis::CELL);
+				auto celltypes = CPM::getCellTypes();
+				for (auto wct : celltypes) {
+					auto ct = wct.lock();
+					if (ct->isMedium())
+						continue;
+					auto cell_ids = ct->getCellIDs();
+					range->cell_range.insert(range->cell_range.end(),cell_ids.begin(), cell_ids.end());
+				}
+			}
+			break;
+		case Granularity::MembraneNode :
+			range->iter_mode = FocusRangeDescriptor::IT_CellMembrane;
+			range->pos_range = MembraneProperty::size;
+			range->spatial_dimensions.insert(FocusRangeAxis::MEM_X);
+			if (range->pos_range.y>1)
+				range->spatial_dimensions.insert(FocusRangeAxis::MEM_Y);
+			
+			if (range->spatial_restriction == FocusRangeDescriptor::RESTR_CELL) {
+				auto cell_range = restrictions.equal_range(FocusRangeAxis::CELL);
+				for (auto cell  = cell_range.first; cell != cell_range.second; cell++ ) {
+					range->cell_range.push_back(cell->second);
+				}
+				if (range->cell_range.size()>1)
+					range->data_axis.push_back(FocusRangeAxis::CELL);
+				range->data_axis.push_back(FocusRangeAxis::MEM_X);
+				if (range->pos_range.y>1)
+					range->data_axis.push_back(FocusRangeAxis::MEM_Y);
+			}
+			else if (range->spatial_restriction == FocusRangeDescriptor::RESTR_CELLPOP) {
+				range->cell_range = ct->getCellIDs();
+				range->data_axis.push_back(FocusRangeAxis::CELL);
+				range->data_axis.push_back(FocusRangeAxis::MEM_X);
+				if (range->pos_range.y>1)
+					range->data_axis.push_back(FocusRangeAxis::MEM_Y);
+				
+			}
+			else {
+				throw string("Can not iterate with membrane node granularity over global range in FocusRange");
+			}
+			break;
+		case Granularity::Node : {
+			VINT l_size = SIM::lattice().size();
+			range->spatial_dimensions.insert(FocusRangeAxis::X);
+			if (l_size.y>1) range->spatial_dimensions.insert(FocusRangeAxis::Y);
+			if (l_size.z>1) range->spatial_dimensions.insert(FocusRangeAxis::Z);
+			
+			if (range->spatial_restriction == FocusRangeDescriptor::RESTR_CELL) {
+				auto cell_range = restrictions.equal_range(FocusRangeAxis::CELL);
+				for (auto cell  = cell_range.first; cell != cell_range.second; cell++ ) {
+					range->cell_range.push_back(cell->second);
+					range->cell_sizes.push_back(CPM::getCell(range->cell_range.back()).nNodes());
+				}
+				
+				range->iter_mode = FocusRangeDescriptor::IT_CellNodes;
+				if (range->cell_range.size()>1)
+					range->data_axis.push_back(FocusRangeAxis::CELL);
+				range->data_axis.push_back(FocusRangeAxis::NODE);
+				range->pos_range = VINT(1,1,1);
+			}
+			else if (range->spatial_restriction == FocusRangeDescriptor::RESTR_CELLPOP) {
+				range->cell_range = ct->getCellIDs();
+				for (auto it : range->cell_range) {
+					range->cell_sizes.push_back(CPM::getCell(it).nNodes());
+				}
+				range->iter_mode = FocusRangeDescriptor::IT_CellNodes;
+				range->data_axis.push_back(FocusRangeAxis::NODE);
+				range->data_axis.push_back(FocusRangeAxis::CELL);
+				range->pos_range = VINT(1,1,1);
+			}
+			else if (range->spatial_restriction == FocusRangeDescriptor::RESTR_GLOBAL) {
+
+				if (SIM::lattice().getDomain().domainType() != Domain::none && writable_only) {
+					range->spatial_restriction = FocusRangeDescriptor::RESTR_DOMAIN;
+					range->domain_enumeration = & SIM::lattice().getDomain().enumerated();
+					range->iter_mode = FocusRangeDescriptor::IT_Domain;
+					range->data_axis.push_back(FocusRangeAxis::NODE);
+				}
+				else {
+					range->data_axis.push_back(FocusRangeAxis::X);
+					if (l_size.y>1) range->data_axis.push_back(FocusRangeAxis::Y);
+					if (l_size.z>1) range->data_axis.push_back(FocusRangeAxis::Z);
+					
+					range->spatial_restriction = FocusRangeDescriptor::RESTR_GLOBAL;
+					range->pos_range = l_size;
+					range->iter_mode = FocusRangeDescriptor::IT_Space;
+				}
+			}
+			break;
+		}
+		case Granularity::Global :
+			range->pos_range = VINT(1,1,1);
+			range->iter_mode = FocusRangeDescriptor::IT_Space;
+			break;
+	}
+	
+	if (!restrictions.empty()) {
+		// Now apply all spatial limits
+		switch (range->iter_mode) {
+			case FocusRangeDescriptor::IT_CellMembrane :
+				if (restrictions.count(FocusRangeAxis::MEM_X) == 1) {
+					range->pos_range.x=1;
+					range->pos_offset.x = restrictions.find(FocusRangeAxis::MEM_X)->second;
+					range->spatial_dimensions.erase(FocusRangeAxis::MEM_X);
+					auto& dim = range->data_axis;
+					dim.erase(find(dim.begin(), dim.end(), FocusRangeAxis::MEM_X) );
+				}
+				if (restrictions.count(FocusRangeAxis::MEM_Y) == 1) {
+					range->pos_range.y=1;
+					range->pos_offset.y = restrictions.find(FocusRangeAxis::MEM_Y)->second;
+					range->spatial_dimensions.erase(FocusRangeAxis::MEM_X);
+					auto& dim = range->data_axis;
+					dim.erase(find(dim.begin(), dim.end(), FocusRangeAxis::MEM_Y) );
+				}
+			break;
+			case FocusRangeDescriptor::IT_CellNodes :
+				if (restrictions.count(FocusRangeAxis::X) == 1) {
+					// copy all cell nodes, filtered through the X-restrictions
+					int x_restr = restrictions.find(FocusRangeAxis::X)->second;
+					for (auto cell : range->cell_range) {
+						const auto& nodes = CPM::getCell(cell).getNodes();
+						set <VINT, less_VINT > new_nodes;
+						for (const auto& node : nodes) {
+							if (node.x == x_restr) {
+								new_nodes.insert(new_nodes.end(), node);
+							}
+						}
+						range->cell_nodes.push_back(new_nodes);
+					}
+					range->pos_range.x=1;
+					range->iter_mode = FocusRangeDescriptor::IT_CellNodes_int;
+					range->spatial_dimensions.erase(FocusRangeAxis::X);
+				}
+				if (restrictions.count(FocusRangeAxis::Y) == 1) {
+					// copy all cell nodes, filtered through the X-restrictions
+					int y_restr = restrictions.find(FocusRangeAxis::Y) -> second;
+					if (range->iter_mode == FocusRangeDescriptor::IT_CellNodes) {
+						for (auto cell : range->cell_range) {
+							const auto& nodes = CPM::getCell(cell).getNodes();
+							set <VINT, less_VINT > new_nodes;
+							for (const auto& node : nodes) {
+								if (node.y == y_restr) {
+									new_nodes.insert(new_nodes.end(), node);
+								}
+							}
+							if (!new_nodes.empty()) {
+								range->cell_nodes.push_back(new_nodes);
+							}
+							else {
+								// remove current.
+							}
+						}
+						range->pos_range.y=1;
+						range->iter_mode = FocusRangeDescriptor::IT_CellNodes_int;
+					}
+					else {
+						for (auto& nodes : range->cell_nodes) {
+							set <VINT, less_VINT > new_nodes;
+							for (const auto& node : nodes) {
+								if (node.y == y_restr) {
+									new_nodes.insert(new_nodes.end(), node);
+								}
+							}
+							nodes = new_nodes;
+						}
+						range->pos_range.y=1;
+					}
+					range->spatial_dimensions.erase(FocusRangeAxis::Y);
+				}
+				
+				if (restrictions.count(FocusRangeAxis::Z) == 1) {
+								// copy all cell nodes, filtered through the X-restrictions
+					int z_restr = restrictions.find(FocusRangeAxis::Z)->second;
+					if (range->iter_mode == FocusRangeDescriptor::IT_CellNodes) {
+						for (auto cell : range->cell_range) {
+							const auto& nodes = CPM::getCell(cell).getNodes();
+							set <VINT, less_VINT > new_nodes;
+							for (const auto& node : nodes) {
+								if (node.z == z_restr) {
+									new_nodes.insert(new_nodes.end(), node);
+								}
+							}
+							range->cell_nodes.push_back(new_nodes);
+						}
+						range->pos_range.z=1;
+						range->iter_mode = FocusRangeDescriptor::IT_CellNodes_int;
+					}
+					else {
+						for (auto& nodes : range->cell_nodes) {
+							set <VINT, less_VINT > new_nodes;
+							for (const auto& node : nodes) {
+								if (node.z == z_restr) {
+									new_nodes.insert(new_nodes.end(), node);
+								}
+							}
+							nodes = new_nodes;
+						}
+						range->pos_range.z=1;
+					}
+					range->spatial_dimensions.erase(FocusRangeAxis::Z);
+				}
+			break;
+			case FocusRangeDescriptor::IT_Domain :
+				if (restrictions.count(FocusRangeAxis::X) == 1) {
+					// copy all cell nodes, filtered through the X-restrictions
+					int x_restr = restrictions.find(FocusRangeAxis::X)->second;
+					for (const auto& node : *range->domain_enumeration) {
+						if (node.x == x_restr) {
+							range->domain_nodes.push_back(node);
+						}
+					}
+					range->pos_range.x = 1;
+					range->iter_mode = FocusRangeDescriptor::IT_Domain_int;
+					range->spatial_dimensions.erase(FocusRangeAxis::X);
+				}
+				if (restrictions.count(FocusRangeAxis::Y) == 1) {
+					// copy all cell nodes, filtered through the X-restrictions
+					int y_restr = restrictions.find(FocusRangeAxis::Y)->second;
+					if (range->iter_mode = FocusRangeDescriptor::IT_Domain) {
+						for (const auto& node : *range->domain_enumeration) {
+							if (node.y == y_restr) {
+								range->domain_nodes.push_back(node);
+							}
+						}
+						range->pos_range.y = 1;
+						range->iter_mode = FocusRangeDescriptor::IT_Domain_int;
+					}
+					else {
+						vector<VINT> new_nodes;
+						for (const auto& node : range->domain_nodes) {
+							if (node.y == y_restr) {
+								new_nodes.push_back(node);
+							}
+						}
+						range->domain_nodes = new_nodes;
+						range->pos_range.y = 1;
+					}
+					range->spatial_dimensions.erase(FocusRangeAxis::Y);
+				}
+				if (restrictions.count(FocusRangeAxis::Z) == 1) {
+					// copy all cell nodes, filtered through the X-restrictions
+					int z_restr = restrictions.find(FocusRangeAxis::Z)->second;
+					if (range->iter_mode = FocusRangeDescriptor::IT_Domain) {
+						for (const auto& node : *range->domain_enumeration) {
+							if (node.z == z_restr) {
+								range->domain_nodes.push_back(node);
+							}
+						}
+						range->pos_range.z = 1;
+						range->iter_mode = FocusRangeDescriptor::IT_Domain_int;
+					}
+					else {
+						vector<VINT> new_nodes;
+						for (const auto& node : range->domain_nodes) {
+							if (node.z == z_restr) {
+								new_nodes.push_back(node);
+							}
+						}
+						range->domain_nodes = new_nodes;
+						range->pos_range.z = 1;
+					}
+					range->spatial_dimensions.erase(FocusRangeAxis::Z);
+				}
+			break;
+			case FocusRangeDescriptor::IT_Space:
+				if (restrictions.count(FocusRangeAxis::X) == 1) {
+					range->pos_range.x=1;
+					range->pos_offset.x = restrictions.find(FocusRangeAxis::X)->second;
+					range->spatial_dimensions.erase(FocusRangeAxis::X);
+					auto& dim = range->data_axis;
+					dim.erase(find(dim.begin(), dim.end(), FocusRangeAxis::X) );
+				}
+				if (restrictions.count(FocusRangeAxis::Y) == 1) {
+					range->pos_range.y=1;
+					range->pos_offset.y = restrictions.find(FocusRangeAxis::Y)->second;
+					range->spatial_dimensions.erase(FocusRangeAxis::Y);
+					auto& dim = range->data_axis;
+					dim.erase(find(dim.begin(), dim.end(), FocusRangeAxis::Y) );
+				}
+				if (restrictions.count(FocusRangeAxis::Z) == 1) {
+					range->pos_range.z=1;
+					range->pos_offset.z = restrictions.find(FocusRangeAxis::Z)->second;
+					range->spatial_dimensions.erase(FocusRangeAxis::Z);
+					auto& dim = range->data_axis;
+					dim.erase(find(dim.begin(), dim.end(), FocusRangeAxis::Z) );
+				}
+			break;
+			case FocusRangeDescriptor::IT_Cell : 
+				if (restrictions.count(FocusRangeAxis::X) || restrictions.count(FocusRangeAxis::Y) || restrictions.count(FocusRangeAxis::Z)) {
+					// just collect those cells which occupy some nodes in the restricted area
+					cerr << "Missing implementation" << endl;
+					assert(0);
+				}
+				break;
+		}
+	}
+	
+	// Pre-compute the sizes of dimensions for irregular data sets
+	switch(range->iter_mode) {
+		case FocusRangeDescriptor::IT_Domain :
+			range->size = range->domain_enumeration->size();
+			range->sizes.push_back(range->domain_enumeration->size());
+			break;
+		case FocusRangeDescriptor::IT_Domain_int :
+			range->size = range->domain_nodes.size();
+			range->sizes.push_back(range->domain_nodes.size());
+			break;
+		case FocusRangeDescriptor::IT_CellNodes : 
+			range->size = 0;
+			for (auto count : range->cell_sizes) {
+				range->size += count;
+			}
+			range->sizes.push_back(-1);
+			range->sizes.push_back(range->cell_sizes.size());
+			break;
+		case FocusRangeDescriptor::IT_CellNodes_int:
+			range->size=0;
+			for (uint i=0; i< range->cell_nodes.size(); i++) {
+				range->cell_sizes[i] = range->cell_nodes[i].size();
+				range->size += range->cell_sizes[i];
+			}
+			range->sizes.push_back(-1);
+			range->sizes.push_back(range->cell_nodes.size());
+			break;
+		default:
+			 // IT_Space, IT_Cell, IT_CellMembrane
+			if (range->pos_range.x == 0) range->pos_range.x = 1;
+			if (range->pos_range.y == 0) range->pos_range.y = 1;
+			if (range->pos_range.z == 0) range->pos_range.z = 1;
+			range->x_div = 1;
+			range->y_div = range->x_div * range->pos_range.x;
+			range->z_div = range->y_div * range->pos_range.y;
+			range->c_div = range->z_div * range->pos_range.z;
+			if (range->iter_mode == FocusRangeDescriptor::IT_Cell || range->iter_mode == FocusRangeDescriptor::IT_CellMembrane) {
+				range->size = range->c_div * range->cell_range.size();
+			}
+			else 
+				range->size = range->c_div;
+			
+			if (range->cell_range.size()>1) range->sizes.push_back(range->cell_range.size());
+			if (range->pos_range.z>1) range->sizes.push_back(range->pos_range.z);
+			if (range->pos_range.y>1) range->sizes.push_back(range->pos_range.y);
+			if (range->pos_range.x>1) range->sizes.push_back(range->pos_range.x);
+			break;
+	}
+	
+	data = range;
+	
+// 	cout << "FocusRange: C" << data->cell_range.size() << " P"<< data->pos_range << " S" << data->size << endl;
+}

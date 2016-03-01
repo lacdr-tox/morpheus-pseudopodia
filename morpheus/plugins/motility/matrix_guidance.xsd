@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="MatrixGuidance"	type="MatrixGuidance"/>
+		</xs:choice>
+	</xs:group>
+	
+
+	<xs:complexType name="MatrixGuidance">		
+		<xs:annotation>
+			<xs:appinfo>Motility</xs:appinfo>
+		</xs:annotation>
+		<xs:all maxOccurs="1">
+			<xs:element name="OrientationLayer" type="cpmLayerRef" >
+				<xs:annotation>
+					<xs:documentation>
+						Layer with orientations of matrix fibers in [-pi, pi] interval, can be reoriented.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="StrengthLayer" type="cpmLayerRef" >
+				<xs:annotation>
+					<xs:documentation>
+						Layer with 'strengths' of matrix fiber orientations, which can be degraded.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:all>
+		<xs:attribute name="name" type="cpmString" use="optional" />
+	</xs:complexType>
+
+</xs:schema>

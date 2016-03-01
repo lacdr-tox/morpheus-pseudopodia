@@ -1,0 +1,8 @@
+
+
+
+
+
+The directories muParser, xmlParser and Eigen contain 3rd party libraries, which were unpacked in those folders.
+
+muParser received a CMake build script and was extended by an interface to read used functions in an expression.

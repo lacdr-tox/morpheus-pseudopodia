@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="GlobalPlugins">
+		<xs:choice>
+			<xs:element name="Constant" 			type="Constant"/>
+			<xs:element name="ConstantVector" 		type="ConstantVector"/>
+			<xs:element name="Variable" 			type="Property"/>
+			<xs:element name="VariableVector"		type="PropertyVector"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="Constant" 			type="Constant"/>
+			<xs:element name="ConstantVector" 		type="ConstantVector"/>
+			<xs:element name="Property" 			type="Property"/>
+			<xs:element name="PropertyVector"		type="PropertyVector"/>
+			<xs:element name="DelayProperty" 		type="DelayProperty"/>
+			<xs:element name="Variable" 			type="Property"/>
+			<xs:element name="VariableVector"		type="PropertyVector"/>
+		</xs:choice>
+	</xs:group>
+  
+	<xs:group name="PDEPlugins">
+		<xs:choice>
+			<xs:element name="Constant" 			type="Constant"/>
+			<xs:element name="ConstantVector" 		type="ConstantVector"/>
+		</xs:choice>
+	</xs:group>
+
+	<xs:group name="InteractionPlugins">
+		<xs:choice>
+			<xs:element name="Constant" 			type="Constant"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="ContactPlugins">
+		<xs:choice>
+			<xs:element name="Constant" 			type="Constant"/>
+		</xs:choice>
+	</xs:group>
+
+	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+			<xs:element name="Constant" 			type="Constant"/>
+			<xs:element name="ConstantVector" 		type="ConstantVector"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="DiscreteSystemPlugins">
+		<xs:choice>
+			<xs:element name="Constant" 			type="Constant"/>
+			<xs:element name="ConstantVector" 		type="ConstantVector"/>
+		</xs:choice>
+	</xs:group>
+
+	<xs:group name="SystemPlugins">
+		<xs:choice>
+			<xs:element name="Constant" 			type="Constant"/>
+			<xs:element name="ConstantVector" 		type="ConstantVector"/>
+		</xs:choice>
+	</xs:group>
+
+
+  
+	
+	<xs:complexType name="Constant">
+		
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>Container</xs:appinfo>
+			
+			<xs:documentation>Global constant double value that can be referenced via a symbol.</xs:documentation>
+		</xs:annotation>
+		
+		<xs:attribute name="name" 	type="cpmString"			use="optional" />
+		<xs:attribute name="symbol"	type="cpmDoubleSymbolDef"	use="required" />
+		<xs:attribute name="value" 	type="cpmDouble"			use="required" />
+		
+	</xs:complexType>
+	
+	
+	<xs:complexType name="ConstantVector">
+		
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>Container</xs:appinfo>
+			
+			<xs:documentation>Globally constant vector that can be referenced via a symbol.</xs:documentation>
+		</xs:annotation>
+		
+		<xs:attribute name="name" 	type="cpmString"			use="optional" />
+		<xs:attribute name="symbol"	type="cpmVectorSymbolDef"	use="required" />
+		<xs:attribute name="value" 	type="cpmDoubleVector"		use="required" />
+	</xs:complexType>
+	
+	
+	
+	
+	<xs:complexType name="Property">
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>Container</xs:appinfo>
+			<xs:documentation>Variable numeric property for each cell that can be referenced via a symbol. 
+				
+				The specified value serves as the initial (or default) value.</xs:documentation>
+		</xs:annotation>
+
+		<xs:attribute name="name" 	type="cpmString"		use="optional" />
+		<xs:attribute name="symbol"	type="cpmDoubleSymbolDef"		use="required" />
+		<xs:attribute name="value"	type="cpmMathExpression"		use="required" />
+	</xs:complexType>
+	
+	
+	<xs:complexType name="PropertyVector">
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>Container</xs:appinfo>
+			<xs:documentation>Variable vector property for each cell that can be referenced via a symbol. 
+				
+				The specified value serves as the initial (or default) value.</xs:documentation>
+		</xs:annotation>
+
+		<xs:attribute name="name" 	type="cpmString"		use="optional" />
+		<xs:attribute name="symbol"	type="cpmVectorSymbolDef"		use="required" />
+		<xs:attribute name="value"	type="cpmVectorMathExpression"		use="required" />
+	</xs:complexType>
+	
+	<xs:complexType name="PropertyQueue">
+		<xs:annotation>
+			<xs:appinfo>Container</xs:appinfo>
+			<xs:documentation>Variable queue property for each cell that can be referenced via a symbol. 
+				
+				The specified value serves as the initial (or default) value.</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="Duration" minOccurs="1" type="cpmTime" />
+		</xs:all>
+		
+		<xs:attribute name="name" 	type="cpmString"		use="optional" />
+		<xs:attribute name="symbol"	type="cpmQueueSymbolDef"		use="required" />
+		<xs:attribute name="value"	type="cpmDoubleQueue"		use="required" />
+	</xs:complexType>
+	
+	
+	<xs:complexType name="PropertyData">
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>Container</xs:appinfo>
+			<xs:documentation>Specify the numeric property of a cell that can be referenced via a symbol.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="symbol-ref"	type="cpmDoubleSymbolRef"		use="required" />
+		<xs:attribute name="value"	type="cpmDouble"		use="required" />
+	</xs:complexType>
+	
+	<xs:complexType name="PropertyVectorData">
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>Container</xs:appinfo>
+			<xs:documentation>Specify the vector property of a cell that can be referenced via a symbol.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="symbol-ref"	type="cpmVectorSymbolRef"		use="required" />
+		<xs:attribute name="value"	type="cpmDoubleVector"		use="required" />
+	</xs:complexType>
+	
+<!--	<xs:complexType name="PropertyQueueData">
+		<xs:annotation>
+			<xs:appinfo>Container</xs:appinfo>
+			<xs:documentation>Specify the queue property for each cell that can be referenced via a symbol.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="symbol-ref"	type="cpmQueueSymbolRef"		use="required" />
+		<xs:attribute name="value"	type="cpmDoubleQueue"		use="required" />
+	</xs:complexType>-->
+	
+	<xs:group  name="PropertyDataGroup">
+		<xs:choice maxOccurs="unbounded">
+			<xs:element name="PropertyData" type="PropertyData" />
+			<xs:element name="PropertyVectorData" type="PropertyVectorData" />
+			<xs:element name="DelayPropertyData" type="DelayPropertyData" />
+<!-- 			<xs:element name="PropertyArrayData" type="PropertyArrayData" /> -->
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="DelayProperty">
+		<xs:annotation>
+			<xs:appinfo>Container</xs:appinfo>
+			<xs:documentation>Numeric delay-property for each cell that can be referenced via a symbol.
+
+				At time t, the container provides numerical values that have been written at t-delay.
+				The specified value serves as the initial (or default) value.
+			</xs:documentation>
+		</xs:annotation>
+			<xs:attribute name="name" type="cpmString" use="optional" />
+			<xs:attribute name="delay" type="cpmDouble" use="required" default="1" />
+			<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required" />
+			<xs:attribute name="value" type="cpmDouble" use="required" />
+	</xs:complexType>
+
+	<xs:complexType name="DelayPropertyData">
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>Container</xs:appinfo>
+			<xs:documentation>Specify the numeric property of a cell that can be referenced via a symbol.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="symbol-ref"	type="cpmDoubleSymbolRef"		use="required" />
+		<xs:attribute name="value"	type="cpmDoubleQueue"		use="required" />
+	</xs:complexType>
+</xs:schema>
+

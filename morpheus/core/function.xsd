@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  
+	<xs:group name="GlobalPlugins">
+		<xs:choice>
+			<xs:element name="Function" 			type="Function"/>
+			<xs:element name="VectorFunction" 		type="VectorFunction"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="Function" 			type="Function"/>
+			<xs:element name="VectorFunction" 		type="VectorFunction"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="PDEPlugins">
+		<xs:choice>
+			<xs:element name="Function" 			type="Function"/>
+		</xs:choice>
+	</xs:group>
+
+	<xs:group name="InteractionPlugins">
+		<xs:choice>
+			<xs:element name="Function" 			type="Function"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="ContactPlugins">
+		<xs:choice>
+			<xs:element name="Function" 			type="Function"/>
+		</xs:choice>
+	</xs:group>
+
+	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+			<xs:element name="Function" 			type="Function"/>
+			<xs:element name="VectorFunction" 		type="VectorFunction"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="DiscreteSystemPlugins">
+		<xs:choice>
+			<xs:element name="Function"				type="Function"/>
+			<xs:element name="VectorFunction" 		type="VectorFunction"/>
+		</xs:choice>
+	</xs:group>
+
+	<xs:group name="SystemPlugins">
+		<xs:choice>
+			<xs:element name="Function"				type="Function"/>
+			<xs:element name="VectorFunction" 		type="VectorFunction"/>
+		</xs:choice>
+	</xs:group>
+
+	<xs:complexType name="Function">
+	
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>Math</xs:appinfo>
+			<xs:documentation>Defines an funtion to apply on a symbol at each time step.</xs:documentation>
+		</xs:annotation>
+		
+		<xs:all>
+			<xs:element name="Expression"	type="cpmMathExpression" />
+		</xs:all>
+
+		
+		<xs:attribute name="name" 	type="cpmString"				use="optional" />
+		<xs:attribute name="symbol"	type="cpmDoubleSymbolDef"		use="required" />
+
+	</xs:complexType>
+
+	
+	<xs:complexType name="VectorFunction">
+	
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>Math</xs:appinfo>
+			<xs:documentation>Defines an equation to apply on a cell property (referenced by symbol) at each time step.</xs:documentation>
+		</xs:annotation>
+		
+		<xs:all>
+			<xs:element name="Expression"	type="cpmVectorMathExpression" />
+		</xs:all>
+
+		<xs:attribute name="name" type="cpmString" use="optional" />
+
+		<xs:attribute name="symbol"	type="cpmVectorSymbolDef"		use="required" />
+		<xs:attribute name="spherical"	type="cpmBoolean"	default="false"	use="optional" />
+
+	</xs:complexType>
+</xs:schema>
+

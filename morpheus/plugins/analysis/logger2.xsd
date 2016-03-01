@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+	<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+	<xs:group name="AnalysisPlugins">
+		<xs:choice>
+			<xs:element name="Logger"	type="Logger"/>
+		</xs:choice>
+	</xs:group>
+
+	<xs:complexType name="Logger">
+		<xs:annotation>
+			<xs:appinfo>Data analysis</xs:appinfo>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="Input" type="cpmLoggerInput" minOccurs="1" maxOccurs="1" />
+			<xs:element name="Output" type="cpmLoggerOutput" minOccurs="1" maxOccurs="1" />
+			<xs:element name="Plots" type="cpmLoggerPlots" minOccurs="0" maxOccurs="1" />
+			<xs:element name="Restriction"	type="cpmLoggerRestrictions"   minOccurs="0" maxOccurs="1" />
+		</xs:all>
+		<xs:attribute name="time-step"	type="cpmDouble" use="required" />
+		<xs:attribute name="name"	type="cpmString" use="optional" />
+	</xs:complexType>
+
+	<xs:complexType name="cpmLoggerInput">
+		<xs:all>
+			<xs:element name="Symbol" 	type="cpmLoggerSymbol"	minOccurs="1" maxOccurs="unbounded" />
+		</xs:all>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmLoggerSymbol">
+		<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required"/>
+	</xs:complexType>
+
+<!--  -->
+
+	<xs:complexType name="cpmLoggerOutput">
+		<xs:choice>
+			<xs:element name="TextOutput" 	type="cpmLoggerTextOutput"	minOccurs="1" maxOccurs="1" />
+<!-- 			<xs:element name="HDF5Output" 	type="cpmLoggerHDF5Output"	minOccurs="0" maxOccurs="1" /> -->
+		</xs:choice>
+	</xs:complexType>
+
+<!--  -->
+
+	<xs:complexType name="cpmLoggerPlots">
+		<xs:all>
+			<xs:element name="Plot" 		type="cpmLoggerCSVPlot" 	minOccurs="0" maxOccurs="unbounded" />
+			<xs:element name="SurfacePlot" 	type="cpmLoggerMatrixPlot" 	minOccurs="0" maxOccurs="unbounded" />
+		</xs:all>
+	</xs:complexType>
+
+<!--  -->
+
+	<xs:complexType name="cpmLoggerTextOutput">
+		<xs:attribute name="file-format" type="cpmLoggerOutputFormats" use="optional" default="csv" />
+		<xs:attribute name="header" type="cpmBoolean" use="optional" default="true" />
+        <xs:attribute name="separator" type="cpmLoggerOutputSeparator" use="optional" default="\t" />
+		<xs:attribute name="file-name" type="cpmString" use="optional" default="automatic" />
+		<xs:attribute name="file-numbering" type="cpmFileNumbering" use="optional" default="time" /> 
+        <xs:attribute name="file-separation" type="cpmLoggerFileSeparation" use="optional" default="none" />
+<!-- 		<xs:attribute name="name"	type="cpmString" use="optional" /> -->
+	</xs:complexType>
+
+
+	<xs:simpleType name="cpmLoggerOutputSeparator">
+		<xs:restriction base="cpmString">
+            <xs:enumeration value="tab"/>
+            <xs:enumeration value="comma"/>
+            <xs:enumeration value="semicolon"/>
+		</xs:restriction>
+	</xs:simpleType>	
+
+	<xs:simpleType name="cpmLoggerFileSeparation">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="none"/>
+			<xs:enumeration value="time"/>
+			<xs:enumeration value="cell"/>
+			<xs:enumeration value="time+cell"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="cpmFileNumbering">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="time"/>
+			<xs:enumeration value="sequential"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="cpmLoggerOutputFormats">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="csv"/>
+			<xs:enumeration value="matrix"/>
+		</xs:restriction>
+	</xs:simpleType>	
+
+<!--   -->
+
+	<xs:complexType name="cpmLoggerRestrictions" >
+		<xs:choice>
+			<xs:element name="Slice"	type="cpmLoggerSlice" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="Celltype"	type="cpmLoggerCellType" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="Cells"	type="cpmLoggerCells" minOccurs="0" maxOccurs="1"/>
+		</xs:choice>
+		<xs:attribute name="force-node-granularity" type="cpmBoolean" use="optional" default="false" />
+		<xs:attribute name="domain-only" type="cpmBoolean" use="optional" default="true" />
+	</xs:complexType>
+
+	<xs:complexType name="cpmLoggerSlice" >
+		<xs:attribute name="value" type="cpmMathExpression" use="required"/>
+		<xs:attribute name="axis" type="cpmLoggerSliceAxis" use="required"/>
+	</xs:complexType>
+
+	<xs:complexType name="cpmLoggerCellType" >
+		<xs:attribute name="celltype" type="cpmCellTypeRef" use="required"/>
+	</xs:complexType>
+
+	<xs:complexType name="cpmLoggerCells" >
+		<xs:attribute name="cell-ids" type="cpmString" use="required" default="1" />
+	</xs:complexType>
+
+	<xs:simpleType name="cpmLoggerSliceAxis">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="x"/>
+			<xs:enumeration value="y"/>
+			<xs:enumeration value="z"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+<!--  -->
+
+	
+	<xs:complexType name="cpmLoggerCSVPlot" >
+		<xs:all>
+			<xs:element name="X-axis" minOccurs="1" maxOccurs="1">
+				<xs:complexType>
+					<xs:attribute name="minimum" type="cpmMathExpression" use="optional" />
+					<xs:attribute name="maximum" type="cpmMathExpression" use="optional" />
+					<xs:attribute name="logarithmic" type="cpmBoolean" use="optional" />
+					<xs:all>
+						<xs:element name="Symbol" type="cpmLoggerPlotColumn" minOccurs="1" maxOccurs="1" />
+					</xs:all>
+				</xs:complexType>
+			</xs:element>
+			
+			<xs:element name="Y-axis" minOccurs="1" maxOccurs="1">
+				<xs:complexType>
+					<xs:attribute name="minimum" type="cpmMathExpression" use="optional" />
+					<xs:attribute name="maximum" type="cpmMathExpression" use="optional" />
+					<xs:attribute name="logarithmic" type="cpmBoolean" use="optional" />
+					<xs:all>
+						<xs:element name="Symbol" type="cpmLoggerPlotColumn" minOccurs="1" maxOccurs="25" />
+					</xs:all>
+				</xs:complexType>
+			</xs:element>
+		
+			<xs:element name="Color-bar" minOccurs="0">
+				<xs:complexType>
+					<xs:attribute name="minimum" type="cpmMathExpression" use="optional" />
+					<xs:attribute name="maximum" type="cpmMathExpression" use="optional" />
+					<xs:attribute name="logarithmic" type="cpmBoolean" use="optional" />
+                    <xs:attribute name="palette" type="cpmLoggerPalette" use="optional" />
+                    <xs:attribute name="reverse-palette" type="cpmBoolean" use="optional" default="false"/>
+                    <xs:all>
+						<xs:element name="Symbol" type="cpmLoggerPlotColumn" minOccurs="1" maxOccurs="1" />
+					</xs:all>
+				</xs:complexType>
+			</xs:element>
+			
+			<xs:element name="Range" minOccurs="0" maxOccurs="1">
+				<xs:complexType>
+					<xs:all>
+						<xs:element name="Time" minOccurs="0" maxOccurs="1">
+							<xs:complexType>
+								<xs:attribute name="mode" type="cpmPlotTimeRange" use="required" default="all" />
+								<xs:attribute name="history" type="cpmDouble" use="optional" default="1.0" />
+							</xs:complexType>
+						</xs:element>
+						<xs:element name="Data" minOccurs="0" maxOccurs="1">
+							<xs:complexType>
+								<xs:attribute name="first-line" type="cpmMathExpression" use="optional" default="1" />
+								<xs:attribute name="last-line" type="cpmMathExpression" use="optional" />
+								<xs:attribute name="increment" type="cpmMathExpression" use="optional" default="1" />
+							</xs:complexType>
+						</xs:element>
+					</xs:all>
+				</xs:complexType>
+			</xs:element>
+
+			<xs:element name="Terminal" minOccurs="1" maxOccurs="1">
+				<xs:complexType>
+					<xs:attribute name="terminal" type="cpmLoggerTerminalEnum" use="required" default="png"/>
+                    <xs:attribute name="plot-size" type="cpmDoubleVector" use="optional" />
+					<xs:attribute name="file-numbering" type="cpmFileNumbering" use="optional" default="time" />
+				</xs:complexType>
+			</xs:element>
+
+			<xs:element name="Style" minOccurs="1" maxOccurs="1">
+				<xs:complexType>
+					<xs:attribute name="decorate" type="cpmBoolean" use="optional" default="true" />
+					<xs:attribute name="style" type="cpmPlotLinesPoints" use="required" default="points" />
+					<xs:attribute name="point-size" type="cpmDouble" use="optional" default="1.0" />
+					<xs:attribute name="line-width" type="cpmDouble" use="optional" default="1.0" />
+					<xs:attribute name="grid" type="cpmBoolean" use="optional" default="false" />
+				</xs:complexType>
+			</xs:element>
+
+		</xs:all>
+		
+		<xs:attribute name="time-step" type="cpmDouble" use="optional" default="-1" />
+        <xs:attribute name="log-commands"   use="optional" type="cpmBoolean" default="false" />
+		<xs:attribute name="name" type="cpmString" use="optional" default="" />
+		
+	</xs:complexType>
+		
+	<xs:complexType name="cpmLoggerMatrixPlot" >
+		<xs:all>
+			<xs:element name="Color-bar" minOccurs="1">
+				<xs:complexType>
+					<xs:attribute name="minimum" type="cpmDouble" use="optional" />
+					<xs:attribute name="maximum" type="cpmDouble" use="optional" />
+					<xs:attribute name="logarithmic" type="cpmBoolean" use="optional" />
+                    <xs:attribute name="palette" type="cpmLoggerPalette" use="optional" />
+                    <xs:attribute name="reverse-palette" type="cpmBoolean" use="optional" default="false"/>
+                    <xs:all>
+						<xs:element name="Symbol" type="cpmLoggerPlotColumn" minOccurs="1" maxOccurs="1" />
+					</xs:all>
+				</xs:complexType>
+			</xs:element>
+
+			<xs:element name="Terminal" minOccurs="1" maxOccurs="1">
+				<xs:complexType>
+					<xs:attribute name="terminal" type="cpmLoggerTerminalEnum" use="required" default="png"/>
+                    <xs:attribute name="plot-size" type="cpmDoubleVector" use="optional" />
+					<xs:attribute name="file-numbering" type="cpmFileNumbering" use="optional" default="time" />
+				</xs:complexType>
+			</xs:element>
+		</xs:all>
+		
+        <xs:attribute name="time-step" type="cpmDouble" use="optional" default="-1" />
+        <xs:attribute name="log-commands"   use="optional" type="cpmBoolean" default="false" />
+	</xs:complexType>
+	
+
+	<xs:complexType name="cpmLoggerPlotColumn" >
+		<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required"/>
+	</xs:complexType>
+	
+	<xs:simpleType name="cpmLoggerTerminalEnum">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="screen"/>
+			<xs:enumeration value="png"/>
+			<xs:enumeration value="jpeg"/>
+			<xs:enumeration value="gif"/>
+			<xs:enumeration value="svg"/>
+			<xs:enumeration value="postscript"/>
+			<xs:enumeration value="pdf"/>
+		</xs:restriction>
+	</xs:simpleType>
+    
+    <xs:simpleType name="cpmLoggerPalette">
+        <xs:restriction base="cpmString">
+            <xs:enumeration value="hot"/>
+            <xs:enumeration value="afmhot"/>
+            <xs:enumeration value="ocean"/>
+            <xs:enumeration value="grv"/>
+            <xs:enumeration value="rainbow"/>
+            <xs:enumeration value="gray"/>
+            <xs:enumeration value="default"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+
+    <xs:simpleType name="cpmLoggerMappingField">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="all"/>
+			<xs:enumeration value="min_max"/>
+			<xs:enumeration value="sum"/>
+			<xs:enumeration value="average"/>
+			<xs:enumeration value="variance"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="cpmPlotTimeRange">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="all"/>
+			<xs:enumeration value="since last plot"/>
+			<xs:enumeration value="history"/>
+			<xs:enumeration value="current"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="cpmPlotLinesPoints">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="points"/>
+			<xs:enumeration value="lines"/>
+			<xs:enumeration value="linespoints"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="cpmLoggerMapping">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="all"/>
+			<xs:enumeration value="average"/>
+			<xs:enumeration value="min_max"/>
+			<xs:enumeration value="single"/>
+			<xs:enumeration value="sum"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+<!--                                                                                      -->
+
+</xs:schema>

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Morpheus
+Categories=Science;Biology
+GenericName=Modeling environment
+Comment=Modeling environment for multicellular systems biology
+TryExec=morpheus-gui
+Exec=morpheus-gui %U
+Icon=morpheus
+MimeType=application/xml

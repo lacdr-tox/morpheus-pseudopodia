@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+			<xs:element name="ContactLogger" type="ContactLogger"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="ContactLogger">
+		<xs:annotation>
+			<xs:appinfo>Data Export</xs:appinfo>
+		</xs:annotation>
+		<xs:attribute name="time-step" use="required" type="cpmDouble" />
+		<xs:attribute name="celltype" type="cpmCellTypeRef" use="required" />
+<!--		<xs:attribute name="separator" type="cpmCellTypeRef" use="required" />
+		<xs:attribute name="position" type="cpmCellTypeRef" use="required" />-->
+   </xs:complexType>
+</xs:schema>

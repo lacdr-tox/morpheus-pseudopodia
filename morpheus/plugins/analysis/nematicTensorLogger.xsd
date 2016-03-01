@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+			<xs:element name="NematicTensorLogger" 			type="NematicTensorLogger"/>
+		</xs:choice>
+	</xs:group>
+	
+    <xs:complexType name="NematicTensorLogger">
+		<xs:annotation>
+			<xs:appinfo>Data Export</xs:appinfo>
+            <xs:documentation>Computes the inertia/nematic tensor of a 3D MembraneProperty.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="interval" use="required" type="cpmDouble">
+			<xs:annotation>
+				<xs:documentation>Number of Monte Carlo steps between logging updates.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="endstate" use="optional" type="cpmBoolean">
+			<xs:annotation>
+				<xs:documentation>Only execute analysis plugin at the end of the simulation.
+
+Note: This overrides the specified 'interval'.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+        <xs:attribute name="symbol-ref" use="required" type="cpmDoubleSymbolRef"/>
+        <xs:attribute name="threshold" use="required" type="cpmDouble"/>
+        <xs:attribute name="celltype" use="required" type="cpmCellTypeRef"/>
+
+    </xs:complexType>
+
+</xs:schema>
+
+

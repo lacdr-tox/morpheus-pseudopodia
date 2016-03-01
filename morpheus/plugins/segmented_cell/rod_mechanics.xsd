@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="RodMechanics"	type="RodMechanics"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="ContactPlugins">
+		<xs:choice>
+			<xs:element name="RodSegmentInteraction"	type="RodSegmentInteraction"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:simpleType name="cpmRodInteractionType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="head-adhesion"/>
+			<xs:enumeration value="zero-neighbors"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="RodSegmentInteraction">
+		<xs:annotation>
+			<xs:documentation>Sets the interaction energy of neighboring subcells to 0.
+			  </xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="name" type="cpmString" use="optional"/>
+		<xs:attribute name="type" type="cpmRodInteractionType" use="optional"/> 
+	</xs:complexType>
+	
+	<xs:simpleType name="cpmRodStiffnessModel">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="solid"/>
+			<xs:enumeration value="tube"/>
+			<xs:enumeration value="log"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="RodMechanics">
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>SuperCell</xs:appinfo>
+			
+			<xs:documentation>Defines the Stiffness properties of a chain of subcells within a supercell
+			  Stiffness determines the model and the parameters for cell stiffness.
+			  InterfaceConstraint sets
+			  Orientation is a Reporter slot to put the subcell orientation into a cell property.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all maxOccurs="1">
+			<xs:element name="Orientation" 			type="cpmVectorPropertyRef" />
+			<xs:element name="Reversal" 			type="cpmDoublePropertyRef" minOccurs="0" />
+			<xs:element name="Stiffness">
+			  <xs:complexType>
+			    <xs:attribute name="model" type="cpmRodStiffnessModel" />
+			    <xs:attribute name="axial" type="cpmUnsignedDouble" />
+			    <xs:attribute name="bending" type="cpmUnsignedDouble" />    
+			  </xs:complexType>
+			</xs:element>
+			<xs:element name="InterfaceConstraint" minOccurs="0">
+			   <xs:complexType>
+			    <xs:attribute name="strength" type="cpmUnsignedDouble" use="required" />
+				<xs:attribute name="length" type="cpmUnsignedDouble" use="optional" />
+			  </xs:complexType>
+			</xs:element>
+		</xs:all>
+		<xs:attribute name="name" type="cpmString" use="optional" />
+	</xs:complexType>
+
+</xs:schema>

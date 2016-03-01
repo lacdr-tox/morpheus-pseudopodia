@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+	<xs:group name="GlobalPlugins">
+		<xs:choice>
+			<xs:element name="Event" 			type="Event"/>
+			<xs:element name="System" 				type="System"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="Event" 			type="Event"/>
+			<xs:element name="System" 				type="System"/>
+		</xs:choice>
+	</xs:group>
+
+	<xs:group name="PDEPlugins">
+		<xs:choice>
+			<xs:element name="System" 				type="System"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="System">
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>Math</xs:appinfo>
+
+   <xs:documentation>
+System of differential or recurrence equations that are solved synchronously.
+
+Solver for differential equations:
+- Euler: 1st order
+- Heun (aka midpoint): 2nd order 
+- Runga-Kutta: 4th order
+
+The 'time-step' sets the (fixed) numerical integration step. Should be small enough to prevent numerical instabilities and achieve sufficiently accurate solutions.
+
+The 'time-scaling' attribute can be used to scale the dynamics relative to the simulation time. This is useful to vary dynamics between submodels in a multiscale model.
+
+Note:
+- Algebraic loops are allowed, since the state of the System at time t depends only on state t-1.
+- When a random number, i.e. rand_norm(0,1), is used in an expression, Euler-Maruyama is automatically used (not supported for runge-kutta).
+
+</xs:documentation>
+		</xs:annotation>
+
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+<!-- 			<xs:element name="MaxTimeStep" type="cpmTime" maxOccurs="1"/> -->
+			<xs:group ref="SystemPlugins" />
+		</xs:choice>
+		<xs:attribute name="name" type="cpmString" use="optional" />
+		<xs:attribute name="time-step" type="cpmDouble" use="required" default="1.0">
+			<xs:annotation>
+				<xs:documentation>Time step ('dt') used in the numerical solver.
+Given in units of system time, i.e. simulation time scaled by the systems time-scaling, in case it is provided.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="time-scaling" type="cpmDouble" use="optional" default="1.0">
+			<xs:annotation>
+					
+				<xs:documentation>Scaling of the system time relative to the simulation time. Can be used to speed up or slow down dynamics of the System.
+
+				Defaults to 1.0.
+				
+				Note: changing the time-scaling does not affect the accuracy of the solution (since tmie-step 'dt' is scaled to the time-scaling).
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="solver" type="cpmSolver" use="required"/>
+	</xs:complexType>
+
+	<xs:simpleType name="cpmSolver">
+		<xs:annotation>
+			<xs:documentation>
+Solver for differential equations:
+- Euler: 1st order
+- Heun (aka midpoint): 2nd order
+- Runga-Kutta: 4th order
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="heun"/>
+			<xs:enumeration value="euler"/>
+			<xs:enumeration value="runge-kutta"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="DiscreteSystem">
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>Math</xs:appinfo>
+			<xs:documentation>System of equations that is updated synchronously.</xs:documentation>
+		</xs:annotation>
+		
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:group ref="DiscreteSystemPlugins" />
+		</xs:choice>
+		<xs:attribute name="name" type="cpmString" use="optional" />
+		<xs:attribute name="time-step" type="cpmDouble" use="optional" />
+	</xs:complexType>
+	
+	<xs:complexType name="TriggeredSystem">
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>Math</xs:appinfo>
+			<xs:documentation>System of equations that is updated synchronously when triggered.</xs:documentation>
+		</xs:annotation>
+		
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:group ref="DiscreteSystemPlugins" />
+		</xs:choice>
+		<xs:attribute name="name" type="cpmString" use="optional" />
+	</xs:complexType>
+
+	<xs:complexType name="Event">
+		<xs:annotation>
+			<xs:appinfo>Math</xs:appinfo>
+			<xs:documentation>System of equations that is applied when a given condition changes to true
+				The condition is tested as often as the symbols in the condition change.
+				If a specific testing frequency is desired it can be defined by the time-step attribute.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:choice minOccurs="0" maxOccurs="unbounded">
+			<xs:element name="Condition" type="cpmMathExpression" minOccurs="1" maxOccurs="1" />
+			<xs:group ref="DiscreteSystemPlugins" />
+		</xs:choice>
+		<xs:attribute name="name" type="cpmString" use="optional" />
+		<xs:attribute name="time-step" type="cpmDouble" use="optional">
+			<xs:annotation>
+				<xs:documentation> Frequency for testing the Event's Condition
+				The testing frequncy is adjusted according to the change of the input symbols of the condition.
+				Setting the time-step attribute overrides the automatic adjustment.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="trigger" type="cpmEventTriggerMode" use="optional" default="on change">
+		</xs:attribute>
+	</xs:complexType>
+
+	<xs:simpleType name="cpmEventTriggerMode">
+		<xs:annotation>
+			<xs:documentation> Trigger of the event
+				"on change" means, that the system is triggered when the condition changes from FALSE to TRUE.
+				"when true" means, that the system is triggered always when the condition is TRUE, no matter what the previous state was.
+
+				While the first version is in line with SBML, the second one follows a more mechanistic view on triggers.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="on change"/>
+			<xs:enumeration value="when true"/>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>
+

@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+			<xs:element name="MembraneLogger" 			type="MembraneLogger"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="MembraneLogger">
+		<xs:annotation>
+			<xs:appinfo>Data Export</xs:appinfo>
+			<xs:documentation>
+Write 2D projection of 3D (spherical) MembraneProperty to file. 
+</xs:documentation>
+		</xs:annotation>
+
+   <xs:all>
+	   
+	   <xs:element name="MembraneProperty" type="cpmMembraneLoggerProperty" minOccurs="1" maxOccurs="unbounded" />
+	   <xs:element name="Plot" 	type="cpmMembraneLoggerPlot" minOccurs="0" maxOccurs="1" />
+		   
+	   </xs:all>
+	   
+	   
+		<xs:attribute name="interval" use="required" type="cpmDouble">
+			<xs:annotation>
+				<xs:documentation>Number of Monte Carlo steps between logging updates.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="endstate" use="optional" type="cpmBoolean">
+			<xs:annotation>
+				<xs:documentation>Only execute analysis plugin at the end of the simulation.
+
+Note: This overrides the specified 'interval'.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+
+                <xs:attribute name="timename" use="optional" type="cpmBoolean">
+                        <xs:annotation>
+                                <xs:documentation>...</xs:documentation>
+                        </xs:annotation>
+                </xs:attribute>
+
+                <xs:attribute name="celltype" use="required" type="cpmCellTypeRef">
+                        <xs:annotation>
+                                <xs:documentation>...</xs:documentation>
+                        </xs:annotation>
+                </xs:attribute>
+<!--				<xs:attribute name="cell_id" use="optional" type="cpmUnsignedInteger">
+					<xs:annotation>
+						<xs:documentation>To log single cell</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+-->	
+				<xs:attribute name="cellids" type="cpmString" use="optional">
+					<xs:annotation>
+						<xs:documentation>Plot specific cell(s), identified by cell ID.
+							
+							- Format:
+							comma-separated: 1,2,3,4,5
+							dash-seperated:  1-5 
+							combined:        1,3-5
+							
+							- Note: 
+							unsigned integers only
+						</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+
+        </xs:complexType>
+
+   <xs:complexType name="cpmMembraneLoggerProperty" >
+	   <xs:annotation>
+		   <xs:documentation>...</xs:documentation>
+	   </xs:annotation>
+	   <xs:attribute name="symbol-ref" use="required" type="cpmDoubleSymbolRef">
+		   <xs:annotation>
+			   <xs:documentation>...</xs:documentation>
+		   </xs:annotation>
+	   </xs:attribute>	   
+   </xs:complexType>
+   
+   <xs:complexType name="cpmMembraneLoggerPlot" >
+	   <xs:annotation>
+	   <xs:documentation>...</xs:documentation>
+	   </xs:annotation>
+	   	   
+	   <xs:attribute name="terminal" type="cpmGnuplotTerminalEnum" use="required">			
+		   <xs:annotation>
+			   <xs:documentation>Gnuplot terminals to plot to screen or file. Note: availability of terminals depends solely on local Gnuplot installation!
+				   Plot to screen: x11 (default), wxt (unix), aqua (MacOS).
+					   Plot to file  : png, jpeg, gif, postscript, pdf.</xs:documentation>
+				   </xs:annotation>		
+			   </xs:attribute>
+			   
+			   <xs:attribute name="interval" type="cpmDouble" use="optional">
+				   <xs:annotation>
+					   <xs:documentation>Interval between plots.</xs:documentation>
+				   </xs:annotation>
+			   </xs:attribute>
+
+				<xs:attribute name="commands" type="cpmBoolean" use="optional">
+					<xs:annotation>
+						<xs:documentation>Write gnuplot commands to file.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				
+				<xs:attribute name="commandSphere" type="cpmBoolean" use="optional">
+					<xs:annotation>
+						<xs:documentation>Write gnuplot scripts to plot a 3D spherical projection of the 2D lattice.
+						
+						Usage:
+						- Animation:
+						  - Create animation of rotation:  gnuplot membraneLogger_command_rotate.plt
+						  - Change terminal (wxt, animated gif, png): edit line membraneLogger_command_rotate.plt
+						- Interactive:
+						  - View sphere:  gnuplot --persist membraneLogger_command_sphere.plt 
+						  - Convert data to XYZ format: awk morphConvertMatrixtoXYZ.awk MemLog_[symbol]_[cellid]_[time].log > membraneData_XYZ.txt
+					
+						By default, it plots the first symbol of the first cell. This can be changed by changing the input to the awk script (either on command line or in rotate script).
+						  
+					</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				
+				
+				<xs:attribute name="superimpose" type="cpmBoolean" use="optional">
+					<xs:annotation>
+						<xs:documentation>Superimpose multiple plots.
+							
+							Notes: 
+							- each overlay gets uniform color (no gradients), hence only useful for binary data.
+							- plots are overlayed in order specified here.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				
+				<xs:attribute name="pointsize" type="cpmDouble" use="optional">
+					<xs:annotation>
+						<xs:documentation>Point size for superimposed plots. 
+							
+							Ignored by non-superimposed plots (which use "with image")
+						</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				
+				<xs:attribute name="persist" use="optional" type="cpmBoolean">
+				   <xs:annotation>
+					   <xs:documentation>If true, plot will persist (i.e. not closed) after simulation has finished.</xs:documentation>
+				   </xs:annotation>
+			   </xs:attribute>
+			   
+			   <xs:attribute name="clean" use="optional" type="cpmBoolean">
+				   <xs:annotation>
+					   <xs:documentation>If true, decorations like colorbar and title are not shown.</xs:documentation>
+				   </xs:annotation>
+			   </xs:attribute>			   
+		   </xs:complexType>
+        
+</xs:schema>
+
+
