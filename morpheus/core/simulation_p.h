@@ -84,7 +84,7 @@ namespace CPM {
 
 namespace SIM {
 	const string dep_graph_format = "svg";
-	bool generate_symbol_graph_and_exit;
+	bool generate_symbol_graph_and_exit = false;
 	
 	int numthreads = 1;
 	shared_ptr<Lattice> global_lattice;
