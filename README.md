@@ -20,7 +20,7 @@ build tools required:
 
 Libraries required (debian package notation):
   - zlib1g-dev libtiff-dev graphviz-dev
-  - libqt4-dev libqt4-sql-sqlite libqt4-network libqt4-webkit libqt4-svg libqt4-xml, libqt4-dev-bin, qt4-dev-tools
+  - libqt4-dev libqt4-sql-sqlite libqt4-network libqt4-webkit libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools
   
 ```
   git clone git@gitlab.com:morpheus.lab/morpheus.git morpheus
