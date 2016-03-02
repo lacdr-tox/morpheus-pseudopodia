@@ -92,17 +92,25 @@
             </Plot>
             <Terminal name="png"/>
         </Gnuplotter>
-        <!--    <Disabled>
         <Logger time-step="100">
-            <Format string="cell.center.x"/>
             <Input>
-                <Disabled>
-                    <Global/>
-                </Disabled>
-                <Cell mapping="all" celltype="cell"/>
+                <Symbol symbol-ref="celltype.cell.size"/>
             </Input>
+            <Output>
+                <TextOutput/>
+            </Output>
+            <Plots>
+                <Plot time-step="500">
+                    <Style style="linespoints"/>
+                    <Terminal terminal="png"/>
+                    <X-axis>
+                        <Symbol symbol-ref="time"/>
+                    </X-axis>
+                    <Y-axis>
+                        <Symbol symbol-ref="celltype.cell.size"/>
+                    </Y-axis>
+                </Plot>
+            </Plots>
         </Logger>
-    </Disabled>
--->
     </Analysis>
 </MorpheusModel>
