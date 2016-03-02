@@ -2,6 +2,8 @@ MESSAGE(STATUS "BUILDING MORPHEUS GUI")
 FIND_PACKAGE(Qt4 COMPONENTS QtCore QtGui QtSql QtNetwork QtWebkit QtXML QtHelp QtSvg REQUIRED)
 ### Include Qt directories  *  Add Qt standard Defines  *  Create QT_LIBRARIES variable, including all required libs 
 
+FIND_PACKAGE(ZLIB REQUIRED)
+
 SET(GUI_EXEC_NAME "morpheus-gui")
 #OPTION(MORPHEUS_REMOTE "Enable support for remote computing resources. Depends on libSSH." OFF)
 
