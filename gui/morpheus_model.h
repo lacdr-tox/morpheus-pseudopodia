@@ -46,7 +46,7 @@ public:
     ~MorphModel();
     /*!< Creates a model description from file @param filepath. */
     bool close();
-	static const int fix_version = 1;
+	static const int morpheus_ml_version = 2;
 
 // The interface for QAbstractItemModel ...
     virtual QModelIndex index( int row, int column, const QModelIndex &parent) const;

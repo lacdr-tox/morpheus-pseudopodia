@@ -955,9 +955,6 @@ void MainWindow::addModel(int index) {
 
     setPermanentStatus("Model loaded successfully");
     if ( ! model->rootNodeContr->getModelDescr().auto_fixes.isEmpty()) {
-        QMessageBox::warning(qApp->activeWindow(),
-                         "Loading model ...",
-                         QString("The model description had several issues, that have been fixed.\n Read the fixBoard.\n"));
         dwid_fixBoard->raise();
     }
 

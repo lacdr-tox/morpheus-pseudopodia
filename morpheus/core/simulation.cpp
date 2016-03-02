@@ -125,7 +125,9 @@ ostream& operator <<(ostream& os, const CPM::STATE& n) {
 
 bool enableEgdeTracking()
 {
-	edgeTracker = shared_ptr<EdgeTrackerBase>(new EdgeListTracker(layer,boundary_neighborhood));
+	// Don't enable the edge tracker when just creating a dependency graph
+	if (!SIM::generate_symbol_graph_and_exit)
+		edgeTracker = shared_ptr<EdgeTrackerBase>(new EdgeListTracker(layer,boundary_neighborhood));
 }
 
 shared_ptr<const EdgeTrackerBase> cellEdgeTracker() {                                                      

@@ -11,7 +11,6 @@ MorpheusModel/Space/MembraneLattice/Resolution/@symbol
 MorpheusModel/PDE/Layer
 MorpheusModel/Global/Field
 
-### BUG: This does not work: how to get the Expression/text into an attribute
 MorpheusModel/Global/Field/Initial/InitPDEExpression/Expression/@text
 MorpheusModel/Global/Field/@value
 
@@ -36,7 +35,6 @@ MorpheusModel/CellTypes/CellType/Variable
 ### Shape plugins ###
 
 # VolumeConstraint
-### BUG: Only the value of the first occurrence are properly moved
 
 MorpheusModel/CellTypes/CellType/VolumeConstraint/Strength/@value
 MorpheusModel/CellTypes/CellType/VolumeConstraint/@strength

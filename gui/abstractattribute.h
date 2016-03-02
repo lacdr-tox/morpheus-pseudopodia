@@ -52,7 +52,7 @@ struct ModelDescriptor {
 
 class ModelException : public exception {
 public:
-	enum Type { UnknownXSDType, UndefinedNode, InvalidNodeIndex, FileIOError };
+	enum Type { UnknownXSDType, UndefinedNode, InvalidNodeIndex, InvalidVersion, FileIOError };
 	virtual const char* what() const throw();
 	QString message;
 	Type type;
