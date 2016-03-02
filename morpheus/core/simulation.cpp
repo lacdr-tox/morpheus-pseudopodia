@@ -269,7 +269,7 @@ void loadCellTypes(XMLNode xCellTypesNode) {
 			
 			SymbolData symbol;
 			symbol.link = SymbolData::PopulationSizeLink;
-			symbol.granularity = Granularity::Cell;
+			symbol.granularity = Granularity::Global;
 			symbol.name = string("celltype.") + name + ".size";
 			symbol.celltype = celltypes.back();
 			
@@ -1393,7 +1393,7 @@ shared_ptr <const Lattice> getLattice() {
 		assert(0);
 		exit(-1);
 	}
-	cout << "getLattice" << endl;
+	//cout << "getLattice" << endl;
 	return global_lattice;
 };
 
