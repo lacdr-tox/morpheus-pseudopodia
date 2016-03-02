@@ -37,7 +37,7 @@ MorphModel::MorphModel(QObject *parent) :
 		qDebug() << "Error creating MorpheusModel from plain template ... ";
 		throw;
 	}
-	rootNodeContr->attribute("version")->set(QString::number(fix_version));
+	rootNodeContr->attribute("version")->set(QString::number(morpheus_ml_version));
 
     // nodeControllers created all required elements
     // Now we clear the history of changes ...
@@ -54,10 +54,10 @@ try : QAbstractItemModel(parent),  xml_file(xmlFile)
 {
     sweep_lock = false;
 
-    QList<MorphModelEdit> edits = applyAutoFixes(xml_file.xmlDocument);
-
-    if (xml_file.xmlDocument.documentElement().nodeName() != "MorpheusModel")
+	if (xml_file.xmlDocument.documentElement().nodeName() != "MorpheusModel")
         throw ModelException(ModelException::UndefinedNode, QString("File \"%1\" has wrong wrong root node '%2'.\nExpected 'MorpheusModel'!").arg(xmlFile,xml_file.xmlDocument.nodeName()));
+
+    QList<MorphModelEdit> edits = applyAutoFixes(xml_file.xmlDocument);
 
     //XML in datenstruktur einlesen (nodeController)
     rootNodeContr = new nodeController(NULL, xml_file.xmlDocument.documentElement());
@@ -70,6 +70,10 @@ try : QAbstractItemModel(parent),  xml_file(xmlFile)
     }
 
     initModel();
+	if (!edits.empty()) 
+		QMessageBox::warning(qApp->activeWindow(),
+			"Auto Fixes",
+			QString("Your Morpheus model was upgraded to the current version %1.\nSee the FixBoard for details.\nModel elements that could not be converted were removed.").arg(morpheus_ml_version) );
 }
 catch (QString e) {
 	throw ModelException(ModelException::FileIOError, e);
@@ -80,10 +84,12 @@ QAbstractItemModel(parent), xml_file(model)
 {
     sweep_lock = false;
 
-    QList<MorphModelEdit> edits = applyAutoFixes(xml_file.xmlDocument);
-
     if (xml_file.xmlDocument.documentElement().nodeName() != "MorpheusModel")
         throw ModelException(ModelException::UndefinedNode, QString("Imported Document has wrong wrong root node '%1'.\nExpected 'MorpheusModel'!").arg(xml_file.xmlDocument.nodeName()));
+	
+    QList<MorphModelEdit> edits = applyAutoFixes(xml_file.xmlDocument);
+
+	
 
     //XML in datenstruktur einlesen (nodeController)
     rootNodeContr = new nodeController(NULL, xml_file.xmlDocument.documentElement());
@@ -96,6 +102,11 @@ QAbstractItemModel(parent), xml_file(model)
     }
     
 	initModel();
+
+	if (!edits.empty()) 
+		QMessageBox::warning(qApp->activeWindow(),
+			"Auto Fixes",
+			QString("Your Morpheus model was upgraded to the current version %1.\nSee the FixBoard for details.\nModel elements that could not be converted were removed.").arg(morpheus_ml_version) );
 }
 
 MorphModel::~MorphModel()
@@ -257,84 +268,91 @@ void MorphModel::initModel()
 
 QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 
+	int morpheus_file_version = document.documentElement().attribute("version","1").toInt();
+	int fix_version;
 	QList<MorphModel::AutoFix> fixes;
-	MorphModel::AutoFix a;
-	a.match_path  = "CellularPottsModel"; a.move_path = "MorpheusModel"; fixes.append(a);
-	a.match_path  = "MorpheusModel/Lattice/@size"; a.move_path = "MorpheusModel/Space/Lattice/Size/@value";fixes.append(a);
-	a.match_path  = "MorpheusModel/Lattice/@structure"; a.move_path = "MorpheusModel/Space/Lattice/@class";fixes.append(a);
-	a.match_path  = "MorpheusModel/Lattice/BoundaryConditions"; a.move_path = "MorpheusModel/Space/Lattice/BoundaryConditions";fixes.append(a);
-	
-	a.match_path  = "MorpheusModel/Simulation/SpaceScale/NodeLength"; a.move_path = "MorpheusModel/Space/Lattice/NodeLength";fixes.append(a);
-	a.match_path  = "MorpheusModel/Simulation/SpaceScale/MembraneSize"; a.move_path = "MorpheusModel/Space/MembraneSize";fixes.append(a);
-
-	a.match_path  = "MorpheusModel/Simulation/@start"; a.move_path = "MorpheusModel/Time/StartTime/@value";fixes.append(a);
-	a.match_path  = "MorpheusModel/Simulation/@stop"; a.move_path = "MorpheusModel/Time/StopTime/@value";fixes.append(a);
-	a.match_path  = "MorpheusModel/Simulation/@save"; a.move_path = "MorpheusModel/Time/SaveInterval/@value";fixes.append(a);
-	a.match_path  = "MorpheusModel/Simulation/RandomSeed"; a.move_path = "MorpheusModel/Time/RandomSeed";fixes.append(a);
-
-	a.match_path  = "MorpheusModel/Simulation/MCSDuration"; a.move_path = "MorpheusModel/CPM/MCSDuration";fixes.append(a);
-	a.match_path  = "MorpheusModel/Simulation/Title"; a.move_path = "MorpheusModel/Description/Title";fixes.append(a);
-
-	a.match_path  = "MorpheusModel/CellType"; a.move_path = "MorpheusModel/CellTypes/CellType"; fixes.append(a);
-	a.match_path  = "MorpheusModel/CellPopulation"; a.move_path = "MorpheusModel/CellPopulations/Population"; fixes.append(a);
-	a.match_path  = "MorpheusModel/Interaction"; a.move_path = "MorpheusModel/CPM/Interaction"; fixes.append(a);
-	a.match_path  = "MorpheusModel/MetropolisKinetics"; a.move_path = "MorpheusModel/CPM/MetropolisKinetics"; fixes.append(a);
-	a.match_path  = "MorpheusModel/Analysis/Logger/Cell"; a.move_path = "MorpheusModel/Analysis/Logger/Input/Cell"; fixes.append(a);
-	
-	a.match_path  = "MorpheusModel/CPM/Interaction/Neighborhood"; a.move_path = "MorpheusModel/Space/Lattice/Neighborhood";fixes.append(a);
-	
-	a.match_path  = "MorpheusModel/Space/MembraneSize/@value"; a.move_path = "MorpheusModel/Space/MembraneProperty/@resolution";fixes.append(a);
-	a.match_path  = "MorpheusModel/Space/MembraneProperty"; a.move_path = "MorpheusModel/Space/MembraneLattice";fixes.append(a);
-	
-	a.match_path  = "MorpheusModel/CellTypes/CellType/System/Equation"; a.move_path = "MorpheusModel/CellTypes/CellType/System/Rule";fixes.append(a);
-	a.match_path  = "MorpheusModel/CellTypes/CellType/Event/Equation"; a.move_path = "MorpheusModel/CellTypes/CellType/Event/Rule";fixes.append(a);
-
-	
-	QFile file(":/data/autofix_rules.txt");
-	if (file.open(QIODevice::ReadOnly | QIODevice::Text) ) {
-		qDebug() << "Autofix rules from file."; 
-		
-		QTextStream in(&file);
-		QStringList paths;
-		while(!in.atEnd()) {
-			QString line = in.readLine().remove(" ");
-			// ignore lines starting with comments
-			if( line.startsWith("#") ){
-				continue;
-			}
-			// if encountering empty line, take the last two lines as paths (old, new)
-			if( line.isEmpty() ){
-				if( paths.length() >= 2 ){
-					a.match_path = paths.at( paths.length() - 2 );
-					a.move_path  = paths.at( paths.length() - 1 );
-					qDebug() << "AutoFix Rule:\nold path: " << a.match_path << "\nnew path: " << a.move_path << "\n\n";
-					fixes.append(a);
-					paths.clear();
-				}
-				else{
-					qDebug() << "Encountered an empty line without two preceding non-empty lines... I'll assume this is just for layout. However, make sure there are no empty lines in between OLD and NEW path.";
-					paths.clear();
-				}
-			}
-			else{
-				paths.append( line );
-			}
-		}
-	}
-	else{
-		qDebug() << "Error: Autofix rules file NOT found."; 
-	}
-
-	
-	
 	QList<MorphModelEdit> edits;
 	
-	int morpheus_file_version = document.documentElement().attribute("version","0").toInt();
-	
-	qDebug() << "NUmber of AutoFix rules = " << fixes.size();
+	if (morpheus_file_version == morpheus_ml_version) {
+		return edits;
+	}
+	else if (morpheus_file_version == 1) {
+		fix_version=2;
+		MorphModel::AutoFix a;
+		a.match_path  = "CellularPottsModel"; a.move_path = "MorpheusModel"; fixes.append(a);
+		a.match_path  = "MorpheusModel/Lattice/@size"; a.move_path = "MorpheusModel/Space/Lattice/Size/@value";fixes.append(a);
+		a.match_path  = "MorpheusModel/Lattice/@structure"; a.move_path = "MorpheusModel/Space/Lattice/@class";fixes.append(a);
+		a.match_path  = "MorpheusModel/Lattice/BoundaryConditions"; a.move_path = "MorpheusModel/Space/Lattice/BoundaryConditions";fixes.append(a);
+		
+		a.match_path  = "MorpheusModel/Simulation/SpaceScale/NodeLength"; a.move_path = "MorpheusModel/Space/Lattice/NodeLength";fixes.append(a);
+		a.match_path  = "MorpheusModel/Simulation/SpaceScale/MembraneSize"; a.move_path = "MorpheusModel/Space/MembraneSize";fixes.append(a);
+
+		a.match_path  = "MorpheusModel/Simulation/@start"; a.move_path = "MorpheusModel/Time/StartTime/@value";fixes.append(a);
+		a.match_path  = "MorpheusModel/Simulation/@stop"; a.move_path = "MorpheusModel/Time/StopTime/@value";fixes.append(a);
+		a.match_path  = "MorpheusModel/Simulation/@save"; a.move_path = "MorpheusModel/Time/SaveInterval/@value";fixes.append(a);
+		a.match_path  = "MorpheusModel/Simulation/RandomSeed"; a.move_path = "MorpheusModel/Time/RandomSeed";fixes.append(a);
+
+		a.match_path  = "MorpheusModel/Simulation/MCSDuration"; a.move_path = "MorpheusModel/CPM/MCSDuration";fixes.append(a);
+		a.match_path  = "MorpheusModel/Simulation/Title"; a.move_path = "MorpheusModel/Description/Title";fixes.append(a);
+
+		a.match_path  = "MorpheusModel/CellType"; a.move_path = "MorpheusModel/CellTypes/CellType"; fixes.append(a);
+		a.match_path  = "MorpheusModel/CellPopulation"; a.move_path = "MorpheusModel/CellPopulations/Population"; fixes.append(a);
+		a.match_path  = "MorpheusModel/Interaction"; a.move_path = "MorpheusModel/CPM/Interaction"; fixes.append(a);
+		a.match_path  = "MorpheusModel/MetropolisKinetics"; a.move_path = "MorpheusModel/CPM/MetropolisKinetics"; fixes.append(a);
+		a.match_path  = "MorpheusModel/Analysis/Logger/Cell"; a.move_path = "MorpheusModel/Analysis/Logger/Input/Cell"; fixes.append(a);
+		
+		a.match_path  = "MorpheusModel/CPM/Interaction/Neighborhood"; a.move_path = "MorpheusModel/Space/Lattice/Neighborhood";fixes.append(a);
+		
+		a.match_path  = "MorpheusModel/Space/MembraneSize/@value"; a.move_path = "MorpheusModel/Space/MembraneProperty/@resolution";fixes.append(a);
+		a.match_path  = "MorpheusModel/Space/MembraneProperty"; a.move_path = "MorpheusModel/Space/MembraneLattice";fixes.append(a);
+		
+		a.match_path  = "MorpheusModel/CellTypes/CellType/System/Equation"; a.move_path = "MorpheusModel/CellTypes/CellType/System/Rule";fixes.append(a);
+		a.match_path  = "MorpheusModel/CellTypes/CellType/Event/Equation"; a.move_path = "MorpheusModel/CellTypes/CellType/Event/Rule";fixes.append(a);
+
+		
+		QFile file(":/data/autofix_rules.txt");
+		if (file.open(QIODevice::ReadOnly | QIODevice::Text) ) {
+			qDebug() << "Autofix rules from file."; 
+			
+			QTextStream in(&file);
+			QStringList paths;
+			while(!in.atEnd()) {
+				QString line = in.readLine().remove(" ");
+				// ignore lines starting with comments
+				if( line.startsWith("#") ){
+					continue;
+				}
+				// if encountering empty line, take the last two lines as paths (old, new)
+				if( line.isEmpty() ){
+					if( paths.length() >= 2 ){
+						a.match_path = paths.at( paths.length() - 2 );
+						a.move_path  = paths.at( paths.length() - 1 );
+						qDebug() << "AutoFix Rule:\nold path: " << a.match_path << "\nnew path: " << a.move_path << "\n\n";
+						fixes.append(a);
+						paths.clear();
+					}
+					else{
+						qDebug() << "Encountered an empty line without two preceding non-empty lines... I'll assume this is just for layout. However, make sure there are no empty lines in between OLD and NEW path.";
+						paths.clear();
+					}
+				}
+				else{
+					paths.append( line );
+				}
+			}
+		}
+		else{
+			qDebug() << "Error: Autofix rules file NOT found."; 
+		}
+	}
+	else {
+		throw  ModelException(ModelException::InvalidVersion, QString("Incompatible MorpheusML version %1").arg(morpheus_file_version) );
+	}
+	qDebug() << QString("Applying fixes from version %1 to %2").arg(morpheus_file_version).arg(fix_version);
+	qDebug() << "Number of AutoFix rules = " << fixes.size();
 	
 	for (int i=0; i<fixes.size(); i++) {
-		qDebug() << "Autofix rule nr. " << (i+1);
+// 		qDebug() << "Autofix rule nr. " << (i+1);
 		QList<QDomNode> matches;
 		QString search_path = fixes[i].match_path;
 		// remove delete 
@@ -506,80 +524,11 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		}
 	}
 	
-	if (morpheus_file_version < 1) {
-		// Add Diffusion unit µm²/s
-		QDomNodeList matches = document.elementsByTagName("Diffusion");
-		for (int i=0; i<matches.length();i++) {
-			QDomElement match =  matches.at(i).toElement();
-			match.setAttribute("unit","µm²/s");
-			MorphModelEdit ed;
-			ed.xml_parent = match;
-			ed.edit_type = AttribAdd;
-			ed.info = QString("Unit of Diffusion Constant set to µm²/s");
-			ed.name =  match.tagName();
-			edits.append(ed);
-		}
-		
-		// Now reformating ancient Property nodes
-		matches = document.elementsByTagName("Property");
-		for (int i=0; i<matches.length();i++) {
-			QDomElement match =  matches.at(i).toElement();
-			QDomNode child;
-			if ( ! match.firstChildElement("Double").isNull() ) {
-				child = match.firstChildElement("Double");
-			}
-			else if ( ! match.firstChildElement("Vector").isNull() ) {
-				child = match.firstChildElement("Vector");
-				match.toElement().setTagName("PropertyVector");
-			}
-			else if ( ! match.firstChildElement("Queue").isNull() ) {
-				child = match.firstChildElement("Queue");
-				match.setTagName("PropertyQueue");
-			}
-			else {
-				continue;
-			}
-			match.setAttribute("value", child.firstChild().nodeValue());
-			match.removeChild(child);
-
-			MorphModelEdit ed;
-			ed.xml_parent = match;
-			ed.edit_type = NodeRename;
-			ed.info = QString("Property  ") + match.attribute("symbol") + " was reformated.";
-			ed.name =  match.tagName();
-			edits.append(ed);
-		}
-
-		// Now reformating ancient Constant nodes
-		matches = document.elementsByTagName("Constant");
-		for (int i=0; i<matches.length();i++) {
-			QDomElement match =  matches.at(i).toElement();
-			QDomNode child;
-			if ( ! match.firstChildElement("Double").isNull() ) {
-				child = match.firstChildElement("Double");
-			}
-			else if ( ! match.firstChildElement("Vector").isNull() ) {
-				child = match.firstChildElement("Vector");
-				match.toElement().setTagName("ConstantVector");
-			}
-			else {
-				continue;
-			}
-
-			match.setAttribute("value", child.firstChild().nodeValue());
-			match.removeChild(child);
-
-			MorphModelEdit ed;
-			ed.xml_parent = match;
-			ed.edit_type = NodeRename;
-			ed.info = QString("Constant  ") + match.attribute("symbol") + " was reformated.";
-			ed.name =  match.tagName();
-			edits.append(ed);
-		}
-	}
-	
 	document.documentElement().setAttribute( "version",QString::number(fix_version) );
-	
+	if (fix_version != morpheus_ml_version) {
+		auto new_edits = applyAutoFixes(document);
+		edits.append(new_edits);
+	}
 	return edits;
 }
 
