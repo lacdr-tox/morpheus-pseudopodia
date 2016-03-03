@@ -168,7 +168,7 @@ Defines a symbol with accessible x, y and z coordinates.</xs:documentation>
 			<xs:documentation>Number of neighboring lattice sites to take into account.</xs:documentation>
 		</xs:annotation>
 		<xs:choice>
-			<xs:element name="Order" type="cpmUnsignedInteger">
+			<xs:element name="Order" type="cpmUnsignedInteger" default="2" >
 				<xs:annotation>
 					<xs:documentation>Assuming a two dim. lattice order means
 1: 4 neighbors (von Neumann)
@@ -176,7 +176,7 @@ Defines a symbol with accessible x, y and z coordinates.</xs:documentation>
 etc...</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-			<xs:element name="Distance" type="cpmUnsignedDouble">
+			<xs:element name="Distance" type="cpmUnsignedDouble" default="2">
 				<xs:annotation>
 					<xs:documentation>Maximal distance to neighbor to take into account (in units of lattice nodes).</xs:documentation>
 				</xs:annotation>
