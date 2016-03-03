@@ -14,14 +14,6 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
         <Field symbol="act" value="0" name="actin activity">
             <Diffusion rate="0"/>
         </Field>
-        <!--    <Disabled>
-        <System solver="euler" time-step="1.0">
-            <Rule symbol-ref="act">
-                <Expression>act</Expression>
-            </Rule>
-        </System>
-    </Disabled>
--->
     </Global>
     <Space>
         <Lattice class="cubic">

@@ -26,7 +26,7 @@
     </Space>
     <Time>
         <StartTime value="0"/>
-        <StopTime value="1500"/>
+        <StopTime value="2500"/>
         <TimeSymbol symbol="time"/>
         <RandomSeed value="1456688742"/>
     </Time>
@@ -39,7 +39,7 @@
             <VolumeConstraint target="Vt" strength="1.0"/>
             <SurfaceConstraint target="0.9" strength="1.0"/>
             <CellDivision division-plane="major">
-                <Condition>rand_uni(0,1) &lt; 0.005 and cell.volume > Vt*0.9</Condition>
+                <Condition>rand_uni(0,1) &lt; 0.0025 and cell.volume > Vt*0.9</Condition>
                 <Triggers>
                     <Rule symbol-ref="divisions">
                         <Expression>divisions + 0.5</Expression>
@@ -57,7 +57,7 @@
             <Contact type1="cell" type2="medium" value="-4"/>
             <Contact type1="cell" type2="matrix" value="-2"/>
         </Interaction>
-        <MCSDuration value="1.0"/>
+        <MCSDuration value="1"/>
         <MetropolisKinetics temperature="0.5" stepper="edgelist">
             <Neighborhood>
                 <Order>3</Order>
@@ -86,7 +86,7 @@
             <Channel symbol-ref="cell.id" exclude-medium="true"/>
             <Channel symbol-ref="c" exclude-medium="true" celltype="cell" outline="true"/>
         </TiffPlotter>
-        <Gnuplotter time-step="100" decorate="false">
+        <Gnuplotter time-step="100" decorate="true">
             <Plot>
                 <Cells value="cell.id" slice="50"/>
             </Plot>

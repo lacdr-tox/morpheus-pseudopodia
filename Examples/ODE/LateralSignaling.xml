@@ -103,11 +103,11 @@ http://dx.doi.org/10.1098/rsif.2012.0766
                 <Symbol symbol-ref="Y"/>
             </Input>
             <Output>
-                <TextOutput/>
+                <TextOutput file-separation="cell"/>
             </Output>
             <Plots>
                 <Plot time-step="-1">
-                    <Style point-size="0.5" style="points"/>
+                    <Style style="lines" line-width="2"/>
                     <Terminal terminal="png"/>
                     <X-axis>
                         <Symbol symbol-ref="t"/>
