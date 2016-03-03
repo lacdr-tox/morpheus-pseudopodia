@@ -54,7 +54,7 @@ TIFF images can be viewed with external tools such as Fiji / ImageJ (http://fiji
                 <Field symbol-ref="u" slice="25"/>
             </Plot>
         </Gnuplotter>
-        <TiffPlotter timelapse="false" format="32bit" OME-header="true" compression="false" time-step="0.5">
+        <TiffPlotter timelapse="true" format="32bit" OME-header="true" compression="false" time-step="0.5">
             <Channel symbol-ref="u"/>
             <Channel symbol-ref="v"/>
         </TiffPlotter>

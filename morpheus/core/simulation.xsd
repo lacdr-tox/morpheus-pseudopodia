@@ -34,7 +34,7 @@
 		<xs:all>
 <!-- 			<xs:element name="BoundaryConditions" type="cpmCPMBoundaryConditions" minOccurs="0" /> -->
 			<xs:element name="MetropolisKinetics" type="MetropolisKinetics" />
-			<xs:element name="MCSDuration" type="cpmTime">
+			<xs:element name="MCSDuration" type="cpmTime" default="1">
 				<xs:annotation>
 					<xs:documentation>Simulation time passing during one Monte Carlo step of the cpm simulation.</xs:documentation>
 				</xs:annotation>
@@ -248,7 +248,7 @@ This can be used to model the resistance of cell membrane to fluctuations.
 -->
 		</xs:all>
 
-		<xs:attribute name="stepper" type="cpmStepper" use="required" />
+		<xs:attribute name="stepper" type="cpmStepper" use="required"/>
 		<xs:attribute name="temperature" type="cpmDouble" use="required" default="1">
 			<xs:annotation>
 				<xs:documentation>Boltzmann temperature in Metropolis algorithm.

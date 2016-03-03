@@ -21,7 +21,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)//, ui(new Ui::Main
  qDebug() << "(Mac only) Library Path (incl. plugins): " << libpaths;
 #endif
 */
-    QCoreApplication::setOrganizationName("Morpheus");
+	QStringList libpaths = QApplication::libraryPaths();
+	qDebug() << "Using library Path (should include Qt plugins dir): " << libpaths;
+
+	QCoreApplication::setOrganizationName("Morpheus");
     QCoreApplication::setOrganizationDomain("morpheus.org");
     QCoreApplication::setApplicationName("Morpheus");
     QApplication::setWindowIcon(QIcon(":/morpheus.png") );
@@ -682,8 +685,8 @@ void MainWindow::loadXMLFile()
 
 void MainWindow::startSimulation()
 {
-	documentsDock->setFocus();
-// 	jobQueueDock->setFocus();
+//	documentsDock->setFocus();
+ 	jobQueueDock->setFocus();
 
 	if (current_model) {
 		if (editorStack->currentWidget()==sweeper){

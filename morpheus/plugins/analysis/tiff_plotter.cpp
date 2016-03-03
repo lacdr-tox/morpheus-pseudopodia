@@ -696,12 +696,15 @@ void TiffPlotter::writeTIFF(CPM::CELL_ID cellid)
 		int xml_size;
 		XMLSTR ome_data=omeXML.createXMLString(1,&xml_size);
 		
-		cout << "OME-TIFF Header" << endl;
-		cout << string(ome_data) << endl;
+		//cout << "OME-TIFF Header" << endl;
+		//cout << string(ome_data) << endl;
 		
-		TIFFSetDirectory(output, 0); // only update the TIFFTAG_IMAGEDESCRIPTION of the first image
+		// only update the TIFFTAG_IMAGEDESCRIPTION of the first image
+		// note: this is incompatible with compressed timelapse images because compression disables random access 
+		TIFFSetDirectory(output, 0); 
 		TIFFSetField(output, TIFFTAG_IMAGEDESCRIPTION, ome_data);
 		TIFFWriteDirectory(output);
+		
 	//  	for(uint i=0; i<im_desc.size(); i++){
 	//  		TIFFSetDirectory(output, i); // only update the TIFFTAG_IMAGEDESCRIPTION of the first image
 	//  		TIFFSetField(output, TIFFTAG_IMAGEDESCRIPTION, ome_data);
