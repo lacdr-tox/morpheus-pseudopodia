@@ -594,7 +594,7 @@ string CellPainter::getPaletteCmd() {
 	} else if ( external_range_max ){
 		cmd << "set cbrange [*:" << range_max << "];\n"; 
 	} else if ((! color_map.empty() && symbol.isInteger())) { // if plotting celltypes
-		cmd << "set cbrange [0:" << color_map.size()-1 << "];\n";
+		cmd << "set cbrange [" << color_map.begin()->first << ":" << color_map.rbegin()->first << "];\n";
 	} else if (min_val < max_val){
 		cmd << "set cbrange [" << min_val << ":" << max_val << "];\n"; 
 	} else { // else, let gnuplot choose range
