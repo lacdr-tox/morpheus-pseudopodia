@@ -31,3 +31,23 @@ Libraries required (debian package notation):
   make && sudo make install
 ```
 
+
+<!--  StatCounter -->
+<script type="text/javascript">
+var sc_project=10858269; 
+var sc_invisible=1; 
+var sc_security="392b0df5"; 
+var scJsHost = (("https:" == document.location.protocol) ?
+"https://secure." : "http://www.");
+document.write("<sc"+"ript type='text/javascript' src='" +
+scJsHost+
+"statcounter.com/counter/counter.js'></"+"script>");
+</script>
+<noscript><div class="statcounter"><a title="shopify
+analytics ecommerce tracking"
+href="http://statcounter.com/shopify/" target="_blank"><img
+class="statcounter"
+src="http://c.statcounter.com/10858269/0/392b0df5/1/"
+alt="shopify analytics ecommerce
+tracking"></a></div></noscript>
+<!-- End of StatCounter Code -->
