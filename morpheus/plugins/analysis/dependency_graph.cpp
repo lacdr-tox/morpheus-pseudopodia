@@ -13,13 +13,34 @@ DependencyGraph::DependencyGraph()
 	format.setConversionMap(format_names);
 	format.setDefault("png");
 	registerPluginParameter(format);
+	
+	exclude_plugins.setXMLPath("exclude-plugins");
+	exclude_symbols.setXMLPath("exclude-symbols");
+	registerPluginParameter(exclude_plugins);
+	registerPluginParameter(exclude_symbols);
 }
 
 
 void DependencyGraph::analyse(double time)
 {
 	stringstream s_tmp;
-	SIM::getGlobalScope()->write_graph(s_tmp);
+	Scope::DepGraphConf config;
+	config.exclude_plugins.insert(this->XMLName());
+	if (exclude_plugins.isDefined()) {
+		vector<string> excludes = tokenize(exclude_plugins(),"|");
+		for (string e : excludes) {
+			e.erase(remove_if(e.begin(), e.end(), [](char i) { return i == ' ';} ), e.end());
+			config.exclude_plugins.insert(e);
+		}
+	}
+	if (exclude_symbols.isDefined()) {
+		vector<string> excludes = tokenize(exclude_symbols(),"|");
+		for (auto& e : excludes) {
+			e.erase(remove_if(e.begin(), e.end(), [](char i) { return i == ' ';} ), e.end());
+			config.exclude_symbols.insert(e);
+		}
+	}
+	SIM::getGlobalScope()->write_graph(s_tmp,config);
 
 	GVC_t *gvc = gvContext();
 	if (!gvc) {

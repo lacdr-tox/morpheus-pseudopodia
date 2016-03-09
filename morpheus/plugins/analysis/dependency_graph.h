@@ -9,10 +9,10 @@
 //
 //////
 
-// #include "core/simulation.h"
+#include <cctype>
+#include <graphviz/gvc.h>
 #include "core/interfaces.h"
 #include "core/plugin_parameter.h"
-#include <graphviz/gvc.h>
 
 /** \ingroup AnalysisPlugins
  *  \defgroup DependencyGraph
@@ -46,6 +46,8 @@ Example: Plot CPM state showing two cell properties to PNG files
 class DependencyGraph: public AnalysisPlugin {
 	enum class OutFormat {SVG, PNG, PDF, DOT};
 	PluginParameter2<OutFormat,XMLNamedValueReader, DefaultValPolicy > format;
+	PluginParameter2<string,XMLValueReader,OptionalPolicy> exclude_symbols;
+	PluginParameter2<string,XMLValueReader,OptionalPolicy> exclude_plugins;
 	
 public:
 	DECLARE_PLUGIN("DependencyGraph");

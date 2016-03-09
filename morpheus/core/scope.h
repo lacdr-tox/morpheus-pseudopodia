@@ -15,8 +15,11 @@
 #include "symbol.h"
 // #include "symbolfocus.h"
 #include <assert.h>
+
 // #include "interfaces.h"
+class Plugin;
 class TimeStepListener;
+
 
 class Scope {
 public:
@@ -52,7 +55,8 @@ public:
 	string getSymbolType(string name) const;
 	string getSymbolBaseName(string name) const;
 	
-	void write_graph(ostream& out) const;
+	struct DepGraphConf { set<string> exclude_symbols; set<string> exclude_plugins; };
+	void write_graph(ostream& out, const DepGraphConf& config) const;
 	map<string, string> graphstyle;
 	
 private:
@@ -78,6 +82,8 @@ private:
 	friend class TimeStepListener;
 	multimap<string, TimeStepListener *> symbol_readers;
 	multimap<string, TimeStepListener *> symbol_writers;
+	
+	
 	set<TimeStepListener *> local_tsl;
 	void registerSymbolWriter(TimeStepListener* tsl, string symbol);
 	void registerSymbolReader(TimeStepListener* tsl, string symbol);
@@ -93,8 +99,16 @@ private:
 	multiset<string> unresolved_symbols;
 	
 	static int max_scope_id;
-	void write_graph_local_variables(ostream& out) const;
+	
+	/// Generation of DotGraph of Dependencies
+	// Filtered Copy of the scheduling elements
+// 	mutable map<string, SymbolData> filtered_local_symbols;
+// 	mutable multimap<string, TimeStepListener *> filtered_local_tls;
+	mutable multimap<string, TimeStepListener *> filtered_symbol_readers;
+	mutable multimap<string, TimeStepListener *> filtered_symbol_writers;
+	void write_graph_local_variables(ostream& definitions, ostream& links, const DepGraphConf& config) const;
 	string tslDotName(TimeStepListener* tsl) const;
+	string pluginDotName(Plugin* p) const;
 	string dotStyleForType(const string& type) const;
 	
 };

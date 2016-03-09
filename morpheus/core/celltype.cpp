@@ -225,20 +225,26 @@ void CellType::init() {
 	SIM::leaveScope();
 }
 
-set< SymbolDependency > CellType::cpmDependSymbols() const
+multimap<Plugin*, SymbolDependency > CellType::cpmDependSymbols() const
 {
-	set<SymbolDependency> s;
+	multimap<Plugin*, SymbolDependency > s;
 	for (uint i=0; i<energies.size();i++) {
 		set<SymbolDependency> s2 = energies[i]->getDependSymbols();
-		if (!s2.empty()) s.insert(s2.begin(),s2.end());
+		for (auto& dep : s2) {
+			s.insert(make_pair(energies[i].get(),dep));
+		}
 	}
 	for (uint i=0; i<check_update_listener.size();i++) {
 		set<SymbolDependency> s2 = check_update_listener[i]->getDependSymbols();
-		if (!s2.empty()) s.insert(s2.begin(),s2.end());
+		for (auto& dep : s2) {
+			s.insert(make_pair(check_update_listener[i].get(),dep));
+		}
 	}
 	for (uint i=0; i<update_listener.size();i++) {
 		set<SymbolDependency> s2 = update_listener[i]->getDependSymbols();
-		if (!s2.empty()) s.insert(s2.begin(),s2.end());
+		for (auto& dep : s2) {
+			s.insert(make_pair(update_listener[i].get(),dep));
+		}
 	}
 	
 	return s;

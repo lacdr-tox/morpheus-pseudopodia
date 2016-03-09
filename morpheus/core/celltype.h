@@ -75,7 +75,7 @@ public:
 // 	void setName(const string& n)  __attribute__ ((deprecated)) { name =n; };
 	uint getID() const { return id; };               ///< celltype cpm id
 	const Scope* getScope() const { return local_scope; };
-	set<SymbolDependency> cpmDependSymbols() const;
+	std::multimap< Plugin*, SymbolDependency > cpmDependSymbols() const;
 
 	vector< CPM::CELL_ID > getCellIDs() const { return cell_ids; }
 	int getPopulationSize() { return cell_ids.size(); }

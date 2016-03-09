@@ -9,6 +9,8 @@
 	
 	<xs:complexType name="DependencyGraph">
 		<xs:attribute name="format" use="required" type="GraphVizFormat" />
+		<xs:attribute name="exclude-symbols" use="optional" type="cpmString" />
+		<xs:attribute name="exclude-plugins" use="optional" type="cpmString" />
 	</xs:complexType>
 	
 	<xs:simpleType name="GraphVizFormat">
