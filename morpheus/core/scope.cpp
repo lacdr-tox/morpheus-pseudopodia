@@ -496,7 +496,7 @@ void Scope::write_graph_local_variables(ostream& definitions, ostream& links, co
 			}
 		
 		auto cpm_dep = ct_component->cpmDependSymbols();
-		bool found_valid_cpm_plugin;
+		bool found_valid_cpm_plugin = false;
 		for (auto dep : cpm_dep) {
 			if ( !config.exclude_plugins.count( dep.first->XMLName() )) {
 				found_valid_cpm_plugin = true;
@@ -511,7 +511,7 @@ void Scope::write_graph_local_variables(ostream& definitions, ostream& links, co
 			string plugin_node_name;
 			string last_dep = "";
 			for (auto dep : cpm_dep) {
-				if ( !config.exclude_plugins.count( dep.first->XMLName() ))
+				if ( config.exclude_plugins.count( dep.first->XMLName() ))
 					continue;
 				
 				if (dep.first->XMLName() != current_plugin) {
