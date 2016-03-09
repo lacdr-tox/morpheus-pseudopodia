@@ -27,14 +27,14 @@ void DependencyGraph::analyse(double time)
 	Scope::DepGraphConf config;
 	config.exclude_plugins.insert(this->XMLName());
 	if (exclude_plugins.isDefined()) {
-		vector<string> excludes = tokenize(exclude_plugins(),"|");
+		vector<string> excludes = tokenize(exclude_plugins(),"|,");
 		for (string e : excludes) {
 			e.erase(remove_if(e.begin(), e.end(), [](char i) { return i == ' ';} ), e.end());
 			config.exclude_plugins.insert(e);
 		}
 	}
 	if (exclude_symbols.isDefined()) {
-		vector<string> excludes = tokenize(exclude_symbols(),"|");
+		vector<string> excludes = tokenize(exclude_symbols(),"|,");
 		for (auto& e : excludes) {
 			e.erase(remove_if(e.begin(), e.end(), [](char i) { return i == ' ';} ), e.end());
 			config.exclude_symbols.insert(e);
