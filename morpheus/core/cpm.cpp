@@ -1,6 +1,7 @@
 #include "cpm.h"
 #include "interaction_energy.h"
 
+
 CPMSampler::CPMSampler() :
 	ContinuousProcessPlugin(MCS,XMLSpec::XML_NONE)
 {
@@ -59,7 +60,8 @@ void CPMSampler::init(const Scope* scope)
 	
 	edge_tracker = CPM::cellEdgeTracker();
 	
-	interaction_energy->init();
+	interaction_energy->init(scope);
+	registerInputSymbols( interaction_energy->getDependSymbols() );
 	
 	current_update.boundary = unique_ptr<LatticeStencil> (new LatticeStencil(cell_layer,edge_tracker->getNeighborhood()));
 	current_update.interaction = unique_ptr<StatisticalLatticeStencil> (new StatisticalLatticeStencil(cell_layer,interaction_energy->getNeighborhood()));
@@ -68,12 +70,33 @@ void CPMSampler::init(const Scope* scope)
 	for (auto wct : weak_celltypes) {
 		auto ct = wct.lock();
 		celltypes.push_back(ct);
-		registerInputSymbols( ct->cpmDependSymbols() );
+		auto dependencies =  ct->cpmDependSymbols();
+		for (auto& dep : dependencies) {
+			registerInputSymbol( dep.second.name, dep.second.scope );
+		}
 		registerCellPositionOutput();
 	}
 	
 	
 	
+	
+	
+}
+
+vector<multimap< Plugin*, SymbolDependency > > CPMSampler::getCellTypeDependencies() const
+{
+	vector<multimap< Plugin*, SymbolDependency > > res;
+	auto weak_celltypes = CPM::getCellTypes();
+	for (auto wct : weak_celltypes) {
+		auto ct = wct.lock();
+		res.push_back(ct->cpmDependSymbols() );
+	}
+	return res;
+}
+
+set< SymbolDependency > CPMSampler::getInteractionDependencies() const 
+{
+	return interaction_energy->getDependSymbols();
 }
 
 const vector< VINT >& CPMSampler::getInteractionNeighborhood()

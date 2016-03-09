@@ -20,7 +20,7 @@
 #include "function.h"
 
 
-class InteractionEnergy {
+class InteractionEnergy : public Plugin {
 
 	private:
 		// declare flags for storing the results of interaction initialisation
@@ -47,18 +47,22 @@ class InteractionEnergy {
 		vector< vector< shared_ptr<Plugin> > > plugins;
 		vector< shared_ptr<Interaction_Overrider> > ia_overrider;
 		vector< vector< shared_ptr<Interaction_Addon> > > ia_addon;
+		
+		set< SymbolDependency > dependencies;
 
 		uint getInterActionID(uint celltype1, uint celltype2 ) const { assert(celltype1<n_celltypes); assert(celltype2<n_celltypes); return celltype1 * n_celltypes + celltype2; }
 
 	public:
 		InteractionEnergy();
-
-		void loadFromXML(const XMLNode xNode);
+		
+		string XMLName() const override { return "InteractionEnergy"; }
+		void loadFromXML(const XMLNode xNode) override;
 		XMLNode saveToXML() const;
 
+		void init(const Scope* scope) override;
+		
 		const vector<VINT>& getNeighborhood() { return ia_neighborhood; };
 
-		void init();
 		double delta(const CPM::UPDATE& update) const;
 		double hamiltonian(const Cell* gc) const;
 // 		bool addMatrix(double ** &intMatrix);

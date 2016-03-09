@@ -12,6 +12,7 @@
 #ifndef CPM_H
 #define CPM_H
 
+#include <map>
 #include "interfaces.h"
 #include "simulation.h"
 #include "plugin_parameter.h"
@@ -49,6 +50,9 @@ public:
 	
     virtual void init(const Scope* scope);
 	const vector<VINT>& getInteractionNeighborhood();
+	vector< multimap< Plugin*, SymbolDependency > > getCellTypeDependencies() const;
+	set< SymbolDependency > getInteractionDependencies() const;
+	
 private:
 	enum class StepperType { EDGELIST, RANDOM };
 	PluginParameter2<double,XMLValueReader,RequiredPolicy> mcs_duration;

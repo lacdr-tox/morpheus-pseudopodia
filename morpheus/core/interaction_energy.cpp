@@ -43,7 +43,7 @@ XMLNode InteractionEnergy::saveToXML() const {
 	return ia_XMLNode;
 }
 
-void InteractionEnergy::init()
+void InteractionEnergy::init(const Scope* scope)
 {
 	layer = CPM::getLayer();
 	ia_neighborhood = layer->optimizeNeighborhood(ia_neighborhood);
@@ -170,10 +170,18 @@ void InteractionEnergy::init()
 	if (has_supercells)
 		interaction_details |= IA_SUPERCELLS;
 	
-	for (uint i=0;i<n_celltypes; i++)
-		for (uint j=i; j<n_celltypes; j++)
+	for (uint i=0;i<n_celltypes; i++) {
+		if (ia_overrider[i]) {
+			ia_overrider[i]->init(celltypes[i].lock()->getScope());
+			registerInputSymbols( ia_overrider[i]->getDependSymbols() );
+		}
+		
+		for (uint j=i; j<n_celltypes; j++) {
 			for (uint k=0; k < plugins[getInterActionID(i,j)].size(); k++) {
-				plugins[getInterActionID(i,j)][k]->init(SIM::getGlobalScope());
+				plugins[getInterActionID(i,j)][k]->init(scope);
+				registerInputSymbols( plugins[getInterActionID(i,j)][k]->getDependSymbols() );
+			}
+		}
 	}
 	
 // 	nei_cells.reserve(max_neighbors);
@@ -185,7 +193,6 @@ void InteractionEnergy::init()
 	     << endl;
 	
 }
-
 
 
 
@@ -320,7 +327,7 @@ double InteractionEnergy::delta(const CPM::UPDATE& update) const {
 		if (interaction_details & IA_SUPERCELLS) {
 			if (interaction_details & IA_PLUGINS) {
 				for (uint i=0; i<ia_neighborhood_offsets.size(); i++) {
-					const CPM::STATE& neighbor_state =layer->data[ focus_offset + ia_neighborhood_offsets[i] ];
+					const CPM::STATE& neighbor_state = layer->data[ focus_offset + ia_neighborhood_offsets[i] ];
 					const CPM::INDEX& neighbor_index = CellType::storage.index( neighbor_state.cell_id );
 
 					if (update.remove_state.cell_id !=  neighbor_state.cell_id ) {
