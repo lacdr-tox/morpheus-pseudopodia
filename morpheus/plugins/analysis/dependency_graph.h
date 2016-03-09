@@ -9,10 +9,9 @@
 //
 //////
 
-#include <cctype>
-#include <graphviz/gvc.h>
 #include "core/interfaces.h"
 #include "core/plugin_parameter.h"
+#include <graphviz/gvc.h>
 
 /** \ingroup AnalysisPlugins
  *  \defgroup DependencyGraph
