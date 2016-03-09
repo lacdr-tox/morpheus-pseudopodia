@@ -62,14 +62,14 @@ void TimeScheduler::init()
 			if (time_step < minimal_time_step)
 				minimal_time_step = time_step;
 			
-			cout << "TSL " << tsl->XMLName() << " propagates time step " << time_step << endl;
-			cout << "upstream ";
+			cout << "\n TimeStepListener \"" << tsl->XMLName() << "\" propagates its time step " << time_step << endl;
+			cout << " Upstream: " << endl;
 			set<SymbolDependency> dep_sym = tsl->getDependSymbols();
 			for (auto dep : dep_sym) {
-				cout << "-> " << dep.name  << endl;
+				cout << " -> " << dep.name  << endl;
 				const_cast<Scope*>(dep.scope)->propagateSinkTimeStep(dep.name, time_step);
 			}
-			cout << "downstream ";
+			cout << " Downstream: " << endl;
 			set<SymbolDependency> out_sym = tsl->getOutputSymbols();
 			for (auto out : out_sym) {
 				cout << "-> "<< out.name << endl;
