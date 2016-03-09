@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="1">
+<MorpheusModel version="2">
     <Description>
         <Title>Example-Crypt</Title>
         <Details>Illustrative model of stem cells in intestinal crypt
@@ -101,11 +101,11 @@ Shows the following features of Morpheus:
             </CellReporter>
             <CellReporter name="Count Clone D">
                 <Input value="clone==4"/>
-                <Output symbol-ref="num_C" mapping="sum"/>
+                <Output symbol-ref="num_D" mapping="sum"/>
             </CellReporter>
             <CellReporter name="Count Clone E">
                 <Input value="clone==5"/>
-                <Output symbol-ref="num_C" mapping="sum"/>
+                <Output symbol-ref="num_E" mapping="sum"/>
             </CellReporter>
         </CellType>
     </CellTypes>
