@@ -15,7 +15,7 @@
 #include <config.h>
 #include <cmath>
 #include <iostream>
-#include <tr1/functional>
+#include <functional>
 
 #ifndef M_PI
   const double M_PI = 3.1415926535897932384626433832795028841971;
