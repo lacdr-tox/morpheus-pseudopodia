@@ -580,7 +580,7 @@ public:
  *  @tparam RequirementPolicy one of RequiredPolicy / OptionalPolicy
  * 
  */
-template <class T, template <class T, class R> class XMLValueInterpreter = XMLValueReader, class RequirementPolicy = RequiredPolicy >
+template <class T, template <class S, class R> class XMLValueInterpreter = XMLValueReader, class RequirementPolicy = RequiredPolicy >
 class PluginParameter2 : public PluginParameterBase, public XMLValueInterpreter<T, RequirementPolicy> {
 public:
 	typedef  T ValType;
