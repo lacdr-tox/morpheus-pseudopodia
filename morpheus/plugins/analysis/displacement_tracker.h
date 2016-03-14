@@ -10,7 +10,7 @@
 //////
 
 #ifndef DISPLACEMENT_TRACKER_H
-#define DISPLACEMENTTRACKER_H
+#define DISPLACEMENT_TRACKER_H
 
 #include "core/interfaces.h"
 #include "core/plugin_parameter.h"

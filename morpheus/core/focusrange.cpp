@@ -447,154 +447,106 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 				}
 			break;
 			case FocusRangeDescriptor::IT_CellNodes :
-				if (restrictions.count(FocusRangeAxis::X) == 1) {
-					// copy all cell nodes, filtered through the X-restrictions
-					int x_restr = restrictions.find(FocusRangeAxis::X)->second;
-					for (auto cell : range->cell_range) {
-						const auto& nodes = CPM::getCell(cell).getNodes();
-						set <VINT, less_VINT > new_nodes;
-						for (const auto& node : nodes) {
-							if (node.x == x_restr) {
-								new_nodes.insert(new_nodes.end(), node);
-							}
-						}
-						range->cell_nodes.push_back(new_nodes);
+			case FocusRangeDescriptor::IT_CellNodes_int :
+			{
+				VINT filter_enabled(restrictions.count(FocusRangeAxis::X) == 1, restrictions.count(FocusRangeAxis::Y) == 1, restrictions.count(FocusRangeAxis::Z) == 1);
+				if (filter_enabled.abs()==0)
+					break;
+				VINT filter_value(filter_enabled.x == 1 ? restrictions.find(FocusRangeAxis::X)->second : 0,
+								filter_enabled.y == 1 ? restrictions.find(FocusRangeAxis::Y)->second : 0,
+								filter_enabled.z == 1 ? restrictions.find(FocusRangeAxis::Z)->second : 0);
+				vector< const set <VINT, less_VINT >* > cell_nodes;
+				const vector<CPM::CELL_ID>& cell_range = range->cell_range;
+				if (range->iter_mode == FocusRangeDescriptor::IT_CellNodes) {
+					for (auto cell : cell_range) {
+						cell_nodes.push_back(&CPM::getCell(cell).getNodes());
 					}
+				}
+				else if (range->iter_mode == FocusRangeDescriptor::IT_CellNodes_int) {
+					for (auto& nodes : range->cell_nodes) {
+						cell_nodes.push_back(&nodes);
+					}
+				}
+				vector< set <VINT, less_VINT > > new_cell_nodes;
+				vector< CPM::CELL_ID > new_cell_range;
+				
+				for (int i = 0; i<cell_nodes.size(); i++) {
+					set <VINT, less_VINT > new_nodes;
+					for (auto node : *cell_nodes[i]) {
+						if (   (filter_enabled.x ? node.x == filter_value.x : true) 
+						    && (filter_enabled.y ? node.y == filter_value.y : true)
+						    && (filter_enabled.z ? node.z == filter_value.z : true) )
+						{
+							new_nodes.insert(new_nodes.end(), node);
+						}
+					}
+					if (!new_nodes.empty()) {
+						new_cell_nodes.emplace_back(new_nodes);
+						new_cell_range.push_back(cell_range[i]);
+					}
+				}
+				swap(range->cell_nodes, new_cell_nodes);
+				swap(range->cell_range, new_cell_range);
+				range->iter_mode = FocusRangeDescriptor::IT_CellNodes_int;
+				
+				if (filter_enabled.x) {
 					range->pos_range.x=1;
-					range->iter_mode = FocusRangeDescriptor::IT_CellNodes_int;
 					range->spatial_dimensions.erase(FocusRangeAxis::X);
 				}
-				if (restrictions.count(FocusRangeAxis::Y) == 1) {
-					// copy all cell nodes, filtered through the X-restrictions
-					int y_restr = restrictions.find(FocusRangeAxis::Y) -> second;
-					if (range->iter_mode == FocusRangeDescriptor::IT_CellNodes) {
-						for (auto cell : range->cell_range) {
-							const auto& nodes = CPM::getCell(cell).getNodes();
-							set <VINT, less_VINT > new_nodes;
-							for (const auto& node : nodes) {
-								if (node.y == y_restr) {
-									new_nodes.insert(new_nodes.end(), node);
-								}
-							}
-							if (!new_nodes.empty()) {
-								range->cell_nodes.push_back(new_nodes);
-							}
-							else {
-								// remove current.
-							}
-						}
-						range->pos_range.y=1;
-						range->iter_mode = FocusRangeDescriptor::IT_CellNodes_int;
-					}
-					else {
-						for (auto& nodes : range->cell_nodes) {
-							set <VINT, less_VINT > new_nodes;
-							for (const auto& node : nodes) {
-								if (node.y == y_restr) {
-									new_nodes.insert(new_nodes.end(), node);
-								}
-							}
-							nodes = new_nodes;
-						}
-						range->pos_range.y=1;
-					}
+				if (filter_enabled.y) {
+					range->pos_range.y=1;
 					range->spatial_dimensions.erase(FocusRangeAxis::Y);
+				}
+				if (filter_enabled.z) {
+					range->pos_range.z=1;
+					range->spatial_dimensions.erase(FocusRangeAxis::Z);
+				}
+				break;
+			}
+			case FocusRangeDescriptor::IT_Domain :
+			case FocusRangeDescriptor::IT_Domain_int :
+			{
+				VINT filter_enabled(restrictions.count(FocusRangeAxis::X) == 1, restrictions.count(FocusRangeAxis::Y) == 1, restrictions.count(FocusRangeAxis::Z) == 1);
+				if (filter_enabled.abs()==0)
+					break;
+				VINT filter_value(filter_enabled.x == 1 ? restrictions.find(FocusRangeAxis::X)->second : 0,
+								filter_enabled.y == 1 ? restrictions.find(FocusRangeAxis::Y)->second : 0,
+								filter_enabled.z == 1 ? restrictions.find(FocusRangeAxis::Z)->second : 0);
+				
+				const vector <VINT >* domain_nodes;
+				if (range->iter_mode == FocusRangeDescriptor::IT_Domain) {
+					domain_nodes = range->domain_enumeration;
+				}
+				else if (range->iter_mode == FocusRangeDescriptor::IT_Domain_int) {
+					domain_nodes = & range->domain_nodes;
+				}
+				vector<VINT> new_domain_nodes;
+				for (const auto& node : *domain_nodes) {
+					if (   (filter_enabled.x ? node.x == filter_value.x : true) 
+						&& (filter_enabled.y ? node.y == filter_value.y : true)
+						&& (filter_enabled.z ? node.z == filter_value.z : true) )
+					{
+						new_domain_nodes.push_back(node);
+					}
 				}
 				
-				if (restrictions.count(FocusRangeAxis::Z) == 1) {
-								// copy all cell nodes, filtered through the X-restrictions
-					int z_restr = restrictions.find(FocusRangeAxis::Z)->second;
-					if (range->iter_mode == FocusRangeDescriptor::IT_CellNodes) {
-						for (auto cell : range->cell_range) {
-							const auto& nodes = CPM::getCell(cell).getNodes();
-							set <VINT, less_VINT > new_nodes;
-							for (const auto& node : nodes) {
-								if (node.z == z_restr) {
-									new_nodes.insert(new_nodes.end(), node);
-								}
-							}
-							range->cell_nodes.push_back(new_nodes);
-						}
-						range->pos_range.z=1;
-						range->iter_mode = FocusRangeDescriptor::IT_CellNodes_int;
-					}
-					else {
-						for (auto& nodes : range->cell_nodes) {
-							set <VINT, less_VINT > new_nodes;
-							for (const auto& node : nodes) {
-								if (node.z == z_restr) {
-									new_nodes.insert(new_nodes.end(), node);
-								}
-							}
-							nodes = new_nodes;
-						}
-						range->pos_range.z=1;
-					}
-					range->spatial_dimensions.erase(FocusRangeAxis::Z);
-				}
-			break;
-			case FocusRangeDescriptor::IT_Domain :
-				if (restrictions.count(FocusRangeAxis::X) == 1) {
-					// copy all cell nodes, filtered through the X-restrictions
-					int x_restr = restrictions.find(FocusRangeAxis::X)->second;
-					for (const auto& node : *range->domain_enumeration) {
-						if (node.x == x_restr) {
-							range->domain_nodes.push_back(node);
-						}
-					}
-					range->pos_range.x = 1;
-					range->iter_mode = FocusRangeDescriptor::IT_Domain_int;
+				swap(range->domain_nodes,new_domain_nodes);
+				range->iter_mode = FocusRangeDescriptor::IT_Domain_int;
+				
+				if (filter_enabled.x) {
+					range->pos_range.x=1;
 					range->spatial_dimensions.erase(FocusRangeAxis::X);
 				}
-				if (restrictions.count(FocusRangeAxis::Y) == 1) {
-					// copy all cell nodes, filtered through the X-restrictions
-					int y_restr = restrictions.find(FocusRangeAxis::Y)->second;
-					if (range->iter_mode = FocusRangeDescriptor::IT_Domain) {
-						for (const auto& node : *range->domain_enumeration) {
-							if (node.y == y_restr) {
-								range->domain_nodes.push_back(node);
-							}
-						}
-						range->pos_range.y = 1;
-						range->iter_mode = FocusRangeDescriptor::IT_Domain_int;
-					}
-					else {
-						vector<VINT> new_nodes;
-						for (const auto& node : range->domain_nodes) {
-							if (node.y == y_restr) {
-								new_nodes.push_back(node);
-							}
-						}
-						range->domain_nodes = new_nodes;
-						range->pos_range.y = 1;
-					}
+				if (filter_enabled.y) {
+					range->pos_range.y=1;
 					range->spatial_dimensions.erase(FocusRangeAxis::Y);
 				}
-				if (restrictions.count(FocusRangeAxis::Z) == 1) {
-					// copy all cell nodes, filtered through the X-restrictions
-					int z_restr = restrictions.find(FocusRangeAxis::Z)->second;
-					if (range->iter_mode = FocusRangeDescriptor::IT_Domain) {
-						for (const auto& node : *range->domain_enumeration) {
-							if (node.z == z_restr) {
-								range->domain_nodes.push_back(node);
-							}
-						}
-						range->pos_range.z = 1;
-						range->iter_mode = FocusRangeDescriptor::IT_Domain_int;
-					}
-					else {
-						vector<VINT> new_nodes;
-						for (const auto& node : range->domain_nodes) {
-							if (node.z == z_restr) {
-								new_nodes.push_back(node);
-							}
-						}
-						range->domain_nodes = new_nodes;
-						range->pos_range.z = 1;
-					}
+				if (filter_enabled.z) {
+					range->pos_range.z=1;
 					range->spatial_dimensions.erase(FocusRangeAxis::Z);
 				}
-			break;
+				break;
+			}
 			case FocusRangeDescriptor::IT_Space:
 				if (restrictions.count(FocusRangeAxis::X) == 1) {
 					range->pos_range.x=1;
