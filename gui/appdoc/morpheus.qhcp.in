@@ -3,17 +3,17 @@
 	<docFiles>
 		<generate>
 			<file>
-				<input>@QT_HELP_PROJECT@</input>
-				<output>@QT_HELP_COMPRESSED@</output>
+				<input>html/index.qhp</input>
+				<output>morpheus.qch</output>
 			</file>
 			<file>
-				<input>@QT_HELP_MATHJAX_PROJECT@</input>
-				<output>@QT_HELP_MATHJAX_COMPRESSED@</output>
+				<input>html/mathjax.qhp</input>
+				<output>mathjax.qch</output>
 			</file>
 		</generate>
 		<register>
-			<file>@QT_HELP_COMPRESSED@</file>
-			<file>@QT_HELP_MATHJAX_COMPRESSED@</file>
+			<file>morpheus.qch</file>
+			<file>mathjax.qch</file>
 		</register>
 	</docFiles>
 </QHelpCollectionProject>
