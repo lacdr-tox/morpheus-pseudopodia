@@ -529,7 +529,7 @@ void LoggerTextWriter::writeCSV() {
 	stringstream time;
 	time << SIM::getTime();
 	
-	bool separate_cells = (file_separation == FileSeparation::TIME_CELL) || (file_separation == FileSeparation::CELL) && (range.dataAxis()[0] == FocusRangeAxis::CELL);
+	bool separate_cells = (file_separation == FileSeparation::TIME_CELL) || ((file_separation == FileSeparation::CELL) && (range.dataAxis()[0] == FocusRangeAxis::CELL));
 	if (separate_cells) {
 		auto cells = range.cells();
 		multimap<FocusRangeAxis,int> plain_restrictions = logger.getRestrictions();
@@ -584,7 +584,7 @@ void LoggerTextWriter::writeMatrix() {
 	
 	string sep = separator();
 	
-	bool separate_cells = file_separation == FileSeparation::TIME_CELL || file_separation == FileSeparation::CELL && range.dataAxis()[0] == FocusRangeAxis::CELL;
+	bool separate_cells = file_separation == FileSeparation::TIME_CELL || (file_separation == FileSeparation::CELL && range.dataAxis()[0] == FocusRangeAxis::CELL);
 	int row_length = range.dataSizes().back();
 	int row_count = 1;
 	if (range.dataSizes().size()>1)
@@ -904,10 +904,10 @@ LoggerPlotBase::LoggerPlotBase(Logger& logger, string xml_base_path)
 		terminal_name[Terminal::SCREEN] = "aqua";
 	}
 	else if (morpheus_os == "UNIX") {
-		terminal_name[Terminal::SCREEN] == "qt";
+		terminal_name[Terminal::SCREEN] = "qt";
 	}
 	else 
-		terminal_name[Terminal::SCREEN] == "";
+		terminal_name[Terminal::SCREEN] = "";
 	
 	
 	plotsize.setXMLPath(xml_base_path+"/Terminal/plot-size");

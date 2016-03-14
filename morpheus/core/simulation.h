@@ -151,7 +151,7 @@ namespace CPM {
 	weak_ptr<const CellType> findCellType(string name);  /// Seek for celltype named @p name. Returns a pointer to the Celltype or an empty pointer if the celltype is unknown.
 	void setCellType(CELL_ID cell_id, uint celltype);
 	
-	bool enableEgdeTracking();
+	void enableEgdeTracking();
 	shared_ptr<const EdgeTrackerBase> cellEdgeTracker();
 	
 	bool isBoundary(const VINT& pos);

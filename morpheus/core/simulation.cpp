@@ -123,7 +123,7 @@ ostream& operator <<(ostream& os, const CPM::STATE& n) {
 	return os;
 }
 
-bool enableEgdeTracking()
+void enableEgdeTracking()
 {
 	// Don't enable the edge tracker when just creating a dependency graph
 	if (!SIM::generate_symbol_graph_and_exit)

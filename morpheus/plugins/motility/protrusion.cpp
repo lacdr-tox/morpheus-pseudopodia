@@ -78,6 +78,7 @@ double Protrusion::delta(const SymbolFocus& cell_focus, const CPM::UPDATE& updat
 		return -dH; // Cell is extended to the focal node (Protrusion)
  	if ( todo & CPM::REMOVE ) 
  		return dH;  // Cell is removed from the focal node (Retraction)
+	return 0;
 
 }
 

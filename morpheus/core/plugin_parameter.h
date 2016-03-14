@@ -47,7 +47,7 @@
 			shared_ptr<ParameterPrivate> d;
    }
    
-   
+*/
 
 /**
  * 
@@ -669,9 +669,9 @@ class XMLStringifyExpression<string,RequirementPolicy> {
 		void setScope(const Scope * scope) { this->scope = scope; }
 	
 // 		string name() { RequirementPolicy::assertDefined(); return symbol_name; }
-		const string& description() const  { if (type == Type::D) return double_expr.description(); if (type == Type::VD)  return double_expr.description(); return ""; }
+		const string& description() const  { if (type == Type::D) return double_expr.description(); if (type == Type::VD)  return vdouble_expr.description(); return string_val; }
 
-		Granularity granularity() const { if (type == Type::D) return double_expr.granularity(); if (type == Type::VD)  return double_expr.granularity(); return Granularity::Undef; }
+		Granularity granularity() const { if (type == Type::D) return double_expr.granularity(); if (type == Type::VD)  return vdouble_expr.granularity(); return Granularity::Undef; }
 
 		string operator()(SymbolFocus f) const {
 					stringstream s;

@@ -348,19 +348,19 @@ SymbolRWAccessor<S>::SymbolRWAccessor(SymbolData d, const Scope* scope) : Symbol
 template <class S>
 bool SymbolRWAccessor<S>::set(CPM::CELL_ID cell_id, typename TypeInfo<S>::Parameter value) const 
 {
-	set(SymbolFocus(cell_id),value);
+	return set(SymbolFocus(cell_id),value);
 }
 
 template <class S>
 bool SymbolRWAccessor<S>::set(CPM::CELL_ID cell_id, const VINT& pos, typename TypeInfo<S>::Parameter value)  const
 {
-	set(SymbolFocus(cell_id,pos),value);
+	return set(SymbolFocus(cell_id,pos),value);
 }
 
 template <class S>
 bool SymbolRWAccessor<S>::set(const VINT& pos, typename TypeInfo<S>::Parameter value)  const
 {
-	set(SymbolFocus(pos),value);
+	return set(SymbolFocus(pos),value);
 }
 
 template <class S>

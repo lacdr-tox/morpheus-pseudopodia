@@ -122,7 +122,7 @@ ExpressionEvaluator<T>::ExpressionEvaluator(const ExpressionEvaluator<T> & other
 	depend_symbols = other.depend_symbols;
 	
 	// relink the symbol_values cache to the parser
-	symbol_values;
+	symbol_values.resize(symbols.size());
 	for( int i_sym=0; i_sym<symbols.size(); i_sym++) {
 		parser->DefineVar(symbols[i_sym].getName(), &symbol_values[i_sym]);
 	}
