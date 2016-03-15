@@ -50,7 +50,7 @@ CellType* Scope::getCellType() const {
 
 void Scope::registerSymbol(SymbolData data)
 {
-    cout << "Registering Symbol " << data.name << " with linktype " << SymbolData::getLinkTypeName(data.link) << " of type " << data.type_name << endl;
+//     cout << "Registering Symbol " << data.name << " with linktype " << SymbolData::getLinkTypeName(data.link) << " of type " << data.type_name << endl;
 	assert(! data.name.empty() );
 	assert(! data.type_name.empty() );
 	assert( data.link != SymbolData::UnLinked );
@@ -172,7 +172,7 @@ void Scope::registerSubScopeSymbol(Scope *sub_scope, string symbol_name) {
 		v_sym.component_subscopes.resize(sub_scope_id+1, NULL);
 		v_sym.component_subscopes[sub_scope->ct_component->getID()] = sub_scope;
 		local_symbols[symbol_name] = v_sym;
-		cout << "!!! SubScope Symbol \"" << symbol_name << "\" registered!" << endl;
+// 		cout << "!!! SubScope Symbol \"" << symbol_name << "\" registered!" << endl;
 		
 			// creating read-only derived symbol definitions for vector properties
 		if (v_sym.type_name == TypeInfo<VDOUBLE>::name()) {
@@ -498,7 +498,7 @@ void Scope::write_graph_local_variables(ostream& definitions, ostream& links, co
 		auto cpm_dep = ct_component->cpmDependSymbols();
 		bool found_valid_cpm_plugin = false;
 		for (auto dep : cpm_dep) {
-			if ( !config.exclude_plugins.count( dep.first->XMLName() )) {
+			if ( config.exclude_plugins.count( dep.first->XMLName() ) == 0) {
 				found_valid_cpm_plugin = true;
 				break;
 			}

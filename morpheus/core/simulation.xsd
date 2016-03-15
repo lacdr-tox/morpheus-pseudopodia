@@ -183,7 +183,7 @@ This allows the user to create populations a heterogeneous initial population. T
 
 	<xs:complexType name="Interaction">
 		<xs:all>
-			<xs:element name="Neighborhood" type="cpmNeighborhood" />
+			<xs:element name="Neighborhood" type="cpmNeighborhood" minOccurs="0"/>
 <!-- 			<xs:choice minOccurs="0" maxOccurs="unbounded"> -->
 <!-- 				<xs:group ref="InteractionPlugins"/> -->
 			<xs:element name="Contact" minOccurs="0" maxOccurs="unbounded">
