@@ -96,7 +96,7 @@ class NeighborhoodReporter : public ReporterPlugin
 		CellType* celltype;
 		shared_ptr <const CPM::LAYER > cpm_layer;
 		
-		PluginParameter2<double, XMLEvaluator, RequiredPolicy> input;
+		PluginParameter2<double, XMLThreadsaveEvaluator, RequiredPolicy> input;
 		PluginParameter2<InputModes, XMLNamedValueReader, OptionalPolicy> input_mode;
 
 		struct OutputSpec {

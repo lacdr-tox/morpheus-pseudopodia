@@ -67,20 +67,15 @@ Assign a new value to 'a' based on values of 'a' in previous time-step.
 class Equation : public ReporterPlugin
 {
 	private:
-		shared_ptr<ThreadedExpressionEvaluator<double> > evaluators;
-		string expression;
-		PluginParameter2<double,XMLReadWriteSymbol,RequiredPolicy> symbol;
+		PluginParameter2<double,XMLWritableSymbol,RequiredPolicy> symbol;
+		PluginParameter2<double, XMLThreadsaveEvaluator, RequiredPolicy> expression;
 
 	public:
 		DECLARE_PLUGIN("Equation");
 
 		Equation();
-		virtual void loadFromXML(const XMLNode );
-
 		virtual void report();
-		
-		virtual void init(const Scope* scope);
-		string getExpr() { return expression; }
+		string getExpr() { return expression.stringVal(); }
 		string getSymbol() { return symbol.name(); };
 };
 

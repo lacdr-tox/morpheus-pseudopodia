@@ -245,15 +245,15 @@ private:
  * Policy class to be used to create a read-only but evaluated value PluginParameter 
  */
 
-template <class ValType, class RequirementPolicy> 
-class XMLEvaluator : public RequirementPolicy {
+template <class ValType, class RequirementPolicy, template <class V> class Evaluator> 
+class XMLEvaluatorBase : public RequirementPolicy {
 public:
 	typename TypeInfo<ValType>::SReturn get(SymbolFocus f) const 
 	{ 
 		RequirementPolicy::assertDefined();
 		
 		if (!is_initialized)
-			const_cast<XMLEvaluator<ValType,RequirementPolicy>* >(this)->init(); // may throw ...
+			const_cast<XMLEvaluatorBase<ValType,RequirementPolicy,Evaluator>* >(this)->init(); // may throw ...
 		if (is_const)
 			return const_expr;
 		else 
@@ -301,18 +301,18 @@ public:
 	set<SymbolDependency> getOutputSymbols() const { return set<SymbolDependency>(); };
 	
 protected:
-	XMLEvaluator() : is_const(false), is_initialized(false), scope(NULL), require_global_scope(false) {};
+	XMLEvaluatorBase() : is_const(false), is_initialized(false), scope(NULL), require_global_scope(false) {};
 	// TODO Clearify  whether a Copy constructor is required to deal with the unique_ptr evaluator
 	// An assignment will leave the rhs object uninitialized !!!
 	
 	
 	bool read(const string& string_val){
-		evaluator = unique_ptr<ExpressionEvaluator<ValType> >(new ExpressionEvaluator<ValType>(string_val) );
+		evaluator = unique_ptr<Evaluator<ValType> >(new Evaluator<ValType>(string_val) );
 		return true;
 	};
 	
 	// Delete Policies only from derived classes
-	~XMLEvaluator() {};
+	~XMLEvaluatorBase() {};
 	
 private:
 	bool is_const;
@@ -320,8 +320,15 @@ private:
 	const Scope* scope;
 	bool require_global_scope;
 	ValType const_expr;
-	unique_ptr< ExpressionEvaluator<ValType> > evaluator;
+	unique_ptr< Evaluator<ValType> > evaluator;
 };
+
+
+template <class ValType, class RequirementPolicy >
+using XMLEvaluator = XMLEvaluatorBase< ValType, RequirementPolicy, ExpressionEvaluator >;
+
+template <class ValType, class RequirementPolicy >
+using XMLThreadsaveEvaluator = XMLEvaluatorBase< ValType, RequirementPolicy, ThreadedExpressionEvaluator >;
 
 /** 
  * Policy class to be used to create a read-only and mapped-from-string value PluginParameter 

@@ -73,26 +73,25 @@ Assign a value by comma separated list of 3 expressions.
 #include "core/interfaces.h"
 #include "core/symbol_accessor.h"
 #include "core/plugin_parameter.h"
+#include "core/focusrange.h"
 
 
 class VectorEquation : public ReporterPlugin {
+	
 	private:
-		shared_ptr<ThreadedExpressionEvaluator<VDOUBLE> > evaluator;
-		PluginParameter2<VDOUBLE,XMLReadWriteSymbol,RequiredPolicy> symbol;
+		PluginParameter2<VDOUBLE,XMLWritableSymbol,RequiredPolicy> symbol;
 		PluginParameter2<bool,XMLValueReader,DefaultValPolicy> spherical;
-		PluginParameter2<string,XMLValueReader, RequiredPolicy> expression;
+		PluginParameter2<VDOUBLE, XMLThreadsaveEvaluator, RequiredPolicy> expression;
 		const Scope* scope;
 		
 	public:
 		DECLARE_PLUGIN("VectorEquation");
 
 		VectorEquation();
-		virtual void loadFromXML(const XMLNode );
 
 		virtual void report();
 		
-		virtual void init(const Scope* scope);
-		string getExpr() { return expression(); }
+		string getExpr() { return expression.stringVal(); }
 		string getSymbol() { return symbol.name(); };
 		bool isSpherical() { return spherical(); };
 

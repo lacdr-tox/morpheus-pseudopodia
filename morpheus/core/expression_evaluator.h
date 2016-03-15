@@ -67,26 +67,48 @@ private:
 	set<string> depend_symbols;
 };
 
+
+class OMPMutex
+{
+public:
+    OMPMutex()             {omp_init_lock(&_lock);}
+    ~OMPMutex()            {omp_destroy_lock(&_lock);}
+    void lock()         {omp_set_lock(&_lock);}
+    void unlock()           {omp_unset_lock(&_lock);}
+    bool try_to_lock()      {return omp_test_lock(&_lock);}
+private:
+    OMPMutex(const OMPMutex&);
+    OMPMutex&operator=(const OMPMutex&);
+    omp_lock_t _lock;
+}; 
+
+
 template <class T>
 class ThreadedExpressionEvaluator {
 public:
 	ThreadedExpressionEvaluator(string expression) { evaluators.push_back( unique_ptr<ExpressionEvaluator<T> >(new ExpressionEvaluator<T>(expression)) );};
-	void init(const Scope* scope) { evaluators[0]->init(scope); evaluators.resize(omp_get_num_threads()); };
+	void init(const Scope* scope) { evaluators[0]->init(scope); }
 	bool isConst() const { return evaluators[0]->isConst(); };
-	string getDescription() const { return evaluators[0]->getDescription(); };
+	const string& getDescription() const { return evaluators[0]->getDescription(); };
 	Granularity getGranularity() const { return evaluators[0]->getGranularity(); };
 	string getExpression() const { return evaluators[0]->getExpression(); };
 	bool isInteger() const { return evaluators[0]->isInteger(); };
 	typename TypeInfo<T>::SReturn get(const SymbolFocus& focus) const {
 		int t = omp_get_thread_num();
-		if ( ! evaluators[t] ) {
+		if (evaluators.size()<=t || ! evaluators[t] ) {
+			mutex.lock();
+			if (evaluators.size()<=t) {
+				evaluators.resize(t+1);
+			}
 			evaluators[t] = unique_ptr<ExpressionEvaluator<T> >( new ExpressionEvaluator<T>(*evaluators[0]) );
+			mutex.unlock();
 		}
 		return evaluators[t]->get(focus);
 	};
 	set<SymbolDependency> getDependSymbols() const { return evaluators[0]->getDependSymbols(); };
 private:
 	mutable vector<unique_ptr<ExpressionEvaluator<T> > > evaluators;
+	mutable OMPMutex mutex;
 };
 
 #include "symbol_accessor.h"
