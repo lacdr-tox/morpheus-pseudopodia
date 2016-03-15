@@ -9,19 +9,19 @@ void InteractionEnergy::loadFromXML( const XMLNode xNode) {
 	
 	//assert( ! ia_neighborhood_node.isEmpty() );
 	ia_neighborhood = SIM::lattice().getDefaultNeighborhood();
-// 	Neighborhood(ia_XMLNode.getChildNode("Neighborhood"));
+	if (ia_XMLNode.nChildNode("Neighborhood"))
+		ia_neighborhood = SIM::lattice().getNeighborhood(ia_XMLNode.getChildNode("Neighborhood"));
 
-// 	if (ia_neighborhood.empty()) {
-// 		cerr << "Unable to get a neighborhood specification for interaction energy" << endl;
-// 		exit(-1);
-// 		assert(0);
-// 	}
+	if (ia_neighborhood.empty()) {
+		cerr << "CPM: Unable to get a neighborhood specification for interaction energy" << endl;
+		exit(-1);
+		assert(0);
+	}
+	
 	cout << "CPM: InteractionEnergy initialized with " << ia_neighborhood.size() << " interaction neighbors" << endl;
 
-	double default_value;
-	if (getXMLAttribute(xNode,"default",default_value)) {
-		std::fill(ia_energies.begin(),ia_energies.end(),default_value);
-	}
+	default_interaction = 0;
+	getXMLAttribute(xNode,"default", default_interaction);
 	
 	negate_interactions = false;
 	getXMLAttribute(xNode,"negative",negate_interactions);
@@ -47,19 +47,6 @@ void InteractionEnergy::init(const Scope* scope)
 {
 	layer = CPM::getLayer();
 	ia_neighborhood = layer->optimizeNeighborhood(ia_neighborhood);
-// 	int last_offset = -10000000;
-// 	for (uint i=0; i<ia_neighborhood.size(); i++) {
-// 		int offset = layer->get_data_index(ia_neighborhood[i]) - layer->get_data_index(VINT(0,0,0));
-// 		ia_neighborhood_offsets.push_back( offset );
-// 		cout << "offset " << offset;
-// 		if ( abs(offset - last_offset) > 64/sizeof(CPM::STATE) ) {
-// 			ia_neighborhood_row_offsets.push_back(offset);
-// 			last_offset = offset;
-// 			cout << " -> row start";
-// 		}
-// 		cout << endl;
-// 	}
-// 	cout << "CPM::STATE size "  << sizeof(CPM::STATE) << endl;
 	
 	auto celltypes = CPM::getCellTypes();
 	// map celltype names to internal state id
@@ -74,7 +61,7 @@ void InteractionEnergy::init(const Scope* scope)
 	
 	n_celltypes=celltypes.size();
 	// NOTE we should preferably have a container where the key consists of the two celltype_ids for the interaction energies, e.g. hash_map<struct {uint, uint}, double>
-	ia_energies.resize(n_celltypes*n_celltypes,1.0);
+	ia_energies.resize(n_celltypes*n_celltypes, default_interaction);
 	ia_overrider.resize(n_celltypes*n_celltypes);
 	plugins.resize(n_celltypes*n_celltypes);
 	ia_addon.resize(n_celltypes*n_celltypes);
@@ -184,8 +171,8 @@ void InteractionEnergy::init(const Scope* scope)
 		}
 	}
 	
-// 	nei_cells.reserve(max_neighbors);
-	
+	cout << "CPM: InteractionEnergy has "
+	     << ia_neighborhood.size() << " neighbors" << endl;
 	cout << "CPM: InteractionEnergy was initialized with "
 	     << ((interaction_details & IA_COLLAPSE) ? " IA_COLLAPSE ": "") 
 	     << ((interaction_details & IA_PLUGINS) ? " IA_PLUGINS ": "")

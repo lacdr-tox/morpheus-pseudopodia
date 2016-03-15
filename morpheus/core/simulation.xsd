@@ -182,21 +182,21 @@ This allows the user to create populations a heterogeneous initial population. T
 
 
 	<xs:complexType name="Interaction">
-<!--		<xs:all>
-			<xs:element name="Neighborhood" type="cpmNeighborhood" />-->
-			<xs:choice minOccurs="0" maxOccurs="unbounded">
-				<xs:group ref="InteractionPlugins"/>
-				<xs:element name="Contact">
-					<xs:complexType>
-						<xs:choice minOccurs="0" maxOccurs="unbounded">
-							<xs:group ref="ContactPlugins"/>
-						</xs:choice>
-						<xs:attribute name="type1" use="required" type="cpmCellTypeRef" />
-						<xs:attribute name="type2" use="required" type="cpmCellTypeRef" />
-						<xs:attribute name="value" use="required" type="cpmDouble" />
-					</xs:complexType>
-				</xs:element>
-			</xs:choice>
+		<xs:all>
+			<xs:element name="Neighborhood" type="cpmNeighborhood" />
+<!-- 			<xs:choice minOccurs="0" maxOccurs="unbounded"> -->
+<!-- 				<xs:group ref="InteractionPlugins"/> -->
+			<xs:element name="Contact" minOccurs="0" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:choice minOccurs="0" maxOccurs="unbounded">
+						<xs:group ref="ContactPlugins"/>
+					</xs:choice>
+					<xs:attribute name="type1" use="required" type="cpmCellTypeRef" />
+					<xs:attribute name="type2" use="required" type="cpmCellTypeRef" />
+					<xs:attribute name="value" use="required" type="cpmDouble" />
+				</xs:complexType>
+			</xs:element>
+		</xs:all>
 		<xs:attribute name="default" use="optional" type="cpmDouble"/>
 		<xs:attribute name="collapse" use="optional" type="cpmBoolean" default="true" />
 		<xs:attribute name="negative" use="optional" type="cpmBoolean" default="false">
@@ -236,7 +236,6 @@ This allows the user to create populations a heterogeneous initial population. T
 			<xs:documentation>Specifies the modified Metropolis algorithm used to stochastically find the minimal energy configuration.</xs:documentation>
 		</xs:annotation>
 		<xs:all>
-			<xs:element name="Neighborhood" minOccurs="1" type="cpmNeighborhood" />
 <!-- MOVED BACK TO ATTRIBUTE
                         <xs:element name="Yield" minOccurs="0" type="cpmPluginParameter_Double" >
                         <xs:annotation>

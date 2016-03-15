@@ -42,7 +42,8 @@ class InteractionEnergy : public Plugin {
 		shared_ptr<const CPM::LAYER> layer;
 // 		mutable vector <NEIGHBOR_STAT> nei_cells;
 // 		static const int max_neighbors=40;
-
+		
+		double default_interaction;
 		vector<double> ia_energies;
 		vector< vector< shared_ptr<Plugin> > > plugins;
 		vector< shared_ptr<Interaction_Overrider> > ia_overrider;
