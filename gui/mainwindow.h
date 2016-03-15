@@ -60,6 +60,7 @@ private:
     SharedMorphModel current_model; /// Holds a pointer to the active model
     config::modelIndex model_popup_index;
     config::modelIndex model_index;
+	const QString param_sweep_name = "ParamSweep";
 
     QMenu *addModelPartMenu; /*!< Menu, which appears when clicking on the '+'-button in the tabbar, to add a new tab. */
     QMenu *modelMenu; /*!< Menu, which appears when requesting a menu for a tab in the tabbar (to remove or copy the tab). */
@@ -123,7 +124,7 @@ protected:
 	void dropEvent(QDropEvent *event);
 	
 public slots:
-    void selectModel(int index, int part=-1);
+    void selectModel(int index, int part = -1);
 	void selectAttribute(AbstractAttribute* attr);
 	void selectXMLPath(QString path);
     void addModel(int index);
@@ -141,6 +142,7 @@ private slots:
 //     void jobAdded(const QModelIndex&, int);
 
     void modelListChanged(QTreeWidgetItem*);
+	void activatePart(QModelIndex);
 	void showCurrentModel();
     void showModelListMenu(QPoint p); /*!< Opens the menu for copying or deleting the existing tab at position 'p'. */
 	void modelActionTriggerd (QAction*); /*!< Calls the right function to transform the given Action from tabMenu. */

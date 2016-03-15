@@ -367,11 +367,12 @@ void MainWindow::createMainWidgets()
     connect(modelList, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showModelListMenu(QPoint)));
     connect(modelList, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(modelListChanged(QTreeWidgetItem*)));
 	connect(modelList, SIGNAL(clicked(QModelIndex)), this, SLOT(showCurrentModel()) );
+	connect(modelList, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(activatePart(QModelIndex)) );
 
     modelMenu = new QMenu();
     showModelXMLAction = modelMenu->addAction(QThemedIcon("text-xml",QIcon(":/text-xml.png")),"Show XML");
     modelMenu->addSeparator();
-    addModelPartMenu = modelMenu->addMenu(QThemedIcon("list-add",QIcon(":/list-add.png")),"Add");
+//     addModelPartMenu = modelMenu->addMenu(QThemedIcon("list-add",QIcon(":/list-add.png")),"Add");
     removeModelPartAction = modelMenu->addAction(QThemedIcon("list-remove",QIcon(":/list-remove.png")),"Remove");
     copyModelPartAction = modelMenu->addAction(QThemedIcon("edit-copy",QIcon(":/edit-copy.png")),"Copy");
     pasteModelPartAction = modelMenu->addAction(QThemedIcon("edit-paste",QIcon(":/edit-paste.png")),"Paste");
@@ -460,7 +461,7 @@ void MainWindow::selectModel(int index, int part)
         if (selected.model == model_index.model)
             part = selected.part;
 
-        model_index.part = part >= 0 ? part : 0;
+        model_index.part = part>=0 ? part : 0;
 
         setWindowTitle(tr("Morpheus - %1").arg(  current_model->xml_file.name ) );
         //setWindowIcon( QIcon(":/logo.png") );
@@ -499,7 +500,12 @@ void MainWindow::selectModel(int index, int part)
 // 		showCurrentModel();
     }
     else {
-        model_index.part = part >=0 ? part : selected.part>=0 ? selected.part : 0;
+		if (part<0 || part>=current_model->parts.size()) {
+			model_index.part = selected.part;
+		}
+		if (current_model->parts[part].enabled) {
+			model_index.part = part;
+		}
 		showCurrentModel();
     }
 
@@ -717,21 +723,21 @@ void MainWindow::stopSimulation()
 
 config::modelIndex MainWindow::modelListIndex(QTreeWidgetItem* item) {
     config::modelIndex index;
-    if (item) {
-        if (modelList->indexOfTopLevelItem(item)==-1) {
-            index.model = modelList->indexOfTopLevelItem(item->parent());
-            index.part = item->parent()->indexOfChild(item);
-        }
-        else {
-            index.model = modelList->indexOfTopLevelItem(item);
-            index.part = -1;
-        }
-    }
+	if (item) {
+		if (item->parent()) {
+			index.model = modelList->indexOfTopLevelItem(item->parent());
+			index.part = item->parent()->indexOfChild(item);
+		}
+		else {
+			index.model = modelList->indexOfTopLevelItem(item);
+			index.part = 0;
+		}
+	}
     else {
-        index.model = -1;
-        index.part = -1;
-    }
-    return index;
+		index.model = -1;
+		index.part = 0;
+	}
+	return index;
 }
 
 //------------------------------------------------------------------------------
@@ -739,19 +745,19 @@ config::modelIndex MainWindow::modelListIndex(QTreeWidgetItem* item) {
 void MainWindow::showModelListMenu(QPoint p)
 {
     QTreeWidgetItem* item = modelList->itemAt(p);
-    if (item) {
+    if (item && ! item->isDisabled()) {
         model_popup_index = modelListIndex(item);
         SharedMorphModel m = config::getOpenModels()[model_popup_index.model];
 
         QList<QString> addableChilds = m->rootNodeContr->getAddableChilds();
-		if (addableChilds.empty()) 
-			addModelPartMenu->setDisabled(true);
-		else
-			addModelPartMenu->setDisabled(false);
-        addModelPartMenu->clear();
-        for ( int i=0; i< addableChilds.size(); i++ ) {
-            addModelPartMenu->addAction(addableChilds[i]);
-        }
+// 		if (addableChilds.empty()) 
+// 			addModelPartMenu->setDisabled(true);
+// 		else
+// 			addModelPartMenu->setDisabled(false);
+//         addModelPartMenu->clear();
+//         for ( int i=0; i< addableChilds.size(); i++ ) {
+//             addModelPartMenu->addAction(addableChilds[i]);
+//         }
         if ( ! config::getNodeCopies().empty())
             pasteModelPartAction->setEnabled(addableChilds.contains(config::getNodeCopies().front().nodeName()));
         else
@@ -815,6 +821,14 @@ void MainWindow::modelActionTriggerd (QAction *act)
         if(i == QMessageBox::Ok)
         {
             popup_model->removePart(model_popup_index.part);
+			QTreeWidgetItem* model_item = modelList->invisibleRootItem()->child(model_popup_index.model);
+			QTreeWidgetItem* item = model_item->child(model_index.part);
+			item->setDisabled(true);
+			item->setForeground(0,QBrush(Qt::gray));
+			while (model_item->child(model_index.part)->isDisabled()) {
+				model_index.part--;
+			}
+			modelList->setCurrentItem(model_item->child(model_index.part));
         }
     }
 
@@ -822,37 +836,34 @@ void MainWindow::modelActionTriggerd (QAction *act)
     {
         popup_model->addPart(config::getNodeCopies().first().cloneNode(true));
     }
-    else
-    {
-        popup_model->addPart(act->text());
-    }
 }
 
 void MainWindow::reloadModelParts(int m) {
-    if (m==-1) {
-        const QList<SharedMorphModel >&  models = config::getOpenModels();
-        foreach ( SharedMorphModel model, models) {
-            if (sender() == model.data()) {
-                m = models.indexOf(model);
-            }
-        }
-    }
-    qDebug() << "Reload model parts for idx " << m;
-    modelList->topLevelItem(m)->takeChildren();
-    SharedMorphModel model = config::getOpenModels()[m];
+	if (m==-1) {
+		const QList<SharedMorphModel >&  models = config::getOpenModels();
+		foreach ( SharedMorphModel model, models) {
+			if (sender() == model.data()) {
+				m = models.indexOf(model);
+			}
+		}
+	}
+	qDebug() << "Reload model parts for idx " << m;
+	modelList->topLevelItem(m)->takeChildren();
+	SharedMorphModel model = config::getOpenModels()[m];
 
-    // sort ModelParts (Elements) according to label (see compare_labels() in morpheus_model.h)
-    std::sort( model->parts.begin(), model->parts.end(), MorphModelPart::compare_labels );
 
-    for (int part=0; part < model->parts.size(); part++) {
-        QTreeWidgetItem* part_item = new QTreeWidgetItem(QStringList(model->parts[part].label));
-        modelList->topLevelItem(m)->insertChild(part, part_item);
-    }
-    if (model_index.model == m) {
-        if (model_index.part>=model->parts.size())
-            model_index.part = model->parts.size()-1;
-        selectModel(m, model_index.part);
-    }
+	for (int part=0; part < model->parts.size(); part++) {
+		QTreeWidgetItem* part_item = new QTreeWidgetItem(QStringList(model->parts[part].label));
+		if (! model->parts[part].enabled) {
+			part_item->setDisabled(true);
+			part_item->setForeground(0,QBrush(Qt::gray));
+		}
+		modelList->topLevelItem(m)->addChild(part_item);
+	}
+
+	if (model_index.model == m) {
+		selectModel(m, model_index.part);
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -1010,6 +1021,27 @@ void MainWindow::modelListChanged(QTreeWidgetItem * item) {
         selectModel(selection.model, selection.part);
 	}
  }
+ 
+void MainWindow::activatePart(QModelIndex idx)
+{
+	
+	if (idx.isValid() && idx.parent().isValid()) {
+		config::modelIndex selection;
+		selection.model = idx.parent().row();
+		selection.part = idx.row();
+		auto model = config::getOpenModels()[selection.model];
+		if ( !model->parts[selection.part].enabled ) {
+			if (model->activatePart(selection.part)) {
+				QTreeWidgetItem* item = modelList->invisibleRootItem()->child(selection.model)->child(selection.part);
+				item->setForeground(0,QBrush(Qt::black));
+				item->setDisabled(false);
+				modelList->setCurrentItem(item);
+			}
+		}
+		
+	}
+}
+
 
 
 //------------------------------------------------------

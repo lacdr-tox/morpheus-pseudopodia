@@ -219,19 +219,8 @@ bool AbstractAttribute::set(QString att)
 					model_descr->track_next_change = false;
 				}
 			}
-			if (is_changed) {
-				if ((is_active == orig_active) && (orig_value == value)) {
-					is_changed = false;
-					model_descr->change_count--;
-				}
-			}
-			else {
-				if ((is_active != orig_active) || (orig_value != value)) {
-					is_changed = true;
-					model_descr->change_count++;
-				}
-			}
 			model_descr->edits++;
+			
 			emit changed(this);
         }
 

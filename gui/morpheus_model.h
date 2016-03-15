@@ -22,12 +22,11 @@
 //class domNodeViewer;
 struct MorphModelPart {
     QString label;
+	bool enabled;
     nodeController* element;
     QModelIndex element_index;
-	static map<QString, uint> order;
-	static bool compare_labels(MorphModelPart a, MorphModelPart b){
-		return (order[a.label] < order[b.label]);
-	}
+	static const QList<QString> all_parts_sorted;
+	static const QMap<QString,int> all_parts_index;
 };
 
 
@@ -67,16 +66,18 @@ public:
     QMimeData* mimeData(const QModelIndexList &indexes) const;
     bool dropMimeData( const QMimeData * data, Qt::DropAction action, int row, int column, const QModelIndex & parent );
 
-    bool insertNode(const QModelIndex &parent, QDomNode child, int pos = -1);
-    bool insertNode(const QModelIndex &parent, QString child, int pos = -1);
+    QModelIndex insertNode(const QModelIndex& parent, QDomNode child, int pos = -1);
+    QModelIndex insertNode(const QModelIndex& parent, QString child, int pos = -1);
 	void setDisabled(const QModelIndex &node, bool disabled);
 
     // bool removeRows ( int row, int count, const QModelIndex & parent = QModelIndex() );
     void removeNode(const QModelIndex &parent, int row);
 
+	bool activatePart(int idx);
     bool addPart(QString name);
     bool addPart(QDomNode xml);
-    void removePart(int idx);
+    void removePart(QString name);
+	void removePart(int idx);
     QList<MorphModelPart> parts; /*!< Keeps the model parts for the editor */
 
     bool isSweeperAttribute(AbstractAttribute* attr) const;
@@ -117,8 +118,8 @@ public slots:
     /*!< Removes an attribute from the parameter sweeper list */
 
 signals:
-    void modelPartAdded();
-    void modelPartRemoved();
+    void modelPartAdded(int idx);
+    void modelPartRemoved(int idx);
 //     void sweeperAttributeAdded(AbstractAttribute* attr);
 //     void sweeperAttributeRemoved(AbstractAttribute* attr);
 };

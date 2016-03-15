@@ -50,9 +50,9 @@ public:
     */
     ~domNodeViewer();
 
-
-    void setModelPart(int part_idx);
-    void setModel(SharedMorphModel mod, int part_idx);
+	void setModelPart(QString part_name);
+    void setModelPart(int part);
+    void setModel(SharedMorphModel mod, int part);
     void updateConfig(); /*!< Sets the splitter of widget to the old position. */
     bool selectNode(QDomNode);
 	bool selectNode(QString path);

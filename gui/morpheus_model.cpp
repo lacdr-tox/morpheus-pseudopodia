@@ -1,24 +1,24 @@
 #include "morpheus_model.h"
 #include "config.h"
 
-map<QString,uint> createLabelOrder() {
-	map<QString,uint> order_map;
-	
-	order_map["Description"]=0;
-	order_map["Space"]=1;
-	order_map["Time"]=2;
-	order_map["CellTypes"]=3;
-	order_map["CPM"]=4;
-	order_map["PDE"]=5;
-	order_map["CellPopulations"]=6;
-	order_map["Analysis"]=7;
-	order_map["ParamSweep"]=8;
-	
-	return order_map;
-}   
+QList<QString> model_parts() {
+	QList<QString> parts;
+	parts << "Description" << "Space" << "Time" << "Global" << "CellTypes" << "CPM";
+	parts << "CellPopulations" << "Analysis";
+	return parts;
+}
+const QList<QString> MorphModelPart::all_parts_sorted = model_parts();
 
-map<QString,uint> MorphModelPart::order = createLabelOrder();
+QMap<QString,int> model_part_indices() {
+	QMap<QString,int> indices;
+	auto parts = model_parts();
+	for (uint i=0; i<parts.size(); i++) {
+		indices[parts[i]] = i;
+	}
+	return indices;
+}
 
+const QMap<QString,int> MorphModelPart::all_parts_index = model_part_indices();
 
 //------------------------------------------------------------------------------
 
@@ -851,9 +851,9 @@ QModelIndex MorphModel::itemToIndex(nodeController* node) const {
 
 //------------------------------------------------------------------------------
 
-bool MorphModel::insertNode(const QModelIndex &parent, QDomNode child, int pos) {
+QModelIndex MorphModel::insertNode(const QModelIndex &parent, QDomNode child, int pos) {
 	nodeController* contr = indexToItem(parent);
-	
+	QModelIndex result;
 	try {
 		if ( ! contr )
 			throw ModelException(ModelException::InvalidNodeIndex,QString("MorphModel::insertNode: Request to insert into invalid index!"));
@@ -865,6 +865,7 @@ bool MorphModel::insertNode(const QModelIndex &parent, QDomNode child, int pos) 
 				if (groupChild) {
 					groupChild->setDisabled(true);
 					dataChanged(itemToIndex(groupChild),itemToIndex(groupChild));
+					
 				}
 			} 
 			else if (childInfo.maxOccure.toInt() == 1 && contr->firstChild(child.nodeName()) != NULL ) {
@@ -882,26 +883,25 @@ bool MorphModel::insertNode(const QModelIndex &parent, QDomNode child, int pos) 
 // 		qDebug() << "Inserting Node " << child.nodeName() << " into " << contr ->getName() << " at " << pos;
 		
 		beginInsertRows(parent, pos, pos);
-		contr->insertChild(child,pos);
-		
+		auto child_node = contr->insertChild(child,pos);
 		endInsertRows();
+		result = itemToIndex(child_node);
 	} 
 	catch (ModelException e) {
 		QMessageBox::critical(NULL,"Insert Node Error",e.message);
-		return false;
 	}
 	catch (...)  {
 		QMessageBox::critical(NULL,"Insert Node Error","Unknown error while inserting a Data Node into the Model");
-		return false;
 	}
-	return true;
+	return result;
 }
 
 //------------------------------------------------------------------------------
 
-bool MorphModel::insertNode(const QModelIndex &parent, QString child, int pos) {
+QModelIndex MorphModel::insertNode(const QModelIndex &parent, QString child, int pos) {
 //    qDebug() << "MorphModel::insertNode at " << parent;
 	nodeController* contr = indexToItem(parent);
+	QModelIndex result;
 	try {
 	
 		if ( ! contr )
@@ -925,22 +925,20 @@ bool MorphModel::insertNode(const QModelIndex &parent, QString child, int pos) {
 		}
 // 		qDebug() << "Inserting Node " << child << " into " << contr ->getName() << " at " << pos;
 		beginInsertRows(parent, pos, pos);
-		contr->insertChild(child,pos);
+		auto child_node = contr->insertChild(child,pos);
 		endInsertRows();
+		result = itemToIndex(child_node);
 	} 
 	catch (ModelException e) {
 		QMessageBox::critical(NULL,"Insert Node Error",e.message);
-		return false;
 	}
 	catch (QString e) {
 		QMessageBox::critical(NULL,"Insert Node Error",e);
-		return false;
 	}
 	catch (...)  {
 		QMessageBox::critical(NULL,"Insert Node Error","Unknown error while inserting a Data Node into the Model");
-		return false;
 	}
-	return true;
+	return result;
 }
 
 //------------------------------------------------------------------------------
@@ -1095,10 +1093,10 @@ bool MorphModel::dropMimeData( const QMimeData * data, Qt::DropAction action, in
             QDomDocument doc;
             doc.setContent(data->text());
 			if (indexToItem(new_parent)->canInsertChild(doc.documentElement().nodeName(),row)) {
-				return insertNode(new_parent,doc.documentElement(),row);
+				return insertNode(new_parent,doc.documentElement(),row).isValid();
 			}
 			else if ( doc.firstChild().isComment() ) {
-				return insertNode(new_parent,doc.firstChild(),row);
+				return insertNode(new_parent,doc.firstChild(),row).isValid();
 			}
 			else {
 				qDebug() << data->text();
@@ -1114,60 +1112,88 @@ bool MorphModel::dropMimeData( const QMimeData * data, Qt::DropAction action, in
 //------------------------------------------------------------------------------
 
 bool MorphModel::addPart(QString name) {
-    if (!insertNode(itemToIndex(rootNodeContr),name)) return false;
-    loadModelParts();
-    emit modelPartAdded();
+	if (!MorphModelPart::all_parts_index.contains(name))
+		return false;
+	int idx = MorphModelPart::all_parts_index.value(name);
+	return activatePart(idx);
+}
+
+
+bool MorphModel::activatePart(int idx) {
+	if (idx<0 || idx>=parts.size())
+		return false;
+	auto& part = parts[idx];
+	if (!part.enabled) {
+		part.element_index = insertNode(itemToIndex(rootNodeContr),part.label);
+		if (!part.element_index.isValid())
+			return false;
+		part.element = indexToItem(part.element_index);
+		part.enabled = true;
+		emit modelPartAdded(idx);
+	}
     return true;
 }
 
 
 bool MorphModel::addPart(QDomNode xml) {
-
-    if (!insertNode(itemToIndex(rootNodeContr),xml)) return false;
-    loadModelParts();
-    emit modelPartAdded();
+	if (!MorphModelPart::all_parts_index.contains(xml.nodeName()))
+		return false;
+	
+	int idx = MorphModelPart::all_parts_index.value(xml.nodeName());
+	auto& part = parts[idx];
+	if (!part.enabled) {
+		part.element_index = insertNode(itemToIndex(rootNodeContr),xml);
+		if (!part.element_index.isValid())
+			return false;
+		part.element = indexToItem(part.element_index);
+		emit modelPartAdded(idx);
+	}
     return true;
 }
 
+void MorphModel::removePart(QString part) {
+	if (!MorphModelPart::all_parts_index.contains(part))
+		return;
+	removePart(MorphModelPart::all_parts_index.value(part));
+}
+
 void MorphModel::removePart(int idx) {
-    removeNode(itemToIndex(rootNodeContr),idx);
-    loadModelParts();
-    emit modelPartRemoved();
+	if (idx<0 || idx>=parts.size())
+		return;
+	if (parts[idx].enabled) {
+		parts[idx].enabled = false;
+		parts[idx].element = NULL;
+		removeNode(itemToIndex(rootNodeContr),parts[idx].element_index.row());
+		emit modelPartRemoved(parts[idx].element_index.row());
+	}
 }
 
 void MorphModel::loadModelParts() {
 
 	int current_order_id = -1;
 	bool need_resort = true;
-	const QList<nodeController* >& children = rootNodeContr->getChilds();
+	const QList<nodeController* >& xml_parts = rootNodeContr->getChilds();
+	QMap<QString, nodeController*> named_xml_parts;
+	for (auto part : xml_parts) named_xml_parts[part->getName()] = part;
 	
-	// this does a plain bubble sort, which should not create a performance limitation
-	while (need_resort) {
-		need_resort = false;
-		current_order_id = MorphModelPart::order[children.front()->name];
-		for (int i=1; i<children.size(); i++ ) {
-			if (MorphModelPart::order[children[i]->name] >= current_order_id) {
-				current_order_id = MorphModelPart::order[children[i]->name];
-			}
-			else {
-				rootNodeContr->moveChild(i,i-1);
-				need_resort = true;
-			}
+	auto all_parts = MorphModelPart::all_parts_sorted;
+	
+	parts.clear();
+	for (int i=0; i< all_parts.size(); i++ ) {
+		MorphModelPart part;
+		part.label = all_parts[i];
+		part.enabled = named_xml_parts.contains(part.label);
+		if (part.enabled) {
+			part.element = named_xml_parts[part.label];
+			part.element_index = itemToIndex(part.element);
 		}
+		parts.push_back(part);
 	}
 
-    parts.clear();
-    for (int i=0; i<children.size(); i++ ) {
-       MorphModelPart part;
-       part.label = children[i]->name;
-       part.element = children[i];
-       part.element_index = itemToIndex(children[i]);
-       parts.push_back(part);
-    }
-
-    MorphModelPart param_sweep;
-    param_sweep.label = "ParamSweep";
-    parts.push_back(param_sweep);
+	MorphModelPart param_sweep;
+	param_sweep.label = "ParamSweep";
+	param_sweep.enabled = true;
+	parts.push_back(param_sweep);
 }
 
 //------------------------------------------------------------------------------

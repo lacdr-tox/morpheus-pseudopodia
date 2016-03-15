@@ -113,27 +113,37 @@ void domNodeViewer::createMenu()
     QObject::connect(treeMenu, SIGNAL(triggered(QAction*)), this, SLOT(doContextMenuAction(QAction*)));
 }
 
-//------------------------------------------------------------------------------
-
-void domNodeViewer::setModelPart(int part_idx) {
-    QModelIndex root;
-    root = model->parts[part_idx].element_index;
-    model_tree_view->setRootIndex(root);
-	model_tree_view->setCurrentIndex(root);
+void domNodeViewer::setModelPart(QString part_name) {
+	
+	for (uint i=0; i<model->parts.size(); i++) {
+		if (model->parts[i].label == part_name) {
+			setModelPart(i);
+		}
+	}
 }
 
 //------------------------------------------------------------------------------
 
-void domNodeViewer::setModel(SharedMorphModel mod, int part_idx) {
+void domNodeViewer::setModelPart(int part) {
+	if (model->parts[part].enabled && model->parts[part].element_index.isValid()) {
+		QModelIndex root;
+		root = model->parts[part].element_index;
+		model_tree_view->setRootIndex(root);
+		model_tree_view->setCurrentIndex(root);
+	}
+}
+
+//------------------------------------------------------------------------------
+
+void domNodeViewer::setModel(SharedMorphModel mod, int part) {
     model = mod;
     model_tree_view->setModel(model.data());
 // 	QObject::connect(model_tree_view, SIGNAL(), this, SLOT());
 	
 	QObject::connect(model_tree_view->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(setTreeItem( const QModelIndex& )));
 	QObject::connect(model.data(), SIGNAL(rowsMoved ( const QModelIndex & , int , int , const QModelIndex & , int  )), this, SLOT(selectMovedItem(const QModelIndex & , int , int , const QModelIndex & , int )),Qt::QueuedConnection);
-	setModelPart(part_idx);
 	QObject::connect(model.data(), SIGNAL(rowsInserted( const QModelIndex & , int , int)), this, SLOT(selectInsertedItem(const QModelIndex & , int , int )),Qt::QueuedConnection);
-	setModelPart(part_idx);
+	setModelPart(part);
 }
 
 void domNodeViewer::selectMovedItem(const QModelIndex & sourceParent, int sourceRow, int , const QModelIndex & destParent, int destRow) {
@@ -447,12 +457,8 @@ bool domNodeViewer::selectNode(QString path) {
 	QStringList xml_path = path.split("/",QString::SkipEmptyParts);
 	nodeController* node = model->rootNodeContr->find(xml_path);
 	if (node) {
-		for ( int p=0; p<model->parts.size()-1; p++ ) {
-			if (model->parts.at(p).label == xml_path[1]) {
-				setModelPart(p);
-				break;
-			}
-		}
+		
+		setModelPart(xml_path[1]);
 		setTreeItem( model->itemToIndex(node));
 		return true;
 	}
@@ -467,17 +473,16 @@ bool domNodeViewer::selectNode(QString path) {
 bool domNodeViewer::selectNode(QDomNode n) {
 
 	nodeController* part_node = NULL;
-	for ( int p=0; p<model->parts.size()-1; p++ ) {
-       part_node = model->parts[p].element->find(n);
-        if (part_node) {
-            setModelPart(p);
-            break;
-        }
-    }
-    if (!part_node) {
-		qDebug() << "domNodeViewer::selectNode: Unable to select node " << n.nodeName();
-		return false;
+	
+	for (uint i=0; i<model->parts.size(); i++) {
+		if ( (part_node = model->parts[i].element->find(n)) ) {
+			setModelPart(i);
+			setTreeItem( model->itemToIndex(part_node));
+			return true;
+		}
 	}
-	setTreeItem( model->itemToIndex(part_node));
-    return true;
+	
+	qDebug() << "domNodeViewer::selectNode: Unable to select node " << n.nodeName();
+	return false;
+	
 }
