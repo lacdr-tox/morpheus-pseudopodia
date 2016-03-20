@@ -24,17 +24,17 @@ string CellMembraneAccessor::getFullName() { if (ct) return ct->default_membrane
 
 VINT CellMembraneAccessor::map_global ( CPM::CELL_ID cell_id, VINT pos ) const
 {
-	VINT membrane_pos;
 	VDOUBLE from_center = SIM::lattice().orth_distance(SIM::lattice().to_orth(pos),CPM::getCell(cell_id).getCenter());
-	if( MembraneProperty::size.x <= 1 ){ // linear Membrane PDE
-		double angle = (from_center).angle_xy();
-		membrane_pos.x = (int) (angle * (((0.5*(double)MembraneProperty::size.x)/M_PI)))  ;
-	}
-	else{ // spherical Membrane PDE
-		VDOUBLE radials = from_center.to_radial();
-		membrane_pos.x = (int) (radials.x * (((0.5*(double)MembraneProperty::size.x)/M_PI)))  ;
-		membrane_pos.y = (int) (radials.y * ((((double)MembraneProperty::size.y)/M_PI)))  ;
-	}
+	VDOUBLE membrane_pos = MembraneProperty::orientationToMemPos(from_center);
+// 	if( MembraneProperty::size.x <= 1 ){ // linear Membrane PDE
+// 		double angle = (from_center).angle_xy();
+// 		membrane_pos.x = (int) (angle * (((0.5*(double)MembraneProperty::size.x)/M_PI)))  ;
+// 	}
+// 	else{ // spherical Membrane PDE
+// 		VDOUBLE radials = from_center.to_radial();
+// 		membrane_pos.x = (int) (radials.x * (((0.5*(double)MembraneProperty::size.x)/M_PI)))  ;
+// 		membrane_pos.y = (int) (radials.y * ((((double)MembraneProperty::size.y)/M_PI)))  ;
+// 	}
 	return membrane_pos;
 }
 

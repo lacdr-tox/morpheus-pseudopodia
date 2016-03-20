@@ -46,6 +46,9 @@ private:
 	Length_Scale node_length;
 	shared_ptr <PDE_Layer> pde_layer;
 	
+	static VINT size;
+	static uint resolution;
+	static string resolution_symbol;
 public:
 	DECLARE_PLUGIN("MembraneProperty");
 	
@@ -55,9 +58,12 @@ public:
 	string getName( void );
 	shared_ptr<PDE_Layer> getPDE( void );
 
-	static uint resolution;
-	static string resolution_symbol;
-	static VINT size;
+	static void loadMembraneLattice(const XMLNode& node);
+	static string getResolutionSymbol() { return MembraneProperty::resolution_symbol; }
+	static uint getResolution() { return MembraneProperty::resolution; }
+	static VINT getSize() { return size; }
+	static VINT orientationToMemPos(const VDOUBLE& direction);
+	static VDOUBLE memPosToOrientation(const VINT& memPos);
 
 	static shared_ptr<const Lattice> lattice();
 };

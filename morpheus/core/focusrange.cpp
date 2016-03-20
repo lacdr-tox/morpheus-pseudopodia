@@ -344,7 +344,7 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 			break;
 		case Granularity::MembraneNode :
 			range->iter_mode = FocusRangeDescriptor::IT_CellMembrane;
-			range->pos_range = MembraneProperty::size;
+			range->pos_range = MembraneProperty::getSize();
 			range->spatial_dimensions.insert(FocusRangeAxis::MEM_X);
 			if (range->pos_range.y>1)
 				range->spatial_dimensions.insert(FocusRangeAxis::MEM_Y);

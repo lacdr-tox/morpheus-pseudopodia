@@ -25,17 +25,17 @@ SymbolFocus::SymbolFocus ( CPM::CELL_ID cell_id, double phi, double theta) :
 
 const VINT&  SymbolFocus::membrane_pos() const {
 	if (!has_membrane) {
-		d_membrane_pos = VINT(0,0,0);
 		VDOUBLE from_center = SIM::lattice().orth_distance(SIM::lattice().to_orth(pos()),cell().getCenter());
-		if( MembraneProperty::size.y <= 1){ // assume linear PDE
-			double angle = (from_center).angle_xy();
-			d_membrane_pos.x = (int) (angle * (((0.5*(double)MembraneProperty::size.x)/M_PI)))  ;
-		}
-		else{ // 3D simulation: assume spherical PDE
-			VDOUBLE radials = from_center.to_radial();
-			d_membrane_pos.x = (int) (radials.x * (((0.5*(double)MembraneProperty::size.x)/M_PI)))  ;
-			d_membrane_pos.y    = (int) (radials.y * ((((double)MembraneProperty::size.y)/M_PI)))  ;
-		}
+		d_membrane_pos = MembraneProperty::orientationToMemPos(from_center);
+// 		if( MembraneProperty::size.y <= 1){ // assume linear PDE
+// 			double angle = (from_center).angle_xy();
+// 			d_membrane_pos.x = (int) (angle * (((0.5*(double)MembraneProperty::size.x)/M_PI)))  ;
+// 		}
+// 		else{ // 3D simulation: assume spherical PDE
+// 			VDOUBLE radials = from_center.to_radial();
+// 			d_membrane_pos.x = (int) (radials.x * (((0.5*(double)MembraneProperty::size.x)/M_PI)))  ;
+// 			d_membrane_pos.y    = (int) (radials.y * ((((double)MembraneProperty::size.y)/M_PI)))  ;
+// 		}
 	}
 	return d_membrane_pos;
 };

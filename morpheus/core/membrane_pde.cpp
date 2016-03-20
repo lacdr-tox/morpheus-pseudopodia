@@ -15,30 +15,90 @@ string MembraneProperty::resolution_symbol("");
 shared_ptr<const Lattice> MembraneProperty::membrane_lattice = shared_ptr<const Lattice>();
 VINT MembraneProperty::size = VINT(0,0,0);
 
+void MembraneProperty::loadMembraneLattice(const XMLNode& node)
+{
+	if ( ! getXMLAttribute(node,"MembraneLattice/Resolution/value",MembraneProperty::resolution) )
+		return ;
+	
+	if (getXMLAttribute(node,"MembraneLattice/Resolution/symbol",MembraneProperty::resolution_symbol)) {
+			shared_ptr<Property<double> > p = Property<double>::createConstantInstance(MembraneProperty::resolution_symbol, "Membrane Lattice Size");
+			p->set(MembraneProperty::resolution);
+			SIM::defineSymbol(p);
+	}
+	
+	SymbolData symbol;
+	if (getXMLAttribute(node,"MembraneLattice/SpaceSymbol/symbol",SymbolData::MembraneSpace_symbol) ) {
+		symbol.link = SymbolData::MembraneSpace;
+		symbol.granularity = Granularity::MembraneNode;
+		symbol.name = SymbolData::MembraneSpace_symbol;
+		symbol.fullname = "membrane coordinates";
+		getXMLAttribute(node,"MembraneLattice/SpaceSymbol/name",symbol.fullname); 
+		symbol.type_name = TypeInfo<VDOUBLE>::name();
+		symbol.integer = false;
+		symbol.invariant = false;
+		symbol.time_invariant = true;
+		SIM::defineSymbol(symbol);
+	}
+	
+	if ( MembraneProperty::resolution < 2) {
+		throw string("Membrane resolution specified is too small!");
+	}
+	if (SIM::getLattice()->getDimensions()==2) {
+		size = VINT(MembraneProperty::resolution,1,1);
+		membrane_lattice = shared_ptr<Lattice>(Linear_Lattice::create(size,true));
+	}
+	else if (SIM::getLattice()->getDimensions()==3) {
+
+		size.y = MembraneProperty::resolution/2;
+		size.x = 2 * size.y;
+		size.z = 1;
+		membrane_lattice = shared_ptr<Lattice>(Square_Lattice::create(size,true));
+	}
+	else {
+// 				cout << "cannot create membranes for 1D lattices.\nrefuse to create the membrane lattice!" << SIM::getLattice()->getDimensions() << endl;
+		throw(string("cannot create membranes for 1D lattices.\nrefuse to create the membrane lattice!")  +  to_str( SIM::getLattice()->getDimensions() ) );
+	}
+}
+
+
+VINT MembraneProperty::orientationToMemPos(const VDOUBLE& direction) {
+	if (size.x == 0) {
+		return VINT(0,0,0);
+	}
+	if (size.y <= 1) {
+		int x = round(direction.angle_xy() / (2*M_PI) * size.x);
+		if (x >= size.x) 
+			x-= size.x;
+		return VINT(x,0,0);
+	}
+	else {
+		VDOUBLE radial = direction.to_radial();
+		VINT mem_pos(round(radial.x/(2*M_PI)*size.x),round((radial.y/M_PI)*size.y-0.5),0);
+		if (mem_pos.x >= size.x) mem_pos.x-=size.x;
+		if (mem_pos.y<0) mem_pos.y = 0;
+		return mem_pos;
+	}
+}
+
+VDOUBLE MembraneProperty::memPosToOrientation(const VINT& memPos)
+{
+	if (size.x == 0) {
+		return VDOUBLE(0,0,0);
+	}
+	else if (size.y <= 1) {
+		double angle_xy = memPos.x * 2 * M_PI / size.x;
+		return VDOUBLE(cos(angle_xy), sin(angle_xy), 0);
+	}
+	else {
+		return VDOUBLE::from_radial(VDOUBLE( 2 * M_PI * memPos.x / size.x, M_PI * ((memPos.y+0.5)  / size.y - 0.5),1));
+	}
+	
+}
+
 shared_ptr< const Lattice > MembraneProperty::lattice()
 {
 	if ( ! membrane_lattice ) {
-// #pragma omp critical
-		if ( ! membrane_lattice ) {
-			if ( MembraneProperty::resolution < 2) {
-				throw string("Membrane resolution is not specified!\nTo use membrane properties, you must set Space/MembraneSize/Resolution");
-			}
-			if (SIM::getLattice()->getDimensions()==2) {
-				size = VINT(MembraneProperty::resolution,1,1);
-				membrane_lattice = shared_ptr<Lattice>(Linear_Lattice::create(size,true));
-			}
-			else if (SIM::getLattice()->getDimensions()==3) {
-
-				size.y = MembraneProperty::resolution/2;
-				size.x = 2 * size.y;
-				size.z = 1;
-				membrane_lattice = shared_ptr<Lattice>(Square_Lattice::create(size,true));
-			}
-			else {
-// 				cout << "cannot create membranes for 1D lattices.\nrefuse to create the membrane lattice!" << SIM::getLattice()->getDimensions() << endl;
-				throw(string("cannot create membranes for 1D lattices.\nrefuse to create the membrane lattice!")  +  to_str( SIM::getLattice()->getDimensions() ) );
-			}
-		}
+		throw string("Membrane resolution is not specified!\nTo use membrane properties, you must set Space/MembraneSize/Resolution");
 	}
 	return membrane_lattice;
 }

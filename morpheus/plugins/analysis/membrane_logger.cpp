@@ -243,8 +243,8 @@ void MembraneLogger::log(double time){
 }
 
 void MembraneLogger::writeMembrane(const PluginParameter2<double, XMLReadableSymbol, RequiredPolicy>& symbol, CPM::CELL_ID id, ostream& output){
-	for(uint theta=0; theta<MembraneProperty::size.y; theta++){
-		for(uint phi=0; phi<MembraneProperty::size.x; phi++){
+	for(uint theta=0; theta<MembraneProperty::getSize().y; theta++){
+		for(uint phi=0; phi<MembraneProperty::getSize().x; phi++){
 			
 			double value = symbol( SymbolFocus(id, phi, theta) );
 			//double inf = 1.0/0.0;

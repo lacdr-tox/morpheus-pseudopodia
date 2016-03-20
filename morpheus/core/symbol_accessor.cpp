@@ -347,9 +347,10 @@ TypeInfo<VDOUBLE>::SReturn SymbolAccessorBase<VDOUBLE,ReadOnlyAccess>::get(const
 			return orth_pos;
 		}
 		case SymbolData::MembraneSpace: {
-			VDOUBLE radial = f.membrane_pos() * mem_scale;
-			radial.z = 1.0;
-			return VDOUBLE::from_radial(radial);
+			return MembraneProperty::memPosToOrientation(f.membrane_pos());
+// 			VDOUBLE radial = f.membrane_pos() * mem_scale;
+// 			radial.z = 1.0;
+// 			return VDOUBLE::from_radial(radial);
 		}
         case SymbolData::CellCenterLink:
             return f.cell().getCenter();

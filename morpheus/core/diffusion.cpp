@@ -71,7 +71,7 @@ void Diffusion::executeTimeStep()
 			for ( int ic=0; ic<cells.size(); ic++) {
 					uint cell_volume = CPM::getCell( cells[ic] ).nNodes();
 					double spherical_circumference = membrane_length(cell_volume);
-					double node_length_along_equator = (spherical_circumference * physical_node_length) / MembraneProperty::resolution;
+					double node_length_along_equator = (spherical_circumference * physical_node_length) / MembraneProperty::getResolution();
 					
 					membrane_accessor.getMembrane(cells[ic])->updateNodeLength( node_length_along_equator );
 					// membrane_accessor.getMembrane(cells[ic])->setNodeLength( some funciton( cell_volume_accessor(cells[ic])));

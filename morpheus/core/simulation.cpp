@@ -1113,26 +1113,6 @@ void loadFromXML(const XMLNode xNode) {
 		symbol.time_invariant = true;
 		defineSymbol(symbol);
 		
-		getXMLAttribute(xSpace,"MembraneLattice/Resolution/value",MembraneProperty::resolution);
-		if (getXMLAttribute(xSpace,"MembraneLattice/Resolution/symbol",MembraneProperty::resolution_symbol)) {
-				shared_ptr<Property<double> > p = Property<double>::createConstantInstance(MembraneProperty::resolution_symbol, "Membrane Lattice Size");
-				p->set(MembraneProperty::resolution);
-				defineSymbol(p);
-		}
-		
-		if (getXMLAttribute(xSpace,"MembraneLattice/SpaceSymbol/symbol",SymbolData::MembraneSpace_symbol) ) {
-			symbol.link = SymbolData::MembraneSpace;
-			symbol.granularity = Granularity::MembraneNode;
-			symbol.name = SymbolData::MembraneSpace_symbol;
-			symbol.fullname = "membrane coordinates";
-			getXMLAttribute(xSpace,"MembraneLattice/SpaceSymbol/name",symbol.fullname); 
-			symbol.type_name = TypeInfo<VDOUBLE>::name();
-			symbol.integer = false;
-			symbol.invariant = false;
-			symbol.time_invariant = true;
-			defineSymbol(symbol);
-		}
-		
 		// Loading and creating the underlying lattice
 		cout << "Creating lattice"<< endl;
 		XMLNode xLattice = xSpace.getChildNode("Lattice");
@@ -1163,7 +1143,9 @@ void loadFromXML(const XMLNode xNode) {
 			p->set(global_lattice->size());
 			defineSymbol(p);
 		}
-
+		
+		MembraneProperty::loadMembraneLattice(xSpace);
+		
 		// Loading global definitions
 		if (xNode.nChildNode("Global")) {
 			xGlobals = xNode.getChildNode("Global");
@@ -1340,11 +1322,11 @@ void saveToXML() {
 	XMLNode xLattice = global_lattice->saveToXML();
 	xSpace.addChild(xLattice);
 
-	if( MembraneProperty::resolution > 0) {
+	if( MembraneProperty::getResolution() > 0) {
 		XMLNode xMemSize = xSpace.addChild("MembraneLattice");
-		xMemSize.addAttribute("resolution", to_cstr(MembraneProperty::resolution));
-		if (!MembraneProperty::resolution_symbol.empty()) 
-			xMemSize.addAttribute("symbol", MembraneProperty::resolution_symbol.c_str());
+		xMemSize.addAttribute("resolution", to_cstr(MembraneProperty::getResolution()));
+		if (!MembraneProperty::getResolutionSymbol().empty()) 
+			xMemSize.addAttribute("symbol", MembraneProperty::getResolutionSymbol().c_str());
 	}
 	
 	// saving global_scope

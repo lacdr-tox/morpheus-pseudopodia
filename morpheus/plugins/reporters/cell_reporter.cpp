@@ -167,14 +167,20 @@ void CellReporter::report() {
 		else if (input.granularity() == Granularity::MembraneNode) {
 			for (const auto cell_id: cells)  {
 				VDOUBLE polarisation;
-				double theta_scale = 2.0 * M_PI / MembraneProperty::size.x;
-				double phi_scale = 2.0 * M_PI / MembraneProperty::size.y;
+// 				double theta_scale = 2.0 * M_PI / MembraneProperty::getSize().x;
+// 				double phi_scale = 1.0 * M_PI / MembraneProperty::getSize().y;
 				FocusRange range(Granularity::MembraneNode, cell_id);
+				double surface = 0;
 				for (const auto& focus : range) {
-					VDOUBLE orientation( cos( focus.membrane_pos().x * theta_scale ), sin( focus.membrane_pos().x * theta_scale ),0);
-					polarisation += input(focus) * orientation;
+					VDOUBLE orientation = MembraneProperty::memPosToOrientation(focus.membrane_pos());
+					
+					double d_surf = sqrt(1-abs(orientation.z));
+					surface += d_surf /* * 2 * M_PI / MembraneProperty::size.x */;
+					
+// 					VDOUBLE orientation( cos( focus.membrane_pos().x * theta_scale ), sin( focus.membrane_pos().x * theta_scale ),0);
+					polarisation += input(focus) * orientation * d_surf;
 				}
-				polarisation = polarisation / double(MembraneProperty::size.x);
+				polarisation = polarisation / surface;
 				polarity_output.set(SymbolFocus(cell_id), polarisation);
 			}
 		}
