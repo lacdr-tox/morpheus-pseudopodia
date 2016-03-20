@@ -301,7 +301,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		a.match_path  = "MorpheusModel/MetropolisKinetics"; a.move_path = "MorpheusModel/CPM/MetropolisKinetics"; fixes.append(a);
 		a.match_path  = "MorpheusModel/Analysis/Logger/Cell"; a.move_path = "MorpheusModel/Analysis/Logger/Input/Cell"; fixes.append(a);
 		
-		a.match_path  = "MorpheusModel/CPM/Interaction/Neighborhood"; a.move_path = "MorpheusModel/Space/Lattice/Neighborhood";fixes.append(a);
+// 		a.match_path  = "MorpheusModel/CPM/Interaction/Neighborhood"; a.move_path = "MorpheusModel/Space/Lattice/Neighborhood";fixes.append(a);
 		
 		a.match_path  = "MorpheusModel/Space/MembraneSize/@value"; a.move_path = "MorpheusModel/Space/MembraneProperty/@resolution";fixes.append(a);
 		a.match_path  = "MorpheusModel/Space/MembraneProperty"; a.move_path = "MorpheusModel/Space/MembraneLattice";fixes.append(a);
