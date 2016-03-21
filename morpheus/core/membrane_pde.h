@@ -49,6 +49,7 @@ private:
 	static VINT size;
 	static uint resolution;
 	static string resolution_symbol;
+	static vector<double> node_sizes;
 public:
 	DECLARE_PLUGIN("MembraneProperty");
 	
@@ -64,6 +65,7 @@ public:
 	static VINT getSize() { return size; }
 	static VINT orientationToMemPos(const VDOUBLE& direction);
 	static VDOUBLE memPosToOrientation(const VINT& memPos);
+	static double nodeSize(const VINT& memPos);
 
 	static shared_ptr<const Lattice> lattice();
 };

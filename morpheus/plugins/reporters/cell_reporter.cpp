@@ -173,11 +173,8 @@ void CellReporter::report() {
 				double surface = 0;
 				for (const auto& focus : range) {
 					VDOUBLE orientation = MembraneProperty::memPosToOrientation(focus.membrane_pos());
-					
-					double d_surf = sqrt(1-abs(orientation.z));
+					double d_surf = MembraneProperty::nodeSize(focus.membrane_pos());
 					surface += d_surf /* * 2 * M_PI / MembraneProperty::size.x */;
-					
-// 					VDOUBLE orientation( cos( focus.membrane_pos().x * theta_scale ), sin( focus.membrane_pos().x * theta_scale ),0);
 					polarisation += input(focus) * orientation * d_surf;
 				}
 				polarisation = polarisation / surface;

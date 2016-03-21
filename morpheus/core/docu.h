@@ -318,18 +318,18 @@ This can imported from a 8-bit TIFF image, loaded from file. By convention, non-
 \defgroup MembraneLattice
 \ingroup Space
 
-\b Resolution specifies the lattice discretization of the membrane-bound fields (\ref MembraneProperty).
-This resolution is equal for all MembraneProperties and for all cells.
+Defines the discretization of the membrane property system (\ref MembraneProperty), which is represented by a field on a unit sphere / circle, that is mapped to the actual cell boundary. 
+
+\b Resolution specifies the lattice discretization of the membrane-bound fields.
+This resolution is equal for all MembraneProperties and for all cells. By convention, the x and y-resolution in 2D MembraneProperties are identical.
+
 Optionally, a \b symbol can be specified to refer to the lattice discretization.
 
-By convention, the y-resolution in 2D MembraneProperties is \f$ \frac{1}{2}*{resolution} \f$ and is specified automatically.
-
-\b SpaceSymbol can be specified to refer to the current location a membrane property, in polar coordinates (phi, theta).
+\b SpaceSymbol can be specified to refer to the current location with respect ot a membrane property. Positions are given as a vector (x,y,z) within the unit sphere / circle representing the memrane field.
 This can be used to initialize membrane properties (see example below).
 
 \section Note
-The resolution can have serious impact on computational performance! 
-High spatial resolution may lead to slow simulations, in particular for reaction-diffusion systems on membranes of large cell populations.
+The resolution can have serious impact on computational performance, in particular for reaction-diffusion systems on membranes of large cell populations.
 
 \section Example
 To specify a membrane property with a lattice discretization of 100 and definition of symbols for the membrane size and location (from PCP example):
@@ -341,10 +341,10 @@ To specify a membrane property with a lattice discretization of 100 and definiti
 \endverbatim
 
 Note that the symbols defined above can be used initialize the membrane property, independent of the lattice discretization. 
-Here, using a sine wave, scaled between 0 and 1.
+Here, using a sine wave, scaled between 0 and 1 by just referring to the x part of the current membrane position.
 \verbatim
 <InitProperty symbol-ref="membrane">
-	<Expression> 0.5*sin(m.phi)+1.0 </Expression>
+	<Expression> 0.5*(m.x+1.0) </Expression>
 </InitProperty>
 \endverbatim
 
@@ -597,10 +597,10 @@ A \b Scope is a portion of the model in which a symbol is defined and valid. Sym
 The following model elements define their own scopes:
 - \ref Global
 - \ref CellType
-- \ref System
+- \ref System (including Trigger environments)
 
-Symbols are inherited from the global to local scopes, but may be overwritten in local scopes, even to represent a different type of symbol (e.g. Global/Constant may be overwritten by a System/Variable). 
-In this way, global symbols can be used as default values.
+Symbols are inherited from the global to local scopes, but may be overwritten in local scopes, even to differ in constness and granularity (e.g. Global/Constant may be overwritten by a System/Variable). 
+The type of the symbol (scalar / vector), however, has to be identical. In this way, global symbols can be used as default values.
 
 Unlike the other scopes, the \ref CellType scope is provides a spatial compartment, such that symbol defined in the CellType scope
 can only be resolved at the spatial positions occupied by cells of this CellType. Therefore, in some cases, it may be required to provide a global constant as a default value.

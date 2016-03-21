@@ -342,7 +342,9 @@ void TiffPlotter::writeTIFF(CPM::CELL_ID cellid)
 				for(uint j=0; j < cell_ids.size(); j++){
 					
 					if( plot.channels[c]->symbol.accessor().getLinkType() == SymbolData::CellMembraneLink ){
-						if(plot.channels[c]->membrane.valid()) {
+						if (plot.channels[c]->membrane.valid()) {
+							auto min_val = plot.channels[c]->membrane.getMembrane( cell_ids[j] )->min_val();
+							if (min_val < plot.channels[c]->min)
 							plot.channels[c]->min = plot.channels[c]->membrane.getMembrane( cell_ids[j] )->min_val();
 						}
 					}

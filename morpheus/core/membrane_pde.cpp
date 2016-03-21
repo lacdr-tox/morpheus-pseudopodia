@@ -15,6 +15,8 @@ string MembraneProperty::resolution_symbol("");
 shared_ptr<const Lattice> MembraneProperty::membrane_lattice = shared_ptr<const Lattice>();
 VINT MembraneProperty::size = VINT(0,0,0);
 
+vector<double> MembraneProperty::node_sizes;
+
 void MembraneProperty::loadMembraneLattice(const XMLNode& node)
 {
 	if ( ! getXMLAttribute(node,"MembraneLattice/Resolution/value",MembraneProperty::resolution) )
@@ -46,6 +48,7 @@ void MembraneProperty::loadMembraneLattice(const XMLNode& node)
 	if (SIM::getLattice()->getDimensions()==2) {
 		size = VINT(MembraneProperty::resolution,1,1);
 		membrane_lattice = shared_ptr<Lattice>(Linear_Lattice::create(size,true));
+		node_sizes.push_back(1.0);
 	}
 	else if (SIM::getLattice()->getDimensions()==3) {
 
@@ -53,11 +56,22 @@ void MembraneProperty::loadMembraneLattice(const XMLNode& node)
 		size.x = 2 * size.y;
 		size.z = 1;
 		membrane_lattice = shared_ptr<Lattice>(Square_Lattice::create(size,true));
+		node_sizes.resize(size.y);
+		VINT pos(0,0,0);
+		for (pos.y=0; pos.y<size.y; pos.y++) {
+			node_sizes[pos.y] = sin(MembraneProperty::memPosToOrientation(pos).to_radial().y);
+		}
+		
 	}
 	else {
-// 				cout << "cannot create membranes for 1D lattices.\nrefuse to create the membrane lattice!" << SIM::getLattice()->getDimensions() << endl;
 		throw(string("cannot create membranes for 1D lattices.\nrefuse to create the membrane lattice!")  +  to_str( SIM::getLattice()->getDimensions() ) );
 	}
+}
+
+double MembraneProperty::nodeSize(const VINT& memPos)
+{
+	assert(MembraneProperty::node_sizes.size()>memPos.y);
+	return MembraneProperty::node_sizes[memPos.y];
 }
 
 
