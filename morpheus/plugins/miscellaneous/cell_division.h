@@ -36,23 +36,32 @@ To specify daughter-specific properties (to model e.g. asymmetric cell division)
 This defines a symbolic handle (value 1 or 2) for the two daughters that can be used in the Triggers. See example below.
 
 - \b condition: Expression describing condition under a cell should divide
-- \b division_plane: Plane of division, through cell center of mass. 
+- \b division-plane: Plane of division, through cell center of mass. 
   - major: longest axis in ellipsoid approximation of cell shape
   - minor: shortest axis in ellipsoid approximation of cell shape
   - random: randomly oriented division plane
+  - oriented: user-specified division plane (must be given as vector in 'orientation')
 
 - \b write_log (default false): Boolean value specifying whether or not to create a log file 'celldivisions.log' that holds information (Time, cell IDs) per cell division.
 - \b daughterID (optional): Local symbol that provides unique IDs (1 or 2) for the two daughter cells to be used in Triggers. E.g. to model asymmetric cell division
+- \b orientation (optional): Vector (or vectorexpression) giving the division plane. Only used (and required) if division-plane="oriented".
 - \b Triggers (optional): a System of Rules that are triggered for both daughter cells after cell division.
 
-\section Example
-
-Divide with random orientation when a certain condition is statisfied.
+\section Examples
+Divide with random orientation when cell volume doubles.
 \verbatim
-<CellDivision condition="V >= (2.0 * V0)" division_plane="random"/>
+<CellDivision	condition="V >= (2.0 * V0)" 
+				division_plane="random" />
 \endverbatim
 
-Using Triggers to specify properties after cell division. Symbol 'Vt' is here set to a daughter-specific value with 'daughterID', 
+Divide every 1000 time steps along a user-specified orientation.
+\verbatim
+<CellDivision	condition="mod(time, 1000) == 0" 
+				division_plane="oriented" 
+				orientation="vector.x, vector.y, vector.z" />
+\endverbatim
+
+Using Triggers to specify properties after cell division (assymetric division). Symbol 'Vt' is here set to a daughter-specific value with 'daughterID', 
 \verbatim
 <CellDivision condition="V >= (2.0 * V0)" division_plane="major" daughterID="daughter">
 	<Triggers>
@@ -77,6 +86,7 @@ class CellDivision : public InstantaneousProcessPlugin
 private:
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> condition;
 	PluginParameter2<CellType::division, XMLNamedValueReader, RequiredPolicy> division_plane;
+	PluginParameter2<VDOUBLE, XMLEvaluator, OptionalPolicy> orientation;
 	
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> write_log;
 

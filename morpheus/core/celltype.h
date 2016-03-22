@@ -108,8 +108,8 @@ public:
 	/** Splits the specified cell @p id along a given split plane and returns the id of the newly created daughter cell. 
 	    By default, the cell is split perpendicular to its long axis, right trough the center of gravity;
 	  */
-	enum division{ MAJOR, MINOR, RANDOM };
-	pair<CPM::CELL_ID, CPM::CELL_ID> divideCell2(CPM::CELL_ID id, division d = CellType::MAJOR);
+	enum division{ MAJOR, MINOR, RANDOM, ORIENTED };
+	pair<CPM::CELL_ID, CPM::CELL_ID> divideCell2(CPM::CELL_ID id, division d = CellType::MAJOR, VDOUBLE orientation=VDOUBLE(1,0,0) );
 	pair<CPM::CELL_ID, CPM::CELL_ID> divideCell2(CPM::CELL_ID mother_id, VDOUBLE split_plane_normal,  VDOUBLE split_plane_center );
 	
 

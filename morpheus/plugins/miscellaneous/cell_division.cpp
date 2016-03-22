@@ -6,7 +6,6 @@ REGISTER_PLUGIN(CellDivision);
 CellDivision::CellDivision() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_NONE ) {
 	
 	condition.setXMLPath("Condition/text");
-
 	registerPluginParameter(condition);
 
 	division_plane.setXMLPath("division-plane");
@@ -15,10 +14,13 @@ CellDivision::CellDivision() : InstantaneousProcessPlugin( TimeStepListener::XML
 	conversion_map[string("minor")] 	= CellType::MINOR;
 	conversion_map[string("major")] 	= CellType::MAJOR;
 	// TODO: it would be useful to determine specific division plane
-	//conversion_map[string("vector")] 	= CellType::VECTOR; 
+	conversion_map[string("oriented")] 	= CellType::ORIENTED; 
 	division_plane.setConversionMap( conversion_map );
 	registerPluginParameter(division_plane);
 
+	orientation.setXMLPath("orientation");
+	registerPluginParameter(orientation);
+	
 	write_log.setXMLPath("write-log");
 	write_log.setDefault("false");
 	registerPluginParameter(write_log);
@@ -60,6 +62,11 @@ void CellDivision::init(const Scope* scope){
 		cout << "CellDivision: Log cell IDs to file: celldivisions.log\n";
 		fout << "Time\tMotherID\tDaughter1ID\tDaughter2ID\n";
 	}
+	
+	if( division_plane() == CellType::ORIENTED && !orientation.isDefined()  ){
+		throw MorpheusException("CellDivision: Orientation of cell division plane must be specified.", stored_node);
+	}
+
 }
 
 void CellDivision::executeTimeStep() {
@@ -78,7 +85,16 @@ void CellDivision::executeTimeStep() {
 			const Cell& mother = CPM::getCell(cells[i]);
 			//CPM::CELL_ID daughter_id = celltype->divideCell( mother_id, divisionPlane ); //CPM::getCellIndex(mother_id).cell );
 			
-			pair<CPM::CELL_ID,CPM::CELL_ID> daughter_ids = celltype->divideCell2( mother_id, division_plane() ); //CPM::getCellIndex(mother_id).cell );
+			pair<CPM::CELL_ID,CPM::CELL_ID> daughter_ids;
+			if ( division_plane() == CellType::ORIENTED  ){
+				if ( orientation.isDefined() )
+					daughter_ids = celltype->divideCell2( mother_id, division_plane(), orientation( SymbolFocus(cells[i]) ) );
+				else
+					throw MorpheusException("CellDivision: Orientation of cell division plane must be specified.", stored_node);
+			}
+			else
+				daughter_ids = celltype->divideCell2( mother_id, division_plane() );
+				
 			const Cell& daughter1 = CPM::getCell(daughter_ids.first);
 			const Cell& daughter2 = CPM::getCell(daughter_ids.second);
 			

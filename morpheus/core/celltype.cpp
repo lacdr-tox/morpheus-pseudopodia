@@ -365,28 +365,36 @@ CPM::CELL_ID  CellType::createCell(CPM::CELL_ID cell_id) {
 }
 
 
-pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID cell_id, division mode) {
+pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID cell_id, division mode, VDOUBLE orientation) {
 	VDOUBLE division_plane_normal = VDOUBLE(0,0,0);
 
 	const EllipsoidShape& shape = storage.cell(cell_id).getCellShape();
-	if( mode == CellType::MAJOR ){
-		division_plane_normal = shape.axes[1];
-	}
-	else if( mode == CellType::MINOR ){
-		division_plane_normal = shape.axes[0];
-	}
-	else if( mode == CellType::RANDOM ){
-		if ( SIM::getLattice()->getDimensions()==3) {
-			division_plane_normal = VDOUBLE::from_radial(VDOUBLE(getRandom01()*2*M_PI,0,1));
+	switch ( mode ){
+		case CellType::MAJOR:{
+			division_plane_normal = shape.axes[1];
+			break;
 		}
-		else if ( SIM::getLattice()->getDimensions()==2){
-			division_plane_normal = VDOUBLE::from_radial(VDOUBLE(getRandom01()*2*M_PI,(getRandom01()-0.5)*M_PI,1));
+		case CellType::MINOR:{
+			division_plane_normal = shape.axes[0];
+			break;
+		}
+		case CellType::RANDOM:{
+			if ( SIM::getLattice()->getDimensions()==3) {
+				division_plane_normal = VDOUBLE::from_radial(VDOUBLE(getRandom01()*2*M_PI,0,1));
+			}
+			else if ( SIM::getLattice()->getDimensions()==2){
+				division_plane_normal = VDOUBLE::from_radial(VDOUBLE(getRandom01()*2*M_PI,(getRandom01()-0.5)*M_PI,1));
+			}
+			break;
+		}
+		case CellType::ORIENTED:{
+			division_plane_normal = orientation;
+			break;
+		}
+		default:{
+			throw string("CellDivision: Unknown division plane specification.");
 		}
 	}
-	else {
-		throw string("Unknown division plane specification in CellType::divideCell2");
-	}
-	
 	return divideCell2(cell_id, division_plane_normal, shape.center);
 }
 
