@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- First line must be the XML declaration line -->
+<!-- XSD root element. All XSD elements must be prefixed with "xs" -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+	<!-- Declaration of plugin group and name of its XML element -->
+	<!-- This plugin will be merged with other CellTypePlugins -->
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<!-- Plugin will appear as "ExamplePlugin" in XML and GUI -->
+			<xs:element name="ExamplePlugin" type="ExamplePluginType"/>
+		</xs:choice>
+	</xs:group>
+
+	<!-- Specification of XML element, its subelements and its attributes -->
+	<xs:complexType name="ExamplePluginType">
+		<!-- Attributes with their type, usage and default value -->
+		<xs:attribute name="threshold" type="cpmDouble" use="optional" default="1" />
+		<xs:attribute name="expression" type="cpmMathExpression" use="required" />
+	</xs:complexType>
+
+</xs:schema>

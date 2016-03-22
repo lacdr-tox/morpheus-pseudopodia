@@ -5,16 +5,7 @@ set(plugin_src
 	add_cell.cpp
 	change_celltype.cpp
 	insert_medium.cpp
-	
-	
-#  env_dissipation.cpp
-#  fusion.cpp
-  #experimental
-#  fluidsecretion.cpp
-  # vesicles.cpp
-  
-#  membranerules.cpp
-#  membraneRules3D.cpp
 
-
+	# example_plugin.cpp
+	
   PARENT_SCOPE)
