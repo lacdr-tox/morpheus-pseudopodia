@@ -18,6 +18,7 @@ bool SymbolAccessorBase<double,ReadOnlyAccess>::init_special() {
 			vec = shared_ptr< SymbolAccessor<VDOUBLE> >(new SymbolAccessor<VDOUBLE>(scope->findSymbol<VDOUBLE>(vec_name)));
 			// properly refer to the underlying container
 			data.link = vec->getLinkType();
+			data.granularity = vec->getGranularity();
 			break;
 		}
 			

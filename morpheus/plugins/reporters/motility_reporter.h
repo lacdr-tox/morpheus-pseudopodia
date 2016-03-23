@@ -43,9 +43,9 @@ class MotilityReporter : public ReporterPlugin
 public:
 	DECLARE_PLUGIN("MotilityReporter");
     MotilityReporter();
-    virtual void loadFromXML ( const XMLNode );
-    virtual void init (const Scope* scope);
-    virtual void report();
+    virtual void loadFromXML ( const XMLNode ) override;
+    virtual void init (const Scope* scope) override;
+    virtual void report() override;
 	
 private:
 	const CellType* celltype;
