@@ -37,6 +37,12 @@ void CPMSampler::loadFromXML(const XMLNode node)
 		SIM::defineSymbol(symbol);
 	}
 	
+	boundary_neigbhborhood = SIM::lattice().getDefaultNeighborhood();
+	XMLNode xNeighborhood = node.getChildNode("MetropolisKinetics").getChildNode("Neighborhood");
+	if (!xNeighborhood.isEmpty()) {
+		boundary_neigbhborhood = SIM::lattice().getNeighborhood(xNeighborhood);
+	}
+	
 	interaction_energy = shared_ptr<InteractionEnergy>(new InteractionEnergy());
 	interaction_energy->loadFromXML(node.getChildNode("Interaction"));
 
@@ -104,6 +110,10 @@ const vector< VINT >& CPMSampler::getInteractionNeighborhood()
 	return interaction_energy->getNeighborhood();
 }
 
+const vector< VINT >& CPMSampler::getBoundaryNeighborhood()
+{
+	return boundary_neigbhborhood;
+}
 
 void CPMSampler::executeTimeStep()
 {

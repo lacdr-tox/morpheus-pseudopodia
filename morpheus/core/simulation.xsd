@@ -183,7 +183,7 @@ This allows the user to create populations a heterogeneous initial population. T
 
 	<xs:complexType name="Interaction">
 		<xs:all>
-			<xs:element name="Neighborhood" type="cpmNeighborhood" minOccurs="0"/>
+ 			<xs:element name="Neighborhood" type="cpmNeighborhood" minOccurs="0"/> 
 <!-- 			<xs:choice minOccurs="0" maxOccurs="unbounded"> -->
 <!-- 				<xs:group ref="InteractionPlugins"/> -->
 			<xs:element name="Contact" minOccurs="0" maxOccurs="unbounded">
@@ -198,7 +198,7 @@ This allows the user to create populations a heterogeneous initial population. T
 			</xs:element>
 		</xs:all>
 		<xs:attribute name="default" use="optional" type="cpmDouble"/>
-		<xs:attribute name="collapse" use="optional" type="cpmBoolean" default="true" />
+<!--		<xs:attribute name="collapse" use="optional" type="cpmBoolean" default="true" /> -->
 		<xs:attribute name="negative" use="optional" type="cpmBoolean" default="false">
 			<xs:annotation>
 				<xs:documentation>Use negative surface values when using SurfaceConstraint (Ouchi, 2003)</xs:documentation>
@@ -236,15 +236,7 @@ This allows the user to create populations a heterogeneous initial population. T
 			<xs:documentation>Specifies the modified Metropolis algorithm used to stochastically find the minimal energy configuration.</xs:documentation>
 		</xs:annotation>
 		<xs:all>
-<!-- MOVED BACK TO ATTRIBUTE
-                        <xs:element name="Yield" minOccurs="0" type="cpmPluginParameter_Double" >
-                        <xs:annotation>
-                        <xs:documentation>Modification to Boltzmann distribution such that energetically unfavourable configurations are accepted with lower probablity.
-This can be used to model the resistance of cell membrane to fluctuations.
-</xs:documentation>
-                        </xs:annotation>
-			</xs:element>
--->
+			<xs:element name="Neighborhood" type="cpmNeighborhood" minOccurs="0"/>
 		</xs:all>
 
 		<xs:attribute name="stepper" type="cpmStepper" use="required"/>

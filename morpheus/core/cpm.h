@@ -42,14 +42,15 @@ public:
 	CPMSampler();
 	~CPMSampler() { cout << "Deleting the CPM sampler" << endl; };
 	
-    virtual void loadFromXML(const XMLNode node);
+    virtual void loadFromXML(const XMLNode node) override;
 	double MCSDuration() { return mcs_duration(); }
-	virtual void prepareTimeStep() {};
-	virtual void executeTimeStep();
-	virtual string XMLName() const { return string("CPM"); };
+	virtual void prepareTimeStep() override {};
+	virtual void executeTimeStep() override ;
+	virtual string XMLName() const override { return string("CPM"); };
 	
-    virtual void init(const Scope* scope);
+    virtual void init(const Scope* scope) override;
 	const vector<VINT>& getInteractionNeighborhood();
+	const vector<VINT>& getBoundaryNeighborhood();
 	vector< multimap< Plugin*, SymbolDependency > > getCellTypeDependencies() const;
 	set< SymbolDependency > getInteractionDependencies() const;
 	
@@ -62,6 +63,7 @@ private:
 	PluginParameter2<double,XMLValueReader,DefaultValPolicy> metropolis_yield;
 	
 	CPM::UPDATE current_update;
+	vector<VINT> boundary_neigbhborhood;
 	shared_ptr<const EdgeTrackerBase> edge_tracker;
 	shared_ptr<InteractionEnergy> interaction_energy;
 	

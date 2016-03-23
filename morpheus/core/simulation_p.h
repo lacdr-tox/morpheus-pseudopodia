@@ -66,6 +66,7 @@ namespace CPM {
 	shared_ptr<LAYER> layer;
 	shared_ptr<CPMSampler> cpm_sampler;
 	vector<VINT> boundary_neighborhood;
+	vector<VINT> interaction_neighborhood;
 	shared_ptr<EdgeTrackerBase> edgeTracker;
 	
 	vector< shared_ptr<CellType> > celltypes;

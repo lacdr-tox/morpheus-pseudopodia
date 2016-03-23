@@ -9,8 +9,8 @@ void InteractionEnergy::loadFromXML( const XMLNode xNode) {
 	
 	//assert( ! ia_neighborhood_node.isEmpty() );
 	ia_neighborhood = SIM::lattice().getDefaultNeighborhood();
-	if (ia_XMLNode.nChildNode("Neighborhood"))
-		ia_neighborhood = SIM::lattice().getNeighborhood(ia_XMLNode.getChildNode("Neighborhood"));
+// 	if (ia_XMLNode.nChildNode("Neighborhood"))
+// 		ia_neighborhood = SIM::lattice().getNeighborhood(ia_XMLNode.getChildNode("Neighborhood"));
 
 	if (ia_neighborhood.empty()) {
 		cerr << "CPM: Unable to get a neighborhood specification for interaction energy" << endl;

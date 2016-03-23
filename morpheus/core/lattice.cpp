@@ -244,6 +244,9 @@ std::vector<VINT> Lattice::getNeighborhood(const XMLNode node) const {
 std::vector<VINT> Lattice::getNeighborhoodByDistance(const double dist_max) const  {
 	std::vector<VINT> acc = get_all_neighbors();
 	// assume all neighbors are ordered by distance and we just got to drop from the end ...
+	if (dist_max>3.0) {
+		throw string("Neighborhood distances larger than 3 are not supported");
+	}
 	while ( ! acc.empty() && orth_distance(VDOUBLE(0,0,0),to_orth(acc.back())).abs() > dist_max + 0.00001 ) {
 // 		cout << acc.back() << " -> "  << orth_distance(VINT(0,0,0),to_orth(acc.back())).abs() << endl;
 		acc.pop_back();
@@ -253,8 +256,12 @@ std::vector<VINT> Lattice::getNeighborhoodByDistance(const double dist_max) cons
 
 std::vector<VINT> Lattice::getNeighborhoodByOrder(const uint order) const {
 	std::vector<VINT> neighbors = get_all_neighbors();
+	std::vector<int> neighbors_per_order = get_all_neighbors_per_order();
+	if (neighbors_per_order.size()<order) {
+		throw string("Maximum neighborhood order for the current lattice is ") + to_str(neighbors_per_order.size());
+	}
 	uint n_neighbors=0;
-	for (uint i=0; i<order; i++) n_neighbors += get_all_neighbors_per_order()[i]; 
+	for (uint i=0; i<order; i++) n_neighbors += neighbors_per_order[i]; 
 	neighbors.resize(n_neighbors);
 	return neighbors;
 }
@@ -319,14 +326,20 @@ vector<VINT> Hex_Lattice::get_all_neighbors() const {
 	// 2nd order
 	VINT(1,1,0), VINT(-1,-1,0),VINT(2,-1,0), VINT(1,-2,0), VINT(-2,1,0), VINT(-1,2,0),
 	// 3rd order
-	VINT(2,0,0), VINT(-2,0,0),VINT(0,2,0), VINT(0,-2,0), VINT(-2,2,0), VINT(2,-2,0)
+	VINT(2,0,0), VINT(-2,0,0),VINT(0,2,0), VINT(0,-2,0), VINT(-2,2,0), VINT(2,-2,0),
+	// 4th order
+	VINT(2,1,0), VINT(1,2,0),VINT(-1,3,0), VINT(-2,3,0), VINT(-3,2,0), VINT(-3,1,0),
+	VINT(-2,-1,0), VINT(-1,-2,0),VINT(1,-3,0), VINT(2,-3,0), VINT(3,-2,0), VINT(3,-1,0),
+	// 5th order
+	VINT(3,0,0), VINT(-3,0,0),VINT(0,3,0), VINT(0,-3,0), VINT(-3,3,0), VINT(3,-3,0)
 	};
+	
 	vector<VINT> acc(c_array_begin(neighbors), c_array_end(neighbors));
 	return acc;
 };
 
 vector<int> Hex_Lattice::get_all_neighbors_per_order() const {
-	int neighbors[]	 = {6, 6, 6};
+	int neighbors[]	 = {6, 6, 6, 12 ,6};
 	std::vector<int> acc(c_array_begin(neighbors), c_array_end(neighbors));
 	return acc;	
 }
@@ -408,6 +421,10 @@ const VINT neighbors[] = {
 	VINT(-2,1,-2),VINT(-2,-1,-2),
 	VINT(1,2,-2),VINT(-1,2,-2),
 	VINT(1,-2,-2),VINT(-1,-2,-2),
+	
+	VINT(3,0,0), VINT(-3,0,0),
+	VINT(0,3,0), VINT(0,-3,0),
+	VINT(0,0,3), VINT(0,0,-3),
 	//Eckennachbarn
 	VINT(2,2,2),    VINT(-2,2,2),  VINT(2,-2,2),  VINT(2,2,-2),
 	VINT(-2,-2,-2), VINT(2,-2,-2), VINT(-2,2,-2), VINT(-2,-2,2)
@@ -417,7 +434,7 @@ const VINT neighbors[] = {
 }
 
 std::vector<int> Cubic_Lattice::get_all_neighbors_per_order() const {
-	int neighbors[]	 = {6, 12, 8, 6, 24, 24, 12, 24, 8};
+	int neighbors[]	 = {6, 12, 8, 6, 24, 24, 12, 30, 8};
 	std::vector<int> acc(c_array_begin(neighbors), c_array_end(neighbors));
 	return acc;	
 };
@@ -481,14 +498,17 @@ const VINT neighbors[] = {
 	VINT(1,2,0), VINT(-1,2,0), 
 	VINT(1,-2,0),VINT(-1,-2,0),
 	// Eckennachbarn der Eckennachbarn 1.Ordnung
-	VINT(2,2,0), VINT(-2,2,0), VINT(2,-2,0), VINT(-2,-2,0)
+	VINT(2,2,0), VINT(-2,2,0), VINT(2,-2,0), VINT(-2,-2,0),
+	// 
+	VINT(3,0,0), VINT(0,3,0), VINT(-3,0,0), VINT(0,-3,0)
 	};
+	
 	vector<VINT> acc(c_array_begin(neighbors), c_array_end(neighbors));
 	return acc;
 }
 
 std::vector<int> Square_Lattice::get_all_neighbors_per_order() const {
-	int neighbors[]	 = {4, 4, 4, 8, 4};
+	int neighbors[]	 = {4, 4, 4, 8, 4, 4};
 	std::vector<int> acc(c_array_begin(neighbors), c_array_end(neighbors));
 	return acc;	
 };
@@ -520,7 +540,8 @@ Linear_Lattice* Linear_Lattice::create(VINT resolution, bool periodic) {
 vector< VINT > Linear_Lattice::get_all_neighbors() const {
 	const VINT neighbors[] = {
 	VINT(1,0,0), VINT(-1,0,0),
-	VINT(2,0,0),VINT(-2,0,0)
+	VINT(2,0,0),VINT(-2,0,0),
+	VINT(3,0,0),VINT(-3,0,0)
 	};
 	vector<VINT> acc(c_array_begin(neighbors), c_array_end(neighbors));
 	return acc;
@@ -528,7 +549,7 @@ vector< VINT > Linear_Lattice::get_all_neighbors() const {
 
 
 vector< int > Linear_Lattice::get_all_neighbors_per_order() const {
-	int neighbors[]	 = {2, 2};
+	int neighbors[]	 = {2, 2, 2};
 	std::vector<int> acc(c_array_begin(neighbors), c_array_end(neighbors));
 	return acc;	 
 }
