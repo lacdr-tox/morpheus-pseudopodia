@@ -235,10 +235,10 @@ void loadFromXML(XMLNode xMorph) {
 						layer->set(InitialState.pos, InitialState);
 
 		// Creating a default global update template
-		boundary_neighborhood = SIM::global_lattice->getDefaultNeighborhood();
+// 		boundary_neighborhood = SIM::global_lattice->getDefaultNeighborhood();
 		// sort(boundary_neighborhood.begin(),boundary_neighborhood.end(), CompareAngle() );
 		global_update.boundary = unique_ptr<LatticeStencil>(new LatticeStencil(layer, boundary_neighborhood));
-		global_update.interaction = unique_ptr<StatisticalLatticeStencil>(new StatisticalLatticeStencil(layer, boundary_neighborhood));
+		global_update.interaction = unique_ptr<StatisticalLatticeStencil>(new StatisticalLatticeStencil(layer, interaction_neighborhood));
 		
 		// Setting up the EdgeTracker
 		edgeTracker = shared_ptr<EdgeTrackerBase>(new NoEdgeTracker(layer, boundary_neighborhood));
@@ -401,11 +401,9 @@ void init(XMLNode population) {
 		celltypes[i]->init();
 	}
 	// Init the sampler
-// 	if ( cpm_sampler) {
-// 		cpm_sampler->init(SIM::getGlobalScope());
-// 		global_update.boundary = unique_ptr<LatticeStencil>(new LatticeStencil(layer,cpm_sampler->getBoundaryNeighborhood()));
-// 		global_update.interaction = unique_ptr<StatisticalLatticeStencil>(new StatisticalLatticeStencil(layer, cpm_sampler->getInteractionNeighborhood() ));
-// 	}
+	if ( cpm_sampler) {
+		cpm_sampler->init(SIM::getGlobalScope());
+	}
 }
 
 void loadCellPopulations(XMLNode populations)

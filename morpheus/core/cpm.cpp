@@ -82,11 +82,6 @@ void CPMSampler::init(const Scope* scope)
 		}
 		registerCellPositionOutput();
 	}
-	
-	
-	
-	
-	
 }
 
 vector<multimap< Plugin*, SymbolDependency > > CPMSampler::getCellTypeDependencies() const

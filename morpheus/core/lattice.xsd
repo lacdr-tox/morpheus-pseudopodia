@@ -6,7 +6,7 @@
 			<xs:documentation>Specifies the lattice by size, structure and boundary conditions.</xs:documentation>
 		</xs:annotation>	
 		<xs:all>
-			<xs:element name="Size" minOccurs="1" maxOccurs="1">
+			<xs:element name="Size" >
 				<xs:annotation>
 					<xs:documentation>Specifies length of lattice site.
 Defines a symbol with accessible x, y and z coordinates.</xs:documentation>
@@ -40,13 +40,13 @@ Defines a symbol with accessible x, y and z coordinates.</xs:documentation>
 					</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-			<xs:element name="Domain" type="cpmDomain" minOccurs="0" maxOccurs="1" >
+			<xs:element name="Domain" type="cpmDomain" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>Specify a custom non-rectangular lattice domain using a predefined structure (cirle) or TIFF image.
 					</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-			<xs:element name="Neighborhood" type="cpmNeighborhood" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="Neighborhood" type="cpmNeighborhood"/>
 		</xs:all>
 		<xs:attribute name="class" use="required" type="cpmLatticeStructure">
 			<xs:annotation>
@@ -168,7 +168,7 @@ Defines a symbol with accessible x, y and z coordinates.</xs:documentation>
 			<xs:documentation>Number of neighboring lattice sites to take into account.</xs:documentation>
 		</xs:annotation>
 		<xs:choice>
-			<xs:element name="Order" type="cpmUnsignedInteger" default="2" >
+			<xs:element name="Order" type="cpmUnsignedInteger" default="1" >
 				<xs:annotation>
 					<xs:documentation>Assuming a two dim. lattice order means
 1: 4 neighbors (von Neumann)
@@ -176,7 +176,7 @@ Defines a symbol with accessible x, y and z coordinates.</xs:documentation>
 etc...</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-			<xs:element name="Distance" type="cpmUnsignedDouble" default="2">
+			<xs:element name="Distance" type="cpmUnsignedDouble" default="1">
 				<xs:annotation>
 					<xs:documentation>Maximal distance to neighbor to take into account (in units of lattice nodes).</xs:documentation>
 				</xs:annotation>
