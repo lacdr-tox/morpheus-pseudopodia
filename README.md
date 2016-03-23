@@ -31,6 +31,12 @@ Libraries required (debian package notation):
   make && sudo make install
 ```
 
+Building on Debian based systems
+--------------------------------
+To install all dependencies on Ubuntu 14.04 and other Debian based systems run:
+```  
+sudo apt-get install g++ cmake cmake-curses-gui xsltproc xmlint doxygen git zlib1g-dev libtiff-dev libgraphviz-dev libqt4-dev libqt4-sql-sqlite libqt4-network libqt4-webkit libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tool
+``` 
 
 <!--  StatCounter -->
 <script type="text/javascript">
