@@ -69,11 +69,11 @@ AbstractAttribute::AbstractAttribute( QObject* parent, QDomNode xsdDescrNode, QD
             { is_required = true; }
         simpleTypeName = xsdDescrNode.attributes().namedItem("type").nodeValue();
     }
-    else if (xsdDescrNode.nodeName() == "xs:simpleType") {
+    else if (xsdDescrNode.nodeName() == "xs:element") {
         is_text = true;
         is_required = true;
         name = "#text";
-		simpleTypeName = xsdDescrNode.attributes().namedItem("name").nodeValue();
+		simpleTypeName = xsdDescrNode.attributes().namedItem("type").nodeValue();
     }
     else {
 		throw ModelException(ModelException::UnknownXSDType, QString("Cannot create an AbstractAttribute for xsdNode %1.").arg(xsdDescrNode.nodeName()));

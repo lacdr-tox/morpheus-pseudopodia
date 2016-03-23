@@ -102,7 +102,7 @@ QObject(parent)
 		}
 	}
 	else {
-		text = new AbstractAttribute(this, xsdTypeNode, xmlDataNode, model_descr);
+		text = new AbstractAttribute(this, parent->childInformation(name).xsdChildDef , xmlDataNode, model_descr);
 	}
 
     // read xml data
