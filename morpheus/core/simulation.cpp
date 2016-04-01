@@ -136,6 +136,12 @@ shared_ptr<const EdgeTrackerBase> cellEdgeTracker() {
 	return edgeTracker;
 }
 
+const vector< VINT >& getBoundaryNeighborhood()
+{
+	return boundary_neighborhood;
+}
+
+
 bool isBoundary(const VINT& pos) {
 	return edgeTracker->is_boundary(pos);
 }
@@ -150,6 +156,7 @@ void loadFromXML(XMLNode xMorph) {
 		loadCellTypes(xMorph.getChildNode("CellTypes"));
 	
 	boundary_neighborhood = SIM::lattice().getDefaultNeighborhood();
+	sort(boundary_neighborhood.begin(),boundary_neighborhood.end(), CompareAngle() );
 	interaction_neighborhood = SIM::lattice().getDefaultNeighborhood();
 	
 	

@@ -63,7 +63,7 @@ private:
 	PluginParameter2<double,XMLValueReader,DefaultValPolicy> metropolis_yield;
 	
 	CPM::UPDATE current_update;
-	vector<VINT> boundary_neigbhborhood;
+	vector<VINT> boundary_neighborhood;
 	shared_ptr<const EdgeTrackerBase> edge_tracker;
 	shared_ptr<InteractionEnergy> interaction_energy;
 	

@@ -156,7 +156,7 @@ namespace CPM {
 	
 	bool isBoundary(const VINT& pos);
 	uint nBoundaries(const VINT& pos);
-// 	const vector<VINT>& getBoundaryNeighborhood(); /// Returns the Neighborhood of a node boundary, sorted counterclockwise
+	const vector<VINT>& getBoundaryNeighborhood(); /// Returns the Neighborhood of a node boundary, sorted counterclockwise
 	
 }
 

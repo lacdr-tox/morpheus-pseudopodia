@@ -9,7 +9,7 @@ ConnectivityConstraint::ConnectivityConstraint(){
 void ConnectivityConstraint::init(const Scope* scope) {
 	CPM_Check_Update::init(scope);
 	const Lattice& lattice = SIM::lattice();
-	neighbors = lattice.getDefaultNeighborhood();
+	neighbors = CPM::getBoundaryNeighborhood();
 	
 	//CPM::getBoundaryNeighborhood();
 	
@@ -27,7 +27,7 @@ void ConnectivityConstraint::init(const Scope* scope) {
 		
 		if( lattice.getStructure() == Lattice::hexagonal ){
 			if (neighbors.size() > 12) {
-				cerr << "ConnectivityConstraint not available for 1st and 2nd order update neighborhood in hexagonal lattices." << endl;
+				cerr << "ConnectivityConstraint only available for 1st and 2nd order update neighborhood in hexagonal lattices." << endl;
 				exit(-1);
 			}
 		}
