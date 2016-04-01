@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="1">
+<MorpheusModel version="2">
     <Description>
         <Title>Example-RunAndTumble</Title>
         <Details>Models a Levy walk - a random search strategy.
@@ -13,7 +13,7 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
         <Lattice class="hexagonal">
             <Size symbol="size" value="300 300 0"/>
             <Neighborhood>
-                <Order>1</Order>
+                <Distance>2.5</Distance>
             </Neighborhood>
             <BoundaryConditions>
                 <Condition boundary="x" type="periodic"/>
@@ -56,7 +56,7 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
         <MCSDuration value="1"/>
         <MetropolisKinetics temperature="0.6" stepper="edgelist">
             <Neighborhood>
-                <Order>1</Order>
+                <Order>2</Order>
             </Neighborhood>
         </MetropolisKinetics>
     </CPM>

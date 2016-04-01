@@ -1,14 +1,16 @@
-<MorpheusModel version="1">
+<MorpheusModel version="2">
     <Description>
         <Title>Example-Convergence-Extension</Title>
         <Details></Details>
     </Description>
-    <Global/>
+    <Global>
+        <Constant symbol="c" value="0.0"/>
+    </Global>
     <Space>
         <Lattice class="square">
             <Size symbol="size" value="500,500,0"/>
             <Neighborhood>
-                <Distance>5</Distance>
+                <Distance>3</Distance>
             </Neighborhood>
         </Lattice>
         <MembraneLattice>
@@ -41,11 +43,7 @@
             <Property symbol="pos" value="0.0"/>
             <PersistentMotion decay-time="10" strength="1"/>
         </CellType>
-        <CellType class="medium" name="medium">
-            <MembraneProperty symbol="c" value="">
-                <Diffusion rate="0.0"/>
-            </MembraneProperty>
-        </CellType>
+        <CellType class="medium" name="medium"/>
     </CellTypes>
     <CPM>
         <Interaction default="0.0">
@@ -85,7 +83,7 @@
         <BoundaryValue boundary="-y" value="medium"/>
     </CellPopulations>
     <Analysis>
-        <Gnuplotter clean="true" time-step="250">
+        <Gnuplotter time-step="250">
             <Terminal pointsize="0.75" name="png"/>
             <Plot>
                 <Cells value="c"/>
@@ -97,11 +95,11 @@
                 <Symbol symbol-ref="cell.center.y"/>
             </Input>
             <Output>
-                <TextOutput/>
+                <TextOutput file-separation="cell"/>
             </Output>
             <Plots>
                 <Plot time-step="500">
-                    <Style point-size="0.5" style="points"/>
+                    <Style point-size="0.5" style="lines"/>
                     <Terminal terminal="png"/>
                     <X-axis minimum="0" maximum="size.x">
                         <Symbol symbol-ref="cell.center.x"/>

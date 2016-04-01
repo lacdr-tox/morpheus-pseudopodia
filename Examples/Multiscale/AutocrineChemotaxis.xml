@@ -1,4 +1,4 @@
-<MorpheusModel version="1">
+<MorpheusModel version="2">
     <Description>
         <Title>Example-AutocrineChemotaxis</Title>
         <Details></Details>
@@ -24,7 +24,7 @@
             </BoundaryConditions>
             <NodeLength unit="micron" value="1.0"/>
             <Neighborhood>
-                <Distance>2.0</Distance>
+                <Distance>2.5</Distance>
             </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="space"/>
@@ -90,13 +90,6 @@
                 </Cells>
             </Plot>
         </Gnuplotter>
-        <Logger time-step="0.0">
-            <Input>
-                <Symbol symbol-ref="cell.id"/>
-            </Input>
-            <Output>
-                <TextOutput/>
-            </Output>
-        </Logger>
+        <DependencyGraph format="svg" exclude-plugins="Gnuplotter"/>
     </Analysis>
 </MorpheusModel>

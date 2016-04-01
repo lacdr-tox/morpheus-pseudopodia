@@ -1,4 +1,4 @@
-<MorpheusModel version="1">
+<MorpheusModel version="2">
     <Description>
         <Title>Example-CellPolarity</Title>
         <Details>Chemotaxis of polarized cell
@@ -155,7 +155,7 @@ PDE Equation:
                 <Cells value="A" slice="25"/>
             </Plot>
         </Gnuplotter>
-        <TiffPlotter format="8bit" time-step="100">
+        <TiffPlotter format="8bit" OME-header="false" time-step="100">
             <Channel symbol-ref="cell.id" celltype="cells"/>
             <Channel symbol-ref="c" celltype="cells"/>
             <Channel symbol-ref="U"/>

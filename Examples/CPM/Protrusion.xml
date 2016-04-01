@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="1">
+<MorpheusModel version="2">
     <Description>
         <Title>Example-Protrusion</Title>
         <Details>Model for cell protrusions using the Act model. 
@@ -92,7 +92,7 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
                 <Field symbol-ref="act" slice="100"/>
             </Plot>
         </Gnuplotter>
-        <TiffPlotter timelapse="true" format="guess" OME-header="true" compression="false" time-step="100">
+        <TiffPlotter timelapse="true" format="8bit" OME-header="true" compression="false" time-step="100">
             <Channel symbol-ref="cell.id" exclude-medium="true"/>
             <Channel symbol-ref="act"/>
         </TiffPlotter>

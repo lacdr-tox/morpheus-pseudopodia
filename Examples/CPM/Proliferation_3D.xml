@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="1">
+<MorpheusModel version="2">
     <Description>
         <Title>Example-Proliferation3D</Title>
         <Details></Details>
@@ -11,11 +11,11 @@
             <BoundaryConditions>
                 <Condition boundary="x" type="periodic"/>
                 <Condition boundary="y" type="periodic"/>
-                <Condition boundary="z" type="constant"/>
+                <Condition boundary="z" type="noflux"/>
                 <Condition boundary="-z" type="noflux"/>
             </BoundaryConditions>
             <Neighborhood>
-                <Order>2</Order>
+                <Distance>2.5</Distance>
             </Neighborhood>
         </Lattice>
         <MembraneLattice>
@@ -60,7 +60,7 @@
         <MCSDuration value="1"/>
         <MetropolisKinetics temperature="0.5" stepper="edgelist">
             <Neighborhood>
-                <Order>3</Order>
+                <Order>2</Order>
             </Neighborhood>
         </MetropolisKinetics>
     </CPM>

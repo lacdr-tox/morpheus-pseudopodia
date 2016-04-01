@@ -30,7 +30,7 @@ Shows the following features of Morpheus:
                 <Condition boundary="y" type="periodic"/>
             </BoundaryConditions>
             <Neighborhood>
-                <Order>3</Order>
+                <Distance>2.5</Distance>
             </Neighborhood>
             <Domain boundary-type="noflux">
                 <Image path="crypt.tif"/>
@@ -199,5 +199,6 @@ Shows the following features of Morpheus:
                 </Plot>
             </Plots>
         </Logger>
+        <DependencyGraph format="svg" exclude-plugins="Gnuplotter"/>
     </Analysis>
 </MorpheusModel>

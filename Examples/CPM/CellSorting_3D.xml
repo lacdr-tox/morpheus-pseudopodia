@@ -1,4 +1,4 @@
-<MorpheusModel version="1">
+<MorpheusModel version="2">
     <Description>
         <Title>Example-CellSorting-2D</Title>
         <Details>Reference:
@@ -18,7 +18,7 @@ Graner and Glazier, Simulation of biological cell sorting using a two-dimensiona
                 <Condition boundary="y" type="periodic"/>
             </BoundaryConditions>
             <Neighborhood>
-                <Distance>4.0</Distance>
+                <Distance>2.5</Distance>
             </Neighborhood>
         </Lattice>
     </Space>
@@ -150,5 +150,6 @@ Graner and Glazier, Simulation of biological cell sorting using a two-dimensiona
             <Channel symbol-ref="cell.id" exclude-medium="true"/>
             <Channel symbol-ref="cell.type" exclude-medium="true"/>
         </TiffPlotter>
+        <DependencyGraph format="svg" exclude-plugins="Gnuplotter, Logger, TiffPlotter"/>
     </Analysis>
 </MorpheusModel>

@@ -1,4 +1,4 @@
-<MorpheusModel version="1">
+<MorpheusModel version="2">
     <Description>
         <Title>Example-Persistence</Title>
         <Details></Details>
@@ -10,7 +10,7 @@
         <Lattice class="square">
             <Size symbol="size" value="200, 200, 0"/>
             <Neighborhood>
-                <Distance>5</Distance>
+                <Distance>2.5</Distance>
             </Neighborhood>
             <Domain boundary-type="constant">
                 <Circle diameter="200"/>
@@ -100,7 +100,7 @@
             </Output>
             <Plots>
                 <Plot time-step="50">
-                    <Style style="lines" line-width="3.0"/>
+                    <Style style="lines" line-width="2"/>
                     <Terminal terminal="png"/>
                     <X-axis minimum="0.0" maximum="size.x">
                         <Symbol symbol-ref="cell.center.x"/>
@@ -109,7 +109,7 @@
                         <Symbol symbol-ref="cell.center.y"/>
                     </Y-axis>
                     <Color-bar>
-                        <Symbol symbol-ref="time"/>
+                        <Symbol symbol-ref="cell.id"/>
                     </Color-bar>
                     <Range>
                         <Data/>
@@ -118,5 +118,6 @@
                 </Plot>
             </Plots>
         </Logger>
+        <DependencyGraph format="svg" exclude-plugins="Gnuplotter"/>
     </Analysis>
 </MorpheusModel>
