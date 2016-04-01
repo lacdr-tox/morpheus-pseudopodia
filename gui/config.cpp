@@ -255,7 +255,7 @@ QString config::getPathToExecutable(QString exec_name) {
 	QString app_name = exec_name.split("/").last();
 
 	info.setFile(QCoreApplication::applicationDirPath() + "/" + app_name);
-	if (info.exists()) {
+	if (info.exists() && info.isExecutable()) {
 		qDebug() << "Found executable " << info.filePath();
 		return info.canonicalFilePath();
 	}
@@ -269,7 +269,7 @@ QString config::getPathToExecutable(QString exec_name) {
 	
 	Q_FOREACH (const QString& path, env_paths) {
 		info.setFile(path + "/" + app_name);
-		if (info.exists()) {
+		if (info.exists() && info.isExecutable()) {
 			qDebug() << "Found executable " << info.filePath();
 			return info.canonicalFilePath();
 		}
