@@ -210,7 +210,7 @@ private:
 // 	vector <shared_ptr <const CellType > > celltypes;
 	PluginParameter2<VDOUBLE,XMLEvaluator> value;
 // 	SymbolReader x_symbol, y_symbol;
-	double scaling;
+// 	double scaling;
 	int style;
 	string color;
 	int coarsening;

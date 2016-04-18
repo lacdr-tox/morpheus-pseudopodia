@@ -393,6 +393,18 @@ void LoggerTextWriter::init() {
 					csv_header.push_back(SymbolData::MembraneSpace_symbol+".y");
 					output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::MembraneSpace_symbol+".y") );
 					break;
+				case FocusRangeAxis::NODE :
+					csv_header.push_back(SymbolData::Space_symbol+".x");
+					output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::Space_symbol+".x") );
+					if (SIM::lattice().getDimensions()>1) {
+						csv_header.push_back(SymbolData::Space_symbol+".y");
+						output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::Space_symbol+".y") );
+					}
+					if (SIM::lattice().getDimensions()>2) {
+						csv_header.push_back(SymbolData::Space_symbol+".z");
+						output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::Space_symbol+".z") );
+					}
+					break;
 				default:
 					assert(0);
 					break;
@@ -579,7 +591,7 @@ void LoggerTextWriter::writeCSV() {
 
 void LoggerTextWriter::writeMatrix() {
 	Granularity granularity = logger.getGranularity();
-	FocusRange range(granularity, logger.getRestrictions(), logger.getDomainOnly());
+	FocusRange range(granularity, logger.getRestrictions(), false);
 	assert(range.isRegular());
 	
 	string sep = separator();
@@ -645,7 +657,7 @@ void LoggerTextWriter::writeMatrix() {
 		else {
 			if (range.size() == 0) return;
 			ofstream& out = getOutFile( *(range.begin()), symbol.getName());
-			FocusRange range(granularity,logger.getRestrictions());
+// 			FocusRange range(granularity,logger.getRestrictions());
 			bool write_header_block=header();
 			uint col=0;
 			uint row=0;

@@ -288,8 +288,8 @@ void VectorFieldPainter::loadFromXML(const XMLNode node)
 	getXMLAttribute(node, "color", color);
 	coarsening = 1;
 	getXMLAttribute(node, "coarsening",coarsening);
-	scaling=1.0;
-	getXMLAttribute(node,"scaling",scaling);
+// 	scaling=1.0;
+// 	getXMLAttribute(node,"scaling",scaling);
     slice = 0;
     getXMLAttribute(node,"slice",slice);
 }
@@ -311,7 +311,7 @@ void VectorFieldPainter::plotData(ostream& out)
 	VINT size = SIM::lattice().size();
 	for (pos.y=coarsening/2; pos.y<size.y; pos.y+=coarsening) {
 		for (pos.x=coarsening/2; pos.x<size.x; pos.x+=coarsening) {
-            VDOUBLE arrow = value.get(SymbolFocus(pos)) * scaling;
+            VDOUBLE arrow = value.get(SymbolFocus(pos));
 			out << pos.x - 0.5*arrow.x << "\t" << pos.y - 0.5*arrow.y << "\t" << arrow.x << "\t" << arrow.y << "\n";
 		}
 	}
