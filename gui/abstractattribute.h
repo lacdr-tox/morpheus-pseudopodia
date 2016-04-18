@@ -47,6 +47,7 @@ struct ModelDescriptor {
     QString title;
     QString details;
     int edits;
+	int change_count;
     QMap<QString,QString> getSymbolNames(QString type_name) const;
 };
 

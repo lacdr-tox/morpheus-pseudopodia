@@ -219,19 +219,20 @@ bool AbstractAttribute::set(QString att)
 					model_descr->track_next_change = false;
 				}
 			}
-            if (is_changed) {
-                if ((is_active == orig_active) && (orig_value == value)) {
-                    is_changed = false;
-                    model_descr->edits--;
-                }
-            }
-            else {
-                if ((is_active != orig_active) || (orig_value != value)) {
-                    is_changed = true;
-                    model_descr->edits++;
-                }
-            }
-            emit changed(this);
+			if (is_changed) {
+				if ((is_active == orig_active) && (orig_value == value)) {
+					is_changed = false;
+					model_descr->change_count--;
+				}
+			}
+			else {
+				if ((is_active != orig_active) || (orig_value != value)) {
+					is_changed = true;
+					model_descr->change_count++;
+				}
+			}
+			model_descr->edits++;
+			emit changed(this);
         }
 
         return true;
@@ -289,15 +290,16 @@ void AbstractAttribute::setActive(bool a)
     if (is_changed) {
         if ((is_active == orig_active) && ( ! is_active || (orig_value == value))) {
             is_changed = false;
-            model_descr->edits--;
+            model_descr->change_count--;
         }
     }
     else {
         if ((is_active != orig_active) || ( is_active && (orig_value != value))) {
             is_changed = true;
-            model_descr->edits++;
+            model_descr->change_count++;
         }
     }
+    model_descr->edits++;
     emit changed(this);
 }
 
@@ -399,7 +401,7 @@ AbstractAttribute::~AbstractAttribute()
     emit deleted(this);
     setActive(false);
     if (is_changed)
-        model_descr->edits--;
+        model_descr->change_count--;
 }
 
 

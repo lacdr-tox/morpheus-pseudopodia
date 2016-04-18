@@ -66,7 +66,7 @@ try : QAbstractItemModel(parent),  xml_file(xmlFile)
     ModelDescriptor& desc = const_cast<ModelDescriptor&>(rootNodeContr->getModelDescr());
     for (int i=0; i<edits.size();i++) {
         desc.auto_fixes.append(edits[i]);
-        desc.edits++;
+        desc.change_count++;
     }
 
     initModel();
@@ -98,7 +98,7 @@ QAbstractItemModel(parent), xml_file(model)
     ModelDescriptor& desc = const_cast<ModelDescriptor&>(rootNodeContr->getModelDescr());
     for (int i=0; i<edits.size();i++) {
         desc.auto_fixes.append(edits[i]);
-        desc.edits++;
+        desc.change_count++;
     }
     
 	initModel();
@@ -534,7 +534,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 
 bool MorphModel::close()
 {
-    bool modelChanged = rootNodeContr->getModelDescr().edits > 1;
+    bool modelChanged = rootNodeContr->getModelDescr().change_count > 1;
 
     if ( modelChanged ) {
         // The current model was changed
@@ -1165,6 +1165,6 @@ bool MorphModel::addSweeperAttribute(AbstractAttribute* attr) {
 }
 
 bool MorphModel::isEmpty() const {
-    return xml_file.is_plain_model && rootNodeContr->getModelDescr().edits==0;
+    return xml_file.is_plain_model && rootNodeContr->getModelDescr().change_count==0;
 }
 

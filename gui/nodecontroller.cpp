@@ -55,6 +55,8 @@ QObject(parent)
         // and a schema and take it's root element as xsd type ...
 		try {
 			model_descr = QSharedPointer<ModelDescriptor>( new ModelDescriptor);
+			model_descr->change_count =0;
+			model_descr->edits =0;
 		}
 		catch (QString s) {
 			qDebug() << "Error creating Root NodeController: " << s;
@@ -843,6 +845,7 @@ nodeController* nodeController::insertChild(QDomNode xml_node, int pos)
 	}
 	
 	model_descr->edits++;
+	model_descr->change_count++;
 	return contr;
 }
 
@@ -952,6 +955,7 @@ void nodeController::moveChild(int from, int to) {
     childs.move(from,to);
 
     model_descr->edits++;
+	model_descr->change_count++;
 }
 
 //------------------------------------------------------------------------------
@@ -1086,9 +1090,11 @@ bool nodeController::setDisabled(bool b) {
 		xmlNode.setNodeValue(dis_node_text);
 
         if (orig_disabled)
-            model_descr->edits--;
-        else
-            model_descr->edits++;
+			model_descr->change_count--;
+		else
+			model_descr->change_count++;
+
+		model_descr->edits++;
     }
     else {
         disabled = false;
@@ -1100,10 +1106,12 @@ bool nodeController::setDisabled(bool b) {
 		for (auto a=attributes.begin(); a!=attributes.end(); a++) {
 			a.value()->inheritDisabled(false);
 		}
-        if (orig_disabled)
-            model_descr->edits++;
-        else
-            model_descr->edits--;
+		if (orig_disabled)
+			model_descr->change_count++;
+		else
+			model_descr->change_count--;
+
+		model_descr->edits++;
     }
     return true;
 }
@@ -1167,5 +1175,5 @@ void nodeController::saved() {
     for (int c=0; c<childs.size(); c++) {
         childs[c]->saved();
     }
-    model_descr->edits = 0;
+	model_descr->change_count = 0;
 }
