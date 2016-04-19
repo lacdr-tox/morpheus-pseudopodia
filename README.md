@@ -23,7 +23,7 @@ Libraries required (debian package notation):
   - libqt4-dev libqt4-sql-sqlite libqt4-network libqt4-webkit libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools
   
 ```
-  git clone git@gitlab.com:morpheus.lab/morpheus.git morpheus
+  git clone https://gitlab.com/morpheus.lab/morpheus.git morpheus
   cd morpheus
   mkdir build
   cd build
