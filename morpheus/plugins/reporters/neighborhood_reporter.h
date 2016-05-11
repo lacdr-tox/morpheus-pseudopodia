@@ -25,6 +25,7 @@ A single \b Input element must be specified:
 - \b value: input variable (e.g. Property, MembraneProperty or Field). May contain expression.
 - \b scaling: setting scaling to \b per_cell will aquire information per neighboring cell (entity), \b per_length will scale the information with the interface length, i.e. the input value is considered to
 be a rate per node length.
+- \b noflux-cell-medium: if true, the cell-medium interfaces are treated as no-flux boundaries. That is, at these interfaces, the value will be taken from the cell itself instead of the (empty) neighborhood.
 
 If input variable is a Vector, use \ref NeighborhoodVectorReporter.
 
@@ -98,6 +99,8 @@ class NeighborhoodReporter : public ReporterPlugin
 		
 		PluginParameter2<double, XMLThreadsaveEvaluator, RequiredPolicy> input;
 		PluginParameter2<InputModes, XMLNamedValueReader, OptionalPolicy> input_mode;
+		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> noflux_cell_medium_interface;
+		bool noflux_cell_medium;
 
 		struct OutputSpec {
 			PluginParameter2<DataMapper::Mode, XMLNamedValueReader, OptionalPolicy> mapping;

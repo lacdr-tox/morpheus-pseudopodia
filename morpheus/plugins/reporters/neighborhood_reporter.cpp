@@ -16,6 +16,11 @@ NeighborhoodReporter::NeighborhoodReporter() {
 	// Input is required to be valid on global scope
 	input.setGlobalScope();
 	registerPluginParameter(input);
+	
+	noflux_cell_medium_interface.setXMLPath("Input/noflux-cell-medium");
+	noflux_cell_medium_interface.setDefault("false");
+	registerPluginParameter(noflux_cell_medium_interface);
+	
 }
 
 void NeighborhoodReporter::loadFromXML(const XMLNode xNode)
@@ -52,7 +57,7 @@ void NeighborhoodReporter::init(const Scope* scope)
 	
 	bool input_is_halo = input.granularity() == Granularity::MembraneNode || input.granularity() == Granularity::Node;
 	if (input_mode.isDefined() && input_is_halo) {
-		cout << "NeighborhoodReporter: Input has node granularity. Ignoring defined input mode." << endl;
+		cout << "NeighborhoodReporter: Input has (membrane) node granularity. Ignoring defined input mode." << endl;
 	}
 	
 	for ( auto & out : output) {
@@ -85,6 +90,16 @@ void NeighborhoodReporter::init(const Scope* scope)
 	if (!halo_output.empty()) {
 		CPM::enableEgdeTracking();
 	}
+	
+	noflux_cell_medium = false;
+	if (noflux_cell_medium_interface.isDefined() ){
+		cout << "noflux_cell_medium_interface.isDefined()" << endl;
+		if (noflux_cell_medium_interface() == true){
+			noflux_cell_medium = true;
+			cout << "noflux_cell_medium_interface() == true!" << endl;
+		}
+	}
+		
 }
 
 
@@ -117,7 +132,15 @@ void NeighborhoodReporter::report() {
 					const CPM::STATE& nb_spin = cpm_layer->get ( neighbor_position );
 
 					if ( cell_id != nb_spin.cell_id ) { // if neighbor is different from me
-						halo_nodes.insert ( neighbor_position ); // add neighbor node to list of unique neighboring points (used for layers below)
+						
+						// HACK: NOFLUX BOUNDARY CONDITIONS when halo is in MEDIUM
+						//cout << CPM::getCellIndex( nb_spin.cell_id ).celltype << " != " << CPM::getEmptyCelltypeID() << endl;
+						if( noflux_cell_medium && CPM::getCellIndex( nb_spin.cell_id ).celltype == CPM::getEmptyCelltypeID() ){ // if neighbor is medium, add own node in halo 
+							halo_nodes.insert ( *m ); // add own membrane node to list of unique neighboring points (used for layers below)
+							//cout << *m << "\n";
+						}
+						else
+							halo_nodes.insert ( neighbor_position ); // add neighbor node to list of unique neighboring points (used for layers below)
 					}
 				}
 			}
@@ -197,7 +220,14 @@ void NeighborhoodReporter::report() {
 
 			for (map<CPM::CELL_ID,double>::const_iterator nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
 				CPM::CELL_ID cell_id = nb->first;
-				double value = input.get(SymbolFocus(cell_id));
+				
+				double value = 0.0;
+				// HACK: NO-FLUX BOUNDARIES for cell-medium interface
+				if( noflux_cell_medium && CPM::getCellIndex( cell_id ).celltype == CPM::getEmptyCelltypeID() ){ // if neighbor is medium, add own value 
+					value = input.get( cell_focus ); // value of own cell 
+				}
+				else
+					value = input.get(SymbolFocus(cell_id)); // value of neighboring cell
 				double interfacelength = (input_mode() == INTERFACES) ? nb->second : 1;
 				
 				for (auto & out : interf_output) {
