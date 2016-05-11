@@ -1,2 +1,8 @@
+# build directories
 build
+build_clang
+
 *~
+# kdevelop files
+.kdev4/
+*.kdev4

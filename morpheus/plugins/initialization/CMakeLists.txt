@@ -5,5 +5,6 @@ set(plugin_src
 	init_rectangle.cpp
 	init_circle.cpp 
 	tiff_reader.cpp
+	init_hex_lattice.cpp
 	
 PARENT_SCOPE)

@@ -327,7 +327,7 @@ VDOUBLE Hex_Lattice::orth_distance(const VDOUBLE& a, const VDOUBLE& b) const {
 	return c;
 }
 
-vector<VINT> Hex_Lattice::get_all_neighbors() const {
+/* vector<VINT> Hex_Lattice::get_all_neighbors() const {
 	const VINT neighbors[] = {
 	// 1st order
 	VINT(1,0,0), VINT(0,1,0),  VINT(-1,1,0), VINT(-1,0,0), VINT(0,-1,0), VINT(1,-1,0),
@@ -344,13 +344,61 @@ vector<VINT> Hex_Lattice::get_all_neighbors() const {
 	
 	vector<VINT> acc(c_array_begin(neighbors), c_array_end(neighbors));
 	return acc;
+}; */
+
+
+vector<VINT> Hex_Lattice::get_all_neighbors() const {
+	const VINT neighbors[] = {
+	// 1st order CCW
+	VINT(1,0,0), VINT(0,1,0),  VINT(-1,1,0), 
+	VINT(-1,0,0), VINT(0,-1,0), VINT(1,-1,0),
+	// 2nd order CCW
+	VINT(1,1,0), VINT(-1,2,0), VINT(-2,1,0), 
+	VINT(-1,-1,0), VINT(1,-2,0), VINT(2,-1,0), 
+	// 3rd order CCW
+	VINT(2,0,0), VINT(0,2,0),  VINT(-2,2,0), 
+	VINT(-2,0,0), VINT(0,-2,0), VINT(2,-2,0),
+	// 4rd order CCW
+	VINT(2,1,0),  VINT(1,2,0),  VINT(-1,3, 0), VINT(-2,3,0), VINT(-3,2,0), VINT(-3,1,0),
+	VINT(-2,-1,0),VINT(-1,-2,0),VINT(1,-3,0), VINT(2,-3,0), VINT(3,-2,0), VINT(3,-1,0),
+	// 5th order CCW
+	VINT(3,0,0), VINT(0,3,0), VINT(-3,3,0),
+	VINT(-3,0,0),VINT(0,-3,0),VINT(3,-3,0),
+	// 6th order CCW
+	VINT(2,2,0), VINT(-2,4,0),VINT(-4,2,0),
+	VINT(-2,-2,0),VINT(2,-4,0),VINT(4,-2,0),
+	// 7th order CCW
+	VINT(3,1,0),  VINT(1,3,0),  VINT(-1,4,0),VINT(-3,4,0),VINT(-4,3,0),VINT(-4,1,0),
+	VINT(-3,-1,0),VINT(-1,-3,0),VINT(1,-4,0),VINT(3,-4,0),VINT(4,-3,0),VINT(4,-1,0),
+	// 8th order CCW
+	VINT(4,0,0), VINT(0,4,0), VINT(-4,4,0),
+	VINT(-4,0,0),VINT(0,-4,0),VINT(4,-4,0),
+	// 9th order CCW
+	VINT(3,2,0),  VINT(2,3,0),  VINT(-2,5,0),VINT(-3,5,0),VINT(-5,3,0),VINT(-5,2,0),
+	VINT(-3,-2,0),VINT(-2,-3,0),VINT(2,-5,0),VINT(3,-5,0),VINT(5,-3,0),VINT(5,-2,0),
+	// 10th order CCW
+	VINT(4,1,0),  VINT(1,4,0),  VINT(-1,5,0),VINT(-4,5,0),VINT(-5,4,0),VINT(-5,1,0),
+	VINT(-4,-1,0),VINT(-1,-4,0),VINT(1,-5,0),VINT(4,-5,0),VINT(5,-4,0),VINT(5,-1,0),
+	// 11th order CCW
+	VINT(5,0,0), VINT(0,5,0), VINT(-5,5,0),
+	VINT(-5,0,0),VINT(0,-5,0),VINT(5,-5,0)
+	};
+	vector<VINT> acc(c_array_begin(neighbors), c_array_end(neighbors));
+	return acc;
 };
 
-vector<int> Hex_Lattice::get_all_neighbors_per_order() const {
+/* vector<int> Hex_Lattice::get_all_neighbors_per_order() const {
 	int neighbors[]	 = {6, 6, 6, 12 ,6};
 	std::vector<int> acc(c_array_begin(neighbors), c_array_end(neighbors));
 	return acc;	
+} */
+
+vector<int> Hex_Lattice::get_all_neighbors_per_order() const {
+	int neighbors[]	 = {6, 6, 6, 12, 6, 6, 12, 6, 12, 12, 6};
+	std::vector<int> acc(c_array_begin(neighbors), c_array_end(neighbors));
+	return acc;	
 }
+
 
 
 VDOUBLE Orth_Lattice::to_orth(const VDOUBLE& a) const { return a; };
