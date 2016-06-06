@@ -14,6 +14,7 @@
 
 #include "core/interfaces.h"
 #include "core/plugin_parameter.h"
+#include "core/focusrange.h"
 
 /** \defgroup InitCellLattice
 \ingroup InitializerPlugins
