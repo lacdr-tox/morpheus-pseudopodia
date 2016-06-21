@@ -77,6 +77,10 @@ void TiffPlotter::loadFromXML(const XMLNode xNode)	//einlesen der Daten aus der 
 		c->outline.setDefault("false");
 		registerPluginParameter(c->outline);
 		
+		c->no_outline.setXMLPath("Channel["+to_str(i)+"]/no-outline");
+		c->no_outline.setDefault("false");
+		registerPluginParameter(c->no_outline);
+
 		plot.channels.push_back(c);
 	}
 
@@ -502,6 +506,11 @@ void TiffPlotter::writeTIFF(CPM::CELL_ID cellid)
 								}
 								else{ // if not outline, plot property over whole cell
 									value = (double)plot.channels[c]->symbol.get( pos );
+
+									// if no-outline, set value to zero on cell boundary
+									if( plot.channels[c]->no_outline.get() && CPM::isSurface( pos ) ){
+										value = 0;
+									}
 									
 									// when cropToCell, do not plot boundary (to avoid visualization problems: overlaying multiple transparent layers)
 									if( plot.cropToCell && CPM::isSurface( pos ) )
@@ -527,6 +536,12 @@ void TiffPlotter::writeTIFF(CPM::CELL_ID cellid)
 								else{
 
 									value = (double)plot.channels[c]->symbol.get( pos );
+									
+									// if no-outline, set value to zero on cell boundary
+									if( plot.channels[c]->no_outline.get() && CPM::isSurface( pos ) ){
+										value = 0;
+									}
+
 /*									
 									// when cropToCell, do not plot boundary (to avoid visualization problems: overlaying multiple transparent layers)
 									if( plot.cropToCell && !CPM::isBoundary( pos ) )

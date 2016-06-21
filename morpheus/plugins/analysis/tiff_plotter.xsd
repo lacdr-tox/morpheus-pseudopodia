@@ -31,6 +31,7 @@
 		<xs:attribute name="maximum" type="cpmDouble" use="optional" default="1"/>
 		<xs:attribute name="scale" type="cpmBoolean" use="optional" default="false" />
 		<xs:attribute name="outline" type="cpmBoolean" use="optional" default="false"/>
+		<xs:attribute name="no-outline" type="cpmBoolean" use="optional" default="false"/>
 		<xs:attribute name="exclude-medium" type="cpmBoolean" use="optional" default="true" />
 	</xs:complexType>
 

@@ -48,7 +48,8 @@ Note: cannot handle hexagonal latices.
   - \b minimum (optional): User-specified fixed minimum value. If not given, determined by data.
   - \b maximum (optional): User-specified fixed minimum value. If not given, determined by data.
   - \b scale (optional): If true, data is scaled according to min/max values. If false, raw values are used.
-  - \b outline (default=true): Plot values on cell surface only (e.g. like membraneproperties are drawn). Can be used to visualize cells semi-transparently.
+  - \b outline (default=false): Plot values on cell surface only (e.g. like membraneproperties are drawn). Can be used to visualize cells semi-transparently.
+  - \b no-outline (default=false): Do NOT plot values on cell surface. Can be used to separate cells in the image.
   - \b exclude-medium (optional): Medium is not plotted (zero).
  
 - \b CropToCell: plot small TIFF image(s) containing single cell(s)
@@ -113,6 +114,7 @@ private:
 		double min, max;
 		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> scale;
 		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> outline;
+		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> no_outline;
 		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> exclude_medium;
 		
 		shared_ptr<PDE_Layer> pde_layer; 
