@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+			<xs:element name="VtkPlotter" type="VtkPlotter"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="VtkPlotter">
+		<xs:annotation>
+			<xs:appinfo>Visualization</xs:appinfo>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="Channel" type="cpmVTKChannel" minOccurs="1" maxOccurs="unbounded"/>
+		</xs:all>
+		<xs:attribute name="time-step" use="required" type="cpmDouble"/>
+		<xs:attribute name="mode" use="optional" type="cpmVtkMode" default="ascii"/>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmVTKChannel">
+		<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required" />
+		<xs:attribute name="celltype" type="cpmCellTypeRef" use="optional" default=""/>
+		<xs:attribute name="outline" type="cpmBoolean" use="optional" default="false"/>
+		<xs:attribute name="no-outline" type="cpmBoolean" use="optional" default="false"/>
+		<xs:attribute name="exclude-medium" type="cpmBoolean" use="optional" default="true" />
+	</xs:complexType>	
+
+	<xs:simpleType name="cpmVtkMode">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="ascii"/>
+			<xs:enumeration value="binary"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+</xs:schema>

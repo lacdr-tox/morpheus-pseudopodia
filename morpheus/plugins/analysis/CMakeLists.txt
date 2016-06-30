@@ -1,16 +1,18 @@
 set(plugin_src
         
 	gnuplotter.cpp
-	histogram_logger.cpp
+	logger2.cpp
+
 	tiff_plotter.cpp
-#    logger.cpp
-    clustering_tracker.cpp
-    membrane_logger.cpp
+	vtk_plotter.cpp
 	
-	logger2.cpp # temporary
+	histogram_logger.cpp
+	clustering_tracker.cpp
+	membrane_logger.cpp
+	
 	cell_tracker.cpp
 	contact_logger.cpp
-
+	
 #	space_time_logger.cpp #obsolete (replaced by logger2)
 #	NetworkLogger.cpp
 #	svgPlotter.cpp
