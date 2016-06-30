@@ -197,7 +197,7 @@ void MembraneMapper::fillGaps()
 		bool done = false;
 		bool fwd = true;
 		int iterations=0;
-		vector<VINT> neighbors = membrane_lattice->getNeighborhoodByOrder(2);
+		vector<VINT> neighbors = membrane_lattice->getNeighborhoodByOrder(2).neighbors();
 		vector<int> neighbor_offsets(neighbors.size());
 		vector<double> neighbor_distance(neighbors.size());
 		for (uint i=0; i< neighbors.size(); i++ ) {
@@ -347,7 +347,7 @@ void MembraneMapper::ComputeDistance()
 // 		bool fwd = true;
 		uint dir = 0;
 		int iterations=0;
-		vector<VINT> neighbors = membrane_lattice->getNeighborhoodByOrder(2);
+		vector<VINT> neighbors = membrane_lattice->getNeighborhoodByOrder(2).neighbors();
 		vector<int> neighbor_offsets(neighbors.size());
 		vector<double> neighbor_distance(neighbors.size());
 		for (uint i=0; i< neighbors.size(); i++ ) {

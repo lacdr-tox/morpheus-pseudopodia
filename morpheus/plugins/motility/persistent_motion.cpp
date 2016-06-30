@@ -60,13 +60,13 @@ void PersistentMotion::report(){
 	}
 }
 
-double PersistentMotion::delta ( const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo ) const
+double PersistentMotion::delta ( const SymbolFocus& cell_focus, const CPM::Update& update) const
 {
 	const Cell& cell = cell_focus.cell();
 	VDOUBLE update_direction = cell.getUpdatedCenter() - cell.getCenter();
 	double cell_size = cell.nNodes();
 
-	double s = ((todo & CPM::ADD) && protrusion() ) || ( (todo & CPM::REMOVE) && retraction() ) ? strength( cell_focus ) : 0.0 ; 
+	double s = (update.opAdd() && protrusion() ) || ( update.opRemove() && retraction() ) ? strength( cell_focus ) : 0.0 ; 
 	return -s * cell_size * ( update_direction * cell_direction( cell_focus.cellID() ) );
 }
 

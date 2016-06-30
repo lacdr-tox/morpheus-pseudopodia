@@ -84,31 +84,31 @@ void SuperCell::removeSubCell(CPM::CELL_ID cell_id)
 }
 
 
-void SuperCell::setUpdate ( const CPM::UPDATE& update, CPM::UPDATE_TODO todo ) {
+void SuperCell::setUpdate ( const CPM::Update& update) {
 // 	updated_interfaces = interfaces;
 // 	updated_centers = centers;
 
 	
-	if ( ! ( nodes.size() == 1 and todo == CPM::REMOVE ) ) {
+	if ( ! ( nodes.size() == 1 and update.opRemove()) ) {
 		if (track_nodes) {
 			for (uint i=0; i<centers.size(); ++i) {
 				updated_centers[i] = centers[i];
 			}
 // 			updated_centers =  centers;
-			if (todo == CPM::ADD) {
-				updated_center = SIM::getLattice() -> to_orth(  (VDOUBLE)(accumulated_nodes + update.add_state.pos) / ( nodes.size() + 1 ) );
-				updated_lattice_center = ( ( accumulated_nodes + update.add_state.pos) / ( nodes.size() + 1 ) )/* % SIM::getLattice() -> size()*/;
-				updated_centers[sub_cell_pos[update.add_state.cell_id]] = CellType::storage.cell(update.add_state.cell_id).getUpdatedCenter();
+			if (update.opAdd() && update.opRemove()) {
+				updated_centers[sub_cell_pos[update.focusStateAfter().cell_id]] = CellType::storage.cell(update.focusStateAfter().cell_id).getUpdatedCenter();
+				updated_centers[sub_cell_pos[update.focusStateBefore().cell_id]] = CellType::storage.cell(update.focusStateBefore().cell_id).getUpdatedCenter();
 			}
-			else if (todo == CPM::REMOVE) {
-				updated_center = SIM::getLattice() -> to_orth(  (VDOUBLE)(accumulated_nodes - update.remove_state.pos) / ( nodes.size() - 1 ) );
-				updated_lattice_center = ( ( accumulated_nodes - update.remove_state.pos) / ( nodes.size() - 1 ) ) /* % SIM::getLattice() -> size()*/;
-				updated_centers[sub_cell_pos[update.remove_state.cell_id]] = CellType::storage.cell(update.remove_state.cell_id).getUpdatedCenter();
-// 				assert(nodes.find(update.remove_state.pos) != nodes.end());
-			} 
-			else if (todo==CPM::ADD_AND_REMOVE) {
-				updated_centers[sub_cell_pos[update.add_state.cell_id]] = CellType::storage.cell(update.add_state.cell_id).getUpdatedCenter();
-				updated_centers[sub_cell_pos[update.remove_state.cell_id]] = CellType::storage.cell(update.remove_state.cell_id).getUpdatedCenter();
+			else if (update.opAdd()) {
+				updated_center = SIM::getLattice() -> to_orth(  (VDOUBLE)(accumulated_nodes + update.focusStateAfter().pos) / ( nodes.size() + 1 ) );
+				updated_lattice_center = ( ( accumulated_nodes + update.focusStateAfter().pos) / ( nodes.size() + 1 ) )/* % SIM::getLattice() -> size()*/;
+				updated_centers[sub_cell_pos[update.focusStateAfter().cell_id]] = CellType::storage.cell(update.focusStateAfter().cell_id).getUpdatedCenter();
+			}
+			else if (update.opRemove()) {
+				updated_center = SIM::getLattice() -> to_orth(  (VDOUBLE)(accumulated_nodes - update.focusStateBefore().pos) / ( nodes.size() - 1 ) );
+				updated_lattice_center = ( ( accumulated_nodes - update.focusStateBefore().pos) / ( nodes.size() - 1 ) ) /* % SIM::getLattice() -> size()*/;
+				updated_centers[sub_cell_pos[update.focusStateBefore().cell_id]] = CellType::storage.cell(update.focusStateBefore().cell_id).getUpdatedCenter();
+// 				assert(nodes.find(update.focusStateBefore().pos) != nodes.end());
 			}
 
 		}
@@ -117,10 +117,10 @@ void SuperCell::setUpdate ( const CPM::UPDATE& update, CPM::UPDATE_TODO todo ) {
 			// reset the interfaces
 // 			resetUpdatedInterfaces();
 			
-			if (todo == CPM::ADD) {
+			if (update.opAdd()) {
 			}
 
-			if (todo == CPM::REMOVE) {
+			if (update.opRemove()) {
 			}
 		}
 	} else {
@@ -131,45 +131,45 @@ void SuperCell::setUpdate ( const CPM::UPDATE& update, CPM::UPDATE_TODO todo ) {
 	}
 }
 
-void SuperCell::applyUpdate ( const CPM::UPDATE& update, CPM::UPDATE_TODO todo )
+void SuperCell::applyUpdate ( const CPM::Update& update)
 {
 	//  !! Updates are already applied to the subcells !!
 	//  collect changes on the cell scale
-	if (track_nodes && todo != CPM::NEIGHBORHOOD_UPDATE) {
-		if (todo == CPM::ADD) {
-			accumulated_nodes += update.add_state.pos;
-			nodes.insert(update.add_state.pos);
-			orth_center = updated_center;
-			lattice_center = updated_lattice_center;
-		}
-		else if (todo == CPM::REMOVE) {
-			accumulated_nodes -= update.remove_state.pos;
-			if ( ! nodes.erase(update.remove_state.pos) ) {
-					cerr << "SuperCell::applyUpdate : Trying to remove node ["<< update.remove_state.pos << "]  which is not in the storage! " << endl;
-					cerr << CPM::getNode(update.remove_state.pos) << endl;
-					cerr << update.remove_state << " " << celltype->getName() << endl;
-					copy(nodes.begin(), nodes.end(), ostream_iterator<VINT>(cerr,"|"));
-					cerr << endl;
-					exit(-1);
-			}
-			orth_center = updated_center;
-			lattice_center = updated_lattice_center;
-		}
-		else { // todo == CPM::ADD_AND_REMOVE
-			if (update.add_state.pos != update.remove_state.pos) {
-				if ( ! nodes.erase(update.remove_state.pos) ) {
-					cerr << "SuperCell::applyUpdate : Trying to remove node ["<< update.remove_state.pos << "]  which is not in the storage! " << endl;
-					cerr << CPM::getNode(update.remove_state.pos) << endl;
-					cerr << update.remove_state << " " << celltype->getName() << endl;
+	if (track_nodes) {
+		if (update.opAdd() && update.opRemove()) {
+			if (update.focusStateAfter().pos != update.focusStateBefore().pos) {
+				if ( ! nodes.erase(update.focusStateBefore().pos) ) {
+					cerr << "SuperCell::applyUpdate : Trying to remove node ["<< update.focusStateBefore().pos << "]  which is not in the storage! " << endl;
+					cerr << CPM::getNode(update.focusStateBefore().pos) << endl;
+					cerr << update.focusStateBefore() << " " << celltype->getName() << endl;
 					copy(nodes.begin(), nodes.end(), ostream_iterator<VINT>(cerr,"|"));
 					cerr << endl;
 					assert(0);
 					exit(-1);
 				}
+				nodes.insert(update.focusStateAfter().pos);
 			}
-			nodes.insert(update.add_state.pos);
 		}
-			// 	centers = updated_centers;
+		else if (update.opAdd()) {
+			accumulated_nodes += update.focusStateAfter().pos;
+			nodes.insert(update.focusStateAfter().pos);
+			orth_center = updated_center;
+			lattice_center = updated_lattice_center;
+		}
+		else if (update.opRemove()) {
+			accumulated_nodes -= update.focusStateBefore().pos;
+			if ( ! nodes.erase(update.focusStateBefore().pos) ) {
+					cerr << "SuperCell::applyUpdate : Trying to remove node ["<< update.focusStateBefore().pos << "]  which is not in the storage! " << endl;
+					cerr << CPM::getNode(update.focusStateBefore().pos) << endl;
+					cerr << update.focusStateBefore() << " " << celltype->getName() << endl;
+					copy(nodes.begin(), nodes.end(), ostream_iterator<VINT>(cerr,"|"));
+					cerr << endl;
+					exit(-1);
+			}
+			orth_center = updated_center;
+			lattice_center = updated_lattice_center;
+		}
+		// 	centers = updated_centers;
 		uint n_centers = centers.size();
 		for (uint i=0; i<n_centers; ++i) {
 			centers[i] = updated_centers[i];
@@ -177,7 +177,7 @@ void SuperCell::applyUpdate ( const CPM::UPDATE& update, CPM::UPDATE_TODO todo )
 	}
 
 	
-	if (track_surface && todo != CPM::ADD_AND_REMOVE) {
+	if (track_surface && (update.opAdd() xor update.opRemove())) {
 // 		map <CPM::CELL_ID, uint >::iterator ui, i;
 // 		bool brute_force_copy = false;
 // 		if (updated_interfaces.size() == interfaces.size())

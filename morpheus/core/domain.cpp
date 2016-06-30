@@ -42,6 +42,7 @@ std::string Boundary::code_to_name(Boundary::Codes code)
 		case pz :
 			return "z";
 	}
+	return "";
 }
 
 
@@ -80,7 +81,7 @@ void Domain::loadFromXML(const XMLNode xNode,VINT size_hint)
 	if (xNode.nChildNode("Image")) {
 		type = image;
 		getXMLAttribute(xNode, "Image/path", image_path);
-		uint32 width, height, slices;
+// 		uint32 width, height, slices;
 		
 // 		TIFFSetWarningHandler(0);
 // 		TIFF* tif = TIFFOpen(image_path.c_str(), "r");

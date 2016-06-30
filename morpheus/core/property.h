@@ -45,8 +45,8 @@ public:
 	void setSubCellular(bool value) { sub_cellular = value; };
 	
 protected:
-	AbstractProperty(bool constant, bool cellproperty) : is_cellproperty(cellproperty), is_constant(constant), sub_cellular(false), initialized(true) {};
-	AbstractProperty(string n, string s, bool constant, bool cellproperty) : name(n) , symbolic_name(s), is_cellproperty(cellproperty), is_constant(constant), sub_cellular(false), initialized(true) {};
+	AbstractProperty(bool constant, bool cellproperty) : is_cellproperty(cellproperty), is_constant(constant), initialized(true), sub_cellular(false) {};
+	AbstractProperty(string n, string s, bool constant, bool cellproperty) : name(n) , symbolic_name(s), is_cellproperty(cellproperty), is_constant(constant), initialized(true), sub_cellular(false) {};
 	~AbstractProperty() {};
 	string name, symbolic_name;
 	const bool is_cellproperty;

@@ -97,7 +97,7 @@ void NeighborhoodReporter::report() {
 	// the same is true, if one of the output symbols requires node granularity
 	if ( !halo_output.empty()) {
 		//  draw in the membrane mapper ...
-		vector<VINT> neighbor_offsets = cpm_layer->lattice().getDefaultNeighborhood();
+		vector<VINT> neighbor_offsets = CPM::getSurfaceNeighborhood().neighbors();
 
 #pragma omp parallel
 {

@@ -28,7 +28,7 @@ void Protrusion::init(const Scope* scope) {
 	this->scope = scope;
     lattice = SIM::getLattice();
 	cpm_lattice = CPM::getLayer();
-	nbh = lattice->getNeighborhoodByOrder( 2 );
+	nbh = CPM::getSurfaceNeighborhood().neighbors();
 	//registerCellPositionOutput(); 
 
 };
@@ -51,19 +51,19 @@ double Protrusion::local_activity(SymbolFocus f) const{
 	return pow( multiplication, 1.0/(double)num_nbs );
 }
 
-double Protrusion::delta(const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const
+double Protrusion::delta(const SymbolFocus& cell_focus, const CPM::Update& update) const
 {
 //    cout << "Protrusion> delta" << endl;
 
 // 	if ( todo & CPM::REMOVE )
 // 		return 0.0;
 	
- 	if(update.source.celltype() == CPM::getEmptyCelltypeID() ){
+ 	if (update.source().celltype() == CPM::getEmptyCelltypeID() ) {
  		return 0.0;
  	}
 
-	double act_source = local_activity( update.source );
-	double act_focus  = local_activity( update.focus );
+	double act_source = local_activity( update.source() );
+	double act_focus  = local_activity( update.focus() );
 
 	double dH = (strength(cell_focus) / maxact(cell_focus) ) * (act_source - act_focus);
 	
@@ -74,23 +74,24 @@ double Protrusion::delta(const SymbolFocus& cell_focus, const CPM::UPDATE& updat
 // 		 << "\tact_focus: " << act_focus
 // 		 << "\tdH: " << dH << endl; 
 		
-	if ( todo & CPM::ADD ) 
+	if ( update.opAdd() ) 
 		return -dH; // Cell is extended to the focal node (Protrusion)
- 	if ( todo & CPM::REMOVE ) 
+ 	if ( update.opRemove() ) 
  		return dH;  // Cell is removed from the focal node (Retraction)
 	return 0;
 
 }
 
 // update the activity field after update
-void Protrusion::update_notify(CPM::CELL_ID cell_id, const CPM::UPDATE& update, CPM::UPDATE_TODO todo){
+void Protrusion::update_notify(CPM::CELL_ID cell_id, const CPM::Update& update) {
 	
-	if ( todo & CPM::ADD ){
-		field.set( update.focus.pos(), maxact( SymbolFocus(cell_id) ));
-		field.set( update.source.pos(), maxact( SymbolFocus(cell_id) ));
+	if ( update.opAdd()){
+		field.set( update.focus().pos(), maxact( SymbolFocus(cell_id) ));
+		if (update.source().valid())
+			field.set( update.source().pos(), maxact( SymbolFocus(cell_id) ));
 	}
-	if ( todo & CPM::REMOVE ) 
-		field.set( update.focus.pos(), 0.0);
+	if ( update.opRemove() ) 
+		field.set( update.focus().pos(), 0.0);
 	
 }
 

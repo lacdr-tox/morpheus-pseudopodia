@@ -12,7 +12,7 @@ SurfaceConstraint::SurfaceConstraint(){
 	registerPluginParameter(exponent);
 };
 
-double SurfaceConstraint::delta ( const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo ) const
+double SurfaceConstraint::delta ( const SymbolFocus& cell_focus, const CPM::Update& update ) const
 {
 	double d_surface_length = cell_focus.cell().getInterfaceLength();
 	double d_new_surface_length = cell_focus.cell().getUpdatedInterfaceLength();

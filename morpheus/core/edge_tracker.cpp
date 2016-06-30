@@ -22,8 +22,8 @@ void EdgeListTracker::reset() {
 }
 
 
-EdgeListTracker::EdgeListTracker(shared_ptr< const CPM::LAYER >p, const vector<VINT> &opx_nei) :
-	EdgeTrackerBase(p, opx_nei), 
+EdgeListTracker::EdgeListTracker(shared_ptr< const CPM::LAYER >p, const vector<VINT> &opx_nei, const vector<VINT>& surface_nei) :
+	EdgeTrackerBase(p, opx_nei, surface_nei), 
 	no_edge(numeric_limits<unsigned int>::max()-1),
 	no_flux_edge(numeric_limits<unsigned int>::max())
 {
@@ -44,6 +44,8 @@ EdgeListTracker::EdgeListTracker(shared_ptr< const CPM::LAYER >p, const vector<V
 				break;
 			}
 		}
+		
+		opx_is_surface.push_back(find(this->surface_neighbors.begin(),this->surface_neighbors.end(),*nei) != this->surface_neighbors.end());
 	}
 	
 // 	cout << "Edge_List:_Stepper: Checking for constant and noflux boundaries " << endl;
@@ -140,7 +142,7 @@ void EdgeListTracker::init_edge_list() {
 						}
 					}
 					else if ( bt == Boundary::noflux) 
-						// that neighboring node is not writable, but can not source new nodes 
+						// that neighboring node is not writable and can not source new nodes 
 					{
 						edge.eid_list_a->at(neighbor) = no_flux_edge;
 						initial_edges++;
@@ -166,12 +168,14 @@ void EdgeListTracker::get_update(VINT& origin, VINT& direction) const{
 			if ( ! edge_lattice->writable(edges[idx].pos_b) ) continue; // node b, the focus, is not writable ...
 			origin = edges[idx].pos_a;
 			direction = this->opx_neighbors[edges[idx].direction_a2b];
+			return;
 		} else {
 			if ( ! edge_lattice->writable(edges[idx].pos_a) ) continue;
 			origin = edges[idx].pos_b;
 			direction = this->opx_neighbors[inverse_neighbor[edges[idx].direction_a2b]];
+			return;
 		}
-	} while (0) ;
+	} while (1) ;
 }
 
 void EdgeListTracker::update_notifier(const VINT& pos, const LatticeStencil& neighborhood) {
@@ -290,23 +294,23 @@ void EdgeListTracker::update_notifier(const VINT& pos, const LatticeStencil& nei
 };
 
 
-bool EdgeListTracker::is_boundary(const VINT& pos) const{
+bool EdgeListTracker::has_surface(const VINT& pos) const{
 	VINT k(pos);
 	if ( ! this->lattice->resolve(k) ) return true;
 	const vector<unsigned int> & edge_list = edge_lattice->get(k);
-	for (vector<unsigned int>::const_iterator i = edge_list.begin(); i!= edge_list.end(); i++) {
-		if (*i != no_edge ) return true;
+	for (uint i = 0; i< edge_list.size(); i++) {
+		if (opx_is_surface[i] &&  edge_list[i] != no_edge ) return true;
 	}
 	return false;
 }
 
-uint EdgeListTracker::n_boundaries(const VINT& pos) const{
+uint EdgeListTracker::n_surfaces(const VINT& pos) const{
 	VINT k(pos);
 	if ( ! this->lattice->resolve(k) ) return 1;
 	const vector<unsigned int> & edge_list = edge_lattice->get(pos);
 	uint n_edges(0);
-	for (vector<unsigned int>::const_iterator i = edge_list.begin(); i!= edge_list.end(); ++i) {
-		n_edges += (*i != no_edge );
+	for (uint i = 0; i< edge_list.size(); i++) {
+		n_edges += (opx_is_surface[i] &&  edge_list[i] != no_edge );
 	}
 	return n_edges;
 }

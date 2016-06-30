@@ -1,6 +1,6 @@
 #define SIMULATION_CPP
 
-// #define NO_CORE_CATCH
+#define NO_CORE_CATCH
 
 #include "simulation_p.h"
 #include "edge_tracker.h"
@@ -126,9 +126,15 @@ ostream& operator <<(ostream& os, const CPM::STATE& n) {
 void enableEgdeTracking()
 {
 	// Don't enable the edge tracker when just creating a dependency graph
-	if (!SIM::generate_symbol_graph_and_exit) {
-		if (!dynamic_pointer_cast<EdgeListTracker>(edgeTracker))
-			edgeTracker = shared_ptr<EdgeTrackerBase>(new EdgeListTracker(layer, boundary_neighborhood));
+	if (SIM::generate_symbol_graph_and_exit) return ;
+	
+	if (!dynamic_pointer_cast<EdgeListTracker>(edgeTracker)) {
+		if ( ! update_neighborhood.empty() ) {
+			edgeTracker = shared_ptr<EdgeTrackerBase>(new EdgeListTracker(layer, update_neighborhood.neighbors(), surface_neighborhood.neighbors()));
+		}
+		else {
+			edgeTracker = shared_ptr<EdgeTrackerBase>(new EdgeListTracker(layer, surface_neighborhood.neighbors(), surface_neighborhood.neighbors()));
+		}
 	}
 }
 
@@ -136,18 +142,23 @@ shared_ptr<const EdgeTrackerBase> cellEdgeTracker() {
 	return edgeTracker;
 }
 
-const vector< VINT >& getBoundaryNeighborhood()
+const Neighborhood& getBoundaryNeighborhood()
 {
 	return boundary_neighborhood;
 }
 
-
-bool isBoundary(const VINT& pos) {
-	return edgeTracker->is_boundary(pos);
+const Neighborhood& getSurfaceNeighborhood()
+{
+	return surface_neighborhood;
 }
 
-uint nBoundaries(const VINT& pos) {
-	return edgeTracker->n_boundaries(pos);
+
+bool isSurface(const VINT& pos) {
+	return edgeTracker->has_surface(pos);
+}
+
+uint nSurfaces(const VINT& pos) {
+	return edgeTracker->n_surfaces(pos);
 };
 
 
@@ -156,18 +167,44 @@ void loadFromXML(XMLNode xMorph) {
 		loadCellTypes(xMorph.getChildNode("CellTypes"));
 	
 	boundary_neighborhood = SIM::lattice().getDefaultNeighborhood();
-	sort(boundary_neighborhood.begin(),boundary_neighborhood.end(), CompareAngle() );
-	interaction_neighborhood = SIM::lattice().getDefaultNeighborhood();
 	
+	if (SIM::lattice().getStructure() == Lattice::square)
+		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(2);
+	else if (SIM::lattice().getStructure() == Lattice::hexagonal)
+		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
+	else if (SIM::lattice().getStructure() == Lattice::cubic)
+		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(3);
+	else if (SIM::lattice().getStructure() == Lattice::linear)
+		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
 	
 	if ( ! xMorph.getChildNode("CPM").isEmpty() ) {
-		cpm_sampler =  shared_ptr<CPMSampler>(new CPMSampler());
 		xCPM = xMorph.getChildNode("CPM");
-		cpm_sampler->loadFromXML(xCPM);
-		time_per_mcs.set( cpm_sampler->timeStep() );
-		boundary_neighborhood = cpm_sampler->getBoundaryNeighborhood();
-		interaction_neighborhood = cpm_sampler->getInteractionNeighborhood();
 		
+		// CPM Cell representation requires the definition of the CPM ShapeBoundary for shape length estimations
+		boundary_neighborhood = SIM::lattice().getNeighborhood(xCPM.getChildNode("ShapeBoundary").getChildNode("Neighborhood"));
+		string boundary_scaling;
+		if (getXMLAttribute(xCPM,"ShapeBoundary/scaling",boundary_scaling)) {
+			if (boundary_scaling == "none") {
+				CPMShape::scalingMode = CPMShape::BoundaryScalingMode::None;
+			}
+			else if (boundary_scaling == "norm") {
+				CPMShape::scalingMode = CPMShape::BoundaryScalingMode::Magno;
+			}
+			else if (boundary_scaling == "size") {
+				CPMShape::scalingMode = CPMShape::BoundaryScalingMode::NeigborNumber;
+			}
+			else if (boundary_scaling == "magno") {
+				CPMShape::scalingMode = CPMShape::BoundaryScalingMode::Magno;
+			}
+		}
+		
+		// CPM time evolution is defined by a MonteCarlo simulation based on the a Hamiltionian and the metropolis kintics
+		if ( ! xCPM.getChildNode("MonteCarloSampler").isEmpty() ) {
+			cpm_sampler =  shared_ptr<CPMSampler>(new CPMSampler());
+			cpm_sampler->loadFromXML(xCPM);
+			time_per_mcs.set( cpm_sampler->timeStep() );
+			update_neighborhood = cpm_sampler->getUpdateNeighborhood();
+		}
 		
 	}
 	if ( ! xMorph.getChildNode("CellPopulations").isEmpty()) {
@@ -244,18 +281,25 @@ void loadFromXML(XMLNode xMorph) {
 		// Creating a default global update template
 // 		boundary_neighborhood = SIM::global_lattice->getDefaultNeighborhood();
 		// sort(boundary_neighborhood.begin(),boundary_neighborhood.end(), CompareAngle() );
-		global_update.boundary = unique_ptr<LatticeStencil>(new LatticeStencil(layer, boundary_neighborhood));
-		global_update.interaction = unique_ptr<StatisticalLatticeStencil>(new StatisticalLatticeStencil(layer, interaction_neighborhood));
+		global_update_data.boundary = unique_ptr<StatisticalLatticeStencil>(new StatisticalLatticeStencil(layer, boundary_neighborhood.neighbors()));
+		global_update_data.surface = unique_ptr<LatticeStencil>(new LatticeStencil(layer, surface_neighborhood.neighbors()));
+		if ( ! update_neighborhood.empty() ) {
+			global_update_data.update = unique_ptr<LatticeStencil>(new LatticeStencil(layer, update_neighborhood.neighbors()));
+			// Setting up the EdgeTracker
+			edgeTracker = shared_ptr<EdgeTrackerBase>(new NoEdgeTracker(layer, update_neighborhood.neighbors(), surface_neighborhood.neighbors()));
+		}
+		else {
+			edgeTracker = shared_ptr<EdgeTrackerBase>(new NoEdgeTracker(layer, surface_neighborhood.neighbors(), surface_neighborhood.neighbors()));
+		}
 		
-		// Setting up the EdgeTracker
-		edgeTracker = shared_ptr<EdgeTrackerBase>(new NoEdgeTracker(layer, boundary_neighborhood));
 	}
 	else {
 		// boundary_neighborhood = SIM::global_lattice->getDefaultNeighborhood();
 		// sort(boundary_neighborhood.begin(),boundary_neighborhood.end(), CompareAngle() );
 		// global_update.boundary = new LatticeStencil(layer, boundary_neighborhood);
-		global_update.boundary = 0;
-		global_update.interaction = 0;
+		global_update_data.boundary = 0;
+		global_update_data.update = 0;
+		global_update_data.surface = 0;
 	}
 	
 }
@@ -477,12 +521,12 @@ XMLNode saveCellPopulations() {
 		return XMLNode();
 }
 
-const vector<VINT>& getInteractionNeighborhood() {
-	if (cpm_sampler)
-		return cpm_sampler->getInteractionNeighborhood();
-	else
-		return layer->lattice().getDefaultNeighborhood();
-};
+// const Neighborhood& getInteractionNeighborhood() {
+// 	if (cpm_sampler)
+// 		return cpm_sampler->getInteractionNeighborhood();
+// 	else
+// 		return layer->lattice().getDefaultNeighborhood();
+// };
 
 
 shared_ptr<const CPM::LAYER> getLayer() {
@@ -497,64 +541,98 @@ const CPM::STATE& getNode(const VINT& pos) {
 	return layer->get(pos);
 };
 
-bool executeCPMUpdate(const CPM::UPDATE& update) {
+bool executeCPMUpdate(const CPM::Update& update) {
 //      cout << cpm_layer->get(update.focus) << endl;
 //      cout << update.focus.pos() << " - "<< update.remove_state.cell_id << " - " << update.add_state.cell_id << endl;
-	assert(layer->writable(update.focus.pos()) );
-	assert(SIM::global_lattice->equal_pos(update.focus.pos(), update.add_state.pos));
-	assert(SIM::global_lattice->equal_pos(update.remove_state.pos, update.add_state.pos));
+	assert(SIM::global_lattice->equal_pos(update.focus.pos(), update.focusStateAfter().pos));
+	assert(SIM::global_lattice->equal_pos(update.focusStateBefore().pos, update.focusStateAfter().pos));
 
 	try {
-
-		if ( update.focus.celltype() == update.source.celltype())
-			celltypes[update.focus.celltype()] -> apply_update(update, ADD_AND_REMOVE);
-		else {
-			celltypes[update.source.celltype()] -> apply_update(update, ADD);
-			celltypes[update.focus.celltype()] -> apply_update(update, REMOVE);
-		}
-		// also notify all the cells that are just next to the focal node
-		// TODO make this notification compact!
-		const vector<StatisticalLatticeStencil::STATS>& neighbor_stats = update.interaction->getStatistics();
-		for (uint i=0; i<neighbor_stats.size(); i++) {
-			if ( (neighbor_stats[i].cell != update.add_state.cell_id) && (neighbor_stats[i].cell != update.remove_state.cell_id)) {
-				CELL_INDEX_STATE state = getCellIndex(neighbor_stats[i].cell).status;
-				if ( state != NO_CELL && state != VIRTUAL_CELL)
-					CellType::storage.cell(neighbor_stats[i].cell) . applyNeighborhoodUpadate(update,neighbor_stats[i].count);
+		if (update.opAdd() && update.opRemove()) {
+			
+			if ( update.focus().celltype() == update.focusUpdated().celltype()) {
+				celltypes[update.focus().celltype()] -> apply_update(update.selectOp(Update::ADD_AND_REMOVE));
 			}
+			else {
+				celltypes[update.focusUpdated().celltype()] -> apply_update(update.selectOp(Update::ADD));
+				celltypes[update.focus().celltype()] -> apply_update(update.selectOp(Update::REMOVE));
+			}
+			
+			// Notify all the cells that are adajcent to the focal node wrt. the boundary neighborhood
+			if (update.opNeighborhood()) {
+				const vector<StatisticalLatticeStencil::STATS>& neighbor_stats = update.boundaryStencil()->getStatistics();
+				for (uint i=0; i<neighbor_stats.size(); i++) {
+					if ( (neighbor_stats[i].cell != update.focusStateAfter().cell_id) && (neighbor_stats[i].cell != update.focusStateBefore().cell_id)) {
+						CELL_INDEX_STATE state = getCellIndex(neighbor_stats[i].cell).status;
+						if ( state != NO_CELL && state != VIRTUAL_CELL)
+							CellType::storage.cell(neighbor_stats[i].cell) . applyUpdate(update.selectOp(Update::NEIGHBORHOOD_UPDATE));
+					}
+				}
+			}
+			VINT position = update.focus().pos();
+// 			assert( layer -> writable_resolve(position) );
+			layer->set(position,update.focusStateAfter());
+			assert(edgeTracker);
+			if (update.updateStencil())
+				edgeTracker->update_notifier(position, *update.updateStencil());
+			else 
+				edgeTracker->update_notifier(position, *update.surfaceStencil());
 		}
-		VINT position = update.focus.pos();
-		assert( layer -> writable_resolve(position) );
-		layer->set(position,update.add_state);
-		assert(update.boundary);
-		assert(edgeTracker);
-		edgeTracker->update_notifier(position, *(update.boundary));
+		else if (update.opMove()) {
+			
+		}
 	} catch ( string e ) {
 		cerr << "error while applying executeCPMUpdate()" << endl;
-		cerr << update.remove_state << endl << update.add_state << endl;
+		cerr << update.focusStateBefore() << endl << update.focusStateAfter() << endl;
 		cerr << e << endl;
 		exit (0);
 	}
 	return true;
 }
 
+CPM::Update& getGlobalUpdate() { static Update global_update(&global_update_data, layer); return global_update;}
+
+const CPM::Update& createUpdate(VINT source, VINT direction, CPM::Update::Operation opx) {
+	
+	VINT latt_pos = source + direction;
+	Update& global_update = getGlobalUpdate();
+	if ( ! layer->writable_resolve(latt_pos) ) {
+		cout << "Cannot write to constant node " << latt_pos << ". Rejecting update." << endl;
+		global_update.unset();
+	}
+	else {
+		global_update.set(source,direction, opx);
+	}
+	
+	setUpdate(global_update);
+
+	return global_update;
+	
+}
+
 bool setNode(VINT position, CPM::CELL_ID cell_id) {
 
-	VINT cell_pos = position;
-	if ( ! layer->writable_resolve(position) ) {
-		cout << "Skipping write to constant node " << position << endl;
+	VINT latt_pos = position;
+	if ( ! layer->writable_resolve(latt_pos) ) {
+		cout << "setNode(): Rejecting write to constant node at " << latt_pos << "." << endl;
 		return false;
 	}
 	
-	global_update.focus.setPosition(position); 
-	global_update.source = VINT(0,0,0);
+	Update& global_update = getGlobalUpdate();
+	global_update.set(position, cell_id); 
+	
+/*	global_update.source = VINT(0,0,0);
 	
 	global_update.add_state.pos = cell_pos;
 	global_update.add_state.cell_id = cell_id;
-	global_update.remove_state = layer->get(global_update.focus.pos());
+	global_update.remove_state = layer->get(global_update.focus.pos());*/
 
-	setUpdate(global_update);
-	
-	return executeCPMUpdate(global_update);
+	if (global_update.valid()) {
+		setUpdate(global_update);
+		return executeCPMUpdate(global_update);
+	}
+	else 
+		return false;
 
 };
 
@@ -585,40 +663,53 @@ void setCellType(CELL_ID cell_id, uint celltype)
 	celltypes[old_celltype]->removeCell(cell_id);
 }
 
-void setUpdate(CPM::UPDATE& update) {
+void setUpdate(CPM::Update& update) {
 	// we assume that focus source, add_state and remove_state are already set properly
-	if (update.interaction)
-		update.interaction->setPosition(update.focus.pos());
-	update.boundary->setPosition(update.focus.pos());
+// 	if (update.interaction)
+// 		update.interaction->setPosition(update.focus.pos());
+// 	update.boundary->setPosition(update.focus.pos());
 
 	// Fwd adding nodes to a supercell to the first subcell
-	if (update.source.cell_index().status == SUPER_CELL ) {
-		update.add_state.super_cell_id = update.add_state.cell_id;
-		update.add_state.cell_id = static_cast<const SuperCell&>(getCell(update.add_state.super_cell_id)).getSubCells().front();
-		update.source = SymbolFocus(update.add_state.cell_id, update.add_state.pos);
-	}
+// 	if (update.focusUpdated().cell_index().status == SUPER_CELL ) {
+// 		update.add_state.super_cell_id = update.add_state.cell_id;
+// 		update.add_state.cell_id = static_cast<const SuperCell&>(getCell(update.add_state.super_cell_id)).getSubCells().front();
+// 		update.source = SymbolFocus(update.add_state.cell_id, update.add_state.pos);
+// 	}
 	
 	// Find the proper celltype to notify
-	update.source_top_ct = update.source.celltype();
-	update.focus_top_ct =  update.focus.celltype();
+// 	update.source_top_ct = update.source.celltype();
+// 	update.focus_top_ct =  update.focus.celltype();
 	
-	if ( update.source.cell_index().status == SUB_CELL ) {
-		// notify the supercell containing the cell
-		update.source_top_ct = getCellIndex(update.add_state.super_cell_id).celltype;
+// 	if ( update.source.cell_index().status == SUB_CELL ) {
+// 		// notify the supercell containing the cell
+// 		update.source_top_ct = getCellIndex(update.add_state.super_cell_id).celltype;
+// 	}
+// 
+// 	if ( update.focus.cell_index().status == SUB_CELL ) {
+// 		// notify the supercell containing the cell
+// 		update.focus_top_ct = getCellIndex(update.remove_state.super_cell_id).celltype;
+// 	}
+	
+	if (update.opAdd() && update.opRemove()) {
+		if ( update.focus().cell_index().celltype == update.focusUpdated().cell_index().celltype ) {
+			celltypes[update.focus().cell_index().celltype] -> set_update(update.selectOp(Update::ADD_AND_REMOVE));
+		}
+		else {
+			celltypes[update.focusUpdated().cell_index().celltype] -> set_update(update.selectOp(Update::ADD));
+			celltypes[update.focus().cell_index().celltype] -> set_update(update.selectOp(Update::REMOVE));
+		}
 	}
-
-	if ( update.focus.cell_index().status == SUB_CELL ) {
-		// notify the supercell containing the cell
-		update.focus_top_ct = getCellIndex(update.remove_state.super_cell_id).celltype;
+	if (update.opNeighborhood()) {
+		const vector<StatisticalLatticeStencil::STATS>& neighbor_stats = update.boundaryStencil()->getStatistics();
+		for (uint i=0; i<neighbor_stats.size(); i++) {
+			if ( (neighbor_stats[i].cell != update.focusStateAfter().cell_id) && (neighbor_stats[i].cell != update.focusStateBefore().cell_id)) {
+				CELL_INDEX_STATE state = getCellIndex(neighbor_stats[i].cell).status;
+				if ( state != NO_CELL && state != VIRTUAL_CELL)
+					CellType::storage.cell(neighbor_stats[i].cell) . setUpdate(update.selectOp(CPM::Update::NEIGHBORHOOD_UPDATE));
+			}
+		}
 	}
 	
-	if ( update.focus_top_ct == update.source_top_ct ) {
-		celltypes[update.focus_top_ct] -> set_update(update, ADD_AND_REMOVE);
-	}
-	else {
-		celltypes[update.source_top_ct] -> set_update(update, ADD);
-		celltypes[update.focus_top_ct] -> set_update( update, REMOVE);
-	}
 }
 
 }

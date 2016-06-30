@@ -58,9 +58,6 @@ Defines a symbol with accessible x, y and z coordinates.</xs:documentation>
 					2D: square or hexagonal
 					3D: cubic
 					
-					Caution: 
-					- Some features may not work correctly with hexagonal lattices.
-					
 					Note: 
 					- For non-spatial (ODE) models, choose 'linear' with size: 1 0 0.
 				</xs:documentation>

@@ -46,12 +46,15 @@ template <> const string Property<VDOUBLE>::constant_xml_name() { return "Consta
 template <>
 void Property<double>::init(const Scope* scope, const SymbolFocus& f) {
 	AbstractProperty::init(scope, f);
+	
+	value = 0;
+	initialized = true;
+	
 	if (!string_val.empty()) {
 		ExpressionEvaluator<double> eval(string_val);
 		eval.init(scope);
 		value = eval.get(f);
 	}
-	initialized = true; 
 }
 
 template <>

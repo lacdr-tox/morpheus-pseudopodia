@@ -16,7 +16,7 @@ void InsertMedium::init(const Scope* scope)
 	setTimeStep( CPM::getMCSDuration() );
 	celltype 		= scope->getCellType();
 	cpm_layer 		= CPM::getLayer();
-	neighbor_sites	= cpm_layer->getLattice()->getNeighborhood(1);
+	neighbor_sites	= cpm_layer->getLattice()->getNeighborhood(1).neighbors();
 	medium			= CPM::getEmptyState().cell_id;
 	
 	if( condition.isDefined() )

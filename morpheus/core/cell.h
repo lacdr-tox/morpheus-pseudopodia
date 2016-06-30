@@ -27,19 +27,20 @@
 
 // #include "simulation.h"
 #include "interfaces.h"
-#include "cpm_layer.h"
+// #include "cpm_layer.h"
+#include "cpm_shape.h"
 #include "property.h"
 
 class MembraneMapper;
 
-struct EllipsoidShape{
-	vector< VDOUBLE > axes;
-	vector< double> lengths;
-	double eccentricity;
-	VDOUBLE center;
-	uint volume;
-	double timestamp;
-};
+// struct EllipsoidShape{
+// 	vector< VDOUBLE > axes;
+// 	vector< double> lengths;
+// 	double eccentricity;
+// 	VDOUBLE center;
+// 	uint volume;
+// 	double timestamp;
+// };
 
 class CellShape {
 public:
@@ -93,9 +94,9 @@ public:
  * @param update provides the whole udate story
  * @param todo selects which changes contribute to the cell
  */
-	virtual void setUpdate(const CPM::UPDATE& update, CPM::UPDATE_TODO todo);
-	virtual void applyUpdate(const CPM::UPDATE& update, CPM::UPDATE_TODO todo);  ///< apply the requested changes to the cell (either add_state or remove_state are NULL)
-	void applyNeighborhoodUpadate(const CPM::UPDATE& update, uint count); 
+	virtual void setUpdate(const CPM::Update& update);
+	virtual void applyUpdate(const CPM::Update& update);  ///< apply the requested changes to the cell (either add_state or remove_state are NULL)
+// 	void applyNeighborhoodUpadate(const CPM::Update& update, uint count); 
 
 	CPM::CELL_ID getID() const { return id; };                                 ///< ID that represents the cell in the cpm lattice
 	uint getName() const { return id; };                               ///< a unique name that remains constant, no matter of proliferation or cell death or differentiation. It is unique for the whole cpm.
@@ -153,8 +154,7 @@ protected:
  *  however, set<> allows log(N) insert and find methods, which is effectively faster than 
  *  list version of find and insert.
  */
-	CPM::UPDATE active_update;
-	CPM::UPDATE_TODO active_todo;
+// 	CPM::Update active_update;
 	
 	Nodes nodes, updated_nodes;                     /// Container storing all occupied nodes
 	mutable Nodes surface, updated_surface;                   /// Container storing the nodes at the cell surface

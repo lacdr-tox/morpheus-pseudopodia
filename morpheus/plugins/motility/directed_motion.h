@@ -70,7 +70,7 @@ public:
 	DECLARE_PLUGIN("DirectedMotion");
 	DirectedMotion();
     void init(const Scope* scope);
-	double delta (const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const;
+	double delta (const SymbolFocus& cell_focus, const CPM::Update& update) const;
 	double hamiltonian (CPM::CELL_ID) const;
 	
 };

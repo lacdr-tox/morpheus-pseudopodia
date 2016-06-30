@@ -11,7 +11,7 @@
 
 #ifndef SYMBOLFOCUS_H
 #define SYMBOLFOCUS_H
-#include "simulation.h"
+#include "cpm_layer.h"
 
 class Symbol;
 
@@ -41,6 +41,7 @@ public:
 	void setPosition(const VINT& pos);
 	void setMembrane( CPM::CELL_ID cell_id, const VINT& pos );
 	void unset();
+	bool valid() const { return has_pos || has_cell; }
 	static const SymbolFocus global;
 	
 private:

@@ -113,11 +113,11 @@ public:
 	pair<CPM::CELL_ID, CPM::CELL_ID> divideCell2(CPM::CELL_ID mother_id, VDOUBLE split_plane_normal,  VDOUBLE split_plane_center );
 	
 
-	virtual bool check_update(const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const;  ///<  the method is called previous to an cpm update and may prevent it by returning false.
-	virtual double delta(const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const;               ///<  the method is called in the cpm, update to determine the energy change contributed by the celltype
+	virtual bool check_update(const CPM::Update& update) const;  ///<  the method is called previous to an cpm update and may prevent it by returning false.
+	virtual double delta(const CPM::Update& update) const;               ///<  the method is called in the cpm, update to determine the energy change contributed by the celltype
 	virtual double hamiltonian() const ;   ///< Calculates the Hamiltonian energy for the whole cellpopulation
-	virtual void set_update(const CPM::UPDATE& update, CPM::UPDATE_TODO todo);
-	virtual void apply_update(const CPM::UPDATE& update, CPM::UPDATE_TODO todo);        ///<  the method is called in the cpm update to apply an update to the celltype structure. Note that the lattice at that time still holds the old state.
+	virtual void set_update(const CPM::Update& update);
+	virtual void apply_update(const CPM::Update& update);        ///<  the method is called in the cpm update to apply an update to the celltype structure. Note that the lattice at that time still holds the old state.
 
 	/// Interface for time continuous processes
 	/// TODO Those actions should somehow move to a central time sscheduler

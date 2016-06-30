@@ -347,15 +347,15 @@ bool PDE_Layer::solve_adi_diffusion(double time_interval)
 	valarray<value_type> d2(1+2*alpha,l_size.x);
 
 	// We assume row aligned arrays. If not, one could switch to VINT index(i,j,0) * offset for indexing
-	for ( uint j=0; j < l_size.y; j++) {
+	for ( int j=0; j < l_size.y; j++) {
 		if (j==0) {
 			if (boundary_types[Boundary::my] == Boundary::constant) {
 				value_type cy = this->get(VINT(0,-1,0));
-				for ( uint i=0; i< l_size.x; i++) {
+				for ( int i=0; i< l_size.x; i++) {
 					b[i] = alpha * cy+(1-2*alpha)*data[j * shadow_offset.y +i]+alpha*data[(j+1)*shadow_offset.y+i];
 				}
 			} else {
-				for ( uint i=0; i< l_size.x; i++) {
+				for ( int i=0; i< l_size.x; i++) {
 					b[i] = (1-alpha)*data[j * shadow_offset.y +i]+alpha*data[(j+1)*shadow_offset.y+i];
 				}
 			}
@@ -363,17 +363,17 @@ bool PDE_Layer::solve_adi_diffusion(double time_interval)
 		else if (j==l_size.y-1) {
 			if (boundary_types[Boundary::py] == Boundary::constant) {
 				value_type cy = this->get(VINT(0, l_size.y, 0));
-				for ( uint i=0; i< l_size.x; i++) {
+				for ( int i=0; i< l_size.x; i++) {
 					b[i] = alpha * data[(j-1)*shadow_offset.y + i] + (1-2*alpha)*data[j * shadow_offset.y +i] + alpha*cy;
 				}
 			} else {
-				for ( uint i=0; i< l_size.x; i++) {
+				for ( int i=0; i< l_size.x; i++) {
 					b[i] = alpha * data[(j-1)*shadow_offset.y + i] + (1-alpha)*data[j * shadow_offset.y +i];
 				}
 			}
 		}
 		else {
-			for ( uint i=0; i< l_size.x; i++) {
+			for ( int i=0; i< l_size.x; i++) {
 				b[i] = alpha * data[(j-1)*shadow_offset.y + i]+(1-2*alpha)*data[j * shadow_offset.y +i]+alpha*data[(j+1)*shadow_offset.y+i];
 			}
 		}
@@ -398,11 +398,11 @@ bool PDE_Layer::solve_adi_diffusion(double time_interval)
 		if (i==0) {
 			if ( boundary_types[Boundary::mx] == Boundary::constant) {
 				value_type cx  = this->get(VINT(-1,0,0));
-				for (uint j=0; j<l_size.y; j++) {
+				for (int j=0; j<l_size.y; j++) {
 					b[j] = alpha*cx + (1-2*alpha)*write_buffer[j*shadow_offset.y+i] + alpha*write_buffer[j*shadow_offset.y+i+1];
 				}
 		} else {
-				for (uint j=0; j<l_size.y; j++) {
+				for (int j=0; j<l_size.y; j++) {
 					b[j] = (1-alpha)*write_buffer[j*shadow_offset.y+i] + alpha*write_buffer[j*shadow_offset.y+i+1];
 				}
 			}
@@ -410,17 +410,17 @@ bool PDE_Layer::solve_adi_diffusion(double time_interval)
 		else if (i==l_size.x-1) {
 			if (boundary_types[Boundary::px] == Boundary::constant) {
 				value_type cx  = this->get(VINT(l_size.x,0,0));
-				for (uint j=0; j<l_size.y; j++) {
+				for (int j=0; j<l_size.y; j++) {
 						b[j] = alpha*b_save[j] + (1-2*alpha)*write_buffer[j*shadow_offset.y+i] + alpha*cx;
 				}
 			} else {
-				for (uint j=0; j<l_size.y; j++) {
+				for (int j=0; j<l_size.y; j++) {
 					b[j] = alpha*b_save[j] + (1-alpha)*write_buffer[j*shadow_offset.y+i];
 				}
 			}
 		}
 		else {
-			for (uint j=0; j<l_size.y; j++) {
+			for (int j=0; j<l_size.y; j++) {
 				b[j] = alpha*b_save[j] + (1-2*alpha)*write_buffer[j*shadow_offset.y+i] + alpha*write_buffer[j*shadow_offset.y+i+1];
 			}
 		}
@@ -523,7 +523,7 @@ bool PDE_Layer::solve_fwd_euler_diffusion(double time_interval)
 	//cout << "Euler diffusion: D =  " << diffusion_rate << "; time_interval= " <<  time_interval <<
 	//		";	node_length" << node_length <<  "; alpha = "<< alpha << endl;
 
-	vector<VINT> neighbors = _lattice->getNeighborhood(1);
+	vector<VINT> neighbors = _lattice->getNeighborhood(1).neighbors();
 	
 	// numerical stability criterion
 	if( alpha * neighbors.size() >= 1.0 ){
@@ -606,7 +606,7 @@ bool PDE_Layer::solve_fwd_euler_diffusion_generalized(double time_interval)
 	double alpha_normal = (diffusion_rate * time_interval) / sqr(node_length);
 
 	double alpha_total = 0;
-	vector<VINT> neighbors = _lattice->getNeighborhood(1);
+	vector<VINT> neighbors = _lattice->getNeighborhood(1).neighbors();
 	valarray<double> neighbor_distance(neighbors.size());
 	valarray<double> neighbor_alpha(neighbors.size());
 	valarray<int> neighbor_index_offst(neighbors.size());
@@ -999,10 +999,10 @@ double PDE_Layer::sum() const
 		return data[domain == Boundary::none].sum();
 	}
 	double s=0;
-	for (uint z=0; z<l_size.z; z++) {
-		for (uint y=0; y<l_size.y; y++) {
-			uint i = get_data_index(VINT(0,0,0));
-			for ( uint x=0; x<l_size.x; x++ ) {
+	for (int z=0; z<l_size.z; z++) {
+		for (int y=0; y<l_size.y; y++) {
+			int i = get_data_index(VINT(0,0,0));
+			for ( int x=0; x<l_size.x; x++ ) {
 				s+=data[i++];
 			}
 		}
@@ -1025,10 +1025,10 @@ double PDE_Layer::variance() const
 		return ((data[domain == Boundary::none] - average) * (data[domain == Boundary::none] - average)).sum() / ((domain == Boundary::none).sum() - 1);
 	}
 	double s=0;
-	for (uint z=0; z<l_size.z; z++) {
-		for (uint y=0; y<l_size.y; y++) {
-			uint i = get_data_index(VINT(0,0,0));
-			for ( uint x=0; x<l_size.x; x++ ) {
+	for (int z=0; z<l_size.z; z++) {
+		for (int y=0; y<l_size.y; y++) {
+			int i = get_data_index(VINT(0,0,0));
+			for ( int x=0; x<l_size.x; x++ ) {
 				s+=sqr(data[i++]-average);
 			}
 		}
@@ -1042,10 +1042,10 @@ double PDE_Layer::min_val() const {
 		return data[domain == Boundary::none].min();
 	}
 	double m = data[get_data_index(VINT(0,0,0))];
-	for (uint z=0; z<l_size.z; z++) {
-		for (uint y=0; y<l_size.y; y++) {
-			uint i = get_data_index(VINT(0,0,0));
-			for ( uint x=0; x<l_size.x; x++,i++ ) {
+	for (int z=0; z<l_size.z; z++) {
+		for (int y=0; y<l_size.y; y++) {
+			int i = get_data_index(VINT(0,0,0));
+			for ( int x=0; x<l_size.x; x++,i++ ) {
 				m = m>data[i] ? m : data[i];
 			}
 		}
@@ -1058,10 +1058,10 @@ double PDE_Layer::max_val() const {
 		return data[domain == Boundary::none].max();
 	}
 	double m = data[get_data_index(VINT(0,0,0))];
-	for (uint z=0; z<l_size.z; z++) {
-		for (uint y=0; y<l_size.y; y++) {
-			uint i = get_data_index(VINT(0,0,0));
-			for ( uint x=0; x<l_size.x; x++,i++ ) {
+	for (int z=0; z<l_size.z; z++) {
+		for (int y=0; y<l_size.y; y++) {
+			int i = get_data_index(VINT(0,0,0));
+			for ( int x=0; x<l_size.x; x++,i++ ) {
 				m = m<data[i] ? m : data[i];
 			}
 		}

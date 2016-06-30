@@ -79,7 +79,7 @@ public:
 	DECLARE_PLUGIN("SurfaceConstraint");
 
 	double hamiltonian ( CPM::CELL_ID  cell_id ) const;
-    double delta ( const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo ) const;
+    double delta ( const SymbolFocus& cell_focus, const CPM::Update& update) const;
 
 };
 

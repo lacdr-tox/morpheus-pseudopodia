@@ -9,8 +9,9 @@ ConnectivityConstraint::ConnectivityConstraint(){
 void ConnectivityConstraint::init(const Scope* scope) {
 	CPM_Check_Update::init(scope);
 	const Lattice& lattice = SIM::lattice();
-	neighbors = CPM::getBoundaryNeighborhood();
-	
+	neighbors = CPM::getSurfaceNeighborhood().neighbors();
+	max_first_order = 0;
+	// TODO Check the neighborhood to be exactly what we need
 	//CPM::getBoundaryNeighborhood();
 	
 	//cout << "ConnectivityConstraint: init(): " << neighbors.size() << " neighbors" << endl;
@@ -24,16 +25,15 @@ void ConnectivityConstraint::init(const Scope* scope) {
 			max_first_order += distance < 1.01;
 			cout << "ConnectivityConstraint: " << neighbors[i] << " a " << angle << " d" << distance << endl;
 		}
-		
-		if( lattice.getStructure() == Lattice::hexagonal ){
-			if (neighbors.size() > 12) {
-				cerr << "ConnectivityConstraint only available for 1st and 2nd order update neighborhood in hexagonal lattices." << endl;
+		if ( lattice.getStructure() == Lattice::hexagonal ) {
+			if (neighbors.size() != 6) {
+				cerr << "ConnectivityConstraint only available for 1st order surface neighborhood in hexagonal lattices." << endl;
 				exit(-1);
 			}
 		}
 		else if ( lattice.getStructure() == Lattice::square ){
-			if (neighbors.size() > 8) {
-				cerr << "ConnectivityConstraint only available for 1st and 2nd order update neighborhood in square lattices." << endl;
+			if (neighbors.size() != 8) {
+				cerr << "ConnectivityConstraint only available for 2nd order surfce neighborhood in square lattices." << endl;
 				exit(-1);
 			}
 		}
@@ -54,9 +54,9 @@ void ConnectivityConstraint::init(const Scope* scope) {
 	cout << "ConnectivityConstraint: Found " << max_first_order << " first order neighbors" << endl;
 };
 
-bool ConnectivityConstraint:: update_check( CPM::CELL_ID cell_id , const CPM::UPDATE& update, CPM::UPDATE_TODO todo)
+bool ConnectivityConstraint:: update_check( CPM::CELL_ID cell_id , const CPM::Update& update)
 {
-	const vector<CPM::CELL_ID>& neighbors = update.boundary->getStates();
+	const vector<CPM::CELL_ID>& neighbors = update.surfaceStencil()->getStates();
 	
 	if (dimensions == 3) {
 		int n_identicals = 0;
@@ -93,11 +93,11 @@ bool ConnectivityConstraint:: update_check( CPM::CELL_ID cell_id , const CPM::UP
 			n_1st_section = n_identicals; 
 		}
 		
-		if ( todo==CPM::REMOVE && ( n_1st_section < n_identicals || n_1st_order == max_first_order ) ) {
+		if ( update.opRemove() && ( n_1st_section < n_identicals || n_1st_order == max_first_order ) ) {
 // 			cout << "prevented update::remove " << SIM::getTime() << (n_1st_section < n_identicals ? " multiple sections " : "") << ( (n_1st_order == max_first_order) ? " all 1st order occ." : "") << endl;
 			return false;
 		}
-		else if ( todo==CPM::ADD && ( n_1st_section < n_identicals || n_1st_order == 0 )) {
+		else if ( update.opAdd() && ( n_1st_section < n_identicals || n_1st_order == 0 )) {
 // 			cout << "prevented update::add " << SIM::getTime() << (n_1st_section < n_identicals ? " multiple sections " : "") << ( (n_1st_order == 0) ? " all 1st order empty.": "") << endl;
 			return false;
 		}
@@ -110,16 +110,17 @@ bool ConnectivityConstraint:: update_check( CPM::CELL_ID cell_id , const CPM::UP
 		CPM::CELL_ID last_neigbor = neighbors.back();
 		
 		if (SIM::lattice().getStructure()==Lattice::hexagonal) {
+// 			for (int i=0; i<neighbors.size(); i++) {
+// 				if (is_first_order[i])
+// 			}
+// 			last_neigbor = neighbors.back();
+			
 			for (int i=0; i<neighbors.size(); i++) {
-				if (is_first_order[i])
-					last_neigbor = neighbors[i];
-			}
-			for (int i=0; i<neighbors.size(); i++) {
-				if (is_first_order[i]) {
-					n_sections += ( neighbors[i] != cell_id && last_neigbor == cell_id );
-					n_1st_order += (neighbors[i] == cell_id) ;
-					last_neigbor = neighbors[i];
-				}
+// 				if (is_first_order[i]) {
+				n_sections += ( neighbors[i] != cell_id && last_neigbor == cell_id );
+				n_1st_order += is_first_order[i] && (neighbors[i] == cell_id) ;
+				last_neigbor = neighbors[i];
+// 				}
 			}
 
 		}
@@ -130,13 +131,13 @@ bool ConnectivityConstraint:: update_check( CPM::CELL_ID cell_id , const CPM::UP
 				last_neigbor = neighbors[i];
 			}
 		}
-		if ( todo==CPM::REMOVE ) {
+		if ( update.opRemove() ) {
 			// prevent purely diagonal connections and disconnecting chains
-			if (n_sections > 1 || n_1st_order == max_first_order ) return false;
+			if (n_sections > 1 /*|| n_1st_order == max_first_order*/ ) return false;
 		}
 		
 		// Prohibiting extension to a node, where a cell has no 1st order neighbor or connects individual branches
-		if ( todo==CPM::ADD ) {
+		if ( update.opAdd() ) {
 			// prevent purely diagonal connections and connecting branches
 			if (n_1st_order == 0 || n_sections > 1) return false;
 		}

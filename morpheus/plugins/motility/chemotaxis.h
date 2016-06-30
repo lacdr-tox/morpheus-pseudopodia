@@ -73,7 +73,7 @@ class Chemotaxis : public CPM_Energy
 		DECLARE_PLUGIN("Chemotaxis");
 		Chemotaxis();
 
-		double delta(const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const;
+		double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const;
 		double hamiltonian(CPM::CELL_ID cell_id) const;
 };
 

@@ -41,6 +41,34 @@ typedef unsigned int uint;
 // All lattice characteristics are kept in a class derived from the Lattice class. They provide metrics (including topological boundaries), the neighborhood and the lattice extends. All data is stored in Lattice_Data_Layer class, which thus is a template.
 
 
+class Lattice;
+
+class Neighborhood {
+public:
+	Neighborhood() :_neighbors({}),  _order(0), _distance(0), _lattice(nullptr) {};
+	Neighborhood(const vector<VINT>& neighbors, int order, const Lattice* lattice);
+	
+	/// Get i_th neighbor, angular sorted in counter-clockwise fashion
+	const VINT& operator[](int i) const { return _neighbors[i]; };
+	
+	/// Get neighbors, angular sorted in counter-clockwise fashion
+	const vector<VINT>& neighbors() const { return _neighbors; };
+	bool empty() const { return _neighbors.empty(); }
+	int size() const { return _neighbors.size(); }
+	/// Get order of the neighborhood
+	int order() const { return _order; };
+	/// Get neigborhood size, i.e. maximum distance from the neigborhood center
+	double distance() const { return _distance; };
+	const Lattice& lattice() const { if (!_lattice) throw string("Uninitialized lattice in Neighborhood!"); return *_lattice; };
+private:
+	vector<VINT> _neighbors;
+	int _order;
+	double _distance;
+	const Lattice* _lattice;
+// 	friend class Lattice;
+};
+
+
 class Lattice {
 public:
 // XML interface
@@ -71,7 +99,7 @@ public:
 	/// Number of lattice dimensions
 	uint getDimensions() const {return dimensions; }
 	Lattice::Structure getStructure() const { return structure; }
-	const std::vector<VINT>& getDefaultNeighborhood() const { return default_neighborhood; }
+	const Neighborhood& getDefaultNeighborhood() const { return default_neighborhood; }
 	/// Choose a lattice site at random ...
 	VINT getRandomPos() const;
 
@@ -85,12 +113,12 @@ public:
 	virtual VDOUBLE orth_distance(const VDOUBLE& a, const VDOUBLE& b) const =0; /// distance measure assuming parameters are provided in orthogonal coordinates. Also respects periodic boundary conditions.
 	virtual VINT from_orth(const VDOUBLE& a) const = 0; /// convert orthogonal coordinates into a discrete lattice position
 	/// Neighborhood identified by @param  name
-	std::vector<VINT> getNeighborhood(const std::string name) const;  
+	Neighborhood getNeighborhood(const std::string name) const;  
 	/// Neighborhood up to the order defined by @param  order.
-	std::vector<VINT> getNeighborhood(uint order) const {return getNeighborhoodByOrder(order); };
-	std::vector<VINT> getNeighborhood(const XMLNode node) const ;
-	std::vector<VINT> getNeighborhoodByDistance(const double distance) const;
-	std::vector<VINT> getNeighborhoodByOrder(const uint order) const;
+	Neighborhood getNeighborhood(uint order) const { return getNeighborhoodByOrder(order); };
+	Neighborhood getNeighborhood(const XMLNode node) const ;
+	Neighborhood getNeighborhoodByDistance(const double dist_max) const;
+	Neighborhood getNeighborhoodByOrder(const uint order) const;
 protected:
 	uint dimensions;
 	VINT _size;
@@ -101,10 +129,10 @@ protected:
 	XMLNode stored_node;
 
 	// access to predefined neighborhoods
-	virtual std::vector<VINT> getNeighborhoodByName(std::string name) const { return std::vector<VINT>(); };
+	virtual Neighborhood getNeighborhoodByName(std::string name) const { return Neighborhood(); };
 	virtual vector<VINT> get_all_neighbors() const =0;
 	virtual vector<int> get_all_neighbors_per_order() const =0;
-	std::vector<VINT> default_neighborhood;
+	Neighborhood default_neighborhood;
 	void setNeighborhood(const XMLNode node);
 	
 };
@@ -144,7 +172,6 @@ inline bool Lattice::resolve ( VINT& a) const {
 
 
 inline bool Lattice::orth_resolve ( VDOUBLE& a) const {
-	double y_div;
 	if ( a.z<0 || a.z >= _size.z ) {
 		if ( boundaries[Boundary::pz] == Boundary::periodic  ) {
 			 a.z = MOD(a.z,double(_size.z));
@@ -263,7 +290,7 @@ class Cubic_Lattice: public Orth_Lattice {
 public:
 	Cubic_Lattice(const XMLNode xnode);
 	string getXMLName() const override { return "cubic"; };
-	std::vector<VINT> getNeighborhoodByName(std::string name) const override;
+	Neighborhood getNeighborhoodByName(std::string name) const override;
 private:
 	vector<VINT> get_all_neighbors() const override;
 	vector<int> get_all_neighbors_per_order() const override;

@@ -2,6 +2,37 @@
 #include "simulation.h"
 const double sin_60 = 0.86602540378443864676;
 
+
+
+Neighborhood::Neighborhood(const vector< VINT >& neighbors, int order, const Lattice* lattice) 
+  : _neighbors(neighbors), _order(order), _distance(0), _lattice(lattice)
+{
+	sort(_neighbors.begin(),_neighbors.end(), [&](const VINT& a, const VINT& b) {
+		
+		double angular_diff = _lattice->to_orth(a).angle_xy() - _lattice->to_orth(b).angle_xy();
+		if (angular_diff<0) return true;
+		else if (angular_diff>0) return false;
+		
+		double radial_diff = _lattice->to_orth(a).abs_sqr() - _lattice->to_orth(b).abs_sqr();
+		if (radial_diff<0) return true;
+		else if (radial_diff>0) return false;
+		 
+		double z_diff = _lattice->to_orth(a).z - _lattice->to_orth(b).z;
+		if (z_diff<0) return true;
+		else if (z_diff>0) return false;
+		
+		return false;
+	});
+	
+	for(auto i : _neighbors) {
+		double d = _lattice->to_orth(i).abs();
+		d = d > _distance ? d : _distance;
+	}
+}
+	
+	
+	
+
 Lattice::Lattice() {
 // set default boundary conditions
  	for (uint i=0; i<Boundary::nCodes; i++){
@@ -158,8 +189,8 @@ VINT Lattice::getRandomPos( void ) const {
 };
 
 
-std::vector<VINT> Lattice::getNeighborhood(const std::string name) const {
-	vector<VINT> neighborhood = this->getNeighborhoodByName(name);
+Neighborhood Lattice::getNeighborhood(const std::string name) const {
+	Neighborhood neighborhood = this->getNeighborhoodByName(name);
 	if ( ! neighborhood.empty() ) return neighborhood;
 	int float_end = name.find_first_not_of(" 0123456789.,");
 	int int_end = name.find_first_not_of(" 0123456789");
@@ -178,42 +209,10 @@ std::vector<VINT> Lattice::getNeighborhood(const std::string name) const {
 }
 
 void Lattice::setNeighborhood(const XMLNode node) {
-	if ( node.nChildNode("Distance") ) {
-		neighborhood_type = "Distance";
-		double distance;
-		getXMLAttribute(node,"Distance/text",distance);
-		getXMLAttribute(node,"Distance/text",neighborhood_value);
-		if( distance == 0 ){
-		  cerr << "Neighborhood/Distance must be greater than 0." << endl;
-		  exit(-1);
-		}
-		default_neighborhood = getNeighborhoodByDistance( distance );
-	}
-	else if ( node.nChildNode("Order") ) {
-		neighborhood_type = "Order";
-		int order;
-		getXMLAttribute(node,"Order/text",order);
-		getXMLAttribute(node,"Order/text",neighborhood_value);
-		if( order == 0 ){
-		  cerr << "Neighborhood/Order must be greater than 0." << endl;
-		  exit(-1);
-		}
-		default_neighborhood = getNeighborhoodByOrder( order );
-	}
-	else if ( node.nChildNode("Name") ){
-		neighborhood_type = "Name";
-		neighborhood_value =  string(node.getChildNode("Name").getText());
-		default_neighborhood = getNeighborhood( neighborhood_value );
-	}
-	else {
-		cerr << "unknown neighborhood definition in " << node.getName() << endl;
-		exit(-1);
-	}
-	
-	sort(default_neighborhood.begin(),default_neighborhood.end(), [this](const VINT& a, const VINT& b){ return this->to_orth(a).angle_xy()< this->to_orth(b).angle_xy(); } );
+	default_neighborhood = getNeighborhood(node);
 }
 
-std::vector<VINT> Lattice::getNeighborhood(const XMLNode node) const {
+Neighborhood Lattice::getNeighborhood(const XMLNode node) const {
 	if ( node.nChildNode("Distance") ) {
 		double distance;
 		getXMLAttribute(node,"Distance/text",distance);
@@ -241,20 +240,29 @@ std::vector<VINT> Lattice::getNeighborhood(const XMLNode node) const {
 	}
 }
 
-std::vector<VINT> Lattice::getNeighborhoodByDistance(const double dist_max) const  {
-	std::vector<VINT> acc = get_all_neighbors();
+Neighborhood Lattice::getNeighborhoodByDistance(const double dist_max) const  {
+	std::vector<VINT> neighbors = get_all_neighbors();
 	// assume all neighbors are ordered by distance and we just got to drop from the end ...
 	if (dist_max>3.0) {
 		throw string("Neighborhood distances larger than 3 are not supported");
 	}
-	while ( ! acc.empty() && orth_distance(VDOUBLE(0,0,0),to_orth(acc.back())).abs() > dist_max + 0.00001 ) {
-// 		cout << acc.back() << " -> "  << orth_distance(VINT(0,0,0),to_orth(acc.back())).abs() << endl;
-		acc.pop_back();
+	uint order=0;
+	int n_neighbors=0;
+	std::vector<int> neighbors_per_order = get_all_neighbors_per_order();
+	
+	for (order=0; order<neighbors_per_order.size(); order++) {
+		if ( orth_distance(VDOUBLE(0,0,0),to_orth(neighbors[n_neighbors])).abs() < dist_max + 0.00001) {
+			n_neighbors+= neighbors_per_order[order];
+		}
+		else {
+			break;
+		}
 	}
-	return acc;
+	neighbors.resize(n_neighbors);
+	return Neighborhood(neighbors,order,this);
 }
 
-std::vector<VINT> Lattice::getNeighborhoodByOrder(const uint order) const {
+Neighborhood Lattice::getNeighborhoodByOrder(const uint order) const {
 	std::vector<VINT> neighbors = get_all_neighbors();
 	std::vector<int> neighbors_per_order = get_all_neighbors_per_order();
 	if (neighbors_per_order.size()<order) {
@@ -263,7 +271,7 @@ std::vector<VINT> Lattice::getNeighborhoodByOrder(const uint order) const {
 	uint n_neighbors=0;
 	for (uint i=0; i<order; i++) n_neighbors += neighbors_per_order[i]; 
 	neighbors.resize(n_neighbors);
-	return neighbors;
+	return Neighborhood(neighbors,order, this);
 }
 
 
@@ -439,10 +447,10 @@ std::vector<int> Cubic_Lattice::get_all_neighbors_per_order() const {
 	return acc;	
 };
 
-std::vector<VINT> Cubic_Lattice::getNeighborhoodByName(std::string name) const {
+Neighborhood Cubic_Lattice::getNeighborhoodByName(std::string name) const {
 	std::vector<VINT> acc;
 	if (lower_case(name) == "fchc") {
-		VINT neighbors[] = {
+		std::vector<VINT> neighbors = {
 		//Flächennnachbarn
 		VINT(1,0,0),VINT(-1,0,0),VINT(0,0,1),VINT(0,0,-1),VINT(0,1,0),VINT(0,-1,0),
 		VINT(1,0,0),VINT(-1,0,0),VINT(0,0,1),VINT(0,0,-1),VINT(0,1,0),VINT(0,-1,0),
@@ -450,9 +458,9 @@ std::vector<VINT> Cubic_Lattice::getNeighborhoodByName(std::string name) const {
 		VINT(1,1,0), VINT(-1,1,0), VINT(1,0,1), VINT(1,0,-1), VINT(0,1,1), VINT(0,-1,1),
 		VINT(1,-1,0),VINT(-1,-1,0),VINT(-1,0,1),VINT(-1,0,-1),VINT(0,1,-1),VINT(0,-1,-1)
 		};
-		return std::vector<VINT>(c_array_begin(neighbors), c_array_end(neighbors));
+		return Neighborhood(neighbors,2,this);
 	}
-	return std::vector<VINT>();
+	return Neighborhood();
 };
 
 

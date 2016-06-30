@@ -174,9 +174,9 @@ void CellType::init() {
 		local_scope = SIM::createSubScope(string("CellType[")+name + "]",this);
 	SIM::enterScope(local_scope);
 	
+	// Property initializer may fail gracefully when expressions require an explicite cell
 	for (auto plug : plugins) {
 		if ( dynamic_pointer_cast<AbstractProperty>( plug) ) {
-// 			plug->init(local_scope);
 			try { 
 				plug->init(local_scope); } catch (...) {/* There might be errors due to the fact that there is no real cell present !!!*/ }
 		}
@@ -186,7 +186,12 @@ void CellType::init() {
 		try { mem->init(local_scope); } catch (...) {/* There might be errors due to the fact that there is no real cell present !!!*/ }
 	}
 
-
+	for (uint i=0;i<plugins.size();i++) {
+		if ( dynamic_pointer_cast<AbstractProperty>( plugins[i]) )
+			continue;
+		plugins[i]->init(local_scope);
+	}
+	
 	for (auto ini : pop_initializers) {
 		ini->init(local_scope);
 		ini->run(this);
@@ -217,11 +222,6 @@ void CellType::init() {
 		}
 	}
 	
-	for (uint i=0;i<plugins.size();i++) {
-		if ( dynamic_pointer_cast<AbstractProperty>( plugins[i]) )
-			continue;
-		plugins[i]->init(local_scope);
-	}
 	SIM::leaveScope();
 }
 
@@ -523,83 +523,97 @@ double CellType::hamiltonian() const {
 	return hamil;
 }
 
-bool CellType::check_update(const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const
+bool CellType::check_update(const CPM::Update& update) const
 {
-	if ((todo & CPM::REMOVE) && storage.cell(update.remove_state.cell_id).nNodes() == 1)
+	if ((update.opRemove()) && update.focus().cell().nNodes() == 1)
 		return false;;
 
-	for ( uint c=0; c < check_update_listener.size(); c++ ) {
-		if (todo & CPM::REMOVE)
-			if ( ! check_update_listener[c] -> update_check( update.remove_state.cell_id , update, CPM::REMOVE)) {
-// 				cout << "Update prevented by " << check_update_listener[c]->XMLName() << endl;
+	if (update.opAdd()) {
+		auto update_add = update.selectOp(CPM::Update::ADD);
+		for ( uint c=0; c < check_update_listener.size(); c++ ) {
+			if (! check_update_listener[c] -> update_check( update.focusStateAfter().cell_id , update_add))
 				return false;
-			}
-		if (todo & CPM::ADD)
-			if ( ! check_update_listener[c] -> update_check( update.add_state.cell_id , update, CPM::ADD)){
-// 				cout << "Update prevented by " << check_update_listener[c]->XMLName() << endl;
-				return false;
-			}
+		}
 	}
+	
+	if (update.opRemove()) {
+		auto update_remove = update.selectOp(CPM::Update::REMOVE);
+		for ( uint c=0; c < check_update_listener.size(); c++ ) {
+			if (! check_update_listener[c] -> update_check( update.focusStateBefore().cell_id , update_remove)) 
+				return false;
+		}
+	}
+	
 	return true;
 }
 
-double CellType::delta(const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const
+double CellType::delta(const CPM::Update& update) const
 {
 	// Maybe it's better to put add cell focus at the position of the node to be aquired
 // 	SymbolFocus add_focus(update.source.cellID(), update.add_state.pos);
 	
 	double delta=0;
-	if (todo & CPM::ADD) {
-
+	if (update.opAdd()) {
+		auto update_add = update.selectOp(CPM::Update::ADD);
 		for (uint e = 0; e<energies.size(); ++e) {
-			delta += energies[e]->delta(update.source, update, CPM::ADD);
+			delta += energies[e]->delta(update.focusUpdated(), update_add);
 		}
 	}
-	if (todo & CPM::REMOVE) {
+	if (update.opRemove()) {
+		auto update_remove = update.selectOp(CPM::Update::REMOVE);
 		for (uint e = 0; e<energies.size(); ++e) {
-// 			energies[e]->attachTo(update.remove_state);
-			delta += energies[e]->delta(update.focus, update, CPM::REMOVE );
+			delta += energies[e]->delta(update.focus(), update_remove);
 		}
 	}
 	return delta;
 }
 
-void CellType::set_update(const CPM::UPDATE& update, CPM::UPDATE_TODO todo) {
+void CellType::set_update(const CPM::Update& update) {
 	
-	if (todo & CPM::ADD) {
-		storage.cell(update.add_state.cell_id) . setUpdate(update, CPM::ADD);
-		for (uint i=0; i<update_listener.size(); i++) {
-			update_listener[i]->set_update_notify(update.add_state.cell_id, update, CPM::ADD);
-		}
-	}
-	if (todo & CPM::REMOVE) {
-		storage.cell(update.remove_state.cell_id) . setUpdate(update, CPM::REMOVE);
-		for (uint i=0; i<update_listener.size(); i++) {
-			update_listener[i]->set_update_notify(update.remove_state.cell_id,update, CPM::REMOVE);
-		}
-	}
-}
-
-void CellType::apply_update(const CPM::UPDATE& update, CPM::UPDATE_TODO todo) {
-	if (todo & CPM::ADD) {
-		storage.cell(update.add_state.cell_id) . applyUpdate(update, CPM::ADD);
-		for (uint i=0; i<update_listener.size(); i++) {
-			update_listener[i]->update_notify(update.add_state.cell_id,update, CPM::ADD);
-		}
-	}
-	if (todo & CPM::REMOVE) {
-		storage.cell(update.remove_state.cell_id) . applyUpdate(update, CPM::REMOVE);
-		for (uint i=0; i<update_listener.size(); i++) {
-			update_listener[i]->update_notify(update.remove_state.cell_id,update, CPM::REMOVE);
-		}
-	}
-}
-
-// void CellType::execute_once_each_mcs(int mcs) {
-// 	for (uint i=0; i<mcs_listener.size(); i++) {
-// 		mcs_listener[i]->mcs_notify(mcs);
+// 	if (update.opNeighborhood()) {
+// 		auto update_neigh = update.selectOp(CPM::Update::NEIGHBORHOOD_UPDATE);
+// 		const auto& states = update.boundaryStencil().getStatistics();
+// 		for (const StatisticalLatticeStencil::STATS& state : states) {
+// 			if ( state.cell != update.focusStateAfter().cell_id && state.cell != update.focusStateBefore().cell_id )
+// 				storage.cell(state.cell) . setUpdate(update_neigh);
+// 		}
 // 	}
-// }
+	if (update.opAdd()) {
+		auto cell_id = update.focusStateAfter().cell_id;
+		auto update_add = update.selectOp(CPM::Update::ADD);
+		storage.cell(cell_id) . setUpdate(update_add);
+		for (uint i=0; i<update_listener.size(); i++) {
+			update_listener[i]->set_update_notify(cell_id, update_add);
+		}
+	}
+	if (update.opRemove()) {
+		auto cell_id = update.focusStateBefore().cell_id;
+		auto update_remove = update.selectOp(CPM::Update::REMOVE);
+		storage.cell(cell_id) . setUpdate(update_remove);
+		for (uint i=0; i<update_listener.size(); i++) {
+			update_listener[i]->set_update_notify(cell_id, update_remove);
+		}
+	}
+}
+
+void CellType::apply_update(const CPM::Update& update) {
+	if (update.opAdd()) {
+		auto cell_id = update.focusStateAfter().cell_id;
+		auto update_add = update.selectOp(CPM::Update::ADD);
+		storage.cell(cell_id) . applyUpdate(update_add);
+		for (uint i=0; i<update_listener.size(); i++) {
+			update_listener[i]->update_notify(cell_id, update_add);
+		}
+	}
+	if (update.opRemove()) {
+		auto cell_id = update.focusStateBefore().cell_id;
+		auto update_remove = update.selectOp(CPM::Update::REMOVE);
+		storage.cell(cell_id) . applyUpdate(update_remove);
+		for (uint i=0; i<update_listener.size(); i++) {
+			update_listener[i]->update_notify(cell_id, update_remove);
+		}
+	}
+}
 
 
 CellType* MediumCellType::createInstance(uint ct_id) {

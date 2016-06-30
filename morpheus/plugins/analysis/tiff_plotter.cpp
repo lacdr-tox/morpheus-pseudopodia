@@ -496,7 +496,7 @@ void TiffPlotter::writeTIFF(CPM::CELL_ID cellid)
 							else if( celltype_at_pos == plot.channels[c]->celltype.get()->getID() ){
 
 								if( plot.channels[c]->outline.get() ){
-									if ( CPM::isBoundary( pos ) ){
+									if ( CPM::isSurface( pos ) ){
 										value = (double)plot.channels[c]->symbol.get( pos );
 									}
 								}
@@ -504,7 +504,7 @@ void TiffPlotter::writeTIFF(CPM::CELL_ID cellid)
 									value = (double)plot.channels[c]->symbol.get( pos );
 									
 									// when cropToCell, do not plot boundary (to avoid visualization problems: overlaying multiple transparent layers)
-									if( plot.cropToCell && CPM::isBoundary( pos ) )
+									if( plot.cropToCell && CPM::isSurface( pos ) )
 										value = 0;
 								}
 							}
@@ -520,7 +520,7 @@ void TiffPlotter::writeTIFF(CPM::CELL_ID cellid)
 							}
 							else{
 								if( plot.channels[c]->outline.get() ){
-									if ( CPM::isBoundary( pos ) ){
+									if ( CPM::isSurface( pos ) ){
 										value = (double)plot.channels[c]->symbol.get( pos );
 									}
 								}

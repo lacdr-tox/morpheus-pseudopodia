@@ -46,7 +46,7 @@ public:
     ~MorphModel();
     /*!< Creates a model description from file @param filepath. */
     bool close();
-	static const int morpheus_ml_version = 2;
+	static const int morpheus_ml_version = 3;
 
 // The interface for QAbstractItemModel ...
     virtual QModelIndex index( int row, int column, const QModelIndex &parent) const;
@@ -99,7 +99,7 @@ private:
     struct AutoFix {
         QString match_path;
         QString move_path;
-        bool rename;
+        bool copy;
     };
     QList<MorphModelEdit> applyAutoFixes(QDomDocument document);
 	void initModel();

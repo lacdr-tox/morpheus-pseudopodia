@@ -34,7 +34,7 @@ void LengthConstraint::init(const Scope* scope) {
 	_incrementalUpdatesLeft	= p->addProperty<double> ( "_stored_incrementalUpdatesLeft", "" );	
 }
 
-double LengthConstraint::delta( const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const
+double LengthConstraint::delta( const SymbolFocus& cell_focus, const CPM::Update& update) const
 { 
 	double s = strength( cell_focus );
 	double t = target( cell_focus );
@@ -50,7 +50,7 @@ double LengthConstraint::hamiltonian( CPM::CELL_ID cell_id) const {
 	return dE;
 }
 
-void LengthConstraint::set_update_notify(CPM::CELL_ID cell_id, const CPM::UPDATE& update, CPM::UPDATE_TODO todo)
+void LengthConstraint::set_update_notify(CPM::CELL_ID cell_id, const CPM::Update& update)
 {
 	std::vector<double> &I=_I(cell_id), 
 	                    &temp_I=_temp_I(cell_id);	
@@ -87,12 +87,12 @@ void LengthConstraint::set_update_notify(CPM::CELL_ID cell_id, const CPM::UPDATE
 			}
 			double dir;
 			VDOUBLE delta;
-			if (todo == CPM::ADD) {
-				delta = center - VDOUBLE(update.add_state.pos);
+			if (update.opAdd()) {
+				delta = center - VDOUBLE(update.focusStateAfter().pos);
 				dir=+1;
 			}
-			else if (todo == CPM::REMOVE) {
-				delta = center - VDOUBLE(update.remove_state.pos); 
+			else if (update.opRemove()) {
+				delta = center - VDOUBLE(update.focusStateBefore().pos); 
 				dir=-1;
 			}
 			else dir = 0;
@@ -114,12 +114,12 @@ void LengthConstraint::set_update_notify(CPM::CELL_ID cell_id, const CPM::UPDATE
 			}		 	 
 			double dir;
 			VDOUBLE delta;
-			if (todo == CPM::ADD) {
-				delta = center - VDOUBLE(update.add_state.pos);
+			if (update.opAdd()) {
+				delta = center - VDOUBLE(update.focusStateAfter().pos);
 				dir=+1;
 			}
-			else if (todo == CPM::REMOVE) {
-				delta = center - VDOUBLE(update.remove_state.pos); 
+			else if (update.opRemove()) {
+				delta = center - VDOUBLE(update.focusStateBefore().pos); 
 				dir=-1;
 			} 
 			else dir = 0;
@@ -136,8 +136,8 @@ void LengthConstraint::set_update_notify(CPM::CELL_ID cell_id, const CPM::UPDATE
 	
 		VDOUBLE delta,deltacom;
 		int dir;
-		if (todo & CPM::ADD) dir=1;
-		else if (todo & CPM::REMOVE) dir=-1;
+		if (update.opAdd()) dir=1;
+		else if (update.opRemove()) dir=-1;
 		else dir=0;
 		
 		if (dir!=0)
@@ -147,10 +147,10 @@ void LengthConstraint::set_update_notify(CPM::CELL_ID cell_id, const CPM::UPDATE
 			VDOUBLE updated_center = CPM::getCell(cell_id).getUpdatedCenter();
 			
 			if (dir==1){
-				delta = updated_center - VDOUBLE(update.add_state.pos);
+				delta = updated_center - VDOUBLE(update.focusStateAfter().pos);
 			} 
 			else {
-				delta = updated_center - VDOUBLE(update.remove_state.pos);
+				delta = updated_center - VDOUBLE(update.focusStateBefore().pos);
 			}
 			deltacom = center - updated_center;
 // 			cout << " p  " << update.add_state.pos 
@@ -192,7 +192,7 @@ void LengthConstraint::set_update_notify(CPM::CELL_ID cell_id, const CPM::UPDATE
 	}
 }
  
-void LengthConstraint::update_notify( CPM::CELL_ID cell_id, const CPM::UPDATE& update, CPM::UPDATE_TODO todo){
+void LengthConstraint::update_notify( CPM::CELL_ID cell_id, const CPM::Update& update){
 	assert(_I(cell_id).size()!=0);
 // check difference between incremental and absolute calculation
 	if (PARANOID_CHECK){ 

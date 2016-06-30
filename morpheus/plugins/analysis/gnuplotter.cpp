@@ -701,7 +701,7 @@ void CellPainter::writeCellLayer(ostream& out)
 			CPM::STATE state = cpm_layer->get(p);
 
 			if( state != CPM::getEmptyState()){ // if not medium
-				if (symbol.granularity() == Granularity::MembraneNode && ! CPM::isBoundary(p)) {
+				if (symbol.granularity() == Granularity::MembraneNode && ! CPM::isSurface(p)) {
 					
 					view[p.y][p.x] = transparency_value;
 				}
@@ -754,7 +754,7 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 	
 	// we assume that the neighbors are sorted either clockwise or anti-clockwise.
 	// we could also add a sorting step after the filtering of nodes belonging to the plane
-	vector<VINT> neighbors = SIM::lattice().getNeighborhood(1);
+	vector<VINT> neighbors = SIM::lattice().getNeighborhood(1).neighbors();
 	if( SIM::lattice().getStructure() == Lattice::linear ) {
 		neighbors.resize(4);
 		neighbors[0] = VINT(1, 0, 0);

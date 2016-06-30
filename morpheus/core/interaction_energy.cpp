@@ -1,4 +1,5 @@
 #include "interaction_energy.h"
+#include "cpm_shape.h"
 
 InteractionEnergy::InteractionEnergy() : n_celltypes(0), interaction_details(IA_PLAIN) {
 }
@@ -8,17 +9,17 @@ void InteractionEnergy::loadFromXML( const XMLNode xNode) {
 	ia_XMLNode = xNode;
 	
 	//assert( ! ia_neighborhood_node.isEmpty() );
-	ia_neighborhood = SIM::lattice().getDefaultNeighborhood();
+// 	ia_neighborhood = CPM::getBoundaryNeighborhood();
 // 	if (ia_XMLNode.nChildNode("Neighborhood"))
 // 		ia_neighborhood = SIM::lattice().getNeighborhood(ia_XMLNode.getChildNode("Neighborhood"));
 
-	if (ia_neighborhood.empty()) {
-		cerr << "CPM: Unable to get a neighborhood specification for interaction energy" << endl;
-		exit(-1);
-		assert(0);
-	}
+// 	if (ia_neighborhood.empty()) {
+// 		cerr << "CPM: Unable to get a neighborhood specification for interaction energy" << endl;
+// 		exit(-1);
+// 		assert(0);
+// 	}
 	
-	cout << "CPM: InteractionEnergy initialized with " << ia_neighborhood.size() << " interaction neighbors" << endl;
+// 	cout << "CPM: InteractionEnergy initialized with " << ia_neighborhood.size() << " interaction neighbors" << endl;
 
 	default_interaction = 0;
 	getXMLAttribute(xNode,"default", default_interaction);
@@ -46,7 +47,9 @@ XMLNode InteractionEnergy::saveToXML() const {
 void InteractionEnergy::init(const Scope* scope)
 {
 	layer = CPM::getLayer();
-	ia_neighborhood = layer->optimizeNeighborhood(ia_neighborhood);
+	boundaryLenghScaling = CPMShape::BoundaryLengthScaling(CPM::getBoundaryNeighborhood());
+// 	ia_neighborhood = 
+// 	layer->optimizeNeighborhood(ia_neighborhood);
 	
 	auto celltypes = CPM::getCellTypes();
 	// map celltype names to internal state id
@@ -172,7 +175,7 @@ void InteractionEnergy::init(const Scope* scope)
 	}
 	
 	cout << "CPM: InteractionEnergy has "
-	     << ia_neighborhood.size() << " neighbors" << endl;
+	     << CPM::getBoundaryNeighborhood().size() << " neighbors" << endl;
 	cout << "CPM: InteractionEnergy was initialized with "
 	     << ((interaction_details & IA_COLLAPSE) ? " IA_COLLAPSE ": "") 
 	     << ((interaction_details & IA_PLUGINS) ? " IA_PLUGINS ": "")
@@ -183,56 +186,56 @@ void InteractionEnergy::init(const Scope* scope)
 
 
 
-double InteractionEnergy::delta(const CPM::UPDATE& update) const {
+double InteractionEnergy::delta(const CPM::Update& update) const {
 	// get Neighborhood stats
 #ifdef VTRACE
 	VT_TRACER("InteractionEnergy::delta");
 #endif
 	double dH = 0;
-	const CPM::INDEX& add_index = CellType::storage.index(update.add_state.cell_id);
-	const CPM::INDEX& remove_index = CellType::storage.index(update.remove_state.cell_id);
+	const CPM::INDEX& add_index = CellType::storage.index(update.focusStateAfter().cell_id);
+	const CPM::INDEX& remove_index = CellType::storage.index(update.focusStateBefore().cell_id);
 	
 	if (interaction_details & IA_COLLAPSE) {
 		
-		const vector<StatisticalLatticeStencil::STATS>& nei_cells = update.interaction->getStatistics();
-		int focus_offset = layer->get_data_index(update.focus.pos());
+		const vector<StatisticalLatticeStencil::STATS>& nei_cells = update.boundaryStencil()->getStatistics();
+		int focus_offset = layer->get_data_index(update.focus().pos());
 		
 		if (interaction_details & IA_SUPERCELLS) {
 			if (interaction_details & IA_PLUGINS) {
 				CPM::STATE neighbor_state;
-				neighbor_state.pos = update.focus.pos();
+				neighbor_state.pos = update.focus().pos();
 
 				for (uint i=0; i<nei_cells.size(); ++i ) {
 					neighbor_state.cell_id = nei_cells[i].cell;
 					const CPM::INDEX& neighbor_index = CPM::getCellIndex( neighbor_state.cell_id );
 					neighbor_state.super_cell_id=neighbor_index.super_cell_id;
 					
-					if (update.remove_state.cell_id != neighbor_state.cell_id ) {
+					if (update.focusStateBefore().cell_id != neighbor_state.cell_id ) {
 						uint ia_id = getInterActionID( remove_index.status == CPM::SUB_CELL && remove_index.super_cell_id != neighbor_index.super_cell_id ? remove_index.super_celltype : remove_index.celltype ,
 													neighbor_index.status == CPM::SUB_CELL  && remove_index.super_cell_id != neighbor_index.super_cell_id ? neighbor_index.super_celltype : neighbor_index.celltype );
 						double interaction_remove;
 						if (ia_overrider[ia_id])
-							interaction_remove = ia_overrider[ia_id]->interaction(update.remove_state, neighbor_state,ia_energies[ia_id]);
+							interaction_remove = ia_overrider[ia_id]->interaction(update.focusStateBefore(), neighbor_state,ia_energies[ia_id]);
 						else
 							interaction_remove = ia_energies[ia_id];
 						
 						for (uint k=0; k<ia_addon[ia_id].size(); ++k) {
-							interaction_remove += ia_addon[ia_id][k]->interaction(update.remove_state, neighbor_state);
+							interaction_remove += ia_addon[ia_id][k]->interaction(update.focusStateBefore(), neighbor_state);
 						}
 						
 						dH -= interaction_remove * nei_cells[i].count;
 					}
-					if (update.add_state.cell_id != neighbor_state.cell_id) {
+					if (update.focusStateAfter().cell_id != neighbor_state.cell_id) {
 						uint ia_id = getInterActionID( add_index.status == CPM::SUB_CELL && add_index.super_cell_id != neighbor_index.super_cell_id ? add_index.super_celltype : add_index.celltype ,
 													neighbor_index.status == CPM::SUB_CELL  && add_index.super_cell_id != neighbor_index.super_cell_id ? neighbor_index.super_celltype : neighbor_index.celltype );
 						double interaction_add;
 						if (ia_overrider[ia_id])
-							interaction_add = ia_overrider[ia_id]->interaction(update.add_state, neighbor_state,ia_energies[ia_id]);
+							interaction_add = ia_overrider[ia_id]->interaction(update.focusStateAfter(), neighbor_state,ia_energies[ia_id]);
 						else
 							interaction_add = ia_energies[ia_id];
 						
 						for (uint k=0; k<ia_addon[ia_id].size(); ++k) {
-							interaction_add += ia_addon[ia_id][k]->interaction(update.add_state, neighbor_state);
+							interaction_add += ia_addon[ia_id][k]->interaction(update.focusStateAfter(), neighbor_state);
 						}
 						dH += interaction_add * nei_cells[i].count;
 					}
@@ -241,12 +244,12 @@ double InteractionEnergy::delta(const CPM::UPDATE& update) const {
 			else {
 				for (uint i=0; i<nei_cells.size(); ++i ) {
 					const CPM::INDEX& neighbor_index = CPM::getCellIndex( nei_cells[i].cell );
-					if (update.remove_state.cell_id != nei_cells[i].cell ) {
+					if (update.focusStateBefore().cell_id != nei_cells[i].cell ) {
 						uint ia_id = getInterActionID( remove_index.status == CPM::SUB_CELL && remove_index.super_cell_id != neighbor_index.super_cell_id ? remove_index.super_celltype : remove_index.celltype ,
 													neighbor_index.status == CPM::SUB_CELL  && remove_index.super_cell_id != neighbor_index.super_cell_id ? neighbor_index.super_celltype : neighbor_index.celltype );
 						dH -= ia_energies[ia_id] * nei_cells[i].count;
 					}
-					if (update.add_state.cell_id != nei_cells[i].cell) {
+					if (update.focusStateAfter().cell_id != nei_cells[i].cell) {
 						uint ia_id = getInterActionID( add_index.status == CPM::SUB_CELL && add_index.super_cell_id != neighbor_index.super_cell_id ? add_index.super_celltype : add_index.celltype ,
 													neighbor_index.status == CPM::SUB_CELL  && add_index.super_cell_id != neighbor_index.super_cell_id ? neighbor_index.super_celltype : neighbor_index.celltype );
 						
@@ -258,34 +261,34 @@ double InteractionEnergy::delta(const CPM::UPDATE& update) const {
 		else {
 			if (interaction_details & IA_PLUGINS) {
 				CPM::STATE neighbor_state;
-				neighbor_state.pos = update.focus.pos();
+				neighbor_state.pos = update.focus().pos();
 				
 				for (uint i=0; i<nei_cells.size(); ++i ) {
 					neighbor_state.cell_id = nei_cells[i].cell;
 					const CPM::INDEX& neighbor_index = CPM::getCellIndex(neighbor_state.cell_id );
 					
 					
-					if (update.remove_state.cell_id != nei_cells[i].cell ) {
+					if (update.focusStateBefore().cell_id != nei_cells[i].cell ) {
 						uint ia_id = getInterActionID(remove_index.celltype, neighbor_index.celltype);
 						double interaction_remove;
 						if (ia_overrider[ia_id])
-							interaction_remove = ia_overrider[ia_id]->interaction(update.remove_state, neighbor_state,ia_energies[ia_id]);
+							interaction_remove = ia_overrider[ia_id]->interaction(update.focusStateBefore(), neighbor_state,ia_energies[ia_id]);
 						else
 							interaction_remove = ia_energies[ia_id];
 						for (uint k=0; k<ia_addon[ia_id].size(); ++k) {
-							interaction_remove  += ia_addon[ia_id][k]->interaction(update.remove_state, neighbor_state );
+							interaction_remove  += ia_addon[ia_id][k]->interaction(update.focusStateBefore(), neighbor_state );
 						}
 						dH -= interaction_remove * nei_cells[i].count;
 					}
-					if (update.add_state.cell_id != nei_cells[i].cell) {
+					if (update.focusStateAfter().cell_id != nei_cells[i].cell) {
 						uint ia_id = getInterActionID(add_index.celltype, neighbor_index.celltype);
 						double interaction_add;
 						if (ia_overrider[ia_id])
-							interaction_add = ia_overrider[ia_id]->interaction(update.add_state, neighbor_state,ia_energies[ia_id]);
+							interaction_add = ia_overrider[ia_id]->interaction(update.focusStateAfter(), neighbor_state,ia_energies[ia_id]);
 						else
 							interaction_add = ia_energies[ia_id];
 						for (uint k=0; k<ia_addon[ia_id].size(); ++k) {
-							interaction_add += ia_addon[ia_id][k]->interaction(update.add_state, neighbor_state );
+							interaction_add += ia_addon[ia_id][k]->interaction(update.focusStateAfter(), neighbor_state );
 						}
 						dH += interaction_add * nei_cells[i].count;
 					}
@@ -294,10 +297,10 @@ double InteractionEnergy::delta(const CPM::UPDATE& update) const {
 			else {
 				for (uint i=0; i<nei_cells.size(); ++i ) {
 					const CPM::INDEX& neighbor_index = CPM::getCellIndex( nei_cells[i].cell );
-					if (update.remove_state.cell_id != nei_cells[i].cell ) {
+					if (update.focusStateBefore().cell_id != nei_cells[i].cell ) {
 						dH -=ia_energies[getInterActionID(remove_index.celltype, neighbor_index.celltype)] * nei_cells[i].count;
 					}
-					if (update.add_state.cell_id != nei_cells[i].cell) {
+					if (update.focusStateAfter().cell_id != nei_cells[i].cell) {
 						dH += ia_energies[getInterActionID(add_index.celltype, neighbor_index.celltype)] * nei_cells[i].count;
 					}
 				}
@@ -305,7 +308,7 @@ double InteractionEnergy::delta(const CPM::UPDATE& update) const {
 		}
 	} else {
 		// no collapsed neigbors ...
-		int focus_offset = layer->get_data_index(update.focus.pos());
+		int focus_offset = layer->get_data_index(update.focus().pos());
 #ifdef __GNUC__
 		for (uint k=0; k<ia_neighborhood_row_offsets.size(); ++k ) {
 			__builtin_prefetch(&layer->data[ focus_offset + ia_neighborhood_row_offsets[k]],0,1);
@@ -317,22 +320,22 @@ double InteractionEnergy::delta(const CPM::UPDATE& update) const {
 					const CPM::STATE& neighbor_state = layer->data[ focus_offset + ia_neighborhood_offsets[i] ];
 					const CPM::INDEX& neighbor_index = CellType::storage.index( neighbor_state.cell_id );
 
-					if (update.remove_state.cell_id !=  neighbor_state.cell_id ) {
+					if (update.focusStateBefore().cell_id !=  neighbor_state.cell_id ) {
 						uint ia_id = getInterActionID( remove_index.status == CPM::SUB_CELL && remove_index.super_cell_id != neighbor_index.super_cell_id ? remove_index.super_celltype : remove_index.celltype ,
 													neighbor_index.status == CPM::SUB_CELL  && remove_index.super_cell_id != neighbor_index.super_cell_id ? neighbor_index.super_celltype : neighbor_index.celltype );
 						double interaction_remove = ia_energies[ia_id];
 						for (uint k=0; k<ia_addon[ia_id].size(); ++k) {
-							interaction_remove += ia_addon[ia_id][k]->interaction(update.remove_state,  neighbor_state );
+							interaction_remove += ia_addon[ia_id][k]->interaction(update.focusStateBefore(),  neighbor_state );
 						}
 						
 						dH -= interaction_remove;
 					}
-					if (update.add_state.cell_id !=  neighbor_state.cell_id ) {
+					if (update.focusStateAfter().cell_id !=  neighbor_state.cell_id ) {
 						uint ia_id = getInterActionID( add_index.status == CPM::SUB_CELL && add_index.super_cell_id != neighbor_index.super_cell_id ? add_index.super_celltype : add_index.celltype ,
 													neighbor_index.status == CPM::SUB_CELL  && add_index.super_cell_id != neighbor_index.super_cell_id ? neighbor_index.super_celltype : neighbor_index.celltype );
 						double interaction_add = ia_energies[ia_id];
 						for (uint k=0; k<ia_addon[ia_id].size(); ++k) {
-							interaction_add += ia_addon[ia_id][k]->interaction(update.add_state,  neighbor_state );
+							interaction_add += ia_addon[ia_id][k]->interaction(update.focusStateAfter(),  neighbor_state );
 						}
 						dH += interaction_add;
 					}
@@ -342,12 +345,12 @@ double InteractionEnergy::delta(const CPM::UPDATE& update) const {
 				for (uint i=0; i<ia_neighborhood_offsets.size(); i++) {
 					const CPM::STATE& neighbor_state =layer->data[ focus_offset + ia_neighborhood_offsets[i] ];
 					const CPM::INDEX& neighbor_index = CellType::storage.index( neighbor_state.cell_id );
-					if (update.remove_state.cell_id !=  neighbor_state.cell_id ) {
+					if (update.focusStateBefore().cell_id !=  neighbor_state.cell_id ) {
 						uint ia_id = getInterActionID( remove_index.status == CPM::SUB_CELL && remove_index.super_cell_id != neighbor_index.super_cell_id ? remove_index.super_celltype : remove_index.celltype ,
 													neighbor_index.status == CPM::SUB_CELL  && remove_index.super_cell_id != neighbor_index.super_cell_id ? neighbor_index.super_celltype : neighbor_index.celltype );
 						dH -= ia_energies[ia_id];
 					}
-					if (update.add_state.cell_id != neighbor_state.cell_id ) {
+					if (update.focusStateAfter().cell_id != neighbor_state.cell_id ) {
 						uint ia_id = getInterActionID( add_index.status == CPM::SUB_CELL && add_index.super_cell_id != neighbor_index.super_cell_id ? add_index.super_celltype : add_index.celltype ,
 													neighbor_index.status == CPM::SUB_CELL  && add_index.super_cell_id != neighbor_index.super_cell_id ? neighbor_index.super_celltype : neighbor_index.celltype );
 						
@@ -361,24 +364,24 @@ double InteractionEnergy::delta(const CPM::UPDATE& update) const {
 			
 			if (interaction_details & IA_PLUGINS) {
 				CPM::STATE neighbor_state;
-				neighbor_state.pos = update.focus.pos();
+				neighbor_state.pos = update.focus().pos();
 				for (uint i=0; i<ia_neighborhood_offsets.size(); i++) {
 					const CPM::STATE& neighbor_state =layer->data[ focus_offset + ia_neighborhood_offsets[i] ];
 					const CPM::INDEX& neighbor_index = CellType::storage.index( neighbor_state.cell_id );
 					
-					if (update.remove_state.cell_id != neighbor_state.cell_id ) {
+					if (update.focusStateBefore().cell_id != neighbor_state.cell_id ) {
 						uint ia_id = getInterActionID(remove_index.celltype, neighbor_index.celltype);
 						double interaction_remove = ia_energies[ia_id];
 						for (uint k=0; k<ia_addon[ia_id].size(); ++k) {
-							interaction_remove  += ia_addon[ia_id][k]->interaction(update.remove_state, neighbor_state );
+							interaction_remove  += ia_addon[ia_id][k]->interaction(update.focusStateBefore(), neighbor_state );
 						}
 						dH -= interaction_remove;
 					}
-					if (update.add_state.cell_id != neighbor_state.cell_id ) {
+					if (update.focusStateAfter().cell_id != neighbor_state.cell_id ) {
 						uint ia_id = getInterActionID(add_index.celltype, neighbor_index.celltype);
 						double interaction_add = ia_energies[ia_id];
 						for (uint k=0; k<ia_addon[ia_id].size(); ++k) {
-							interaction_add += ia_addon[ia_id][k]->interaction(update.add_state, neighbor_state );
+							interaction_add += ia_addon[ia_id][k]->interaction(update.focusStateAfter(), neighbor_state );
 						}
 						dH += interaction_add;
 					}
@@ -388,10 +391,10 @@ double InteractionEnergy::delta(const CPM::UPDATE& update) const {
 				for (uint i=0; i<ia_neighborhood_offsets.size(); i++) {
 					const CPM::STATE& neighbor_state =layer->data[ focus_offset + ia_neighborhood_offsets[i] ];
 					const CPM::INDEX& neighbor_index = CellType::storage.index( neighbor_state.cell_id );
-					if (update.remove_state.cell_id != neighbor_state.cell_id ) {
+					if (update.focusStateBefore().cell_id != neighbor_state.cell_id ) {
 						dH -=ia_energies[getInterActionID(remove_index.celltype, neighbor_index.celltype)];
 					}
-					if (update.add_state.cell_id != neighbor_state.cell_id ) {
+					if (update.focusStateAfter().cell_id != neighbor_state.cell_id ) {
 						dH += ia_energies[getInterActionID(add_index.celltype, neighbor_index.celltype)];
 					}
 				}
@@ -400,9 +403,9 @@ double InteractionEnergy::delta(const CPM::UPDATE& update) const {
 	}
 
 	if (negate_interactions) 
-		return -dH / ia_neighborhood.size();
+		return -dH / boundaryLenghScaling;
 	else
-		return dH / ia_neighborhood.size();
+		return dH / boundaryLenghScaling;
 }
 
 

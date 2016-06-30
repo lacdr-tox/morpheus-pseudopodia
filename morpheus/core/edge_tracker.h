@@ -39,8 +39,9 @@ protected:
 	shared_ptr< const CPM::LAYER > cell_layer;
 	shared_ptr< const Lattice> lattice;
 	vector<VINT> opx_neighbors;
+	vector<VINT> surface_neighbors;
 public:
-	EdgeTrackerBase(shared_ptr<const  CPM::LAYER > p, const vector<VINT>& opx_nei) : cell_layer(p), lattice(p->getLattice()), opx_neighbors(opx_nei) {};
+	EdgeTrackerBase(shared_ptr<const  CPM::LAYER > p, const vector<VINT>& opx_nei, const vector<VINT>& surface_nei) : cell_layer(p), lattice(p->getLattice()), opx_neighbors(opx_nei), surface_neighbors(surface_nei) {};
 	virtual ~EdgeTrackerBase() {};
 	/// Number of update trials in a MCS
 	virtual uint updates_per_mcs() const  =0;
@@ -50,15 +51,15 @@ public:
 	virtual void update_notifier(const VINT& pos, const LatticeStencil& neighborhood) =0;
 	/// Reset the stepper, i.e. the cell configuration may have changed completely
 	virtual void reset() =0;
-	virtual bool is_boundary(const VINT& pos) const =0;
-	virtual uint n_boundaries(const VINT& pos) const =0;
+	virtual bool has_surface(const VINT& pos) const =0;
+	virtual uint n_surfaces(const VINT& pos) const =0;
 	/// The update neighborhood used
 	const vector<VINT>& getNeighborhood() const { return opx_neighbors; }
 };
 
 class NoEdgeTracker : public EdgeTrackerBase {
 public:
-	NoEdgeTracker(shared_ptr< const CPM::LAYER > p, const vector<VINT>& opx_nei) : EdgeTrackerBase(p, opx_nei)
+	NoEdgeTracker(shared_ptr< const CPM::LAYER > p, const vector<VINT>& opx_nei, const vector<VINT>& surface_nei) : EdgeTrackerBase(p, opx_nei, surface_nei)
 	{
 		max_source = this->lattice->size() - VINT(1,1,1);
 		min_source = VINT(0,0,0);
@@ -97,22 +98,22 @@ public:
 	
 	virtual void reset() {};
 	
-	virtual bool is_boundary(const VINT& pos) const {
+	virtual bool has_surface(const VINT& pos) const {
 		const CPM::STATE& spin = cell_layer->get(pos);
 		// check the boundary neighborhood
-		for (uint i_nei = 0; i_nei < this->opx_neighbors.size(); ++i_nei) {
-			if (spin != cell_layer->get(pos+this->opx_neighbors[i_nei]) )
+		for (const auto& offset : this->surface_neighbors) {
+			if (spin != cell_layer->get(pos+offset) )
 				return true;
 		}
 		return false;
 	}
 	
-	virtual uint n_boundaries(const VINT& pos) const {
+	virtual uint n_surfaces(const VINT& pos) const {
 		const CPM::STATE& spin = this->cell_layer->get(pos);
 		// check 1st order neighborhood
 		uint n_edges=0;
-		for (uint i_nei = 0; i_nei < opx_neighbors.size(); ++i_nei) {
-			if (spin != cell_layer->get(pos+opx_neighbors[i_nei]) )
+		for (const auto& offset : this->surface_neighbors) {
+			if (spin != cell_layer->get(pos+offset) )
 				n_edges++;
 		}
 		return n_edges;
@@ -140,12 +141,13 @@ private:
 	vector<uint> invalid_edge_ids;
 	Lattice_Data_Layer<Edge_Id_List> *edge_lattice;
 	vector<int> inverse_neighbor;
+	vector<bool> opx_is_surface;
 	Boundary::Type lattice_boundary_type[Boundary::nCodes];	
 
 	void init_edge_list();
 
 public:
-	EdgeListTracker(shared_ptr< const CPM::LAYER > p, const vector<VINT> &opx_nei);
+	EdgeListTracker(shared_ptr< const CPM::LAYER > p, const vector<VINT> &opx_nei, const vector<VINT>& surface_nei);
 	~EdgeListTracker() { delete edge_lattice; }
 	virtual uint updates_per_mcs() const {
 		static double factor = 2.0 / this->opx_neighbors.size();
@@ -155,8 +157,8 @@ public:
 	virtual void update_notifier(const VINT& pos, const LatticeStencil& neighborhood);
 	virtual void reset();
 	
-	virtual bool is_boundary(const VINT& pos) const;
-	virtual uint n_boundaries(const VINT& pos) const;
+	virtual bool has_surface(const VINT& pos) const;
+	virtual uint n_surfaces(const VINT& pos) const;
 
 };
 

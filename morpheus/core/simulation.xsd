@@ -33,15 +33,20 @@
 		</xs:annotation>
 		<xs:all>
 <!-- 			<xs:element name="BoundaryConditions" type="cpmCPMBoundaryConditions" minOccurs="0" /> -->
-			<xs:element name="MetropolisKinetics" type="MetropolisKinetics" />
-			<xs:element name="MCSDuration" type="cpmTime" default="1">
-				<xs:annotation>
-					<xs:documentation>Simulation time passing during one Monte Carlo step of the cpm simulation.</xs:documentation>
-				</xs:annotation>
+			<xs:element name="ShapeBoundary">
+				<xs:complexType>
+					<xs:all>
+						<xs:element name="Neighborhood" type="cpmNeighborhood" /> 
+					</xs:all>
+					<xs:attribute name="scaling" use="required" type="cpmBoundaryScalingModes" default="norm" />
+				</xs:complexType>
 			</xs:element>
 			<xs:element name="Interaction" type="Interaction" />
+			<xs:element name="MonteCarloSampler" type="MonteCarloSampler" minOccurs="0" />
+<!-- 			<xs:element name="MetropolisKinetics" type="MetropolisKinetics" minOccurs="0" /> -->
+<!-- 			 -->
 		</xs:all>
-		<xs:attribute name="default-type" use="optional" type="cpmCellTypeRef"/>
+<!-- 		<xs:attribute name="default-type" use="optional" type="cpmCellTypeRef"/> -->
 		
 	</xs:complexType>
 	
@@ -61,7 +66,13 @@
 		<xs:attribute name="value" use="required" type="cpmCellTypeRef" />
 	</xs:complexType>
 
-	
+	<xs:simpleType name="cpmBoundaryScalingModes">
+        <xs:restriction base="cpmString">
+			<xs:enumeration value="norm"/>
+			<xs:enumeration value="size"/>
+			<xs:enumeration value="none"/>
+        </xs:restriction>
+    </xs:simpleType>
 	
 	<xs:complexType name="CellTypes">
 		<xs:choice minOccurs="1" maxOccurs="unbounded">
@@ -183,7 +194,7 @@ This allows the user to create populations a heterogeneous initial population. T
 
 	<xs:complexType name="Interaction">
 		<xs:all>
- 			<xs:element name="Neighborhood" type="cpmNeighborhood" minOccurs="0"/> 
+<!--  			<xs:element name="Neighborhood" type="cpmNeighborhood" minOccurs="0"/>  -->
 <!-- 			<xs:choice minOccurs="0" maxOccurs="unbounded"> -->
 <!-- 				<xs:group ref="InteractionPlugins"/> -->
 			<xs:element name="Contact" minOccurs="0" maxOccurs="unbounded">
@@ -231,29 +242,23 @@ This allows the user to create populations a heterogeneous initial population. T
 		</xs:all>
 	</xs:complexType>
 	
-	<xs:complexType name="MetropolisKinetics">
-		<xs:annotation>
-			<xs:documentation>Specifies the modified Metropolis algorithm used to stochastically find the minimal energy configuration.</xs:documentation>
-		</xs:annotation>
+	<xs:complexType name="MonteCarloSampler">
+		
 		<xs:all>
-			<xs:element name="Neighborhood" type="cpmNeighborhood" minOccurs="0"/>
+			<xs:element name="MetropolisKinetics">
+				<xs:complexType>
+					<xs:annotation>
+						<xs:documentation>Specifies the modified Metropolis algorithm used to stochastically find the minimal energy configuration.</xs:documentation>
+					</xs:annotation>
+					<xs:attribute name="temperature" type="cpmDouble" use="required" default="1" />
+					<xs:attribute name="yield" type="cpmDouble" use="optional" default="0.0" />
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Neighborhood" type="cpmNeighborhood" />
+			<xs:element name="MCSDuration" type="cpmTime" default="1" minOccurs="0" />
 		</xs:all>
 
 		<xs:attribute name="stepper" type="cpmStepper" use="required"/>
-		<xs:attribute name="temperature" type="cpmDouble" use="required" default="1">
-			<xs:annotation>
-				<xs:documentation>Boltzmann temperature in Metropolis algorithm.
-Controls the probability of accepting a configuration that is energetically unfavorable.
-Determines the amount of membrane fluctuation (cell motility).</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="yield" type="cpmDouble" use="optional" default="0.0">
-			<xs:annotation>
-				<xs:documentation>Modification to Boltzmann distribution such that energetically unfavourable configurations are accepted with lower probablity. This avoids energetically neutral updated (with dH=0) to be accepted with probability 1.0.
-	Can be used to model the resistance of cell membrane to fluctuations.
-				</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
 	</xs:complexType>
 
     <xs:simpleType name="cpmStepper">

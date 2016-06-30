@@ -12,7 +12,7 @@ void FreezeMotion::init(const Scope* scope){
 	condition.init();
 }
 
-bool FreezeMotion::update_check(CPM::CELL_ID cell_id, const CPM::UPDATE& update, CPM::UPDATE_TODO todo )
+bool FreezeMotion::update_check(CPM::CELL_ID cell_id, const CPM::Update& update)
 {
     if( condition( SymbolFocus(cell_id) ) >= 1.0 ){
         return false;

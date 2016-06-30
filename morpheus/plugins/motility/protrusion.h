@@ -73,10 +73,10 @@ public:
 	DECLARE_PLUGIN("Protrusion");
 	Protrusion();
 
-	double delta(const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const;
+	double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const;
 	void init(const Scope* scope);
 	double hamiltonian(CPM::CELL_ID cell_id) const;
-	void update_notify(CPM::CELL_ID cell_id, const CPM::UPDATE& update, CPM::UPDATE_TODO todo);
+	void update_notify(CPM::CELL_ID cell_id, const CPM::Update& update);
 	double local_activity(SymbolFocus focus) const;
 	void executeTimeStep();
 	

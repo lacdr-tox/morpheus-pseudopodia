@@ -49,8 +49,8 @@ public:
 	virtual string XMLName() const override { return string("CPM"); };
 	
     virtual void init(const Scope* scope) override;
-	const vector<VINT>& getInteractionNeighborhood();
-	const vector<VINT>& getBoundaryNeighborhood();
+	const Neighborhood& getInteractionNeighborhood();
+	const Neighborhood& getUpdateNeighborhood();
 	vector< multimap< Plugin*, SymbolDependency > > getCellTypeDependencies() const;
 	set< SymbolDependency > getInteractionDependencies() const;
 	
@@ -62,14 +62,15 @@ private:
 	PluginParameter2<double,XMLValueReader,RequiredPolicy> metropolis_temperature;
 	PluginParameter2<double,XMLValueReader,DefaultValPolicy> metropolis_yield;
 	
-	CPM::UPDATE current_update;
-	vector<VINT> boundary_neighborhood;
+// 	CPM::UPDATE current_update;
+
+	Neighborhood update_neighborhood;
 	shared_ptr<const EdgeTrackerBase> edge_tracker;
 	shared_ptr<InteractionEnergy> interaction_energy;
 	
 	///  Run one MonteCarloStep, i.e. as many updates as determined by the mcs stepper
 	void MonteCarloStep();
-	bool evalCPMUpdate(CPM::UPDATE& update);
+	bool evalCPMUpdate(const CPM::Update& update);
 	
 	shared_ptr<const CPM::LAYER> cell_layer;
 	vector <std::shared_ptr <const CellType > > celltypes;

@@ -65,13 +65,13 @@ class SuperCell : public Cell // public CellPopulation
 		*   Here, the platform assures that the subcell already received the notifier for setUpdate (SuperCT::setUpdate).
 		*   Thus, all subcell information is already up to date !
 		*/
-		virtual void setUpdate(const CPM::UPDATE & update, CPM::UPDATE_TODO todo);
+		virtual void setUpdate(const CPM::Update & update);
 		/**  @brief Apply the update on the cell
 		* 
 		*   Here, the platform assures that the subcell already received the notifier for applyUpdate (SuperCT::applyUpdate).
 		*   Thus, all subcell information is already up to date !
 		*/
-		virtual void applyUpdate ( const CPM::UPDATE& update, CPM::UPDATE_TODO todo );
+		virtual void applyUpdate ( const CPM::Update& update);
 // 		void splitLastSegment(VDOUBLE split_plane_normal);
 };
 

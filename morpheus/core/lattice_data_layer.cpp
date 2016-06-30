@@ -146,9 +146,15 @@ template <class T> void Lattice_Data_Layer<T>::setDomain()
 	for (pos.z=0; pos.z<l_size.z; pos.z++) {
 		for (pos.y=0; pos.y<l_size.y; pos.y++) {
 			for (pos.x=0; pos.x<l_size.x; pos.x++) {
-				bool inside = d.inside(pos);
-				domain[get_data_index(pos)] = inside ? Boundary::none : d.boundaryType();
-				data[get_data_index(pos)] = inside ? default_boundary_value : domain_value;
+				
+				if (d.inside(pos)) {
+					domain[get_data_index(pos)] = Boundary::none;
+					data[get_data_index(pos)] = default_boundary_value;
+				}
+				else {
+					domain[get_data_index(pos)] = d.boundaryType();
+					data[get_data_index(pos)] = domain_value;
+				}
 			}
 		}
 	}

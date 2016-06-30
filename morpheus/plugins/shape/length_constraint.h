@@ -90,12 +90,12 @@ public:
 	LengthConstraint();
 	DECLARE_PLUGIN("LengthConstraint");
 
-	double delta(const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const;
+	double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const;
 	double hamiltonian(CPM::CELL_ID cell_id) const;
     void init(const Scope* scope);
 	double long_cell_axis2(CPM::CELL_ID id) const ;
-	void set_update_notify( CPM::CELL_ID cell_id, const CPM::UPDATE& update, CPM::UPDATE_TODO todo);
-	void update_notify(CPM::CELL_ID cell_id, const CPM::UPDATE& update, CPM::UPDATE_TODO todo);
+	void set_update_notify( CPM::CELL_ID cell_id, const CPM::Update& update);
+	void update_notify(CPM::CELL_ID cell_id, const CPM::Update& update);
 };
 
 #endif

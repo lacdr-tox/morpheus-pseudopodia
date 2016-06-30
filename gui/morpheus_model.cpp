@@ -273,12 +273,28 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 	QList<MorphModel::AutoFix> fixes;
 	QList<MorphModelEdit> edits;
 	
+	
+	
 	if (morpheus_file_version == morpheus_ml_version) {
 		return edits;
+	}
+	else if (morpheus_file_version == 2) {
+		// return edits;
+		fix_version=3;
+		MorphModel::AutoFix a;
+		a.copy = false;
+		a.match_path  = "MorpheusModel/CPM/Interaction/Neighborhood"; a.move_path = "MorpheusModel/CPM/ShapeBoundary/Neighborhood"; fixes.append(a);
+		a.match_path  = "MorpheusModel/CPM/MCSDuration"; a.move_path = "MorpheusModel/CPM/MonteCarloSampler/MCSDuration"; fixes.append(a);
+		a.match_path  = "MorpheusModel/CPM/MetropolisKinetics/Neighborhood"; a.move_path = "MorpheusModel/CPM/MonteCarloSampler/Neighborhood"; fixes.append(a);
+		a.match_path  = "MorpheusModel/CPM/MetropolisKinetics/@stepper"; a.move_path = "MorpheusModel/CPM/MonteCarloSampler/@stepper"; fixes.append(a);
+		a.match_path  = "MorpheusModel/CPM/MetropolisKinetics"; a.move_path = "MorpheusModel/CPM/MonteCarloSampler/MetropolisKinetics"; fixes.append(a);
+		a.copy = true; a.match_path  = "MorpheusModel/Space/Lattice/Neighborhood"; a.move_path = "MorpheusModel/CPM/ShapeBoundary/Neighborhood"; fixes.append(a); a.copy = false;
+		
 	}
 	else if (morpheus_file_version == 1) {
 		fix_version=2;
 		MorphModel::AutoFix a;
+		a.copy = false;
 		a.match_path  = "CellularPottsModel"; a.move_path = "MorpheusModel"; fixes.append(a);
 		a.match_path  = "MorpheusModel/Lattice/@size"; a.move_path = "MorpheusModel/Space/Lattice/Size/@value";fixes.append(a);
 		a.match_path  = "MorpheusModel/Lattice/@structure"; a.move_path = "MorpheusModel/Space/Lattice/@class";fixes.append(a);
@@ -327,6 +343,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 					if( paths.length() >= 2 ){
 						a.match_path = paths.at( paths.length() - 2 );
 						a.move_path  = paths.at( paths.length() - 1 );
+						a.copy = false;
 						qDebug() << "AutoFix Rule:\nold path: " << a.match_path << "\nnew path: " << a.move_path << "\n\n";
 						fixes.append(a);
 						paths.clear();
@@ -404,6 +421,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 					while ( ! child.isNull() ) {
 						if (child.nodeName() == search_tags_copy.front()) {
 							new_matches.append(child);
+							qDebug() << "Matched " << search_tags_copy.front();
 						}
 						child = child.nextSibling();
 					}
@@ -487,7 +505,10 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 						qDebug() << "new_parent: " << new_parent.tagName();
 						qDebug() << "ed.name   : " << ed.name;
 						qDebug() << "value     : " << matches[j].nodeValue();
-						matches[j].parentNode().toElement().removeChild(matches[j]);
+						edits.append(ed);
+						
+						if (!fixes[i].copy)
+							matches[j].parentNode().toElement().removeChild(matches[j]);
 					}
 					else {
 						qDebug() << "New Attribute :" << new_name;
@@ -502,21 +523,34 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 						qDebug() << "new_parent: " << new_parent.tagName();
 						qDebug() << "ed.name   : " << ed.name;
 						qDebug() << "value     : " << matches[j].nodeValue();
-						
-						matches[j].parentNode().toElement().removeChild(matches[j]);
 						edits.append(ed);
+						
+						if (!fixes[i].copy)
+							matches[j].parentNode().toElement().removeAttribute(matches[j].nodeName());
 					}
 				}
 				else {
 					qDebug() << QString("Element ") + search_path + " was moved to " + move_path;
-					matches[j].toElement().setTagName(new_name);
-					ed.xml_parent = new_parent.appendChild(matches[j]);
-					ed.edit_type = NodeMove;
-					ed.info = QString("Element  ") + search_path + " was moved to " + move_path;
-					ed.name =  matches[j].attributes().namedItem("name").nodeValue();
+					if (!fixes[i].copy) {
+						matches[j].toElement().setTagName(new_name);
+						ed.xml_parent = new_parent.appendChild(matches[j]);
+						ed.edit_type = NodeMove;
+						ed.info = QString("Element  ") + search_path + " was moved to " + move_path;
+						ed.name =  matches[j].attributes().namedItem("name").nodeValue();
+					}
+					else {
+						ed.xml_parent = new_parent.appendChild(matches[j].cloneNode());
+						ed.xml_parent.toElement().setTagName(new_name);
+						ed.edit_type = NodeAdd;
+						ed.info = QString("Element  ") + search_path + " was copied to " + move_path;
+						ed.name =  matches[j].attributes().namedItem("name").nodeValue();
+					}
+					
 					if (ed.name.isEmpty())
 						ed.name = new_name;
+					
 					edits.append(ed);
+					
 				}
 			}
 			if (matches.size())

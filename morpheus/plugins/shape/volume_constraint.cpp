@@ -9,7 +9,7 @@ VolumeConstraint::VolumeConstraint(){
 	registerPluginParameter(strength);
 };
 
-double VolumeConstraint::delta( const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const
+double VolumeConstraint::delta( const SymbolFocus& cell_focus, const CPM::Update& update) const
 {
 	double s = strength( cell_focus );
 	double t = target( cell_focus );
@@ -17,7 +17,7 @@ double VolumeConstraint::delta( const SymbolFocus& cell_focus, const CPM::UPDATE
 	// Vb = volume before update
 	int Vb = cell_focus.cell().nNodes(); 
 	// Va = volume after update
-	int Va =  Vb + (todo & CPM::ADD ? 1 :0) - (todo & CPM::REMOVE ? 1:0);
+	int Va =  Vb + (update.opAdd()) - (update.opRemove());
 	
 	double dE = s * ( sqr(t - Va) - sqr(t - Vb) );
 	return dE;

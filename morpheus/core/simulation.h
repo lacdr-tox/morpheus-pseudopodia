@@ -76,9 +76,10 @@ class EdgeTrackerBase;
 
 #include "lattice.h"
 #include "cpm_layer.h"
+#include "symbolfocus.h"
+#include "cell_update.h"
 #include "scales.h"
 #include "symbol.h"
-#include "symbolfocus.h"
 #include "scope.h"
 
 
@@ -136,10 +137,11 @@ namespace CPM {
 	 */
 	VINT findEmptyNode(VINT min = VINT(0,0,0) , VINT max = VINT(0,0,0));
 	bool setNode(VINT position, CELL_ID cell_id);
-	class UPDATE;
 	// Interface for the MonteCarloSampler
-	void setUpdate(CPM::UPDATE& update);
-	bool executeCPMUpdate(const CPM::UPDATE& update);
+
+	const CPM::Update& createUpdate(VINT source, VINT direction, Update::Operation opx);
+	void setUpdate(CPM::Update& update);
+	bool executeCPMUpdate(const CPM::Update& update);
 	
 	const CPM::INDEX& getCellIndex(const CELL_ID cell_id);
 	const Cell& getCell(CELL_ID cell_id);
@@ -154,9 +156,11 @@ namespace CPM {
 	void enableEgdeTracking();
 	shared_ptr<const EdgeTrackerBase> cellEdgeTracker();
 	
-	bool isBoundary(const VINT& pos);
-	uint nBoundaries(const VINT& pos);
-	const vector<VINT>& getBoundaryNeighborhood(); /// Returns the Neighborhood of a node boundary, sorted counterclockwise
+	/// 
+	bool isSurface(const VINT& pos);
+	uint nSurfaces(const VINT& pos);
+	const Neighborhood& getBoundaryNeighborhood(); /// Returns the Neighborhood of a node boundary, sorted counterclockwise
+	const Neighborhood& getSurfaceNeighborhood(); /// Returns the Neighborhood, that designates a node to be surface node, sorted counterclockwise
 	
 }
 

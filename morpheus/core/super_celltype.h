@@ -39,10 +39,10 @@ public:
 // 	CellPropertyAccessor<S> findCellProperty(string prop_symbol, bool required = true) const;
 		
 // 	The interface methods should propagate all calls to the subcelltype
-	virtual bool check_update(const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const;
-	virtual void set_update(const CPM::UPDATE& update, CPM::UPDATE_TODO todo); 
-	virtual void apply_update(const CPM::UPDATE& update, CPM::UPDATE_TODO todo); 
-	virtual double delta(const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const;
+	virtual bool check_update(const CPM::Update& update) const;
+	virtual void set_update(const CPM::Update& update); 
+	virtual void apply_update(const CPM::Update& update); 
+	virtual double delta(const CPM::Update& update) const;
 	virtual double hamiltonian() const ;  
 
 protected:

@@ -50,7 +50,7 @@ public:
 	FreezeMotion();
 	DECLARE_PLUGIN("FreezeMotion");
 	void init(const Scope* scope);
-	bool update_check(CPM::CELL_ID  cell_id, const CPM::UPDATE& update, CPM::UPDATE_TODO todo);
+	bool update_check(CPM::CELL_ID  cell_id, const CPM::Update& update);
 };
 
 #endif // FREEZER_H

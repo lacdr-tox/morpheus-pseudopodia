@@ -1,6 +1,7 @@
 #include "cpm_layer.h"
 #include "lattice_data_layer.cpp"
 
+// Explicit template instantiation
 template class Lattice_Data_Layer<CPM::STATE>;
 
 

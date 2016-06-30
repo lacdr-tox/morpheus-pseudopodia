@@ -117,6 +117,8 @@ string SymbolData::getLinkTypeName(LinkType linktype) {
 			return "Singel CellType CellMembrane";
 		case SymbolData::FunctionLink:
 			return "Function";
+		case SymbolData::VectorFunctionLink:
+			return "VectorFunction";
 		case SymbolData::Space:
 			return "Space";
 		case SymbolData::MembraneSpace:

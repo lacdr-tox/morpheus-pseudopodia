@@ -16,7 +16,7 @@ void FlipCellMotion::init(const Scope* scope) {
 	condition.init();
     lattice = SIM::getLattice();
 	cpm_lattice = CPM::getLayer();
-	nbh = lattice->getNeighborhoodByDistance( neighborhood() );
+	nbh = lattice->getNeighborhoodByDistance( neighborhood() ).neighbors();
 	// Add "cell.center" as output(!) symbol  (not depend symbol)
 	registerCellPositionOutput(); 
 };

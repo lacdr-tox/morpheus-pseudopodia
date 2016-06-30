@@ -45,7 +45,7 @@ abstractProcess::abstractProcess(SharedMorphModel model, int job_id, QString sub
 		model_dir = QFileInfo(model->xml_file.path).absoluteDir();
 	}
 
-	for (uint i=0; i<system_files.size(); i++ ) {
+	for (int i=0; i<system_files.size(); i++ ) {
 		original_paths.push_back(system_files[i]->get());
 		if (system_files[i]->isActive() && ! system_files[i]->isDisabled()) {
 			QFileInfo file(model_dir,system_files[i]->get().trimmed());
@@ -70,7 +70,7 @@ abstractProcess::abstractProcess(SharedMorphModel model, int job_id, QString sub
 	}
 
 	// reset xml file paths
-	for (uint i=0; i<system_files.size(); i++ ) {
+	for (int i=0; i<system_files.size(); i++ ) {
 		system_files[i]->set(original_paths[i]);
 	}
 

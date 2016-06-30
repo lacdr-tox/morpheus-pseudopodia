@@ -90,7 +90,7 @@ const PDE_Layer& CellShape::sphericalApprox()
 	
 	for (Cell::Nodes::const_iterator pt = nodes.begin(); pt != nodes.end(); pt++)
 	{
-		if (CPM::isBoundary(*pt)) {
+		if (CPM::isSurface(*pt)) {
 			double distance = lattice.orth_distance(center, lattice.to_orth(*pt)).abs();
 			spherical_mapper->map(*pt,distance);
 		}
@@ -301,7 +301,7 @@ const Cell::Nodes& Cell::getSurface() const {
 		Nodes::const_iterator i = nodes.begin();
 		
 		for(i = nodes.begin(); i!= nodes.end(); i++){
-			if( CPM::isBoundary(*i) ){
+			if( CPM::isSurface(*i) ){
 				surface.insert(surface.end(), *i );	
 			}
 		}
@@ -324,7 +324,7 @@ Cell::Cell(CPM::CELL_ID cell_name, CellType* ct)
 	track_nodes = true;
 	track_surface = true;
 	interface_length=0;
-	neighbors2length = 0;
+	neighbors2length = CPMShape::BoundaryLengthScaling(CPM::getBoundaryNeighborhood());
 	surface_timestamp = -10000;
 };
 
@@ -620,34 +620,30 @@ void Cell::resetUpdatedInterfaces() {
 	updated_interface_length = interface_length;
 }
 
-void Cell::setUpdate(const CPM::UPDATE& update, CPM::UPDATE_TODO todo)
+void Cell::setUpdate(const CPM::Update& update)
 {
-	if ( ! ( nodes.size() == 1 and todo == CPM::REMOVE ) ) {
+	if ( ! ( nodes.size() == 1 and update.opRemove() ) ) {
 		if (track_nodes) {
-			if (todo == CPM::ADD) {
-				updated_center = SIM::lattice() . to_orth(  (VDOUBLE)(accumulated_nodes + update.add_state.pos) / ( nodes.size() + 1 ) );
-				updated_lattice_center  =( ( accumulated_nodes + update.add_state.pos) / ( nodes.size() + 1 ) ) /* % SIM::getLattice() -> size() */ ;
+			if (update.opAdd()) {
+				updated_center = SIM::lattice() . to_orth(  (VDOUBLE)(accumulated_nodes + update.focusStateAfter().pos) / ( nodes.size() + 1 ) );
+				updated_lattice_center  =( ( accumulated_nodes + update.focusStateAfter().pos) / ( nodes.size() + 1 ) );
 			}
-			else if (todo == CPM::REMOVE) {
-				updated_center = SIM::lattice() . to_orth(  (VDOUBLE)(accumulated_nodes - update.remove_state.pos) / ( nodes.size() - 1 ) );
-				updated_lattice_center  =( ( accumulated_nodes - update.remove_state.pos) / ( nodes.size() - 1 ) ) /* % SIM::getLattice() -> size() */;
-				assert(nodes.find(update.remove_state.pos) != nodes.end());
+			else if (update.opRemove()) {
+				updated_center = SIM::lattice() . to_orth(  (VDOUBLE)(accumulated_nodes - update.focusStateBefore().pos) / ( nodes.size() - 1 ) );
+				updated_lattice_center  =( ( accumulated_nodes - update.focusStateBefore().pos) / ( nodes.size() - 1 ) );
 			}
 		}
 
 		if (track_surface) {
 			
 			resetUpdatedInterfaces();
-			if (neighbors2length==0.0) {
-				neighbors2length = double(update.interaction->getStencil().size()) / 2;
-			}
-			const vector<StatisticalLatticeStencil::STATS>& neighbor_stats = update.interaction->getStatistics();
+			const vector<StatisticalLatticeStencil::STATS>& neighbor_stats = update.boundaryStencil()->getStatistics();
 			int interface_diff=0;
 			
-			if (todo & CPM::ADD) {
+			if (update.opAdd()) {
 				for ( auto neighbor = neighbor_stats.begin(); neighbor != neighbor_stats.end(); neighbor++ ) {
 					if (neighbor->cell == id) {
-						updated_interfaces[update.remove_state.cell_id] -= neighbor->count;
+						updated_interfaces[update.focusStateBefore().cell_id] -= neighbor->count;
 						interface_diff -= neighbor->count;
 					}
 					else  {
@@ -656,11 +652,10 @@ void Cell::setUpdate(const CPM::UPDATE& update, CPM::UPDATE_TODO todo)
 					}
 				}
 			}
-
-			if (todo & CPM::REMOVE) {
+			else if (update.opRemove()) {
 				for ( auto neighbor = neighbor_stats.begin(); neighbor != neighbor_stats.end(); neighbor++ ) {
 					if (neighbor->cell == id ) {
-						updated_interfaces[ update.add_state.cell_id ] += neighbor->count;
+						updated_interfaces[ update.focusStateAfter().cell_id ] += neighbor->count;
 						interface_diff += neighbor->count;
 					}
 					else {
@@ -668,6 +663,17 @@ void Cell::setUpdate(const CPM::UPDATE& update, CPM::UPDATE_TODO todo)
 						interface_diff -= neighbor->count;
 					}
 				}
+			}
+			else if (update.opNeighborhood()) {
+				// TODO This has to be integrated to allow tracking of boundary changes of neighbor cells
+				/*
+				const auto& stats = update.boundaryStencil().getStatistics();
+				int count = find_if(stats.begin(), stats.end(),[](const StatisticalLatticeStencil::STATS& a) { return a.cell == id ;} )->count;
+				if ( (interfaces[update.focusStateBefore().cell_id] -= count) == 0) {
+					interfaces.erase(update.focusStateBefore().cell_id);
+				}
+				interfaces[update.focusStateAfter().cell_id]+=count;
+				*/
 			}
 			
 			updated_interface_length += double(interface_diff) / neighbors2length;
@@ -686,74 +692,86 @@ void Cell::setUpdate(const CPM::UPDATE& update, CPM::UPDATE_TODO todo)
 // 	}
 }
 
-void Cell::applyUpdate(const CPM::UPDATE& update, CPM::UPDATE_TODO todo)
+void Cell::applyUpdate(const CPM::Update& update)
 {
 	if (track_nodes) {
-		if (todo & CPM::ADD) {
-			nodes.insert( update.add_state.pos );
-			accumulated_nodes += update.add_state.pos;
+		if (update.opAdd()) {
+			nodes.insert( update.focusStateAfter().pos );
+			accumulated_nodes += update.focusStateAfter().pos;
 			orth_center = updated_center;
 			lattice_center = updated_lattice_center;
 		}
-		if (todo & CPM::REMOVE) {
-			if ( ! nodes.erase(update.remove_state.pos) ) {
-				cerr << "Cell::applyUpdate : Trying to remove a node "<< update.remove_state.pos << " that was not stored! " << endl;
-				cerr << CPM::getNode(update.remove_state.pos) << endl;
-				cerr << update.remove_state << " " << celltype->getName() << endl;
+		if (update.opRemove()) {
+			if ( ! nodes.erase(update.focusStateBefore().pos) ) {
+				cerr << "Cell::applyUpdate : Trying to remove a node "<< update.focusStateBefore().pos << " that was not stored! " << endl;
+				cerr << CPM::getNode(update.focusStateBefore().pos) << endl;
+				cerr << update.focusStateBefore() << " " << celltype->getName() << endl;
 				copy(nodes.begin(), nodes.end(), ostream_iterator<VINT>(cout,"|"));
 				exit(-1);
 			}
-			accumulated_nodes -= update.remove_state.pos;
+			accumulated_nodes -= update.focusStateBefore().pos;
 			orth_center = updated_center;
 			lattice_center = updated_lattice_center;
 		}
 		cell_shape.invalidate();
 	}
 	if (track_surface) {
-		map <CPM::CELL_ID, uint >::iterator ui, i;
-		bool brute_force_copy = false;
-		if (updated_interfaces.size() == interfaces.size())
-			for (ui = updated_interfaces.begin(), i=interfaces.begin(); ui != updated_interfaces.end(); ++ui) {
-				if (ui->first == i->first) {
-					if ( ! ui->second ) {
-						interfaces.erase(i++);
-					} else {
-						i->second = ui->second;
-						++i;
+		if (update.opNeighborhood()) {
+			// we are notified of an update that we are not directly involved in,
+			// i.e. the cell nodes will not change but the interfaces
+			const auto& stats = update.boundaryStencil()->getStatistics();
+			int count = find_if(stats.begin(), stats.end(),[&](const StatisticalLatticeStencil::STATS& a) { return a.cell == id ;} )->count;
+			if ( (interfaces[update.focusStateBefore().cell_id] -= count) == 0) {
+				interfaces.erase(update.focusStateBefore().cell_id);
+			}
+			interfaces[update.focusStateAfter().cell_id]+=count;
+		}
+		else {
+			map <CPM::CELL_ID, uint >::iterator ui, i;
+			bool brute_force_copy = false;
+			if (updated_interfaces.size() == interfaces.size())
+				for (ui = updated_interfaces.begin(), i=interfaces.begin(); ui != updated_interfaces.end(); ++ui) {
+					if (ui->first == i->first) {
+						if ( ! ui->second ) {
+							interfaces.erase(i++);
+						} else {
+							i->second = ui->second;
+							++i;
+						}
+					}
+					else {
+						brute_force_copy = true;
+						break;
 					}
 				}
-				else {
-					brute_force_copy = true;
-					break;
+			else brute_force_copy = true;
+			if (brute_force_copy) { /*interfaces = updated_interfaces;*/
+				interfaces.clear();
+				map <CPM::CELL_ID, uint >::iterator i, ui;
+				i = interfaces.begin();
+				for (ui = updated_interfaces.begin();  ui != updated_interfaces.end(); ui++) {
+					if (ui->second != 0) {
+						i=interfaces.insert(i,*ui);
+					}
 				}
 			}
-		else brute_force_copy = true;
-		if (brute_force_copy) { /*interfaces = updated_interfaces;*/
-			interfaces.clear();
-			map <CPM::CELL_ID, uint >::iterator i, ui;
-			i = interfaces.begin();
-			for (ui = updated_interfaces.begin();  ui != updated_interfaces.end(); ui++) {
-				if (ui->second != 0) {
-					i=interfaces.insert(i,*ui);
-				}
-			}
+			
+			interface_length = updated_interface_length;
 		}
-		
-		interface_length = updated_interface_length;
 	}
 }
 
-void Cell::applyNeighborhoodUpadate(const CPM::UPDATE& update, uint count) {
-	if (track_surface) {
-		// we are notified of an update that we are not directly involved in,
-		// i.e. the cell nodes will not change but the interfaces
-		if ( (interfaces[update.remove_state.cell_id] -= count) == 0) {
-			interfaces.erase(update.remove_state.cell_id);
-		}
-		interfaces[update.add_state.cell_id]+=count;
-	}
-}
-
+// void Cell::applyNeighborhoodUpadate(const CPM::UPDATE& update, uint count) {
+// 	if (track_surface) {
+// 		// we are notified of an update that we are not directly involved in,
+// 		// i.e. the cell nodes will not change but the interfaces
+// 		if ( (interfaces[update.remove_state.cell_id] -= count) == 0) {
+// 			interfaces.erase(update.remove_state.cell_id);
+// 		}
+// 		interfaces[update.add_state.cell_id]+=count;
+// 	}
+// }
+// 
 
 
 // const Cell::Nodes& Cell::getSurface() const{

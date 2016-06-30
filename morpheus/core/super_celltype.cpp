@@ -89,25 +89,26 @@ void SuperCT::init()
 };
 
 
-bool SuperCT::check_update(const CPM::UPDATE& update,  CPM::UPDATE_TODO todo) const 
+bool SuperCT::check_update(const CPM::Update& update) const 
 {
-	if (! sub_celltype->check_update(update, todo) ) return false;
+	if (! sub_celltype->check_update(update) ) return false;
 	static uint rejectoins=0;
-	if (todo == CPM::ADD_AND_REMOVE && update.add_state.super_cell_id == update.remove_state.super_cell_id) {
+	if (update.opAdd() && update.opRemove() && update.focusStateAfter().super_cell_id == update.focusStateBefore().super_cell_id) {
 		for (uint i=0; i<check_update_listener.size(); i++) {
-			if ( ! check_update_listener[i]->update_check (update.add_state.super_cell_id,update, CPM::ADD_AND_REMOVE) ){
+			if ( ! check_update_listener[i]->update_check (update.focusStateAfter().super_cell_id,update) ){
 				if (rejectoins < 200) {
 					cout << "Update prevented by " << check_update_listener[i]->XMLName() << endl;
 					rejectoins++;
 				}
 				return false;
-			}	
+			}
 		}
-	} 
+	}
 	else {
-		if (todo & CPM::ADD) {
+		if (update.opAdd()) {
+			auto update_add = update.selectOp(CPM::Update::ADD);
 			for (uint i=0; i<check_update_listener.size(); i++) {
-				if ( ! check_update_listener[i]->update_check(update.add_state.super_cell_id,update, CPM::ADD) ) {
+				if ( ! check_update_listener[i]->update_check(update_add.focusStateAfter().super_cell_id, update_add) ) {
 					if (rejectoins < 200) {
 						cout << "Update prevented by " << check_update_listener[i]->XMLName() << endl;
 						rejectoins++;
@@ -116,9 +117,10 @@ bool SuperCT::check_update(const CPM::UPDATE& update,  CPM::UPDATE_TODO todo) co
 				}
 			}
 		}
-		if (todo & CPM::REMOVE) {
+		if (update.opRemove()) {
+			auto update_remove = update.selectOp(CPM::Update::REMOVE);
 			for (uint i=0; i<check_update_listener.size(); i++) {
-				if ( ! check_update_listener[i]->update_check(update.remove_state.super_cell_id,update, CPM::REMOVE) ) {
+				if ( ! check_update_listener[i]->update_check(update_remove.focusStateBefore().super_cell_id, update_remove) ) {
 					if (rejectoins < 200) {
 						cout << "Update prevented by " << check_update_listener[i]->XMLName() << endl;
 						rejectoins++;
@@ -131,63 +133,68 @@ bool SuperCT::check_update(const CPM::UPDATE& update,  CPM::UPDATE_TODO todo) co
 	return true;
 }
 
-double SuperCT::delta(const  CPM::UPDATE& update,  CPM::UPDATE_TODO todo) const {
-	double d = sub_celltype->delta(update, todo);
+double SuperCT::delta(const  CPM::Update& update) const {
+	double d = sub_celltype->delta(update);
 	
-	if (todo == CPM::ADD_AND_REMOVE && update.add_state.super_cell_id == update.remove_state.super_cell_id) {
+	if (update.opAdd() && update.opRemove() && update.focusStateAfter().super_cell_id == update.focusStateBefore().super_cell_id) {
 		for (uint i=0; i<energies.size(); i++) {
-			d+= energies[i]->delta (update.add_state.super_cell_id,update, CPM::ADD_AND_REMOVE);
+			d+= energies[i]->delta (update.focusStateAfter().super_cell_id, update);
 		}
 	} 
 	else {
-		if (todo & CPM::ADD) {
+		if (update.opAdd()) {
+			auto update_add = update.selectOp(CPM::Update::ADD);
 			for (uint i=0; i<energies.size(); i++) {
-				d+= energies[i]->delta (update.add_state.super_cell_id,update, CPM::ADD);
+				d+= energies[i]->delta (update_add.focusStateAfter().super_cell_id, update_add);
 			}
 		}
-		if (todo & CPM::REMOVE) {
+		if (update.opRemove()) {
+			auto update_remove = update.selectOp(CPM::Update::REMOVE);
 			for (uint i=0; i<energies.size(); i++) {
-				d+= energies[i]->delta (update.remove_state.super_cell_id,update, CPM::REMOVE);
+				d+= energies[i]->delta (update_remove.focusStateBefore().super_cell_id, update_remove);
 			}
 		}
 	}
 	return d;
 }
 
-void SuperCT::set_update(const  CPM::UPDATE& update,  CPM::UPDATE_TODO todo) {
+void SuperCT::set_update(const  CPM::Update& update) {
 	
-	sub_celltype->set_update(update,todo);
-	if (todo == CPM::ADD_AND_REMOVE && update.add_state.super_cell_id == update.remove_state.super_cell_id) {
-		storage.cell(update.add_state.super_cell_id) . setUpdate(update, CPM::ADD_AND_REMOVE);
+	sub_celltype->set_update(update);
+	
+	if (update.opAdd() && update.opRemove() && update.focusStateAfter().super_cell_id == update.focusStateBefore().super_cell_id) {
+		storage.cell(update.focusStateAfter().super_cell_id) . setUpdate(update);
 	} else {
-		if (todo & CPM::ADD)
-			storage.cell(update.add_state.super_cell_id) . setUpdate(update, CPM::ADD);
-		if (todo & CPM::REMOVE)
-			storage.cell(update.remove_state.super_cell_id) . setUpdate(update, CPM::REMOVE);
+		if (update.opAdd())
+			storage.cell(update.focusStateAfter().super_cell_id) . setUpdate(update.selectOp(CPM::Update::ADD));
+		if (update.opRemove())
+			storage.cell(update.focusStateBefore().super_cell_id) . setUpdate(update.selectOp(CPM::Update::REMOVE));
 	}
-	
 }
 
-void SuperCT::apply_update(const CPM::UPDATE& update,  CPM::UPDATE_TODO todo) {
+void SuperCT::apply_update(const CPM::Update& update) {
 	
-	sub_celltype->apply_update(update,todo);
-	if (todo == CPM::ADD_AND_REMOVE && update.add_state.super_cell_id == update.remove_state.super_cell_id) {
-		storage.cell(update.add_state.super_cell_id) . applyUpdate(update, CPM::ADD_AND_REMOVE);
+	sub_celltype->apply_update(update);
+	
+	if (update.opAdd() && update.opRemove() && update.focusStateAfter().super_cell_id == update.focusStateBefore().super_cell_id) {
+		storage.cell(update.focusStateAfter().super_cell_id) . applyUpdate(update);
 		for (uint i=0; i<update_listener.size(); i++) {
-			update_listener[i]->update_notify(update.add_state.super_cell_id,update, CPM::ADD_AND_REMOVE);
+			update_listener[i]->update_notify(update.focusStateAfter().super_cell_id,update);
 		}
 	} 
 	else {
-		if (todo & CPM::ADD) {
-			storage.cell(update.add_state.super_cell_id) . applyUpdate(update, CPM::ADD);
+		if (update.opAdd()) {
+			auto update_add = update.selectOp(CPM::Update::ADD);
+			storage.cell(update_add.focusStateAfter().super_cell_id) . applyUpdate(update_add);
 			for (uint i=0; i<update_listener.size(); i++) {
-				update_listener[i]->update_notify(update.add_state.super_cell_id,update, CPM::ADD);
+				update_listener[i]->update_notify(update_add.focusStateAfter().super_cell_id, update_add);
 			}
 		}
-		if (todo & CPM::REMOVE) {
-			storage.cell(update.remove_state.super_cell_id) . applyUpdate(update, CPM::REMOVE);
+		if (update.opRemove()) {
+			auto update_remove = update.selectOp(CPM::Update::REMOVE);
+			storage.cell(update_remove.focusStateBefore().super_cell_id) . applyUpdate(update_remove);
 			for (uint i=0; i<update_listener.size(); i++) {
-				update_listener[i]->update_notify(update.remove_state.super_cell_id,update, CPM::REMOVE);
+				update_listener[i]->update_notify(update_remove.focusStateBefore().super_cell_id, update_remove);
 			}
 		}
 	}

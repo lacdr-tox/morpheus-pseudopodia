@@ -28,7 +28,7 @@ void DirectedMotion::init(const Scope* scope){
 	}
 }
 
-double DirectedMotion::delta(const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo ) const
+double DirectedMotion::delta(const SymbolFocus& cell_focus, const CPM::Update& update) const
 {
 	const Cell& cell = cell_focus.cell();
 	VDOUBLE update_direction = cell.getUpdatedCenter() - cell.getCenter();
@@ -36,8 +36,8 @@ double DirectedMotion::delta(const SymbolFocus& cell_focus, const CPM::UPDATE& u
 	double cell_volume = cell.nNodes();
 	
 	double s = 0.0;
-	if ( ((todo & CPM::ADD) && protrusion()) || ((todo & CPM::REMOVE) && retraction()) )
-		s = strength( update.focus );
+	if ( (update.opAdd() && protrusion()) || ( update.opRemove() && retraction()) )
+		s = strength( update.focus() );
 	
 	double dE = -s * cell_volume * ( update_direction * preferred_direction );
 

@@ -526,6 +526,7 @@ AbstractAttribute* nodeController::getAttributeByPath(QStringList path) {
 			return a;
 		}
 	}
+	return nullptr;
 // 	else {
 // 		
 // 		QString child_name = path.takeFirst();
@@ -792,7 +793,7 @@ bool nodeController::setText(QString txt)
 			model_descr->title = txt; 
 		if (b && this->name == "Details")
 			model_descr->details = txt; 
-		
+		return true;
 	}
     else
         return false;
@@ -1000,6 +1001,7 @@ bool nodeController::insertChild(nodeController* source, int dest_pos)
 		xmlDataNode.insertAfter(child->xmlNode, childs[dest_pos-1]->xmlNode);
 	}
 	childs.insert(dest_pos, child);
+	return true;
 }
 
 

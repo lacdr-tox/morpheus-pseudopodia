@@ -26,7 +26,7 @@ Chemotaxis::Chemotaxis(): CPM_Energy() {
 }
 
 
-double Chemotaxis::delta(const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const
+double Chemotaxis::delta(const SymbolFocus& cell_focus, const CPM::Update& update) const
 {
 
 	// with contact inhibition, only protrusions and retraction to/from medium have nonzero energy change
@@ -34,8 +34,8 @@ double Chemotaxis::delta(const SymbolFocus& cell_focus, const CPM::UPDATE& updat
 // TODO
 // 		CellType * ct =CPM::getCellTypes()[update.add_celltype].isMedium();
 // 		ct->isMedium();
-		if (update.focus.celltype() != CPM::getEmptyCelltypeID() 
-			&& update.source.celltype() != CPM::getEmptyCelltypeID() ){ // if not medium
+		if (update.focus().celltype() != CPM::getEmptyCelltypeID() 
+			&& update.source().celltype() != CPM::getEmptyCelltypeID() ){ // if not medium
 			return 0.0;
 		}
 	}
@@ -43,20 +43,21 @@ double Chemotaxis::delta(const SymbolFocus& cell_focus, const CPM::UPDATE& updat
 	// get chemotactic strength of cell at position
 	// note that we need distinguish the cases of protrusion and retraction
 	double c_strength = 0.;
-	if( todo & CPM::ADD ) 
-		c_strength = strength( update.source );
-	else
-		c_strength = strength( update.focus  );
-	if( c_strength == 0.0  ) 
+	if (update.opAdd()) 
+		c_strength = strength( update.source() );
+	else if (update.opRemove())
+		c_strength = strength( update.focus()  );
+	
+	if ( c_strength == 0.0  ) 
 		return 0.0;
 
-	double conc_focus	= field( update.focus  );	// concentration at site being copied into
-	double conc_source	= field( update.source );	// concentration at site of which state is being copied from
+	double conc_focus	= field( update.focus()  );	// concentration at site being copied into
+	double conc_source	= field( update.source() );	// concentration at site of which state is being copied from
 
 //	cout << "c_strength: " <<  c_strength << ", conc_focus: " << conc_focus << ", conc_source: " << conc_source << endl;
 
 	double dE = 0.;
-	if( saturation.isDefined() ){
+	if ( saturation.isDefined() ){
 		double c_saturation = saturation( cell_focus );
 		dE = c_strength * ( (conc_focus/(1.0 + c_saturation * conc_focus)) - (conc_source/(1.0 + c_saturation * conc_source)));
 	}

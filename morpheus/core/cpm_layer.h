@@ -15,7 +15,7 @@
 #include "lattice.h"
 #include "lattice_data_layer.h"
 
-class LatticeStencil;
+class Cell; class CellType;
 
 namespace CPM {
 
@@ -47,29 +47,6 @@ namespace CPM {
 		uint sub_cell_id;
 	};
 	
-// 	/** @brief Represents a cursor for the retrieving spatial/temporal information in a simulation
-// 	 *
-// 	 * Resolving symbols during a simulation often demands to determine the context -- a cell or a position or ...
-// 	 * Finally, it might be more efficient to just use a single object to fill that gap, which might slenderize the interface for symbol retrieval.
-// 	*/
-// 	class focus {
-// 	public:
-// 		focus();
-// 		void set(VINT pos);
-// 		void set(CPM::CELL_ID cellid);
-// 		
-// 		CPM::CELL_ID cellid() const;
-// 		uint celltype() const;
-// 		const VINT& pos() const;
-// 		bool writable();
-// 	private:
-// 		mutable bool have_pos, have_celltype, have_cellid;
-// 		mutable VINT cached_pos; uint cached_celltype; CPM::CELL_ID cached_cellid;
-// 		const VINT& getPos();
-// 		const VINT& getCellID();
-// 		const VINT& getCellType();
-// 	};
-// 	
 	/** 
 	 * Comparison operator that returns true in the case that both states denote the same cpm cell, false otherwise. 
 	 * The given position does not matter.
@@ -141,6 +118,7 @@ class LatticeStencil {
 		vector<int> stencil_offsets;
 		vector<CPM::CELL_ID> stencil_states;
 };
+
 
 #endif //LATTICE_STENCIL
 

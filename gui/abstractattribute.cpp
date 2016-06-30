@@ -1,6 +1,6 @@
 #include "abstractattribute.h"
 
-ModelException::ModelException(Type t, QString m) :type(t), message(m) {};
+ModelException::ModelException(Type t, QString m) :message(m), type(t)  {};
 
 const char* ModelException::what() const throw() { return message.toStdString().c_str(); }
 

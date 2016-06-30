@@ -131,34 +131,9 @@ void init() {
  */
 
 
-namespace CPM {
-		/** @brief Stores details of an update in the cellular potts model.
-	 */
-	struct UPDATE {
-		class SymbolFocus focus, source;
-		STATE add_state;
-		STATE remove_state;
-		unique_ptr<LatticeStencil> boundary; 
-		unique_ptr<StatisticalLatticeStencil> interaction;
-		uint source_top_ct;
-		uint focus_top_ct;
-	}; 
-	
-	/** @brief Enumerator type used to traverse update tasks through the cell population interfaces.
-	 *
-	 *  Use (todo & CPM::ADD) or (todo & CPM::REMOVE) to find out if a method shall take care of add or remove operation respectively. 
-	 *  Use (todo == CPM::ADD_AND_REVERSE) to find out if a method are responsible for both.
-	 */
-	enum UPDATE_TODO { NEIGHBORHOOD_UPDATE=0, ADD=1, REMOVE=2, ADD_AND_REMOVE=3 };
-	
-	inline bool operator == (const CPM::UPDATE &a,const CPM::UPDATE &b ) {
-		return (a.add_state == b.add_state && a.remove_state == b.remove_state && a.source.pos() == b.source.pos() &&  a.focus.pos() == b.focus.pos());
-	}
-	
-	inline ostream& operator <<(ostream& os, const CPM::UPDATE& n) { os << n.add_state << " | " << n.remove_state << " | " << n.focus.pos() << " | " << n.source.pos() << endl; return os;}
 
-	
-}
+
+
 
 /// Information about a SymbolDependency
 struct SymbolDependency {string name; const Scope* scope;};
@@ -295,7 +270,7 @@ class CPM_Energy : virtual public Plugin {
 		 * 
 		 * Updated cell properties are availible in the Cell  via accessors prefaced with updated_ .
 		 */
-		virtual double delta(const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const =0;
+		virtual double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const =0;
 		virtual double hamiltonian(CPM::CELL_ID cell_id) const =0;            // Berechnung gesamte Energie
 };
 
@@ -323,7 +298,7 @@ class CPM_Check_Update : virtual public Plugin
 		 *  Returning false prevents the update. 
 		 *  Post-Updated cell properties are availible in the Cell instance via accessors prefaced with updated_ .
 		 */
-		virtual bool update_check(CPM::CELL_ID  cell_id, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) =0;
+		virtual bool update_check(CPM::CELL_ID  cell_id, const CPM::Update& update) =0;
 };
 
 /** \defgroup CPM_UpdateListenerPlugins CPM Update Listener Plugins
@@ -339,8 +314,8 @@ class CPM_Check_Update : virtual public Plugin
 class CPM_Update_Listener : virtual public Plugin
 {
 	public:
-		virtual void set_update_notify(CPM::CELL_ID cell_id, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) {};
-		virtual void update_notify(CPM::CELL_ID cell_id, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) =0;
+		virtual void set_update_notify(CPM::CELL_ID cell_id, const CPM::Update& update) {};
+		virtual void update_notify(CPM::CELL_ID cell_id, const CPM::Update& update) =0;
 };
 
 

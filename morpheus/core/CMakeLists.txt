@@ -5,6 +5,7 @@ SET(tools_src
 )
 
 SET(morpheus_src
+	cell_update.cpp
 	scales.cpp
 	lattice.cpp
 	domain.cpp
@@ -15,6 +16,7 @@ SET(morpheus_src
 	interaction_energy.cpp
 	simulation.cpp
 	cpm_layer.cpp
+    cpm_shape.cpp
 	edge_tracker.cpp
 	cpm.cpp
 	pde_layer.cpp

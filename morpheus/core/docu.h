@@ -467,17 +467,20 @@ Specifies parameters for a cellular Potts model (CPM) which provides a MonteCarl
 
 \f$ P = \f$
 
-\b Interaction specifies adhesion energies \f$ J_{\sigma, \sigma} \f$for different intercellular \ref Contact. The interaction energy is normalized by the size of the interaction neighborhood.
-- \b Neighborhood specifies the neighborhood for the interaction energy, which defaults to the \ref Lattice defined.
+\b ShapeBoundary specifies the Neighborhood used to estimate the boundary length of CPM Shapes, in particular cells. This estimate is used for computing interaction energies, cell perimeters and interface lengths.
+  - \b scaling scaling of number of neighbors to length: \b norm estimate the length in unit of node length (see Magno, Grieneisen and Marée, BMC Biophysics, 2015), \b size neigborhood fraction occupied by other entities, \b none number of neighbors occupied by other entities.
+
+\b Interaction specifies interaction energies \f$ J_{\sigma, \sigma} \f$for different intercellular \ref Contact. The interaction energy given per length unit as defined in ShapeBoundary.
 
 
-\b MCSDuration scales the Monte Carlo Step (MCS) to the simulation time. One MCS is defined as a number of update attempts equal to the number of lattice sites.
-
-\b MetropolisKinetics:
-- \b stepper: algorithm to sample lattice sites: \b edgelist chooses form list all lattice sites that can potentially change cofiguration; \b random sampling chooses lattice site with uniform random distribution over all lattice sites.
-- \b temperature: specifies Boltzmann probability to accept updates that increase energy.
-- \b yield: offset for Boltzmann probability distribution representing resistance to membrane deformations (see Kafer, Hogeweg and Maree, PLoS Comp Biol, 2006).
-- \b Neighborhood specifies the neighborhood size used for choosing updates in the modified Metropolis algorithm. Defaults to the \ref Lattice defined.
+\b MonteCarloSampler
+  - \b stepper: \b edgelist chooses updates from a tracked list of lattice sites that can potentially change cofiguration; \b random sampling chooses lattice site with uniform random distribution over all lattice sites.
+  - \b MetropolisKinetics:
+    - \b temperature: specifies Boltzmann probability to accept updates that increase energy.
+    - \b yield: offset for Boltzmann probability distribution representing resistance to membrane deformations (see Kafer, Hogeweg and Maree, PLoS Comp Biol, 2006).
+  - \b Neighborhood specifies the neighborhood size used for choosing updates in the modified Metropolis algorithm. Defaults to the \ref Lattice defined.
+  - \b MCSDuration scales the Monte Carlo Step (MCS) to the simulation time. One MCS is defined as a number of update attempts equal to the number of lattice sites.
+    
 \section References
 
 Graner, Glazier, 1992

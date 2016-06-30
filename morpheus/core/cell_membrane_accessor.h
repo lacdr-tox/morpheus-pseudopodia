@@ -47,8 +47,8 @@ class CellMembraneAccessor {
 	private:
 
 		VINT map_global( CPM::CELL_ID cell_id, VINT pos ) const;
-		mutable double shit_value;
 		const CellType* ct;
+		mutable double shit_value;
 		uint pid;
 };
 

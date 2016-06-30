@@ -34,7 +34,8 @@ class InteractionEnergy : public Plugin {
 		int interaction_details;
 		
 		uint n_celltypes;
-		vector<VINT> ia_neighborhood;
+// 		Neighborhood ia_neighborhood;
+		double boundaryLenghScaling;
 		vector<int> ia_neighborhood_offsets;
 		vector<int> ia_neighborhood_row_offsets;
 		XMLNode ia_XMLNode;
@@ -62,9 +63,9 @@ class InteractionEnergy : public Plugin {
 
 		void init(const Scope* scope) override;
 		
-		const vector<VINT>& getNeighborhood() { return ia_neighborhood; };
+		const Neighborhood& getNeighborhood() { return CPM::getBoundaryNeighborhood(); };
 
-		double delta(const CPM::UPDATE& update) const;
+		double delta(const CPM::Update& update) const;
 		double hamiltonian(const Cell* gc) const;
 // 		bool addMatrix(double ** &intMatrix);
 };

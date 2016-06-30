@@ -61,12 +61,14 @@ namespace CPM {
 	STATE InitialState,EmptyState; // get overridden during load process;
 	uint EmptyCellType;
 	Time_Scale time_per_mcs("MCSDuration",1);
-	UPDATE global_update;
+	UpdateData global_update_data;
 	
 	shared_ptr<LAYER> layer;
 	shared_ptr<CPMSampler> cpm_sampler;
-	vector<VINT> boundary_neighborhood;
-	vector<VINT> interaction_neighborhood;
+	Neighborhood boundary_neighborhood;
+	Neighborhood update_neighborhood;
+	Neighborhood surface_neighborhood;
+// // 	vector<VINT> interaction_neighborhood;
 	shared_ptr<EdgeTrackerBase> edgeTracker;
 	
 	vector< shared_ptr<CellType> > celltypes;
