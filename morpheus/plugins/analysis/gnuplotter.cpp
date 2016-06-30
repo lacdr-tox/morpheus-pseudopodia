@@ -885,6 +885,81 @@ Gnuplotter::Gnuplotter(): AnalysisPlugin(), gnuplot(NULL) {
 	file_numbering.setConversionMap(file_numbering_map);
 	registerPluginParameter(file_numbering);
 	
+	terminal.setXMLPath("Terminal/name");
+	
+	map<string, Terminal> term_map;
+	term_map["screen"] = Terminal::SCREEN;
+	term_map["wxt"] = Terminal::SCREEN;
+	term_map["aqua"] = Terminal::SCREEN;
+	term_map["qt"] = Terminal::SCREEN;
+	term_map["x11"] = Terminal::SCREEN;
+	term_map["png"] = Terminal::PNG;
+	term_map["jpg"] = Terminal::JPG;
+	term_map["svg"] = Terminal::SVG;
+	term_map["pdf"] = Terminal::PDF;
+	term_map["eps"] = Terminal::EPS;
+	term_map["postscript"] = Terminal::EPS;
+	terminal.setConversionMap(term_map);
+	terminal.setDefault("png");
+	registerPluginParameter(terminal);
+	
+	terminal_size.setXMLPath("Terminal/size");
+	registerPluginParameter(terminal_size);
+	
+	pointsize.setXMLPath("Terminal/pointsize");
+	pointsize.setDefault("0.5");
+	registerPluginParameter(pointsize);
+	
+	cell_opacity.setXMLPath("Terminal/opacity");
+	registerPluginParameter(cell_opacity);
+	
+	
+	
+	TerminalSpec term;
+	term.name = "wxt"; // Will get overridden during init
+	term.visual = true;
+	term.vectorized = false;
+	term.size = VINT(1200,600,0);
+	term.font_size = 60;
+	term.line_width = 2;
+	term.font = "Verdana";
+	term.extension = "";
+	
+	terminal_defaults[Terminal::SCREEN]  = term;
+	
+	term.visual = false;
+	term.extension = "png";
+	term.name = "pngcairo";
+	terminal_defaults[Terminal::PNG]  = term;
+	
+	term.extension = "jpg";
+	term.name = "jpeg";
+	terminal_defaults[Terminal::JPG] = term;
+	
+	term.extension = "gif";
+	term.name = "gif";
+	terminal_defaults[Terminal::GIF]  = term;
+
+	term.vectorized = true;
+	term.name = "svg";
+	term.extension = "svg";
+	term.font_size = 30;
+	terminal_defaults[Terminal::SVG]  = term;
+	
+	term.extension = "pdf";
+	term.name = "pdfcairo";
+	term.size = VINT(20,10,0);
+	term.font_size = 40;
+	term.line_width = 6;
+	terminal_defaults[Terminal::PDF]  = term;
+	
+	term.extension = "eps";
+	term.name = "epscairo";
+	term.font = "Helvetica";
+	term.font_size  = 40;
+	term.line_width = 1.5;
+	terminal_defaults[Terminal::EPS] = term;
+	
 };
 Gnuplotter::~Gnuplotter() { if (gnuplot) delete gnuplot; Gnuplotter::instances--;};
 
@@ -892,18 +967,6 @@ void Gnuplotter::loadFromXML(const XMLNode xNode)
 {
 	AnalysisPlugin::loadFromXML(xNode);
 
-	terminal="none";
-	pointsize=0.5;
-	persist=false;
-	cell_opacity = 1.0;
-	if( xNode.nChildNode("Terminal") ){
-		getXMLAttribute(xNode,"Terminal/name",terminal);
-		getXMLAttribute(xNode,"Terminal/pointsize",pointsize);
-		getXMLAttribute(xNode,"Terminal/persist",persist);
-		getXMLAttribute(xNode,"Terminal/opacity",cell_opacity);
-		getXMLAttribute(xNode,"Terminal/size",terminal_size);
-	}
-	
 	decorate = true;
 	getXMLAttribute(xNode,"decorate",decorate);
 
@@ -955,6 +1018,19 @@ void Gnuplotter::loadFromXML(const XMLNode xNode)
 
 void Gnuplotter::init(const Scope* scope) {
 	AnalysisPlugin::init(scope);
+	if (terminal() == Terminal::SCREEN && terminal.stringVal() == "screen") {
+		terminal_defaults[Terminal::SCREEN].name = Gnuplot::get_screen_terminal();
+	}
+	else {
+		auto gnu_terminals = Gnuplot::get_terminals();
+		if (gnu_terminals.find(terminal.stringVal()) != gnu_terminals.end() )
+			terminal_defaults[Terminal::SCREEN].name = terminal.stringVal();
+		else {
+			terminal_defaults[Terminal::SCREEN].name = Gnuplot::get_screen_terminal();
+			cout << "Gnuplotter: Requested terminal " << terminal.stringVal() <<
+			        " is not available. Switching to " << Gnuplot::get_screen_terminal() << endl;
+		}
+	}
 
 	try {
 		gnuplot = new Gnuplot();
@@ -1044,59 +1120,10 @@ void Gnuplotter::analyse(double time) {
 	// SETTING UP THE PLOT LAYOUT
 	plotLayout plot_layout = getPlotLayout(plots.size(),decorate);
 	
-	map<string,TerminalSpec> term_defaults;
-	TerminalSpec term;
-	term.visual = true;
-	term.vectorized = false;
-	term.size = VINT(1600,800,0);
-	term.font_size = 60;
-	term.line_width = 2;
-	term.font = "Verdana";
-	term.extension = "";
-	term_defaults[string("wxt")]  = term;
-	
-	term_defaults[string("aqua")] = term;
-	
-	term_defaults[string("qt")]   = term;
-	
-	term_defaults[string("x11")]  = term;
-	
-	term.visual = false;
-	term.extension = "png";
-	term_defaults[string("png")]  = term;
-	
-	term.extension = "jpg";
-	term_defaults[string("jpeg")] = term;
-	
-	term.extension = "gif";
-	term_defaults[string("gif")]  = term;
 
-	term.vectorized = true;
-	term.extension = "svg";
-	term.font_size = 30;
-	term_defaults[string("svg")]  = term;
-	
-	term.extension = "pdf";
-	term.size = VINT(20,10,0);
-	term.font_size = 40;
-	term.line_width = 6;
-	term_defaults[string("pdf")]  = term;
-	
-	term.extension = "eps";
-	term.font = "Helvetica";
-	term.font_size  = 40;
-	term.line_width = 1.5;
-	term_defaults[string("postscript")] = term;
-	
-
-	TerminalSpec terminal_spec;
-	if (term_defaults.find(terminal) == term_defaults.end()) {
-		terminal = "png";
-	}
-	terminal_spec = term_defaults[terminal];
-
-	if (terminal_size.abs() != 0) {
-		terminal_spec.size = terminal_size;
+	TerminalSpec terminal_spec = terminal_defaults[terminal()];
+	if ( terminal_size.isDefined() ) {
+		terminal_spec.size = terminal_size();
 	}
 	
 	double term_aspect_ratio = terminal_spec.size.y / terminal_spec.size.x;
@@ -1128,7 +1155,7 @@ void Gnuplotter::analyse(double time) {
 	command << "unset multiplot; reset; \n";
 
 	// assumes that the default terminal size has aspect ratio 2:1
-	double terminal_scaling =  max(terminal_spec.size.x/(term_defaults[terminal].size.x * plot_layout.cols) , terminal_spec.size.y/(term_defaults[terminal].size.y * 2 * plot_layout.rows));
+	double terminal_scaling =  max(terminal_spec.size.x/(terminal_defaults[terminal()].size.x * plot_layout.cols) , terminal_spec.size.y/(terminal_defaults[terminal()].size.y * 2 * plot_layout.rows));
 	if ( terminal_spec.vectorized) {
 		terminal_spec.font_size  *= terminal_scaling;
 		terminal_spec.line_width *= terminal_scaling;
@@ -1142,8 +1169,7 @@ void Gnuplotter::analyse(double time) {
 	
 	stringstream terminal_cmd;
 	terminal_cmd << setprecision(2) << setiosflags(ios::fixed);
-
-	terminal_cmd << "set term "<< terminal << (persist && terminal_spec.visual ? " persist ":" ") << " enhanced "
+	terminal_cmd << "set term "<< terminal_spec.name << (terminal_spec.visual ? " persist ":" ") << " enhanced "
 				 << "size " << terminal_spec.size.x << "," << terminal_spec.size.y << " "
 				 << "font \"" << terminal_spec.font << "," << terminal_spec.font_size << "\" ";
 				 
@@ -1153,8 +1179,8 @@ void Gnuplotter::analyse(double time) {
 	if ( ! terminal_spec.vectorized && ! terminal_spec.visual)
 		terminal_cmd << "truecolor ";
 
-	if (terminal == "postscript")
-		terminal_cmd << "color ";
+// 	if (terminal == Terminal::EPS)
+// 		terminal_cmd << "color ";
 	
 	terminal_cmd << ";\n";
 	
@@ -1345,8 +1371,8 @@ void Gnuplotter::analyse(double time) {
 			command << plots[i].cell_painter->getPaletteCmd() << endl;
 			command << "unset contour;\n";
 			
-			if (cell_opacity < 1.0)
-				command << "set style fill transparent solid " << cell_opacity << " noborder;\n";
+			if (cell_opacity.isDefined() && cell_opacity() < 1.0 && cell_opacity() >= 0)
+				command << "set style fill transparent solid " << cell_opacity() << " noborder;\n";
 			//command << "set cbrange ["<< plots[i].cell_painter->getMinVal() << ":"<< plots[i].cell_painter->getMaxVal() << "]" << endl;
 
 			if ( ! decorate)
@@ -1417,7 +1443,7 @@ void Gnuplotter::analyse(double time) {
 				else
 					command << " '" << outputDir << "/" << plots[i].cells_data_file << "' " ;
 				command << layout << " using (1+$1):(1+$2):3 ";
-				command << " w p pt 5 ps " << pointsize << " pal not";
+				command << " w p pt 5 ps " << pointsize() << " pal not";
 				if (pipe_data) 
 					command << ", '-' ";
 				else 

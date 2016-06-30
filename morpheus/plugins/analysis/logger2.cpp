@@ -908,19 +908,6 @@ LoggerPlotBase::LoggerPlotBase(Logger& logger, string xml_base_path)
 	terminal_name[Terminal::SVG] = "svg";
 	terminal_name[Terminal::EPS] = "epscairo";
 	terminal_name[Terminal::GIF] = "gif";
-	string morpheus_os("MORPHEUS_OS");
-	if ( morpheus_os == "WIN32" ) {
-		terminal_name[Terminal::SCREEN] = "wxt";
-	} 
-	else if (morpheus_os == "APPLE") {
-		terminal_name[Terminal::SCREEN] = "aqua";
-	}
-	else if (morpheus_os == "UNIX") {
-		terminal_name[Terminal::SCREEN] = "qt";
-	}
-	else 
-		terminal_name[Terminal::SCREEN] = "";
-	
 	
 	plotsize.setXMLPath(xml_base_path+"/Terminal/plot-size");
     logger.registerPluginParameter(plotsize);

@@ -57,6 +57,7 @@
 #include <fstream>              // for std::ifstream
 #include <sstream>              // for std::ostringstream
 #include <list>                 // for std::list
+#include <set>                 // for std::set
 #include <cstdio>               // for FILE, fputs(), fflush(), popen()
 #include <cstdlib>              // for getenv()
 #include "gnuplot_i.h"
@@ -151,7 +152,8 @@ DISPLAY") == NULL)
     return;
 }
 
-string Gnuplot::version()
+
+string Gnuplot::get_gnuplot_out(const string& cmd, vector<string> args ) 
 {
 	// if gnuplot not available
 	if (!Gnuplot::get_program_path())
@@ -159,41 +161,84 @@ string Gnuplot::version()
 		throw GnuplotException("Can't find gnuplot");
 	}
 
-
-    //
-    // open pipe
-    //
-	static int instance_counter=0;
-	stringstream gnuplot_exec;
-	gnuplot_exec << "\"" << Gnuplot::m_sGNUPlotPath << "\" --version";
-    // std::string tmp = std::string("\"") + Gnuplot::m_sGNUPlotPath + "/" + Gnuplot::m_sGNUPlotFileName + "\" 2> gnuplot_error";
+	//
+	// open pipe
+	//
 	
-    FILE* gnu_stdout = NULL;
-    // FILE *popen(const char *command, const char *mode);
-    // The popen() function shall execute the command specified by the string command,
-    // create a pipe between the calling program and the executed command, and
-    // return a pointer to a stream that can be used to either read from or write to the pipe.
+	stringstream gnuplot_exec;
+	gnuplot_exec << "\"" << Gnuplot::m_sGNUPlotPath << "\"";
+	if (!cmd.empty())
+		gnuplot_exec << " -e \"set print '-'; "<< cmd << "\" ";  // set print to stdout, not stderr
+	for (const auto& arg : args) {
+		gnuplot_exec << " " << arg;
+	}
+	// std::string tmp = std::string("\"") + Gnuplot::m_sGNUPlotPath + "/" + Gnuplot::m_sGNUPlotFileName + "\" 2> gnuplot_error";
+	
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__)
-    gnu_stdout = _popen(gnuplot_exec.str().c_str(),"r");
+	std::shared_ptr<FILE> gnu_pipe(_popen(gnuplot_exec.str().c_str(), "r"), _pclose);
 #elif defined(unix) || defined(__unix) || defined(__unix__) || defined(__APPLE__)
-    gnu_stdout = popen(gnuplot_exec.str().c_str(),"r");
+	std::shared_ptr<FILE> gnu_pipe(popen(gnuplot_exec.str().c_str(), "r"), pclose);
 #endif
+	if (!gnu_pipe) {
+		throw GnuplotException("Couldn't open connection to gnuplot");
+	}
+	
+	char buffer[128];
+	std::string result = "";
+	while (!feof(gnu_pipe.get())) {
+		if (fgets(buffer, 128, gnu_pipe.get()) != NULL)
+				result += buffer;
+	}
+	
+	return result;
+}
 
-    // popen() shall return a pointer to an open stream that can be used to read or write to the pipe.
-    // Otherwise, it shall return a null pointer and may set errno to indicate the error.
-    if (!gnu_stdout)
-    {
-        throw GnuplotException("Couldn't open connection to gnuplot");
-    }
+std::set<std::string> Gnuplot::get_terminals() 
+{
+	std::string result = get_gnuplot_out("print GPVAL_TERMINALS");
+	
+	//
+	// tokenize response
+	//
+	
+	std::string delimiters = " \t\n\r";
+	std::set<std::string> terminals;
+	std::string::size_type fPos=0,lPos=0;
+	do {
+		// Skip delimiters at beginning.
+		fPos = result.find_first_not_of(delimiters, lPos);
+		// Don't add empty strings
+		if (fPos == std::string::npos) break;
+		// Iterate until first delimiter
+		lPos = result.find_first_of(delimiters, fPos);
+		// eat all the string left, if no further delimiter was found
+		if (lPos == std::string::npos) lPos = result.length();
+		// Add the token to the vector.
+		terminals.insert(result.substr(fPos, lPos - fPos));
+	} while (lPos != result.length());
 
-	string r;
-	char buffer[1024];
-	char *line_p = fgets(buffer, sizeof(buffer), gnu_stdout);
-	if ( line_p  && strlen(line_p)!=0)
-		r.append(line_p);
-	pclose(gnu_stdout);
-	gnu_stdout = NULL;
-	return r;
+	return terminals;
+}
+
+std::string Gnuplot::get_screen_terminal()
+{
+	std::vector<string> screen_terminals = {"qt","wxt","windows","aqua","x11"};
+	auto terminals = get_terminals();
+	for (const auto& term : screen_terminals) {
+		if (terminals.find(term) != terminals.end()) {
+// 			cout << "Found gnuplot screen terminal " << term << endl;
+			return term;
+		}
+	}
+	cout << "Gnuplot Warning: Did not find a screen terminal" << endl;
+	return "";
+}
+
+
+
+std::string Gnuplot::version()
+{
+	return get_gnuplot_out("",{"--version"});
 }
 
 
@@ -387,7 +432,7 @@ Gnuplot& Gnuplot::set_smooth(const std::string &stylestr)
 Gnuplot& Gnuplot::showonscreen()
 {
     cmd("set output");
-    cmd("set terminal " + Gnuplot::terminal_std);
+    cmd("set terminal " + Gnuplot::get_screen_terminal());
 
     return *this;
 }
@@ -937,8 +982,6 @@ Gnuplot& Gnuplot::plotfile_xyz(const std::string &filename,
 
     return *this;
 }
-
-
 
 //----------------------------------------------------------------------------------
 //

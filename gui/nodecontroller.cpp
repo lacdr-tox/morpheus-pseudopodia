@@ -87,7 +87,7 @@ QObject(parent)
 		auto i = attributes.begin();
 		while (i != attributes.end()) {
 			// register gnuplot terminal attributes
-			if (i.value()->getType()->name == "cpmGnuplotTerminalEnum") {
+			if (i.value()->getType()->name == "cpmGnuplotTerminalEnum" || i.value()->getType()->name == "cpmLoggerTerminalEnum") {
 				model_descr->terminal_names.append(i.value());
 // 				qDebug() << "found terminal " << i.value()->get();
 			}

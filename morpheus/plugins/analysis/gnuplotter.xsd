@@ -291,15 +291,17 @@ Note: This option is only applicable when plotting on-screen (using x11, wxt, or
 	
 	<xs:simpleType name="cpmGnuplotTerminalEnum">
 		<xs:restriction base="cpmString">
-			<xs:enumeration value="x11"/>
-			<xs:enumeration value="wxt"/>
-			<xs:enumeration value="aqua"/>
+			<xs:enumeration value="screen"/>
 			<xs:enumeration value="png"/>
 			<xs:enumeration value="jpeg"/>
 			<xs:enumeration value="gif"/>
 			<xs:enumeration value="svg"/>
+			<xs:enumeration value="eps"/>
 			<xs:enumeration value="postscript"/>
 			<xs:enumeration value="pdf"/>
+			<xs:enumeration value="x11"/>
+			<xs:enumeration value="wxt"/>
+			<xs:enumeration value="aqua"/>
 		</xs:restriction>
 	</xs:simpleType>
 	

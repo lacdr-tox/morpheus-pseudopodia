@@ -327,7 +327,14 @@ class Gnuplotter : public AnalysisPlugin
 			double layout_aspect_ratio; /// Height to width ratio of the layout
 			vector<plotPos> plots;
 		};
+		enum class Terminal{ PNG, PDF, JPG, GIF, SVG, EPS, SCREEN };
+		PluginParameter2<Terminal,XMLNamedValueReader,DefaultValPolicy> terminal;
+		PluginParameter2<VINT,XMLValueReader,OptionalPolicy> terminal_size;
+		PluginParameter2<double,XMLValueReader,OptionalPolicy> cell_opacity;
+		PluginParameter2<double,XMLValueReader,DefaultValPolicy> pointsize;
+		
 		struct TerminalSpec {
+			string name;
 			VDOUBLE size;
 			bool vectorized;
 			bool visual;
@@ -336,20 +343,18 @@ class Gnuplotter : public AnalysisPlugin
 			string font;
 			string extension;
 		};
+		map<Terminal, TerminalSpec> terminal_defaults;
+		
+		
 		static int instances;
 		int instance_id;
 		Gnuplot* gnuplot;
-		string terminal;
-		VINT terminal_size;
-		bool persist;
-		double pointsize;
 		enum class FileNumbering { SEQUENTIAL, TIME };
 		PluginParameter2<FileNumbering, XMLNamedValueReader, DefaultValPolicy > file_numbering;
 		bool log_plotfiles;
 		bool decorate;
 		bool interpolation_pm3d;
 		bool data_cropping;
-		double cell_opacity;
 
 		vector<PlotSpec> plots;				// vector storing all plots
 		plotLayout getPlotLayout( uint plot_count, bool border = true );

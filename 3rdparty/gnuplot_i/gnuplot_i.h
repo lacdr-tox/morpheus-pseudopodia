@@ -35,6 +35,7 @@
 #include <fstream>    // for std::ifstream
 #include <stdexcept>  // for std::runtime_error class in GnuplotException
 #include <cstdio>     // for FILE (identifies a stream and contains a pointer to its buffer, its position indicator and all its state indicators)
+#include <memory>
 
 using namespace std;   
 
@@ -110,6 +111,17 @@ class Gnuplot
 	// ---------------------------------------------------------------------------------
     static bool    get_program_path(); 
 	
+	//----------------------------------------------------------------------------------
+	///\brief execute single gnuplot command?
+	///
+	/// \param cmd gnuplot command to execute
+	/// \param args additional command line argument
+	///
+	/// \return <-- gnuplot stdout
+	// ---------------------------------------------------------------------------------
+	
+	static string get_gnuplot_out(const string& cmd, vector<string> args = {} ); 
+	
 	// ---------------------------------------------------------------------------------
 	///\brief checks if file exists
 	///
@@ -142,8 +154,27 @@ class Gnuplot
 		/// \return ---
 		// ----------------------------------------------------------------------------
         static void set_terminal_std(const std::string &type);
+		
+		// ----------------------------------------------------------------------------
+		/// \brief read all available terminals from GnuPlot
+		///
+		/// \return set of available terminals
+		// ----------------------------------------------------------------------------
+		static std::set<std::string> get_terminals();
+		
+		// ----------------------------------------------------------------------------
+		/// \brief get a suitable available screen terminal
+		///
+		/// \return terminal name, empty if none is found
+		// ----------------------------------------------------------------------------
+		static std::string get_screen_terminal();
 
-		static string version();
+		// ----------------------------------------------------------------------------
+		/// \brief read GnuPlot version
+		///
+		/// \return version number
+		// ----------------------------------------------------------------------------
+		static std::string version();
 
 		//-----------------------------------------------------------------------------
     	// constructors

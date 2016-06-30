@@ -235,14 +235,12 @@ typedef CClassFactory<string, Plugin> PluginFactory;
  */
 #define DECLARE_PLUGIN(xml_tag_name) static bool factory_registration; \
 static Plugin* createInstance(); \
-string XMLName() const { return string(xml_tag_name); };
-
+string XMLName() const { return string(xml_tag_name); }; \
+static string FactoryName() { return string(xml_tag_name); };
 
 template <class PluginClass>
 bool registerPlugin() {
-	PluginClass* t = new PluginClass();
-	bool ret=PluginFactory::RegisterCreatorFunction(t->XMLName(), PluginClass::createInstance );
-	delete t;
+	bool ret=PluginFactory::RegisterCreatorFunction(PluginClass::FactoryName(), PluginClass::createInstance );
 	return ret;
 }
 

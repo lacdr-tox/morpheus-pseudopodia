@@ -291,47 +291,21 @@ int JobQueue::addProcess(SharedMorphModel model)
 
         for (int i=0; i<terminal_names.size(); i++) {
             stored_terminals.push_back(terminal_names[i]->get());
-
-#ifdef  Q_WS_X11
-            terminal_names[i]->set("wxt");
-#endif
-#ifdef  Q_WS_MAC
-            terminal_names[i]->set("aqua");
-#endif
-#ifdef  Q_WS_WIN
-            terminal_names[i]->set("wxt");
-#endif
-
+            terminal_names[i]->set("screen");
         }
     }
     else if (queue == remote) {
+		QVector<QString> screen_term = {"screen","qt","wxt","x11","windows","aqua"};
         // set all gnuplotter terminals to png
         QList<AbstractAttribute*> terminal_names = model->rootNodeContr->getModelDescr().terminal_names;
         for (int i=0; i<terminal_names.size(); i++) {
             stored_terminals.push_back(terminal_names[i]->get());
-            if (stored_terminals.back() == "wxt" || stored_terminals.back() == "aqua" ||stored_terminals.back() == "x11" ) {
+            if (screen_term.contains(stored_terminals.back())) {
                  terminal_names[i]->set("png");
             }
         }
     }
-    else if( queue == interactive || queue == local ) {
-        QList<AbstractAttribute*> terminal_names = model->rootNodeContr->getModelDescr().terminal_names;
-        for (int i=0; i<terminal_names.size(); i++) {
-            stored_terminals.push_back(terminal_names[i]->get());
-#ifdef Q_WS_X11
-            if (stored_terminals.back() == "x11")
-				terminal_names[i]->set("wxt");
-#endif
-#ifdef  Q_WS_MAC
-            if (stored_terminals.back() == "wxt")
-                terminal_names[i]->set("aqua");
-#endif
-#ifdef Q_WS_WIN
-            if (stored_terminals.back() == "aqua" || stored_terminals.back() ==  "x11" )
-                terminal_names[i]->set("wxt");
-#endif
-        }
-    }
+
     if (queue == local || queue == interactive)
     {
         process = QSharedPointer<localProcess>(new localProcess(model, freeID));
