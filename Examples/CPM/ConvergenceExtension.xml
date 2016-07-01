@@ -1,11 +1,9 @@
-<MorpheusModel version="2">
+<MorpheusModel version="1">
     <Description>
         <Title>Example-Convergence-Extension</Title>
         <Details></Details>
     </Description>
-    <Global>
-        <Constant symbol="c" value="0.0"/>
-    </Global>
+    <Global/>
     <Space>
         <Lattice class="square">
             <Size symbol="size" value="500,500,0"/>
@@ -14,7 +12,7 @@
             </Neighborhood>
         </Lattice>
         <MembraneLattice>
-            <Resolution symbol="memsize" value="40"/>
+            <Resolution symbol="memsize" value="20"/>
             <SpaceSymbol symbol="m"/>
         </MembraneLattice>
         <SpaceSymbol symbol="l"/>
@@ -43,7 +41,11 @@
             <Property symbol="pos" value="0.0"/>
             <PersistentMotion decay-time="10" strength="1"/>
         </CellType>
-        <CellType class="medium" name="medium"/>
+        <CellType class="medium" name="medium">
+            <MembraneProperty symbol="c" value="">
+                <Diffusion rate="0.0"/>
+            </MembraneProperty>
+        </CellType>
     </CellTypes>
     <CPM>
         <Interaction default="0.0">
@@ -83,13 +85,13 @@
         <BoundaryValue boundary="-y" value="medium"/>
     </CellPopulations>
     <Analysis>
-        <Gnuplotter time-step="250">
-            <Terminal pointsize="0.75" name="png"/>
+        <Gnuplotter time-step="1000" decorate="false">
+            <Terminal pointsize="0.60" name="png"/>
             <Plot>
                 <Cells value="c"/>
             </Plot>
         </Gnuplotter>
-        <Logger time-step="50">
+        <Logger time-step="250">
             <Input>
                 <Symbol symbol-ref="cell.center.x"/>
                 <Symbol symbol-ref="cell.center.y"/>
@@ -98,7 +100,7 @@
                 <TextOutput file-separation="cell"/>
             </Output>
             <Plots>
-                <Plot time-step="500">
+                <Plot time-step="2500">
                     <Style point-size="0.5" style="lines"/>
                     <Terminal terminal="png"/>
                     <X-axis minimum="0" maximum="size.x">

@@ -1,4 +1,4 @@
-<MorpheusModel version="2">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-CellSorting-2D</Title>
         <Details>Reference:
@@ -73,12 +73,18 @@ Graner and Glazier, Simulation of biological cell sorting using a two-dimensiona
             <Contact type1="ct2" type2="ct2" value="6"/>
             <Contact type1="ct1" type2="ct2" value="16"/>
         </Interaction>
-        <MCSDuration value="1"/>
-        <MetropolisKinetics temperature="2" stepper="edgelist">
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1"/>
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>
-        </MetropolisKinetics>
+            <MetropolisKinetics temperature="2"/>
+        </MonteCarloSampler>
+        <ShapeBoundary scaling="norm">
+            <Neighborhood>
+                <Distance>3.0</Distance>
+            </Neighborhood>
+        </ShapeBoundary>
     </CPM>
     <CellPopulations>
         <Population size="0" type="ct1">
@@ -96,12 +102,7 @@ Graner and Glazier, Simulation of biological cell sorting using a two-dimensiona
         <Gnuplotter time-step="100" decorate="false">
             <Terminal name="png"/>
             <Plot>
-                <Cells flooding="true" value="cell.type">
-                    <ColorMap>
-                        <Color value="2" color="green"/>
-                        <Color value="1" color="red"/>
-                    </ColorMap>
-                </Cells>
+                <Cells flooding="true" value="cell.type"/>
             </Plot>
             <Plot>
                 <Cells flooding="true" value="b">

@@ -1,4 +1,4 @@
-<MorpheusModel version="2">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-CellSorting-2D</Title>
         <Details>Reference:
@@ -33,6 +33,7 @@ Graner and Glazier, Simulation of biological cell sorting using a two-dimensiona
         <TimeSymbol symbol="time"/>
     </Time>
     <CellTypes>
+        <CellType class="medium" name="medium"/>
         <CellType class="biological" name="ct1">
             <VolumeConstraint target="1000" strength="1"/>
             <NeighborhoodReporter>
@@ -63,7 +64,6 @@ Graner and Glazier, Simulation of biological cell sorting using a two-dimensiona
                 <Output symbol-ref="b2" mapping="sum"/>
             </NeighborhoodReporter>
         </CellType>
-        <CellType class="medium" name="medium"/>
     </CellTypes>
     <CPM>
         <Interaction default="0.0">
@@ -73,12 +73,18 @@ Graner and Glazier, Simulation of biological cell sorting using a two-dimensiona
             <Contact type1="ct2" type2="ct2" value="6"/>
             <Contact type1="ct1" type2="ct2" value="16"/>
         </Interaction>
-        <MCSDuration value="1"/>
-        <MetropolisKinetics temperature="2" stepper="edgelist">
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1"/>
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>
-        </MetropolisKinetics>
+            <MetropolisKinetics temperature="2"/>
+        </MonteCarloSampler>
+        <ShapeBoundary scaling="norm">
+            <Neighborhood>
+                <Distance>2.5</Distance>
+            </Neighborhood>
+        </ShapeBoundary>
     </CPM>
     <CellPopulations>
         <Population size="0" type="ct1">

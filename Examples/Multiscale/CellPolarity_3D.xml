@@ -1,4 +1,4 @@
-<MorpheusModel version="1">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-CellPolarity</Title>
         <Details>Chemotaxis of polarized cell
@@ -53,9 +53,9 @@ PDE Equation:
     </Time>
     <CellTypes>
         <CellType class="biological" name="cells">
-            <Chemotaxis field="U" strength="30*(A+2)" retraction="true"/>
+            <Chemotaxis field="U" strength="60*(A+2)" retraction="true"/>
             <VolumeConstraint target="5000" strength="1"/>
-            <SurfaceConstraint target="1" strength="1"/>
+            <SurfaceConstraint target="1.5" strength="1"/>
             <MembraneProperty symbol="A" value="0.5" name="A">
                 <Diffusion rate="0.05" unit="µm²/s"/>
             </MembraneProperty>
@@ -127,12 +127,18 @@ PDE Equation:
     </Disabled>
 -->
         </Interaction>
-        <MetropolisKinetics temperature="1" yield="0.05" stepper="edgelist">
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1"/>
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>
-        </MetropolisKinetics>
-        <MCSDuration value="1"/>
+            <MetropolisKinetics temperature="5" yield="0.05"/>
+        </MonteCarloSampler>
+        <ShapeBoundary scaling="norm">
+            <Neighborhood>
+                <Distance>2.0</Distance>
+            </Neighborhood>
+        </ShapeBoundary>
     </CPM>
     <CellPopulations>
         <Population size="0" type="cells">
@@ -148,15 +154,15 @@ PDE Equation:
         </Population>
     </CellPopulations>
     <Analysis>
-        <Gnuplotter time-step="50">
+        <Gnuplotter time-step="100">
             <Terminal pointsize="1.5" name="png"/>
             <Plot>
                 <Field symbol-ref="U"/>
                 <Cells value="A" slice="25"/>
             </Plot>
         </Gnuplotter>
-        <TiffPlotter timelapse="false" format="8bit" OME-header="true" compression="false" time-step="100">
-            <Channel symbol-ref="cell.id" celltype="cells"/>
+        <TiffPlotter timelapse="true" format="32bit" OME-header="true" compression="false" time-step="100">
+            <Channel symbol-ref="cell.id" no-outline="true" celltype="cells"/>
             <Channel symbol-ref="c" celltype="cells"/>
             <Channel symbol-ref="U"/>
         </TiffPlotter>
@@ -167,7 +173,7 @@ PDE Equation:
         </MembraneLogger>
     </Disabled>
 -->
-        <Logger time-step="50">
+        <Logger time-step="100">
             <Input>
                 <Symbol symbol-ref="A"/>
             </Input>
@@ -175,7 +181,7 @@ PDE Equation:
                 <TextOutput file-format="matrix"/>
             </Output>
             <Plots>
-                <SurfacePlot time-step="50">
+                <SurfacePlot time-step="100">
                     <Color-bar>
                         <Symbol symbol-ref="A"/>
                     </Color-bar>

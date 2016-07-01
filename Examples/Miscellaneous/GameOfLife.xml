@@ -67,7 +67,7 @@ Rules:
     </CellPopulations>
     <Analysis>
         <Gnuplotter time-step="20" decorate="false">
-            <Terminal size="400 400 0" name="png"/>
+            <Terminal name="png"/>
             <Plot>
                 <Cells value="s">
                     <ColorMap>

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="2">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-CellCycle-MultiScale</Title>
         <Details>- NOTE: cell Property 'dist' does not give correct values (see Logger): values are identical for all cells!
@@ -25,14 +25,14 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
         <Constant symbol="posx" value="0.0"/>
     </Global>
     <Space>
-        <Lattice class="square">
+        <Lattice class="hexagonal">
             <Size symbol="size" value="250 250 0"/>
             <BoundaryConditions>
                 <Condition boundary="x" type="periodic"/>
                 <Condition boundary="y" type="periodic"/>
             </BoundaryConditions>
             <Neighborhood>
-                <Distance>1.5</Distance>
+                <Order>3</Order>
             </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="space"/>
@@ -71,7 +71,7 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
             <Property symbol="c" value="0" name="division timeout"/>
             <Property symbol="Vt" value="25000" name="Target volume"/>
             <VolumeConstraint target="Vt" strength="1"/>
-            <SurfaceConstraint target="0.95" strength="0.5"/>
+            <SurfaceConstraint target="1.0" strength="0.5"/>
             <Event trigger="on change" name="reset timeout">
                 <Condition>CDK1&lt;0.25</Condition>
                 <Rule symbol-ref="c">
@@ -99,26 +99,34 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
             </CellReporter>
             <Property symbol="dist" value="sqrt( (cell.center.x-size.x/2)^2 + (cell.center.y-size.y/2)^2 )  "/>
         </CellType>
-        <CellType class="medium" name="Medium"/>
+        <CellType class="medium" name="Medium">
+            <Property symbol="APC" value="0" name="Anaphase-promoting complex"/>
+        </CellType>
     </CellTypes>
     <CPM>
         <Interaction default="0">
             <Contact type1="cells" type2="cells" value="-12"/>
             <Contact type1="cells" type2="Medium" value="0"/>
         </Interaction>
-        <MCSDuration value="1e-4"/>
-        <MetropolisKinetics temperature="2" yield="0.1" stepper="edgelist">
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1e-4"/>
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>
-        </MetropolisKinetics>
+            <MetropolisKinetics temperature="2" yield="0.1"/>
+        </MonteCarloSampler>
+        <ShapeBoundary scaling="norm">
+            <Neighborhood>
+                <Order>3</Order>
+            </Neighborhood>
+        </ShapeBoundary>
     </CPM>
     <CellPopulations>
         <Population size="0" type="cells">
             <InitCellObjects mode="order">
                 <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
                     <Object>
-                        <Sphere radius="75" center="125, 125, 0"/>
+                        <Sphere radius="45" center="125, 125, 0"/>
                     </Object>
                 </Arrangement>
             </InitCellObjects>

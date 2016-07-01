@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="2">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-Crypt</Title>
         <Details>Illustrative model of stem cells in intestinal crypt
@@ -114,12 +114,18 @@ Shows the following features of Morpheus:
             <Contact type1="stem_cells" type2="stem_cells" value="-10"/>
             <Contact type1="stem_cells" type2="TA_cells" value="10"/>
         </Interaction>
-        <MCSDuration value="1.0"/>
-        <MetropolisKinetics temperature="3" yield="0.1" stepper="edgelist">
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1.0"/>
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>
-        </MetropolisKinetics>
+            <MetropolisKinetics temperature="3" yield="0.1"/>
+        </MonteCarloSampler>
+        <ShapeBoundary scaling="norm">
+            <Neighborhood>
+                <Distance>2.5</Distance>
+            </Neighborhood>
+        </ShapeBoundary>
     </CPM>
     <CellPopulations>
         <Population size="0" type="stem_cells">

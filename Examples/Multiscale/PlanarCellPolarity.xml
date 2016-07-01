@@ -1,4 +1,4 @@
-<MorpheusModel version="1">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-PCP</Title>
         <Details>Planar Cell Polarity (PCP)</Details>
@@ -148,10 +148,22 @@
                 </Cells>
             </Plot>
         </Gnuplotter>
-        <ContactLogger format="matrix" time-step="-1" celltype="cells"/>
+        <ContactLogger time-step="-1" celltype="cells"/>
         <HistogramLogger minimum="0.0" normalized="false" maximum="6.28" number-of-bins="36" time-step="250">
             <Column symbol-ref="polC.phi" celltype="cells"/>
             <Plot minimum="0.0" terminal="png"/>
         </HistogramLogger>
     </Analysis>
+    <CPM>
+        <ShapeBoundary scaling="norm">
+            <Neighborhood>
+                <!--    <Disabled>
+        <Distance>1</Distance>
+    </Disabled>
+-->
+                <Order>1</Order>
+            </Neighborhood>
+        </ShapeBoundary>
+        <Interaction/>
+    </CPM>
 </MorpheusModel>

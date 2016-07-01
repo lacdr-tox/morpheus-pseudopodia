@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="2">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-RunAndTumble</Title>
         <Details>Models a Levy walk - a random search strategy.
@@ -53,12 +53,18 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
         <Interaction>
             <Contact type1="amoeba" type2="medium" value="4"/>
         </Interaction>
-        <MCSDuration value="1"/>
-        <MetropolisKinetics temperature="0.6" stepper="edgelist">
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1"/>
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>
-        </MetropolisKinetics>
+            <MetropolisKinetics temperature="0.6"/>
+        </MonteCarloSampler>
+        <ShapeBoundary scaling="norm">
+            <Neighborhood>
+                <Distance>2.5</Distance>
+            </Neighborhood>
+        </ShapeBoundary>
     </CPM>
     <CellPopulations>
         <Population size="1" type="amoeba">

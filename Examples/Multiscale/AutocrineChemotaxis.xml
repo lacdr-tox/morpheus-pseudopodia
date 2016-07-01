@@ -1,4 +1,4 @@
-<MorpheusModel version="2">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-AutocrineChemotaxis</Title>
         <Details></Details>
@@ -63,12 +63,18 @@
             <Contact type1="cells" type2="medium" value="-10"/>
             <Contact type1="cells" type2="cells" value="-20"/>
         </Interaction>
-        <MetropolisKinetics temperature="10.0" stepper="edgelist">
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration unit="sec" value="1.0"/>
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>
-        </MetropolisKinetics>
-        <MCSDuration unit="sec" value="1.0"/>
+            <MetropolisKinetics temperature="10.0"/>
+        </MonteCarloSampler>
+        <ShapeBoundary scaling="norm">
+            <Neighborhood>
+                <Distance>2.5</Distance>
+            </Neighborhood>
+        </ShapeBoundary>
     </CPM>
     <CellPopulations>
         <Population size="0" type="cells">

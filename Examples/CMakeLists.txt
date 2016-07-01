@@ -25,12 +25,13 @@ SET(EXAMPLE_SOURCES
 	CPM/Crypt.xml
 	CPM/crypt.tif
 	CPM/RunAndTumble.xml
-	CPM/ConvergenceExtension.xml
-	CPM/Protrusion.xml
+	CPM/ConvergentExtension.xml
+	#CPM/Protrusion.xml
 
 
 	Multiscale/AutocrineChemotaxis.xml
 	Multiscale/CellCycle.xml
+	Multiscale/CellCycle_3D.xml
 	Multiscale/CellCycle_PDE.xml
 	Multiscale/CellPolarity.xml
 	Multiscale/PlanarCellPolarity.xml

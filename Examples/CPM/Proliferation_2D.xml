@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="2">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-Proliferation2D</Title>
         <Details></Details>
@@ -30,7 +30,7 @@
             <Property symbol="p" value="5e-5" name="proliferation rate"/>
             <Property symbol="d" value="0" name="divisions"/>
             <Property symbol="c" value="0" name="color"/>
-            <VolumeConstraint target="100" strength="1"/>
+            <VolumeConstraint target="500" strength="1"/>
             <SurfaceConstraint target="0.9" strength="1"/>
             <System solver="euler" time-step="1.0">
                 <Rule symbol-ref="c">
@@ -54,17 +54,23 @@
         <Interaction default="0">
             <Contact type1="cells" type2="cells" value="-4"/>
         </Interaction>
-        <MCSDuration value="1.0"/>
-        <MetropolisKinetics temperature="3" yield="0.1" stepper="edgelist">
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1.0"/>
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>
-        </MetropolisKinetics>
+            <MetropolisKinetics temperature="3" yield="0.1"/>
+        </MonteCarloSampler>
+        <ShapeBoundary scaling="norm">
+            <Neighborhood>
+                <Order>3</Order>
+            </Neighborhood>
+        </ShapeBoundary>
     </CPM>
     <CellPopulations>
         <Population size="1" type="cells">
             <InitCircle mode="regular" number-of-cells="20">
-                <Dimensions radius="20" center="250, 250, 0"/>
+                <Dimensions radius="35" center="250, 250, 0"/>
             </InitCircle>
         </Population>
     </CellPopulations>

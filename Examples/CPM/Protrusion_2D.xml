@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="1">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-Protrusion</Title>
         <Details>Model for cell protrusions using the Act model. 
@@ -24,8 +24,8 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
 -->
     </Global>
     <Space>
-        <Lattice class="square">
-            <Size symbol="size" value="200 200 0"/>
+        <Lattice class="hexagonal">
+            <Size symbol="size" value="200, 200, 0"/>
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>
@@ -38,46 +38,67 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
     </Space>
     <Time>
         <StartTime value="0"/>
-        <StopTime value="10000"/>
+        <StopTime value="15000"/>
         <TimeSymbol symbol="time"/>
     </Time>
     <CellTypes>
         <CellType class="biological" name="amoeba">
             <VolumeConstraint target="2500" strength="50"/>
-            <SurfaceConstraint target="0.8" strength="5"/>
+            <SurfaceConstraint target="0.9" strength="5"/>
             <Protrusion field="act" maximum="200" strength="80"/>
-            <!--    <Disabled>
-        <ConnectivityConstraint/>
-    </Disabled>
--->
+            <ConnectivityConstraint/>
         </CellType>
         <CellType class="medium" name="medium"/>
+        <CellType class="biological" name="obstable">
+            <FreezeMotion>
+                <Condition>1</Condition>
+            </FreezeMotion>
+        </CellType>
     </CellTypes>
     <CPM>
         <Interaction>
             <Contact type1="amoeba" type2="medium" value="140"/>
             <Contact type1="medium" type2="medium" value="0"/>
         </Interaction>
-        <MCSDuration value="1"/>
-        <MetropolisKinetics temperature="20" stepper="edgelist">
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1"/>
             <Neighborhood>
                 <Order>1</Order>
             </Neighborhood>
-        </MetropolisKinetics>
+            <MetropolisKinetics temperature="20"/>
+        </MonteCarloSampler>
+        <ShapeBoundary scaling="norm">
+            <Neighborhood>
+                <Order>2</Order>
+            </Neighborhood>
+        </ShapeBoundary>
     </CPM>
     <CellPopulations>
         <Population size="0" type="amoeba">
             <InitCellObjects mode="distance">
                 <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
                     <Object>
-                        <Sphere radius="30" center="100,100,0"/>
+                        <Sphere radius="25" center="100,100,0"/>
+                    </Object>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+        <Population size="1" type="obstable">
+            <InitCellObjects mode="distance">
+                <Arrangement repetitions="2, 1, 1" displacements="100, 1, 1">
+                    <Object>
+                        <!--    <Disabled>
+        <Box size="20,20,0" origin="150,100,0"/>
+    </Disabled>
+-->
+                        <Sphere radius="10" center="50,100,0"/>
                     </Object>
                 </Arrangement>
             </InitCellObjects>
         </Population>
     </CellPopulations>
     <Analysis>
-        <Gnuplotter time-step="50" interpolation="false" decorate="false">
+        <Gnuplotter time-step="250" interpolation="false" decorate="false">
             <Terminal opacity="0.2" name="png"/>
             <Plot>
                 <Cells value="cell.id">
@@ -92,32 +113,38 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
                 <Field symbol-ref="act"/>
             </Plot>
         </Gnuplotter>
-        <Logger time-step="25">
+        <Logger time-step="10">
             <Input>
-                <Symbol symbol-ref="cell.surface"/>
-                <Symbol symbol-ref="cell.length"/>
-                <Symbol symbol-ref="cell.volume"/>
+                <Symbol symbol-ref="cell.center.x"/>
+                <Symbol symbol-ref="cell.center.y"/>
             </Input>
             <Output>
-                <TextOutput/>
+                <TextOutput file-separation="cell"/>
             </Output>
             <Plots>
-                <Plot time-step="1000">
-                    <Style point-size="0.5" style="linespoints"/>
+                <Plot time-step="-1">
+                    <Style style="lines" line-width="2.0"/>
                     <Terminal terminal="png"/>
                     <X-axis>
-                        <Symbol symbol-ref="time"/>
+                        <Symbol symbol-ref="cell.center.x"/>
                     </X-axis>
                     <Y-axis>
-                        <Symbol symbol-ref="cell.surface"/>
-                        <Symbol symbol-ref="cell.length"/>
-                        <!--    <Disabled>
-        <Symbol symbol-ref="cell.volume"/>
+                        <Symbol symbol-ref="cell.center.y"/>
+                    </Y-axis>
+                    <Color-bar>
+                        <Symbol symbol-ref="time"/>
+                    </Color-bar>
+                    <!--    <Disabled>
+        <Range>
+            <Time mode="history"/>
+        </Range>
     </Disabled>
 -->
-                    </Y-axis>
                 </Plot>
             </Plots>
+            <Restriction>
+                <Celltype celltype="amoeba"/>
+            </Restriction>
         </Logger>
     </Analysis>
 </MorpheusModel>
