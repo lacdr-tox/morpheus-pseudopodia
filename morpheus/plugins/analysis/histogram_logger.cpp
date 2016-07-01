@@ -288,7 +288,7 @@ void HistogramLogger::plotData(double time){
 	stringstream ss;
 
 	if(!plot.extension.empty()){
-		ss << "set output 'histogram_";
+		ss << "set output 'plot_histogram_";
 		for(uint i=0; i<columns.size(); i++){
 			ss << columns[i]->symbol.name() << "_";
 		}
