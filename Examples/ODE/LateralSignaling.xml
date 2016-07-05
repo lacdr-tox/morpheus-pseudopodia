@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="1">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-LateralSignaling</Title>
         <Details>Reference:
@@ -17,6 +17,9 @@ http://dx.doi.org/10.1098/rsif.2012.0766
                 <Condition boundary="x" type="periodic"/>
                 <Condition boundary="y" type="periodic"/>
             </BoundaryConditions>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="space"/>
     </Space>

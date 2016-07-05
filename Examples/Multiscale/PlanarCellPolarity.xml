@@ -25,7 +25,7 @@
         <Distance>1</Distance>
     </Disabled>
 -->
-                <Order>1</Order>
+                <Order>5</Order>
             </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="l"/>
@@ -154,16 +154,4 @@
             <Plot minimum="0.0" terminal="png"/>
         </HistogramLogger>
     </Analysis>
-    <CPM>
-        <ShapeBoundary scaling="norm">
-            <Neighborhood>
-                <!--    <Disabled>
-        <Distance>1</Distance>
-    </Disabled>
--->
-                <Order>1</Order>
-            </Neighborhood>
-        </ShapeBoundary>
-        <Interaction/>
-    </CPM>
 </MorpheusModel>
