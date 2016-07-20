@@ -544,7 +544,7 @@ const CPM::STATE& getNode(const VINT& pos) {
 bool executeCPMUpdate(const CPM::Update& update) {
 //      cout << cpm_layer->get(update.focus) << endl;
 //      cout << update.focus.pos() << " - "<< update.remove_state.cell_id << " - " << update.add_state.cell_id << endl;
-	assert(SIM::global_lattice->equal_pos(update.focus.pos(), update.focusStateAfter().pos));
+	assert(SIM::global_lattice->equal_pos(update.focus().pos(), update.focusStateAfter().pos));
 	assert(SIM::global_lattice->equal_pos(update.focusStateBefore().pos, update.focusStateAfter().pos));
 
 	try {
