@@ -31,9 +31,8 @@ void ContactLogger::analyse(double time)
 		CPM::CELL_ID cellid = cells[c];
 		const Cell& cell = CPM::getCell( cellid );
 
-		const std::map< CPM::CELL_ID, uint >& interfaces = cell.getInterfaces();
-		std::map <CPM::CELL_ID, uint >::const_iterator i = interfaces.begin();
-		for(i = interfaces.begin(); i != interfaces.end(); i++){
+		const auto& interfaces = cell.getInterfaceLengths();
+		for( auto i = interfaces.begin(); i != interfaces.end(); i++){
 			 CPM::CELL_ID nb_cellid = i->first;
 			 if ( CPM::getCellIndex( nb_cellid ).celltype == celltype.get()->getID() ) { // if not medium
 		 		fout << cellid << "\t" << nb_cellid << "\t" << i->second << "\n";

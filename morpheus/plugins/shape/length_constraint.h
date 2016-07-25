@@ -23,21 +23,32 @@ using namespace SIM;
 \ingroup CPM_EnergyPlugins
 
 \section Description
+
+\subsection Length Mode
+
 The length constraint penalizes deviations of the length of a cell \f$ l_{\sigma, t} \f$ from a given target length \f$ L_{target} \f$, specified in units of lattice sites.
 
 The length of a cell is the length of the semimajor axis of an ellipsoid approximation of the cell shape, using the inertia tensor.
 
 The Hamiltonian is given by: \f$ E_{Length} = \sum_{\sigma} \lambda_L \cdot ( l_{\sigma, t} - L_{target} )^2 \f$
 
-\f$ \Delta E_{Volume} = \lambda_L \cdot \big( ( l_{\sigma, before} - L_{target} )^2  -  ( l_{\sigma, after} - L_{target} )^2 \big) \f$
+\f$ \Delta E_{Length} = \lambda_L \cdot \big( ( l_{\sigma, before} - L_{target} )^2  -  ( l_{\sigma, after} - L_{target} )^2 \big) \f$
 where 
 - \f$ \lambda_L \f$ is the strength of the constraint
 - \f$ l_{\sigma, before} \f$ is the current length of cell \f$ \sigma \f$ at time \f$ t \f$
 - \f$ l_{\sigma, after} \f$ is the projected length of cell \f$ \sigma \f$ at time \f$ t \f$ (if updated would be accepted)
 - \f$ L_{target} \f$ is the target length of cell \f$ \sigma \f$ at time \f$ t \f$
 
+\subsection Eccentricity Mode
+
+The length constraint penalizes deviations of the eccentricity of a cell \f$ ecc_{\sigma, t} \f$ from a given target \f$ Ecc_{target} \f$.
+
+The eccentricity is derived from the ellipsoid approximation of the cell shape, using the inertia tensor.
+
+The Hamiltonian is given by: \f$ E_{Length} = \sum_{\sigma} \lambda_L \cdot ( ecc_{\sigma, t} - Ecc_{target} )^2 \f$
 
 \section Input
+- *mode*: Selects to constrain either eength or eccentricity.
 - *target*: Expression describing the target cell length. This may be a constant (e.g. "1.0"), a symbol (e.g. "St"), or an expression (e.g. "S0 * 2.0")
 - *strength*: Expression describing the strength of the length constraint. This may be a constant (e.g. "2.0"), a symbol (e.g. "Ss"), or an expression (e.g. "S0 * 2.0")
 
@@ -58,44 +69,23 @@ Zajac M, Jones GL, Glazier JA. Simulating convergent extension by way of anisotr
 */
 
 
-class LengthConstraint : public CPM_Energy, public CPM_Update_Listener
+class LengthConstraint : public CPM_Energy
 {
 private:
 	// required
+	enum class TargetMode {TARGET_LENGTH, TARGET_ECCENTRICITY};
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> target;
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> strength;
-		
-	static const int LC_XX=0;
-	static const int LC_XY=1;
-	static const int LC_YY=2;
-	static const int LC_XZ=3;
-	static const int LC_YZ=4;
-	static const int LC_ZZ=5;
-	
-// actual + test properties of cell		
-// 		CellPropertyAccessor<VDOUBLE> _center;
-// 		CellPropertyAccessor<VDOUBLE> _temp_center;
-	CellPropertyAccessor<double>  _cell_length;
-	CellPropertyAccessor<double>  _temp_cell_length;
-	CellPropertyAccessor<std::vector<double > > _I;
-	CellPropertyAccessor<std::vector<double > > _temp_I;		
-			
-// how many incremental updates still sensible
-	CellPropertyAccessor<double> _maxIncrementalUpdates;
-	CellPropertyAccessor<double> _incrementalUpdatesLeft;
-	CellPropertyAccessor<double> i_updated;
-	double calcLengthHelper3D(const std::vector<double> &I, int N) const;
-	double calcLengthHelper2D(const std::vector<double> &I, int N) const;
+	PluginParameter2<TargetMode, XMLNamedValueReader, RequiredPolicy> target_mode;
 public:
 	LengthConstraint();
 	DECLARE_PLUGIN("LengthConstraint");
 
 	double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const;
 	double hamiltonian(CPM::CELL_ID cell_id) const;
-    void init(const Scope* scope);
-	double long_cell_axis2(CPM::CELL_ID id) const ;
-	void set_update_notify( CPM::CELL_ID cell_id, const CPM::Update& update);
-	void update_notify(CPM::CELL_ID cell_id, const CPM::Update& update);
+// 	double long_cell_axis2(CPM::CELL_ID id) const ;
+// 	void set_update_notify( CPM::CELL_ID cell_id, const CPM::Update& update);
+// 	void update_notify(CPM::CELL_ID cell_id, const CPM::Update& update);
 };
 
 #endif

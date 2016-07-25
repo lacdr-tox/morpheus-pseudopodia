@@ -14,7 +14,17 @@
 
 		<xs:attribute	name="target"	type="cpmMathExpression" use="required" default="1" />
 		<xs:attribute	name="strength"	type="cpmMathExpression" use="required" default="1" />
+		<xs:attribute	name="mode"		type="cpmLCTargetMode"   use="required" default="length" />
 		<xs:attribute	name="name" 	type="cpmString" use="optional" />
 	</xs:complexType>
+	
+	
+	<xs:simpleType name="cpmLCTargetMode">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="length"/>
+			<xs:enumeration value="eccentricity"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
 
 </xs:schema>

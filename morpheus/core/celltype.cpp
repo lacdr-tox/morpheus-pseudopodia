@@ -371,7 +371,7 @@ CPM::CELL_ID  CellType::createCell(CPM::CELL_ID cell_id) {
 pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID cell_id, division mode, VDOUBLE orientation) {
 	VDOUBLE division_plane_normal = VDOUBLE(0,0,0);
 
-	const EllipsoidShape& shape = storage.cell(cell_id).getCellShape();
+	const EllipsoidShape& shape = storage.cell(cell_id).currentShape().ellipsoidApprox();
 	switch ( mode ){
 		case CellType::MAJOR:{
 			division_plane_normal = shape.axes[1];
@@ -531,19 +531,21 @@ bool CellType::check_update(const CPM::Update& update) const
 	if ((update.opRemove()) && update.focus().cell().nNodes() == 1)
 		return false;;
 
-	if (update.opAdd()) {
-		auto update_add = update.selectOp(CPM::Update::ADD);
-		for ( uint c=0; c < check_update_listener.size(); c++ ) {
-			if (! check_update_listener[c] -> update_check( update.focusStateAfter().cell_id , update_add))
-				return false;
+	if (!check_update_listener.empty()) {
+		if (update.opAdd()) {
+			auto update_add = update.selectOp(CPM::Update::ADD);
+			for ( uint c=0; c < check_update_listener.size(); c++ ) {
+				if (! check_update_listener[c] -> update_check( update.focusStateAfter().cell_id , update_add))
+					return false;
+			}
 		}
-	}
 	
-	if (update.opRemove()) {
-		auto update_remove = update.selectOp(CPM::Update::REMOVE);
-		for ( uint c=0; c < check_update_listener.size(); c++ ) {
-			if (! check_update_listener[c] -> update_check( update.focusStateBefore().cell_id , update_remove)) 
-				return false;
+		if (update.opRemove()) {
+			auto update_remove = update.selectOp(CPM::Update::REMOVE);
+			for ( uint c=0; c < check_update_listener.size(); c++ ) {
+				if (! check_update_listener[c] -> update_check( update.focusStateBefore().cell_id , update_remove)) 
+					return false;
+			}
 		}
 	}
 	
@@ -552,8 +554,6 @@ bool CellType::check_update(const CPM::Update& update) const
 
 double CellType::delta(const CPM::Update& update) const
 {
-	// Maybe it's better to put add cell focus at the position of the node to be aquired
-// 	SymbolFocus add_focus(update.source.cellID(), update.add_state.pos);
 	
 	double delta=0;
 	if (update.opAdd()) {

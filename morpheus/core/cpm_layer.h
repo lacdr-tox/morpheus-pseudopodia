@@ -14,7 +14,7 @@
 
 #include "lattice.h"
 #include "lattice_data_layer.h"
-
+#include <assert.h>
 class Cell; class CellType;
 
 namespace CPM {

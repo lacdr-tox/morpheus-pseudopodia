@@ -183,7 +183,7 @@ void VtkPlotter::writeVTK(double time){
 							}
 							// otherwise, plot property of all cell types
 							else{
-								if( ( plot.channels[c]->exclude_medium.get() && celltype_at_pos == EmptyCellTypeID ) ){
+								if( ( plot.channels[c]->exclude_medium() && celltype_at_pos == EmptyCellTypeID ) ){
 									value = 0;
 								}
 								else{

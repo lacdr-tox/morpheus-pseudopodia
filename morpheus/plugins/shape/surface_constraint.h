@@ -21,7 +21,10 @@
 \ingroup CPM_EnergyPlugins
 
 The surface constraint penalizes deviations of the cell perimeter (2D) or surface area \f$ s_{\sigma, t} \f$ from a given target \f$ S_{target} \f$.
+
 This models the cell cortex ridigity by specifying the ratio between a cell's surface area to its volume (or ratio between perimeter length are area in 2D).
+
+The target can be defined explicitly in surface mode, or implicitely in aspherity mode as a multiple of the surface of the sphere with equal volume.
 
 The Hamiltonian is given by \f$ E_{Surface} = \sum_{\sigma} \lambda_S \cdot ( s_{\sigma, t} - S_{target} )^n \f$
 
@@ -37,15 +40,20 @@ where
 - \f$ n \f$ is the exponent.
 
 
-Note that the target surface is normalized to the surface area of a sphere given its cell volume \f$ v_{\sigma, t}\f$: 
+# Note that the target surface is normalized to the surface area of a sphere given its cell volume \f$ v_{\sigma, t}\f$: 
 
 2D: \f$ S_{target} =   2\sqrt{  v_{\sigma, t} \pi} \f$
 
 3D: \f$ S_{target} =   4\pi \big( \frac{ \frac{3}{4} v_{\sigma, t}}{ \pi }^{\frac{2}{3}} \big) \f$
 
+
+
+
 \section Input 
 Required
 --------
+- *mode*: Selects the target to be either a lenght/surface or the aspherity of the shape
+
 - *target*: Expression describing the target perimeter (2D) or surface area (3D) of a cell. This may be a constant (e.g. "1.0"), a symbol (e.g. "St"), or an expression (e.g. "S0 * 2.0")
 
 - *strength*: Expression describing the strength of the surface constraint. This may be a constant (e.g. "2.0"), a symbol (e.g. "Ss"), or an expression (e.g. "S0 * 2.0")
@@ -66,7 +74,9 @@ Optional
 class SurfaceConstraint : public CPM_Energy
 {
 private:
+	enum class TargetMode {SURFACE, ASPHERITY};
 	// required
+	PluginParameter2<TargetMode, XMLNamedValueReader, RequiredPolicy> target_mode;
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> target;
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> strength;
 	//optional 
