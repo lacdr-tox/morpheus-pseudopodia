@@ -18,13 +18,14 @@
 /** \defgroup SurfaceConstraint
 \ingroup CellShapePlugins
 \brief Penalizes deviations from target cell perimeter (2D) or surface area (3D)
+
 \ingroup CPM_EnergyPlugins
 
 The surface constraint penalizes deviations of the cell perimeter (2D) or surface area \f$ s_{\sigma, t} \f$ from a given target \f$ S_{target} \f$.
 
 This models the cell cortex ridigity by specifying the ratio between a cell's surface area to its volume (or ratio between perimeter length are area in 2D).
 
-The target can be defined explicitly in surface mode, or implicitely in aspherity mode as a multiple of the surface of the sphere with equal volume.
+The target can be defined explicitly in surface mode, or implicitely in aspherity mode as a multiple of the surface of a sphere of equal volume.
 
 The Hamiltonian is given by \f$ E_{Surface} = \sum_{\sigma} \lambda_S \cdot ( s_{\sigma, t} - S_{target} )^n \f$
 

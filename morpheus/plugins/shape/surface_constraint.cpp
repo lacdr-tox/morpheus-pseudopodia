@@ -24,27 +24,23 @@ double SurfaceConstraint::delta ( const SymbolFocus& cell_focus, const CPM::Upda
 	double d_surface_length = cell_focus.cell().getInterfaceLength();
 	double d_new_surface_length = cell_focus.cell().getUpdatedInterfaceLength();
 	
-
-	
 	double s = strength( cell_focus );
 	double dE = 0.0;
+	uint volume =  cell_focus.cell().nNodes();
+	double target_surface;
 	if (target_mode() == TargetMode::SURFACE) {
-		dE = s * ( sqr(d_new_surface_length - target(cell_focus) ) - sqr(d_surface_length - target(cell_focus) ) );
+		target_surface = target( cell_focus ) ;
 	}
-	else {
-		uint volume =  cell_focus.cell().nNodes();
-		double target_surface = target( cell_focus ) * targetSurfaceFromVolume(volume);
-		if( exponent.isDefined() ){
-			dE = s * ( pow(d_new_surface_length - target_surface, exponent()) - pow(d_surface_length - target_surface, exponent()) );
-		}
-		else{
-			dE = s * ( sqr(d_new_surface_length - target_surface ) - sqr(d_surface_length - target_surface ) );
-		}
+	else { // (target_mode() == TargetMode::ASPHERITY)
+		target_surface = target( cell_focus ) * targetSurfaceFromVolume(volume);
 	}
-// 	cout << "SurfaceConstraint: dE = " << dE << " s: " << s << " t: " << t << 
-// 			" target_surface: " <<  target_surface << 
-// 			" d_new_surface_length: " <<  d_new_surface_length << 
-// 			" d_surface_length: " << d_surface_length << endl;
+	if( exponent.isDefined() ){
+		dE = s * ( pow(d_new_surface_length - target_surface, exponent()) - pow(d_surface_length - target_surface, exponent()) );
+	}
+	else{
+		dE = s * ( sqr(d_new_surface_length - target_surface ) - sqr(d_surface_length - target_surface ) );
+	}
+	
 	return dE;
 }
 

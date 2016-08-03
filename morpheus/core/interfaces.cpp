@@ -216,7 +216,8 @@ void TimeStepListener::init(const Scope* scope)
 		setTimeStep(time_step);
 	else {
 		valid_time = numeric_limits< double >::max();
-		latest_time_step = numeric_limits< double >::max();
+		if (time_step<0)
+			latest_time_step = numeric_limits< double >::max();
 	}
 
 	TimeScheduler::reg(this);

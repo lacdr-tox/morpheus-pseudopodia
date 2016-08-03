@@ -11,7 +11,7 @@
 		<xs:annotation>
 			<xs:appinfo>Shape</xs:appinfo>
 		</xs:annotation>
-		<xs:attribute	name="mode"		type="cpmLCTargetMode"   use="required" default="length" />
+		<xs:attribute	name="mode"		type="cpmSCTargetMode"   use="required" default="aspherity" />
 		<xs:attribute	name="target"	type="cpmMathExpression" use="required" default="1" />
 		<xs:attribute	name="strength"	type="cpmMathExpression" use="required" default="1" />
 		<xs:attribute	name="name"		type="cpmString" use="optional" />

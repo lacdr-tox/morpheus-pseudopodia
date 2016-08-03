@@ -37,5 +37,6 @@ public:
 	DECLARE_PLUGIN("DependencyGraph");
 	
     DependencyGraph();
+	void init(const Scope* scope) override;
     void analyse(double time) override;
 };
