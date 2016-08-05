@@ -160,7 +160,7 @@ IF(${MORPHEUS_OS} STREQUAL "UNIX" AND  NOT ${MORPHEUS_OS} STREQUAL "APPLE" )
    SET(DEBIAN_TIFF_PACKAGE "libtiff5-dev")
   ENDIF(DPKG_PROGRAM)
   
-  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.6), libgcc1 (>= 1:4.1), libssh-4, ${DEBIAN_TIFF_PACKAGE}, libqtcore4, libqtgui4, libqt4-xml, libqt4-svg, libqt4-sql-sqlite, libqtwebkit4, gnuplot-qt (>= 4.4) | gnuplot-x11 (>=4.4), graphviz")
+  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.6), libgcc1 (>= 1:4.1), libssh-4, ${DEBIAN_TIFF_PACKAGE}, libqtcore4, libqtgui4, libqt4-xml, libqt4-help, libqt4-svg, libqt4-sql-sqlite, libqtwebkit4, gnuplot-qt (>= 4.4) | gnuplot-x11 (>=4.4), graphviz")
   SET(CPACK_GENERATOR "DEB")
 
   SET(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://imc.zih.tu-dresden.de/wiki/morpheus")
