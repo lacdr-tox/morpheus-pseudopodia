@@ -24,15 +24,17 @@ public:
 	AdaptiveCPMShapeTracker(CPM::CELL_ID cell, const CPMShape::Nodes& cell_nodes);
 	
 	/// Cell nodes accessors
-	const CPMShape::Nodes& nodes() const { return _nodes; };
+// 	const CPMShape::Nodes& nodes() const { return _nodes; }; // For performance reasons, the pending updated shape does not have an updated notes container yet. Thus, no accessor here.
+	/// Cell size
+	const int size() const { return node_count; };
 	/// Cell center in orthogonal coordinates
 	VDOUBLE center() const { return lattice.to_orth(VDOUBLE(node_sum)/double(node_count)); }
 	/// Cell center in lattice coordinates
 	VDOUBLE centerLatt() const { return VDOUBLE(node_sum)/double(node_count); };
-	/// Cell perimeter as estimated through boundary neighborhood and boundary scaling
-	double perimeter() const { return _interface_length / boundary_scaling; };
+	/// Cell surface as estimated through boundary neighborhood and boundary scaling
+	double surface() const { return _interface_length / boundary_scaling; };
 	/// Cell surface nodes -- all nodes that have contact via edge or corner to foreign occupied nodes
-	   const CPMShape::Nodes& surface() const;
+	const CPMShape::Nodes& surfaceNodes() const;
 	/// Interface length to other cells / entities
 	const map<CPM::CELL_ID,double>&  interfaces() const;
 	/// Ellipsoid approximation of the cell

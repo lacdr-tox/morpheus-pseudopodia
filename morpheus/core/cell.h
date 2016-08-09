@@ -67,12 +67,12 @@ public:
 	uint nNodes() const { return nodes.size(); };                                  ///< Number of nodes aka volume, area or whatsoever
 	const Nodes& getNodes() const { return nodes; };                    ///< All nodes occupied by the cell. Note, this are lattice coordinates, which are not necessarily orthogonal ... 
 // 	const Nodes& getUpdatedNodes() const { return updated_nodes; };
-	const Nodes& getSurface() const { return shape_tracker.current().surface();}
-	const Nodes& getUpdatedSurface() const { return shape_tracker.updated().surface(); } // __attribute__ ((deprecated));
+	const Nodes& getSurface() const { return shape_tracker.current().surfaceNodes();}
+// 	const Nodes& getUpdatedSurface() const { return shape_tracker.updated().surfaceNodes(); } // __attribute__ ((deprecated));
 // 	const map<CPM::CELL_ID,uint>& getInterfaces() const { return shape_tracker.current().interfaces(); }; /// List of interfaces with other cells. Note that the count is given in number of neighbors.
 	std::map< CPM::CELL_ID, double > getInterfaceLengths() const { return shape_tracker.current().interfaces(); };; /// List of interfaces with other cells. Note that the counts are given in interface length (as getInterfaceLength()).
-	double getInterfaceLength() const { return  shape_tracker.current().perimeter(); };
-	double getUpdatedInterfaceLength() const { return shape_tracker.updated().perimeter(); };
+	double getInterfaceLength() const { return  shape_tracker.current().surface(); };
+	double getUpdatedInterfaceLength() const { return shape_tracker.updated().surface(); };
 	const map<CPM::CELL_ID,double>& getUpdatedInterfaceLengths() const { return shape_tracker.updated().interfaces(); };
 	
 	const vector< shared_ptr<AbstractProperty> >& properties;

@@ -21,24 +21,25 @@ SurfaceConstraint::SurfaceConstraint(){
 
 double SurfaceConstraint::delta ( const SymbolFocus& cell_focus, const CPM::Update& update ) const
 {
-	double d_surface_length = cell_focus.cell().getInterfaceLength();
-	double d_new_surface_length = cell_focus.cell().getUpdatedInterfaceLength();
+	double d_surface_length = cell_focus.cell().currentShape().surface();
+	double d_new_surface_length = cell_focus.cell().updatedShape().surface();
 	
 	double s = strength( cell_focus );
 	double dE = 0.0;
-	uint volume =  cell_focus.cell().nNodes();
 	double target_surface;
+	double new_target_surface;
 	if (target_mode() == TargetMode::SURFACE) {
-		target_surface = target( cell_focus ) ;
+		new_target_surface = target_surface = target( cell_focus ) ;
 	}
 	else { // (target_mode() == TargetMode::ASPHERITY)
-		target_surface = target( cell_focus ) * targetSurfaceFromVolume(volume);
+		target_surface = target( cell_focus ) * targetSurfaceFromVolume(cell_focus.cell().currentShape().size());
+		new_target_surface = target( cell_focus ) * targetSurfaceFromVolume(cell_focus.cell().updatedShape().size());
 	}
 	if( exponent.isDefined() ){
-		dE = s * ( pow(d_new_surface_length - target_surface, exponent()) - pow(d_surface_length - target_surface, exponent()) );
+		dE = s * ( pow(d_new_surface_length - new_target_surface, exponent()) - pow(d_surface_length - target_surface, exponent()) );
 	}
 	else{
-		dE = s * ( sqr(d_new_surface_length - target_surface ) - sqr(d_surface_length - target_surface ) );
+		dE = s * ( sqr(d_new_surface_length - new_target_surface ) - sqr(d_surface_length - target_surface ) );
 	}
 	
 	return dE;
@@ -46,10 +47,14 @@ double SurfaceConstraint::delta ( const SymbolFocus& cell_focus, const CPM::Upda
 
 double SurfaceConstraint::hamiltonian ( CPM::CELL_ID cell_id ) const
 {
-	int surface_length = CPM::getCell(cell_id).getInterfaceLength();
+	SymbolFocus focus(cell_id);
+	int surface_length = focus.cell().currentShape().surface();
+	
 	double t = target( SymbolFocus(cell_id) );
-	double s = strength( SymbolFocus(cell_id) );
-	return s * sqr( t - surface_length );
+	if (target_mode() == TargetMode::ASPHERITY)
+		t*=targetSurfaceFromVolume(focus.cell().currentShape().size());
+
+	return strength(focus) * sqr( t - surface_length );
 }
 
 vector<double> SurfaceConstraint::target_surface_cache;

@@ -132,8 +132,8 @@ bool ConnectivityConstraint:: update_check( CPM::CELL_ID cell_id , const CPM::Up
 			}
 		}
 		if ( update.opRemove() ) {
-			// prevent purely diagonal connections and disconnecting chains
-			if (n_sections > 1 /*|| n_1st_order == max_first_order*/ ) return false;
+			// prevent disconnecting chains and prevent hole formation
+			if (n_sections > 1 || n_1st_order == max_first_order) return false;
 		}
 		
 		// Prohibiting extension to a node, where a cell has no 1st order neighbor or connects individual branches

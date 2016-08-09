@@ -50,7 +50,7 @@ void AdaptiveCPMShapeTracker::reset() {
 
 }
 
-const CPMShape::Nodes& AdaptiveCPMShapeTracker::surface() const
+const CPMShape::Nodes& AdaptiveCPMShapeTracker::surfaceNodes() const
 {
 	if (last_surface_update == n_updates) {
 		return surface_nodes;
@@ -598,7 +598,7 @@ void AdaptiveCPMShapeTracker::initNodes() const {
 	node_sum = VINT(0,0,0);
 	node_count = _nodes.size();
 	_interface_length=0;
-	if (nodes().size()>0) {
+	if (_nodes.size()>0) {
 		StatisticalLatticeStencil boundaryStencil(CPM::getLayer(),CPMShape::boundaryNeighborhood.neighbors());
 		for (auto node : _nodes) {
 			node_sum += node;
