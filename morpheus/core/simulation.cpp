@@ -1,6 +1,6 @@
 #define SIMULATION_CPP
 
-#define NO_CORE_CATCH
+//#define NO_CORE_CATCH
 
 #include "simulation_p.h"
 #include "edge_tracker.h"
