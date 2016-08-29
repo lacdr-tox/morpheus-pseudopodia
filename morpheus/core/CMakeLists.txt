@@ -52,15 +52,16 @@ SET(morpheus_src ${morpheus_src} ${tools_src} )
 CONFIGURE_FILE(config.h.cmake config.h)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR} ${TIFF_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
 
-# option(MORPHEUS_NO_CORE_CATCH "Don't catch the Excpetions. For debuffing only. Destroys GUI integration." OFF)
-# mark_as_advanced(MORPHEUS_NO_CORE_CATCH)
+option(MORPHEUS_CORE_CATCH "Catch excaptions in the simulator core. Required for GUI integration. May be switched off for debuging purposese. " ON)
+mark_as_advanced(MORPHEUS_CORE_CATCH)
 
-# if (MORPHEUS_NO_CORE_CATCH)
-# SET_PROPERTY(
-# 	SOURCE simulation.cpp
-# 	PROPERTY COMPILE_DEFINITIONS NO_CORE_CATCH
-# 	)
-# ENDIF()
+if (NOT(MORPHEUS_CORE_CATCH))
+# 	ADD_DEFINITIONS("-D NO_CORE_CATCH")
+	SET_PROPERTY(
+		SOURCE simulation.cpp
+		PROPERTY COMPILE_DEFINITIONS "NO_CORE_CATCH"
+		)
+ENDIF()
 
 SET(SIMULATOR_EXEC_NAME ${PROJECT_NAME})
 

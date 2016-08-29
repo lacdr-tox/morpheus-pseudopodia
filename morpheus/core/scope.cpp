@@ -63,10 +63,13 @@ void Scope::registerSymbol(SymbolData data)
 				data.component_subscopes = it->second.component_subscopes;
 		}
 		else {
-			cerr << "Redefinition of a symbol "/*with different type [" << symbol.name << "]*/ <<endl;
-			cerr << " type " << data.getLinkTypeName() << " ?= " << local_symbols[data.name].getLinkTypeName() << endl;
-			cerr << " name " << data.name << " ?= " << local_symbols[data.name].name << endl;
-			cerr << " fullname " << data.fullname << " ?= " << local_symbols[data.name].fullname << endl;
+			stringstream s;
+			s << "Redefinition of a symbol \"" << data.name << "\" with different type." << endl;
+			s << " type " << data.getLinkTypeName() << " != " << local_symbols[data.name].getLinkTypeName() << endl;
+			
+			throw s.str();
+// 			cerr << " name " << data.name << " = " << local_symbols[data.name].name << endl;
+// 			cerr << " fullname " << data.fullname << " = " << local_symbols[data.name].fullname << endl;
 			exit(-1);
 		}
 	}

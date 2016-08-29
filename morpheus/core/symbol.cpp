@@ -108,7 +108,7 @@ string SymbolData::getLinkTypeName(LinkType linktype) {
 		case SymbolData::CellPropertyLink:
 			return "CellProperty";
 		case SymbolData::PDELink:
-			return "PDE";
+			return "PDELink";
 		case SymbolData::CellMembraneLink:
 			return "CellMembrane";
 		case SingleCellPropertyLink:
