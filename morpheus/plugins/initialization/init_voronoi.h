@@ -38,7 +38,7 @@ private:
 
 	static const float no_distance;
 	static const float no_label;
-	vector<VINT> neighbors;
+	Neighborhood neighbors;
 	vector<double> neighbor_distance;
 	int euclideanDistanceTransform( shared_ptr<Lattice_Data_Layer<double>>& distanceMap, shared_ptr<Lattice_Data_Layer<double> >&maskMap);
 	int euclideanDistanceTransform( shared_ptr<Lattice_Data_Layer<double>>& distanceMap, shared_ptr<Lattice_Data_Layer<double> >&maskMap, VINT bottomleft, VINT topright);

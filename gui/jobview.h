@@ -37,7 +37,7 @@ public slots:
 	void setGroupBy(JobViewModel::Grouping g);
 	void addJob(const QModelIndex&, int);
 	void addMessage(QString message, int progress = -1);
-	void addCriticalMessage(QString message, bool popup=false);
+	void addCriticalMessage(QString message, bool popup=true);
 
 private slots:
 	void selectJob(const QModelIndex&);

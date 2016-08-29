@@ -146,7 +146,8 @@ void InteractionEnergy::init(const Scope* scope)
 					plugins[ v_id2 ].push_back(p);
 			}
 			catch(string er) { 
-				cerr << er << " - leaving you alone ..." << endl; exit(-1);
+				throw MorpheusException(er, stored_node);
+				//cerr << er << " - leaving you alone ..." << endl; exit(-1);
 			}
 			
 		}

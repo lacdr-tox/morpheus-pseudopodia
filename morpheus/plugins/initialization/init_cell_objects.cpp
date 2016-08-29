@@ -338,15 +338,16 @@ int InitCellObjects::setNodes(CellType* ct)
 							double min_dist = 99999.9;
 							VDOUBLE min_v_dist;
 							for(int c=0; c<candidates.size();c++){
-								if (candidates[c].abs_distance == min_dist) {
-									VDOUBLE d_n = candidates[c].distance;
-									VDOUBLE d_o = min_v_dist;
-									if (( d_n.z < d_o.z || (d_n.z==d_o.z  &&  (d_n.y<d_o.y || (d_n.y==d_o.y && d_n.x<d_o.x))))) {
-										winner = candidates[c].index;
-										min_v_dist = d_n;
-									}
-								}
-								else if( candidates[c].abs_distance < min_dist ){
+// 								if (candidates[c].abs_distance == min_dist) {
+// 									VDOUBLE d_n = candidates[c].distance;
+// 									VDOUBLE d_o = min_v_dist;
+// 									if (( d_n.z < d_o.z || (d_n.z==d_o.z  &&  (d_n.y<d_o.y || (d_n.y==d_o.y && d_n.x<d_o.x))))) {
+// 										winner = candidates[c].index;
+// 										min_v_dist = d_n;
+// 									}
+// 								}
+// 								else 
+								if( candidates[c].abs_distance < min_dist ){
 									min_dist = candidates[c].abs_distance;
 									min_v_dist = candidates[c].distance;
 									winner = candidates[c].index;

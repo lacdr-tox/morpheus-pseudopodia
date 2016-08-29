@@ -112,6 +112,7 @@ protected:
 	friend class InteractionEnergy;  // Neighborhood per node -- not using the stencil implementation
 	friend class MembraneMapper;
 	friend class MembraneRules3D;
+	friend class InitVoronoi;
 };
 
 #endif

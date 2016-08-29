@@ -131,6 +131,7 @@ public:
 private:
 	uint id;
 	string name;
+	XMLNode stored_node;
 	
 // 	void CreateCells(uint n);
 protected:

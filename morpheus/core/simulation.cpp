@@ -1386,10 +1386,10 @@ void loadFromXML(const XMLNode xNode) {
 		if (SIM::generate_symbol_graph_and_exit) {
 			createDepGraph();
 		}
-		string xmlpath =  getXMLPath(e.where());
-		cerr << "XMLPath: " << xmlpath << "\n\n";
-		cerr << "Error while reading model description.\n";
+		//cerr << "Error while reading model description.\n";
 		cerr << e.what();
+		string xmlpath =  getXMLPath(e.where());
+		cerr << "\n\nXMLPath: " << xmlpath << "\n\n";
 		cerr.flush();
 		exit(-1);
 	}
@@ -1397,9 +1397,10 @@ void loadFromXML(const XMLNode xNode) {
 		if (SIM::generate_symbol_graph_and_exit) {
 			createDepGraph();
 		}
-		cerr << "Error while reading model description\n";
+//		cerr << "Error while reading model description\n";
 // 		cerr << "XMLPath: "<< getXMLPath(SIM::getScope()->currentXMLNode()) << "\n";
 		cerr << e << endl;
+		cerr.flush();
 		exit(-1);
 	}
 #endif

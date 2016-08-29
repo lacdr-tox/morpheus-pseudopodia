@@ -223,7 +223,8 @@ void SymbolAccessorBase<S,AccessPolicy>::init_all()
 		else {
 			for (uint ct_id=0; ct_id<component_accessors.size(); ct_id++) {
 				if ( !data.component_subscopes[ct_id]) {
-					throw(string("SymbolAccessor: Incomplete definition of composite symbol \"" + data.name + "\" without global default.") );
+					throw(string("Global default for symbol \"" + data.name + "\" is missing.") );
+					//throw(string("SymbolAccessor: Incomplete definition of composite symbol \"" + data.name + "\" without global default.") );
 				}
 				component_accessors[ct_id] = AccessPolicy<S>::findSymbol(data.component_subscopes[ct_id],data.name);
 			}
@@ -244,7 +245,8 @@ void SymbolAccessorBase<S,AccessPolicy>::init_all()
 					break;
 				default:
 					if ( ! init_special() ) 
-						throw(string("SymbolAcessor: Not implemented for linktype = ") + data.getLinkTypeName());
+						throw(string("Symbol \"" + data.name + "\" does not refer to a "+data.getLinkTypeName()+". ") );
+						//throw(string("SymbolAccessor: Not implemented for linktype = ") + data.getLinkTypeName());
 			}
 		} 
 		catch(string e) {
@@ -338,7 +340,7 @@ template <class S>
 SymbolRWAccessor<S>::SymbolRWAccessor(SymbolData d, const Scope* scope) : SymbolAccessorBase<S,ReadWriteAccess>(d, scope)
 {
 	if ( ! d.writable ) {
-		throw string("SymbolRWAccsessor: Cannot create writable accessor to non-writabel Symbol ") + d.name + " of link type " + d.getLinkTypeName();
+		throw string("SymbolRWAccsessor: Cannot create writable accessor to non-writable Symbol ") + d.name + " of link type " + d.getLinkTypeName();
 		exit(-1);
 	}
 	this->init_all();

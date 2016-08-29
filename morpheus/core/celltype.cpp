@@ -88,6 +88,7 @@ XMLNode CellType::saveToXML() const {
 }
 
 void CellType::loadFromXML(const XMLNode xCTNode) {
+	stored_node = xCTNode;
 	getXMLAttribute(xCTNode,"name",name);
 	string classname;
 	getXMLAttribute(xCTNode,"class",classname,false);
@@ -117,8 +118,9 @@ void CellType::loadFromXML(const XMLNode xCTNode) {
 				
 				if (!property->isConstant()) {
 					if (property_by_symbol.find( property->getName() ) != property_by_symbol.end()) {
-						cerr << "Redefinition of Property " << property->getSymbol() << endl;
-						exit(-1);
+						throw MorpheusException("Redefinition of Property \""+property->getSymbol()+"\". ", stored_node);
+						//cerr << "Redefinition of Property " << property->getSymbol() << endl;
+						//exit(-1);
 					}
 					_default_properties.push_back(property);
 					property_by_name[property->getName()]=_default_properties.size()-1;
@@ -162,8 +164,9 @@ void CellType::loadFromXML(const XMLNode xCTNode) {
 				throw(xml_tag_name + " is not a valid celltype plugin");
 			plugins.push_back( p );
 		}
-		catch(string er) { 
-			cerr << er << " - leaving you alone ..." << endl; exit(-1);
+		catch(string er) {
+			throw MorpheusException(er, stored_node);
+			//cerr << er << " - leaving you alone ..." << endl; exit(-1);
 		}
 	}
 	SIM::leaveScope();

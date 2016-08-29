@@ -6,5 +6,6 @@ set(plugin_src
 	init_circle.cpp 
 	tiff_reader.cpp
 	init_hex_lattice.cpp
+	init_voronoi.cpp
 	
 PARENT_SCOPE)

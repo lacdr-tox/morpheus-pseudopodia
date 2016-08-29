@@ -115,6 +115,10 @@ private:
 
 template<class T>
 SymbolAccessor<T> Scope::findSymbol(string name) const {
+	cout << "Symbol name: " << name << endl;
+	if(name.empty())
+		throw (string("Symbol without a name \"") + name + ("\""));
+
 	// try to find it locally
 	try {
 		auto it = local_symbols.find(name);
@@ -132,24 +136,29 @@ SymbolAccessor<T> Scope::findSymbol(string name) const {
 			return parent->findSymbol<T>(name);
 		}
 		else {
-			throw (string("Requested symbol is not defined."));
+ 			throw (string("Symbol \""+name+"\" is not defined. "));
 		}
 	}
 	catch (string e) {
-		stringstream sstr;
-		sstr << "findSymbol: Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
-		sstr << e << endl; 
+		throw ("Global default for symbol \""+name+"\" is missing. ");
+//		stringstream sstr;
+//		sstr << "findSymbol: Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
+//		sstr << e << endl; 
 // 		sstr << "Available symbols: ";
 // 		for (auto it : local_symbols) {
 // 			if (it.second.type_name == TypeInfo<T>::name())
 // 				sstr << "\""<< it.first << "\", ";
 // 		}
-		throw (sstr.str());
+//		throw (sstr.str());
 	}
 };
 
 template<class T>
 SymbolRWAccessor<T> Scope::findRWSymbol(string name) const {
+	cout << "Symbol name: " << name << endl;
+	if(name.empty())
+		throw (string("Symbol without a name \"") + name + ("\""));
+	
 	// try to find it locally
 	try {
 		auto it = local_symbols.find(name);
@@ -170,20 +179,24 @@ SymbolRWAccessor<T> Scope::findRWSymbol(string name) const {
 		}
 	}
 	catch (string e) {
-		stringstream sstr;
-		sstr << "findRWSymbol: Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
-		sstr << e << endl; 
+		throw ("Cannot find (r+w) symbol \""+name+"\". ");
+//		stringstream sstr;
+//		sstr << "findRWSymbol: Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
+//		sstr << e << endl; 
 // 		sstr << "Available symbols: ";
 // 		for (auto it : local_symbols) {
 // 			if (it.second.type_name == TypeInfo<T>::name())
 // 				sstr << "\""<< it.first << "\", ";
 // 		}
-		throw (sstr.str());
+//		throw (sstr.str());
 	}
 };
 
 template<class T>
 SymbolAccessor<T> Scope::findSymbol(string name, const T& default_val) const {
+	cout << "Symbol name: " << name << endl;
+	if(name.empty())
+		throw (string("Symbol without a name \"") + name + ("\""));
 	// try to find it locally
 	try {
 		auto it = local_symbols.find(name);
@@ -204,15 +217,16 @@ SymbolAccessor<T> Scope::findSymbol(string name, const T& default_val) const {
 		}
 	}
 	catch (string e) {
-		stringstream sstr;
-		sstr << "findSymbol: Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
-		sstr << e << endl; 
+		throw ("Cannot find symbol \""+name+"\". ");
+//		stringstream sstr;
+//		sstr << "findSymbol: Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
+//		sstr << e << endl; 
 // 		sstr << "Available symbols: ";
 // 		for (auto it : local_symbols) {
 // 			if (it.second.type_name == TypeInfo<T>::name())
 // 				sstr << "\""<< it.first << "\", ";
 // 		}
-		throw (sstr.str());
+//		throw (sstr.str());
 	}
 };
 

@@ -371,13 +371,13 @@ void JobQueue::processStateChanged(abstractProcess *process) {
 
 void JobQueue::processError ( QString error )
 {
-	bool popup = false;
+	bool popup = true;
 	if (sender()) {
 		abstractProcess* source = qobject_cast<abstractProcess*>(sender());
 		if (source)
 			popup = pending_interactive_jobs.contains(source->jobID()) || running_interactive_jobs.contains(source->jobID()) || finished_interactive_jobs.contains(source->jobID()) ;
 	}
-	emit criticalMessage(QString("Simulation Error\n") + error, popup);
+	emit criticalMessage(error, popup);
 }
 
 

@@ -12,6 +12,7 @@
 			<xs:appinfo>Initialization</xs:appinfo>
 		</xs:annotation>
 		<xs:attribute name="mode" type="cpmInitHexLatticeMode" use="optional" default="left" />
+		<xs:attribute name="randomness" type="cpmDouble" use="optional" default="0.0" />
 	</xs:complexType>
 	
 	<xs:simpleType name="cpmInitHexLatticeMode">

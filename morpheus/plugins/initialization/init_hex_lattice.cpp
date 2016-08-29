@@ -11,6 +11,11 @@ void InitHexLattice::loadFromXML(const XMLNode node)
 	conv_map["right"] = Direction::RIGHT;
 	mode.setDefault("left");
 	mode.setConversionMap(conv_map);
+	registerPluginParameter(mode);
+
+	randomness.setXMLPath("randomness");
+	randomness.setDefault("0.0");
+	registerPluginParameter(randomness);
 
 }
 
@@ -37,11 +42,16 @@ bool InitHexLattice::run(CellType* ct)
 	
 	for(int x=0; x<num_cells_x; x++){
 		for(int y=0; y<num_cells_y; y++){
-			VINT center;
+			VDOUBLE center;
 			if( mode() == InitHexLattice::Direction::LEFT )
 				center = origin + VINT(16*x-6*y, (12-1)*y+x, 0);
 			else
 				center = origin + VINT(17*x-5*y, (12-1)*y-x, 0);
+			if( randomness.isDefined() ){
+				center.x += getRandom01()*randomness();
+				center.y += getRandom01()*randomness();
+				cout << "Randomness: " << center << endl;
+			}
 			cout << x << "\t" << y << " --> \t" << center << endl;
 			CPM::CELL_ID id1 = makeCell(center, nbh, ct);
 		}
@@ -56,11 +66,14 @@ bool InitHexLattice::run(CellType* ct)
 	cout << "NUMBER OF CELLS: " << num_cells_x << "\t" << num_cells_y << endl;
 	for(int x=0; x<num_cells_x; x++){
 		for(int y=0; y<num_cells_y; y++){
-			VINT center;
+			VDOUBLE center;
 			if( mode() == InitHexLattice::Direction::LEFT )
 				center = origin2 + VINT(16*x-6*y, (12-1)*y+x, 0);
 			else
 				center = origin2 + VINT(17*x-5*y, (12-1)*y-x, 0);
+			if( randomness.isDefined() )
+				center.x += getRandom01()*randomness();
+				center.y += getRandom01()*randomness();
 			cout << x << "\t" << y << " --> \t" << center << endl;
 			CPM::CELL_ID id1 = makeCell(center, nbh, ct);
 		}

@@ -58,6 +58,11 @@ void Function::loadFromXML ( const XMLNode Node)
 		getXMLAttribute(Node,"Expression/text",raw_expression);
 	}
 	
+	if( function_symbol.empty() )
+		throw  MorpheusException("Function does not have a valid symbol \""+ function_symbol +"\". ", Node);
+	if( raw_expression.empty() )
+		throw  MorpheusException("Function does not have a valid expression \""+ function_symbol +"\". ", Node);
+		
 	evaluator = shared_ptr<ThreadedExpressionEvaluator<double> >(new ThreadedExpressionEvaluator<double>(raw_expression));
 	
 	function_fullname = this->plugin_name;

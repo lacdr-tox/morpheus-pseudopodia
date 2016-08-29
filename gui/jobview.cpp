@@ -80,6 +80,7 @@ void JobQueueView::selectStatus(QListWidgetItem * message_item) {
 
 void JobQueueView::addCriticalMessage ( QString message, bool popup )
 {
+	popup = true;
 	QListWidgetItem* item = new QListWidgetItem(QThemedIcon("dialog-error",QIcon(":/stop.png")),message);
 	jobQueueStatusText->addItem(item);
 	if (jobQueueStatusText->count()> maxMessageItems)
@@ -87,6 +88,7 @@ void JobQueueView::addCriticalMessage ( QString message, bool popup )
 	jobQueueStatusText->setCurrentItem(item);
 
 	if (popup) {
+		selectStatus(item);
 		QMessageBox::critical(this,"Simulation error", message);
 	}
 }

@@ -36,6 +36,7 @@ private:
 	CPM::CELL_ID makeCell(VINT pos, vector<VINT> nbh, CellType* ct);
 	enum Direction { LEFT, RIGHT };
 	PluginParameter2<Direction, XMLNamedValueReader,DefaultValPolicy> mode;
+	PluginParameter2<double, XMLValueReader,DefaultValPolicy> randomness;
 public:
 	InitHexLattice(){};
 	DECLARE_PLUGIN("InitHexLattice");

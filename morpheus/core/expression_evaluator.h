@@ -200,8 +200,10 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 				parser->DefineVar( symbol.c_str(), &buzz_value );
 			}
 			catch (mu::Parser::exception_type &e){
-				cerr << "Error in declaring variable '"<< symbol <<"'  for Expression: " << e.GetMsg() << ":\n\n" << endl;
-				assert(0); exit(-1);
+				string scopename = (scope->getParent()?scope->getParent()->getName():"Global");
+				throw  (string("Error in declaration of variable \"") +symbol+ ("\"  in ")+ scopename + ("."));
+				//cerr << "Error in declaring variable '"<< symbol <<"'  for Expression: " << e.GetMsg() << ":\n\n" << endl;
+				//assert(0); exit(-1);
 			}
 		}
 		
@@ -209,8 +211,10 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 			parser->SetExpr(clean_expression);
 		}
 		catch (mu::Parser::exception_type &e){
-			cerr << "Error in Expression: " << e.GetMsg() << ":\n\n" << e.GetExpr() << endl;
-			exit(-1);
+			string scopename = (scope->getParent()?scope->getParent()->getName():"Global");
+			throw  (string("Error in expression \"")+ e.GetExpr() +("\" in ")+ scopename + ("."));
+			//cerr << "Error in Expression: " << e.GetMsg() << ":\n\n" << e.GetExpr() << endl;
+			//exit(-1);
 		}
 		
 		mu::varmap_type used_symbols;
@@ -224,11 +228,13 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 			}
 		}
 		catch(mu::Parser::exception_type &e){
+				string scopename = (scope->getParent()?scope->getParent()->getName():"Global");
+			throw  (string("Error in expression \"")+ e.GetExpr() +("\" in ")+ scopename + ("."));
 			//string indicator;
 			//for(int i=0; i< e.GetPos(); i++) indicator.append(" ");
 			//indicator.append("Y");
-			cerr << "Error in Expression: " << e.GetMsg() << ":\n\n" << e.GetExpr() << endl;	
-			exit(-1);
+			//cerr << "Error in Expression: " << e.GetMsg() << ":\n\n" << e.GetExpr() << endl;	
+			//exit(-1);
 		}
 		
 		parser->ClearVar();
