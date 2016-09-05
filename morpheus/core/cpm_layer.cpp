@@ -31,6 +31,12 @@ void StatisticalLatticeStencil::setStencil(const vector< VINT >& neighbors)
 
 void StatisticalLatticeStencil::setPosition(VINT pos)
 {
+	this->pos = pos;
+	valid_data = false;
+}
+
+void StatisticalLatticeStencil::applyPos() const
+{
 	stencil_statistics.resize(0);
 	assert(data_layer->lattice().inside(pos));
 	int center_index = data_layer->get_data_index(pos);
@@ -62,6 +68,7 @@ void StatisticalLatticeStencil::setPosition(VINT pos)
 			stack_id++;
 		}
 	}
+	valid_data = true;
 }
 
 LatticeStencil::LatticeStencil(shared_ptr< const CPM::LAYER >  data_layer, const std::vector< VINT >& neighbors )

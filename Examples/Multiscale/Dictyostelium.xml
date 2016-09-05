@@ -129,11 +129,11 @@ phase
             </Neighborhood>
             <MetropolisKinetics temperature="1.0" yield="0.1"/>
         </MonteCarloSampler>
-        <ShapeBoundary scaling="norm">
+        <ShapeSurface scaling="norm">
             <Neighborhood>
                 <Distance>1.5</Distance>
             </Neighborhood>
-        </ShapeBoundary>
+        </ShapeSurface>
     </CPM>
     <CellPopulations>
         <Population size="1" type="autoAmoeba">

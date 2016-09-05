@@ -134,11 +134,11 @@ PDE Equation:
             </Neighborhood>
             <MetropolisKinetics temperature="5" yield="0.05"/>
         </MonteCarloSampler>
-        <ShapeBoundary scaling="norm">
+        <ShapeSurface scaling="norm">
             <Neighborhood>
                 <Distance>2.0</Distance>
             </Neighborhood>
-        </ShapeBoundary>
+        </ShapeSurface>
     </CPM>
     <CellPopulations>
         <Population size="0" type="cells">

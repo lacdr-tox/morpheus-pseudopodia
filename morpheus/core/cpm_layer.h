@@ -88,18 +88,21 @@ class StatisticalLatticeStencil  {
 		StatisticalLatticeStencil( shared_ptr< const CPM::LAYER > data_layer, const std::vector< VINT >& neighbors );
 		void setPosition(VINT pos);
 		const vector<VINT>& getStencil() const { return stencil_neighbors; };
-		const vector<StatisticalLatticeStencil::STATS>& getStatistics() const { return stencil_statistics; };
-		const vector<CPM::CELL_ID>& getStates() const { return stencil_states; };
+		const vector<StatisticalLatticeStencil::STATS>& getStatistics() const { if (!valid_data) applyPos(); return stencil_statistics; };
+		const vector<CPM::CELL_ID>& getStates() const { if (!valid_data) applyPos(); return stencil_states; };
 		
 	private:
 		void setStencil(const std::vector< VINT >& neighbors);
-
+		void applyPos() const;
+		
+		VINT pos;
+		mutable bool valid_data;
 		shared_ptr< const CPM::LAYER > data_layer;
 		vector<VINT> stencil_neighbors;
 		vector<int> stencil_offsets;
 		vector<int> stencil_row_offsets;
-		vector <STATS> stencil_statistics;
-		vector<CPM::CELL_ID> stencil_states;
+		mutable vector <STATS> stencil_statistics;
+		mutable vector<CPM::CELL_ID> stencil_states;
 };
 
 class LatticeStencil {

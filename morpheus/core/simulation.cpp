@@ -185,12 +185,12 @@ void loadFromXML(XMLNode xMorph) {
 	if ( ! xMorph.getChildNode("CPM").isEmpty() ) {
 		xCPM = xMorph.getChildNode("CPM");
 		
-		// CPM Cell representation requires the definition of the CPM ShapeBoundary for shape length estimations
-		boundary_neighborhood = SIM::lattice().getNeighborhood(xCPM.getChildNode("ShapeBoundary").getChildNode("Neighborhood"));
+		// CPM Cell representation requires the definition of the CPM ShapeSurface for shape length estimations
+		boundary_neighborhood = SIM::lattice().getNeighborhood(xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood"));
 		CPMShape::boundaryNeighborhood = boundary_neighborhood;
 		
 		string boundary_scaling;
-		if (getXMLAttribute(xCPM,"ShapeBoundary/scaling",boundary_scaling)) {
+		if (getXMLAttribute(xCPM,"ShapeSurface/scaling",boundary_scaling)) {
 			if (boundary_scaling == "none") {
 				CPMShape::scalingMode = CPMShape::BoundaryScalingMode::None;
 			}

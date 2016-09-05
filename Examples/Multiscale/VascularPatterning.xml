@@ -95,11 +95,11 @@ http://dx.doi.org/10.1371/journal.pone.0024175
             </Neighborhood>
             <MetropolisKinetics temperature="1"/>
         </MonteCarloSampler>
-        <ShapeBoundary scaling="norm">
+        <ShapeSurface scaling="norm">
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>
-        </ShapeBoundary>
+        </ShapeSurface>
     </CPM>
     <CellPopulations>
         <Population size="0" type="HUVEC">
