@@ -469,8 +469,12 @@ Specifies parameters for a cellular Potts model (CPM) which provides a MonteCarl
 
 \b ShapeSurface specifies the Neighborhood used to estimate the boundary length of CPM Shapes, in particular cells. This estimate is used for computing interaction energies, cell perimeters and interface lengths.
   - \b scaling scaling of number of neighbors to length: \b norm estimate the length in unit of node length (see Magno, Grieneisen and Marée, BMC Biophysics, 2015), \b size neigborhood fraction occupied by other entities, \b none number of neighbors occupied by other entities.
+  - \b Neigborhood defines the stencil size to approximate the surface length. Wrt. to shape isotropy some neighborhoods are favourable: 
+    - square  -- 6th order corresponding to a distance of 3
+    - hexagonal -- 3rd order, corresponding to a distance of 2
+    - cubic  -- 7th order  corresponding to a distance of \f$ 2 \sqrt 2 \f$ 
 
-\b Interaction specifies interaction energies \f$ J_{\sigma, \sigma} \f$for different intercellular \ref Contact. The interaction energy given per length unit as defined in ShapeSurface.
+\b Interaction specifies interaction energies \f$ J_{\sigma, \sigma} \f$ for different intercellular \ref Contact. The interaction energy given per length unit as defined in ShapeSurface.
 
 
 \b MonteCarloSampler
@@ -487,6 +491,7 @@ Graner, Glazier, 1992
 
 Kafer, Hogeweg and Maree, PLoS Comp Biol, 2006
 
+Magno, Grieneisen and Marée, BMC Biophysics, 2015
 
 **/
 

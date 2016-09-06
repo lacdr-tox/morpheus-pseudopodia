@@ -67,7 +67,7 @@ const map<CPM::CELL_ID,double>&  AdaptiveCPMShapeTracker::interfaces() const {
 	if (last_interface_update!=n_updates) {
 		if (n_updates - last_interface_update< 5*(10 + _nodes.size())) {
 			tracking.interfaces=true;
-			cout << "Switching on interface tracking for cell " << cell_id << " after " << n_updates - last_interface_update << " updates."<< endl;
+// 			cout << "Switching on interface tracking for cell " << cell_id << " after " << n_updates - last_interface_update << " updates."<< endl;
 		}
 		initInterfaces();
 	}
@@ -124,7 +124,7 @@ void AdaptiveCPMShapeTracker::reset(AdaptiveCPMShapeTracker* other) {
 	
 	if (other->cell_id != cell_id)
 		assert(0);
-	assert(other->n_updates<n_updates);
+// 	assert(other->n_updates<n_updates);
 	
 	node_sum = other->node_sum;
 	node_count = other->node_count;
@@ -213,7 +213,9 @@ void AdaptiveCPMShapeTracker::apply(const CPM::Update& update, AdaptiveCPMShapeT
 {
 	if (other->cell_id != cell_id)
 		assert(0);
-	assert(other->n_updates>n_updates);
+	
+	if (! (other->n_updates>n_updates) )
+		return apply(update); // In case just this change is not tracked in 'other'
 	
 	node_sum = other->node_sum;
 	node_count = other->node_count;
@@ -743,8 +745,16 @@ void CPMShapeTracker::reset()
 void CPMShapeTracker::applyUpdate(const CPM::Update& update)
 {
 	if (update.opAdd() && update.opRemove()) return;
-	current_shape.apply(update,&updated_shape);
-	updated_is_current = true;
+	
+	if (update.opNeighborhood()) {
+		// Neighborhood updates are not tracked in updated_shape so far
+		current_shape.apply(update);
+		updated_is_current = false;
+	}
+	else {
+		current_shape.apply(update, &updated_shape);
+		updated_is_current = true;
+	}
 }
 
 /*

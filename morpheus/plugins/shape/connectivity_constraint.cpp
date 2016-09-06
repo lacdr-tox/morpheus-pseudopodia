@@ -109,28 +109,12 @@ bool ConnectivityConstraint:: update_check( CPM::CELL_ID cell_id , const CPM::Up
 		int n_1st_order = 0; // number of 1st order neighbors occupied by other spins,
 		CPM::CELL_ID last_neigbor = neighbors.back();
 		
-		if (SIM::lattice().getStructure()==Lattice::hexagonal) {
-// 			for (int i=0; i<neighbors.size(); i++) {
-// 				if (is_first_order[i])
-// 			}
-// 			last_neigbor = neighbors.back();
-			
-			for (int i=0; i<neighbors.size(); i++) {
-// 				if (is_first_order[i]) {
-				n_sections += ( neighbors[i] != cell_id && last_neigbor == cell_id );
-				n_1st_order += is_first_order[i] && (neighbors[i] == cell_id) ;
-				last_neigbor = neighbors[i];
-// 				}
-			}
+		for (int i=0; i<neighbors.size(); i++) {
+			n_sections += ( neighbors[i] != cell_id && last_neigbor == cell_id );
+			n_1st_order += is_first_order[i] && (neighbors[i] == cell_id) ;
+			last_neigbor = neighbors[i];
+		}
 
-		}
-		else {
-			for (int i=0; i<neighbors.size(); i++) {
-				n_sections += ( neighbors[i] != cell_id && last_neigbor == cell_id );
-				n_1st_order += is_first_order[i] && (neighbors[i] == cell_id) ;
-				last_neigbor = neighbors[i];
-			}
-		}
 		if ( update.opRemove() ) {
 			// prevent disconnecting chains and prevent hole formation
 			if (n_sections > 1 || n_1st_order == max_first_order) return false;

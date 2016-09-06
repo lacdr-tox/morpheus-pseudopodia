@@ -36,7 +36,6 @@ double LengthConstraint::delta( const SymbolFocus& cell_focus, const CPM::Update
 }
 
 double LengthConstraint::hamiltonian( CPM::CELL_ID cell_id) const {	  	
-	assert( _I(cell_id).size() != 0);
 	double s = strength( SymbolFocus( cell_id ) );
 	double t = target( SymbolFocus( cell_id ) );
 	double dE = s * sqr( SymbolFocus( cell_id ).cell().currentShape().ellipsoidApprox().lengths[0] - t ); // do full calculation, updates everything
