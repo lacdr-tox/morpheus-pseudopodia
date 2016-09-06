@@ -12,6 +12,9 @@ void Update::set(VINT source, VINT dir, Update::Operation opx) {
 	VINT pos = source;
 	layer->lattice().resolve(pos);
 	d->add_state = layer->get(pos);
+	// In case we copy from a boundary state, we have to fix pos.
+	if (!layer->lattice().equal_pos(pos,d->add_state.pos))
+		d->add_state.pos = pos;
 	d->source.setCell(d->add_state.cell_id, pos);
 	
 	d->add_state.pos += dir;
