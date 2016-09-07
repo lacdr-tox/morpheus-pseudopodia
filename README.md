@@ -6,6 +6,10 @@ For further information look at https://imc.zih.tu-dresden.de/wiki/morpheus .
 
 Morpheus has been developed by Jörn Starruß and Walter de Back at the Center for High Performance Computing at the Technische Universität Dresden, Germany.
 
+
+<img src="https://gitlab.com/morpheus.lab/morpheus/uploads/3a7c4af0d6f9507f6143a67720d629e1/Morpheus.png" width="60%"/>
+*Morpheus graphical user interface. Model editor (top) and results browser (bottom)*
+
 Install
 =======
 
