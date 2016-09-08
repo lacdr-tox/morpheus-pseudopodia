@@ -1,13 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
-	<xs:group name="CellTypePlugins">
+	<xs:group name="GlobalPlugins">
 		<xs:choice>
-			<xs:element name="NeighborhoodReporter"	type="NeighborhoodReporter"/>
+			<xs:element name="NeighborhoodReporter"	type="NeighborhoodGlobalReporter"/>
 		</xs:choice>
 	</xs:group>
 	
-	<xs:complexType name="NeighborhoodReporter" mixed="false" >
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="NeighborhoodReporter"	type="NeighborhoodCellTypeReporter"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="NeighborhoodCelltypeReporter" mixed="false" >
 		<xs:annotation>
 			<xs:appinfo>Reporter</xs:appinfo>
 		</xs:annotation>
@@ -35,6 +41,30 @@
 		<xs:attribute name="name" type="cpmString" use="optional" />
 <!-- 		<xs:attribute name="time-step" type="cpmDouble" use="optional" /> -->
 	</xs:complexType>
+	
+	<xs:complexType name="NeighborhoodGlobalReporter" mixed="false" >
+		<xs:annotation>
+			<xs:appinfo>Reporter</xs:appinfo>
+		</xs:annotation>
+			
+		<xs:all>
+			<xs:element name="Input" minOccurs="1">
+				<xs:complexType>
+					<xs:attribute name="value" type="cpmMathExpression" use="required" />
+				</xs:complexType>
+			</xs:element>
+			
+			<xs:element name="Output" minOccurs="1" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:attribute name="mapping" type="cpmArrayStatistics" use="required" />
+					<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required" />
+				</xs:complexType>
+			</xs:element>
+		</xs:all>
+		
+		<xs:attribute name="name" type="cpmString" use="optional" />
+	</xs:complexType>
+	
 	
 	<xs:simpleType name="cpmNeighborsReporterInputMode">
 		<xs:restriction base="cpmString">

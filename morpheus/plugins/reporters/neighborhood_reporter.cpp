@@ -1,5 +1,6 @@
 #include "neighborhood_reporter.h"
 
+
 using namespace SIM;
 
 REGISTER_PLUGIN(NeighborhoodReporter);
@@ -47,64 +48,115 @@ void NeighborhoodReporter::init(const Scope* scope)
 {
     ReporterPlugin::init(scope);
     celltype = scope->getCellType();
-	if (!celltype)
-		throw XMLName() + " can only be used within CellType scopes.";
-	
-	cpm_layer = CPM::getLayer();
-
-	// Reporter output value depends on cell position
-	registerCellPositionDependency();
-	
-	bool input_is_halo = input.granularity() == Granularity::MembraneNode || input.granularity() == Granularity::Node;
-	if (input_mode.isDefined() && input_is_halo) {
-		cout << "NeighborhoodReporter: Input has (membrane) node granularity. Ignoring defined input mode." << endl;
-	}
-	
-	for ( auto & out : output) {
-		switch (out->symbol.granularity()) {
-			case Granularity::MembraneNode:
-				halo_output.push_back(out);
-				out->membrane_acc = celltype->findMembrane(out->symbol.name());
-				break;
-			case Granularity::Global :
-			case Granularity::Cell :
-				if ( ! out->mapping.isDefined())
-					throw MorpheusException(string("NeighborhoodReporter requires a mapping for reporting into Symbol ") + out->symbol.name(), stored_node);
-				out->mapper = DataMapper::create(out->mapping());
-				
-				if (input_is_halo) {
-					halo_output.push_back(out);
-				}
-				else {
-					interf_output.push_back(out);
-				}
-				break;
-				
-			case Granularity::Node: 
-			default:
-				throw XMLName() + " can not write to symbol " + out->symbol.name() + " with node granularity.";
-				break;
-		}
-	}
-	
-	if (!halo_output.empty()) {
-		CPM::enableEgdeTracking();
-	}
-	
-	noflux_cell_medium = false;
-	if (noflux_cell_medium_interface.isDefined() ){
-		cout << "noflux_cell_medium_interface.isDefined()" << endl;
-		if (noflux_cell_medium_interface() == true){
-			noflux_cell_medium = true;
-			cout << "noflux_cell_medium_interface() == true!" << endl;
-		}
-	}
+		if (celltype) {
 		
+		cpm_layer = CPM::getLayer();
+
+		// Reporter output value depends on cell position
+		registerCellPositionDependency();
+		
+		bool input_is_halo = input.granularity() == Granularity::MembraneNode || input.granularity() == Granularity::Node;
+		if (input_mode.isDefined() && input_is_halo) {
+			cout << "NeighborhoodReporter: Input has (membrane) node granularity. Ignoring defined input mode." << endl;
+		}
+		
+		for ( auto & out : output) {
+			switch (out->symbol.granularity()) {
+				case Granularity::MembraneNode:
+					halo_output.push_back(out);
+					out->membrane_acc = celltype->findMembrane(out->symbol.name());
+					break;
+				case Granularity::Global :
+				case Granularity::Cell :
+					if ( ! out->mapping.isDefined())
+						throw MorpheusException(string("NeighborhoodReporter requires a mapping for reporting into Symbol ") + out->symbol.name(), stored_node);
+					out->mapper = DataMapper::create(out->mapping());
+					
+					if (input_is_halo) {
+						halo_output.push_back(out);
+					}
+					else {
+						interf_output.push_back(out);
+					}
+					break;
+					
+				case Granularity::Node: 
+				default:
+					throw XMLName() + " can not write to symbol " + out->symbol.name() + " with node granularity.";
+					break;
+			}
+		}
+		
+		if (!halo_output.empty()) {
+			CPM::enableEgdeTracking();
+		}
+		
+		noflux_cell_medium = false;
+		if (noflux_cell_medium_interface.isDefined() ){
+			cout << "noflux_cell_medium_interface.isDefined()" << endl;
+			if (noflux_cell_medium_interface() == true){
+				noflux_cell_medium = true;
+				cout << "noflux_cell_medium_interface() == true!" << endl;
+			}
+		}
+	}
+	else {
+		// global scope case
+		
+		for ( auto & out : output) {
+			switch (out->symbol.granularity()) {
+				case Granularity::Node: 
+					out->mapper = DataMapper::create(out->mapping());
+					break;
+				default:
+					throw MorpheusException( XMLName() + " can not write to symbol " + out->symbol.name() + " without node granularity.", stored_node);
+					break;
+			}
+		}
+	}
 }
 
 
 void NeighborhoodReporter::report() {
+	if (celltype) {
+		reportCelltype(celltype);
+	}
+	else {
+		reportGlobal();
+	}
+}
 
+void NeighborhoodReporter::reportGlobal() {
+	FocusRange range(Granularity::Node, SIM::getGlobalScope());
+	auto neighbors = SIM::lattice().getDefaultNeighborhood().neighbors();
+//#pragma omp parallel
+//{
+//#pragma omp for schedule(static)
+//	for (auto i_node = range.begin(); i_node<range.end(); ++i_node) {
+//		auto node = *i_node;
+	
+	for (auto node : range) { // syntax cannot be used with openMP
+		// loop through its neighbors
+		for ( int i_nei = 0; i_nei < neighbors.size(); ++i_nei ) {
+			VINT nb_pos = node.pos() + neighbors[i_nei];
+			// get value at neighbor node
+			double value = input(nb_pos);
+			// add value to data mapper
+			for (auto const& out : output){
+				out->mapper->addVal( value );
+			}
+		}
+		// write mapped values to output symbol at node
+		for (auto const& out : output){
+			out->symbol.set(node.pos(),out->mapper->get());
+			out->mapper->reset();
+		}
+	}
+// }
+}
+
+
+void NeighborhoodReporter::reportCelltype(CellType* celltype) {
     vector<CPM::CELL_ID> cells = celltype->getCellIDs();
 	if (cells.empty()) return;
 

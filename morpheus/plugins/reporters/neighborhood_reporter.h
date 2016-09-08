@@ -11,15 +11,21 @@
 
 /** \defgroup NeighborhoodReporter
 \ingroup ReporterPlugins
-\brief Reports data about the cell's neighborhood or 'microenvironment'. 
 
-\section Description
+\brief Reports data about a node's or a cell's neighborhood or 'microenvironment'. 
+
+\section Description for Global
+
+Collects statistic of the local environment of a node and writes it to a Field. 
+
+
+\section Description for CellType
 
 NeighborhoodReporter reports about the adjacent Neighborhood of a cell, i.e. the cell's 'microenvironment'. 
 
 Information can be retrieved from all contexts within the neighborhood (i.e. Property or MembraneProperty of neighboring cells, Field concentrations) and, if necessary, mapped to a single value.
 
-The neighorhood size is retrieved from the \ref Lattice definition of the boundary neighborhood (Space/Lattice/Neighborhood). 
+The neighorhood size is retrieved from the \ref CPM definition of the ShapeSurface neighborhood (CPM/). 
 
 A single \b Input element must be specified:
 - \b value: input variable (e.g. Property, MembraneProperty or Field). May contain expression.
@@ -37,7 +43,7 @@ Multiple \b Output elements can be specified:
 - \b symbol-ref: ouput variable (e.g. Property or MembraneProperty)
 
 
-\section Examples
+\subsection Examples
 Average and Variance of a value defined by an expression in surrounding cells
 (Assume 'A' and 'B' refer to CellProperties)
 \verbatim
@@ -74,6 +80,7 @@ Surface length of a whole cell population (ct1) with other cells / medium
 	<Output symbol-ref="A" mapping="sum"/>
 </NeighborhoodReporter>
 \endverbatim
+
 */
 
 #ifndef NEIGHBORHOOD_REPORTER_H
@@ -87,6 +94,7 @@ Surface length of a whole cell population (ct1) with other cells / medium
 #include "core/symbolfocus.h"
 #include "core/data_mapper.h"
 #include "core/membranemapper.h"
+#include "core/focusrange.h"
 
 class NeighborhoodReporter : public ReporterPlugin
 {
@@ -112,14 +120,17 @@ class NeighborhoodReporter : public ReporterPlugin
 		vector< shared_ptr<OutputSpec> > halo_output;
 		vector< shared_ptr<OutputSpec> > interf_output;
 		vector< shared_ptr<OutputSpec> > interf_global_output;
+		
+		void reportCelltype(CellType* celltype);
+		void reportGlobal();
 
 	public:
 		DECLARE_PLUGIN("NeighborhoodReporter");
 		NeighborhoodReporter();
 	
-		void init(const Scope* scope);
-		void loadFromXML(const XMLNode);
-		virtual void report();
+		void init(const Scope* scope) override;
+		void loadFromXML(const XMLNode) override;
+		virtual void report() override;
 };
 
 #endif
