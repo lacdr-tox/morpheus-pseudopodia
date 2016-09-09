@@ -13,7 +13,7 @@
 		</xs:choice>
 	</xs:group>
 	
-	<xs:complexType name="NeighborhoodCelltypeReporter" mixed="false" >
+	<xs:complexType name="NeighborhoodCellTypeReporter" mixed="false" >
 		<xs:annotation>
 			<xs:appinfo>Reporter</xs:appinfo>
 		</xs:annotation>
