@@ -129,30 +129,34 @@ void NeighborhoodReporter::report() {
 void NeighborhoodReporter::reportGlobal() {
 	FocusRange range(Granularity::Node, SIM::getGlobalScope());
 	auto neighbors = SIM::lattice().getDefaultNeighborhood().neighbors();
-//#pragma omp parallel
-//{
-//#pragma omp for schedule(static)
-//	for (auto i_node = range.begin(); i_node<range.end(); ++i_node) {
-//		auto node = *i_node;
-	
-	for (auto node : range) { // syntax cannot be used with openMP
-		// loop through its neighbors
-		for ( int i_nei = 0; i_nei < neighbors.size(); ++i_nei ) {
-			VINT nb_pos = node.pos() + neighbors[i_nei];
-			// get value at neighbor node
-			double value = input(nb_pos);
-			// add value to data mapper
-			for (auto const& out : output){
-				out->mapper->addVal( value );
+#pragma omp parallel
+	{
+		vector<shared_ptr<DataMapper> > thread_mapper;
+		for ( auto const& out : output) {
+			thread_mapper.push_back(DataMapper::create(out->mapping()));
+		}
+#pragma omp for schedule(static)
+		for (auto i_node = range.begin(); i_node<range.end(); ++i_node) {
+			const auto& node = *i_node;
+		
+	// 	for (auto node : range) { // syntax cannot be used with openMP
+			// loop through its neighbors
+			for ( int i_nei = 0; i_nei < neighbors.size(); ++i_nei ) {
+				VINT nb_pos = node.pos() + neighbors[i_nei];
+				// get value at neighbor node
+				double value = input(nb_pos);
+				// add value to data mapper
+				for (auto const& mapper : thread_mapper){
+					mapper->addVal( value );
+				}
+			}
+			// write mapped values to output symbol at node
+			for (int i=0; i<output.size(); i++) {
+				output[i]->symbol.set(node.pos(),thread_mapper[i]->get());
+				thread_mapper[i]->reset();
 			}
 		}
-		// write mapped values to output symbol at node
-		for (auto const& out : output){
-			out->symbol.set(node.pos(),out->mapper->get());
-			out->mapper->reset();
-		}
 	}
-// }
 }
 
 
