@@ -71,8 +71,9 @@ MorpheusXML::MorpheusXML(QString xmlFile) {
 bool MorpheusXML::save(QString fileName) {
     QString outputXML = fileName;
     // pull the focus, such that all edit operations finish
-    if ( qApp->activeWindow())
-        qApp->activeWindow()->setFocus();
+// 	if (qApp->focusWidget())
+// 		qApp->focusWidget()->clearFocus();
+
     QFile file(outputXML);
     if(file.open(QIODevice::WriteOnly | QIODevice::Truncate) )
     {
