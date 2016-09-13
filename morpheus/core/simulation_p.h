@@ -21,8 +21,9 @@
 #include <map>
 #include <algorithm>
 
-	#include <sys/types.h>
-	#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <thread>
 
 #ifdef HAVE_GNU_SYSLIB_H
 	#include <sys/unistd.h>

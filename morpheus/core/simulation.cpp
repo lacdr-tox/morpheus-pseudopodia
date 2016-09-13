@@ -7,7 +7,7 @@
 
 #include "simulation_p.h"
 #include "edge_tracker.h"
-#include "lattice_data_layer.cpp"
+// #include "lattice_data_layer.cpp"
 
 int main(int argc, char *argv[]) {
     return SIM::main(argc,argv);
@@ -721,7 +721,10 @@ void setUpdate(CPM::Update& update) {
 namespace SIM {
 
 int main(int argc, char *argv[]) {
-	
+#ifndef NO_CORE_CATCH
+	try {
+#endif
+		
     double init0 = get_wall_time();
 	init(argc, argv);
 	
@@ -745,6 +748,7 @@ int main(int argc, char *argv[]) {
 
 	finalize();
 
+
 	cout << "\n=== Simulation finished ===\n";
 	string init_time = prettyFormattingTime( init1 - init0 );
 	string cpu_time = prettyFormattingTime( cpu1 - cpu0 );
@@ -760,6 +764,34 @@ int main(int argc, char *argv[]) {
     fout << "Threads\tInit(s)\tCPU(s)\tWall(s)\tMem(Mb)\n";
     fout << numthreads << "\t" << (init1-init0) << "\t" << (cpu1-cpu0) << "\t" << (wall1-wall0) << "\t" << (double(peakMem)/(1024.0*1024.0)) << "\n";
 	fout.close();
+
+#ifndef NO_CORE_CATCH
+	}
+	catch (MorpheusException e) {
+		if (SIM::generate_symbol_graph_and_exit) {
+			createDepGraph();
+		}
+		//cerr << "Error while reading model description.\n";
+		cerr << e.what();
+		string xmlpath =  getXMLPath(e.where());
+		cerr << "\n\nXMLPath: " << xmlpath << "\n\n";
+		cerr.flush();
+		this_thread::sleep_for(chrono::milliseconds(50));
+		exit(-1);
+	}
+	catch (string e) {
+		if (SIM::generate_symbol_graph_and_exit) {
+			createDepGraph();
+		}
+//		cerr << "Error while reading model description\n";
+// 		cerr << "XMLPath: "<< getXMLPath(SIM::getScope()->currentXMLNode()) << "\n";
+		cerr << e << endl;
+		cerr.flush();
+		this_thread::sleep_for(chrono::milliseconds(50));
+		exit(-1);
+	}
+#endif
+
 	return 0;
 }
 
@@ -1179,9 +1211,9 @@ void loadFromXML(const XMLNode xNode) {
 
 // Loading simulation parameters
 	string nnn;
-#ifndef NO_CORE_CATCH
-	try {
-#endif
+// #ifndef NO_CORE_CATCH
+// 	try {
+// #endif
 		/*********************************************/
 		/** LOADING XML AND REGISTRATION OF SYMBOLS **/
 		/*********************************************/
@@ -1383,30 +1415,30 @@ void loadFromXML(const XMLNode xNode) {
 		}
 		
 		TimeScheduler::init();
-#ifndef NO_CORE_CATCH
-	}
-	catch (MorpheusException e) {
-		if (SIM::generate_symbol_graph_and_exit) {
-			createDepGraph();
-		}
-		//cerr << "Error while reading model description.\n";
-		cerr << e.what();
-		string xmlpath =  getXMLPath(e.where());
-		cerr << "\n\nXMLPath: " << xmlpath << "\n\n";
-		cerr.flush();
-		exit(-1);
-	}
-	catch (string e) {
-		if (SIM::generate_symbol_graph_and_exit) {
-			createDepGraph();
-		}
-//		cerr << "Error while reading model description\n";
-// 		cerr << "XMLPath: "<< getXMLPath(SIM::getScope()->currentXMLNode()) << "\n";
-		cerr << e << endl;
-		cerr.flush();
-		exit(-1);
-	}
-#endif
+// #ifndef NO_CORE_CATCH
+// 	}
+// 	catch (MorpheusException e) {
+// 		if (SIM::generate_symbol_graph_and_exit) {
+// 			createDepGraph();
+// 		}
+// 		//cerr << "Error while reading model description.\n";
+// 		cerr << e.what();
+// 		string xmlpath =  getXMLPath(e.where());
+// 		cerr << "\n\nXMLPath: " << xmlpath << "\n\n";
+// 		cerr.flush();
+// 		exit(-1);
+// 	}
+// 	catch (string e) {
+// 		if (SIM::generate_symbol_graph_and_exit) {
+// 			createDepGraph();
+// 		}
+// //		cerr << "Error while reading model description\n";
+// // 		cerr << "XMLPath: "<< getXMLPath(SIM::getScope()->currentXMLNode()) << "\n";
+// 		cerr << e << endl;
+// 		cerr.flush();
+// 		exit(-1);
+// 	}
+// #endif
 	cout << "model is up" <<endl;
 };
 
