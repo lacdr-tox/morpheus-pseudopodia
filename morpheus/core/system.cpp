@@ -557,6 +557,8 @@ void System<system_type>::compute(const SymbolFocus& f)
 template <SystemType system_type>
 void System<system_type>::computeContextToBuffer()
 {
+	if (context == SymbolData::UnLinked)
+		return;
 	// TODO This might be dispensible if the pde_layer initializes the buffer accordingly
 	if (context ==  SymbolData::PDELink && SIM::lattice().getDomain().domainType()!= Domain::none) {
 		for (int i =0; i<equations.size(); i++) {
