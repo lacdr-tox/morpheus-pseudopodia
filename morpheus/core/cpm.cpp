@@ -172,7 +172,7 @@ bool CPMSampler::evalCPMUpdate(const CPM::Update& update)
 	if (dE <= 0)
 		return true;
 	
-	double p = exp(-dE / metropolis_temperature());
+	double p = exp(-dE / metropolis_temperature(SymbolFocus()));
 	double rnd = getRandom01();
 
 	return rnd < p;
