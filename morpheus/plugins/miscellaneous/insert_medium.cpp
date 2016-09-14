@@ -37,11 +37,10 @@ void InsertMedium::executeTimeStep()
 	CPM::CELL_ID cell_id = cells[ random_cell ];
 	
 	// 2. get the cell interface from the cell
-	const map<CPM::CELL_ID, uint>& interfaces =  CPM::getCell(cell_id).getInterfaces();
+	const auto& interfaces =  CPM::getCell(cell_id).getInterfaceLengths();
 
 	// 3. if there are already medium neighbors, inserting medium is senseless, so return
-	map<CPM::CELL_ID, uint>::const_iterator it;
-	it = interfaces.find(medium);
+	auto it = interfaces.find(medium);
 	if( it != interfaces.end()){
 		if( it->second > 0 )
 			return;

@@ -121,11 +121,11 @@ Shows the following features of Morpheus:
             </Neighborhood>
             <MetropolisKinetics temperature="3" yield="0.1"/>
         </MonteCarloSampler>
-        <ShapeBoundary scaling="norm">
+        <ShapeSurface scaling="norm">
             <Neighborhood>
                 <Distance>2.5</Distance>
             </Neighborhood>
-        </ShapeBoundary>
+        </ShapeSurface>
     </CPM>
     <CellPopulations>
         <Population size="0" type="stem_cells">

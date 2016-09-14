@@ -15,9 +15,9 @@ double VolumeConstraint::delta( const SymbolFocus& cell_focus, const CPM::Update
 	double t = target( cell_focus );
 
 	// Vb = volume before update
-	int Vb = cell_focus.cell().nNodes(); 
+	int Vb = cell_focus.cell().currentShape().size(); 
 	// Va = volume after update
-	int Va =  Vb + (update.opAdd()) - (update.opRemove());
+	int Va =  cell_focus.cell().updatedShape().size();
 	
 	double dE = s * ( sqr(t - Va) - sqr(t - Vb) );
 	return dE;

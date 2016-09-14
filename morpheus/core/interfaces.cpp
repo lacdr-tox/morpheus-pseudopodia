@@ -130,8 +130,13 @@ TimeStepListener::TimeStepListener(TimeStepListener::XMLSpec spec) : xml_spec(sp
 
 void TimeStepListener::setTimeStep(double t)
 {
-	assert(t>0);
+// 	assert(t>0);
 	time_step = t;
+	if (time_step<0) {
+		valid_time = numeric_limits< double >::max();
+	}
+	else 
+		valid_time = SIM::getTime();
 }
 
 
@@ -209,6 +214,11 @@ void TimeStepListener::init(const Scope* scope)
 	latest_time_step = -1;
 	if (time_step>0)
 		setTimeStep(time_step);
+	else {
+		valid_time = numeric_limits< double >::max();
+		if (time_step<0)
+			latest_time_step = numeric_limits< double >::max();
+	}
 
 	TimeScheduler::reg(this);
 }

@@ -16,12 +16,14 @@ typedef TR1_NAMESPACE::normal_distribution<double> RNG_GaussDist;
 typedef TR1_NAMESPACE::gamma_distribution<double> RNG_GammaDist;
 
 bool getRandomBool() {
-#ifdef USING_CXX0X_TR1
-	static uniform_int_distribution<> rnd(0,1);
-#else
-	static uniform_int<> rnd(0,1);
-#endif
-	return rnd(random_engines[ omp_get_thread_num() ] )!=0;
+// #ifdef USING_CXX0X_TR1
+// 	static uniform_int_distribution<> rnd(0,1);
+// #else
+// 	static uniform_int<> rnd(0,1);
+// #endif
+	
+// 	return rnd(random_engines[ omp_get_thread_num() ] )!=0;
+	return random_engines[ omp_get_thread_num() ]()<random_engines[ omp_get_thread_num() ].max()/2;
 }
 
 double getRandom01() {
@@ -169,6 +171,7 @@ void loadFromXML(XMLNode xMorph) {
 		loadCellTypes(xMorph.getChildNode("CellTypes"));
 	
 	boundary_neighborhood = SIM::lattice().getDefaultNeighborhood();
+	CPMShape::boundaryNeighborhood = boundary_neighborhood;
 	
 	if (SIM::lattice().getStructure() == Lattice::square)
 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(2);
@@ -182,10 +185,12 @@ void loadFromXML(XMLNode xMorph) {
 	if ( ! xMorph.getChildNode("CPM").isEmpty() ) {
 		xCPM = xMorph.getChildNode("CPM");
 		
-		// CPM Cell representation requires the definition of the CPM ShapeBoundary for shape length estimations
-		boundary_neighborhood = SIM::lattice().getNeighborhood(xCPM.getChildNode("ShapeBoundary").getChildNode("Neighborhood"));
+		// CPM Cell representation requires the definition of the CPM ShapeSurface for shape length estimations
+		boundary_neighborhood = SIM::lattice().getNeighborhood(xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood"));
+		CPMShape::boundaryNeighborhood = boundary_neighborhood;
+		
 		string boundary_scaling;
-		if (getXMLAttribute(xCPM,"ShapeBoundary/scaling",boundary_scaling)) {
+		if (getXMLAttribute(xCPM,"ShapeSurface/scaling",boundary_scaling)) {
 			if (boundary_scaling == "none") {
 				CPMShape::scalingMode = CPMShape::BoundaryScalingMode::None;
 			}
@@ -281,8 +286,6 @@ void loadFromXML(XMLNode xMorph) {
 						layer->set(InitialState.pos, InitialState);
 
 		// Creating a default global update template
-// 		boundary_neighborhood = SIM::global_lattice->getDefaultNeighborhood();
-		// sort(boundary_neighborhood.begin(),boundary_neighborhood.end(), CompareAngle() );
 		global_update_data.boundary = unique_ptr<StatisticalLatticeStencil>(new StatisticalLatticeStencil(layer, boundary_neighborhood.neighbors()));
 		global_update_data.surface = unique_ptr<LatticeStencil>(new LatticeStencil(layer, surface_neighborhood.neighbors()));
 		if ( ! update_neighborhood.empty() ) {
@@ -296,9 +299,6 @@ void loadFromXML(XMLNode xMorph) {
 		
 	}
 	else {
-		// boundary_neighborhood = SIM::global_lattice->getDefaultNeighborhood();
-		// sort(boundary_neighborhood.begin(),boundary_neighborhood.end(), CompareAngle() );
-		// global_update.boundary = new LatticeStencil(layer, boundary_neighborhood);
 		global_update_data.boundary = 0;
 		global_update_data.update = 0;
 		global_update_data.surface = 0;

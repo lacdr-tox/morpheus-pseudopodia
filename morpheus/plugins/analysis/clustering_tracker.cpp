@@ -54,15 +54,14 @@ bool Clustering_Tracker::touching(CPM::CELL_ID arg1,CPM::CELL_ID  arg2) {
 	// 	const vector<>& segments2 = static_cast<const SuperCell &>(CPM::getCell(arg2)).getSubCells();
 	// 	double critical_dist = pow (volume.get(segments1[0]), 1.0/ SIM::getLattice()->getDimensions())/1.5 + pow (volume.get(segments2[0]), 1.0/SIM::getLattice()->getDimensions())/1.5;
 		for (uint s1=0; s1<segments1.size();s1++) {
-			const map<CPM::CELL_ID,uint>& interfaces = CPM::getCell(segments1[s1]).getInterfaces();
-			map<CPM::CELL_ID,uint>::const_iterator it;
-			for (it = interfaces.begin(); it != interfaces.end(); it++) {
+			const auto& interfaces = CPM::getCell(segments1[s1]).getInterfaceLengths();
+			for (auto it = interfaces.begin(); it != interfaces.end(); it++) {
 				if (CPM::getCellIndex(it->first).super_cell_id ==  arg2) return true;
 			}
 		}
 	}
 	else {
-		const map<CPM::CELL_ID,uint>& interfaces = CPM::getCell(arg1).getInterfaces();
+		const auto& interfaces = CPM::getCell(arg1).getInterfaceLengths();
 		if ( interfaces.find(arg2) != interfaces.end())
 			return true;
 	}

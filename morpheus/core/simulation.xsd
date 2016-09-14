@@ -33,7 +33,7 @@
 		</xs:annotation>
 		<xs:all>
 <!-- 			<xs:element name="BoundaryConditions" type="cpmCPMBoundaryConditions" minOccurs="0" /> -->
-			<xs:element name="ShapeBoundary">
+			<xs:element name="ShapeSurface">
 				<xs:complexType>
 					<xs:all>
 						<xs:element name="Neighborhood" type="cpmNeighborhood" /> 

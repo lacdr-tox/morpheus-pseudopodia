@@ -80,11 +80,11 @@ Graner and Glazier, Simulation of biological cell sorting using a two-dimensiona
             </Neighborhood>
             <MetropolisKinetics temperature="2"/>
         </MonteCarloSampler>
-        <ShapeBoundary scaling="norm">
+        <ShapeSurface scaling="norm">
             <Neighborhood>
                 <Distance>2.5</Distance>
             </Neighborhood>
-        </ShapeBoundary>
+        </ShapeSurface>
     </CPM>
     <CellPopulations>
         <Population size="0" type="ct1">

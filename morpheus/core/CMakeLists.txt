@@ -16,7 +16,8 @@ SET(morpheus_src
 	interaction_energy.cpp
 	simulation.cpp
 	cpm_layer.cpp
-    cpm_shape.cpp
+    	cpm_shape.cpp
+	cpm_shape_tracker.cpp
 	edge_tracker.cpp
 	cpm.cpp
 	pde_layer.cpp

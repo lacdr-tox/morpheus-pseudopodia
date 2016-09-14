@@ -32,7 +32,7 @@ void MembraneMapper::attachToCell ( CPM::CELL_ID cell_id )
 	distance_map->data = no_distance;
 
 	if (use_shape)
-		cell_shape = & (CPM::getCell(cell_id).getSphericalApproximation());
+		cell_shape = & (CPM::getCell(cell_id).currentShape().sphericalApprox());
 // 	if (mapping_mode == MAP_DISTANCE_TRANSFORM)
 // 		shape_mapper->attachToCell(cell_id);
 }

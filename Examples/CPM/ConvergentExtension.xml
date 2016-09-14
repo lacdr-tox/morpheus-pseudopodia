@@ -61,11 +61,11 @@
             </Neighborhood>
             <MetropolisKinetics temperature="250"/>
         </MonteCarloSampler>
-        <ShapeBoundary scaling="norm">
+        <ShapeSurface scaling="norm">
             <Neighborhood>
                 <Distance>2</Distance>
             </Neighborhood>
-        </ShapeBoundary>
+        </ShapeSurface>
     </CPM>
     <CellPopulations>
         <Population size="0" type="ct1">

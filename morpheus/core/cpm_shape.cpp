@@ -2,6 +2,8 @@
 // #include <map>
 
 CPMShape::BoundaryScalingMode CPMShape::scalingMode = BoundaryScalingMode::Magno;
+Neighborhood CPMShape::boundaryNeighborhood = Neighborhood();
+
 
 double CPMShape::BoundaryLengthScaling(const Neighborhood& neighborhood)
 {

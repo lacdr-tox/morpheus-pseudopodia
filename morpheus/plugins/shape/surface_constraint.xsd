@@ -11,10 +11,18 @@
 		<xs:annotation>
 			<xs:appinfo>Shape</xs:appinfo>
 		</xs:annotation>
+		<xs:attribute	name="mode"		type="cpmSCTargetMode"   use="required" default="aspherity" />
 		<xs:attribute	name="target"	type="cpmMathExpression" use="required" default="1" />
 		<xs:attribute	name="strength"	type="cpmMathExpression" use="required" default="1" />
 		<xs:attribute	name="name"		type="cpmString" use="optional" />
 	</xs:complexType>
+	
+	<xs:simpleType name="cpmSCTargetMode">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="surface"/>
+			<xs:enumeration value="aspherity"/>
+		</xs:restriction>
+	</xs:simpleType>
 
 </xs:schema>
 

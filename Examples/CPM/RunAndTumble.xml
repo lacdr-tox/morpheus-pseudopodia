@@ -60,11 +60,11 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
             </Neighborhood>
             <MetropolisKinetics temperature="0.6"/>
         </MonteCarloSampler>
-        <ShapeBoundary scaling="norm">
+        <ShapeSurface scaling="norm">
             <Neighborhood>
                 <Distance>2.5</Distance>
             </Neighborhood>
-        </ShapeBoundary>
+        </ShapeSurface>
     </CPM>
     <CellPopulations>
         <Population size="1" type="amoeba">

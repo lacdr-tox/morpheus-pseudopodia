@@ -2,7 +2,7 @@
 
 REGISTER_PLUGIN(DependencyGraph);
 
-DependencyGraph::DependencyGraph()
+DependencyGraph::DependencyGraph() : AnalysisPlugin()
 {
 	format.setXMLPath("format");
 	map<string, OutFormat> format_names; 
@@ -18,6 +18,12 @@ DependencyGraph::DependencyGraph()
 	exclude_symbols.setXMLPath("exclude-symbols");
 	registerPluginParameter(exclude_plugins);
 	registerPluginParameter(exclude_symbols);
+}
+
+void DependencyGraph::init(const Scope* scope)
+{
+	setTimeStep(0); // This means call at the end !!
+	AnalysisPlugin::init(scope);
 }
 
 

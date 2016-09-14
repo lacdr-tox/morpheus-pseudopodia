@@ -31,7 +31,14 @@ void StatisticalLatticeStencil::setStencil(const vector< VINT >& neighbors)
 
 void StatisticalLatticeStencil::setPosition(VINT pos)
 {
-	stencil_statistics.clear();
+	this->pos = pos;
+	valid_data = false;
+}
+
+void StatisticalLatticeStencil::applyPos() const
+{
+	stencil_statistics.resize(0);
+	assert(data_layer->lattice().inside(pos));
 	int center_index = data_layer->get_data_index(pos);
 // #ifdef __GNUC__
 // 		for (uint k=0; k<stencil_row_offsets.size(); ++k ) {
@@ -44,6 +51,7 @@ void StatisticalLatticeStencil::setPosition(VINT pos)
 	for (uint k=0; k<stencil_offsets_size; ++k ) {
 		stencil_states[k] = data_layer->data[ center_index + stencil_offsets[k] ].cell_id;
 		uint stack_id = 0;
+		
 		while(1) {
 			if (stack_id == stencil_statistics_size) {
 				STATS s;
@@ -60,6 +68,7 @@ void StatisticalLatticeStencil::setPosition(VINT pos)
 			stack_id++;
 		}
 	}
+	valid_data = true;
 }
 
 LatticeStencil::LatticeStencil(shared_ptr< const CPM::LAYER >  data_layer, const std::vector< VINT >& neighbors )
