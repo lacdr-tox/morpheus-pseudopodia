@@ -259,131 +259,147 @@ void TimeScheduler::compute()
 {
     std::chrono::high_resolution_clock highc;
     auto start = highc.now();
-	
-
+	Plugin* current_plugin = nullptr;
 	TimeScheduler& ts = getInstance(); 
-	if (! ts.is_state_valid ) {
-		// Now run all Reporters, Equations.
+	try {
+		if (! ts.is_state_valid ) {
+			// Now run all Reporters, Equations.
+			for (uint i=0; i<ts.reporter.size(); i++) {
+				if (ts.reporter[i]->currentTime() <= ts.current_time + ts.time_precision_patch ) {
+					current_plugin = ts.reporter[i];
+					ts.reporter[i]->executeTimeStep_internal();
+				}
+			}
+
+			// Now run all analysers
+			for (uint i=0; i<ts.analysers.size(); i++) {
+				if ( ! ts.analysers[i]->endState() ) {
+					current_plugin = ts.analysers[i];
+					ts.analysers[i]->executeTimeStep_internal();
+				}
+			}
+			ts.is_state_valid = true;
+			cout << setprecision(2) << setiosflags(ios::fixed)
+			<< "Time: " << ts.current_time / ts.stop_time.getTimeScaleUnitFactor() << " "
+			<< SIM::getTimeScaleUnit()
+			<< endl;
+			ts.last_progress_notification = ts.current_time;
+			
+		}
+			
+		double stop_time = ts.getStopTime();
+		while (ts.current_time + ts.time_precision_patch < stop_time) {
+			double min_current_time = stop_time;
+			
+			// We provide a time schedule for time CONTINUOUS processes, where X(t) just depends on X(t-1)
+			// And a second schedule for INSTANTANEOUS events for which we use the synchronous X(t) = f (X(t-1))events
+			// In case they are REPORTERS, they will be resolved consecutively in the order of their interdependency
+			//
+			
+			///////////////////////////////////////////////////////////////
+			// PHASE I -- TIME CONTINUOUS -- Synchronously updates schemes
+			///////////////////////////////////////////////////////////////
+			
+			// Run the computations to a buffer for reactions, ...
+			for (uint i=0; i<ts.continuous.size(); i++) {
+				if (ts.continuous[i]->currentTime() <= ts.current_time + ts.time_precision_patch) {
+					current_plugin = ts.continuous[i];
+					ts.continuous[i]->prepareTimeStep_internal();
+				}
+			}
+			
+			// Now execute all required updates on continuous-time schemes. First will be CPM, then Delays, then Reactions, then Diffusion
+			for (uint i=0; i<ts.continuous.size(); i++) {
+				if (ts.continuous[i]->currentTime() <= ts.current_time + ts.time_precision_patch) {
+					current_plugin = ts.continuous[i];
+					ts.continuous[i]->executeTimeStep_internal();
+				}
+				min_current_time = min(min_current_time,ts.continuous[i]->currentTime() );
+			}
+			
+			// Now also respect the instantaneous processes and look how far in the future they are valid
+			for (uint i=0; i<ts.instantaneous.size(); i++) {
+				min_current_time = min(min_current_time, ts.instantaneous[i]->currentTime());
+			}
+			
+			// That's how far we are able to travel within one step, still keeping all processes in a valid state.
+			ts.current_time = min_current_time;
+			
+			////////////////////////////////////////////////////////////////////////////////
+			// PHASE II -- INSTANTANEOUS, sequentially sorted (Equations, Events, Reporters)
+			////////////////////////////////////////////////////////////////////////////////
+			
+			for (uint i=0; i<ts.all_phase2.size(); i++) {
+				if (ts.all_phase2[i]->currentTime() <= ts.current_time + ts.time_precision_patch) {
+					current_plugin = ts.all_phase2[i];
+					ts.all_phase2[i]->executeTimeStep_internal();
+				}
+			}
+
+
+			////////////////////////////////////////////////////////////////////////////////
+			// PHASE III -- ANALYSIS
+			////////////////////////////////////////////////////////////////////////////////
+			
+			for (uint i=0; i<ts.analysers.size(); i++) {
+				if (ts.analysers[i]->currentTime() <= ts.current_time + ts.time_precision_patch) {
+					if( !ts.analysers[i]->endState() ) {
+						current_plugin = ts.analysers[i];
+						ts.analysers[i]->executeTimeStep_internal();
+					}
+				}
+			}
+			
+			// Progress notification
+			if (ts.last_progress_notification + ts.progress_notify_interval <= ts.current_time + ts.time_precision_patch) {
+				cout << setprecision(2) << setiosflags(ios::fixed)
+					<< "Time: " << ts.current_time / ts.stop_time.getTimeScaleUnitFactor() << " "
+	// 				 << SIM::sim_stop_time.getTimeScaleUnit()
+					<< endl;
+				ts.last_progress_notification = ts.current_time;
+			}
+			
+			// Snapshoting 
+			if ( ts.save_interval.getSeconds()>0 && ts.last_save_time + ts.save_interval.getSeconds() <= ts.current_time + ts.time_precision_patch) 
+				SIM::saveToXML();
+				ts.last_save_time = ts.current_time;
+			
+				SymbolFocus sf;
+				if( ts.stop_condition ){
+					if( ts.stop_condition->get( sf ) ){
+						cout << "Simulation terminated on StopCondition (" << ts.stop_condition->getExpression() << ")" << endl;
+						break;
+					}
+				}
+		}
+
+		if (ts.last_progress_notification < ts.current_time)
+			cout << setprecision(2) << setiosflags(ios::fixed)
+				<< "Time: " << ts.current_time / ts.stop_time.getTimeScaleUnitFactor() << " "
+	// 			 << SIM::sim_stop_time.getTimeScaleUnit()
+				<< endl;
+		// Now run all Reporters, Equations, that did not run during the last time step
 		for (uint i=0; i<ts.reporter.size(); i++) {
-			if (ts.reporter[i]->currentTime() <= ts.current_time + ts.time_precision_patch ) {
+			if (ts.reporter[i]->latestTimeStep() < ts.current_time - ts.time_precision_patch ) {
+				current_plugin = ts.reporter[i];
 				ts.reporter[i]->executeTimeStep_internal();
 			}
 		}
-
-		// Now run all analysers
+		// Now run analysers that did not run during the last time step
 		for (uint i=0; i<ts.analysers.size(); i++) {
-			if ( ! ts.analysers[i]->endState() )
+			if (ts.analysers[i]->latestTimeStep() < ts.current_time - ts.time_precision_patch ) {
+				cout << "Now running " << ts.analysers[i]->XMLName() << " last run at " << ts.analysers[i]->latestTimeStep() << endl;
+				current_plugin = ts.analysers[i];
 				ts.analysers[i]->executeTimeStep_internal();
+			}
 		}
-		ts.is_state_valid = true;
-		cout << setprecision(2) << setiosflags(ios::fixed)
-	     << "Time: " << ts.current_time / ts.stop_time.getTimeScaleUnitFactor() << " "
-		 << SIM::getTimeScaleUnit()
-		 << endl;
-		 ts.last_progress_notification = ts.current_time;
-		 
+	} 
+	catch (string e){
+		if (current_plugin)
+			throw MorpheusException(e,current_plugin->getXMLNode());
+		else
+			throw e;
 	}
-		
-	double stop_time = ts.getStopTime();
-	while (ts.current_time + ts.time_precision_patch < stop_time) {
-		double min_current_time = stop_time;
-		
-		// We provide a time schedule for time CONTINUOUS processes, where X(t) just depends on X(t-1)
-		// And a second schedule for INSTANTANEOUS events for which we use the synchronous X(t) = f (X(t-1))events
-		// In case they are REPORTERS, they will be resolved consecutively in the order of their interdependency
-		//
-		
-		///////////////////////////////////////////////////////////////
-		// PHASE I -- TIME CONTINUOUS -- Synchronously updates schemes
-		///////////////////////////////////////////////////////////////
-		
-		// Run the computations to a buffer for reactions, ...
-		for (uint i=0; i<ts.continuous.size(); i++) {
-			if (ts.continuous[i]->currentTime() <= ts.current_time + ts.time_precision_patch) {
-				ts.continuous[i]->prepareTimeStep_internal();
-			}
-		}
-		
-		// Now execute all required updates on continuous-time schemes. First will be CPM, then Delays, then Reactions, then Diffusion
-		for (uint i=0; i<ts.continuous.size(); i++) {
-			if (ts.continuous[i]->currentTime() <= ts.current_time + ts.time_precision_patch) {
-				ts.continuous[i]->executeTimeStep_internal();
-			}
-			min_current_time = min(min_current_time,ts.continuous[i]->currentTime() );
-		}
-		
-		// Now also respect the instantaneous processes and look how far in the future they are valid
-		for (uint i=0; i<ts.instantaneous.size(); i++) {
-			min_current_time = min(min_current_time, ts.instantaneous[i]->currentTime());
-		}
-		
-		// That's how far we are able to travel within one step, still keeping all processes in a valid state.
-		ts.current_time = min_current_time;
-		
-		////////////////////////////////////////////////////////////////////////////////
-		// PHASE II -- INSTANTANEOUS, sequentially sorted (Equations, Events, Reporters)
-		////////////////////////////////////////////////////////////////////////////////
-		
-		for (uint i=0; i<ts.all_phase2.size(); i++) {
-			if (ts.all_phase2[i]->currentTime() <= ts.current_time + ts.time_precision_patch) {
-				ts.all_phase2[i]->executeTimeStep_internal();
-			}
-		}
-
-
-		////////////////////////////////////////////////////////////////////////////////
-		// PHASE III -- ANALYSIS
-		////////////////////////////////////////////////////////////////////////////////
-		
-		for (uint i=0; i<ts.analysers.size(); i++) {
-			if (ts.analysers[i]->currentTime() <= ts.current_time + ts.time_precision_patch) {
-                if( !ts.analysers[i]->endState() )
-                    ts.analysers[i]->executeTimeStep_internal();
-			}
-		}
-		
-		// Progress notification
-		if (ts.last_progress_notification + ts.progress_notify_interval <= ts.current_time + ts.time_precision_patch) {
-			cout << setprecision(2) << setiosflags(ios::fixed)
-				 << "Time: " << ts.current_time / ts.stop_time.getTimeScaleUnitFactor() << " "
-// 				 << SIM::sim_stop_time.getTimeScaleUnit()
-				 << endl;
-			ts.last_progress_notification = ts.current_time;
-		}
-		
-		// Snapshoting 
-		if ( ts.save_interval.getSeconds()>0 && ts.last_save_time + ts.save_interval.getSeconds() <= ts.current_time + ts.time_precision_patch) 
-			SIM::saveToXML();
-			ts.last_save_time = ts.current_time;
-		
-			SymbolFocus sf;
-			if( ts.stop_condition ){
-				if( ts.stop_condition->get( sf ) ){
-					cout << "Simulation terminated on StopCondition (" << ts.stop_condition->getExpression() << ")" << endl;
-					break;
-				}
-			}
-	}
-
-	if (ts.last_progress_notification < ts.current_time)
-		cout << setprecision(2) << setiosflags(ios::fixed)
-			 << "Time: " << ts.current_time / ts.stop_time.getTimeScaleUnitFactor() << " "
-// 			 << SIM::sim_stop_time.getTimeScaleUnit()
-			 << endl;
-	// Now run all Reporters, Equations, that did not run during the last time step
-	for (uint i=0; i<ts.reporter.size(); i++) {
-		if (ts.reporter[i]->latestTimeStep() < ts.current_time - ts.time_precision_patch ) {
-			ts.reporter[i]->executeTimeStep_internal();
-		}
-	}
-	// Now run analysers that did not run during the last time step
-	for (uint i=0; i<ts.analysers.size(); i++) {
-		if (ts.analysers[i]->latestTimeStep() < ts.current_time - ts.time_precision_patch ) {
-			cout << "Now running " << ts.analysers[i]->XMLName() << " last run at " << ts.analysers[i]->latestTimeStep() << endl;
-			ts.analysers[i]->executeTimeStep_internal();
-		}
-	}
-		
     ts.execTime = chrono::duration_cast<chrono::microseconds>(highc.now()-start).count() / 1000.0;
 // 	cout << endl;
 }

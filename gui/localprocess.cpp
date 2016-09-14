@@ -58,11 +58,15 @@ void localProcess::changeState(QProcess::ProcessState state)
     {
         timer->stop();
         setRunTime(stopwatch->elapsed());
-
-        if (process->exitStatus() == QProcess::NormalExit)
-            new_state = ProcessInfo::DONE;
-        else
-            new_state = ProcessInfo::EXIT;
+		
+		if (!error_msg.isEmpty()) {
+			    emit criticalMessage(error_msg.left(500));
+				new_state = ProcessInfo::EXIT;
+		}
+		else if (process->exitStatus() == QProcess::NormalExit)
+			new_state = ProcessInfo::DONE;
+		else
+			new_state = ProcessInfo::EXIT;
 
     }
     else if (state == QProcess::Running)
@@ -72,7 +76,7 @@ void localProcess::changeState(QProcess::ProcessState state)
         setRunTime(0);
         timer->start(config::getApplication().preference_jobqueue_interval );
     }
-    else if (state == QProcess::Starting ){
+    else /*if (state == QProcess::Starting )*/ {
         return;
     }
 
@@ -206,19 +210,17 @@ void localProcess::readErrorMsg()
 {
 	if (process->state() == QProcess::NotRunning)
 		return;
-    QByteArray buffer(process->readAllStandardError());
-	
-    QString tmp(buffer);
-	stop();
-    
+	QByteArray buffer(process->readAllStandardError());
+	QString tmp(buffer);
+	error_msg += tmp;
 
-    emit criticalMessage(tmp.left(500));
-
-    if(errFile->open(QFile::WriteOnly))
-    {
-        errFile->write(tmp.toStdString().c_str());
-        errFile->close();
-    }
+	if(errFile->open(QFile::WriteOnly))
+	{
+		errFile->write(tmp.toStdString().c_str());
+		errFile->close();
+	}
+	if (error_msg.size()>1000)
+		stop();
 }
 
 //---------------------------------------------------------------------------------------------------

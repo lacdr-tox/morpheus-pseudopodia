@@ -517,7 +517,7 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 				if (range->iter_mode == FocusRangeDescriptor::IT_Domain) {
 					domain_nodes = range->domain_enumeration;
 				}
-				else if (range->iter_mode == FocusRangeDescriptor::IT_Domain_int) {
+				else /*if (range->iter_mode == FocusRangeDescriptor::IT_Domain_int)*/ {
 					domain_nodes = & range->domain_nodes;
 				}
 				vector<VINT> new_domain_nodes;

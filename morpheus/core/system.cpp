@@ -253,7 +253,7 @@ void System<system_type>::init() {
 				  functionals[i]->parser->GetUsedFun().count(sym_RandomGamma) ||
 				  functionals[i]->parser->GetUsedFun().count(sym_RandomUni) ) )
 			{
-					cerr << "System: stochastic ODEs can only contain normally distributed noise \"" << sym_RandomNorm << "()\"."<< endl;
+					throw string("System: stochastic ODEs can only contain normally distributed noise \"") + sym_RandomNorm + "()\".";
 					// TODO Throw reasonable error
 					exit(-1);
 			}
@@ -261,11 +261,23 @@ void System<system_type>::init() {
 		catch (mu::Parser::exception_type &e){
 			string indicator;
 			if (e.GetPos()>=0 and e.GetPos()<100) {
-				for(int i=0; i< e.GetPos(); i++) indicator.append(" ");
+				indicator.resize(e.GetPos(),' ');
+// 				for(int i=0; i< e.GetPos(); i++) indicator.append(" ");
 				indicator.append("^");
 			}
-			cerr << "System: muParser error (GetUsedVar): " << e.GetMsg() << " in \n Token\t\t: " << e.GetToken() << "\n Expression\t: " << e.GetExpr() << "\n Indicator\t: " << indicator << endl;
-			exit(-1);
+			stringstream sstr;
+			sstr << e.GetMsg() <<endl;
+			sstr << "Expression: \t" <<  functionals[i]->expression;
+// 			sstr << "at position   " << indicator << endl; 
+	// 		sstr << "Available symbols: ";
+	// 		for (auto it : local_symbols) {
+	// 			if (it.second.type_name == TypeInfo<T>::name())
+	// 				sstr << "\""<< it.first << "\", ";
+	// 		}
+			throw (sstr.str());
+// 			stringstream ss;
+// 			cerr <<  "System: muParser error (GetUsedVar): " << e.GetMsg() << " in \n Token\t\t: " << e.GetToken() << "\n Expression\t: " << e.GetExpr() << "\n Indicator\t: " << indicator << endl;
+// 			exit(-1);
 		}
 		
 	}
@@ -545,6 +557,8 @@ void System<system_type>::compute(const SymbolFocus& f)
 template <SystemType system_type>
 void System<system_type>::computeContextToBuffer()
 {
+	if (context == SymbolData::UnLinked)
+		return;
 	// TODO This might be dispensible if the pde_layer initializes the buffer accordingly
 	if (context ==  SymbolData::PDELink && SIM::lattice().getDomain().domainType()!= Domain::none) {
 		for (int i =0; i<equations.size(); i++) {

@@ -191,6 +191,7 @@ class Plugin {
 		 *  You just have to take care for the XML Tags not treated by the plugin interface or PluginParmeters
 		 */
 		virtual void loadFromXML(const XMLNode);
+		const XMLNode getXMLNode() const { return stored_node;}
 		
 		/// XML Tag the Plugin corresponds to. Gets overridden by the DECLARE_PLUGIN macro.
 

@@ -140,16 +140,16 @@ SymbolAccessor<T> Scope::findSymbol(string name) const {
 		}
 	}
 	catch (string e) {
-		throw ("Global default for symbol \""+name+"\" is missing. ");
-//		stringstream sstr;
-//		sstr << "findSymbol: Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
-//		sstr << e << endl; 
+// 		throw ("Global default for symbol \""+name+"\" is missing. ");
+		stringstream sstr;
+		sstr << "Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
+		sstr << e << endl; 
 // 		sstr << "Available symbols: ";
 // 		for (auto it : local_symbols) {
 // 			if (it.second.type_name == TypeInfo<T>::name())
 // 				sstr << "\""<< it.first << "\", ";
 // 		}
-//		throw (sstr.str());
+		throw (sstr.str());
 	}
 };
 
@@ -179,16 +179,16 @@ SymbolRWAccessor<T> Scope::findRWSymbol(string name) const {
 		}
 	}
 	catch (string e) {
-		throw ("Cannot find (r+w) symbol \""+name+"\". ");
-//		stringstream sstr;
-//		sstr << "findRWSymbol: Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
-//		sstr << e << endl; 
+// 		throw ("Cannot find (r+w) symbol \""+name+"\". ");
+		stringstream sstr;
+		sstr << "Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
+		sstr << e << endl; 
 // 		sstr << "Available symbols: ";
 // 		for (auto it : local_symbols) {
 // 			if (it.second.type_name == TypeInfo<T>::name())
 // 				sstr << "\""<< it.first << "\", ";
 // 		}
-//		throw (sstr.str());
+		throw (sstr.str());
 	}
 };
 
@@ -213,20 +213,20 @@ SymbolAccessor<T> Scope::findSymbol(string name, const T& default_val) const {
 			return parent->findSymbol<T>(name, default_val);
 		}
 		else {
-			throw (string("findSymbol: Requested symbol is not defined."));
+			throw (string("Requested symbol is not defined."));
 		}
 	}
 	catch (string e) {
-		throw ("Cannot find symbol \""+name+"\". ");
-//		stringstream sstr;
-//		sstr << "findSymbol: Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
-//		sstr << e << endl; 
+// 		throw ("Cannot find symbol \""+name+"\". ");
+		stringstream sstr;
+		sstr << "Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
+		sstr << e << endl; 
 // 		sstr << "Available symbols: ";
 // 		for (auto it : local_symbols) {
 // 			if (it.second.type_name == TypeInfo<T>::name())
 // 				sstr << "\""<< it.first << "\", ";
 // 		}
-//		throw (sstr.str());
+		throw (sstr.str());
 	}
 };
 

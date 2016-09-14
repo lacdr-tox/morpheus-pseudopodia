@@ -36,4 +36,5 @@ bool InitCellLattice::run(CellType* ct)
 // 			}
 // 		}
 // 	}
+	return true;
 }

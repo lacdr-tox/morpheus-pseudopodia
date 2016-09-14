@@ -116,7 +116,7 @@ bool Domain::inside(const VINT& a) const
 			return insideImageDomain(a);
 		case circular :
 			return insideCircularDomain(a);
-		case none :
+		default :
 			return true;
 	}
 }
