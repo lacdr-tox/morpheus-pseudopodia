@@ -100,14 +100,14 @@ void Plugin::init(const Scope* scope) {
 	}
 	
 	if (! input_symbols.empty()) {
-		cout << "Plugin " << XMLName() << ": Registered in symbol dependencies ";
+		cout << "Plugin " << XMLName() << ": Registered input symbol dependencies ";
 		for (auto dep : input_symbols) {
 			cout << dep.name << " [" << dep.scope->getName() << "] ,";
 		}
 		cout << endl;
 	}
 	if (! output_symbols.empty()) {
-		cout << "Plugin" << XMLName() << ": Registered out symbol dependencies ";
+		cout << "Plugin" << XMLName() << ": Registered output symbol dependencies ";
 		for (auto dep : output_symbols) {
 			cout << dep.name <<  " [" << dep.scope->getName() << "] ,";
 		}

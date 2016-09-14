@@ -77,7 +77,7 @@ bool InitVoronoi::run(CellType* celltype)
 			} // end of x-loop
 		}// end of y-loop
 	}// end of z-loop
-	
+	return true;
 }
 
 int InitVoronoi::voronoiLabelling( shared_ptr<Lattice_Data_Layer<double> >& distanceMap, shared_ptr<Lattice_Data_Layer<double> >&maskMap,shared_ptr<Lattice_Data_Layer<double> >& labelMap){

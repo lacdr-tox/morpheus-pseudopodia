@@ -55,7 +55,6 @@ void CPMSampler::init(const Scope* scope)
 	cell_layer = CPM::getLayer();
 	lattice = cell_layer->getLattice();
 	
-	
 	if (stepper_type() == StepperType::EDGELIST) {
 		CPM::enableEgdeTracking();
 	}

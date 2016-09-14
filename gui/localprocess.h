@@ -58,6 +58,7 @@ private:
     QTime *stopwatch; /*!<  */
 
     QFile *errFile; /*!< Error-file, where all errors during the simulation are logged. */
+    QString error_msg;
 
 private slots:
     void changeState(QProcess::ProcessState state);

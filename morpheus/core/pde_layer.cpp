@@ -242,6 +242,7 @@ bool PDE_Layer::restoreData(const XMLNode node)
 // 		cerr << s << endl;
 // 		return false;
 // 	}
+	return true;
 }
 
 
@@ -913,7 +914,7 @@ void PDE_Layer::write_ascii(ostream& out, float min_value, float max_value, int 
 			
 			if (first_row) {
 				first_row = false;
-				if ( ! (pos.y+y_iter)<l_size.y )
+				if ( ! ((pos.y+y_iter)<l_size.y) )
 					pos.y-=y_iter;
 			}
 		}

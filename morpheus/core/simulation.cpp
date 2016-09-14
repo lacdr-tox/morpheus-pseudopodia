@@ -7,7 +7,6 @@
 
 #include "simulation_p.h"
 #include "edge_tracker.h"
-// #include "lattice_data_layer.cpp"
 
 int main(int argc, char *argv[]) {
     return SIM::main(argc,argv);
@@ -719,7 +718,7 @@ void setUpdate(CPM::Update& update) {
 
 
 namespace SIM {
-
+// #define NO_CORE_CATCH
 int main(int argc, char *argv[]) {
 #ifndef NO_CORE_CATCH
 	try {
@@ -772,11 +771,10 @@ int main(int argc, char *argv[]) {
 			createDepGraph();
 		}
 		//cerr << "Error while reading model description.\n";
-		cerr << e.what();
+		cerr << "\n" << e.what()<< "\n";
 		string xmlpath =  getXMLPath(e.where());
-		cerr << "\n\nXMLPath: " << xmlpath << "\n\n";
+		cerr << "\nXMLPath: " << xmlpath << endl;
 		cerr.flush();
-		this_thread::sleep_for(chrono::milliseconds(50));
 		exit(-1);
 	}
 	catch (string e) {
@@ -784,10 +782,8 @@ int main(int argc, char *argv[]) {
 			createDepGraph();
 		}
 //		cerr << "Error while reading model description\n";
-// 		cerr << "XMLPath: "<< getXMLPath(SIM::getScope()->currentXMLNode()) << "\n";
 		cerr << e << endl;
 		cerr.flush();
-		this_thread::sleep_for(chrono::milliseconds(50));
 		exit(-1);
 	}
 #endif
@@ -1211,234 +1207,214 @@ void loadFromXML(const XMLNode xNode) {
 
 // Loading simulation parameters
 	string nnn;
-// #ifndef NO_CORE_CATCH
-// 	try {
-// #endif
-		/*********************************************/
-		/** LOADING XML AND REGISTRATION OF SYMBOLS **/
-		/*********************************************/
-		
-		
-		getXMLAttribute(xNode,"version",morpheus_file_version);
-		getXMLAttribute(xNode,"Description/Title/text",fileTitle);
-		XMLNode xTime = xNode.getChildNode("Time");
-		TimeScheduler::loadFromXML(xTime);
-		
-		SymbolData symbol;
-		if (xTime.nChildNode("TimeSymbol")){
-			getXMLAttribute(xTime.getChildNode("TimeSymbol"),"symbol",SymbolData::Time_symbol);
-		}
-		symbol.link=SymbolData::Time;
-		symbol.granularity = Granularity::Global;
-		symbol.name=SymbolData::Time_symbol;
-		symbol.type_name = TypeInfo<double>::name();
-		symbol.fullname = "simulation time";
-		symbol.integer = false;
-		symbol.invariant = false;
-		symbol.time_invariant = false;
-		defineSymbol(symbol);
+	/*********************************************/
+	/** LOADING XML AND REGISTRATION OF SYMBOLS **/
+	/*********************************************/
+	
+	
+	getXMLAttribute(xNode,"version",morpheus_file_version);
+	getXMLAttribute(xNode,"Description/Title/text",fileTitle);
+	XMLNode xTime = xNode.getChildNode("Time");
+	TimeScheduler::loadFromXML(xTime);
+	
+	SymbolData symbol;
+	if (xTime.nChildNode("TimeSymbol")){
+		getXMLAttribute(xTime.getChildNode("TimeSymbol"),"symbol",SymbolData::Time_symbol);
+	}
+	symbol.link=SymbolData::Time;
+	symbol.granularity = Granularity::Global;
+	symbol.name=SymbolData::Time_symbol;
+	symbol.type_name = TypeInfo<double>::name();
+	symbol.fullname = "simulation time";
+	symbol.integer = false;
+	symbol.invariant = false;
+	symbol.time_invariant = false;
+	defineSymbol(symbol);
 
-		setRandomSeeds(xTime.getChildNode("RandomSeed"));
-		
-		XMLNode xSpace = xNode.getChildNode("Space");
-		
-		getXMLAttribute(xSpace,"SpaceSymbol/symbol",SymbolData::Space_symbol);
-		symbol.link = SymbolData::Space;
-		symbol.granularity = Granularity::Node;
-		symbol.name = SymbolData::Space_symbol;
-		symbol.type_name = TypeInfo<VDOUBLE>::name();
-		symbol.fullname = "spatial coordinates";
-		symbol.integer = true;
-		symbol.invariant = false;
-		symbol.time_invariant = true;
-		defineSymbol(symbol);
-		
-		// Loading and creating the underlying lattice
-		cout << "Creating lattice"<< endl;
-		XMLNode xLattice = xSpace.getChildNode("Lattice");
-		if (xLattice.isEmpty()) throw string("unable to read XML Lattice node");
-		
-		if (xLattice.nChildNode("NodeLength"))
-			node_length.loadFromXML(xLattice.getChildNode("NodeLength"));
+	setRandomSeeds(xTime.getChildNode("RandomSeed"));
+	
+	XMLNode xSpace = xNode.getChildNode("Space");
+	
+	getXMLAttribute(xSpace,"SpaceSymbol/symbol",SymbolData::Space_symbol);
+	symbol.link = SymbolData::Space;
+	symbol.granularity = Granularity::Node;
+	symbol.name = SymbolData::Space_symbol;
+	symbol.type_name = TypeInfo<VDOUBLE>::name();
+	symbol.fullname = "spatial coordinates";
+	symbol.integer = true;
+	symbol.invariant = false;
+	symbol.time_invariant = true;
+	defineSymbol(symbol);
+	
+	// Loading and creating the underlying lattice
+	cout << "Creating lattice"<< endl;
+	XMLNode xLattice = xSpace.getChildNode("Lattice");
+	if (xLattice.isEmpty()) throw string("unable to read XML Lattice node");
+	
+	if (xLattice.nChildNode("NodeLength"))
+		node_length.loadFromXML(xLattice.getChildNode("NodeLength"));
 
-		string lattice_code="cubic";
-		getXMLAttribute(xLattice, "class", lattice_code);
-		if (lattice_code=="cubic") {
-			global_lattice =  shared_ptr<Lattice>(new Cubic_Lattice(xLattice));
-		} else if (lattice_code=="square") {
-			global_lattice =  shared_ptr<Lattice>(new Square_Lattice(xLattice));
-		} else if (lattice_code=="hexagonal") {
-			global_lattice =  shared_ptr<Lattice>(new Hex_Lattice(xLattice));
-		} else if (lattice_code=="linear") {
-			global_lattice =  shared_ptr<Lattice>(new Linear_Lattice(xLattice));
-		}
-		else throw string("unknown Lattice type " + lattice_code);
-		if (! global_lattice)
-			 throw string("Error creating Lattice type " + lattice_code);
+	string lattice_code="cubic";
+	getXMLAttribute(xLattice, "class", lattice_code);
+	if (lattice_code=="cubic") {
+		global_lattice =  shared_ptr<Lattice>(new Cubic_Lattice(xLattice));
+	} else if (lattice_code=="square") {
+		global_lattice =  shared_ptr<Lattice>(new Square_Lattice(xLattice));
+	} else if (lattice_code=="hexagonal") {
+		global_lattice =  shared_ptr<Lattice>(new Hex_Lattice(xLattice));
+	} else if (lattice_code=="linear") {
+		global_lattice =  shared_ptr<Lattice>(new Linear_Lattice(xLattice));
+	}
+	else throw string("unknown Lattice type " + lattice_code);
+	if (! global_lattice)
+			throw string("Error creating Lattice type " + lattice_code);
 
-		lattice_size_symbol="";
-		if (getXMLAttribute(xLattice,"Size/symbol",lattice_size_symbol)) {
-			symbol.name = lattice_size_symbol;
-			shared_ptr<Property<VDOUBLE> > p = Property<VDOUBLE>::createConstantInstance(symbol.name,"Lattice Size");
-			p->set(global_lattice->size());
-			defineSymbol(p);
-		}
-		
-		MembraneProperty::loadMembraneLattice(xSpace);
-		
-		// Loading global definitions
-		if (xNode.nChildNode("Global")) {
-			xGlobals = xNode.getChildNode("Global");
-			cout << "Loading [" << xGlobals.nChildNode() << "] Global Plugins" <<endl;
-			for (int i=0; i<xGlobals.nChildNode(); i++) {
-				XMLNode xGlobalChild = xGlobals.getChildNode(i);
-				string xml_tag_name(xGlobalChild.getName());
-				if (xml_tag_name == "Field") {
-					shared_ptr<PDE_Layer> layer(new PDE_Layer( global_lattice, SIM::getNodeLength() ));
-					layer->loadFromXML(xGlobalChild);
-					
-					if (pde_layers.find(layer->getSymbol()) !=  pde_layers.end()) {
-						throw MorpheusException(string("Redefinition of pde layer \"") + layer->getSymbol()  + "\"!",xGlobalChild);
-					}
-
-					pde_layers[layer->getSymbol()] = layer;
-
-					// Create the diffusion wrapper
-					if (layer->getDiffusionRate() > 0.0)
-						global_section_plugins.push_back(shared_ptr<Plugin>(new Diffusion(layer)));
-						
-					
-					// registering global symbol for the pde layer;
-					SymbolData symbol; 
-					symbol.name=layer->getSymbol();
-					symbol.fullname = layer->getName();
-					symbol.link = SymbolData::PDELink;
-					symbol.granularity = Granularity::Node;
-					symbol.type_name = TypeInfo<double>::name();
-					symbol.writable = true;
-					SIM::defineSymbol(symbol);
+	lattice_size_symbol="";
+	if (getXMLAttribute(xLattice,"Size/symbol",lattice_size_symbol)) {
+		symbol.name = lattice_size_symbol;
+		shared_ptr<Property<VDOUBLE> > p = Property<VDOUBLE>::createConstantInstance(symbol.name,"Lattice Size");
+		p->set(global_lattice->size());
+		defineSymbol(p);
+	}
+	
+	MembraneProperty::loadMembraneLattice(xSpace);
+	
+	// Loading global definitions
+	if (xNode.nChildNode("Global")) {
+		xGlobals = xNode.getChildNode("Global");
+		cout << "Loading [" << xGlobals.nChildNode() << "] Global Plugins" <<endl;
+		for (int i=0; i<xGlobals.nChildNode(); i++) {
+			XMLNode xGlobalChild = xGlobals.getChildNode(i);
+			string xml_tag_name(xGlobalChild.getName());
+			if (xml_tag_name == "Field") {
+				shared_ptr<PDE_Layer> layer(new PDE_Layer( global_lattice, SIM::getNodeLength() ));
+				layer->loadFromXML(xGlobalChild);
+				
+				if (pde_layers.find(layer->getSymbol()) !=  pde_layers.end()) {
+					throw MorpheusException(string("Redefinition of pde layer \"") + layer->getSymbol()  + "\"!",xGlobalChild);
 				}
-				else {
-					shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
+
+				pde_layers[layer->getSymbol()] = layer;
+
+				// Create the diffusion wrapper
+				if (layer->getDiffusionRate() > 0.0)
+					global_section_plugins.push_back(shared_ptr<Plugin>(new Diffusion(layer)));
 					
-					if (! p.get())
-						throw MorpheusException(string("Unknown Global plugin ") + xml_tag_name, xGlobalChild);
-					
-					p->loadFromXML(xGlobalChild);
-					
-					if ( dynamic_pointer_cast< AbstractProperty >(p) ) {
-						// note that the AbstractProperty is still maintained by the Plugin
-						shared_ptr<AbstractProperty> property( dynamic_pointer_cast< AbstractProperty >(p) ); 
+				
+				// registering global symbol for the pde layer;
+				SymbolData symbol; 
+				symbol.name=layer->getSymbol();
+				symbol.fullname = layer->getName();
+				symbol.link = SymbolData::PDELink;
+				symbol.granularity = Granularity::Node;
+				symbol.type_name = TypeInfo<double>::name();
+				symbol.writable = true;
+				SIM::defineSymbol(symbol);
+			}
+			else {
+				shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
+				
+				if (! p.get())
+					throw MorpheusException(string("Unknown Global plugin ") + xml_tag_name, xGlobalChild);
+				
+				p->loadFromXML(xGlobalChild);
+				
+				if ( dynamic_pointer_cast< AbstractProperty >(p) ) {
+					// note that the AbstractProperty is still maintained by the Plugin
+					shared_ptr<AbstractProperty> property( dynamic_pointer_cast< AbstractProperty >(p) ); 
 // 						if (!property->isGlobal())
 // 							throw( MorpheusException("Local Properties are not allowed in Global section ...", xNode));
-						defineSymbol(property);
-						global_section_plugins.push_back(p);
-					}
-					else if (dynamic_pointer_cast< Function >(p)) {
-						defineSymbol(dynamic_pointer_cast< Function >(p));
-						global_section_plugins.push_back(p);
-					}
-					else if (dynamic_pointer_cast< TimeStepListener >(p)) {
-						global_section_plugins.push_back(p);
-					}
-					else 
-						throw MorpheusException(string("Unknown interface of Global plugin ")+ xml_tag_name, xGlobalChild);
+					defineSymbol(property);
+					global_section_plugins.push_back(p);
 				}
+				else if (dynamic_pointer_cast< Function >(p)) {
+					defineSymbol(dynamic_pointer_cast< Function >(p));
+					global_section_plugins.push_back(p);
+				}
+				else if (dynamic_pointer_cast< TimeStepListener >(p)) {
+					global_section_plugins.push_back(p);
+				}
+				else 
+					throw MorpheusException(string("Unknown interface of Global plugin ")+ xml_tag_name, xGlobalChild);
 			}
 		}
-		
-		// Loading cell types, CPM and CellPopulations
-		CPM::loadFromXML(xNode);
+	}
+	
+	// Loading cell types, CPM and CellPopulations
+	CPM::loadFromXML(xNode);
 
-		/*****************************************************/
-		/** CREATION AND INTERLINKING of the DATA STRUCTURE **/
-		/*****************************************************/
-		
-		// all model constituents are loaded. let's initialize them (i.e. interlink)
-		global_scope->init();
-		for (auto glob : global_section_plugins) {
+	/*****************************************************/
+	/** CREATION AND INTERLINKING of the DATA STRUCTURE **/
+	/*****************************************************/
+	
+	// all model constituents are loaded. let's initialize them (i.e. interlink)
+	global_scope->init();
+	for (auto glob : global_section_plugins) {
+		try {
 			glob->init(SIM::getGlobalScope());
 		}
-		
-		// Creation of Fields
-		for (auto pde : pde_layers) {
-			pde.second->init(SIM::getGlobalScope());
+		catch (string e) {
+			string s("Simulation Error in Plugin ");
+			s+= glob->XMLName() + "\n" + e;
+			throw MorpheusException(s,glob->getXMLNode());
 		}
-		
-		// Initialising cell populations
-		CPM::init(xNode.getChildNode("CellPopulations"));
+	}
+	
+	// Creation of Fields
+	for (auto pde : pde_layers) {
+		pde.second->init(SIM::getGlobalScope());
+	}
+	
+	// Initialising cell populations
+	CPM::init(xNode.getChildNode("CellPopulations"));
 
-		XMLNode xAnalysis = xNode.getChildNode("Analysis");
-		if ( ! xAnalysis.isEmpty() ) {
-			cout << "Loading Analysis tools [" << xAnalysis.nChildNode() << "]" <<endl;
-			for (int i=0; i<xAnalysis.nChildNode(); i++) {
-				XMLNode xNode = xAnalysis.getChildNode(i);
-				try {
-					string xml_tag_name(xNode.getName());
-					shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
-					
-					if (! p.get()) 
-						throw(string("Unknown analysis plugin " + xml_tag_name));
-					
-					p->loadFromXML(xNode);
-					
-					if ( dynamic_pointer_cast< AbstractProperty >(p) ) {
-						// note that the AbstractProperty is still maintained by the Plugin
-						shared_ptr<AbstractProperty> property( dynamic_pointer_cast< AbstractProperty >(p) ); 
+	XMLNode xAnalysis = xNode.getChildNode("Analysis");
+	if ( ! xAnalysis.isEmpty() ) {
+		cout << "Loading Analysis tools [" << xAnalysis.nChildNode() << "]" <<endl;
+		for (int i=0; i<xAnalysis.nChildNode(); i++) {
+			XMLNode xNode = xAnalysis.getChildNode(i);
+			try {
+				string xml_tag_name(xNode.getName());
+				shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
+				
+				if (! p.get()) 
+					throw(string("Unknown analysis plugin " + xml_tag_name));
+				
+				p->loadFromXML(xNode);
+				
+				if ( dynamic_pointer_cast< AbstractProperty >(p) ) {
+					// note that the AbstractProperty is still maintained by the Plugin
+					shared_ptr<AbstractProperty> property( dynamic_pointer_cast< AbstractProperty >(p) ); 
 // 						if (!property->isGlobal())
 // 							throw( MorpheusException("Local Properties are not allowed in Analysis ...", xNode));
-						defineSymbol(property);
-						analysis_section_plugins.push_back(p);
-					}
-					else if (dynamic_pointer_cast< Function >(p)) {
-						defineSymbol(dynamic_pointer_cast< Function >(p));
-						analysis_section_plugins.push_back(p);
-					}
-					else if (dynamic_pointer_cast<AnalysisPlugin>(p) ) {
-						analysers.push_back( dynamic_pointer_cast<AnalysisPlugin>(p) );
-					}
-					else 
-						throw(string("unknown analysis plugin ")+ xml_tag_name + " - skipping");	
+					defineSymbol(property);
+					analysis_section_plugins.push_back(p);
 				}
-				catch (string er) {
-					cout << er << endl;
+				else if (dynamic_pointer_cast< Function >(p)) {
+					defineSymbol(dynamic_pointer_cast< Function >(p));
+					analysis_section_plugins.push_back(p);
 				}
+				else if (dynamic_pointer_cast<AnalysisPlugin>(p) ) {
+					analysers.push_back( dynamic_pointer_cast<AnalysisPlugin>(p) );
+				}
+				else 
+					throw(string("unknown analysis plugin ")+ xml_tag_name + " - skipping");	
+			}
+			catch (string er) {
+				cout << er << endl;
 			}
 		}
+	}
 
-		// before loading all the Analysis tools that might create some files we should switch the cwd
-		for (uint i=0;i<analysers.size();i++) {
-			analysers[i]->init(global_scope.get());
-		}
-		for (uint i=0;i<analysis_section_plugins.size();i++) {
-			analysis_section_plugins[i]->init(global_scope.get());
-		}
-		
-		TimeScheduler::init();
-// #ifndef NO_CORE_CATCH
-// 	}
-// 	catch (MorpheusException e) {
-// 		if (SIM::generate_symbol_graph_and_exit) {
-// 			createDepGraph();
-// 		}
-// 		//cerr << "Error while reading model description.\n";
-// 		cerr << e.what();
-// 		string xmlpath =  getXMLPath(e.where());
-// 		cerr << "\n\nXMLPath: " << xmlpath << "\n\n";
-// 		cerr.flush();
-// 		exit(-1);
-// 	}
-// 	catch (string e) {
-// 		if (SIM::generate_symbol_graph_and_exit) {
-// 			createDepGraph();
-// 		}
-// //		cerr << "Error while reading model description\n";
-// // 		cerr << "XMLPath: "<< getXMLPath(SIM::getScope()->currentXMLNode()) << "\n";
-// 		cerr << e << endl;
-// 		cerr.flush();
-// 		exit(-1);
-// 	}
-// #endif
+	// before loading all the Analysis tools that might create some files we should switch the cwd
+	for (uint i=0;i<analysers.size();i++) {
+		analysers[i]->init(global_scope.get());
+	}
+	for (uint i=0;i<analysis_section_plugins.size();i++) {
+		analysis_section_plugins[i]->init(global_scope.get());
+	}
+	
+	TimeScheduler::init();
 	cout << "model is up" <<endl;
 };
 

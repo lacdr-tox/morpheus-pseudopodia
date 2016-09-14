@@ -9,11 +9,19 @@ double ExpressionEvaluator<double>::get(const SymbolFocus& focus) const
 {
 	if (expr_is_const)
 		return const_val;
-	if (expr_is_symbol)
-		return symbols.front().get(focus);
 	
-	for (uint i = 0; i<symbols.size(); i++) {
-		symbol_values[i]=symbols[i].get(focus);
+	uint i = 0;
+	try {
+		if (expr_is_symbol)
+			return symbols.front().get(focus);
+		
+		for (uint i = 0; i<symbols.size(); i++) {
+			symbol_values[i]=symbols[i].get(focus);
+		}
+	} 
+	catch (string e) {
+		e+= "\nIn expression '" + this->getExpression() + "' for symbol '" + symbols[i].getName() +"'.";
+		throw e;
 	}
 	return parser->Eval();
 }
@@ -25,14 +33,21 @@ template <>
 float ExpressionEvaluator<float>::get(const SymbolFocus& focus) const
 {
 	if (expr_is_const)
-		return const_val;
-	
-	if (expr_is_symbol)
-		return symbols.front().get(focus);
-	
-	for (uint i = 0; i<symbols.size(); i++) {
-		symbol_values[i]=symbols[i].get(focus);
+		return const_val;;
+	uint i = 0;
+	try {
+		if (expr_is_symbol)
+			return symbols[i].get(focus);
+		
+		for (; i<symbols.size(); i++) {
+			symbol_values[i]=symbols[i].get(focus);
+		}
+	} 
+	catch (string e) {
+		e+= "\n In expression '" + this->getExpression() + "' for symbol '" + symbols[i].getName() +"'.";
+		throw e;
 	}
+	
 	return parser->Eval();
 }
 

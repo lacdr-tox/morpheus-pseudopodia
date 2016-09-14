@@ -370,16 +370,18 @@ template <class T> T& Lattice_Data_Layer<T>::get_writable(VINT a) {
 
 template <class T> VINT Lattice_Data_Layer<T>::getWritableSize(){
 	if (has_reduction) {
-	switch (reduction) {
-		case Boundary::mz : 
-		case Boundary::pz :
-			return VINT(l_size.x,l_size.y,1);
-		case Boundary::mx : 
-		case Boundary::px :
-			return VINT(1,l_size.y,l_size.z);
-		case Boundary::my : 
-		case Boundary::py :
-			return VINT(l_size.x,1,l_size.z);
+		switch (reduction) {
+			case Boundary::mz : 
+			case Boundary::pz :
+				return VINT(l_size.x,l_size.y,1);
+			case Boundary::mx : 
+			case Boundary::px :
+				return VINT(1,l_size.y,l_size.z);
+			case Boundary::my : 
+			case Boundary::py :
+				return VINT(l_size.x,1,l_size.z);
+			default:
+				return size();
 		}
 	}
 	else {

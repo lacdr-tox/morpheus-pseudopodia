@@ -1077,7 +1077,7 @@ void MainWindow::selectXMLPath(QString path)
 	QStringList xml_path = path.split("/", QString::SkipEmptyParts);
 	// The 2nd element is the name of the part to be shown;
 	if (xml_path.size()<2) return; 
-	QString part_name = xml_path[1];
+	QString part_name = xml_path[0];
 	int part_id = -1;
 	for (int p=0; p<current_model->parts.size(); p++ ){
 		if (current_model->parts[p].label == part_name) {

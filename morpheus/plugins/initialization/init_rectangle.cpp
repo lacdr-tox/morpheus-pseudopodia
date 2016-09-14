@@ -65,6 +65,7 @@ bool InitRectangle::run(CellType* ct)
 			cout << "no type defined" << endl;
 			break;
 	}
+	return true;
 }
 
 

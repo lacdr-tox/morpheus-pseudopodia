@@ -56,9 +56,10 @@ void AddCell::executeTimeStep() {
 		bool createCell = false;
 		VINT position = this->getRandomPos();
 		
-		if( !overwrite() )
+		if( !overwrite() ) {
 			if( checkIfMedium(position) )
 				createCell = true;
+		}
 		else
 			createCell = true;
 		

@@ -86,7 +86,7 @@ bool InitHexLattice::run(CellType* ct)
 			ct->removeCell( id );
 	}
 
-
+	return true;
 // 	center += VINT(6, 5, 0);
 // 	CPM::CELL_ID id2 = makeCell(center, nbh, ct);
 // 	
