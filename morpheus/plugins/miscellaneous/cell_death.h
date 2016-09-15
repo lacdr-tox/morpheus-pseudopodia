@@ -50,7 +50,8 @@ private:
 	PluginParameter2<double, XMLReadWriteSymbol, OptionalPolicy> target_volume;
 	
 	CellType* celltype;
-	bool is_lysis, is_shrinkage;
+	enum Mode{LYSIS, SHRINKAGE};
+	Mode mode;
 	set<uint> dying;
 	
 public:
