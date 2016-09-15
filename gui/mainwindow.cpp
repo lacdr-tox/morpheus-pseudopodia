@@ -673,7 +673,7 @@ void MainWindow::loadXMLFile()
         directory = QSettings().value("FileDialog/path").toString();
     }
 
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open model configuration"), directory, tr("Configuration Files (*.xml)"));
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open model configuration"), directory, tr("Configuration Files (*.xml *.xml.gz)"));
     if(fileName != "")
     {
         QString path = QFileInfo(fileName).dir().path();
