@@ -411,7 +411,9 @@ void AdaptiveCPMShapeTracker::neighborNode(const CPM::Update& update) {
 		scaled_interfaces_valid = false;
 		for (const auto& stat : update.boundaryStencil()->getStatistics()) {
 			if (stat.cell == cell_id) {
-				_interfaces[update.focusStateBefore().cell_id] -= stat.count;
+				if ( (_interfaces[update.focusStateBefore().cell_id] -= stat.count) == 0) {
+					_interfaces.erase(update.focusStateBefore().cell_id);
+				}
 				_interfaces[update.focusStateAfter().cell_id] += stat.count;
 			}
 		}
