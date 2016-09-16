@@ -115,7 +115,7 @@ private:
 
 template<class T>
 SymbolAccessor<T> Scope::findSymbol(string name) const {
-	cout << "Symbol name: " << name << endl;
+// 	cout << "Symbol name: " << name << endl;
 	if(name.empty())
 		throw (string("Symbol without a name \"") + name + ("\""));
 
@@ -136,7 +136,7 @@ SymbolAccessor<T> Scope::findSymbol(string name) const {
 			return parent->findSymbol<T>(name);
 		}
 		else {
- 			throw (string("Symbol \""+name+"\" is not defined. "));
+ 			throw (string("Symbol \"")+name+"\" is not defined. ");
 		}
 // 	}
 // 	catch (string e) {
@@ -155,7 +155,7 @@ SymbolAccessor<T> Scope::findSymbol(string name) const {
 
 template<class T>
 SymbolRWAccessor<T> Scope::findRWSymbol(string name) const {
-	cout << "Symbol name: " << name << endl;
+// 	cout << "Symbol name: " << name << endl;
 	if(name.empty())
 		throw (string("Symbol without a name \"") + name + ("\""));
 	
@@ -175,7 +175,7 @@ SymbolRWAccessor<T> Scope::findRWSymbol(string name) const {
 			return parent->findRWSymbol<T>(name);
 		}
 		else {
-			throw (string("findRWSymbol: Requested symbol \"") + name + "\" is not defined.");
+			throw (string("Requested symbol \"") + name + "\" is not defined.");
 		}
 // 	}
 // 	catch (string e) {
@@ -194,7 +194,7 @@ SymbolRWAccessor<T> Scope::findRWSymbol(string name) const {
 
 template<class T>
 SymbolAccessor<T> Scope::findSymbol(string name, const T& default_val) const {
-	cout << "Symbol name: " << name << endl;
+// 	cout << "Symbol name: " << name << endl;
 	if(name.empty())
 		throw (string("Symbol without a name \"") + name + ("\""));
 	// try to find it locally
@@ -213,7 +213,7 @@ SymbolAccessor<T> Scope::findSymbol(string name, const T& default_val) const {
 			return parent->findSymbol<T>(name, default_val);
 		}
 		else {
-			throw (string("Requested symbol is not defined."));
+			throw (string("Requested symbol \"") + name + "\" is not defined.");
 		}
 // 	}
 // 	catch (string e) {
