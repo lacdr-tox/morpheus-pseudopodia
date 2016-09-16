@@ -19,23 +19,44 @@
 #include "edge_tracker.h"
 #include "interaction_energy.h"
 
-/** \defgroup CPM
-\ingroup ContinuousProcessPlugins
-
-\section Description
-CPM provides a MonteCarlo sampler, that evolves a spatial cell configuration on the basis of a Hamiltonian definition
-by statistical sampling. A MonteCarloStep is corresonds to the exectution of update attempts equal to the number of lattice sites.
-Its relation to simulation time is provided trough MCSDuration tag.
-
-The neighborhood used for choosing update neighbors can be selected via Neighborhood tag.
-
-The tendency to accept configuration update increasing the Hamiltonian energy can be adjusted via MetropolisKinetics.
-
-*/
-
 /**
- * 
- */
+\defgroup CPM
+\ingroup ContinuousProcessPlugins
+\ingroup ModelStructure
+
+Specifies parameters for a cellular Potts model (CPM) which provides a MonteCarlo sampler that evolves a spatial cell configuration on the basis of a Hamiltonian definition by statistical sampling.
+
+\f$ H = \f$
+
+\f$ P = \f$
+
+\b ShapeSurface specifies the Neighborhood used to estimate the boundary length of CPM Shapes, in particular cells. This estimate is used for computing interaction energies, cell perimeters and interface lengths.
+  - \b scaling scaling of number of neighbors to length: \b norm estimate the length in unit of node length (see Magno, Grieneisen and Marée, BMC Biophysics, 2015), \b size neigborhood fraction occupied by other entities, \b none number of neighbors occupied by other entities.
+  - \b Neigborhood defines the stencil size to approximate the surface length. Wrt. to shape isotropy some neighborhoods are favourable: 
+    - square  -- 6th order corresponding to a distance of 3
+    - hexagonal -- 3rd order, corresponding to a distance of 2
+    - cubic  -- 7th order  corresponding to a distance of \f$ 2 \sqrt 2 \f$ 
+
+\b Interaction specifies interaction energies \f$ J_{\sigma, \sigma} \f$ for different intercellular \ref Contact. The interaction energy given per length unit as defined in ShapeSurface.
+
+
+\b MonteCarloSampler
+  - \b stepper: \b edgelist chooses updates from a tracked list of lattice sites that can potentially change cofiguration; \b random sampling chooses lattice site with uniform random distribution over all lattice sites.
+  - \b MetropolisKinetics:
+    - \b temperature: specifies Boltzmann probability to accept updates that increase energy, required to be homogeneous in space.
+    - \b yield: offset for Boltzmann probability distribution representing resistance to membrane deformations (see Kafer, Hogeweg and Maree, PLoS Comp Biol, 2006).
+  - \b Neighborhood specifies the neighborhood size used for choosing updates in the modified Metropolis algorithm. Defaults to the \ref Lattice defined.
+  - \b MCSDuration scales the Monte Carlo Step (MCS) to the simulation time. One MCS is defined as a number of update attempts equal to the number of lattice sites.
+    
+\section References
+
+Graner, Glazier, 1992
+
+Kafer, Hogeweg and Maree, PLoS Comp Biol, 2006
+
+Magno, Grieneisen and Marée, BMC Biophysics, 2015
+
+**/
 
 class CPMSampler : public ContinuousProcessPlugin {
 public:
@@ -74,7 +95,7 @@ private:
 	
 	shared_ptr<const CPM::LAYER> cell_layer;
 	vector <std::shared_ptr <const CellType > > celltypes;
-    shared_ptr< const Lattice > lattice;
+	mutable double cached_temp;
 };
 
 #endif
