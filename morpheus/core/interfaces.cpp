@@ -84,19 +84,14 @@ bool Plugin::setParameter(string xml_path, string value)
 void Plugin::init(const Scope* scope) {
 	
 	local_scope = scope;
-	try {
-		for (uint i=0; i<plugin_parameters2.size(); i++) {
-			plugin_parameters2[i]->init();
-			
-			auto in = plugin_parameters2[i]->getDependSymbols();
-			input_symbols.insert(in.begin(), in.end());
+	for (uint i=0; i<plugin_parameters2.size(); i++) {
+		plugin_parameters2[i]->init();
+		
+		auto in = plugin_parameters2[i]->getDependSymbols();
+		input_symbols.insert(in.begin(), in.end());
 
-			auto out = plugin_parameters2[i]->getOutputSymbols();
-			output_symbols.insert(out.begin(), out.end());
-		}
-	}
-	catch (string s) {
-		throw MorpheusException(s, stored_node );
+		auto out = plugin_parameters2[i]->getOutputSymbols();
+		output_symbols.insert(out.begin(), out.end());
 	}
 	
 	if (! input_symbols.empty()) {

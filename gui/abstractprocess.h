@@ -27,6 +27,7 @@ struct ProcessInfo {
     enum status {PEND, PSUSP, RUN, USUSP, SSUSP, DONE, EXIT, UNKWN, ZOMBI};
     int job_id;
     QString title; /*!< Title of the cpm-model. */
+    QString model_file;
     status state;
     double start_time; double stop_time; int snapshot_time; double current_time;
     int run_time; int progress;
@@ -116,6 +117,7 @@ public:
 protected:
     int ID; /*!< Internal id of the process (id from the underlying system) */
     QString model_file_name; /*!< name of the xml-file, which describes the cpm-model. */
+    QString model_source_file;  /*!< name of the xml-file as it was opened in the editor */
     mutable ProcessInfo _info;
 
     bool pending_read;

@@ -772,8 +772,7 @@ int main(int argc, char *argv[]) {
 		}
 		//cerr << "Error while reading model description.\n";
 		cerr << "\n" << e.what()<< "\n";
-		string xmlpath =  getXMLPath(e.where());
-		cerr << "\nXMLPath: " << xmlpath << endl;
+		cerr << "\nXMLPath: " << e.where() << endl;
 		cerr.flush();
 		exit(-1);
 	}

@@ -10,7 +10,9 @@ abstractProcess::abstractProcess(SharedMorphModel model, int job_id, QString sub
 	_info.progress = 0;
 	ID = 0;
 	
-	_info.title = model->rootNodeContr->firstChild("Description")->firstChild("Title")->getText();
+	_info.title = model->rootNodeContr->getModelDescr().title;
+// 	model->rootNodeContr->firstChild("Description")->firstChild("Title")->getText();
+	_info.model_file = model->xml_file.path;
 	if (_info.title.isEmpty())
 		_info.title = "Simulation";
 	

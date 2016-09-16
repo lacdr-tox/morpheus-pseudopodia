@@ -255,10 +255,8 @@ bool PClass::factory_registration = registerPlugin<PClass>(); /* PluginFactory::
 
 /** \defgroup CPM_EnergyPlugins CPM Hamiltonian Plugins
  *  \ingroup CPM
- * 	
- */
-
-/** Plugin interface for defining an energy term in the CPM hamiltonian.
+ * 
+ * Plugin interface for defining an energy term in the CPM hamiltonian.
  * The delta method has to provide the change in energy due to a potential update with respect to cell cell_id.
  * The hamiltonian is the total energy of a cell with respect to this energy term, but is currently not used at all.
  */
@@ -281,7 +279,7 @@ class CPM_Energy : virtual public Plugin {
 
 /** \defgroup CPM_CheckUpdatePlugins CPM Check Update Plugins
  *  \ingroup CPM
- * 	\brief Plugin interface for defining a rule to check for the CPM before updates take place.
+ *  Plugin interface for defining a rule to check for the CPM before updates take place.
  */
 
 /** Plugin interface for defining an update check rule for the CPM.
@@ -302,7 +300,7 @@ class CPM_Check_Update : virtual public Plugin
 
 /** \defgroup CPM_UpdateListenerPlugins CPM Update Listener Plugins
  *  \ingroup CPM
- * 	\brief Plugin interface for getting notifications of cell updates check rule for the CPM.
+ *  Plugin interface for getting notifications of cell updates check rule for the CPM.
  */
 
 /** Plugin interface for getting notifications of cell updates check rule for the CPM.

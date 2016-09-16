@@ -64,7 +64,7 @@ void JobQueue::restoreSavedJobs() {
 		if (job->state() == ProcessInfo::RUN || job->state() == ProcessInfo::PEND) {
 			connect(job.data(), SIGNAL(stateChanged(abstractProcess*)), this, SLOT(processStateChanged(abstractProcess*)));
 			connect(job.data(), SIGNAL(outputChanged(abstractProcess*)), this, SLOT(processStateChanged(abstractProcess*)));
-			connect(job.data(), SIGNAL(criticalMessage(QString,int)), this, SLOT(processError(QString)));
+			connect(job.data(), SIGNAL(criticalMessage(QString)), this, SLOT(processError(QString)));
 		}
 
 		emit processAdded(info.job_id);
@@ -158,7 +158,7 @@ void JobQueue::addSweep(SharedMorphModel model, int sweep_id)
 	QSqlQuery sweep_jobs(config::getDatabase());
 	if ( ! sweep_jobs.exec(QString("SELECT * FROM sweeps WHERE id=%1").arg(sweep_id)) ) {
 		qDebug() << "Unable to retrieve sweep info from DB: " << sweep_jobs.lastError();
-		emit criticalMessage(QString("Unable to retrieve sweep info from DB: %1").append(sweep_jobs.lastError().text()), true);
+		emit criticalMessage(QString("Unable to retrieve sweep info from DB: %1").append(sweep_jobs.lastError().text()));
 		return;
 	}
 
@@ -180,7 +180,7 @@ void JobQueue::addSweep(SharedMorphModel model, int sweep_id)
 	bool ok = sweep_jobs.exec(QString("SELECT * FROM sweep_jobs WHERE sweep=%1").arg(sweep_id));
 	if (!ok) {
 		qDebug() << "Unable to retrieve sweep jobs from DB: " << sweep_jobs.lastError();
-		emit criticalMessage(QString("Unable to retrieve sweep info from DB: %1").append(sweep_jobs.lastError().text()), true);
+		emit criticalMessage(QString("Unable to retrieve sweep info from DB: %1").append(sweep_jobs.lastError().text()));
 		return;
 	}
 	int param_idx = sweep_jobs.record().indexOf("paramSet");
@@ -225,7 +225,7 @@ void JobQueue::addSweep(SharedMorphModel model, int sweep_id)
 
 		// Set Up the Job
 		int job_id = this->newJobID();
-		emit statusMessage(QString("Submitting job %1 (%2/%3)").arg(job_id).arg(job+1).arg(sweep_job_ids.size()),((100 * (job+1))/sweep_job_ids.size() ));
+		emit statusMessage(QString("Submitting job %1 (%2/%3)").arg(job_id).arg(job+1).arg(sweep_job_ids.size()), 100 * (job+1)/sweep_job_ids.size());
 
 		QSharedPointer<abstractProcess> process;
 		if (queue == local) {
@@ -241,7 +241,7 @@ void JobQueue::addSweep(SharedMorphModel model, int sweep_id)
 		update_sweep_job.bindValue(":sweep_job_id",sweep_job_ids[job]);
 		if ( ! update_sweep_job.exec()) {
 			qDebug() << "Unable to update job id in sweep_jobs " << update_sweep_job.lastError();
-			emit criticalMessage(QString("Unable to update job %1 in sweep_jobs ").arg(job_id).append(update_sweep_job.lastError().text()),false);
+			emit criticalMessage(QString("Unable to update job %1 in sweep_jobs ").arg(job_id).append(update_sweep_job.lastError().text()), job_id);
 		}
 		
 		// write summary information
@@ -374,10 +374,11 @@ void JobQueue::processError ( QString error )
 	bool popup = true;
 	if (sender()) {
 		abstractProcess* source = qobject_cast<abstractProcess*>(sender());
-		if (source)
-			popup = pending_interactive_jobs.contains(source->jobID()) || running_interactive_jobs.contains(source->jobID()) || finished_interactive_jobs.contains(source->jobID()) ;
+		if (source) {
+// 			popup = pending_interactive_jobs.contains(source->jobID()) || running_interactive_jobs.contains(source->jobID()) || finished_interactive_jobs.contains(source->jobID()) ;
+			emit criticalMessage(error, source->jobID());
+		}
 	}
-	emit criticalMessage(error, popup);
 }
 
 

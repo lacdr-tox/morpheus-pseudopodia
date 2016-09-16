@@ -455,10 +455,10 @@ void domNodeViewer::insertSymbolIntoEquation(const QModelIndex &idx) {
 
 bool domNodeViewer::selectNode(QString path) {
 	QStringList xml_path = path.split("/",QString::SkipEmptyParts);
+	if (xml_path[0] == "MorpheusModel") xml_path.pop_front();
 	nodeController* node = model->rootNodeContr->find(xml_path);
 	if (node) {
-		
-		setModelPart(xml_path[1]);
+		setModelPart(xml_path[0]);
 		setTreeItem( model->itemToIndex(node));
 		return true;
 	}

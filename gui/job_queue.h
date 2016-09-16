@@ -66,8 +66,8 @@ private slots:
 	void processError(QString error);
 
 signals:
-	void statusMessage(QString message, int progress = -1);
-	void criticalMessage(QString message, bool popup);
+	void statusMessage(QString message, int progress=-1);
+	void criticalMessage(QString message, int job_id=-1);
     void processAdded(int);
     void processChanged(int);
     void processRemoved(int);

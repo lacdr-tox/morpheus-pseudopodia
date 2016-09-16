@@ -595,6 +595,7 @@ public:
 	void setXMLPath(string xml_path) { this->xml_path = xml_path; }
 	string XMLPath() const override { return this->xml_path; }
 	void loadFromXML(XMLNode node) {
+		stored_node = node;
 		try {
 			string raw_string;
 			if (xml_path.empty()) {
@@ -611,13 +612,22 @@ public:
 				XMLValueInterpreter<T, RequirementPolicy>::read(XMLValueInterpreter<T, RequirementPolicy>::stringVal());
 		}
 		catch (string e) {
-			throw (MorpheusException(e + "\nParameter " + xml_path,node));
+			auto tokens = tokenize(xml_path,"/");
+			tokens.pop_back();
+			throw (MorpheusException(e, getXMLPath(stored_node)+"/"+join(tokens,"/")));
 		}
 	}
 	
 	void read(string value) override { XMLValueInterpreter<T, RequirementPolicy>::read(value); }
 	// void name() { RequirementPolicy::stringVal(); }
-	void init() override { XMLValueInterpreter<T, RequirementPolicy>::init(); };
+	void init() override {
+		try { XMLValueInterpreter<T, RequirementPolicy>::init();}
+		catch (string e) {
+			auto tokens = tokenize(xml_path,"/");
+			tokens.pop_back();
+			throw (MorpheusException(e, getXMLPath(stored_node)+"/"+join(tokens,"/")));
+		}
+	};
 	bool isDefined() const { return  ! XMLValueInterpreter<T, RequirementPolicy>::isMissing(); }
 	
 	set<SymbolDependency> getDependSymbols() const { return XMLValueInterpreter<T, RequirementPolicy>::getDependSymbols(); } 
@@ -625,6 +635,7 @@ public:
 
 private:
 	string xml_path;
+	XMLNode stored_node;
 };
 
 

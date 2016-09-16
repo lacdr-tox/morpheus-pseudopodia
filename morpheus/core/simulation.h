@@ -93,13 +93,14 @@ uint getRandomUint(uint max_val);
 class MorpheusException {
 public:
     MorpheusException(string what);
-	MorpheusException(string what, XMLNode where) : _what(what),_where(where) {}
-	XMLNode where() const { return _where; }
+	MorpheusException(string what, XMLNode where) : _what(what),_where(getXMLPath(where)) {}
+	MorpheusException(string what, string where) : _what(what),_where(where) {}
+	string where() const { return _where; }
 	string what() const { return _what; }
 	
 protected:
 	string _what;
-	XMLNode _where;
+	string _where;
 };
 
 class ExpressionException : public MorpheusException {

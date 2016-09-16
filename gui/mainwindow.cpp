@@ -420,7 +420,7 @@ void MainWindow::createMainWidgets()
 	job_queue_view = new JobQueueView(this);
 	connect(job_queue_view,SIGNAL(jobSelected(int)),this,SLOT(showJob(int)));
 	connect(job_queue_view,SIGNAL(sweepSelected(QList<int>)),this,SLOT(showSweep(QList<int>)));
-	connect(job_queue_view, SIGNAL(erronousXMLPath(QString)), this, SLOT(selectXMLPath(QString)));
+	connect(job_queue_view, SIGNAL(erronousXMLPath(QString,int)), this, SLOT(selectXMLPath(QString,int)));
 	
     jobQueueDock->setWidget(job_queue_view);
     jobQueueDock->setObjectName("JobQueueDock");
@@ -496,8 +496,7 @@ void MainWindow::selectModel(int index, int part)
 			}
         }
         modelList->setCurrentItem(modelList->topLevelItem(index)->child(model_index.part));
-		
-// 		showCurrentModel();
+		documentsDock->raise();
     }
     else {
 		if (part<0 || part>=current_model->parts.size()) {
@@ -1009,6 +1008,7 @@ void MainWindow::showCurrentModel() {
 // 		docuDock->setCurrentNode( current_model->parts[model_index.part].element);
 		QWidget::setTabOrder(modelList,modelViewer[current_model]);
     }
+	documentsDock->raise();
 }
 //------------------------------------------------------
 
@@ -1072,11 +1072,11 @@ void MainWindow::copyNodeAction(QDomNode node) {
 
 //------------------------------------------------------
 
-void MainWindow::selectXMLPath(QString path)
+void MainWindow::selectXMLPath(QString path, int model_id)
 {
 	QStringList xml_path = path.split("/", QString::SkipEmptyParts);
-	// The 2nd element is the name of the part to be shown;
-	if (xml_path.size()<2) return; 
+	if (xml_path[0] == "MorpheusModel") xml_path.pop_front();
+	if (xml_path.size()<1) return; 
 	QString part_name = xml_path[0];
 	int part_id = -1;
 	for (int p=0; p<current_model->parts.size(); p++ ){
@@ -1086,7 +1086,8 @@ void MainWindow::selectXMLPath(QString path)
 		}
 	}
 	if (part_id>=0) {
-		selectModel(model_index.model, part_id);
+		// 
+		selectModel(model_id, part_id);
 		modelViewer[current_model]->selectNode(path);
 	}
 }

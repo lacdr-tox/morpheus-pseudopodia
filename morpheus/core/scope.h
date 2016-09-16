@@ -120,7 +120,7 @@ SymbolAccessor<T> Scope::findSymbol(string name) const {
 		throw (string("Symbol without a name \"") + name + ("\""));
 
 	// try to find it locally
-	try {
+// 	try {
 		auto it = local_symbols.find(name);
 		if ( it != local_symbols.end()) {
 			if (TypeInfo<T>::name() != it->second.type_name) {
@@ -138,19 +138,19 @@ SymbolAccessor<T> Scope::findSymbol(string name) const {
 		else {
  			throw (string("Symbol \""+name+"\" is not defined. "));
 		}
-	}
-	catch (string e) {
-// 		throw ("Global default for symbol \""+name+"\" is missing. ");
-		stringstream sstr;
-		sstr << "Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
-		sstr << e << endl; 
-// 		sstr << "Available symbols: ";
-// 		for (auto it : local_symbols) {
-// 			if (it.second.type_name == TypeInfo<T>::name())
-// 				sstr << "\""<< it.first << "\", ";
-// 		}
-		throw (sstr.str());
-	}
+// 	}
+// 	catch (string e) {
+// // 		throw ("Global default for symbol \""+name+"\" is missing. ");
+// 		stringstream sstr;
+// 		sstr << "Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
+// 		sstr << e << endl; 
+// // 		sstr << "Available symbols: ";
+// // 		for (auto it : local_symbols) {
+// // 			if (it.second.type_name == TypeInfo<T>::name())
+// // 				sstr << "\""<< it.first << "\", ";
+// // 		}
+// 		throw (sstr.str());
+// 	}
 };
 
 template<class T>
@@ -160,7 +160,7 @@ SymbolRWAccessor<T> Scope::findRWSymbol(string name) const {
 		throw (string("Symbol without a name \"") + name + ("\""));
 	
 	// try to find it locally
-	try {
+// 	try {
 		auto it = local_symbols.find(name);
 		if ( it != local_symbols.end()) {
 			if (TypeInfo<T>::name() != it->second.type_name) {
@@ -177,19 +177,19 @@ SymbolRWAccessor<T> Scope::findRWSymbol(string name) const {
 		else {
 			throw (string("findRWSymbol: Requested symbol \"") + name + "\" is not defined.");
 		}
-	}
-	catch (string e) {
-// 		throw ("Cannot find (r+w) symbol \""+name+"\". ");
-		stringstream sstr;
-		sstr << "Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
-		sstr << e << endl; 
-// 		sstr << "Available symbols: ";
-// 		for (auto it : local_symbols) {
-// 			if (it.second.type_name == TypeInfo<T>::name())
-// 				sstr << "\""<< it.first << "\", ";
-// 		}
-		throw (sstr.str());
-	}
+// 	}
+// 	catch (string e) {
+// // 		throw ("Cannot find (r+w) symbol \""+name+"\". ");
+// 		stringstream sstr;
+// 		sstr << "Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
+// 		sstr << e << endl; 
+// // 		sstr << "Available symbols: ";
+// // 		for (auto it : local_symbols) {
+// // 			if (it.second.type_name == TypeInfo<T>::name())
+// // 				sstr << "\""<< it.first << "\", ";
+// // 		}
+// 		throw (sstr.str());
+// 	}
 };
 
 template<class T>
@@ -198,7 +198,7 @@ SymbolAccessor<T> Scope::findSymbol(string name, const T& default_val) const {
 	if(name.empty())
 		throw (string("Symbol without a name \"") + name + ("\""));
 	// try to find it locally
-	try {
+// 	try {
 		auto it = local_symbols.find(name);
 		if ( it != local_symbols.end()) {
 			if (TypeInfo<T>::name() != it->second.type_name) {
@@ -215,19 +215,19 @@ SymbolAccessor<T> Scope::findSymbol(string name, const T& default_val) const {
 		else {
 			throw (string("Requested symbol is not defined."));
 		}
-	}
-	catch (string e) {
-// 		throw ("Cannot find symbol \""+name+"\". ");
-		stringstream sstr;
-		sstr << "Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
-		sstr << e << endl; 
-// 		sstr << "Available symbols: ";
-// 		for (auto it : local_symbols) {
-// 			if (it.second.type_name == TypeInfo<T>::name())
-// 				sstr << "\""<< it.first << "\", ";
-// 		}
-		throw (sstr.str());
-	}
+// 	}
+// 	catch (string e) {
+// // 		throw ("Cannot find symbol \""+name+"\". ");
+// 		stringstream sstr;
+// 		sstr << "Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
+// 		sstr << e << endl; 
+// // 		sstr << "Available symbols: ";
+// // 		for (auto it : local_symbols) {
+// // 			if (it.second.type_name == TypeInfo<T>::name())
+// // 				sstr << "\""<< it.first << "\", ";
+// // 		}
+// 		throw (sstr.str());
+// 	}
 };
 
 template <class T>

@@ -36,8 +36,8 @@ private:
 public slots:
 	void setGroupBy(JobViewModel::Grouping g);
 	void addJob(const QModelIndex&, int);
-	void addMessage(QString message, int progress = -1);
-	void addCriticalMessage(QString message, bool popup=true);
+	void addMessage(QString message, int progress);
+	void addCriticalMessage(QString message, int job_id);
 
 private slots:
 	void selectJob(const QModelIndex&);
@@ -49,7 +49,7 @@ signals:
 	void jobSelected(int job_id);
 
 	void sweepSelected(QList<int> job_ids);
-	void erronousXMLPath(QString path);
+	void erronousXMLPath(QString path, int model_id);
 
 	void removeJob(int job_id,bool remove_data);
 	void stopJob(int job_id);

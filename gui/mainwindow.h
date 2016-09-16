@@ -126,7 +126,7 @@ protected:
 public slots:
     void selectModel(int index, int part = -1);
 	void selectAttribute(AbstractAttribute* attr);
-	void selectXMLPath(QString path);
+	void selectXMLPath(QString path, int model_id);
     void addModel(int index);
     void removeModel(int index);
 	void handleMessage(const QString& message);

@@ -6,7 +6,7 @@ JobQueueView::JobQueueView ( QWidget* parent) : QSplitter ( parent )
 	connect(this,SIGNAL(stopJob(int)),job_queue,SLOT(stopProcess(int)));
 	connect(this,SIGNAL(debugJob(int)),job_queue,SLOT(debugProcess(int)));
 	connect(this,SIGNAL(removeJob(int,bool)),job_queue,SLOT(removeProcess(int,bool)));
-	connect(job_queue,SIGNAL(criticalMessage(QString,bool)),this,SLOT(addCriticalMessage(QString,bool)));
+	connect(job_queue,SIGNAL(criticalMessage(QString,int)),this,SLOT(addCriticalMessage(QString,int)));
 	connect(job_queue,SIGNAL(statusMessage(QString,int)),this,SLOT(addMessage(QString,int)));
 
 	job_view_model = new JobViewModel(job_queue,this);
@@ -73,20 +73,25 @@ void JobQueueView::selectStatus(QListWidgetItem * message_item) {
 	QRegExp xml_path("XMLPath: ([\\w\\[\\]/]+)");
 	if (xml_path.indexIn(message) != -1) {
 // 		qDebug() << "Matched XMLPath is " << xml_path.cap(1);
-		emit erronousXMLPath(xml_path.cap(1));
+		JobQueue* job_queue = config::getJobQueue();
+		auto job = job_queue->getJobs()[message_item->data(Qt::UserRole).toInt()];
+// 		QString modelname = job->info().model_file;
+		int model_index = config::openModel(job->info().model_file);
+		emit erronousXMLPath(xml_path.cap(1), model_index);
 	}
 	
 }
 
-void JobQueueView::addCriticalMessage ( QString message, bool popup )
+void JobQueueView::addCriticalMessage ( QString message, int job_id )
 {
-	popup = true;
 	QListWidgetItem* item = new QListWidgetItem(QThemedIcon("dialog-error",QIcon(":/stop.png")),message);
+	item->setData(Qt::UserRole,job_id);
 	jobQueueStatusText->addItem(item);
 	if (jobQueueStatusText->count()> maxMessageItems)
 		jobQueueStatusText->takeItem(0);
 	jobQueueStatusText->setCurrentItem(item);
 
+	bool popup = config::getJobQueue()->getJobs()[job_id]->info().resource != ProcessInfo::remote;
 	if (popup) {
 		selectStatus(item);
 		QMessageBox::critical(this,"Simulation error", message);
@@ -101,7 +106,7 @@ void JobQueueView::addMessage ( QString message, int progress )
 	if (jobQueueStatusText->count()> maxMessageItems)
 		jobQueueStatusText->takeItem(0);
 	jobQueueStatusText->setCurrentItem(item);
-
+	
 	if (progress >= 0) {
 		jobQueueProgressBar->setValue(progress);
 		jobQueueProgressBar->show();
