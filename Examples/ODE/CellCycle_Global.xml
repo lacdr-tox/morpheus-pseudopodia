@@ -1,0 +1,94 @@
+<MorpheusModel version="3">
+    <Description>
+        <Title>Example-PredatorPrey</Title>
+        <Details>Example showing Predator-prey model by Rosenzweig.
+
+The Rosenzweig model is the Lotka-Volterra model with logistic growth and type 2 functional response. 
+
+Reference:
+Rosenzweig, Michael. 1971. "The Paradox of Enrichment" Science Vol. 171: pp. 385–387
+
+
+Illustrates how to 
+- create a simple ODE model
+- log and plot data as time course</Details>
+    </Description>
+    <Global>
+        <Variable symbol="CDK1" value="0"/>
+        <Variable symbol="Plk1" value="0"/>
+        <Variable symbol="APC" value="0"/>
+        <System solver="runge-kutta" time-scaling="1" time-step="1e-2">
+            <Constant symbol="n" value="8"/>
+            <Constant symbol="K" value="0.5"/>
+            <Constant symbol="α1" value="0.1"/>
+            <Constant symbol="α2" value="3.0"/>
+            <Constant symbol="α3" value="3.0"/>
+            <Constant symbol="β1" value="3.0"/>
+            <Constant symbol="β2" value="1.0"/>
+            <Constant symbol="β3" value="1.0"/>
+            <DiffEqn symbol-ref="CDK1">
+                <Expression>α1 - β1 * CDK1 * (APC^n) / (K^n + APC^n)</Expression>
+            </DiffEqn>
+            <DiffEqn symbol-ref="Plk1">
+                <Expression>α2*(1-Plk1) * ((CDK1^n) / (K^n + CDK1^n)) - β2*Plk1</Expression>
+            </DiffEqn>
+            <DiffEqn symbol-ref="APC">
+                <Expression>α3*(1- APC) * ((Plk1^n) / (K^n + Plk1^n)) - β3*APC</Expression>
+            </DiffEqn>
+        </System>
+    </Global>
+    <Space>
+        <Lattice class="linear">
+            <Size symbol="size" value="1, 0, 0"/>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+        </Lattice>
+        <SpaceSymbol symbol="space"/>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="25"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <Analysis>
+        <Logger time-step="1e-2">
+            <Input>
+                <Symbol symbol-ref="APC"/>
+                <Symbol symbol-ref="CDK1"/>
+                <Symbol symbol-ref="Plk1"/>
+            </Input>
+            <Output>
+                <TextOutput file-format="csv"/>
+            </Output>
+            <Plots>
+                <Plot time-step="-1">
+                    <Style style="lines" line-width="4.0"/>
+                    <Terminal terminal="png"/>
+                    <X-axis>
+                        <Symbol symbol-ref="time"/>
+                    </X-axis>
+                    <Y-axis>
+                        <Symbol symbol-ref="APC"/>
+                        <Symbol symbol-ref="CDK1"/>
+                        <Symbol symbol-ref="Plk1"/>
+                    </Y-axis>
+                </Plot>
+                <Plot time-step="-1">
+                    <Style style="lines" line-width="4.0"/>
+                    <Terminal terminal="png"/>
+                    <X-axis>
+                        <Symbol symbol-ref="CDK1"/>
+                    </X-axis>
+                    <Y-axis>
+                        <Symbol symbol-ref="APC"/>
+                    </Y-axis>
+                    <Color-bar>
+                        <Symbol symbol-ref="Plk1"/>
+                    </Color-bar>
+                </Plot>
+            </Plots>
+        </Logger>
+        <DependencyGraph format="png"/>
+    </Analysis>
+</MorpheusModel>
