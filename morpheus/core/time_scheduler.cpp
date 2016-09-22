@@ -359,18 +359,20 @@ void TimeScheduler::compute()
 				ts.last_progress_notification = ts.current_time;
 			}
 			
-			// Snapshoting 
-			if ( ts.save_interval.getSeconds()>0 && ts.last_save_time + ts.save_interval.getSeconds() <= ts.current_time + ts.time_precision_patch) 
+			// Checkpointing 
+			if ( ts.save_interval.getSeconds()>0 && ts.last_save_time + ts.save_interval.getSeconds() <= ts.current_time + ts.time_precision_patch){
 				SIM::saveToXML();
 				ts.last_save_time = ts.current_time;
+			}
 			
+			// StopCondition
+			if( ts.stop_condition ){
 				SymbolFocus sf;
-				if( ts.stop_condition ){
-					if( ts.stop_condition->get( sf ) ){
-						cout << "Simulation terminated on StopCondition (" << ts.stop_condition->getExpression() << ")" << endl;
-						break;
-					}
+				if( ts.stop_condition->get( sf ) ){
+					cout << "Simulation terminated on StopCondition (" << ts.stop_condition->getExpression() << ")" << endl;
+					break;
 				}
+			}
 		}
 
 		if (ts.last_progress_notification < ts.current_time)
