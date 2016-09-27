@@ -654,11 +654,11 @@ VINT findEmptyNode(VINT min , VINT max) {
 }
 
 
-void setCellType(CELL_ID cell_id, uint celltype)
+CELL_ID setCellType(CPM::CELL_ID cell_id, uint celltype)
 {
 	assert (celltype < celltypes.size());
 	uint old_celltype = getCellIndex(cell_id).celltype;
-	celltypes[celltype]->addCell(cell_id);
+	return celltypes[celltype]->addCell(cell_id);
 }
 
 void setUpdate(CPM::Update& update) {
