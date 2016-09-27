@@ -217,8 +217,7 @@ Neighborhood Lattice::getNeighborhood(const XMLNode node) const {
 		double distance;
 		getXMLAttribute(node,"Distance/text",distance);
 		if( distance == 0 ){
-		  cerr << "Neighborhood/Distance must be greater than 0." << endl;
-		  exit(-1);
+		  throw string("Neighborhood/Distance must be greater than 0.");
 		}
 		return getNeighborhoodByDistance( distance );
 	}
@@ -226,8 +225,7 @@ Neighborhood Lattice::getNeighborhood(const XMLNode node) const {
 		int order;
 		getXMLAttribute(node,"Order/text",order);
 		if( order == 0 ){
-		  cerr << "Neighborhood/Order must be greater than 0." << endl;
-		  exit(-1);
+		  throw string("Neighborhood/Order must be greater than 0.");
 		}
 		return getNeighborhoodByOrder( order );
 	}
@@ -235,16 +233,15 @@ Neighborhood Lattice::getNeighborhood(const XMLNode node) const {
 		return getNeighborhood( string(node.getChildNode("Name").getText()) );
 	}
 	else {
-		cerr << "unknown neighborhood definition in " << node.getName() << endl;
-		exit(-1);
+		throw string("Unknown neighborhood definition in ") + node.getName();
 	}
 }
 
 Neighborhood Lattice::getNeighborhoodByDistance(const double dist_max) const  {
 	std::vector<VINT> neighbors = get_all_neighbors();
 	// assume all neighbors are ordered by distance and we just got to drop from the end ...
-	if (dist_max>3.0) {
-		throw string("Neighborhood distances larger than 3 are not supported");
+	if (dist_max>=4.0) {
+		throw string("Neighborhood distances equal or larger than 4 are not supported");
 	}
 	uint order=0;
 	int n_neighbors=0;

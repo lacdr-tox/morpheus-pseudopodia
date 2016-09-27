@@ -184,11 +184,11 @@ void loadFromXML(XMLNode xMorph) {
 	
 	if ( ! xMorph.getChildNode("CPM").isEmpty() ) {
 		xCPM = xMorph.getChildNode("CPM");
-		
+		try {
 		// CPM Cell representation requires the definition of the CPM ShapeSurface for shape length estimations
 		boundary_neighborhood = SIM::lattice().getNeighborhood(xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood"));
 		CPMShape::boundaryNeighborhood = boundary_neighborhood;
-		
+		} catch (string e) { throw MorpheusException(e, xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood")); }
 		string boundary_scaling;
 		if (getXMLAttribute(xCPM,"ShapeSurface/scaling",boundary_scaling)) {
 			if (boundary_scaling == "none") {
@@ -1252,22 +1252,26 @@ void loadFromXML(const XMLNode xNode) {
 	
 	if (xLattice.nChildNode("NodeLength"))
 		node_length.loadFromXML(xLattice.getChildNode("NodeLength"));
-
-	string lattice_code="cubic";
-	getXMLAttribute(xLattice, "class", lattice_code);
-	if (lattice_code=="cubic") {
-		global_lattice =  shared_ptr<Lattice>(new Cubic_Lattice(xLattice));
-	} else if (lattice_code=="square") {
-		global_lattice =  shared_ptr<Lattice>(new Square_Lattice(xLattice));
-	} else if (lattice_code=="hexagonal") {
-		global_lattice =  shared_ptr<Lattice>(new Hex_Lattice(xLattice));
-	} else if (lattice_code=="linear") {
-		global_lattice =  shared_ptr<Lattice>(new Linear_Lattice(xLattice));
+	try {
+		string lattice_code="cubic";
+		getXMLAttribute(xLattice, "class", lattice_code);
+		if (lattice_code=="cubic") {
+			global_lattice =  shared_ptr<Lattice>(new Cubic_Lattice(xLattice));
+		} else if (lattice_code=="square") {
+			global_lattice =  shared_ptr<Lattice>(new Square_Lattice(xLattice));
+		} else if (lattice_code=="hexagonal") {
+			global_lattice =  shared_ptr<Lattice>(new Hex_Lattice(xLattice));
+		} else if (lattice_code=="linear") {
+			global_lattice =  shared_ptr<Lattice>(new Linear_Lattice(xLattice));
+		}
+		else throw string("unknown Lattice type " + lattice_code);
+		if (! global_lattice)
+				throw string("Error creating Lattice type " + lattice_code);
 	}
-	else throw string("unknown Lattice type " + lattice_code);
-	if (! global_lattice)
-			throw string("Error creating Lattice type " + lattice_code);
-
+	catch (string e) {
+		throw MorpheusException(e,xLattice);
+	}
+	
 	lattice_size_symbol="";
 	if (getXMLAttribute(xLattice,"Size/symbol",lattice_size_symbol)) {
 		symbol.name = lattice_size_symbol;
