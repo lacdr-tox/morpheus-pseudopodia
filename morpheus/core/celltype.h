@@ -26,6 +26,7 @@ public:
 	CPM::CELL_ID  getFreeID() { return free_cell_name; };
 	shared_ptr<Cell> addCell(shared_ptr<Cell>, CPM::INDEX);
 	shared_ptr<Cell> removeCell(CPM::CELL_ID);
+	shared_ptr<Cell> replaceCell(shared_ptr<Cell>, CPM::INDEX);
 	Cell& cell(CPM::CELL_ID  cell_id) { assert( cell_id < cell_by_id.size() ); assert( cell_by_id[cell_id] ); return *cell_by_id[cell_id]; };
 	CPM::INDEX& index(CPM::CELL_ID cell_id) { assert( cell_id < cell_index_by_id.size()); return cell_index_by_id[cell_id]; }
 	CPM::INDEX emptyIndex();
@@ -101,8 +102,8 @@ public:
 	const Cell& getCell(CPM::CELL_ID id ){ return storage.cell( id ); }
 	
 
-	virtual CPM::CELL_ID addCell(CPM::CELL_ID  cell_id );               ///< Appends an existing cell to the cell population. Also takes care of transfering all occupied nodes
-	virtual void removeCell(CPM::CELL_ID cell_id);
+	virtual CPM::CELL_ID addCell(CPM::CELL_ID  cell_id );               ///< Appends an existing cell to the cell population. Takes care of transfering all occupied nodes
+	virtual void removeCell(CPM::CELL_ID cell_id);                      ///< Just unregisters the cell from the celltype
 // 	virtual void changeCellType(uint cell_id,  CellType* new_cell_type);     ///< Removes cell cell_id from the cell population. The cell may not occupy and nodes.
 
 	/** Splits the specified cell @p id along a given split plane and returns the id of the newly created daughter cell. 

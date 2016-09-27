@@ -55,7 +55,7 @@ void Cell::init()
 
 
 Cell::Cell( Cell& other_cell, CellType* ct  )
-		: properties(p_properties), membranes(p_membranes), id(other_cell.getID()), celltype (ct),nodes(other_cell.nodes), shape_tracker(id, nodes)
+		: properties(p_properties), membranes(p_membranes), id(other_cell.getID()), celltype (ct),nodes(other_cell.nodes), node_sum(other_cell.node_sum), shape_tracker(id, nodes)
 {
 	
 	for (uint i=0;i< celltype->default_properties.size(); i++) {
