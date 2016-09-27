@@ -53,7 +53,6 @@ void CPMSampler::init(const Scope* scope)
 {
     ContinuousProcessPlugin::init(scope);
 	cell_layer = CPM::getLayer();
-	lattice = cell_layer->getLattice();
 	
 	if (stepper_type() == StepperType::EDGELIST) {
 		CPM::enableEgdeTracking();
@@ -66,6 +65,10 @@ void CPMSampler::init(const Scope* scope)
 	
 	interaction_energy->init(scope);
 	registerInputSymbols( interaction_energy->getDependSymbols() );
+	
+	if (metropolis_temperature.granularity() != Granularity::Global) {
+		throw MorpheusException(string("Metropolis temperature is required to be homogeneous in space."),stored_node.getChildNode("MonteCarloSampler").getChildNode("MetropolisKinetics"));
+	}
 	
 // 	current_update = CPM::createUpdate(); // we also might require a Stencil for the connectivity constraint.
 // 	current_update.boundary = unique_ptr<LatticeStencil> (new LatticeStencil(cell_layer,edge_tracker->getNeighborhood()));
@@ -119,6 +122,8 @@ void CPMSampler::MonteCarloStep()
 	int success=0;
 	assert(edge_tracker != NULL);
 	uint nupdates = edge_tracker->updates_per_mcs();
+	cached_temp = metropolis_temperature.get(SymbolFocus::global);
+	
 	for (uint i=0; i < nupdates; ++i) {
 		// an update is actually a copy operation of a value at source to position source + direction
 		// in "cpm language" source + direction is the "focus" (W. de Back et. al.)
@@ -172,7 +177,7 @@ bool CPMSampler::evalCPMUpdate(const CPM::Update& update)
 	if (dE <= 0)
 		return true;
 	
-	double p = exp(-dE / metropolis_temperature());
+	double p = exp(-dE / cached_temp);
 	double rnd = getRandom01();
 
 	return rnd < p;
