@@ -293,7 +293,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		a.match_path  = "MorpheusModel/CPM/MetropolisKinetics/Neighborhood"; a.move_path = "MorpheusModel/CPM/MonteCarloSampler/Neighborhood"; fixes.append(a);
 		a.match_path  = "MorpheusModel/CPM/MetropolisKinetics/@stepper"; a.move_path = "MorpheusModel/CPM/MonteCarloSampler/@stepper"; fixes.append(a);
 		a.match_path  = "MorpheusModel/CPM/MetropolisKinetics"; a.move_path = "MorpheusModel/CPM/MonteCarloSampler/MetropolisKinetics"; fixes.append(a);
-		a.copy = true; a.match_path  = "MorpheusModel/Space/Lattice/Neighborhood"; a.move_path = "MorpheusModel/CPM/ShapeBoundary/Neighborhood"; fixes.append(a); a.copy = false;
+		a.copy = true; a.match_path  = "MorpheusModel/Space/Lattice/Neighborhood"; a.move_path = "MorpheusModel/CPM/ShapeSurface/Neighborhood"; fixes.append(a); a.copy = false;
 		
 	}
 	else if (morpheus_file_version == 1) {
