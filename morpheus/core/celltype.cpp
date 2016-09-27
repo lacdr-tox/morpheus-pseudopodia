@@ -48,6 +48,18 @@ shared_ptr<Cell> CellIndexStorage::addCell(shared_ptr<Cell> c, CPM::INDEX idx)
 	return cell_by_id[c->getID()];
 };
 
+shared_ptr<Cell> CellIndexStorage::replaceCell(shared_ptr<Cell> c, CPM::INDEX idx)
+{
+	if ( isFree(c->getID()) ) {
+		throw string("Cannot replace cell. Cell does not exist");
+	}
+	auto old_cell = cell_by_id[c->getID()];
+	cell_by_id[c->getID()] = c;
+	cell_index_by_id[c->getID()] = idx;
+	
+	return old_cell;
+};
+
 shared_ptr<Cell> CellIndexStorage::removeCell(CPM::CELL_ID id)
 {
 	used_cell_names.erase(id);
@@ -471,37 +483,26 @@ pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID mother_id, V
 
 CPM::CELL_ID CellType::addCell(CPM::CELL_ID cell_id) 
 {
-	
-	Cell& old_cell = storage.cell(cell_id);
 	CPM::INDEX old_index = storage.index(cell_id);
-	
 	if( this->id == old_index.celltype) return cell_id;
 	
 	// create a cell with the same properties and id, that also owns the same nodes.
-	shared_ptr<Cell> new_cell = shared_ptr<Cell>( new Cell(old_cell, this ) );
-	cell_ids.push_back(new_cell->getID());
+	shared_ptr<Cell> new_cell = shared_ptr<Cell>( new Cell(storage.cell(cell_id), this ) );
 	
-	// change storage associations
-	shared_ptr<Cell> old_cell_ptr = storage.removeCell(cell_id);
-	
-	//update cell accessors
 	CPM::INDEX t = storage.emptyIndex();
 	t.celltype = id;
 	t.status = CPM::REGULAR_CELL;
-	storage.addCell(new_cell, t);
-
+	
+	// change storage associations
+	cell_ids.push_back(new_cell->getID());
+	shared_ptr<Cell> old_cell_ptr = storage.replaceCell(new_cell,t);
+	old_cell_ptr->celltype->removeCell(cell_id);
+	
 	assert( old_cell_ptr.unique() );
 	return new_cell->getID();
 };
 
 void CellType::removeCell(CPM::CELL_ID cell_id) {
-	// Remove global registration in case cell_id is still associated with this celltype
-	if (! storage.isFree(cell_id)  && storage.index(cell_id).celltype == this->id) {
-		shared_ptr<Cell> cell = storage.removeCell(cell_id);
-		assert(cell->getNodes().empty());
-		assert(cell.unique());
-	}
-		
 	cell_ids.erase(remove(cell_ids.begin(), cell_ids.end(), cell_id), cell_ids.end());
 }
 
@@ -645,6 +646,7 @@ CPM::CELL_ID MediumCellType::addCell(CPM::CELL_ID cell_id) {
 	}
 	// now that we don't overtake the cell_id we should clear its global references
 	shared_ptr<Cell> other_cell_ptr = storage.removeCell(cell_id);
+	other_cell_ptr->getCellType()->removeCell(cell_id);
 	assert( other_cell_ptr.unique());
 	return cell_ids[0];
 }
