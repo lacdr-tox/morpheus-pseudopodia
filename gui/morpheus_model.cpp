@@ -293,7 +293,8 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		a.match_path  = "MorpheusModel/CPM/MetropolisKinetics/Neighborhood"; a.move_path = "MorpheusModel/CPM/MonteCarloSampler/Neighborhood"; fixes.append(a);
 		a.match_path  = "MorpheusModel/CPM/MetropolisKinetics/@stepper"; a.move_path = "MorpheusModel/CPM/MonteCarloSampler/@stepper"; fixes.append(a);
 		a.match_path  = "MorpheusModel/CPM/MetropolisKinetics"; a.move_path = "MorpheusModel/CPM/MonteCarloSampler/MetropolisKinetics"; fixes.append(a);
-		a.copy = true; a.match_path  = "MorpheusModel/Space/Lattice/Neighborhood"; a.move_path = "MorpheusModel/CPM/ShapeSurface/Neighborhood"; fixes.append(a); a.copy = false;
+		a.copy = true;  a.require_path = "MorpheusModel/CPM"; a.match_path  = "MorpheusModel/Space/Lattice/Neighborhood"; a.move_path = "MorpheusModel/CPM/ShapeSurface/Neighborhood"; fixes.append(a); 
+		a.copy = false; a.require_path = "";
 		
 	}
 	else if (morpheus_file_version == 1) {
@@ -442,6 +443,10 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		move_path.remove(QRegExp("^/|/$| "));
 		QStringList move_tags;
 		move_tags = move_path.split("/");
+		QString require_path = fixes[i].require_path;
+		require_path.remove(QRegExp("^/|/$| "));
+		QStringList require_tags = require_path.split("/");
+		
 		QString new_name = move_tags.back();
 		move_tags.pop_back();
 
@@ -462,6 +467,15 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		else if (matches.size()) {
 			// moving the nodes in tree
 			qDebug() << "search "  << search_tags << " move " << move_tags ;
+			
+			// Creating relative path for checking require_path
+			QStringList search_req_tags = search_tags;
+			while (! require_tags.isEmpty() && search_req_tags.front() == require_tags.front()) {
+				qDebug() << "Removed leading tag " << search_req_tags.front() << " for relative path";
+				search_req_tags.pop_front();
+				require_tags.pop_front();
+			}
+			
 			while (search_tags.front() == move_tags.front()) {
 				qDebug() << "Removed leading tag " << search_tags.front() << " for relative path";
 				search_tags.pop_front();
@@ -473,10 +487,32 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 			if (move_path.isEmpty()) move_path = "./";
 			move_path += move_tags.join("/") + "/" + new_name;
 			
-
+			int n_success=0;
 			for (int j=0; j<matches.size();j++) {
 
 				MorphModelEdit ed;
+				if (!require_tags.isEmpty()) {
+					// Check relative required path
+					// Relative Path resolution
+					QDomElement new_parent = matches[j].parentNode().toElement();
+					for (int i =0; i<search_req_tags.size()-1; i++) {
+						new_parent = new_parent.parentNode().toElement();
+					}
+					QStringList require_tags_copy = require_tags;
+					bool found_req_path = require_tags_copy.isEmpty();
+					while ( ! require_tags_copy.empty() ) {
+						if ( new_parent.firstChildElement(require_tags_copy.front()).isNull() ) {
+							found_req_path = false;
+							break;
+						}
+						new_parent = new_parent.firstChildElement(require_tags_copy.front());
+						require_tags_copy.pop_front();
+					}
+					if (!found_req_path) {
+						qDebug() << "Required path " << require_path << " not found.";
+						continue;
+					}
+				}
 				// Relative Path resolution
 				QDomElement new_parent = matches[j].parentNode().toElement();
 				for (int i =0; i<search_tags.size()-1; i++) {
@@ -557,9 +593,10 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 					edits.append(ed);
 					
 				}
+				n_success++;
 			}
 			if (matches.size())
-				qDebug() << "AutoFix: Moved " << matches.size() << " element(s) " << " matching " << search_path << " to " << move_path;
+				qDebug() << "AutoFix: Moved " << n_success << " element(s) " << " matching " << search_path << " to " << move_path;
 		}
 	}
 	

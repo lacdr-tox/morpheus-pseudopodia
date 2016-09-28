@@ -100,6 +100,7 @@ private:
     struct AutoFix {
         QString match_path;
         QString move_path;
+        QString require_path;
         bool copy;
     };
     QList<MorphModelEdit> applyAutoFixes(QDomDocument document);
