@@ -10,6 +10,11 @@ Morpheus has been developed by Jörn Starruß and Walter de Back at the Center f
 <img src="https://gitlab.com/morpheus.lab/morpheus/uploads/3a7c4af0d6f9507f6143a67720d629e1/Morpheus.png" width="60%"/>
 *Morpheus graphical user interface. Model editor (top) and results browser (bottom)*
 
+Looking for latest stable release?
+=====================
+
+If you are looking for the latest stable release of Morpheus, and do not necessarily need the source code, please download the precompiled packages for MS Windows, Mac OSX and Linux are available on the [download page](https://imc.zih.tu-dresden.de/wiki/morpheus/doku.php?id=download:download). 
+
 Install
 =======
 
