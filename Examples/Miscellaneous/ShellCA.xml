@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="1">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-ShellCA</Title>
         <Details>This model implements Wolframs's rule 90 (https://en.wikipedia.org/wiki/Rule_90) generating Sierpinski triangles (https://en.wikipedia.org/wiki/Sierpinski_triangle).</Details>
@@ -14,16 +14,19 @@
     </Global>
     <Space>
         <Lattice class="linear">
-            <Size symbol="size" value="100, 0, 0"/>
+            <Size symbol="size" value="500, 0, 0"/>
             <BoundaryConditions>
                 <Condition boundary="x" type="periodic"/>
             </BoundaryConditions>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="space"/>
     </Space>
     <Time>
         <StartTime value="0"/>
-        <StopTime value="150"/>
+        <StopTime value="250"/>
         <TimeSymbol symbol="time"/>
     </Time>
     <CellTypes>
@@ -46,30 +49,15 @@
     </CellTypes>
     <CellPopulations>
         <Population size="100" type="cells">
-            <Cell name="1">
-                <Nodes>40,0,0</Nodes>
-                <PropertyData symbol-ref="state" value="1"/>
-            </Cell>
-            <Cell name="2">
-                <Nodes>60,0,0</Nodes>
-                <PropertyData symbol-ref="state" value="1"/>
-            </Cell>
-            <Cell name="3">
-                <Nodes>70,0,0</Nodes>
-                <PropertyData symbol-ref="state" value="1"/>
-            </Cell>
-            <Cell name="4">
-                <Nodes>41,0,0</Nodes>
-                <PropertyData symbol-ref="state" value="1"/>
-            </Cell>
-            <Cell name="5">
-                <Nodes>61,0,0</Nodes>
-                <PropertyData symbol-ref="state" value="1"/>
-            </Cell>
-            <Cell name="6">
-                <Nodes>71,0,0</Nodes>
-                <PropertyData symbol-ref="state" value="1"/>
-            </Cell>
+            <InitCellLattice/>
+            <InitProperty symbol-ref="state">
+                <Expression>if(cell.center.x == 140 
+or cell.center.x == 141 
+or cell.center.x == 160 
+or cell.center.x == 161 
+or cell.center.x == 170 
+or cell.center.x == 171 , 1, 0)</Expression>
+            </InitProperty>
         </Population>
     </CellPopulations>
     <Analysis>
