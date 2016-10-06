@@ -117,29 +117,47 @@ void Cell::assignMatchingMembranes(const vector< shared_ptr<PDE_Layer> > other_m
 	}
 }
 
-void Cell::assignLocalMembraneConcentrations(const vector< shared_ptr<PDE_Layer> > other_membranes, CPM::CELL_ID& motherID) {
+void Cell::assignLocalMembraneConcentrations(const vector< shared_ptr<PDE_Layer> > other_membranes, Cell::Nodes mother_surface) {
 	for (uint i=0;i< p_membranes.size(); i++) {
 		uint j=0;
 		for (; j<other_membranes.size(); j++) {
 			if (other_membranes[j]->getSymbol() == p_membranes[i]->getSymbol() ) {
-				
-				SymbolFocus mother(motherID);
-				SymbolFocus daughter(getID());
+								
+				SymbolFocus daughter( this->getID() );
 				auto daughter_surface = daughter.cell().getSurface();
-
-				//SymbolAccessor<double> mother_membrane = findGlobalSymbol<double>( other_membranes[j]->getSymbol() );
-				SymbolAccessor<double> mother_membrane = SIM::getGlobalScope()->findSymbol<double>( other_membranes[j]->getSymbol() );
+				
+				SymbolAccessor<double> mother_membrane = celltype->getScope()->findSymbol<double>( other_membranes[j]->getSymbol() );
 				
 				// use membranemapper to extrapolate values of daughter membrane
 				shared_ptr<MembraneMapper> membrane_mapper;
 				membrane_mapper = shared_ptr<MembraneMapper>(new MembraneMapper(MembraneMapper::MAP_CONTINUOUS) );
-				membrane_mapper->attachToCell( getID() );
+				membrane_mapper->attachToCell( this->getID() );
+
+				vector<VINT> intersection;
+				std::set_intersection(	daughter_surface.begin(),daughter_surface.end(),
+										mother_surface.begin(),mother_surface.end(),
+										std::back_inserter(intersection), less_VINT());
+				vector<VINT> difference;
+				std::set_difference(	daughter_surface.begin(),daughter_surface.end(),
+										mother_surface.begin(),mother_surface.end(),
+										std::back_inserter(difference), less_VINT());
+				//cout << "Surface size mother: " << mother_surface.size() << endl;
+				//cout << "Surface size daughter: " << daughter_surface.size() << endl;
+				//cout << "Intersection mother/daughter = " << intersection.size() << endl;
 				
-				// iterate through cell surface of daughter and get corresponding values on membrane from mother cell
-				for (auto node : daughter_surface) {
+				// iterate through cell surface of daughter and get corresponding values on membrane from mother cell, if any
+				for (auto node : intersection) {
 					daughter.setPosition(node);
-					membrane_mapper->map(node, mother_membrane.get(daughter));
+					//cout << node << "\t" <<  mother_membrane.get(SymbolFocus(node)) << endl;
+					membrane_mapper->map(node, mother_membrane.get(SymbolFocus(node)));
 				}
+				// set all other points to zero (on division plane)
+				for (auto node : difference) {
+					daughter.setPosition(node);
+					//cout << node << "\t" <<  mother_membrane.get(SymbolFocus(node)) << endl;
+					membrane_mapper->map(node, 0.0);
+				}
+				
 				// note: many points will not have been filled in because daughter cell has just half of the surface of the mother 
 				
 				// therefore, here we fill in the missing values by (linear?) interpolation

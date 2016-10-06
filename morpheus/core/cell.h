@@ -80,7 +80,7 @@ public:
 	const vector< shared_ptr<PDE_Layer> >& membranes;
 	void assignMatchingProperties(const vector< shared_ptr<AbstractProperty> > other_properties);
 	void assignMatchingMembranes(const vector< shared_ptr<PDE_Layer> > other_membranes);
-	void assignLocalMembraneConcentrations(const vector< shared_ptr<PDE_Layer> > other_membranes, CPM::CELL_ID& motherID); /// Copy local values of membranes during cell division
+	void assignLocalMembraneConcentrations(const vector< shared_ptr<PDE_Layer> > other_membranes, Cell::Nodes mother_surface); /// Copy local values of membranes during cell division
 	
 	bool isNodeTracking() const {return track_nodes;};
 	void disableNodeTracking();
