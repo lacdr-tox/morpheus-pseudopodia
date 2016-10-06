@@ -422,9 +422,11 @@ pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID mother_id, V
 
 	Cell& mother = storage.cell(mother_id);
 	daughter1.assignMatchingProperties(mother.properties);
-	daughter1.assignMatchingMembranes(mother.membranes);
+	//daughter1.assignMatchingMembranes(mother.membranes);
+	daughter1.assignLocalMembraneConcentrations(mother.membranes, mother_id);
 	daughter2.assignMatchingProperties(mother.properties);
-	daughter2.assignMatchingMembranes(mother.membranes);
+	//daughter2.assignMatchingMembranes(mother.membranes);
+	daughter2.assignLocalMembraneConcentrations(mother.membranes, mother_id);
 	
 	shared_ptr <const Lattice > lattice = SIM::getLattice();
 

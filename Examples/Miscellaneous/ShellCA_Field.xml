@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MorpheusModel version="3">
+    <Description>
+        <Title>Example-ShellCA</Title>
+        <Details>This model implements Wolframs's rule 90 (https://en.wikipedia.org/wiki/Rule_90) generating Sierpinski triangles (https://en.wikipedia.org/wiki/Sierpinski_triangle).</Details>
+    </Description>
+    <Global>
+        <Field symbol="state" value="if(space.x == 140 &#xa;or space.x == 141 &#xa;or space.x == 160 &#xa;or space.x == 161 &#xa;or space.x == 170 &#xa;or space.x == 171 , 1, 0)">
+            <Diffusion rate="0.0"/>
+        </Field>
+        <Field symbol="n_state" value="0">
+            <Diffusion rate="0.0"/>
+        </Field>
+        <NeighborhoodReporter>
+            <Input value="state"/>
+            <Output symbol-ref="n_state" mapping="sum"/>
+        </NeighborhoodReporter>
+        <System solver="heun" time-step="1.0">
+            <Rule symbol-ref="state">
+                <Expression>(n_state)== 1</Expression>
+            </Rule>
+        </System>
+    </Global>
+    <Space>
+        <Lattice class="linear">
+            <Size symbol="size" value="300, 0, 0"/>
+            <BoundaryConditions>
+                <Condition boundary="x" type="periodic"/>
+            </BoundaryConditions>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+        </Lattice>
+        <SpaceSymbol symbol="space"/>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="400"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <Analysis>
+        <Logger time-step="1">
+            <Input>
+                <Symbol symbol-ref="state"/>
+            </Input>
+            <Output>
+                <TextOutput file-format="matrix"/>
+            </Output>
+            <Plots>
+                <SurfacePlot time-step="-1">
+                    <Color-bar palette="gray" reverse-palette="true">
+                        <Symbol symbol-ref="state"/>
+                    </Color-bar>
+                    <Terminal plot-size="1000,1000,0" terminal="png"/>
+                </SurfacePlot>
+            </Plots>
+        </Logger>
+    </Analysis>
+</MorpheusModel>

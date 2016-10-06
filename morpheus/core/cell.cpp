@@ -1,5 +1,7 @@
 #include "cell.h"
 #include "celltype.h"
+#include "membranemapper.h"
+#include "symbol_accessor.h"
 
 using namespace SIM;
 
@@ -109,6 +111,41 @@ void Cell::assignMatchingMembranes(const vector< shared_ptr<PDE_Layer> > other_m
 		for (; j<other_membranes.size(); j++) {
 			if (other_membranes[j]->getSymbol() == p_membranes[i]->getSymbol() ) {
 				p_membranes[i] = other_membranes[j]->clone();
+				break;
+			}
+		}
+	}
+}
+
+void Cell::assignLocalMembraneConcentrations(const vector< shared_ptr<PDE_Layer> > other_membranes, CPM::CELL_ID& motherID) {
+	for (uint i=0;i< p_membranes.size(); i++) {
+		uint j=0;
+		for (; j<other_membranes.size(); j++) {
+			if (other_membranes[j]->getSymbol() == p_membranes[i]->getSymbol() ) {
+				
+				SymbolFocus mother(motherID);
+				SymbolFocus daughter(getID());
+				auto daughter_surface = daughter.cell().getSurface();
+
+				//SymbolAccessor<double> mother_membrane = findGlobalSymbol<double>( other_membranes[j]->getSymbol() );
+				SymbolAccessor<double> mother_membrane = SIM::getGlobalScope()->findSymbol<double>( other_membranes[j]->getSymbol() );
+				
+				// use membranemapper to extrapolate values of daughter membrane
+				shared_ptr<MembraneMapper> membrane_mapper;
+				membrane_mapper = shared_ptr<MembraneMapper>(new MembraneMapper(MembraneMapper::MAP_CONTINUOUS) );
+				membrane_mapper->attachToCell( getID() );
+				
+				// iterate through cell surface of daughter and get corresponding values on membrane from mother cell
+				for (auto node : daughter_surface) {
+					daughter.setPosition(node);
+					membrane_mapper->map(node, mother_membrane.get(daughter));
+				}
+				// note: many points will not have been filled in because daughter cell has just half of the surface of the mother 
+				
+				// therefore, here we fill in the missing values by (linear?) interpolation
+				membrane_mapper->fillGaps();
+				// finally, we copy the values to the corresponding membrane of the daughter cell
+				membrane_mapper->copyData(p_membranes[i].get());
 				break;
 			}
 		}
