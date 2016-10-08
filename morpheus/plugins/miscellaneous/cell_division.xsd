@@ -18,7 +18,7 @@
 		</xs:all>
 		<xs:attribute name="division-plane" type="cpmDivisionMode" use="required"/>
 		<xs:attribute name="name" type="cpmString" use="optional" />
-		<xs:attribute name="write-log" type="cpmBoolean" use="optional"/>
+		<xs:attribute name="write-log" type="cpmWriteLogMode" use="optional" default="none"/>
 		<xs:attribute name="daughterID" type="cpmString" use="optional"/>
 		<xs:attribute name="orientation" type="cpmVectorMathExpression" use="optional"/>
 	</xs:complexType>
@@ -29,6 +29,15 @@
 			<xs:enumeration value="minor"/>
 			<xs:enumeration value="random"/>
 			<xs:enumeration value="oriented"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="cpmWriteLogMode">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="none"/>
+			<xs:enumeration value="csv"/>
+			<xs:enumeration value="dot"/>
+			<xs:enumeration value="newick"/>
 		</xs:restriction>
 	</xs:simpleType>
 

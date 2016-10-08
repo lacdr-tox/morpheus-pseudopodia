@@ -42,7 +42,7 @@ This defines a symbolic handle (value 1 or 2) for the two daughters that can be 
   - random: randomly oriented division plane
   - oriented: user-specified division plane (must be given as vector in 'orientation')
 
-- \b write_log (default false): Boolean value specifying whether or not to create a log file 'celldivisions.log' that holds information (Time, cell IDs) per cell division.
+- \b write_log (default none): Create log file about cell divisions in one of the following formats: CSV (Time, mother ID, daughter IDs), NEWICK (https://en.wikipedia.org/wiki/Newick_format), or DOT (https://en.wikipedia.org/wiki/DOT_(graph_description_language)) format.
 - \b daughterID (optional): Local symbol that provides unique IDs (1 or 2) for the two daughter cells to be used in Triggers. E.g. to model asymmetric cell division
 - \b orientation (optional): Vector (or vectorexpression) giving the division plane. Only used (and required) if division-plane="oriented".
 - \b Triggers (optional): a System of Rules that are triggered for both daughter cells after cell division.
@@ -84,14 +84,17 @@ Using Triggers to specify properties after cell division (assymetric division). 
 class CellDivision : public InstantaneousProcessPlugin
 {
 private:
+	enum logmode{ NONE, DOT, CSV, NEWICK };
+
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> condition;
 	PluginParameter2<CellType::division, XMLNamedValueReader, RequiredPolicy> division_plane;
 	PluginParameter2<VDOUBLE, XMLEvaluator, OptionalPolicy> orientation;
-	
-	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> write_log;
+	PluginParameter2<logmode, XMLNamedValueReader, DefaultValPolicy> write_log;
 
 	CellType* celltype;
+	
 	ofstream fout; // output stream to log divisions
+	vector<string> newicks;
 	
 	// Local symbol (inside TriggeredSystem) giving either 1 or 2
 	// This enables one to distinguish between daughter cells , for asymmetric cell division
