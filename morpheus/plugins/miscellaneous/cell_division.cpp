@@ -143,29 +143,36 @@ void CellDivision::executeTimeStep() {
 				}
 				if( write_log() == CellDivision::NEWICK ){
 					// Generate NEWICK tree
+					//string mstr = "\""+to_string(mother_id)+"\"";
 					string mstr = to_string(mother_id);
 					bool mother_found=false;
 					for(int i=0; i < newicks.size(); i++){
 						std::size_t found = newicks[i].find(mstr);
-						if (found!=std::string::npos){ // if found
+						if (found!=std::string::npos){ // if found, replace mother with mother and daughter sub-tree
 							mother_found = true;
-							//cout << "FOUND" << endl;
-							//string mstr2 = string("(\""+to_string(daughter1.getID())+"\",\""+to_string(daughter2.getID())+"\")\""+to_string(mother_id)+"\"");	
-							string mstr2 = string("("+to_string(daughter1.getID())+","+to_string(daughter2.getID())+")"+to_string(mother_id)+"");
+							// string with time: newick format 3 (but has problems)
+							//string mstr2 = string("(\""+to_string(daughter1.getID())+"\":"+to_string(SIM::getTime())+",\""+
+							//						    to_string(daughter2.getID())+"\":"+to_string(SIM::getTime())+")"+mstr);
+							string mstr2 = string("("+to_string(daughter1.getID())+","+to_string(daughter2.getID())+")"+mstr);
 							newicks[i].replace(found,mstr.length(),mstr2);
 						}
 					}
-					if( !mother_found ){
+					if( !mother_found ){ // add a new newick tree and file
 						//cout << "Not FOUND" << endl;
-						newicks.push_back( string("("+to_string(daughter1.getID())+","+to_string(daughter2.getID())+")"+to_string(mother_id)+"") );
+						// string with time: newick format 3 (but has problems)
+						//string mstr2 = string("(\""+to_string(daughter1.getID())+"\":"+to_string(SIM::getTime())+",\""+
+						//						    to_string(daughter2.getID())+"\":"+to_string(SIM::getTime())+")"+mstr);
+						string mstr2 = string("("+to_string(daughter1.getID())+","+to_string(daughter2.getID())+")"+mstr);
+						newicks.push_back( mstr2 );
 					}
-					for(string newick : newicks){
-						cout << newick << ";"<< endl;
-					}
+					// verbose: print newick tree to stdout
+					//for(string newick : newicks){
+					//	cout << newick << ";"<< endl;
+					//}
 					int num=0;
 					for(string newick : newicks){
 						ofstream fout_newick;
-						fout_newick.open("newick_tree_"+to_string(num++)+".txt",ios::out);
+						fout_newick.open("cell_division_newick_"+celltype->getName()+"_"+to_string(num++)+".txt",ios::out);
 						fout_newick << newick << ";" << endl;
 						fout_newick.close();
 					}
@@ -201,7 +208,7 @@ CellDivision::~CellDivision()
 		int num=0;
 		for(string newick : newicks){
 			ofstream fout_newick;
-			fout_newick.open("newick_tree_"+to_string(num++)+".txt",ios::out);
+			fout_newick.open("cell_division_newick_"+celltype->getName()+"_"+to_string(num++)+".txt",ios::out);
 			fout_newick << newick << ";" << endl;
 			fout_newick.close();
 		}
