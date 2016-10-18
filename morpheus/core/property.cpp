@@ -50,6 +50,13 @@ void Property<double>::init(const Scope* scope, const SymbolFocus& f) {
 	value = 0;
 	initialized = true;
 	
+	auto overrides = scope->valueOverrides();
+	auto it = overrides.find(this->symbolic_name);
+	if ( it != overrides.end()) {
+		string_val = it->second;
+		scope->removeValueOverride(it->second);
+	}
+	
 	if (!string_val.empty()) {
 		ExpressionEvaluator<double> eval(string_val);
 		eval.init(scope);
@@ -60,6 +67,14 @@ void Property<double>::init(const Scope* scope, const SymbolFocus& f) {
 template <>
 void Property<VDOUBLE>::init(const Scope* scope, const SymbolFocus& f) {
 	AbstractProperty::init(scope, f); 
+	
+	auto overrides = scope->valueOverrides();
+	auto it = overrides.find(this->symbolic_name);
+	if ( it != overrides.end()) {
+		string_val = it->second;
+		scope->removeValueOverride(it->second);
+	}
+	
 	if (!string_val.empty()) {
 		ExpressionEvaluator<VDOUBLE> eval(string_val);
 		eval.init(scope);

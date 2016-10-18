@@ -1036,6 +1036,11 @@ void init(int argc, char *argv[]) {
 	}
 
 	global_scope = unique_ptr<Scope>(new Scope());
+	// Attach global overrides to the global scope
+	for (map<string,string>::const_iterator it = cmd_line.begin(); it != cmd_line.end(); it++ ) {
+		if (it->first == "file") continue;
+		global_scope->setValueOverride(it->first, it->second);
+	}
 	current_scope = global_scope.get();
 	CPM::EmptyState.cell_id = 0;
 	
@@ -1057,18 +1062,12 @@ void init(int argc, char *argv[]) {
 
 
 	// try to match cmd line options with symbol names and adjust values accordingly
-	for (map<string,string>::const_iterator it = cmd_line.begin(); it != cmd_line.end(); it++ ) {
-		if (it->first == "file") continue;
-		try {
-			auto symbol = global_scope->findRWSymbol<double>(it->first);
-			stringstream ss(it->second);
-			double k;
-			ss >> k;
-			symbol.set(SymbolFocus::global,k);
-		}
-		catch(...) { 
-			cout << "Unknown option " << it->first << endl;
-		}
+	// check that global overrides have been used
+	
+	map<string,string> unused_overrides = global_scope->unusedValueOverrides();
+	
+	for ( const auto& override: unused_overrides ) {
+		cout << "Unknown cmd line override " << override.first << "=" << override.second << endl;
 	}
 
 	cout.flush();

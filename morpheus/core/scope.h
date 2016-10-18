@@ -36,6 +36,11 @@ public:
 	
 	void init();
 	
+	void setValueOverride(string symbol, string value) { value_overrides[symbol] = value;};
+	const map<string, string>& valueOverrides() const { return value_overrides; };
+	void removeValueOverride(string symbol) const { value_overrides.erase(symbol); };
+	const map<string, string>& unusedValueOverrides() const { return value_overrides; };
+	
 	/// Find a read-writable symbol with @p name. Throws an error if symbol cannot be found.
 	template<class T>
 	SymbolRWAccessor<T> findRWSymbol(string name) const;
@@ -57,6 +62,8 @@ public:
 	
 	struct DepGraphConf { set<string> exclude_symbols; set<string> exclude_plugins; };
 	void write_graph(ostream& out, const DepGraphConf& config) const;
+
+
 	map<string, string> graphstyle;
 	
 private:
@@ -76,6 +83,7 @@ private:
 	vector< shared_ptr<Scope> > sub_scopes;
 	vector< shared_ptr<Scope> > component_scopes;
 	map<string, SymbolData> local_symbols;
+	mutable map<string, string> value_overrides;
 	
 	// INTERFACE FOR SCHEDULING THROUGH THE TimeScheduler
 	friend class TimeScheduler;
