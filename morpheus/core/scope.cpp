@@ -120,6 +120,13 @@ void Scope::registerSymbol(SymbolData data)
 		data.name = base_name + ".theta";
 		this->registerSymbol(data);
 	}
+	
+	// look up the value overrides
+	if (value_overrides.count(data.name)) {
+		if (data.granularity == Granularity::Global) {
+			
+		}
+	}
 }
 
 void Scope::init()
