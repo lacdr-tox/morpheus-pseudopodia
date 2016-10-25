@@ -255,7 +255,7 @@ This allows the user to create populations a heterogeneous initial population. T
 				</xs:complexType>
 			</xs:element>
 			<xs:element name="Neighborhood" type="cpmNeighborhood" />
-			<xs:element name="MCSDuration" type="cpmTime" default="1" minOccurs="0" />
+			<xs:element name="MCSDuration" type="cpmTime" default="1" minOccurs="1" />
 		</xs:all>
 
 		<xs:attribute name="stepper" type="cpmStepper" use="required"/>
