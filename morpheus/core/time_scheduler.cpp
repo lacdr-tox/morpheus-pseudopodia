@@ -265,10 +265,10 @@ void TimeScheduler::compute()
 		if (! ts.is_state_valid ) {
 			// Now run all Reporters, Equations.
 			for (uint i=0; i<ts.reporter.size(); i++) {
-				if (ts.reporter[i]->currentTime() <= ts.current_time + ts.time_precision_patch ) {
+				// if (ts.reporter[i]->currentTime() <= ts.current_time + ts.time_precision_patch ) {
 					current_plugin = ts.reporter[i];
 					ts.reporter[i]->executeTimeStep_internal();
-				}
+				//}
 			}
 
 			// Now run all analysers
