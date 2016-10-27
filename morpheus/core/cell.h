@@ -32,7 +32,6 @@
 #include "cpm_shape_tracker.h"
 #include "property.h"
 /// Interface for all cells, implements basic platform integration
-
 class Cell
 {
 public:
@@ -80,7 +79,6 @@ public:
 	const vector< shared_ptr<PDE_Layer> >& membranes;
 	void assignMatchingProperties(const vector< shared_ptr<AbstractProperty> > other_properties);
 	void assignMatchingMembranes(const vector< shared_ptr<PDE_Layer> > other_membranes);
-	void assignLocalMembraneConcentrations(const vector< shared_ptr<PDE_Layer> > other_membranes, CPM::CELL_ID& motherID); /// Copy local values of membranes during cell division
 	
 	bool isNodeTracking() const {return track_nodes;};
 	void disableNodeTracking();
