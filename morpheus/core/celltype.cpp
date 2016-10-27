@@ -421,6 +421,12 @@ pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID mother_id, V
 	Cell& daughter2 = storage.cell(daughter2_id);
 
 	Cell& mother = storage.cell(mother_id);
+	daughter1.assignMatchingProperties(mother.properties);
+	//daughter1.assignMatchingMembranes(mother.membranes);
+	daughter1.assignLocalMembraneConcentrations(mother.membranes, mother_id);
+	daughter2.assignMatchingProperties(mother.properties);
+	//daughter2.assignMatchingMembranes(mother.membranes);
+	daughter2.assignLocalMembraneConcentrations(mother.membranes, mother_id);
 	
 	shared_ptr <const Lattice > lattice = SIM::getLattice();
 
@@ -432,10 +438,6 @@ pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID mother_id, V
 	
 	// redistribute the Nodes following the split plane rules.
 	Cell::Nodes mother_nodes =  mother.getNodes();
-	// save the surface nodes to use to assign membrane properties to daughters
-	Cell::Nodes mother_surface = mother.getSurface();
-	auto mother_membranes = mother.membranes;
-	
 	Cell::Nodes deferred_nodes;
 	for (Cell::Nodes::const_iterator node = mother_nodes.begin(); node != mother_nodes.end();node++) {
 		double distance = distance_plane_point( split_plane_normal, split_plane_center, lattice->to_orth(*node) );
@@ -466,13 +468,6 @@ pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID mother_id, V
 			current_cell=0;
 		}
 	}
-	
-	daughter1.assignMatchingProperties(mother.properties);
-	daughter1.assignMatchingMembranes(mother.membranes);
-	daughter1.assignLocalMembraneConcentrations(mother_membranes, mother_surface);
-	daughter2.assignMatchingProperties(mother.properties);
-	daughter2.assignMatchingMembranes(mother.membranes);
-	daughter2.assignLocalMembraneConcentrations(mother_membranes, mother_surface);
 
 	//cout << "Cell division: mother: " << mother.nNodes() << ", daughter1: " << daughter1.nNodes() << ", daughter2: " << daughter2.nNodes() << endl;	
 	
