@@ -68,7 +68,7 @@ Versatile interface to
 
 \subsection Input
 
-- \b time-step (required): symbol referring to Property or MembraneProperty
+- \b time-step (required): time between logging events
 - \b name (optional, default=none): shows in GUI, only for user-convenience
 
 \subsubsection Symbol (required)
