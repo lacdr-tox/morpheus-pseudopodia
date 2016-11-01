@@ -376,15 +376,19 @@ void System<system_type>::init() {
 			if (!equations.empty())
 				lattice_size = equations[0]->global_symbol.pde_layer->getWritableSize();
 			break;
-		case SymbolData::CellPropertyLink:
-			if (functionals.front()->type == SystemFunc::VEQU) {
-				celltype = functionals.front()->v_global_symbol.getScope()->getCellType();
+		case SymbolData::CellPropertyLink: {
+			auto functional = functionals.begin();
+			while ((*functional)->type == SystemFunc::FUN) functional++;
+			
+			if ((*functional)->type == SystemFunc::VEQU) {
+				celltype = (*functional)->v_global_symbol.getScope()->getCellType();
 			}
 			else {
-				celltype = functionals.front()->global_symbol.getScope()->getCellType();
+				celltype = (*functional)->global_symbol.getScope()->getCellType();
 			}
 // 			if (! celltype) { cerr << "No Celltype for CellProperty symbol in Equation System" << endl; exit(-1); }
 			break;
+		}
 		case SymbolData::CellMembraneLink:
 // 			if (! celltype) { cerr << "No Celltype for CellMembrane symbol in Equation System" << endl; exit(-1); }
 			break;
