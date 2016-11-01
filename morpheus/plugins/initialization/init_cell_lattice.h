@@ -24,7 +24,7 @@ Initializes a population of cells in which each lattice site is occupied with ex
 
 Consequently, each cell has area (2D) or volume (3D) \f$ v_{\sigma}=1 \f$. 
 
-Basically a shorthand for teh same functionality of InitRectangle.
+Basically a shorthand for the same functionality of InitRectangle.
 
 \section Example
 Populate a lattice with cells:
