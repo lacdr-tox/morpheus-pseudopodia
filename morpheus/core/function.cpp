@@ -42,11 +42,11 @@ void defineSymbol(shared_ptr<VectorFunction> f) {
 */
 REGISTER_PLUGIN ( Function );
 
-Function::Function() :  Plugin() {}
+Function::Function() :  ReporterPlugin() {}
 
 void Function::loadFromXML ( const XMLNode Node)
 {
-    Plugin::loadFromXML ( Node );
+    ReporterPlugin::loadFromXML ( Node );
 
 	if ( ! getXMLAttribute(Node,"symbol",function_symbol) )
 	throw string("Function::loadFromXML: Undefined symbol name in Function ") + plugin_name;
@@ -69,9 +69,10 @@ void Function::loadFromXML ( const XMLNode Node)
 }
 
 void Function::init (const Scope* scope) {
-	Plugin::init(scope);
+	ReporterPlugin::init(scope);
 	evaluator->init(scope);
 	registerInputSymbols( evaluator->getDependSymbols() );
+	registerOutputSymbol(function_symbol,scope);
 }
 
 
@@ -113,11 +114,11 @@ Granularity Function::getGranularity() const
 
 REGISTER_PLUGIN ( VectorFunction );
 
-VectorFunction::VectorFunction() :  Plugin() { }
+VectorFunction::VectorFunction() :  ReporterPlugin() { }
 
 void VectorFunction::loadFromXML ( const XMLNode Node)
 {
-	Plugin::loadFromXML( Node );
+	ReporterPlugin::loadFromXML( Node );
 	
 	getXMLAttribute(Node,"Expression/text",raw_expression);
 	is_spherical = false;
@@ -130,7 +131,7 @@ void VectorFunction::loadFromXML ( const XMLNode Node)
 }
 
 void VectorFunction::init (const Scope* scope) {
-	Plugin::init(scope);
+	ReporterPlugin::init(scope);
 	evaluator->init(scope);
 	registerInputSymbols( evaluator->getDependSymbols() );
 }

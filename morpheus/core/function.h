@@ -38,8 +38,7 @@ Assume 'a' is a variable or property.
 #include "expression_evaluator.h"
 
 
-class Function : public Plugin
-{
+class Function : public ReporterPlugin {
 	private:
 		string raw_expression;
 		shared_ptr<ThreadedExpressionEvaluator<double> > evaluator;
@@ -52,13 +51,14 @@ class Function : public Plugin
 		Function();
 		
 		virtual XMLNode saveToXML() const;
-		virtual void loadFromXML(const XMLNode);
+		void loadFromXML(const XMLNode) override;
 		
 // 		static shared_ptr<mu::Parser> createParserInstance(); 
 // 		void setExpr(string expression);
 		string getExpr() const;
 
-		virtual void init (const Scope* scope);
+		void init (const Scope* scope) override;
+		void report() override {};
 
 		double get(const CPM::CELL_ID cell_id) const;
 		double get(const VINT& pos) const;
@@ -68,7 +68,7 @@ class Function : public Plugin
 		Granularity getGranularity() const;
 };
 
-class VectorFunction : public Plugin
+class VectorFunction : public ReporterPlugin
 {
 	private:
 		string raw_expression;
@@ -83,13 +83,14 @@ class VectorFunction : public Plugin
 		DECLARE_PLUGIN("VectorFunction");
 		VectorFunction();
 
-		virtual void loadFromXML(const XMLNode);
+		void loadFromXML(const XMLNode) override;
 	
 		string getExpr() const;
 		
 		bool isSpherical() const { return is_spherical; }
 
-		virtual void init (const Scope* scope);
+		void init (const Scope* scope) override;
+		void report() override {};
 
 		VDOUBLE get(const SymbolFocus& focus) const;
 		const string& getSymbol()  const { return function_symbol; }

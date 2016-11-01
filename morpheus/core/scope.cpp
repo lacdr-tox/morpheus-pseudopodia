@@ -424,6 +424,7 @@ void Scope::write_graph_local_variables(ostream& definitions, ostream& links, co
 				links << clean(dep.name) << "_" << dep.scope->scope_id <<" -> " << cpm_name  << " ["<< graphstyle.at("arrow_read") <<"]\n";
 			}
 		}
+		else if (tsl->XMLName() == "Function" || tsl->XMLName() == "VectorFunction") { }
 		else {
 			definitions << tslDotName(tsl) << " [shape=record, label=\"{ "<< tsl->XMLName() << (tsl->getFullName().empty() ? string("") : string("\\n\\\"") + tsl->getFullName() + "\\\"")<< " | " <<  tsl->timeStep() <<" } \" ]\n" ;
 		}
@@ -556,11 +557,19 @@ void Scope::write_graph_local_variables(ostream& definitions, ostream& links, co
 	for (auto reader : filtered_symbol_readers) {
 		if (reader.second->XMLName() == "CPM" )
 			continue;
-		links << clean(reader.first) << "_" << this->scope_id << " -> " << tslDotName(reader.second) << " [" << graphstyle.at("arrow_read") << "] \n";
+		else if (reader.second->XMLName() == "Function" || reader.second->XMLName() == "VectorFunction" ) {
+			set<SymbolDependency> fun_out = reader.second->getOutputSymbols();
+			links << clean(reader.first) << "_" << this->scope_id << " -> " << fun_out.begin()->name << "_" << fun_out.begin()-> scope -> scope_id << "\n";
+		}
+		else {
+			links << clean(reader.first) << "_" << this->scope_id << " -> " << tslDotName(reader.second) << " [" << graphstyle.at("arrow_read") << "] \n";
+		}
 	}
 	
 	// Write outputs of TSLs
 	for (auto writer : filtered_symbol_writers) {
+		if (writer.second->XMLName() == "Function"  || writer.second->XMLName() == "VectorFunction" )
+			continue;
 		links << tslDotName(writer.second) << " -> " << clean(writer.first) << "_" << this->scope_id << " [" << graphstyle.at("arrow_write") << "] \n";
 	}
 	
