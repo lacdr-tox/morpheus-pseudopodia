@@ -195,6 +195,11 @@ string Gnuplot::get_gnuplot_out(const string& cmd, vector<string> args )
 
 std::set<std::string> Gnuplot::get_terminals() 
 {
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__)
+	std::set<std::string> fixed_terminals = {"wxt","windows","jpeg","svg","pngcairo","postscript","pdfcairo","gif"};
+	return fixed_terminals;
+	
+#endif
 	std::string result = get_gnuplot_out("print GPVAL_TERMINALS");
 	
 	//
