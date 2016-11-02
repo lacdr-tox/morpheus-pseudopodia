@@ -5,14 +5,14 @@
 	
 	<xs:complexType name="MorpheusModel">
 		<xs:all>
+			<xs:element name="Description" type="Description" />
 			<xs:element name="Time" type="Time" />
 			<xs:element name="Space" type="Space" />
-			<xs:element name="Global" type="morphGlobals" />
+			<xs:element name="Global" type="morphGlobals" minOccurs="0" />
 			<xs:element name="CPM" type="CPMType" minOccurs="0" />
 			<xs:element name="CellTypes" type="CellTypes" minOccurs="0" />
 			<xs:element name="Analysis" type="Analysis" minOccurs="0" />
 			<xs:element name="CellPopulations" type="CellPopulations" minOccurs="0" />
-			<xs:element name="Description" type="Description" />
 		</xs:all>
 		<xs:attribute name="version" type="cpmInteger" use="optional" />
 	</xs:complexType>
