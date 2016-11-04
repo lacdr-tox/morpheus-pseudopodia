@@ -503,6 +503,7 @@ protected:
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> logcommands;
 	PluginParameter2<double, XMLValueReader, OptionalPolicy> time_step;
 	double last_plot_time;
+	uint plot_num;
 	
 	enum class FileNumbering { SEQUENTIAL, TIME };
 	PluginParameter2<FileNumbering, XMLNamedValueReader, DefaultValPolicy> file_numbering;

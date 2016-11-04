@@ -190,7 +190,6 @@
 				<xs:complexType>
 					<xs:attribute name="terminal" type="cpmLoggerTerminalEnum" use="required" default="png"/>
                     <xs:attribute name="plot-size" type="cpmDoubleVector" use="optional" />
-					<xs:attribute name="file-numbering" type="cpmFileNumbering" use="optional" default="time" />
 				</xs:complexType>
 			</xs:element>
 
@@ -209,7 +208,8 @@
 		<xs:attribute name="time-step" type="cpmDouble" use="optional" default="-1" />
         <xs:attribute name="log-commands"   use="optional" type="cpmBoolean" default="false" />
 		<xs:attribute name="name" type="cpmString" use="optional" default="" />
-		
+		<xs:attribute name="file-numbering" type="cpmFileNumbering" use="optional" default="time" />
+
 	</xs:complexType>
 		
 	<xs:complexType name="cpmLoggerMatrixPlot" >
@@ -238,6 +238,7 @@
 		
         <xs:attribute name="time-step" type="cpmDouble" use="optional" default="-1" />
         <xs:attribute name="log-commands"   use="optional" type="cpmBoolean" default="false" />
+		<xs:attribute name="file-numbering" type="cpmFileNumbering" use="optional" default="time" />
 	</xs:complexType>
 	
 

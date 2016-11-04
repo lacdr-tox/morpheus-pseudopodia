@@ -184,7 +184,7 @@ int Logger::addWriter(shared_ptr<LoggerWriterBase> writer)
 }
 
 void Logger::analyse(double time){
-// 	cout << "Logger::analyse: " << time << "\n";
+	//cout << "Logger::analyse: " << time << "\t" << SIM::getTime() << endl;
 	// write output files
 	for (auto out : writers) {
 		out->write();
@@ -917,34 +917,34 @@ LoggerPlotBase::LoggerPlotBase(Logger& logger, string xml_base_path)
 	file_numbering_map["time"] = FileNumbering::TIME;
 	file_numbering_map["sequential"] = FileNumbering::SEQUENTIAL;
 	
-    file_numbering.setXMLPath(xml_base_path+"/Terminal/file-numbering");
+    file_numbering.setXMLPath(xml_base_path+"/file-numbering");
 	file_numbering.setConversionMap(file_numbering_map);
     file_numbering.setDefault( "time" );
     logger.registerPluginParameter(file_numbering);
 	
-	last_plot_time = -1;
+	last_plot_time = 0.0;
+	plot_num = 0; // for sequential file numbering
 }
 
 void LoggerPlotBase::checkedPlot()
 {
-	// TODO Using the logger time step as a default seems more intuitive to me (joern)
-	// if interval is NOT defined, only plot at the end of simulation
-	if( !time_step.isDefined() ) {
+	cout << SIM::getTime() << "\t" << (last_plot_time + time_step()) << endl;
+	if( !time_step.isDefined() ) { // not defined, always plot if Logger is executed (as joern suggested)
+		this->plot(); last_plot_time = SIM::getTime();
 	}
-	else if (time_step() <= 0.0) {
-		if( SIM::getTime() != SIM::getStopTime() )
-			return;
+	else if (time_step() <= 0.0) { // if time=step=0.0 or -1, only plot at the end of simulation
+		if( SIM::getTime() == SIM::getStopTime() ){
+			this->plot(); last_plot_time = SIM::getTime();
+		}
 	}
-	// if interval is defined
-	// if interval is 0.0 or smaller, plot on every call of Logger
-	// plot according to user defined intervals
-	else if( time_step() > 0.0 && ((last_plot_time + time_step() > SIM::getTime() + 10e-12) || SIM::getTime() < 10e-12 ) ) {
-		return;
+	else if( (last_plot_time + time_step()) - SIM::getTime() < 10e-6   // t > t_-1 + dt 
+		|| SIM::getTime() < 10e-6 ) { // if t=0.0
+		this->plot(); last_plot_time = SIM::getTime();
 	}
-	
-	this->plot();
-	
-	last_plot_time = SIM::getTime();
+	else{
+		//cout << "NO PLOT" << endl;
+		// do not plot
+	}
 }
 
 
@@ -1181,8 +1181,10 @@ void LoggerLinePlot::plot()
 		if( axes.cb.symbol.isDefined() )
 			fn << axes.cb.symbol() << "_";
 		
-		if ( file_numbering() == FileNumbering::SEQUENTIAL )
-			fn << setfill('0') << setw(4) << int(rint( SIM::getTime() / logger.timeStep()));
+		if ( file_numbering() == FileNumbering::SEQUENTIAL ){
+			fn << setfill('0') << setw(5) << plot_num++; 
+			//fn << setfill('0') << setw(5) << int(rint( SIM::getTime() / logger.timeStep()));
+		}
 		else
 			fn << SIM::getTimeName();
 		fn << "." << outputfilename_ext;
@@ -1539,8 +1541,10 @@ void LoggerMatrixPlot::plot()
 		fn << logger.getInstanceID() << "_";
 	fn << cb_axis.symbol() << "_plot_";
 
-    if ( file_numbering() == FileNumbering::SEQUENTIAL)
-        fn << setfill('0') << setw(4) << int(rint( SIM::getTime() / logger.timeStep()));
+    if ( file_numbering() == FileNumbering::SEQUENTIAL){
+        fn << setfill('0') << setw(5) << plot_num++;
+		//fn << setfill('0') << setw(4) << int(rint( SIM::getTime() / logger.timeStep()));
+	}
     else
         fn << SIM::getTimeName();
     fn << "." << outputfilename_ext;
