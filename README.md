@@ -42,9 +42,13 @@ Libraries required (debian package notation):
 
 Building on Debian based systems
 --------------------------------
+To install all dependencies on Ubuntu 16.04 run:
+```  
+sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libtiff5-dev libgraphviz-dev libqt4-dev libqt4-sql-sqlite libqt4-network libqtwebkit-dev libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools
+``` 
 To install all dependencies on Ubuntu 14.04 and other Debian based systems run:
 ```  
-sudo apt-get install g++ cmake cmake-curses-gui xsltproc xmlint doxygen git zlib1g-dev libtiff-dev libgraphviz-dev libqt4-dev libqt4-sql-sqlite libqt4-network libqt4-webkit libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tool
+sudo apt-get install g++ cmake cmake-curses-gui xsltproc xmlint doxygen git zlib1g-dev libtiff-dev libgraphviz-dev libqt4-dev libqt4-sql-sqlite libqt4-network libqt4-webkit libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools
 ``` 
 
 <!--  StatCounter -->
