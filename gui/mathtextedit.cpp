@@ -5,11 +5,42 @@ mathTextEdit::mathTextEdit(QWidget* parent) : QTextEdit(parent)
     //this->setFont( QFont( "DejaVu Sans Mono" ) );
     QFont font("Monospace");
     font.setStyleHint(QFont::TypeWriter);
+	font.setPointSize(this->font().pointSize());
     this->setFont( font );
     this->setLineWrapMode(QTextEdit::NoWrap);
+	setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+	setMinimumWidth(120);
+// 	setMinimumHeight(45);
 
     QObject::connect(this, SIGNAL(cursorPositionChanged()), SLOT(matchParentheses()));
+	QObject::connect(this, SIGNAL(textChanged()),SLOT(adjustMinSize()));
+	
 }
+
+// QSize mathTextEdit::minimumSizeHint() const
+// {
+// 	QSize s;
+// 	s.setWidth(120);
+// 	s.setHeight(45);
+// 	return QAbstractScrollArea::minimumSizeHint();
+// }
+
+void mathTextEdit::adjustMinSize()
+{
+	int rowcount = toPlainText().count("\n")+1;
+	int min_height = 12+min(6,rowcount)*(15);
+	if ( this->horizontalScrollBar()->isVisible()) {
+		min_height+= 20;
+	}
+	setMinimumHeight(min_height);
+	QSize s = size();
+	if (size().height()<min_height) {
+		s.setHeight(min_height);
+		resize(s);
+	}
+}
+
+
 
 void mathTextEdit::matchParentheses()
 {

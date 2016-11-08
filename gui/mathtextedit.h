@@ -26,10 +26,15 @@ Q_OBJECT
 
 public:
     mathTextEdit(QWidget* parent); /*!< Creates a new textedit which highlights parentheses if the cursor stands next to them. */
+// 	QSize minimumSizeHint () const override;
+// 	QSize sizeHint () const override;
+
+
 
 signals:
     void emitParentheses(int pos); /*!< Signal is send when the cursor stands next to a bracket. */
-
+public slots:
+	void adjustMinSize();
 private slots:
     void matchParentheses(); /*!< Highlights the bracket next to the current cursor position and the correspondending bracket. */
 };

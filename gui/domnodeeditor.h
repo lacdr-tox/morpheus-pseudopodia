@@ -25,7 +25,10 @@ class domNodeEditor : public QWidget
 public:
 	domNodeEditor(QWidget* parent = NULL);
 	void setNode(nodeController* node, SharedMorphModel model);
-		
+	
+protected:
+	void resizeEvent(QResizeEvent* e) override;
+	
 private:
 	enum EditWid { MathText=0 , MultiText=1, EnumBox=2, LineText=3, NoEdit=4 };
 	

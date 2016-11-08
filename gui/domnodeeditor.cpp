@@ -36,6 +36,8 @@ domNodeEditor::domNodeEditor(QWidget* parent) : QWidget(parent)
 	attribute_editor->horizontalHeader()->setVisible(false);
 	attribute_editor->setContextMenuPolicy(Qt::CustomContextMenu);
 	attribute_editor->setTabKeyNavigation(false);
+	attribute_editor->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+
 	main_layout->addWidget(attribute_editor);
 	all_edits.append(attribute_editor);
 	
@@ -57,6 +59,7 @@ domNodeEditor::domNodeEditor(QWidget* parent) : QWidget(parent)
 	QObject::connect(enum_editor, SIGNAL(currentIndexChanged ( const QString & )), this, SLOT(updateNodeText()));
 	
 	QObject::connect(attribute_editor, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(createAttributeEditContextMenu(QPoint)));
+	QObject::connect(attribute_editor, SIGNAL(itemChanged(QTableWidgetItem*)), this, SLOT(changedAttributeEditItem(QTableWidgetItem*)));
 	QObject::connect(attribute_editor, SIGNAL(itemChanged(QTableWidgetItem*)), this, SLOT(changedAttributeEditItem(QTableWidgetItem*)));
 	
 	this->setLayout(main_layout);
@@ -162,6 +165,8 @@ void domNodeEditor::setAttributeEditor(nodeController* node)
 	attribute_editor->clear();
 	attribute_editor->setRowCount(0);
 	attribute_editor->setColumnCount(2);
+	
+	attribute_editor->setTextElideMode(Qt::ElideRight);
 
 	map_rowToAttribute.clear();
 
@@ -174,16 +179,22 @@ void domNodeEditor::setAttributeEditor(nodeController* node)
 
 	//zuerst werden die required attributes der tabelle hinzugefügt (hat den grund, damit die reihenfolge gleich bleibt)
 	int row = 0;
-	for (int i = 0; i < requiredItems.size(); i++)
+	for (int i = 0; i < requiredItems.size() + optionalItems.size(); i++)
 	{
-		AbstractAttribute *tmp_attr = requiredItems.at(i);
+		bool optional = i>=requiredItems.size();
+		AbstractAttribute *tmp_attr = optional ? optionalItems.at(i-requiredItems.size()) : requiredItems.at(i);
 		QString attrName = tmp_attr->getName();
 
 		QTableWidgetItem *tmp_item = new QTableWidgetItem(tmp_attr->get());
 		if (tmp_item->text().isEmpty()) {
+// 			tmp_item->setData(Qt::EditRole,"");
 			tmp_item->setData(Qt::DisplayRole,"...");
 		}
-
+		else {
+// 			tmp_item->setData(Qt::EditRole,tmp_attr->get());
+			tmp_item->setData(Qt::DisplayRole,tmp_attr->get().replace(QRegExp("\\s+")," ") );
+		}
+		
 		QTableWidgetItem *tmp_header = new QTableWidgetItem(attrName);
 		if (model->isSweeperAttribute(tmp_attr))
 			tmp_header->setIcon(QThemedIcon("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)));
@@ -191,55 +202,29 @@ void domNodeEditor::setAttributeEditor(nodeController* node)
 
 		tmp_item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsEditable | Qt::ItemIsSelectable);
 
-		tmp_header->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 		tmp_header->setBackgroundColor(QColor(239, 235, 231, 255));
+		
+		if (optional) {
+			tmp_header->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsUserCheckable);
+			if (tmp_attr->isActive()) {
+				tmp_header->setCheckState(Qt::Checked);
+			}
+			else{
+				tmp_header->setCheckState(Qt::Unchecked);
+				tmp_item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+				tmp_item->setTextColor(Qt::lightGray);
+			}
+		}
+		else {
+			tmp_header->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+		}
 
 		attribute_editor->setItem(row, 1, tmp_item);
 		attribute_editor->setItem(row, 0, tmp_header);
 		attribute_editor->setItemDelegateForRow(row, new attrController(this, tmp_attr) );
 		row++;
 	}
-
-	//danach werden die optionalen attribute in die tabelle eingefügt
-	for (int i = 0; i < optionalItems.size(); i++)
-	{
-		AbstractAttribute *tmp_attr = optionalItems.at(i);
-		QString attrName = tmp_attr->getName();
-
-		QTableWidgetItem *tmp_item = new QTableWidgetItem(tmp_attr->get());
-		if (tmp_item->text().isEmpty()) {
-			tmp_item->setData(Qt::DisplayRole,"...");
-//                tmp_item->setData(Qt::EditRole,"");
-		}
-		QTableWidgetItem *tmp_header = new QTableWidgetItem(attrName);
-		if (model->isSweeperAttribute(tmp_attr))
-			tmp_header->setIcon(QThemedIcon("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)));
-		map_rowToAttribute[row] = tmp_attr;
-
-		tmp_item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsEditable | Qt::ItemIsSelectable);
-		tmp_header->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsUserCheckable);
-		tmp_header->setBackgroundColor(QColor(239, 235, 231, 255));
-
-		if (tmp_attr->isActive()) {
-			tmp_header->setCheckState(Qt::Checked);
-		}
-		else{
-			tmp_header->setCheckState(Qt::Unchecked);
-			tmp_item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-			tmp_item->setTextColor(Qt::lightGray);
-		}
-
-		attribute_editor->setItem(row, 1, tmp_item);
-		attribute_editor->setItem(row, 0, tmp_header);
-		attribute_editor->setItemDelegateForRow(row, new attrController(this, tmp_attr) );
-
-		row++;
-	}
-
-	//setzen der neuen tabellenbeschriftung
-	attribute_editor->resizeColumnsToContents();
-	attribute_editor->resizeRowsToContents();
-
+	
 	attribute_editor->blockSignals(false);
 }
 
@@ -317,7 +302,7 @@ void domNodeEditor::changedAttributeEditItem(QTableWidgetItem* attributeItem)
 
 	if (attributeItem->column() == 1)
 	{
-		attributeItem->tableWidget()->resizeColumnsToContents();
+		attributeItem->setData(Qt::DisplayRole,attributeItem->data(Qt::EditRole).toString().replace("\n"," "));
 	}
 }
 
@@ -335,4 +320,11 @@ void domNodeEditor::doContextMenuAction(QAction* action) {
         }
         return;
     }
+}
+
+void domNodeEditor::resizeEvent(QResizeEvent* e)
+{
+	QWidget::resizeEvent(e);
+	attribute_editor->resizeColumnToContents(0);
+	attribute_editor->setColumnWidth(1,attribute_editor->width()-attribute_editor->columnWidth(0)-attribute_editor->frameWidth()*2);
 }

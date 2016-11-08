@@ -710,142 +710,141 @@ int MorphModel::rowCount(const QModelIndex &parent) const {
 
 
 QVariant MorphModel::data(const QModelIndex &index, int role) const {
-    if (role == Qt::DisplayRole) {
+	if (role == Qt::DisplayRole) {
 
-        switch(index.column()) {
+		switch(index.column()) {
 
-            case 0: return indexToItem(index)->name;
+			case 0: return indexToItem(index)->name;
 
-            case 1: {
-                QString val;
-                nodeController* node = indexToItem(index);
-                AbstractAttribute* name = node->attribute("name"); if (name && ! name->isActive()) name = NULL;
-                AbstractAttribute* value = node->attribute("value"); if (value && ! value->isActive()) value = NULL;
-                AbstractAttribute* symbol = node->attribute("symbol"); if (symbol && ! symbol->isActive()) symbol = NULL;
-                AbstractAttribute* symbol_ref = node->attribute("symbol-ref"); if (symbol_ref && ! symbol_ref->isActive()) symbol_ref = NULL;
+			case 1: {
+				QString val;
+				nodeController* node = indexToItem(index);
+				AbstractAttribute* name = node->attribute("name"); if (name && ! name->isActive()) name = NULL;
+				AbstractAttribute* value = node->attribute("value"); if (value && ! value->isActive()) value = NULL;
+				AbstractAttribute* symbol = node->attribute("symbol"); if (symbol && ! symbol->isActive()) symbol = NULL;
+				AbstractAttribute* symbol_ref = node->attribute("symbol-ref"); if (symbol_ref && ! symbol_ref->isActive()) symbol_ref = NULL;
 
-                if ( node->name == "DiffEqn" ) {
-                    val = QString("d%1 / dt = ").arg(symbol_ref->get());
-                }
-                else if ( node->name== "Equation" || node->name== "Rule" ) {
-                    val = symbol_ref->get() + " = ";
-                }
-                else if (node->name== "Function") {
+				if ( node->name == "DiffEqn" ) {
+					val = QString("d%1 / dt = ").arg(symbol_ref->get());
+				}
+				else if ( node->name== "Equation" || node->name== "Rule" ) {
+					val = symbol_ref->get() + " = ";
+				}
+				else if (node->name== "Function") {
 					val = symbol->get() + " = ";
 				}
 				else if (node->name == "Contact") {
-                    AbstractAttribute* t1=node->attribute("type1");
-                    AbstractAttribute* t2=node->attribute("type2");
-                    if (t1 && t2)  {
-                        val = t1->get() + " - " + t2->get();
-                    }
-                }
-                else if (symbol) {
+					AbstractAttribute* t1=node->attribute("type1");
+					AbstractAttribute* t2=node->attribute("type2");
+					if (t1 && t2)  {
+						val = t1->get() + " - " + t2->get();
+					}
+				}
+				else if (symbol) {
 					if ( value ) 
 						val = symbol->get() + " = ";
 					else
 						val = symbol->get();
-						
-                }
-                else if ( symbol_ref && value ) {
+					
+				}
+				else if ( symbol_ref && value ) {
 					val = symbol_ref->get() + " = ";
-                }
-                else {
-                    if (name) {
-                        if (symbol)
-                            val = QString("%2 [%1]").arg(name->get(),symbol->get());
-                        else
-                            val = name->get();
-                    }
-                    else if (symbol) {
-                            val = symbol->get();
-                    }
-                    else {
-                        return QVariant();
-                    }
-                }
-                return val;
-            }
-            case 2: {
-                QString val;
-                nodeController* node = indexToItem(index);
-                nodeController* text_node(node);
-                AbstractAttribute* value = node->attribute("value"); if (value && ! value->isActive()) value = NULL;
-                AbstractAttribute* symbol_ref=node->attribute("symbol-ref"); if (symbol_ref && ! symbol_ref->isActive()) symbol_ref = NULL;
+				}
+				else {
+					if (name) {
+						if (symbol)
+							val = QString("%2 [%1]").arg(name->get(),symbol->get());
+						else
+							val = name->get();
+					}
+					else if (symbol) {
+							val = symbol->get();
+					}
+					else {
+						return QVariant();
+					}
+				}
+				return val.replace(QRegExp("\\s+")," ");
+			}
+			case 2: {
+				QString val;
+				nodeController* node = indexToItem(index);
+				nodeController* text_node(node);
+				AbstractAttribute* value = node->attribute("value"); if (value && ! value->isActive()) value = NULL;
+				AbstractAttribute* symbol_ref=node->attribute("symbol-ref"); if (symbol_ref && ! symbol_ref->isActive()) symbol_ref = NULL;
 
 //                qDebug() << "node->name: " << node->name  << " | value: "<<  (value?value->get():"N.A.")  << " | symbol-ref: "<< (symbol_ref ? symbol_ref->get() : "N.A.") ;
 
-                QString text("");
-                if ( node->name == "Equation" || node->name== "Rule" || node->name == "Function" || node->name == "DiffEqn" || node->name == "InitPDEExpression") {
+				QString text("");
+				if ( node->name == "Equation" || node->name== "Rule" || node->name == "Function" || node->name == "DiffEqn" || node->name == "InitPDEExpression") {
 					text_node = node->firstChild("Expression");
-                    if (text_node) {
+					if (text_node) {
 						val = text_node->getText();
-						val.replace("\n"," ");
+						val;
 						if (val.length() > 100 )
 							val = val.left(96) + " ...";
 					}
-                }
-                else if (node->name == "Expression" ){
-                    val = "";
-                }
-                else if ( text_node->hasText() ) {
-					text = text_node->getText().replace("\n"," ");
-                    if (text.length() > 100 )
-                        val = text.left(96) + " ...";
-                    else
-                        val = text;
-					val.replace("\n"," ");
-                }
-                else if (value) {
-                    val = value->get();
-                }
-                else if (symbol_ref) {
-                    val = symbol_ref->get();
-                }
-                else {
-                    return QVariant();
-                }
-                return val;
-            }
+				}
+				else if (node->name == "Expression" ){
+					val = "";
+				}
+				else if ( text_node->hasText() ) {
+					if (text.length() > 100 )
+						val = text_node->getText().left(96) + " ...";
+					else
+						val = text_node->getText();
+					val;
+				}
+				else if (value) {
+					val = value->get();
+				}
+				else if (symbol_ref) {
+					val = symbol_ref->get();
+				}
+				else {
+					return QVariant();
+				}
+				return val.replace(QRegExp("\\s+")," ");
+			}
 
-        }
-    }
-    else if (role==Qt::ForegroundRole) {
+		}
+	}
+	else if (role==Qt::ForegroundRole) {
 		if (indexToItem(index)->isDisabled() || indexToItem(index)->isInheritedDisabled()) {
 			return QBrush(Qt::darkGray);
 		}
 		else if (indexToItem(index)->getName() == "System" || indexToItem(index)->getName() == "CellType" || indexToItem(index)->getName() == "PDE" )
 			return QBrush(Qt::darkBlue);
 	}
-    else if (role==Qt::FontRole) {
-        switch (index.column()) {
-            case 1: {
-                nodeController* node = indexToItem(index);
+	else if (role==Qt::FontRole) {
+		switch (index.column()) {
+			case 1: {
+				nodeController* node = indexToItem(index);
 //                AbstractAttribute* value=node->attribute("value");
-                AbstractAttribute* symbol_ref=node->attribute("symbol-ref");
-                if ( symbol_ref && symbol_ref->isActive()) {
-                    QFont font = QApplication::font();
-                    font.setItalic(true);
-                    return font;
-                }
-            }
+				AbstractAttribute* symbol_ref=node->attribute("symbol-ref");
+				if ( symbol_ref && symbol_ref->isActive()) {
+					QFont font = QApplication::font();
+					font.setItalic(true);
+					return font;
+				}
+			}
 
-        }
-    }
-    else if (role==Qt::DecorationRole && index.column() == 0) {
+		}
+	}
+	else if (role==Qt::DecorationRole && index.column() == 0) {
 		nodeController * node = indexToItem(index);
 		if ( node->isDisabled() /*&& ! node->isInheritedDisabled()*/) {
 			return QThemedIcon("media-pause",QApplication::style()->standardIcon(QStyle::SP_MediaPause));
 		}
-        if ( isSweeperAttribute( node->textAttribute())  ) {
-            return QThemedIcon("media-seek-forward",QApplication::style()->standardIcon(QStyle::SP_MediaSeekForward));
-        }
-        if ( node->attribute("value") && isSweeperAttribute( node->attribute("value")) ) {
-            return QThemedIcon("media-seek-forward",QApplication::style()->standardIcon(QStyle::SP_MediaSeekForward));
-        }
-    }
+		if ( isSweeperAttribute( node->textAttribute())  ) {
+			return QThemedIcon("media-seek-forward",QApplication::style()->standardIcon(QStyle::SP_MediaSeekForward));
+		}
+		if ( node->attribute("value") && isSweeperAttribute( node->attribute("value")) ) {
+			return QThemedIcon("media-seek-forward",QApplication::style()->standardIcon(QStyle::SP_MediaSeekForward));
+		}
+	}
 
-    return QVariant();
+	return QVariant();
 }
 
 //------------------------------------------------------------------------------

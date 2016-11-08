@@ -18,6 +18,7 @@
 #include <QRegExpValidator>
 #include "abstractattribute.h"
 #include "config.h"
+#include "mathtextedit.h"
 
 #include <iostream>
 using namespace std;
@@ -42,8 +43,6 @@ private:
     bool eventFilter ( QObject * editor, QEvent * event );
     void setEditorData(QWidget *editor, const QModelIndex &index) const;
     void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
-
-    void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const;
 
     AbstractAttribute* attr; /*!< abstract-attribut to which the delegate belongs and whom editing shall be masked. */
     QRegExpValidator val; /*!< Validator which mask the input. */
