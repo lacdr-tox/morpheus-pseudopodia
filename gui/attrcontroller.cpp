@@ -123,8 +123,8 @@ QWidget *attrController::createEditor(QWidget *parent, const QStyleOptionViewIte
 	else {
 		// String like Type
 		current_editor = new QLineEdit(parent);
-		current_editor->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding));
-		current_editor->setMinimumWidth(120);
+// 		current_editor->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding));
+// 		current_editor->setMinimumWidth(120);
 	}
 	return current_editor;
 }
@@ -179,7 +179,8 @@ QWidget *attrController::createEditor(QWidget *parent, const QStyleOptionViewIte
 			value = attr->get();
 		
 		edit->setPlainText(value);
-		edit->adjustMinSize();
+		QMetaObject::invokeMethod(edit,SLOT(adjustMinSize()), Qt::QueuedConnection);
+// 		edit->adjustMinSize();
 	}
 	else if (dynamic_cast<QLineEdit*>(editor)){
 		QLineEdit *edit = static_cast<QLineEdit*>(editor);
@@ -189,8 +190,7 @@ QWidget *attrController::createEditor(QWidget *parent, const QStyleOptionViewIte
 			value = index.model()->data(index, Qt::EditRole).toString();
         else
 			value = attr->get();
-			
-		value = index.model()->data(index, Qt::EditRole).toString();
+		
 		edit->setText(value);
      }
  }

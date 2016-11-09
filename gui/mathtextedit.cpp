@@ -1,6 +1,6 @@
 #include "mathtextedit.h"
 
-mathTextEdit::mathTextEdit(QWidget* parent) : QTextEdit(parent)
+mathTextEdit::mathTextEdit(QWidget* parent) : QTextEdit(parent), highlighter(this)
 {
     //this->setFont( QFont( "DejaVu Sans Mono" ) );
     QFont font("Monospace");
@@ -13,8 +13,8 @@ mathTextEdit::mathTextEdit(QWidget* parent) : QTextEdit(parent)
 // 	setMinimumHeight(45);
 
     QObject::connect(this, SIGNAL(cursorPositionChanged()), SLOT(matchParentheses()));
-	QObject::connect(this, SIGNAL(textChanged()),SLOT(adjustMinSize()));
-	
+	QObject::connect(this, SIGNAL(textChanged()),SLOT(adjustMinSize()),Qt::QueuedConnection);
+	QObject::connect(this, SIGNAL(emitParentheses(int)), &highlighter,SLOT(highlightParentheses(int)));
 }
 
 // QSize mathTextEdit::minimumSizeHint() const
@@ -27,6 +27,7 @@ mathTextEdit::mathTextEdit(QWidget* parent) : QTextEdit(parent)
 
 void mathTextEdit::adjustMinSize()
 {
+	
 	int rowcount = toPlainText().count("\n")+1;
 	int min_height = 12+min(6,rowcount)*(15);
 	if ( this->horizontalScrollBar()->isVisible()) {
@@ -38,6 +39,10 @@ void mathTextEdit::adjustMinSize()
 		s.setHeight(min_height);
 		resize(s);
 	}
+// 	this->blockSignals(true);
+// 	highlighter.rehighlight();
+// 	this->blockSignals(false);
+	
 }
 
 

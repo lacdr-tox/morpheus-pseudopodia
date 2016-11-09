@@ -13,6 +13,7 @@
 #define MYTEXTEDIT_H
 
 #include <QtGui>
+#include "equationhighlighter.h"
 // #include <iostream>
 
 using namespace std;
@@ -29,6 +30,8 @@ public:
 // 	QSize minimumSizeHint () const override;
 // 	QSize sizeHint () const override;
 
+private:
+	equationHighlighter highlighter;
 
 
 signals:

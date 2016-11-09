@@ -8,7 +8,7 @@ domNodeEditor::domNodeEditor(QWidget* parent) : QWidget(parent)
 	all_edits.append(value_label);
 	
 	multi_line_math_editor = new mathTextEdit(this);
-	eq_highlighter = new equationHighlighter(multi_line_math_editor);
+// 	eq_highlighter = new equationHighlighter(multi_line_math_editor);
 	main_layout->addWidget(multi_line_math_editor);
 	all_edits.append(multi_line_math_editor);
 	
@@ -53,7 +53,7 @@ domNodeEditor::domNodeEditor(QWidget* parent) : QWidget(parent)
 	for (auto wid: all_edits) { wid->hide();}
 	
 	QObject::connect(multi_line_math_editor, SIGNAL(textChanged()), this, SLOT(updateNodeText()));
-	QObject::connect(multi_line_math_editor, SIGNAL(emitParentheses(int)), eq_highlighter, SLOT(highlightParentheses(int)));
+// 	QObject::connect(multi_line_math_editor, SIGNAL(emitParentheses(int)), eq_highlighter, SLOT(highlightParentheses(int)));
 	QObject::connect(multi_line_text_editor, SIGNAL(textChanged()), this, SLOT(updateNodeText()));
 	QObject::connect(line_editor, SIGNAL(editingFinished()), this, SLOT(updateNodeText()));
 	QObject::connect(enum_editor, SIGNAL(currentIndexChanged ( const QString & )), this, SLOT(updateNodeText()));

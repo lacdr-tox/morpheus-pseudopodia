@@ -810,11 +810,12 @@ QVariant MorphModel::data(const QModelIndex &index, int role) const {
 		}
 	}
 	else if (role==Qt::ForegroundRole) {
-		if (indexToItem(index)->isDisabled() || indexToItem(index)->isInheritedDisabled()) {
+		nodeController* item = indexToItem(index);
+		if (item->isDisabled() || item->isInheritedDisabled()) {
 			return QBrush(Qt::darkGray);
 		}
-		else if (indexToItem(index)->getName() == "System" || indexToItem(index)->getName() == "CellType" || indexToItem(index)->getName() == "PDE" )
-			return QBrush(Qt::darkBlue);
+		else if (index.column()==0 && ( item->getName() == "System" || item->getName() == "CellType" || item->getName() == "PDE" || item->getName() == "Triggers") )
+			return QBrush(QColor(0,100,180));
 	}
 	else if (role==Qt::FontRole) {
 		switch (index.column()) {

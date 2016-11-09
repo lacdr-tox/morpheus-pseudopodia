@@ -7,8 +7,8 @@ void equationHighlighter::highlightBlock(const QString &text)
 {
     //****************************//
     QTextCharFormat format;
-    format.setForeground(Qt::blue);
-    highlightPattern(text,"\\w", format);
+    format.setForeground(QColor(0,100,180));
+    highlightPattern(text,"\\b[^\\W\\d]+[\\w\\.]*\\b", format);
 
     //****************************//
     //format.setForeground(Qt::darkCyan);
@@ -16,8 +16,8 @@ void equationHighlighter::highlightBlock(const QString &text)
     //highlightPattern(text,"(\\(|\\))", format);
 
     //****************************//
-    format.setForeground(Qt::red);
-    format.setFontWeight(QFont::Bold);
+    format.setForeground(Qt::darkRed);
+//     format.setFontWeight(QFont::Bold);
     //if([condition], [then], [else]), and, or, xor, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh, log2, log10, ln, exp, sqrt, sign, rint, abs, min, max, sum, avg, mod
     QString pattern = "((\\bif\\b)|(\\band\\b)|(\\bor\\b)|(\\bxor\\b)|(\\bsin\\b)|(\\bcos\\b)|(\\btan\\b)|(\\basin\\b)|(\\bacos\\b)|(\\batan\\b)|(\\bsinh\\b)|(\\bcosh\\b)|(\\btanh\\b)|(\\basinh\\b)|(\\bacosh\\b)|(\\batanh\\b)|(\\blog2\\b)|(\\blog10\\b)|(\\bln\\b)|(\\bexp\\b)|(\\bsqrt\\b)|(\\bsign\\b)|(\\brint\\b)|(\\babs\\b)|(\\bmin\\b)|(\\bmax\\b)|(\\bsum\\b)|(\\bavg\\b)|(\\bmod\\b)|(\\brand_uni\\b)|(\\brand_norm\\b)|(\\brand_gamma\\b)|(\\brand_bool\\b))";
     highlightPattern(text, pattern, format);
