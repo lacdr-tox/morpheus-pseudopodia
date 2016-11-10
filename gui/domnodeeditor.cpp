@@ -35,6 +35,7 @@ domNodeEditor::domNodeEditor(QWidget* parent) : QWidget(parent)
 	attribute_editor->verticalHeader()->setVisible(false);
 	attribute_editor->horizontalHeader()->setVisible(false);
 	attribute_editor->setContextMenuPolicy(Qt::CustomContextMenu);
+	attribute_editor->setTextElideMode(Qt::ElideRight);
 	attribute_editor->setTabKeyNavigation(false);
 	attribute_editor->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 
@@ -163,28 +164,25 @@ void domNodeEditor::setAttributeEditor(nodeController* node)
 {
 	attribute_editor->blockSignals(true);
 	attribute_editor->clear();
-	attribute_editor->setRowCount(0);
-	attribute_editor->setColumnCount(2);
-	
-	attribute_editor->setTextElideMode(Qt::ElideRight);
-
 	map_rowToAttribute.clear();
 
-	QList<AbstractAttribute*> requiredItems = node->getRequiredAttributes();
-	QList<AbstractAttribute*> optionalItems = node->getOptionalAttributes();
+	QList<AbstractAttribute*> attributes = node->getRequiredAttributes();
+	attributes.append( node->getOptionalAttributes() );
+	
 
 	//für jedes attribut des plugins wird ein neuer tabelleneintrag angelegt
 	//je nach dem ob es required oder optional ist wird es in maps sortiert
-	attribute_editor->setRowCount(requiredItems.size() + optionalItems.size() );
+	attribute_editor->setColumnCount(2);
+	attribute_editor->setRowCount(attributes.size() );
 
 	//zuerst werden die required attributes der tabelle hinzugefügt (hat den grund, damit die reihenfolge gleich bleibt)
-	int row = 0;
-	for (int i = 0; i < requiredItems.size() + optionalItems.size(); i++)
+	for (int row  = 0; row < attributes.size(); row++)
 	{
-		bool optional = i>=requiredItems.size();
-		AbstractAttribute *tmp_attr = optional ? optionalItems.at(i-requiredItems.size()) : requiredItems.at(i);
+		
+		AbstractAttribute *tmp_attr = attributes.at(row);
+		bool optional = ! tmp_attr->isRequired();
+		
 		QString attrName = tmp_attr->getName();
-
 		QTableWidgetItem *tmp_item = new QTableWidgetItem(tmp_attr->get());
 		if (tmp_item->text().isEmpty()) {
 // 			tmp_item->setData(Qt::EditRole,"");
@@ -204,7 +202,10 @@ void domNodeEditor::setAttributeEditor(nodeController* node)
 
 		tmp_header->setBackgroundColor(QColor(239, 235, 231, 255));
 		
-		if (optional) {
+		if (tmp_attr->isRequired()) {
+			tmp_header->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+		}
+		else {
 			tmp_header->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsUserCheckable);
 			if (tmp_attr->isActive()) {
 				tmp_header->setCheckState(Qt::Checked);
@@ -215,14 +216,10 @@ void domNodeEditor::setAttributeEditor(nodeController* node)
 				tmp_item->setTextColor(Qt::lightGray);
 			}
 		}
-		else {
-			tmp_header->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-		}
 
 		attribute_editor->setItem(row, 1, tmp_item);
 		attribute_editor->setItem(row, 0, tmp_header);
 		attribute_editor->setItemDelegateForRow(row, new attrController(this, tmp_attr) );
-		row++;
 	}
 	
 	attribute_editor->blockSignals(false);
