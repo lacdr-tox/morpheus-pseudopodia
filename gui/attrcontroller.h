@@ -26,7 +26,7 @@ using namespace std;
 /*!
 This class creates a delegate on the given QObject, depending on the type of given AbstractAttribute.
 If the user wants to change the value, of the QObject, which represents the value of the Attribute, then the delegate masks
-the input of user or it allows only specific values, which are possible for the AbstractAttribut.
+the input of user or it allows only specific values, which are possible for the AbstractAttribute.
 */
 class attrController : public QItemDelegate
 {
@@ -34,17 +34,19 @@ Q_OBJECT
 
 public:
     attrController(QObject *parent, AbstractAttribute* attr, bool range = false);
-    /*!< Constructs a delegate for the Object (parent), which handles the value(s) of the given abstract-attribut.*/
+    /*!< Constructs a delegate for the Object (parent), which handles the value(s) of the given abstract-attribute.*/
 	AbstractAttribute* getAttribute() const { return attr; }
 	void setAttribute( AbstractAttribute* attribute );
 
-private:
-    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-    bool eventFilter ( QObject * editor, QEvent * event );
-    void setEditorData(QWidget *editor, const QModelIndex &index) const;
-    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const;
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+    bool eventFilter ( QObject * editor, QEvent * event ) override;
+    void setEditorData(QWidget *editor, const QModelIndex &index) const override;
+    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override;
 
-    AbstractAttribute* attr; /*!< abstract-attribut to which the delegate belongs and whom editing shall be masked. */
+private:
+	enum EditWid { NoEdit=4, MathText=0 , EnumBox=2, LineText=3, SystemPath=4 } widget_type;
+	
+    AbstractAttribute* attr; /*!< abstract-attribute to which the delegate belongs and whom editing shall be masked. */
     QRegExpValidator val; /*!< Validator which mask the input. */
     bool is_range;
 	QString pattern;

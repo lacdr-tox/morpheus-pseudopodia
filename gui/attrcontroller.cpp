@@ -3,21 +3,38 @@
 //konstruktor des delegates
 attrController::attrController(QObject *parent, AbstractAttribute* attr, bool range) : QItemDelegate(parent), val(parent)
 {
-	this->attr = attr;
 	this->is_range = range;
-	setValidator();
+	this->setAttribute(attr);
 }
 
 void attrController::setAttribute ( AbstractAttribute* attribute)
 {
 	this->attr = attribute;
+	if (!attr){
+		widget_type = NoEdit;
+	}
+	else if (attr->getType()->is_enum  && ! is_range) {
+		widget_type = EnumBox;
+	}
+#ifndef Q_OS_WIN32
+	else if ( attr->getType()->name == "cpmSystemPath" || attr->getType()->name == "cpmSystemFile") {
+		widget_type = SystemPath;
+	}
+#endif
+	else if (attr->getType()->name == "cpmMathExpression" || attr->getType()->name == "cpmVectorMathExpression") {
+		widget_type = MathText;
+	}
+	else {
+		widget_type = LineText;
+	}
+	
 	setValidator();
 }
 
 
 bool attrController::eventFilter ( QObject * editor, QEvent * event ) {
 if (event->type() == QEvent::KeyRelease || event->type() == QEvent::FocusOut || event->type() == QEvent::KeyPress ) {
-		if ( dynamic_cast<QLineEdit*>(editor) ) {
+		if ( widget_type == LineText ) {
 			QLineEdit *edit = static_cast<QLineEdit*>(editor);
 			QString value = edit->text();
 			int pos;
@@ -85,9 +102,9 @@ void attrController::setValidator()
 //muss nicht per connect verbunden werden, da es als delegierter für die einzelne zelle in der tabelle wirkt
 QWidget *attrController::createEditor(QWidget *parent, const QStyleOptionViewItem & option , const QModelIndex &/* index */) const
 {
-	QWidget* current_editor;
+	QWidget* current_editor = NULL;
 	//je nach dem welchen typ die zelle ist wird das passende objekt zur verwaltung der daten angelegt und aufgerufen
-	if (attr->getType()->is_enum  && ! is_range) {
+	if (widget_type == EnumBox) {
 		// Enum Type
 		QComboBox *editor = new QComboBox(parent);
 		if ( XSD::dynamicTypeRefs.contains(attr->getType()->name) ) {
@@ -108,92 +125,85 @@ QWidget *attrController::createEditor(QWidget *parent, const QStyleOptionViewIte
 		}
 		current_editor = editor;
 	}
-#ifndef Q_OS_WIN32
-	else if ( attr->getType()->name == "cpmSystemPath" || attr->getType()->name == "cpmSystemFile") {
+	else if (widget_type == SystemPath) {
 		QFileDialog* system_dialog = new QFileDialog(parent);
 		system_dialog->setDirectory(QDesktopServices::storageLocation(QDesktopServices::HomeLocation));
 		if (attr->getType()->name == "cpmSystemPath" )
 			system_dialog->setFileMode( QFileDialog::DirectoryOnly );
 		current_editor = system_dialog;
 	}
-#endif
-	else if (attr->getType()->name == "cpmMathExpression" || attr->getType()->name == "cpmVectorMathExpression") {
+	else if (widget_type == MathText) {
 		current_editor = new mathTextEdit(parent);
 	}
-	else {
+	else if (widget_type == LineText) {
 		// String like Type
 		current_editor = new QLineEdit(parent);
-// 		current_editor->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding));
-// 		current_editor->setMinimumWidth(120);
 	}
+	
 	return current_editor;
 }
 
 //------------------------------------------------------------------------------
 
 //funktion mit der der wert des delegates initialisiert wird (wert aus zelle wird übernommen)
- void attrController::setEditorData(QWidget *editor, const QModelIndex &index) const
- {
-     if (dynamic_cast<QComboBox*>(editor)) {
-        QComboBox *edit = static_cast<QComboBox*>(editor);
-        QString value = attr->get();
+void attrController::setEditorData(QWidget *editor, const QModelIndex &index) const
+{
+	if (widget_type == EnumBox) {
+		QComboBox *edit = static_cast<QComboBox*>(editor);
+		QString value = attr->get();
 //        index.model()->data(index, Qt::EditRole).toString();
 		if (!edit) {
 			qDebug() << "error in attrController::setEditorData";
 			return;
 		}
 		
-        int ind;
-        if ( XSD::dynamicTypeRefs.contains(attr->getType()->name) )
-            ind = edit->findData(value);
-        else
-            ind = edit->findText(value);
+		int ind;
+		if ( XSD::dynamicTypeRefs.contains(attr->getType()->name) )
+			ind = edit->findData(value);
+		else
+			ind = edit->findText(value);
 
-        edit->setCurrentIndex(ind);
-        edit->adjustSize();
-     }
-#ifndef Q_OS_WIN32
-    else if ( dynamic_cast<QFileDialog*>(editor) ) {
-        if ( ! attr->get().isEmpty() ) {
-            QFileDialog* edit = static_cast<QFileDialog*>(editor);
+		edit->setCurrentIndex(ind);
+		edit->adjustSize();
+	}
+	else if ( widget_type == SystemPath ) {
+		if ( ! attr->get().isEmpty() ) {
+			QFileDialog* edit = static_cast<QFileDialog*>(editor);
 			if (!edit) {
 				qDebug() << "error in attrController::setEditorData";
 				return;
 			}
-            if (attr->getType()->name == "cpmSystemPath" ) {
-                edit->setDirectory(attr->get());
-            }
-            else if (attr->getType()->name == "cpmSystemFile") {
-                edit->selectFile(attr->get());
-            }
-        }
-    }
-#endif
-     else if (dynamic_cast<mathTextEdit*>(editor)) {
+			if (attr->getType()->name == "cpmSystemPath" ) {
+				edit->setDirectory(attr->get());
+			}
+			else if (attr->getType()->name == "cpmSystemFile") {
+				edit->selectFile(attr->get());
+			}
+		}
+	}
+	else if (widget_type == MathText) {
 		mathTextEdit* edit = static_cast<mathTextEdit*>(editor);
 		
 		QString value;
 		if (is_range)
 			value = index.model()->data(index, Qt::EditRole).toString();
-        else
+		else
 			value = attr->get();
 		
 		edit->setPlainText(value);
-		QMetaObject::invokeMethod(edit,SLOT(adjustMinSize()), Qt::QueuedConnection);
-// 		edit->adjustMinSize();
 	}
-	else if (dynamic_cast<QLineEdit*>(editor)){
+	else if (widget_type == LineText) {
 		QLineEdit *edit = static_cast<QLineEdit*>(editor);
 		
 		QString value;
 		if (is_range)
 			value = index.model()->data(index, Qt::EditRole).toString();
-        else
+		else
 			value = attr->get();
 		
 		edit->setText(value);
-     }
- }
+	}
+}
 
 //------------------------------------------------------------------------------
 
@@ -204,7 +214,7 @@ void attrController::setModelData(QWidget *editor, QAbstractItemModel *model, co
 {
 	QString value;
 
-	if (dynamic_cast<QComboBox*>(editor))
+	if (widget_type == EnumBox)
 	{
 		QComboBox *edit = static_cast<QComboBox*>(editor);
 
@@ -220,7 +230,7 @@ void attrController::setModelData(QWidget *editor, QAbstractItemModel *model, co
 				model->setData(index, value, Qt::EditRole);
 		}
 	}
-	else if ( dynamic_cast<QFileDialog*>(editor) ) {
+	else if ( widget_type == SystemPath) {
 		QFileDialog* edit = static_cast<QFileDialog*>(editor);
 
 		if (attr->getType()->name == "cpmSystemPath" ) {
@@ -240,9 +250,8 @@ void attrController::setModelData(QWidget *editor, QAbstractItemModel *model, co
 				model->setData(index, value, Qt::EditRole);
 		}
 	}
-	else if (dynamic_cast<QTextEdit*>(editor)) {
-
-		value = static_cast<QTextEdit*>(editor)->toPlainText();
+	else if (widget_type == MathText) {
+		value = static_cast<mathTextEdit*>(editor)->toPlainText();
 
 		if (is_range) {
 			model->setData(index, value, Qt::EditRole);
@@ -252,9 +261,8 @@ void attrController::setModelData(QWidget *editor, QAbstractItemModel *model, co
 			model->setData(index, value.replace(QRegExp("\\s+")," "), Qt::EditRole);
 		}
     }
-    else if (dynamic_cast<QLineEdit*>(editor)) {
-		QLineEdit *edit = static_cast<QLineEdit*>(editor);
-		value = edit->text();
+    else if (widget_type == LineText) {
+		value = static_cast<QLineEdit*>(editor)->text();
 		
         int pos;
 		if (val.validate(value,pos) != QValidator::Acceptable) {
