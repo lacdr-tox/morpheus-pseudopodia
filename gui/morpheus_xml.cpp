@@ -43,7 +43,6 @@ MorpheusXML::MorpheusXML(QString xmlFile) {
 			throw QString("Unable to create internal DOM structure from \"%1\"!\n\n%2 at line %3, column %4.").arg(xmlFile,error_msg).arg(error_line).arg(error_column);
 		}
 		path = xmlFile;
-		path.chop(3);
 		name = QFileInfo(path).fileName();
 	}
 	else {
@@ -69,26 +68,26 @@ MorpheusXML::MorpheusXML(QString xmlFile) {
 //------------------------------------------------------------------------------
 
 bool MorpheusXML::save(QString fileName) {
-    QString outputXML = fileName;
-    // pull the focus, such that all edit operations finish
+	QString outputXML = fileName;
+	// pull the focus, such that all edit operations finish
 // 	if (qApp->focusWidget())
 // 		qApp->focusWidget()->clearFocus();
 
-    QFile file(outputXML);
-    if(file.open(QIODevice::WriteOnly | QIODevice::Truncate) )
-    {
-        QTextStream ts( &file );
-        ts << domDocToText();
+	QFile file(outputXML);
+	if(file.open(QIODevice::WriteOnly | QIODevice::Truncate) )
+	{
+		QTextStream ts( &file );
+		ts << domDocToText();
 		ts.setCodec("UTF-8");
-        file.close();
-        qDebug() << "Saved to " << outputXML << endl;
-        return true;
-    }
-    else
-    {
-         qDebug() << "Can't open xml-file for saving!" << endl;
-        return false;
-    }
+		file.close();
+		qDebug() << "Saved to " << outputXML << endl;
+		return true;
+	}
+	else
+	{
+		qDebug() << "Can't open xml-file for saving!" << endl;
+		return false;
+	}
 }
 
 //------------------------------------------------------------------------------

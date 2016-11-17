@@ -25,7 +25,10 @@ class domNodeEditor : public QWidget
 public:
 	domNodeEditor(QWidget* parent = NULL);
 	void setNode(nodeController* node, SharedMorphModel model);
-		
+	
+protected:
+	void resizeEvent(QResizeEvent* e) override;
+	
 private:
 	enum EditWid { MathText=0 , MultiText=1, EnumBox=2, LineText=3, NoEdit=4 };
 	
@@ -43,7 +46,7 @@ private:
 	QAction *sweepAttribAction;
     
 	mathTextEdit *multi_line_math_editor; /*!< Textedit which appears instead of a table, if a pure text-node is selected in the treewidget. */
-	equationHighlighter *eq_highlighter; /*!< Highlighter which highlights the value of the selected pure text-node. */
+// 	equationHighlighter *eq_highlighter; /*!< Highlighter which highlights the value of the selected pure text-node. */
 	QTextEdit *multi_line_text_editor; /*!< Textedit which appears instead of a table, if a pure text-node is selected in the treewidget. */
 	QLineEdit *line_editor;
 	QComboBox *enum_editor; /*!< ComboBox which appears instead of a table, if a enum-node is seleceted in the treewidget. */
