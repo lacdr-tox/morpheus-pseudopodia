@@ -470,13 +470,13 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 			
 			// Creating relative path for checking require_path
 			QStringList search_req_tags = search_tags;
-			while (! require_tags.isEmpty() && search_req_tags.front() == require_tags.front()) {
+			while ( !search_req_tags.isEmpty() && !require_tags.isEmpty() && search_req_tags.front() == require_tags.front()) {
 				qDebug() << "Removed leading tag " << search_req_tags.front() << " for relative path";
 				search_req_tags.pop_front();
 				require_tags.pop_front();
 			}
 			
-			while (search_tags.front() == move_tags.front()) {
+			while ( !search_tags.isEmpty() && !move_tags.isEmpty() && search_tags.front() == move_tags.front()) {
 				qDebug() << "Removed leading tag " << search_tags.front() << " for relative path";
 				search_tags.pop_front();
 				move_tags.pop_front();
