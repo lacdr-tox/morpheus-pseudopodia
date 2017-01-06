@@ -294,7 +294,7 @@ JobQueue* config::getJobQueue() {
 //------------------------------------------------------------------------------
 
 int config::openModel(QString filepath) {
-	
+	if (filepath.isEmpty()) return -1;
     // if the model is already open, just switch to that model
     config* conf = getInstance();
 	QString xmlFile = QFileInfo(filepath).absoluteFilePath();

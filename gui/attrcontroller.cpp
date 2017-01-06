@@ -17,11 +17,11 @@ void attrController::setAttribute ( AbstractAttribute* attribute)
 		widget_type = EnumBox;
 	}
 #ifndef Q_OS_WIN32
-	else if ( attr->getType()->name == "cpmSystemPath" || attr->getType()->name == "cpmSystemFile") {
+	else if (( attr->getType()->name == "cpmSystemPath" || attr->getType()->name == "cpmSystemFile" ) && ! is_range ) {
 		widget_type = SystemPath;
 	}
 #endif
-	else if (attr->getType()->name == "cpmMathExpression" || attr->getType()->name == "cpmVectorMathExpression") {
+	else if (( attr->getType()->name == "cpmMathExpression" || attr->getType()->name == "cpmVectorMathExpression")  && ! is_range ) {
 		widget_type = MathText;
 	}
 	else {

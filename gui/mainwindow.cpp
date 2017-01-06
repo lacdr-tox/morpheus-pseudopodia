@@ -1078,6 +1078,11 @@ void MainWindow::selectXMLPath(QString path, int model_id)
 	if (xml_path[0] == "MorpheusModel") xml_path.pop_front();
 	if (xml_path.size()<1) return; 
 	QString part_name = xml_path[0];
+	
+	if (model_id>=0) {
+		selectModel(model_id);
+	}
+	
 	int part_id = -1;
 	for (int p=0; p<current_model->parts.size(); p++ ){
 		if (current_model->parts[p].label == part_name) {
@@ -1085,9 +1090,8 @@ void MainWindow::selectXMLPath(QString path, int model_id)
 			break;
 		}
 	}
-	if (part_id>=0) {
-		// 
-		selectModel(model_id, part_id);
+	
+	if ( part_id>=0) {
 		modelViewer[current_model]->selectNode(path);
 	}
 }
