@@ -626,6 +626,9 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 			if (range->pos_range.z>1) range->sizes.push_back(range->pos_range.z);
 			if (range->pos_range.y>1) range->sizes.push_back(range->pos_range.y);
 			if (range->pos_range.x>1) range->sizes.push_back(range->pos_range.x);
+			// if no dimension with multiple entries exists, just report a single element
+			if (range->sizes.empty()) range->sizes.push_back(1);
+			
 			break;
 	}
 	
