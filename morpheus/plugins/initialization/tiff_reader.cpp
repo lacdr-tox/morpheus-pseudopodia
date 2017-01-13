@@ -167,13 +167,13 @@ bool TIFFReader::loadTIFF(){
 				{
 					
 					if (TIFFReadRGBAImage(tif, w, h, raster8, 0)) {
-						pos.y=0;
+						pos.y=h-1;
 						
 						for (uint i=0; i<npixels; i++, pos.x++) {
 							
 							if ( pos.x >= w ){
 								pos.x=0; 
-								pos.y++; 
+								pos.y--; 
 							}
 							
 							if( numsamples == 1){
@@ -211,13 +211,13 @@ bool TIFFReader::loadTIFF(){
 							cerr << "TIFFReader: Error during reading TIFF image '" << filename() << "'." << endl;
 							exit(-1);
 						}
-						pos.y = h-row; 
+						pos.y = row;
 						pos.x = 0; // TODO: Check whether scanline is necessarily equal to a x-row (if not, remove this line)
 						for(uint32 col=0; col < w; col++, pos.x++){
 							
 							if ( pos.x >= w ){
 								pos.x=0; 
-								pos.y++; 
+								pos.y--; 
 							}
 							
 							if( numsamples == 1 ){
@@ -269,13 +269,14 @@ bool TIFFReader::loadTIFF(){
 							cerr << "TIFFReader: Error during reading TIFF image '" << filename() << "'." << endl;
 							exit(-1);
 						}
-						pos.y = h-row;
+						pos.y = row;
 						pos.x = 0; // TODO: Check whether scanline is necessarily equal to a x-row (if not, remove this line)
 
 						for(uint32 col=0; col < w; col++, pos.x++){
 							
 							if ( pos.x >= w ){
-								pos.x=0; pos.y++; 
+								pos.x=0; 
+								pos.y--; 
 							}
 							
 							if( numsamples == 1 ){

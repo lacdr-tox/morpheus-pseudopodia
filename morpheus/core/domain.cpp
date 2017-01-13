@@ -80,7 +80,9 @@ void Domain::loadFromXML(const XMLNode xNode,VINT size_hint)
 	getXMLAttribute(xNode, "boundary-type", boundary_type);
 	if (xNode.nChildNode("Image")) {
 		type = image;
+		bool invert = false;
 		getXMLAttribute(xNode, "Image/path", image_path);
+		getXMLAttribute(xNode, "Image/invert", invert);
 // 		uint32 width, height, slices;
 		
 // 		TIFFSetWarningHandler(0);
@@ -94,7 +96,7 @@ void Domain::loadFromXML(const XMLNode xNode,VINT size_hint)
 // 		else {
 // 			throw(string("Unable to open Domain image ") + image_path + ".");
 // 		}
-		createImageMap(image_path);
+		createImageMap(image_path, invert);
 		domain_size = max(size_hint, image_size);
 		image_offset = (domain_size - image_size) /2;
 		cout << "Domain Image size " << image_size << ", domain offset " << image_offset << endl;
@@ -164,7 +166,7 @@ void Domain::createEnumerationMap() {
 // };
 
 
-void Domain::createImageMap(string path) {
+void Domain::createImageMap(string path, bool invert) {
 	
 	TIFFSetWarningHandler(0);
 	TIFF* tif = TIFFOpen(path.c_str(), "r");
@@ -198,15 +200,21 @@ void Domain::createImageMap(string path) {
 		unsigned short int numbits;
 		TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &numbits);
 		if( numbits == 8 ){
-			if (TIFFReadRGBAImage(tif, w, h, raster, 0)) {
+//			if (TIFFReadRGBAImage(tif, w, h, raster, 0)) { // origin is bottom-left
+			if (TIFFReadRGBAImageOriented(tif, w, h, raster, ORIENTATION_TOPLEFT, 0)) { // ORIENTATION_BOTRIGHT, ORIENTATION_TOPRIGHT, ORIENTATION_TOPLEFT
 				pos.x=0; pos.y=0;
 				for (uint i=0; i<npixels; i++) {
 					uint8* channels = (uint8*) (raster+i);
-					uint32 transparency = channels[3];
+//					uint32 transparency = channels[3];
 					uint32 grey_val = channels[0] + channels[1] + channels[2];
 // 					cout  << grey_val << " ";
 					
-					image_map[i + w*h*pos.z] = (grey_val > 0);
+					if(!invert){
+						image_map[i + w*h*pos.z] = (grey_val > 0);
+					}
+					else{
+						image_map[i + w*h*pos.z] = (grey_val <= 0);
+					}
 				}
 			}
 		}
