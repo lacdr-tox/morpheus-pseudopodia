@@ -158,7 +158,8 @@ POSSIBLE_PATHS=" $MACPORTS_DIR/lib $MACPORTS_DIR/lib/libgcc /usr/local/lib /usr/
 
 LIBRARIES=" libz.1.dylib libtiff.5.dylib libjpeg.9.dylib libpng16.16.dylib libssl.1.0.0.dylib 
 		   libcrypto.1.0.0.dylib libssh.dylib liblzma.5.dylib libbz2.1.0.dylib libexpat.1.dylib
-			libgvc.6.dylib libcgraph.6.dylib libstdc++.6.dylib libgcc_s.1.dylib libgomp.1.dylib libxdot.4.dylib libcdt.5.dylib libpathplan.4.dylib" # GraphViz
+			libgvc.6.dylib libltdl.7.dylib libcgraph.6.dylib libstdc++.6.dylib libgcc_s.1.dylib libgomp.1.dylib 
+			libxdot.4.dylib libcdt.5.dylib libpathplan.4.dylib" # GraphViz
 
 
 for LIB in $LIBRARIES
@@ -185,9 +186,12 @@ done
 
 echo "== Copying and updating IDs of libssl and libcrypto requires sudo =="
 
-LIBRARIES="libssl.1.0.0.dylib libcrypto.1.0.0.dylib"
+LIBRARIES2="libssl.1.0.0.dylib libcrypto.1.0.0.dylib 
+			libgssapi_krb5.2.2.dylib libkrb5.3.3.dylib
+			libk5crypto.3.1.dylib libcom_err.1.1.dylib 
+			libkrb5support.1.1.dylib libintl.8.dylib libiconv.2.dylib"
 
-for LIB in $LIBRARIES
+for LIB in $LIBRARIES2
 do
 	echo "-- $(basename $LIB) --"
 
@@ -240,7 +244,7 @@ else
     	
 	done
 
-	LIBRARIES=$LIBRARIES" "$LIBSBML1" "$LIBSBML2" "$LIBSBML3
+	LIBRARIES="$LIBRARIES $LIBRARIES2 $LIBSBML1 $LIBSBML2 $LIBSBML3"
 fi
 
 ######
@@ -302,8 +306,9 @@ echo
 echo "== Updating Libraries Refs =="
 echo
 
+LIBRARIES_ALL="$LIBRARIES $LIBRARIES2"
 
-for LIB in $LIBRARIES
+for LIB in $LIBRARIES_ALL
 do
 	echo "-- $LIB --"
 	OLDREFS=$(getDependencies $LIBRARY_DIR/$LIB)
@@ -506,10 +511,11 @@ then
 	# TODO: copy over additional files, if any
 	hdiutil create -ov -srcfolder $imagedir -format UDBZ -volname "Morpheus" $BUNDLE_NAME
 	hdiutil internet-enable -yes $BUNDLE_NAME
-	chown -R $(whoami):$(id -g -n $(whoami)) $BUNDLE_NAME
+	USER=$(who am i | awk '{print $1}') # get original user, even if running as superuser (sudo)
+	chown -R $USER:$(id -g -n $USER) $BUNDLE_NAME
 	rm -rf $imagedir
 	echo "$BUNDLE_NAME created"
-	echo $(whoami)
+	echo $USER
 else
 	echo "NOTE: No DMG created!" 
 	echo
