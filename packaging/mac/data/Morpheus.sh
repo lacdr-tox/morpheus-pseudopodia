@@ -39,6 +39,8 @@ ls -la "$M_BINARIES"
 # Make sure that exectuables can find the libraries
 export DYLD_LIBRARY_PATH=$M_LIBRARIES:$M_PLUGINS
 echo "DYLD_LIBRARY_PATH: " $DYLD_LIBRARY_PATH
+unset DYLD_LIBRARY_PATH
+unset DYLD_FALLBACK_LIBRARY_PATH
 
 #export DYLD_PRINT_LIBRARIES=1 #note: any value will enable printing (comment out to disable)
 
