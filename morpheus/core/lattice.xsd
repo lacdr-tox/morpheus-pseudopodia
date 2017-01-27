@@ -88,6 +88,7 @@ Defines a symbol with accessible x, y and z coordinates.</xs:documentation>
 			<xs:element name="Image">
 				<xs:complexType>
 					<xs:attribute name="path" use="required" type="cpmSystemFile"/>
+					<xs:attribute name="invert" use="optional" type="cpmBoolean" default="false"/>
 				</xs:complexType>
 				<xs:annotation>
 					<xs:documentation>TIFF image (or image stack for 3D) that specifies the shape of domain.

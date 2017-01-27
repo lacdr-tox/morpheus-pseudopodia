@@ -55,7 +55,7 @@ private:
 	VINT image_size;
 	VINT image_offset;
 	
-	void createImageMap(string path);
+	void createImageMap(string path, bool invert);
     void createEnumerationMap();
 	bool insideImageDomain(const VINT& a) const;
 	bool insideCircularDomain(const VINT& a) const;
