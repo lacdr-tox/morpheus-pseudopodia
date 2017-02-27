@@ -22,7 +22,7 @@ Documentation
 Documentation for users as well as plugin developers here found on the [wiki pages](https://gitlab.com/morpheus.lab/morpheus/wikis/home):
 
 - [User manual](https://gitlab.com/morpheus.lab/morpheus/wikis/user-manual) (under construction)
-- [Developers' guide]((https://gitlab.com/morpheus.lab/morpheus/wikis/dev-guide) (under construction)
+- [Plugin dev guide](https://gitlab.com/morpheus.lab/morpheus/wikis/dev-guide) (under construction)
 
 These docs may not reflect the latest state and are currently being updated.
 
