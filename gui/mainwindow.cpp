@@ -502,7 +502,7 @@ void MainWindow::selectModel(int index, int part)
 		if (part<0 || part>=current_model->parts.size()) {
 			model_index.part = selected.part;
 		}
-		if (current_model->parts[part].enabled) {
+		else if (current_model->parts[part].enabled) {
 			model_index.part = part;
 		}
 		showCurrentModel();
