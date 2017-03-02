@@ -479,7 +479,7 @@ void loadCellPopulations(XMLNode populations)
 	
 	vector<XMLNode> defered_poulations;
 	for (int i=0; i<populations.nChildNode("Population"); i++) {
-		XMLNode population = populations.getChildNode(i);
+		XMLNode population = populations.getChildNode("Population",i);
 		string type;
 		if (!getXMLAttribute( population,"type",type)) {
 			cerr << "Simulation::init(): Population Population [" << i << "] has no cell type specified" << endl;
