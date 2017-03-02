@@ -110,23 +110,6 @@ Example: To gain plotting speed, plot PDE layer using binary files, with a resol
 */
 
 
-class SymbolReader {
-public:
-	void init();
-	
-	enum TypeSelector { sInvalid, sDouble, sVDOUBLE };
-	TypeSelector type;
-	
-	string name;
-	string fullname;
-	bool integer;
-	SymbolData::LinkType linktype;
-	
-// 	SymbolAccessor<int> sym_i;
-	SymbolAccessor<double> sym_d;
-	SymbolAccessor<VDOUBLE> sym_v;
-};
-
 class LabelPainter  {
 public:
 	LabelPainter();
@@ -139,12 +122,10 @@ public:
 	string fontcolor() {return _fontcolor;}
 
 private:
-	SymbolReader symbol;
+	PluginParameter2<string,XMLStringifyExpression,RequiredPolicy> value;
 	vector<shared_ptr< const CellType> > celltypes;
 	string _fontcolor;
 	uint _fontsize;
-	int _precision;
-	bool _scientific;
 };
 
 class ArrowPainter  {

@@ -280,7 +280,8 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		fix_version=3;
 		MorphModel::AutoFix a;
 		a.copy = false;
-		a.match_path  = "MorpheusModel/CPM/ShapeBoundary"; a.move_path = "MorpheusModel/CPM/ShapeSurface"; fixes.append(a); 
+		a.match_path = "MorpheusModel/CPM/ShapeBoundary"; a.move_path = "MorpheusModel/CPM/ShapeSurface"; fixes.append(a);
+		a.match_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@symbol-ref";a.move_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@value"; fixes.append(a);
 	}
 	else if (morpheus_file_version == 2) {
 		// return edits;
@@ -445,7 +446,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		move_tags = move_path.split("/");
 		QString require_path = fixes[i].require_path;
 		require_path.remove(QRegExp("^/|/$| "));
-		QStringList require_tags = require_path.split("/");
+		QStringList require_tags = require_path.split("/",QString::SkipEmptyParts);
 		
 		QString new_name = move_tags.back();
 		move_tags.pop_back();
