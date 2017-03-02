@@ -319,12 +319,13 @@ int config::openModel(QString filepath) {
         conf->openModels.back()->close();
         emit conf->modelClosing(conf->openModels.size()-1);
         conf->openModels.pop_back();
+		  conf->current_model = -1;
     }
     conf->openModels.push_back(m);
     int new_index = conf->openModels.size()-1;
     addRecentFile(m->xml_file.path);
     emit conf->modelAdded(new_index);
-    switchModel(new_index);
+//     switchModel(new_index);
 
     return new_index;
 }
@@ -342,7 +343,7 @@ int config::importModel(QSharedPointer< MorphModel > model)
 	conf->openModels.push_back(model);
 	int new_index = conf->openModels.size()-1;
 	emit conf->modelAdded(new_index);
-	switchModel(new_index);
+// 	switchModel(new_index);
 
 	return new_index;
 }
@@ -388,7 +389,7 @@ int config::createModel(QString xml_path)
     int id = conf->openModels.size();
     conf->openModels.push_back(m);
     emit conf->modelAdded(id);
-    switchModel(id);
+//     switchModel(id);
 
     return id;
 }
@@ -420,7 +421,7 @@ bool config::closeModel(int index, bool create_model)
 
 void config::switchModel(int index) {
     config* conf = config::getInstance();
-    // if (index == conf->current_model) return true;
+    if (index == conf->current_model) return;
     conf->current_model = index;
     if (index>=0)
         emit conf->modelSelectionChanged(conf->current_model);

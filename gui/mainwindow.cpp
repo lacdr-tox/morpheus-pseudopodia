@@ -940,39 +940,40 @@ void MainWindow::storeSettings(){
 void MainWindow::addModel(int index) {
     SharedMorphModel model = config::getOpenModels()[index];
 
-    QTreeWidgetItem* c = new QTreeWidgetItem(QStringList(model->xml_file.name));
-    c->setIcon(0,QThemedIcon("text-x-generic",QIcon(":/text-generic.png")));
-    c->setIcon(1,QThemedIcon("edit-delete",QIcon(":/edit-delete.png")));
-    QFont f (c->font(0));
-    f.setBold(true);
-    c->setFont(0,f);
-    modelList->insertTopLevelItem(index,c);
+	QTreeWidgetItem* c = new QTreeWidgetItem(QStringList(model->xml_file.name));
+	c->setIcon(0,QThemedIcon("text-x-generic",QIcon(":/text-generic.png")));
+	c->setIcon(1,QThemedIcon("edit-delete",QIcon(":/edit-delete.png")));
+	QFont f (c->font(0));
+	f.setBold(true);
+	c->setFont(0,f);
+	modelList->insertTopLevelItem(index,c);
 
-    connect(model.data(),SIGNAL(modelPartAdded()),this,SLOT(reloadModelParts()));
-    connect(model.data(),SIGNAL(modelPartRemoved()),this,SLOT(reloadModelParts()));
+	connect(model.data(),SIGNAL(modelPartAdded()),this,SLOT(reloadModelParts()));
+	connect(model.data(),SIGNAL(modelPartRemoved()),this,SLOT(reloadModelParts()));
 
-    domNodeViewer *viewer = new domNodeViewer(this);
-    viewer->setModel(model,0);
-    connect(viewer,SIGNAL(xmlElementCopied(QDomNode)),this,SLOT(copyNodeAction(QDomNode)));
+	domNodeViewer *viewer = new domNodeViewer(this);
+	viewer->setModel(model,0);
+	connect(viewer,SIGNAL(xmlElementCopied(QDomNode)),this,SLOT(copyNodeAction(QDomNode)));
 	connect(viewer,SIGNAL(nodeSelected(nodeController*)),docuDock,SLOT(setCurrentNode(nodeController*)));
 	connect(viewer,SIGNAL(xmlElementSelected(QString)),docuDock,SLOT(setCurrentElement(QString)));
 	
-    editorStack->addWidget(viewer);
-    modelViewer[model] = viewer;
+	editorStack->addWidget(viewer);
+	modelViewer[model] = viewer;
 	modelAbout[model] =  new AboutModel(model);
 	editorStack->addWidget(modelAbout[model]);
 
-    reloadModelParts(index);
+	reloadModelParts(index);
 
-    documentsDock->raise();
+	documentsDock->raise();
+	config::switchModel(index);
 
-    setPermanentStatus("Model loaded successfully");
-    if ( ! model->rootNodeContr->getModelDescr().auto_fixes.isEmpty()) {
-        dwid_fixBoard->raise();
-    }
+	setPermanentStatus("Model loaded successfully");
+	if ( ! model->rootNodeContr->getModelDescr().auto_fixes.isEmpty()) {
+		dwid_fixBoard->raise();
+	}
 
-    statusMsgSource = editorStack;
-    updateRecentFileActions();
+	statusMsgSource = editorStack;
+	updateRecentFileActions();
 }
 
 //------------------------------------------------------
