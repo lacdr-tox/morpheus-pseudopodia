@@ -365,13 +365,15 @@ void TIFFReader::addNode(VINT pos, uint32 color){
 	}
 	else {
 		it = color_to_cellid.find(color);
-		
-		// correct for periodic boundary conditions
-		VINT current_center = CPM::getCell( it->second ).getCenterL();
-		VINT pos_c = current_center - SIM::getLattice()->node_distance( current_center,  SIM::getLattice()->to_orth(pos));
+		VINT pos_c = pos;
+		if (CPM::getCell( it->second ).nNodes()>0) {
+			// correct for periodic boundary conditions
+			VINT current_center = CPM::getCell( it->second ).getCenterL();
+			pos_c = current_center - SIM::getLattice()->node_distance( current_center,  SIM::getLattice()->to_orth(pos));
+		}
 		
 		CPM::setNode(pos_c, it->second );
-		//cout << "Added node ("<<pos<<") to existing cell " << it->second << "\n";
+// 		cout << "Added node ("<<pos<<") with pos_c "<< pos_c <<"to existing cell " << it->second << "\n";
 		created_nodes++;
 	}
 	created_cells = color_to_cellid.size();
