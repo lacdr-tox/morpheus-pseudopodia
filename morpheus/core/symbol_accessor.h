@@ -19,6 +19,7 @@
 #include "cell.h"
 #include "celltype.h"
 
+
 template <class T>
 class ReadOnlyAccess {
 public:
@@ -42,16 +43,16 @@ class SymbolAccessorBase {
 		/** Default constructor for an UnLinked symbol */
 		SymbolAccessorBase();
 		
-		/** Create a SymbolAccessor for the symbol specified by d within a scope.
+		/** Create a SymbolAccessor for the symbol specified by d within a scope. Partial availability in the scope can be allowed by @partial_spec.
 		 */
-		SymbolAccessorBase(SymbolData d, const Scope* scope);
+		SymbolAccessorBase(SymbolData d, const Scope* scope, bool partial_spec = false);
 		
 		/** Create a read-only SymbolAccessor, that returns default_val for any scope wherein the symbol is not defined.
 		 * 
 		 * Main purpose is to allow output generators to have a simplified interface.
 		 */
 		SymbolAccessorBase(SymbolData d, const Scope* scope, const ValType& default_val);
-
+		
 		/// Get the scope of the symbol (wherein it is defined)
 		const Scope* getScope() const { return scope; };
 		
@@ -113,11 +114,9 @@ class SymbolAccessorBase {
 		CellMembraneAccessor cell_membrane;
 		
 		vector< typename AccessPolicy<S>::Accessor > component_accessors;
-// 		vector< CellPropertyAccessor<S> > celltype_properties;
+		bool allow_partial_spec;
 		shared_ptr<PDE_Layer> pde_layer;
-// 		vector<CellMembraneAccessor > celltype_membranes;
 
-// 		shared_ptr< const Lattice > lattice;
 		const Lattice* lattice;
 		VDOUBLE orth_size, mem_scale;
 		struct { bool x; bool y; bool z; } periodic;
@@ -166,27 +165,28 @@ SymbolAccessorBase<S,AccessPolicy>::SymbolAccessorBase() {
 	data.link = SymbolData::UnLinked;
 	scope = NULL;
 	internal_link = SymbolData::UnLinked;
+	allow_partial_spec = false;
 }
 
 template <class S,template <class> class AccessPolicy>
 SymbolAccessorBase<S,AccessPolicy>::SymbolAccessorBase(SymbolData d, const Scope* scope, const ValType& default_val) : data(d), scope(scope) {
-	if (data.link == SymbolData::CompositeSymbolLink) {
+	if (data.link == SymbolData::PureCompositeLink) {
 		// Create a global default value ...
 		auto prop = Property<S>::createConstantInstance(data.name,data.fullname);
 		prop->set(default_val);
 		data.const_prop = prop;
 		default_is_set = true;
 		data.link = SymbolData::GlobalLink;
-		data.is_composite = true;
 	}
-
+	allow_partial_spec = false;
 	init_all();
 };
 
 // this constructor is used for all non-double and non-VDOUBLE symbols
 template <class S,template <class> class AccessPolicy>
-SymbolAccessorBase<S,AccessPolicy>::SymbolAccessorBase(SymbolData d, const Scope* scope) : data(d), scope(scope)
+SymbolAccessorBase<S,AccessPolicy>::SymbolAccessorBase(SymbolData d, const Scope* scope, bool partial_spec) : data(d), scope(scope)
 {
+	allow_partial_spec = partial_spec;
 	init_all();
 }
 
@@ -195,17 +195,18 @@ void SymbolAccessorBase<S,AccessPolicy>::init_all()
 {
 	internal_link = data.link;
 	
-	if (! data.component_subscopes.empty() ) {
+	if ( data.is_composite ) {
 		
 		data.invariant = false;
 		component_accessors.resize(CPM::getCellTypes().size());
 		data.component_subscopes.resize(component_accessors.size(), NULL);
 		// Create a virtual accessor that forwards to the sub-scope specific accessor 
-		if ( internal_link != SymbolData::CompositeSymbolLink ) {
+		if ( internal_link != SymbolData::PureCompositeLink ) {
 			// A global value exists, but is overridden in some of the spatial subscopes
 // 			assert(0); 
 			// we create a default symbol accessor based on the current scope data
 			SymbolData default_data = data;
+			default_data.is_composite = false;
 			default_data.component_subscopes.clear();
 			typename AccessPolicy<S>::Accessor default_sym(default_data,scope);
 			
@@ -217,16 +218,19 @@ void SymbolAccessorBase<S,AccessPolicy>::init_all()
 					component_accessors[ct_id] = default_sym;
 				}
 			}
-			internal_link = SymbolData::CompositeSymbolLink;
+			internal_link = SymbolData::PureCompositeLink;
 			
 		}
 		else {
 			for (uint ct_id=0; ct_id<component_accessors.size(); ct_id++) {
 				if ( !data.component_subscopes[ct_id]) {
-					throw(string("Global default for symbol \"" + data.name + "\" is missing.") );
-					//throw(string("SymbolAccessor: Incomplete definition of composite symbol \"" + data.name + "\" without global default.") );
+					if (allow_partial_spec)
+						component_accessors[ct_id] = typename AccessPolicy<S>::Accessor();
+					else 
+						throw SymbolError(SymbolError::Type::InvalidPartialSpec, string("Global default for symbol \"") + data.name + "\" is missing." );
 				}
-				component_accessors[ct_id] = AccessPolicy<S>::findSymbol(data.component_subscopes[ct_id],data.name);
+				else 
+					component_accessors[ct_id] = AccessPolicy<S>::findSymbol(data.component_subscopes[ct_id],data.name);
 			}
 		}
 	}
@@ -239,9 +243,7 @@ void SymbolAccessorBase<S,AccessPolicy>::init_all()
 					global_value = dynamic_pointer_cast< Property<S> >(data.const_prop);
 					break;
 				case SymbolData::CellPropertyLink:
-					{
-						cell_property = scope->getCellType()->findCellProperty<S>(data.name,true);
-					}
+					cell_property = scope->getCellType()->findCellProperty<S>(data.name,true);
 					break;
 				default:
 					if ( ! init_special() ) 
@@ -250,8 +252,7 @@ void SymbolAccessorBase<S,AccessPolicy>::init_all()
 			}
 		} 
 		catch(string e) {
-			throw string("SymbolAccessor<") + data.type_name + ">:. Error while linking Symbol: '" + data.name + "'\n"  + e;
-			exit(-1);
+			throw SymbolError(SymbolError::Type::InvalidLink, string("SymbolAccessor<") + data.type_name + ">:. Error while linking Symbol: '" + data.name + "'\n"  + e);
 		}
 	}
 }
@@ -277,7 +278,7 @@ bool SymbolAccessorBase<S,AccessPolicy>::valid () const
 template <class S,template <class> class AccessPolicy>
 bool SymbolAccessorBase<S,AccessPolicy>::isDefined(CellType* ct)
 {
-	if (internal_link == SymbolData::CompositeSymbolLink && default_is_set) {
+	if (internal_link == SymbolData::PureCompositeLink && default_is_set) {
 		if ( ! data.component_subscopes[ct->getID()] ) 
 			return false;
 	}
@@ -287,7 +288,7 @@ bool SymbolAccessorBase<S,AccessPolicy>::isDefined(CellType* ct)
 template <class S,template <class> class AccessPolicy>
 bool SymbolAccessorBase<S,AccessPolicy>::isDefined(CPM::CELL_ID cell)
 {
-	if (internal_link == SymbolData::CompositeSymbolLink && default_is_set) {
+	if (internal_link == SymbolData::PureCompositeLink && default_is_set) {
 		if ( ! data.component_subscopes[CPM::getCellIndex(cell).celltype] ) 
 			return false;
 	}
@@ -319,7 +320,7 @@ typename TypeInfo<S>::SReturn SymbolAccessorBase<S,AccessPolicy>::get(const Symb
 {
 	switch (internal_link) {
 		
-		case SymbolData::CompositeSymbolLink:
+		case SymbolData::PureCompositeLink:
 			// forwarding
 			return component_accessors[focus.cell_index().celltype].get(focus);
 			
@@ -329,9 +330,11 @@ typename TypeInfo<S>::SReturn SymbolAccessorBase<S,AccessPolicy>::get(const Symb
 		case SymbolData::CellPropertyLink:
 			return cell_property.get(focus);
 			
-        default:
-            cerr << "SymbolAccessor: Link type '" << data.getLinkTypeName() << "' is not defined for type " << TypeInfo<S>::name() << endl;
-            assert(0); exit(-1);
+		case SymbolData::UnLinked:
+			throw SymbolError(SymbolError::Type::Undefined, "Access to unlinked symbol");
+			
+		default:
+			throw SymbolError(SymbolError::Type::InvalidLink, string("SymbolAccessor: Link type '") + data.getLinkTypeName() + "' is not defined for type " + TypeInfo<S>::name() );
 	}
 }
 
@@ -369,7 +372,7 @@ template <class S>
 bool SymbolRWAccessor<S>::set(const SymbolFocus& f, typename TypeInfo<S>::Parameter  value)  const
 {
 	switch (this->internal_link) {
-		case SymbolData::CompositeSymbolLink :
+		case SymbolData::PureCompositeLink :
 			return this->component_accessors[f.cell_index().celltype].set(f,value);
 			
 		case SymbolData::GlobalLink:
@@ -379,10 +382,11 @@ bool SymbolRWAccessor<S>::set(const SymbolFocus& f, typename TypeInfo<S>::Parame
 		case SymbolData::CellPropertyLink: 
 			return this->cell_property.set(f, value);
 		
-		
+		case SymbolData::UnLinked:
+			throw SymbolError(SymbolError::Type::Undefined, "Write access to unlinked symbol");
+			
 		default:
-			cerr << "SymbolAccessor: Link type '" << this->data.getLinkTypeName() << "' is not defined for type " << TypeInfo<S>::name() << endl;
-			assert (0); exit(-1);
+			throw SymbolError(SymbolError::Type::InvalidLink, string("SymbolAccessor: Link type '") + this->data.getLinkTypeName() + "' is not defined for type " + TypeInfo<S>::name() );
 	}
 }
 
@@ -393,7 +397,7 @@ template <class S>
 bool SymbolRWAccessor<S>::setBuffer(const SymbolFocus& f, typename TypeInfo<S>::Parameter  value) const
 {
 	switch (this->internal_link) {
-		case SymbolData::CompositeSymbolLink :
+		case SymbolData::PureCompositeLink :
 			return this->component_accessors[f.cell_index().celltype].setBuffer(f,value);
 			
 		case SymbolData::GlobalLink:
@@ -404,10 +408,12 @@ bool SymbolRWAccessor<S>::setBuffer(const SymbolFocus& f, typename TypeInfo<S>::
 		{
 			return this->cell_property.setBuffer(f, value);
 		}
-
+		
+		case SymbolData::UnLinked:
+			throw SymbolError(SymbolError::Type::Undefined, "Write access to unlinked symbol");
+			
 		default:
-			cerr << "SymbolAccessor: Link type '" << this->data.getLinkTypeName() << "' is not defined for type " << TypeInfo<S>::name() << endl;
-			assert (0); exit(-1);
+			throw SymbolError(SymbolError::Type::InvalidLink, string("SymbolAccessor: Link type '") + this->data.getLinkTypeName() + "' is not defined for type " + TypeInfo<S>::name() );
 	}
 }
 
@@ -415,7 +421,7 @@ template <class S>
 bool SymbolRWAccessor<S>::swapBuffer(const SymbolFocus& f) const
 {
 	switch (this->internal_link) {
-		case SymbolData::CompositeSymbolLink :
+		case SymbolData::PureCompositeLink :
 		{
 			// TODO: the default value reference should only be considered once, not for any component it is registered
 			// This is now done, but somewhat ugly ...
@@ -439,9 +445,11 @@ bool SymbolRWAccessor<S>::swapBuffer(const SymbolFocus& f) const
 		case SymbolData::CellPropertyLink:
 			return this->cell_property.swapBuffer(f);
 		
+		case SymbolData::UnLinked:
+			throw SymbolError(SymbolError::Type::Undefined, "Write access to unlinked symbol");
+			
 		default:
-			cerr << "SymbolAccessor: Link type '" << this->data.getLinkTypeName() << "' is not defined for type " << TypeInfo<S>::name() << endl;
-			assert (0); exit(-1);
+			throw SymbolError(SymbolError::Type::InvalidLink, string("SymbolAccessor: Link type '") + this->data.getLinkTypeName() + "' is not defined for type " + TypeInfo<S>::name() );
 	}
 }
 
@@ -450,7 +458,7 @@ bool SymbolRWAccessor<S>::swapBuffer() const
 {
 	switch (this->internal_link) {
 		
-		case SymbolData::CompositeSymbolLink :
+		case SymbolData::PureCompositeLink :
 		{
 			// TODO: the default value reference should only be considered once, not for any component it is registered
 			// This is now done, but somewhat ugly ...
@@ -475,10 +483,12 @@ bool SymbolRWAccessor<S>::swapBuffer() const
 		case SymbolData::CellPropertyLink:
 			this->cell_property.swapBuffer();
 			return true;
-
+			
+		case SymbolData::UnLinked:
+			throw SymbolError(SymbolError::Type::Undefined, "Write access to unlinked symbol");
+			
 		default:
-			cerr << "SymbolAccessor: Link type '" << this->data.getLinkTypeName() << "' is not defined for type " << TypeInfo<S>::name() << endl;
-			assert (0); exit(-1);
+			throw SymbolError(SymbolError::Type::InvalidLink, string("SymbolAccessor: Link type '") + this->data.getLinkTypeName() + "' is not defined for type " + TypeInfo<S>::name() );
 	}
 }
 

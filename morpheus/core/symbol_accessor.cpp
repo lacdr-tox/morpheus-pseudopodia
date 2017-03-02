@@ -81,7 +81,7 @@ bool SymbolAccessorBase<double,ReadWriteAccess>::init_special() {
 template <>
 TypeInfo<double>::SReturn SymbolAccessorBase<double,ReadOnlyAccess>::get(const SymbolFocus& focus) const {
 	switch (this->internal_link) {
-		case SymbolData::CompositeSymbolLink: 
+		case SymbolData::PureCompositeLink: 
 			return component_accessors[focus.cell_index().celltype].get(focus);
 		case SymbolData::GlobalLink:
 			return global_value->get();
@@ -115,16 +115,18 @@ TypeInfo<double>::SReturn SymbolAccessorBase<double,ReadOnlyAccess>::get(const S
 			return focus.cell_index().super_cell_id;
 		case SymbolData::CellTypeLink:
 			return focus.cell_index().celltype;
-        case SymbolData::CellLengthLink:
-            return focus.cell().getCellLength();
-        case SymbolData::CellVolumeLink:
-            return focus.cell().nNodes();
-        case SymbolData::CellSurfaceLink:
-            return focus.cell().getInterfaceLength();
+		case SymbolData::CellLengthLink:
+				return focus.cell().getCellLength();
+		case SymbolData::CellVolumeLink:
+				return focus.cell().nNodes();
+		case SymbolData::CellSurfaceLink:
+				return focus.cell().getInterfaceLength();
 		case SymbolData::PopulationSizeLink:
 			return data.celltype.lock()->getPopulationSize();
+		case SymbolData::UnLinked:
+			throw SymbolError(SymbolError::Type::Undefined, "Access to unlinked symbol");
 		default:
-			cerr << "Not implemented (SymbolAccessor<double>::get(uint cell_id, const VINT& pos)) for type "  <<  data.getLinkTypeName(data.link) << endl; assert (0); exit(-1);
+			throw SymbolError(SymbolError::Type::InvalidLink, string("SymbolAccessor: Link type '") + this->data.getLinkTypeName() + "' is not defined for type "  + TypeInfo<ValType>::name());
 	}
 }
 
@@ -132,7 +134,7 @@ TypeInfo<double>::SReturn SymbolAccessorBase<double,ReadOnlyAccess>::get(const S
 template <>
 TypeInfo<double>::SReturn SymbolAccessorBase<double,ReadWriteAccess>::get(const SymbolFocus& focus) const {
 	switch (this->internal_link) {
-		case SymbolData::CompositeSymbolLink: 
+		case SymbolData::PureCompositeLink: 
 			return component_accessors[focus.cell_index().celltype].get(focus);
 		case SymbolData::GlobalLink:
 			return global_value->get();
@@ -142,9 +144,10 @@ TypeInfo<double>::SReturn SymbolAccessorBase<double,ReadWriteAccess>::get(const 
 			return pde_layer->get(focus.pos());
 		case SymbolData::CellMembraneLink:
 			return cell_membrane.get(focus);
-
+		case SymbolData::UnLinked:
+			throw SymbolError(SymbolError::Type::Undefined, "Access to unlinked symbol");
 		default:
-			cerr << "Not implemented (SymbolAccessor<double>::get(uint cell_id, const VINT& pos)) for type "  <<  data.getLinkTypeName(data.link) << endl; assert (0); exit(-1);
+			throw SymbolError(SymbolError::Type::InvalidLink, string("SymbolAccessor: Link type '") + this->data.getLinkTypeName() + "' is not defined for type " + TypeInfo<ValType>::name() );
 	}
 }
 
@@ -152,7 +155,7 @@ template <>
 bool SymbolRWAccessor<double>::set(const SymbolFocus& focus, TypeInfo<double>::Parameter  value) const
 {
 	switch (internal_link) {
-		case SymbolData::CompositeSymbolLink :
+		case SymbolData::PureCompositeLink :
 			return component_accessors[focus.cell_index().celltype].set(focus,value);
 		case SymbolData::GlobalLink:
 			global_value->getRef() = value;
@@ -169,9 +172,10 @@ bool SymbolRWAccessor<double>::set(const SymbolFocus& focus, TypeInfo<double>::P
 		{
 			return cell_membrane.set(focus, value);
 		}
-            
+		case SymbolData::UnLinked:
+			throw SymbolError(SymbolError::Type::Undefined, "Access to unlinked symbol");
 		default:
-			cerr << "Not implemented for type" <<  data.getLinkTypeName(data.link) << endl; assert (0); exit(-1);
+			throw SymbolError(SymbolError::Type::InvalidLink, string("SymbolAccessor: Link type '") + this->data.getLinkTypeName() + "' is not defined for type " + TypeInfo<ValType>::name() );
 		
 	}
 }
@@ -180,7 +184,7 @@ template <>
 bool SymbolRWAccessor<double>::setBuffer(const SymbolFocus& focus, TypeInfo<double>::Parameter value) const {
 
 	switch (internal_link) {
-		case SymbolData::CompositeSymbolLink :
+		case SymbolData::PureCompositeLink :
 			return component_accessors[focus.cell_index().celltype].set(focus,value);
 		case SymbolData::CellPropertyLink:
 			return cell_property.setBuffer(focus,value);
@@ -195,9 +199,10 @@ bool SymbolRWAccessor<double>::setBuffer(const SymbolFocus& focus, TypeInfo<doub
 		case SymbolData::GlobalLink:
 			global_value->setBuffer(value);
 			return true;
-
+		case SymbolData::UnLinked:
+			throw SymbolError(SymbolError::Type::Undefined, "Write access to unlinked symbol");
 		default:
-			cerr << "Not implemented for type" <<  data.getLinkTypeName(data.link) << endl; assert (0); exit(-1);
+			throw SymbolError(SymbolError::Type::InvalidLink, string("SymbolAccessor: Link type '") + this->data.getLinkTypeName() + "' is not defined for type " + TypeInfo<ValType>::name() );
 	}
 }
 
@@ -205,7 +210,7 @@ template <>
 bool SymbolRWAccessor<double>::swapBuffer(const SymbolFocus& f) const {
 	
 	switch (internal_link) {
-		case SymbolData::CompositeSymbolLink:
+		case SymbolData::PureCompositeLink:
 		{
 			// TODO: the default value reference should only be considered once, not for any component it is registered
 			// This is now done, but somewhat ugly ...
@@ -239,9 +244,11 @@ bool SymbolRWAccessor<double>::swapBuffer(const SymbolFocus& f) const {
 		case SymbolData::GlobalLink:
 			global_value->applyBuffer();
 			return true;
-
+		case SymbolData::UnLinked:
+			throw SymbolError(SymbolError::Type::Undefined, "Write access to unlinked symbol");
 		default:
-			cerr << "Not implemented for type" <<  data.getLinkTypeName(data.link) << endl; assert (0); exit(-1);
+			throw SymbolError(SymbolError::Type::InvalidLink, string("SymbolAccessor: Link type '") + this->data.getLinkTypeName() + "' is not defined for type " + TypeInfo<ValType>::name() );
+
 	}
 }
 
@@ -253,7 +260,7 @@ bool SymbolRWAccessor<double>::swapBuffer() const {
 	}
 	
 	switch (internal_link) {
-		case SymbolData::CompositeSymbolLink:
+		case SymbolData::PureCompositeLink:
 		{
 			// TODO: the default value reference should only be considered once, not for any component it is registered
 			// This is now done, but somewhat ugly ...
@@ -287,8 +294,11 @@ bool SymbolRWAccessor<double>::swapBuffer() const {
 			global_value->applyBuffer();
 			return true;
 
+		case SymbolData::UnLinked:
+			throw SymbolError(SymbolError::Type::Undefined, "Write access to unlinked symbol");
 		default:
-			cerr << "Not implemented for type" <<  data.getLinkTypeName(data.link) << endl; assert (0); exit(-1);
+			throw SymbolError(SymbolError::Type::InvalidLink, string("SymbolAccessor: Link type '") + this->data.getLinkTypeName() + "' is not defined for type " + TypeInfo<ValType>::name() );
+
 	}
 }
 
@@ -331,7 +341,7 @@ bool SymbolAccessorBase<VDOUBLE, ReadOnlyAccess>::init_special() {
 template <>
 TypeInfo<VDOUBLE>::SReturn SymbolAccessorBase<VDOUBLE,ReadOnlyAccess>::get(const SymbolFocus& f) const {
 	switch (internal_link) {
-		case SymbolData::CompositeSymbolLink :
+		case SymbolData::PureCompositeLink :
 			return component_accessors[f.cell_index().celltype].get(f);
 		case SymbolData::GlobalLink:
 			return global_value->getRef();
@@ -348,17 +358,16 @@ TypeInfo<VDOUBLE>::SReturn SymbolAccessorBase<VDOUBLE,ReadOnlyAccess>::get(const
 			return orth_pos;
 		}
 		case SymbolData::MembraneSpace: {
-			return MembraneProperty::memPosToOrientation(f.membrane_pos());
-// 			VDOUBLE radial = f.membrane_pos() * mem_scale;
-// 			radial.z = 1.0;
-// 			return VDOUBLE::from_radial(radial);
+			return MembraneProperty::memPosToOrientation(f.membrane_pos());;
 		}
-        case SymbolData::CellCenterLink:
-            return f.cell().getCenter();
-        case SymbolData::CellOrientationLink:
-            return f.cell().getMajorAxis().norm();
-        default:
-            cerr << "SymbolAccessor: Link type '" << data.getLinkTypeName() << "' is not defined for type " << TypeInfo<VDOUBLE>::name() << endl;
-            assert(0); exit(-1);
+		case SymbolData::CellCenterLink:
+			return f.cell().getCenter();
+		case SymbolData::CellOrientationLink:
+			return f.cell().getMajorAxis().norm();
+		case SymbolData::UnLinked:
+			throw SymbolError(SymbolError::Type::Undefined, "Access to unlinked symbol");
+		default:
+			throw SymbolError(SymbolError::Type::InvalidLink, string("SymbolAccessor: Link type '") + this->data.getLinkTypeName() + "' is not defined for type " + TypeInfo<ValType>::name() );
+
 	}
 }

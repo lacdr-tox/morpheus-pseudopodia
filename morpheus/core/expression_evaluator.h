@@ -29,7 +29,7 @@ unique_ptr<mu::Parser> createMuParserInstance();
 template <class T>
 class ExpressionEvaluator {
 public:
-	ExpressionEvaluator(string expression);
+	ExpressionEvaluator(string expression, bool partial_spec = false);
 	ExpressionEvaluator(const ExpressionEvaluator<T> & other);
 	void setSymbolFactory(mu::facfun_type factory, void* internal);
 	void init(const Scope* scope);
@@ -54,6 +54,7 @@ private:
 	
 	T const_val;
 	string expression;
+	bool allow_partial_spec;
 	bool expr_is_symbol;
 	bool expr_is_const;
 	bool have_factory;
@@ -86,7 +87,7 @@ private:
 template <class T>
 class ThreadedExpressionEvaluator {
 public:
-	ThreadedExpressionEvaluator(string expression) { evaluators.push_back( unique_ptr<ExpressionEvaluator<T> >(new ExpressionEvaluator<T>(expression)) );};
+	ThreadedExpressionEvaluator(string expression, bool partial_spec = false) { evaluators.push_back( unique_ptr<ExpressionEvaluator<T> >(new ExpressionEvaluator<T>(expression,partial_spec)) );};
 	void init(const Scope* scope) { evaluators[0]->init(scope); }
 	bool isConst() const { return evaluators[0]->isConst(); };
 	const string& getDescription() const { return evaluators[0]->getDescription(); };
@@ -114,7 +115,7 @@ private:
 #include "symbol_accessor.h"
 
 template <class T>
-ExpressionEvaluator<T>::ExpressionEvaluator(string expression)
+ExpressionEvaluator< T >::ExpressionEvaluator(string expression, bool partial_spec)
 {
 	this->expression = expression;
 	if (expression.empty())
@@ -123,6 +124,7 @@ ExpressionEvaluator<T>::ExpressionEvaluator(string expression)
 	have_factory = false;
 	expr_is_const = false;
 	expr_is_symbol = false;
+	allow_partial_spec = partial_spec;
 }
 
 template <class T>
@@ -136,6 +138,7 @@ ExpressionEvaluator<T>::ExpressionEvaluator(const ExpressionEvaluator<T> & other
 	expr_is_symbol = other.expr_is_symbol;
 	expr_is_const = other.expr_is_const;
 	const_val = other.const_val;
+	allow_partial_spec = other.allow_partial_spec;
 	
 	have_factory = false;
 	scope = other.scope;
@@ -245,14 +248,14 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 		uint i_sym=0;
 		for( auto symbol : used_symbols) {
 			try {
-				symbols.push_back( scope->findSymbol<double>(symbol.first) );
+				symbols.push_back( scope->findSymbol<double>(symbol.first,allow_partial_spec) );
 				parser->DefineVar( symbol.first, &symbol_values[i_sym] );
 				depend_symbols.insert(symbol.first);
 				i_sym++;
 			}
 			catch (...) {
 				if (expand_scalar_expr) {
-					v_symbols.push_back(scope->findSymbol<VDOUBLE>(symbol.first));
+					v_symbols.push_back(scope->findSymbol<VDOUBLE>(symbol.first,allow_partial_spec));
 					depend_symbols.insert(symbol.first);
 				} 
 				else {
