@@ -313,15 +313,10 @@ To exactly reproduce simulation results, choose the same random seed. Note that 
 					<xs:documentation>Initial time of the simulation.</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-			<xs:element name="StopTime" minOccurs="1">
+			<xs:element name="StopTime" minOccurs="1" type="cpmTime" >
 				<xs:annotation>
 					<xs:documentation>Termination time of simulation.</xs:documentation>
 				</xs:annotation>
-				<xs:complexType>
-					<xs:attribute name="value" type="cpmUnsignedDouble" use="required" default="1" />
-					<xs:attribute name="unit" type="cpmTimeUnit" use="optional" default="sec"/>
-					<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="optional" />
-				</xs:complexType>
 			</xs:element>
 			<xs:element name="StopCondition" minOccurs="0">
 				<xs:annotation>

@@ -22,6 +22,7 @@
   * Many fixes to cell pattern initializers
   * Scheduling fixes for *Functions* and *DelayProperties*
   * *Gnuplotter* and *Logger* now deal better with sub and superscript in symbol names or descriptions
+  * Parellize diffusion for *Fields* in domains
 
 
 ### others

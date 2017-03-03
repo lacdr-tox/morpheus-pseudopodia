@@ -534,40 +534,43 @@ bool PDE_Layer::solve_fwd_euler_diffusion(double time_interval)
 	//cout << "Euler diffusion: D =  " << diffusion_rate << "; time_interval= " <<  time_interval <<
 	//		";	node_length" << node_length <<  "; alpha = "<< alpha << endl;
 
-	vector<VINT> neighbors = _lattice->getNeighborhood(1).neighbors();
-	
+// 	vector<VINT> neighbors = _lattice->getNeighborhood(1).neighbors();
 	// numerical stability criterion
-	if( alpha * neighbors.size() >= 1.0 ){
+// 	if( alpha * neighbors.size() >= 1.0 ){
 		// ht < (hx^2 / 4D) (for the 2D lattice case)
 // 		cout << "diffusion step in fwd euler numerically unstable! " << alpha << endl;
 // 		cout <<  " time_interval > node_length² / 2D" << endl;
 // 		cout <<  time_interval << " > " << sqr(node_length) / (getLattice() -> getNeighborhood( 1 ).size() * diffusion_rate) << endl;
-		return false;
-	}
+// 		return false;
+// 	}
 
 	set_fwd_euler_diffusion_boundaries();
-	vector<double> neighbor_distance(neighbors.size());
-	vector<int> neighbor_index_offst(neighbors.size());
-	neighbor_index_offst.resize(neighbors.size());
-	for (uint i=0; i<neighbors.size(); i++) {
-		neighbor_index_offst[i] = neighbors[i] * shadow_offset;
-	}
+	// numerical stability threshold
+	const double beta_critical = 0.2;
 	
 	if (structure == Lattice::square )  {
+		double beta = (1.0-4*alpha);
+		// numerical stability criterion
+		if (beta <= beta_critical) return false;
+		
+#pragma omp parallel for
 		for (uint y=0; y<l_size.y; y++) {
 			uint row_start = get_data_index(VINT(0,y,0));
 			uint row_end = row_start + l_size.x;
-			double beta = (1-neighbors.size()*alpha);
 			for (uint ii=row_start; ii<row_end;ii++) {
 				write_buffer[ii] = data[ii]*beta + alpha * ( data[ii-1] + data[ii+1] + data[ii+shadow_size.x] + data[ii-shadow_size.x] );
 			}
 		}
 	} 
 	else if (structure == Lattice::hexagonal )  {
+		double beta = (1.0-6*alpha);
+		// numerical stability criterion
+		if (beta <= beta_critical) return false;
+		
+#pragma omp parallel for
 		for (uint y=0; y<l_size.y; y++) {
 			uint row_start = get_data_index(VINT(0,y,0));
 			uint row_end = row_start + l_size.x;
-			double beta = (1-neighbors.size()*alpha);
 			for (uint ii=row_start; ii<row_end;ii++) {
 				write_buffer[ii] = data[ii]*beta + alpha * (data[ii-1] + data[ii+1] 
 					+ data[ii+shadow_size.x] + data[ii+shadow_size.x-1]
@@ -576,20 +579,26 @@ bool PDE_Layer::solve_fwd_euler_diffusion(double time_interval)
 		}
 	} 
 	else if (structure == Lattice::linear ) {
+		double beta = (1.0-2*alpha);
+		// numerical stability criterion
+		if (beta <= beta_critical) return false;
+		
 		uint row_start = get_data_index(VINT(0,0,0));
 		uint row_end = row_start + l_size.x;
-		double beta = (1-neighbors.size()*alpha);
 		for (uint ii=row_start; ii<row_end;ii++) {
 			write_buffer[ii] = data[ii]*beta + alpha * (data[ii-1]+ data[ii+1]);
 		}
 	}
 	else if ( structure == Lattice::cubic ) {
-#pragma omp parallel for //if (l_size.z > 100) 
+		double beta = (1.0-6*alpha);
+		// numerical stability criterion
+		if (beta <= beta_critical) return false;
+		
+#pragma omp parallel for
 		for (int z=0; z<l_size.z;z++) {
 			for (uint y=0; y<l_size.y; y++) {
 				uint row_start = get_data_index(VINT(0,y,z));
 				uint row_end = row_start + l_size.x;
-				double beta = (1-6*alpha);
 				for (uint ii=row_start; ii<row_end;ii++) {
 					write_buffer[ii] = data[ii]*beta + alpha * (data[ii-1] + data[ii+1]
 						+ data[ii+shadow_offset.y] + data[ii-shadow_offset.y]
@@ -613,7 +622,7 @@ bool PDE_Layer::solve_fwd_euler_diffusion_generalized(double time_interval)
 	
 
 	
-	// some attempt of normalisation based on homogeneaous diffusion rate and regular lattice ...
+	// normalization based on homogeneous diffusion rate and regular lattice ...
 	double alpha_normal = (diffusion_rate * time_interval) / sqr(node_length);
 
 	double alpha_total = 0;
@@ -634,26 +643,15 @@ bool PDE_Layer::solve_fwd_euler_diffusion_generalized(double time_interval)
 // 		cout << "reject time step " << time_interval << endl;
 		return false;
 	}
-	
-	if (using_domain) {
-// 		write_buffer = data;
-// 		for (uint i=0; i<neighbors.size(); i++) {
-// 			uint idx = get_data_index(VINT(0,0,0));
-// 			uint stop = get_data_index(l_size - VINT(1,1,1));
-// // 			valarray<bool> mask = (domain[idx] == Boundary::none) && domain.shift(neighbor_index_offst[i]) != Boundary::noflux;
-// // 			write_buffer[mask] += neighbor_alpha[i] * (data.shift(neighbor_index_offst)[mask] - data[mask]);
-// 			for (; idx<=stop; idx++ ) {
-// 				write_buffer[idx] += ((domain[idx] != Boundary::none) || (domain[idx + neighbor_index_offst[i]]) == Boundary::noflux) ? 0.0 :
-// 							neighbor_alpha[i] * (data[idx + neighbor_index_offst[i]] - data[idx]); 
-// 			}
-// 		}
 
-		int idx = get_data_index(VINT(0,0,0));  /** fist lattice index **/
+	if (using_domain) {
+		int start = get_data_index(VINT(0,0,0));  /** fist lattice index **/
 		int stop = get_data_index(l_size - VINT(1,1,1)); // last lattice index
 
 		if (structure == Lattice::square )  {
 			double beta = (1-alpha_total);
-			for (; idx<=stop; idx++ ) {
+#pragma omp parallel for
+			for (int idx=start; idx<=stop; idx++ ) {
 				if (domain[idx] != Boundary::none) {
 					write_buffer[idx] = data[idx];
 				}
@@ -667,32 +665,25 @@ bool PDE_Layer::solve_fwd_euler_diffusion_generalized(double time_interval)
 			}
 		}
 		else {
-			for (; idx<=stop; idx++ ) {
-				write_buffer[idx] = data[idx];
-				if (domain[idx] != Boundary::none) continue;
-				for (uint i=0; i<neighbors.size(); i++) {
-					write_buffer[idx] += (domain[idx + neighbor_index_offst[i]] == Boundary::noflux) ? 0.0 :
-										(data[idx + neighbor_index_offst[i]] - data[idx]) * neighbor_alpha[i];
+#pragma omp parallel for
+			for (int idx=start; idx<=stop; idx++ ) {
+				if (domain[idx] != Boundary::none) {
+					write_buffer[idx] = data[idx];
 				}
-	// 			valarray<bool> mask = domain[neighbor_index_offst+idx] != Boundary::noflux;
-	// 			write_buffer[idx] += ((data[neighbor_index_offst+idx].sum() - data[idx]) );
-
-	// 				 += ((domain[idx] != Boundary::none) || (domain[idx + neighbor_index_offst[i]]) == Boundary::noflux) ? 0.0 :
-	// 							neighbor_alpha[i] * (data[idx + neighbor_index_offst[i]] - data[idx]);
+				else {
+					write_buffer[idx] = data[idx];
+					for (uint i=0; i<neighbors.size(); i++) {
+						write_buffer[idx] += (domain[idx + neighbor_index_offst[i]] == Boundary::noflux) ? 0.0 :
+											(data[idx + neighbor_index_offst[i]] - data[idx]) * neighbor_alpha[i];
+					}
+				}
 			}
 		}
 	}
 	else {
 		set_fwd_euler_diffusion_boundaries();
-// 		size_t idx = get_data_index(VINT(0,0,0));
-// 		size_t stop = get_data_index(l_size - VINT(1,1,1));
-// 		for (; idx<=stop; idx++ ) {
-// 			write_buffer[idx] = data[idx];
-// 			for (uint i=0; i<neighbors.size(); i++) {
-// 				write_buffer[idx] += (data[idx + neighbor_index_offst[i]] - data[idx]) * neighbor_alpha[i];
-// 			}
-// 		}
 		write_buffer = data  * (1-alpha_total);
+#pragma omp parallel for 
 		for (uint i=0; i<neighbors.size(); i++) {
 			write_buffer += neighbor_alpha[i] * (data.shift(neighbor_index_offst[i]));
 		}
