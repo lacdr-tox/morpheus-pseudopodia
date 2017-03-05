@@ -236,7 +236,7 @@ typedef CClassFactory<string, Plugin> PluginFactory;
  */
 #define DECLARE_PLUGIN(xml_tag_name) static bool factory_registration; \
 static Plugin* createInstance(); \
-string XMLName() const { return string(xml_tag_name); }; \
+string XMLName() const override { return string(xml_tag_name); }; \
 static string FactoryName() { return string(xml_tag_name); };
 
 template <class PluginClass>
@@ -496,7 +496,7 @@ class AnalysisPlugin : public TimeStepListener {
 public :
 	AnalysisPlugin() : TimeStepListener(TimeStepListener::XMLSpec::XML_OPTIONAL) {};
 	
-	void init(const Scope* scope) { TimeStepListener::init(scope); end_state = (timeStep() <= 0);}
+	void init(const Scope* scope) override { TimeStepListener::init(scope); end_state = (timeStep() <= 0);}
 	bool endState() { return end_state; };
 	void setTimeStep(double ts) override;
 	/** Callback for scheduled notifications. **/

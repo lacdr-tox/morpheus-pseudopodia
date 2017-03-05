@@ -18,7 +18,7 @@
 #include "expression_evaluator.h"
 #include "symbol_accessor.h"
 /* Can we get an implicitely shared behavior for PluginParameters?
-   That would help largely to move Parameter objects around  them around.
+   That would help largely to move Parameter objects around.
    
    * We should preserve the policy based interface enrichment
    * We also have to preserve the joint virtual base-class
@@ -264,6 +264,7 @@ public:
 	
 	void setScope(const Scope * scope) { assert(scope); this->scope = scope; }
 	void setGlobalScope() { require_global_scope=true;};
+	void allowPartialSpec(bool allow=true) { allow_partial_spec=allow; }
 	
 	void init()
 	{
@@ -301,13 +302,13 @@ public:
 	set<SymbolDependency> getOutputSymbols() const { return set<SymbolDependency>(); };
 	
 protected:
-	XMLEvaluatorBase() : is_const(false), is_initialized(false), scope(NULL), require_global_scope(false) {};
+	XMLEvaluatorBase() : is_const(false), is_initialized(false), scope(NULL), require_global_scope(false), allow_partial_spec(false) {};
 	// TODO Clearify  whether a Copy constructor is required to deal with the unique_ptr evaluator
 	// An assignment will leave the rhs object uninitialized !!!
 	
 	
 	bool read(const string& string_val){
-		evaluator = unique_ptr<Evaluator<ValType> >(new Evaluator<ValType>(string_val) );
+		evaluator = make_unique<Evaluator<ValType> >(string_val, allow_partial_spec);
 		return true;
 	};
 	
@@ -319,6 +320,7 @@ private:
 	bool is_initialized;
 	const Scope* scope;
 	bool require_global_scope;
+	bool allow_partial_spec;
 	ValType const_expr;
 	unique_ptr< Evaluator<ValType> > evaluator;
 };
@@ -594,7 +596,7 @@ public:
 	PluginParameter2() : PluginParameterBase(), xml_path("") {};
 	void setXMLPath(string xml_path) { this->xml_path = xml_path; }
 	string XMLPath() const override { return this->xml_path; }
-	void loadFromXML(XMLNode node) {
+	void loadFromXML(XMLNode node) override {
 		stored_node = node;
 		try {
 			string raw_string;
@@ -630,8 +632,8 @@ public:
 	};
 	bool isDefined() const { return  ! XMLValueInterpreter<T, RequirementPolicy>::isMissing(); }
 	
-	set<SymbolDependency> getDependSymbols() const { return XMLValueInterpreter<T, RequirementPolicy>::getDependSymbols(); } 
-	set<SymbolDependency> getOutputSymbols() const { return XMLValueInterpreter<T, RequirementPolicy>::getOutputSymbols(); } 
+	set<SymbolDependency> getDependSymbols() const override { return XMLValueInterpreter<T, RequirementPolicy>::getDependSymbols(); } 
+	set<SymbolDependency> getOutputSymbols() const override { return XMLValueInterpreter<T, RequirementPolicy>::getOutputSymbols(); } 
 
 private:
 	string xml_path;
@@ -646,12 +648,14 @@ class XMLStringifyExpression;
 
 // no implementation other than for string type :-) 
 template <class RequirementPolicy> 
-class XMLStringifyExpression<string,RequirementPolicy> {
+class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPolicy {
+	private:
+			enum class Type {D, VD, Undef };
 	// Just try to forward to either XMLEvaluator for double or VDOUBLE, as required
 	public:
 		void read(const string& string_val) { this->string_val = string_val; };
 		void init() {
-			type = Type::U;
+			type = Type::Undef;
 			if (! RequirementPolicy::isMissing()) {
 				const Scope* local_scope = SIM::getScope();
 				if (scope)
@@ -660,6 +664,7 @@ class XMLStringifyExpression<string,RequirementPolicy> {
 					local_scope = SIM::getGlobalScope();
 
 				try {
+					double_expr.allowPartialSpec();
 					double_expr.read(string_val);
 					double_expr.setScope(local_scope);
 					double_expr.init();
@@ -667,8 +672,9 @@ class XMLStringifyExpression<string,RequirementPolicy> {
 				}
 				catch (...) {
 					// "something went rong"
-					type = Type::U;
+					type = Type::Undef;
 					try {
+						vdouble_expr.allowPartialSpec();
 						vdouble_expr.read(string_val);
 						vdouble_expr.setScope(local_scope);
 						vdouble_expr.init();
@@ -676,7 +682,7 @@ class XMLStringifyExpression<string,RequirementPolicy> {
 					}
 					catch (...) {
 						// "something went rong"
-						type = Type::U;
+						type = Type::Undef;
 						throw string("Can't evaluate ") + string_val + " and convert string";
 					}
 				}
@@ -690,19 +696,35 @@ class XMLStringifyExpression<string,RequirementPolicy> {
 		const string& description() const  { if (type == Type::D) return double_expr.description(); if (type == Type::VD)  return vdouble_expr.description(); return string_val; }
 
 		Granularity granularity() const { if (type == Type::D) return double_expr.granularity(); if (type == Type::VD)  return vdouble_expr.granularity(); return Granularity::Undef; }
-
+		
+		/// set the precision of numerical value output
+		void setPrecision(int prec) { out.precision(prec); };
+		
+		void  setFormat(const std::ios_base::fmtflags format) { out.setf(format); };
+		
+		/// set the string encoding an undefined symbol
+		void setUndefVal(const string& undef) { undef_val=undef; };
+		
 		string operator()(SymbolFocus f) const {
-					stringstream s;
-			switch (type) {
-				case Type::D :
-					s << this->double_expr.get(f);
-					return s.str();
-				case Type::VD :
-					s << this->vdouble_expr.get(f);
-					return s.str();
+			out.clear();
+			out.str("");
+			try {
+				switch (type) {
+					case Type::D :
+						out << this->double_expr.get(f);
+						return out.str();
+					case Type::VD :
+						out << this->vdouble_expr.get(f);
+						return out.str();
+				}
 			}
-			s << "null";
-			return s.str();
+			catch (const SymbolError& e) {
+				if (e.type() == SymbolError::Type::Undefined){
+					return undef_val;
+				}
+			}
+			out << "null";
+			return out.str();
 		};
 	
 		string get(SymbolFocus f) const {
@@ -725,14 +747,16 @@ class XMLStringifyExpression<string,RequirementPolicy> {
 		}
 
 	protected:
-		XMLStringifyExpression() : require_global_scope(false) , scope(NULL), type(Type::Undef) {};
+		XMLStringifyExpression() : require_global_scope(false) , scope(NULL), type(Type::Undef), undef_val("") {};
 		~XMLStringifyExpression() {}
 	
 	private:
+		mutable stringstream out;
+		Type type;
 		string string_val;
+		string undef_val;
 		const Scope* scope;
 		bool require_global_scope;
-		enum class Type {D, VD, Undef } type;
 		PluginParameter2<double, XMLEvaluator, RequiredPolicy> double_expr;
 		PluginParameter2<double, XMLEvaluator, RequiredPolicy> vdouble_expr;
 };

@@ -157,7 +157,7 @@ string SymbolData::getLinkTypeName(LinkType linktype) {
             return "Cell.Length";
 		case SymbolData::PopulationSizeLink:
 			return "PopulationSizeLink";
-		case SymbolData::CompositeSymbolLink:
+		case SymbolData::PureCompositeLink:
 			return "Composite Symbol Link";
 		case SymbolData::UnLinked:
 			return "! Unlinked symbol !";

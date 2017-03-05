@@ -35,6 +35,18 @@ abstractProcess::abstractProcess(SharedMorphModel model, int job_id, QString sub
 	dir.cd(_info.sim_dir);
 	outputDir = dir.absolutePath();
 	
+	// check whether output directory exists and is writable (fixes #34)
+	QFileInfo od(outputDir);
+	if(od.isDir() && od.isWritable()){
+		cout << "Output directory = " << outputDir.toStdString() << endl;
+	}
+	else{
+		_info.state = ProcessInfo::EXIT;
+		cout << "Output directory = " << outputDir.toStdString() << " IS NOT FOUND OR NOT WRITABLE!!" << endl;
+		emit criticalMessage("Output directory '("+QString(outputDir)+")' not found or not writable.");
+		return;
+	}
+	
 	// copying the supplementary file to the output folder
 	const QList < AbstractAttribute* >&  system_files = model->rootNodeContr->getModelDescr().sys_file_refs;
 	QList<QString> original_paths;

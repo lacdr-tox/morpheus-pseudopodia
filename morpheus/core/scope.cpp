@@ -55,22 +55,23 @@ void Scope::registerSymbol(SymbolData data)
 	assert(! data.type_name.empty() );
 	assert( data.link != SymbolData::UnLinked );
 	
-	bool redefinition = false;
 	auto it = local_symbols.find(data.name);
 	if (it != local_symbols.end()) {
-		if (it->second.link == SymbolData::CompositeSymbolLink) {
-			if (data.type_name == it->second.type_name)
+		if (data.type_name == it->second.type_name) {
+			if (it->second.link == SymbolData::PureCompositeLink) {
+			// if existing definition is purely composite, just inherit the subscopes and override definition
 				data.component_subscopes = it->second.component_subscopes;
+				data.is_composite = true;
+			}
+			else {
+				throw SymbolError(SymbolError::Type::InvalidDefinition, string("Redefinition of a symbol \"") + data.name + "\" in scope \""  + this->name + "\"");
+			}
 		}
 		else {
 			stringstream s;
 			s << "Redefinition of a symbol \"" << data.name << "\" with different type." << endl;
 			s << " type " << data.getLinkTypeName() << " != " << local_symbols[data.name].getLinkTypeName() << endl;
-			
-			throw s.str();
-// 			cerr << " name " << data.name << " = " << local_symbols[data.name].name << endl;
-// 			cerr << " fullname " << data.fullname << " = " << local_symbols[data.name].fullname << endl;
-			exit(-1);
+			throw SymbolError(SymbolError::Type::InvalidDefinition,s.str());
 		}
 	}
 
@@ -82,17 +83,20 @@ void Scope::registerSymbol(SymbolData data)
 	
 	if ( ct_component ) {
 		assert(parent);
-		if (data.name == data.base_name) {
-			// is a real symbol, not derived like 'vec.x' 
+// 		if (data.name == data.base_name) {
+// 			// is a real symbol, not derived like 'vec.x' 
 			parent->registerSubScopeSymbol(this, data.name);
-		}
+// 		}
 	}
 	
-	// creating read-only derived symbol definitions for vector properties
-	if (data.type_name == TypeInfo<VDOUBLE>::name()) {
+	// creating read-only derived symbol definitions for vector properties, but not for subscope definitions
+	if (data.type_name == TypeInfo<VDOUBLE>::name() && data.link != SymbolData::PureCompositeLink) {
         // register subelement accessors for sym.x ,sym .y , sym.z 
+		
 		data.type_name = TypeInfo< double >::name();
 		data.writable = false;
+		data.component_subscopes.clear();
+		data.is_composite = false;
 		
 		string base_name = data.name;
 
@@ -134,7 +138,7 @@ void Scope::init()
 	int n_subscopes = this->component_scopes.size();
 	if (n_subscopes>0) {
 		for (auto& sym :local_symbols) {
-			if ( ! sym.second.component_subscopes.empty()) 
+			if ( sym.second.is_composite ) 
 				sym.second.component_subscopes.resize(n_subscopes,NULL);
 		}
 	}
@@ -150,10 +154,10 @@ void Scope::init()
 // Currently, this implementation is only available for CellType scopes, that may override the global scope symbol within the lattice part that they occupy
 void Scope::registerSubScopeSymbol(Scope *sub_scope, string symbol_name) {
 	if (sub_scope->ct_component == NULL) {
-		throw (string("Scope:: Invalid registration of subscope symbol ") + symbol_name +(". Subscope is no spatial component."));
+		throw SymbolError(SymbolError::Type::InvalidDefinition, string("Scope:: Invalid registration of subscope symbol ") + symbol_name +(". Subscope is no spatial component."));
 	}
 	if (parent != NULL ) {
-		throw (string("Scope:: Invalid registration of subscope symbol ") + symbol_name +(" in non-root scope [")+ name +"].");
+		throw  SymbolError(SymbolError::Type::InvalidDefinition, string("Scope:: Invalid registration of subscope symbol ") + symbol_name +(" in non-root scope [")+ name +"].");
 	}
 	
 	int sub_scope_id = sub_scope->ct_component->getID();
@@ -162,7 +166,7 @@ void Scope::registerSubScopeSymbol(Scope *sub_scope, string symbol_name) {
 	if (it != local_symbols.end()) {
 		SymbolData sym = sub_scope->local_symbols[symbol_name];
 		if (it->second.type_name != sym.type_name) {
-			cerr << "Scope::registerSubScopeSymbol : Cannot register type incoherent sub-scope symbol \"" << symbol_name << "\"!" << endl; 
+			throw SymbolError(SymbolError::Type::InvalidDefinition,string("Scope::registerSubScopeSymbol : Cannot register type incoherent sub-scope symbol \"")  + symbol_name + "\"!"); 
 		}
 		else {
 			if (it->second.component_subscopes.size()<=sub_scope_id)
@@ -174,7 +178,7 @@ void Scope::registerSubScopeSymbol(Scope *sub_scope, string symbol_name) {
 	else {
 		SymbolData v_sym = sub_scope->local_symbols[symbol_name];
 		
-		v_sym.link = SymbolData::CompositeSymbolLink;
+		v_sym.link = SymbolData::PureCompositeLink;
 		v_sym.invariant = false;
 		v_sym.time_invariant = false;
 		v_sym.writable = false;
@@ -184,11 +188,14 @@ void Scope::registerSubScopeSymbol(Scope *sub_scope, string symbol_name) {
 		local_symbols[symbol_name] = v_sym;
 // 		cout << "!!! SubScope Symbol \"" << symbol_name << "\" registered!" << endl;
 		
-			// creating read-only derived symbol definitions for vector properties
-		if (v_sym.type_name == TypeInfo<VDOUBLE>::name()) {
+		// creating read-only derived symbol definitions for vector properties
+		// NO, composite symbols are not propagated, since they are made available through propagation of the individual components
+		if (v_sym.type_name == TypeInfo<VDOUBLE>::name() && false) {
 			// register subelement accessors for sym.x ,sym .y , sym.z 
 			v_sym.type_name = TypeInfo< double >::name();
 			v_sym.writable = false;
+			v_sym.component_subscopes.clear();
+			v_sym.is_composite = false;
 			
 			string base_name = v_sym.name;
 
@@ -464,7 +471,7 @@ void Scope::write_graph_local_variables(ostream& definitions, ostream& links, co
 		}
 		else if (sym.second.is_composite) {
 			definitions <<  clean(sym.first) << "_" << scope_id << "[peripheries=2,label=";
-			if (sym.second.link == SymbolData::CompositeSymbolLink) {
+			if (sym.second.link == SymbolData::PureCompositeLink) {
 				definitions << "\""<< sym.first<<"\"";
 			}
 			else {

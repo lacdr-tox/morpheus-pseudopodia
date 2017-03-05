@@ -37,15 +37,15 @@ Specifies parameters for a cellular Potts model (CPM) which provides a MonteCarl
     - hexagonal -- 3rd order, corresponding to a distance of 2
     - cubic  -- 7th order  corresponding to a distance of \f$ 2 \sqrt 2 \f$ 
 
-\b Interaction specifies interaction energies \f$ J_{\sigma, \sigma} \f$ for different intercellular \ref Contact. The interaction energy given per length unit as defined in ShapeSurface.
+\b Interaction specifies interaction energies \f$ J_{\sigma, \sigma} \f$ for different inter-cellular \ref Contact. The interaction energy given per length unit as defined in ShapeSurface.
 
 
 \b MonteCarloSampler
-  - \b stepper: \b edgelist chooses updates from a tracked list of lattice sites that can potentially change cofiguration; \b random sampling chooses lattice site with uniform random distribution over all lattice sites.
+  - \b stepper: \b edgelist chooses updates from a tracked list of lattice sites that can potentially change configuration; \b random sampling chooses lattice site with uniform random distribution over all lattice sites.
   - \b MetropolisKinetics:
     - \b temperature: specifies Boltzmann probability to accept updates that increase energy, required to be homogeneous in space.
     - \b yield: offset for Boltzmann probability distribution representing resistance to membrane deformations (see Kafer, Hogeweg and Maree, PLoS Comp Biol, 2006).
-  - \b Neighborhood specifies the neighborhood size used for choosing updates in the modified Metropolis algorithm. Defaults to the \ref Lattice defined.
+  - \b Neighborhood specifies the neighborhood size used for choosing updates in the modified Metropolis algorithm.
   - \b MCSDuration scales the Monte Carlo Step (MCS) to the simulation time. One MCS is defined as a number of update attempts equal to the number of lattice sites.
     
 \section References

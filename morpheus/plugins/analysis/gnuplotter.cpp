@@ -26,38 +26,13 @@ VDOUBLE Gnuplotter::PlotSpec::size()
 	return latticeDim;
 }
 
-
-void SymbolReader::init()
-{
-	string type_name = SIM::getSymbolType(name);
-	if (type_name == TypeInfo<double>::name()) {
-		type = sDouble;
-		sym_d = SIM::getGlobalScope()->findSymbol<double>(name,0);
-		integer = sym_d.isInteger();
-		fullname = sym_d.getFullName();
-		linktype = sym_d.getLinkType();
-        cout << "SymbolReader::init()  Symbol " <<  name << " is double value of type " << SymbolData::getLinkTypeName(sym_d.getLinkType()) << endl;
-	}
-	else if (type_name == TypeInfo<VDOUBLE>::name()) {
-		type = sVDOUBLE;
-		sym_v = SIM::getGlobalScope()->findSymbol<VDOUBLE>(name,VDOUBLE(0,0,0));
-		integer = sym_v.isInteger();
-		fullname = sym_v.getFullName();
-		linktype = sym_v.getLinkType();
-         cout << "SymbolReader::init()  Symbol " <<  name << " is vector value of type " << SymbolData::getLinkTypeName(sym_v.getLinkType()) << endl;
-	}
-	else {
-		throw string("SymbolReader::init: Unknown Symbol Type ") + type_name + ".";
-	}
-	
+ArrowPainter::ArrowPainter() {
+	arrow.setXMLPath("orientation");
+	arrow.allowPartialSpec();
 }
-
-
-ArrowPainter::ArrowPainter() {}
 
 void ArrowPainter::loadFromXML(const XMLNode node)
 {
-	arrow.setXMLPath("orientation");
 	arrow.loadFromXML(node);
 	style = 3;
 	getXMLAttribute(node,"style",style);
@@ -98,14 +73,18 @@ void ArrowPainter::plotData(ostream& out)
 
 		for (uint c=0; c< cells.size(); c++){
 			SymbolFocus f(cells[c]);
-			
-			VINT centerl = f.cell().getCenterL();
-			lattice.resolve (centerl);
-			VDOUBLE center = ( lattice.to_orth(centerl) + VDOUBLE(0.5,0.5,0) ) % orth_lattice_size;
-			
-			VDOUBLE a = arrow(f);
-			if (! (a.x == 0 && a.y==0) ) {
-				out << center.x-a.x  << "\t" <<  center.y-a.y << "\t" << 2*a.x << "\t" << 2*a.y << endl;
+			try {
+				VDOUBLE a = arrow(f);
+				VINT centerl = f.cell().getCenterL();
+				lattice.resolve (centerl);
+				VDOUBLE center = ( lattice.to_orth(centerl) + VDOUBLE(0.5,0.5,0) ) % orth_lattice_size;
+				
+				
+				if (! (a.x == 0 && a.y==0) ) {
+					out << center.x-a.x  << "\t" <<  center.y-a.y << "\t" << 2*a.x << "\t" << 2*a.y << endl;
+				}
+			}
+			catch (const SymbolError &e) {
 			}
 		}
 	}
@@ -338,23 +317,30 @@ LabelPainter::LabelPainter()
 {
 	_fontcolor="black";
 	_fontsize=12;
-	_scientific=false;
-	_precision=-1;
-	
+	value.setXMLPath("value");
+	value.setUndefVal("");
 }
 
 
 
 void LabelPainter::loadFromXML(const XMLNode node)
 {
-	if ( ! getXMLAttribute(node,"symbol-ref",symbol.name)) {
-			cout << "GnuPlotter, LabelPainter::loadFromXML: symbol-ref not specified. Plotting celltype..." << endl;
-		symbol.name = SymbolData::CellType_symbol;
-	}
+	value.loadFromXML(node);
+
 	getXMLAttribute(node,"fontcolor",_fontcolor);
 	getXMLAttribute(node,"fontsize",_fontsize);
-	getXMLAttribute(node,"precision", _precision);
-	getXMLAttribute(node,"scientific", _scientific);
+	
+	int prec=0;
+	getXMLAttribute(node,"precision", prec);
+	if (prec>=0) {
+		value.setPrecision(prec);
+	}
+	bool scientific=false;
+	getXMLAttribute(node,"scientific", scientific);
+	if  (scientific) 
+		value.setFormat(ios_base::scientific);
+	else
+		value.setFormat(ios_base::fixed);
 	
 }
 
@@ -362,20 +348,17 @@ void LabelPainter::loadFromXML(const XMLNode node)
 
 void LabelPainter::init()
 {
-	symbol.init();
+	value.init();
 }
 
 
 const string& LabelPainter::getDescription() const {
-	return symbol.fullname;
+	return value.description();
 }
 
 set<SymbolDependency> LabelPainter::getInputSymbols() const
 {
-	set<SymbolDependency> sd;
-	SymbolDependency s =  { symbol.name, SIM::getGlobalScope() };
-	sd.insert(s);
-	return sd;
+	return value.getDependSymbols();
 }
 
 
@@ -388,14 +371,6 @@ void LabelPainter::plotData(ostream& out)
 		orth_lattice_size.x-=1;
 	}
 	
-	stringstream label_stream;
-	if( _scientific )
-		label_stream.setf(ios_base::scientific);
-	else 
-		label_stream.setf(ios_base::fixed);
-	if( _precision >= 0 )
-		label_stream<< setprecision(_precision);
-	
 	auto celltypes = CPM::getCellTypes();
 	for (uint i=0; i < celltypes.size(); i++) {
 		auto ct = celltypes[i].lock();
@@ -404,34 +379,17 @@ void LabelPainter::plotData(ostream& out)
 
 		vector<CPM::CELL_ID> cells = ct->getCellIDs();
 		for (uint c=0; c< cells.size(); c++){
-			const Cell& cell = CPM::getCell(cells[c]);
 			
-			VINT centerl = cell.getCenterL();
-			lattice.resolve (centerl);
-			VDOUBLE center = ( lattice.to_orth(centerl) + (CPM::isEnabled() ? VDOUBLE(1.0,1.0,0): VDOUBLE(0.1,0.0,0.0) ) ) % orth_lattice_size;
-			//cout << "cell " << cells[c] << "\t" << center  << " -> ";
+			SymbolFocus focus(cells[c]);
 			
-			switch(symbol.type) {
-			case SymbolReader::sDouble :
-				if (symbol.linktype == SymbolData::CellMembraneLink){
-					cerr << "Gnuplotter: Plotting labels is not available for a MembraneProperty" << endl;
-					exit(-1);
-				}
-				if ( ! symbol.integer ) {
-					label_stream.str("");
-					label_stream << symbol.sym_d.get(cells[c]);
-					out << center.x << "\t" << center.y << "\t" << label_stream.str() << endl;
-				}
-				else 
-					out << center.x << "\t" << center.y << "\t" << int( symbol.sym_d.get(cells[c])) << endl;
-				break;
-			case SymbolReader::sVDOUBLE:
-				label_stream.str("");
-				label_stream << symbol.sym_v.get(cells[c]);
-				out << center << "\t \"" <<  label_stream.str() << "\""<< endl;
-				break;
-			default:
-				cerr << "LabelPainter::plotData(): Unknown symbol type " << symbol.name << endl;
+			string val = value.get(focus);
+			cout << val;
+			if ( ! val.empty() ) {
+				VINT centerl = focus.cell().getCenterL();
+				lattice.resolve (centerl);
+				VDOUBLE center = ( lattice.to_orth(centerl) + (CPM::isEnabled() ? VDOUBLE(1.0,1.0,0): VDOUBLE(0.1,0.0,0.0) ) ) % orth_lattice_size;
+				
+				out << center.x << "\t" << center.y << "\t \"" << val << "\"\n";
 			}
 		}
 	}

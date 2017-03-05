@@ -368,7 +368,7 @@ void System<system_type>::init() {
 	}
 	
 	switch (context) {
-		case SymbolData::CompositeSymbolLink:
+		case SymbolData::PureCompositeLink:
 			throw string("No System methods for mixed containers ...");
 			exit(-1);
 		case SymbolData::PDELink:

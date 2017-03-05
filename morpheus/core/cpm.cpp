@@ -35,12 +35,13 @@ void CPMSampler::loadFromXML(const XMLNode node)
 		symbol->set(mcs_duration.get());
 		SIM::defineSymbol(symbol);
 	}
-	
-	update_neighborhood = SIM::lattice().getNeighborhoodByDistance(1.9); // 
+	// In fact, the update neighborhood should include all neighbors up to sqrt(2), aka Moore for square, 1st order for hex and 2nd order in cubic.
+	update_neighborhood = SIM::lattice().getNeighborhoodByDistance(1.5); 
 	XMLNode xNeighborhood = node.getChildNode("MonteCarloSampler").getChildNode("Neighborhood");
 	if (!xNeighborhood.isEmpty()) {
 		update_neighborhood = SIM::lattice().getNeighborhood(xNeighborhood);
 	}
+	else throw string("Missing required element MonteCarloSampler/Neighborhood.");
 	
 	interaction_energy = shared_ptr<InteractionEnergy>(new InteractionEnergy());
 	interaction_energy->loadFromXML(node.getChildNode("Interaction"));

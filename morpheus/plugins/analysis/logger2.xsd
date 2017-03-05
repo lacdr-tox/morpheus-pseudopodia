@@ -25,6 +25,7 @@
 		<xs:all>
 			<xs:element name="Symbol" 	type="cpmLoggerSymbol"	minOccurs="1" maxOccurs="unbounded" />
 		</xs:all>
+		<xs:attribute name="force-node-granularity" type="cpmBoolean" use="optional" default="true" />
 	</xs:complexType>
 	
 	<xs:complexType name="cpmLoggerSymbol">
@@ -101,7 +102,7 @@
 			<xs:element name="Celltype"	type="cpmLoggerCellType" minOccurs="0" maxOccurs="1"/>
 			<xs:element name="Cells"	type="cpmLoggerCells" minOccurs="0" maxOccurs="1"/>
 		</xs:choice>
-		<xs:attribute name="force-node-granularity" type="cpmBoolean" use="optional" default="false" />
+		<!--<xs:attribute name="force-node-granularity" type="cpmBoolean" use="optional" default="false" />-->
 		<xs:attribute name="domain-only" type="cpmBoolean" use="optional" default="true" />
 	</xs:complexType>
 

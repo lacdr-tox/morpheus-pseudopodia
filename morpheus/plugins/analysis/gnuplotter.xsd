@@ -154,7 +154,7 @@ Note: when (membrane) property has been selected, you MUST provide a symbol-ref 
 		<xs:annotation>
 			<xs:documentation>Plots values of cell ID, type or property in the center of cells.</xs:documentation>
 		</xs:annotation>
-				<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required" >
+				<xs:attribute name="value" type="cpmMathExpression" use="required" >
 			<xs:annotation>
 				<xs:documentation>Symbol referring to a cell property or membrane property.</xs:documentation>
 			</xs:annotation>

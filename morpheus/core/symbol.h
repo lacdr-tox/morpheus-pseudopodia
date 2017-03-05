@@ -117,6 +117,16 @@ Granularity operator+(Granularity a, Granularity b);
 Granularity& operator+=(Granularity& g, Granularity b);
 ostream& operator<<(ostream& out, Granularity g);
 
+class SymbolError : public logic_error {
+public:
+	enum class Type { Undefined, InvalidLink, InvalidPartialSpec, InvalidDefinition };
+	SymbolError(Type type, const string& what) : logic_error(what) , _type(type) {};
+	SymbolError::Type type() const { return _type; };
+
+private:
+	Type _type;
+};
+
 class SymbolData {
 public:
 	SymbolData() : integer(false), writable(false), invariant(false), time_invariant(false), is_composite(false), granularity(Granularity::Undef), link(UnLinked) {};
@@ -128,7 +138,7 @@ public:
 	bool writable;     /// Symbol allows writable access
 	bool invariant;     /// Symbol is invariant in time and space
 	bool time_invariant;  /// Symbols is constant in time
-	bool is_composite; /// Symbol is composed of subscope symbols (only applicable in )
+	bool is_composite; /// Symbol is composed of subscope symbols, but may also have a default
 	
 // 	enum Granularity { UndefGran, GlobalGran, NodeGran, CellGran, MembraneNodeGran };
 	
@@ -159,7 +169,7 @@ public:
 					VecAbsLink,
 					VecPhiLink,
 					VecThetaLink,
-					CompositeSymbolLink,
+					PureCompositeLink,
 					UnLinked};
 
 	Granularity granularity;

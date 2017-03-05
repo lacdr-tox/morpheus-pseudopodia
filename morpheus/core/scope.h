@@ -47,7 +47,7 @@ public:
 	
 	/// Find a readable symbol with @p name. Throws an error if symbol cannot be found.
 	template<class T>
-	SymbolAccessor<T> findSymbol(string name) const;
+	SymbolAccessor<T> findSymbol(string name, bool allow_partial = false) const;
 	
 	/// Find a symbol with @p name. Return a constant symbol of @p default_val, if the symbol cannot be found.
 	template<class T>
@@ -122,7 +122,7 @@ private:
 };
 
 template<class T>
-SymbolAccessor<T> Scope::findSymbol(string name) const {
+SymbolAccessor<T> Scope::findSymbol(string name, bool allow_partial) const {
 // 	cout << "Symbol name: " << name << endl;
 	if(name.empty())
 		throw (string("Symbol without a name \"") + name + ("\""));
@@ -138,10 +138,10 @@ SymbolAccessor<T> Scope::findSymbol(string name) const {
 					+ " of type " + it->second.type_name );
 			}
 			cout << "Scope: Creating Accessor for symbol " << name << " from Scope " << this->name << endl;
-			return SymbolAccessor<T>(it->second, this);
+			return SymbolAccessor<T>(it->second, this, allow_partial);
 		}
 		else if (parent) {
-			return parent->findSymbol<T>(name);
+			return parent->findSymbol<T>(name, allow_partial);
 		}
 		else {
  			throw (string("Symbol \"")+name+"\" is not defined. ");
@@ -245,7 +245,7 @@ set<string> Scope::getAllSymbolNames() const {
 		names = parent->getAllSymbolNames<T>();
 	for ( auto sym : local_symbols ) {
 		if (TypeInfo<T>::name() == sym.second.type_name) {
-			if (sym.second.link == SymbolData::CompositeSymbolLink) {
+			if (sym.second.link == SymbolData::PureCompositeLink) {
 				bool all_subscopes_valid = true;
 				for (auto sub : sym.second.component_subscopes){
 					if (sub == NULL)

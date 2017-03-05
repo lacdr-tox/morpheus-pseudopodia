@@ -52,7 +52,7 @@ void Logger::loadFromXML(const XMLNode xNode){
 	// Force node granularity
 	//  By default, the granularity is determined automatically by checking the symbol with the smallest granularity
 	//  This can be overridden by specifying force-node-granularity="true"
-	force_node_granularity.setXMLPath("Restriction/force-node-granularity");
+	force_node_granularity.setXMLPath("Input/force-node-granularity");
 	force_node_granularity.setDefault("false");
 	registerPluginParameter(force_node_granularity);
 

@@ -28,4 +28,10 @@ using TR1_NAMESPACE::const_pointer_cast;
 using TR1_NAMESPACE::static_pointer_cast;
 using TR1_NAMESPACE::unordered_set;
 
+template<typename T, typename ...Args>
+std::unique_ptr<T> make_unique( Args&& ...args )
+{
+    return std::unique_ptr<T>( new T( std::forward<Args>(args)... ) );
+}
+
 #endif // CONFIG_H
