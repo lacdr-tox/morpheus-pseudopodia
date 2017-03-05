@@ -54,7 +54,7 @@ config::config() : QObject(), helpEngine(NULL) {
         app.local_FFmpeg_executable = settings.value("FFmpegExecutable",ffmpeg_default).toString();
         app.local_maxConcurrentJobs = settings.value("maxConcurrentJobs",1).toInt();
         app.local_maxThreads        = settings.value("maxThreads",1).toInt();
-        app.local_timeOut           = settings.value("timeout",300).toInt();
+        app.local_timeOut           = settings.value("timeOut",999).toInt();
     settings.endGroup();
 
     settings.beginGroup("remote");
