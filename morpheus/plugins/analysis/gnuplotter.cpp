@@ -383,7 +383,6 @@ void LabelPainter::plotData(ostream& out)
 			SymbolFocus focus(cells[c]);
 			
 			string val = value.get(focus);
-			cout << val;
 			if ( ! val.empty() ) {
 				VINT centerl = focus.cell().getCenterL();
 				lattice.resolve (centerl);
