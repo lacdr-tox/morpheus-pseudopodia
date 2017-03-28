@@ -253,7 +253,7 @@ int InitCellObjects::setNodes(CellType* ct)
 						case ELLIPSOID:{
 							//cout << pos << "\tEllipse: " << co.center << ", ax: " << co.axes << "\n";
 							// if it is within the radius of the largest axes, put it as candidate
-							
+
 							if( insideEllipsoid(orth_pos, co.center, co.axes) ) {
 								//cout << "INSIDE\n";
 
@@ -427,7 +427,7 @@ bool InitCellObjects::insideEllipsoid(VDOUBLE point, VDOUBLE center, VDOUBLE axe
     double a  = axes.x;
     double b  = axes.y;
     double c  = axes.z;
-    double p  = (sqr(d.x))/sqr(a) + (sqr(d.y))/sqr(b) + (c>0 && d.z>0 ? (sqr(d.z))/sqr(c): 0.0);
+    double p  = (sqr(d.x))/sqr(a) + (sqr(d.y))/sqr(b) + (c>0 && abs(d.z)>0 ? (sqr(d.z))/sqr(c): 0.0);
     return (p < 1);
 }
 
