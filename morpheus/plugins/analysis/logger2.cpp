@@ -123,7 +123,7 @@ void Logger::init(const Scope* scope){
         if (slice_axis.isDefined() && slice_value.isDefined()) {
 			slice = true;
 		}
-		cout << "Slice...?" << (slice?"true":"false") << endl;
+// 		cout << "Slice...?" << (slice?"true":"false") << endl;
 		
 		// Collect RESTRICTIONS
 		
@@ -154,10 +154,10 @@ void Logger::init(const Scope* scope){
 
 		cout << "Logger INIT:  " << endl;
 		cout << "Granularity:  " << logger_granularity <<  endl;
-		cout << "Restrictions: " <<  endl;
+// 		cout << "Restrictions: " <<  endl;
 		for(auto &r : restrictions)
-			cout << int(r.first) << " = " << int(r.second) << endl;
-		cout << "Range:        " << range.size() << endl;
+// 			cout << int(r.first) << " = " << int(r.second) << endl;
+// 		cout << "Range:        " << range.size() << endl;
 
 		// initialize output
 		for (auto o : writers){
@@ -614,7 +614,7 @@ void LoggerTextWriter::writeMatrix() {
 				auto celltype_restr = plain_restrictions.equal_range(FocusRangeAxis::CellType);
 				plain_restrictions.erase(celltype_restr.first, celltype_restr.second);
 				
-#pragma openmp parallel for private restrictions
+#pragma omp parallel for
 				for (uint c=0; c<cells.size(); c++) {
 					multimap<FocusRangeAxis,int> restrictions = plain_restrictions;
 					restrictions.insert( make_pair(FocusRangeAxis::CELL,cells[c]) );
@@ -928,7 +928,7 @@ LoggerPlotBase::LoggerPlotBase(Logger& logger, string xml_base_path)
 
 void LoggerPlotBase::checkedPlot()
 {
-	cout << SIM::getTime() << "\t" << (last_plot_time + time_step()) << endl;
+// 	cout << SIM::getTime() << "\t" << (last_plot_time + time_step()) << endl;
 	if( !time_step.isDefined() ) { // not defined, always plot if Logger is executed (as joern suggested)
 		this->plot(); last_plot_time = SIM::getTime();
 	}
