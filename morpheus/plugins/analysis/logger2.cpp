@@ -155,7 +155,7 @@ void Logger::init(const Scope* scope){
 		cout << "Logger INIT:  " << endl;
 		cout << "Granularity:  " << logger_granularity <<  endl;
 // 		cout << "Restrictions: " <<  endl;
-		for(auto &r : restrictions)
+// 		for(auto &r : restrictions)
 // 			cout << int(r.first) << " = " << int(r.second) << endl;
 // 		cout << "Range:        " << range.size() << endl;
 
@@ -179,6 +179,7 @@ void Logger::init(const Scope* scope){
 
 int Logger::addWriter(shared_ptr<LoggerWriterBase> writer)
 {
+// 	cout << "Adding another Writer to the Logger" << endl;
 	writers.push_back(writer);
 	return writers.size()-1;
 }
@@ -316,8 +317,11 @@ void LoggerTextWriter::init() {
 
 // 	cout << "LoggerTextWriter::init" << endl;
 
-	if (filename() == "logger" && logger.getInstanceNum()>1) {
-		file_basename = "logger_" + to_str(logger.getInstanceID());
+	if ( (filename() == "logger" || filename() == "automatic") ) {
+		file_basename = "logger";
+		if (logger.getInstanceNum()>1) {
+			file_basename+="_"+to_str(logger.getInstanceID());
+		}
 	}
 	else 
 		file_basename = filename();
