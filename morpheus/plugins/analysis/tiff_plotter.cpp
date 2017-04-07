@@ -182,11 +182,14 @@ Therefore, cannot write OME header to first image.)", stored_node);
 	}
 		
 	// if not specified, try to guess the Format (as small as possible, but uniform within multichannel stack)
-	if( bitformat.isDefined() && bitformat.get() > 0){
-		format = bitformat.get();
-	}
- 	else {
-		uint format_temp;		
+// bitformat is required
+// 	if( bitformat.isDefined()){
+// 		if (format == 8 || format == 16 || format == 32) {
+	format = bitformat.get();
+// 		}
+// 	}
+ 	if (format == 0) {
+		uint format_temp;
 		for(uint c=0; c<plot.channels.size();c++){
 			
 			switch(  plot.channels[c]->symbol.accessor().getLinkType() ){
@@ -284,6 +287,9 @@ void TiffPlotter::writeTIFF(CPM::CELL_ID cellid)
 	uint32 width, height, slices;
 	bool append=false;
 	
+	if (format != 8 && format !=16 && format !=32) {
+		throw string("Unsupported pixel format ") + to_str(format) + " in  TiffPlotter::writeTIFF";
+	}
 	// Open the output image
 	string filename;
 	if(plot.cropToCell && cellid ){

@@ -136,9 +136,13 @@ void VtkPlotter::writeVTK(double time){
 				for (pos.y=0; pos.y<latticeDim.y; pos.y++){
 					for (pos.x=0; pos.x<latticeDim.x; pos.x++){
 						if( mode() == Mode::ASCII )
-							vtkstream << double(plot.channels[c]->symbol.get(pos)) << " ";
-						else // binary
-							vtkstream << double(plot.channels[c]->symbol.get(pos)); // swap_endian<double>(value); 
+							vtkstream << float(plot.channels[c]->symbol.get(pos)) << " ";
+						else {// binary
+							float value = plot.channels[c]->symbol.get(pos);
+							value = swap_endian( value ); // swap_endian<double>(value); 
+							vtkstream.write((char*)& value, sizeof(float) );
+							
+						}
 					}
 				}
 			}
@@ -149,7 +153,7 @@ void VtkPlotter::writeVTK(double time){
 				for (pos.y=0; pos.y<latticeDim.y; pos.y++){
 					for (pos.x=0; pos.x<latticeDim.x; pos.x++){
 						
-						double value = 0.0;
+						float value = 0.0;
 						if (cpm_layer) { // cell property or membrane
 							uint celltype_at_pos = CPM::getCellIndex( cpm_layer->get(pos).cell_id ).celltype;
 							
@@ -165,11 +169,11 @@ void VtkPlotter::writeVTK(double time){
 
 									if( plot.channels[c]->outline.get() ){
 										if ( CPM::isSurface( pos ) ){
-											value = (double)plot.channels[c]->symbol.get( pos );
+											value = plot.channels[c]->symbol.get( pos );
 										}
 									}
 									else{ // if not outline, plot property over whole cell
-										value = (double)plot.channels[c]->symbol.get( pos );
+										value = plot.channels[c]->symbol.get( pos );
 
 										// if no-outline, set value to zero on cell boundary
 										if( plot.channels[c]->no_outline.get() && CPM::isSurface( pos ) ){
@@ -189,11 +193,11 @@ void VtkPlotter::writeVTK(double time){
 								else{
 									if( plot.channels[c]->outline.get() ){
 										if ( CPM::isSurface( pos ) ){
-											value = (double)plot.channels[c]->symbol.get( pos );
+											value = plot.channels[c]->symbol.get( pos );
 										}
 									}
 									else{
-										value = (double)plot.channels[c]->symbol.get( pos );
+										value = plot.channels[c]->symbol.get( pos );
 										
 										// if no-outline, set value to zero on cell boundary
 										if( plot.channels[c]->no_outline.get() && CPM::isSurface( pos ) ){
@@ -203,9 +207,11 @@ void VtkPlotter::writeVTK(double time){
 								}
 							}
 							if( mode() == Mode::ASCII )
-								vtkstream << double(value) << " ";
-							else if( mode() == Mode::BINARY )
-								vtkstream << double(value); // swap_endian<double>(value); 
+								vtkstream << value << " ";
+							else if( mode() == Mode::BINARY ) {
+								value = swap_endian(value); 
+								vtkstream.write((char*)& value, sizeof(float) );
+							}
 						}
 					} // end x
 				}  // end y
