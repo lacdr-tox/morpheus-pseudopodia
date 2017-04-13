@@ -46,8 +46,8 @@ void ChangeCelltype::executeTimeStep() {
 		if( celltype_new_ID != celltype->getID()
 			&& condition( SymbolFocus(cells[i]) ) ){
 			
+			triggers->trigger(SymbolFocus(cells[i]));
 			auto changed_cell = CPM::setCellType( cells[i], celltype_new_ID);
-			triggers->trigger(SymbolFocus(changed_cell));
 		
 		}
 	}
