@@ -17,7 +17,7 @@ void ContactLogger::init(const Scope* scope){
 		return;
 	}
 	// header
-	fout << "Cell" << "\t" << "Neighbor" << "\t" << "Contact" << "\n";
+	fout << "Time" << "\t" < "Cell" << "\t" << "Neighbor" << "\t" << "Contact" << "\n";
 }
 
 void ContactLogger::loadFromXML(const XMLNode node){
@@ -35,7 +35,7 @@ void ContactLogger::analyse(double time)
 		for( auto i = interfaces.begin(); i != interfaces.end(); i++){
 			 CPM::CELL_ID nb_cellid = i->first;
 			 if ( CPM::getCellIndex( nb_cellid ).celltype == celltype.get()->getID() ) { // if not medium
-		 		fout << cellid << "\t" << nb_cellid << "\t" << i->second << "\n";
+                fout << time << "\t" << cellid << "\t" << nb_cellid << "\t" << i->second << "\n";
 			}
 		}
 		fout << "\n";
