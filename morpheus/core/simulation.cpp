@@ -349,6 +349,7 @@ void loadCellTypes(XMLNode xCellTypesNode) {
 		}
 	}
 	
+	
 	SymbolData symbol;
 	symbol.link = SymbolData::CellIDLink;
 	symbol.granularity = Granularity::Cell;
@@ -432,10 +433,13 @@ void loadCellTypes(XMLNode xCellTypesNode) {
 	symbol.fullname = "Cell Orientation";
 	SIM::defineSymbol(symbol);
 
+	
 	for (uint i=0; i<celltypes.size(); i++) {
+		celltypes[i]->loadPlugins();
 		if (dynamic_pointer_cast<SuperCT>(celltypes[i]) )
 			dynamic_pointer_cast<SuperCT>(celltypes[i])->bindSubCelltype();
 	}
+	
 	if (!celltype_names.empty()) {
 		cout << "CellTypes defined: ";
 		for (map<string,uint>::iterator ct1=celltype_names.begin(); ct1 != celltype_names.end();ct1++)
@@ -1516,12 +1520,12 @@ const Scope* getScope() { return current_scope; }
 
 const Scope* getGlobalScope() { return global_scope.get(); }
 
-Scope* createSubScope(string name, CellType* ct) { return current_scope->createSubScope(name,ct); }
+Scope* createSubScope(string name, CellType* ct) { if (! current_scope) throw string("Cannot create subscope from empty scope"); return current_scope->createSubScope(name,ct); }
 
 deque<Scope*> scope_stash;
-void enterScope(Scope* scope) {assert(scope); if (!scope) throw(string("Invalid scope in enterScope")); cout << "Entering scope " << scope->getName() << endl; scope_stash.push_back(current_scope); current_scope = scope;}
+void enterScope(const Scope* scope) { if (!scope) throw(string("Invalid scope in enterScope")); cout << "Entering scope " << scope->getName() << endl; scope_stash.push_back(current_scope); current_scope = const_cast<Scope*>(scope);}
 
-void leaveScope() { assert(!scope_stash.empty()); cout << "Leaving scope " << current_scope->getName(); current_scope = scope_stash.back(); scope_stash.pop_back();  cout << ", back to scope " << current_scope->getName() << endl;  }
+void leaveScope() { if (scope_stash.empty()) throw (string("Invalid scope in leaveScope on empty Stack")); cout << "Leaving scope " << current_scope->getName(); current_scope = scope_stash.back(); scope_stash.pop_back();  cout << ", back to scope " << current_scope->getName() << endl;  }
 
 void defineSymbol(SymbolData symbol) { current_scope->registerSymbol(symbol); }
 

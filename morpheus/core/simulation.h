@@ -197,7 +197,7 @@ namespace SIM {
 	const Scope* getScope();
 	const Scope* getGlobalScope();
 	Scope* createSubScope(string name, CellType* ct = 0);
-	void enterScope(Scope *scope);
+	void enterScope(const Scope *scope);
 	void leaveScope();
 
 	

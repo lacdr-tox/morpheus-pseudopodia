@@ -105,15 +105,20 @@ void CellType::loadFromXML(const XMLNode xCTNode) {
 	string classname;
 	getXMLAttribute(xCTNode,"class",classname,false);
 	if (classname != XMLClassName()) {
-//		throw string("wrong celltype classname ")+classname+", expected "+ XMLClassName();
+		throw string("wrong celltype classname ")+classname+", expected "+ XMLClassName();
 	}
 	
 	local_scope = SIM::createSubScope(string("CellType[")+name + "]",this);
-	SIM::enterScope(local_scope);
+}
 
-	int nPlugins = xCTNode.nChildNode();
+
+void CellType::loadPlugins()
+{
+	assert(plugins.empty());
+	SIM::enterScope(local_scope);
+	int nPlugins = stored_node.nChildNode();
 	for(int i=0; i<nPlugins; i++) {
-		XMLNode xNode = xCTNode.getChildNode(i);
+		XMLNode xNode = stored_node.getChildNode(i);
 		try {
 			string xml_tag_name(xNode.getName());
 // 			if (xml_tag_name=="Segment") continue; // for compatibility with the segmented celltype
@@ -184,6 +189,7 @@ void CellType::loadFromXML(const XMLNode xCTNode) {
 	SIM::leaveScope();
 }
 
+
 void CellType::init() {
 	if (!local_scope)
 		local_scope = SIM::createSubScope(string("CellType[")+name + "]",this);
@@ -204,7 +210,15 @@ void CellType::init() {
 	for (uint i=0;i<plugins.size();i++) {
 		if ( dynamic_pointer_cast<AbstractProperty>( plugins[i]) )
 			continue;
-		plugins[i]->init(local_scope);
+		try { 
+			plugins[i]->init(local_scope);
+		}
+		catch (string er) {
+			throw MorpheusException(er, plugins[i]->saveToXML());
+		}
+		catch (SymbolError er) {
+			throw MorpheusException(er.what(), plugins[i]->saveToXML());
+		}
 	}
 	
 	for (auto ini : pop_initializers) {

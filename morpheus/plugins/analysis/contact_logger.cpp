@@ -17,7 +17,7 @@ void ContactLogger::init(const Scope* scope){
 		return;
 	}
 	// header
-	fout << "Time" << "\t" < "Cell" << "\t" << "Neighbor" << "\t" << "Contact" << "\n";
+	fout << "Time" << "\t" << "Cell" << "\t" << "Neighbor" << "\t" << "Contact" << "\n";
 }
 
 void ContactLogger::loadFromXML(const XMLNode node){

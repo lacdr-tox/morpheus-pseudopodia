@@ -67,6 +67,7 @@ public:
 
 	virtual XMLNode saveToXML() const;
 	virtual void loadFromXML(const XMLNode Node);
+	virtual void loadPlugins();
 	virtual XMLNode savePopulationToXML() const;
 	virtual void loadPopulationFromXML(const XMLNode Node);
 	virtual void init();
