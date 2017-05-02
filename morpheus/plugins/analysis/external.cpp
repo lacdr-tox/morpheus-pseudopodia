@@ -86,6 +86,7 @@ void External::execute(){
 	}
 }
 
+/*
 string External::update_command(string command){
 	if(!replace_symbols){
 		string command_new = command;
@@ -119,6 +120,7 @@ string External::update_command(string command){
 	//cout << "Command = " << command_new << endl;
 	return command_new;
 }
+*/
 
 string External::update_command(string command){
 	if(!replace_symbols){

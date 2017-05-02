@@ -5,7 +5,7 @@ set(plugin_src
 	add_cell.cpp
 	change_celltype.cpp
 	insert_medium.cpp
-	distance_transform.cpp
+	# distance_transform.cpp
 	# example_plugin.cpp
 	
   PARENT_SCOPE)
