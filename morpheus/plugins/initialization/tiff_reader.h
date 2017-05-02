@@ -33,6 +33,7 @@ Fields
 ----------------
 For gradient fields, image values correspond to concentrations.
 
+- From 64 bit images, double precision values are used directly and may be scaled by scaleToMax.
 - From 32 bit images, floating point values are used directly and may be scaled by scaleToMax.
 - From 16 bit images, uint16 values are divided by \f$2^16=65536\f$, and may be scaled by scaleToMax.
 - From 8 bit images, uint8 values are divided by \f$2^8=256\f$, and may be scaled by scaleToMax.
@@ -40,7 +41,7 @@ For gradient fields, image values correspond to concentrations.
 \section Notes
 - Multipage TIFF images (stacks) are supported. 
 - LZW compressed TIFF files are supported.
-- TIFF image must have 8, 16, or 32 bit format.
+- TIFF image must have 8 (uint8), 16 (uint16), 32 (float), 64 (double) bit format.
 - TIFF image should be grey scale (color coded). Otherwise libTIFF will yield error ''.
 
 \section Input

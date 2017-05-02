@@ -85,6 +85,7 @@ bool TIFFReader::loadTIFF(){
 		uint32* raster8;
 		uint16* raster16;
 		float* raster32;
+		double* raster64;
 		
 		TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
 		TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
@@ -135,14 +136,26 @@ bool TIFFReader::loadTIFF(){
 				raster32 = (float*) _TIFFmalloc( TIFFScanlineSize(tif) );
 				break;
 			}
+			case 64:
+			{
+				cout << "TIFF image is 64 bit. Using scanline method\n"; 
+ 				if( mode == TIFFReader::CELLS ){
+ 					cerr << "TIFFReader: Cannot initialize cells using 64-bit (double) format TIFF. Use 8 or 16 bit format with unsigned integers instead." << endl;
+ 					//exit(-1);
+ 				}
+				if( mode == TIFFReader::PDE )
+					cout << "TIFFReader: PDE values read from 64 bit file." << endl;
+				raster64 = (double*) _TIFFmalloc( TIFFScanlineSize(tif) );
+				break;
+			}
 			default:
 			{
-				cerr << "TIFF image is "<< numbits <<" bit, which is not supported! Only 8 (0-255), 16 (0-65535), and 32 (floating-point) bit format are supported." << endl; 
+				cerr << "TIFF image is "<< numbits <<" bit, which is not supported! Only 8 (0-255), 16 (0-65535), 32 (single precision) and 64 (double precision) bit format are supported." << endl; 
 				exit(-1);
 			}
 		}
 		
-		if (raster8 == NULL && raster16 == NULL && raster32 == NULL) {
+		if (raster8 == NULL && raster16 == NULL && raster32 == NULL && raster64 == NULL) {
  			return false;
  		}
  		
@@ -296,6 +309,51 @@ bool TIFFReader::loadTIFF(){
 									case PDE:
 									{
 										float value = raster32[col];
+										if( scaleToMax.isDefined() )
+											value = (double)value*scaleToMax();
+										pde_layer->set( offset_+pos, (double)value );
+										break;
+									}
+								}
+							}
+						}
+					}
+					break;
+				}
+				case 64:
+				{
+					for (uint32 row=0; row < h; row++) {
+						if( TIFFReadScanline( tif, raster64, row ) < 0 ){
+							cerr << "TIFFReader: Error during reading TIFF image '" << filename() << "'." << endl;
+							exit(-1);
+						}
+						pos.y = row;
+						pos.x = 0; // TODO: Check whether scanline is necessarily equal to a x-row (if not, remove this line)
+
+						for(uint32 col=0; col < w; col++, pos.x++){
+							
+							if ( pos.x >= w ){
+								pos.x=0; 
+								pos.y--; 
+							}
+							
+							if( numsamples == 1 ){
+								
+								switch( mode ){
+									case CELLS:
+									{
+ 										uint64 value = uint64(raster64[col]);
+										// Cells need to be initialized with an Integer
+										if( std::floor( value ) != raster64[col] ){
+											cerr << "TIFFReader: Cannot initialize cells with non-integer value: " << raster64[col] << " @ " << row << ", " << col << endl;
+											exit(-1);
+										}
+										addNode( offset_+pos, (uint64)(value) );
+										break;
+									}
+									case PDE:
+									{
+										double value = raster64[col];
 										if( scaleToMax.isDefined() )
 											value = (double)value*scaleToMax();
 										pde_layer->set( offset_+pos, (double)value );
