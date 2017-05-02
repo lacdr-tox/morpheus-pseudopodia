@@ -61,11 +61,17 @@ Log cell-cell contacts at the end of simulation
 
 */
 
-class ContactLogger : public AnalysisPlugin
+class ContactLogger : public AnalysisPlugin, InstantaneousProcessPlugin
 {
+
 	private:
-		PluginParameterCellType<RequiredPolicy> celltype;
+		PluginParameterCellType<OptionalPolicy> celltype;
 		ofstream fout;
+		
+		// record duration
+		PluginParameter2<bool, XMLValueReader, OptionalPolicy > log_duration;
+		map< std::pair< CPM::CELL_ID, CPM::CELL_ID>, double> map_contact_duration;
+		
 	public:
 		DECLARE_PLUGIN("ContactLogger");
 		ContactLogger();
@@ -73,6 +79,7 @@ class ContactLogger : public AnalysisPlugin
 		void loadFromXML(const XMLNode );
 		void init(const Scope* scope);
  		void finish();
+		void executeTimeStep();
 };
 
 #endif // CONTACTLOGGER_H

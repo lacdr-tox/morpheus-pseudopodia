@@ -2,44 +2,143 @@
 
 REGISTER_PLUGIN(ContactLogger);
 
-ContactLogger::ContactLogger(){
-	celltype.setXMLPath("celltype");
-	registerPluginParameter(celltype);
+ContactLogger::ContactLogger() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_NONE ) {
+	log_duration.setXMLPath("log-duration");
+	registerPluginParameter(log_duration);
+	
 }
 
 void ContactLogger::init(const Scope* scope){
 	AnalysisPlugin::init(scope);
+	InstantaneousProcessPlugin::init( scope );
+	InstantaneousProcessPlugin::setTimeStep( CPM::getMCSDuration() );
+
+	
+	// open file
 	stringstream ss;
-	ss << "contact_logger_" << celltype()->getName() << ".txt";
+	ss << "contact_logger";
+	if( celltype.isDefined() )
+		ss << "_" << celltype()->getName();
+	ss << ".log";
 	fout.open(ss.str().c_str(), fstream::out );
 	if( !fout.is_open() ){
 		cout << "Error opening file " << ss.str() << endl;
 		return;
 	}
 	// header
-	fout << "Time" << "\t" << "Cell" << "\t" << "Neighbor" << "\t" << "Contact" << "\n";
+	fout << "time"  << "\t" << "cell.id" << "\t" << "cell.type" 
+					<< "\t" << "neighbor.id" << "\t" << "neighbor.type" 
+					<< "\t" << "length";
+	if( log_duration.isDefined() ){
+		fout << "\t" << "duration";
+	}
+	fout << "\n";
 }
 
 void ContactLogger::loadFromXML(const XMLNode node){
 	AnalysisPlugin::loadFromXML(node);
+	InstantaneousProcessPlugin::loadFromXML(node);
+}
+
+void ContactLogger::executeTimeStep(){
+	if( !log_duration.isDefined() )
+		return;
+
+	vector< weak_ptr<const CellType> > celltypes = CPM::getCellTypes();
+	for(uint ct=0; ct<celltypes.size(); ct++){
+		auto celltype = celltypes[ct].lock();
+		vector<CPM::CELL_ID> cells = celltype->getCellIDs();
+		
+		for(uint c=0; c<cells.size(); c++){
+			CPM::CELL_ID cellid = cells[c];
+			const Cell& cell = CPM::getCell( cellid );
+
+			const auto& interfaces = cell.getInterfaceLengths();
+			for( auto i = interfaces.begin(); i != interfaces.end(); i++){
+				uint ct_id = celltype.get()->getID();
+				CPM::CELL_ID nb_cellid = i->first;
+				uint nb_ct_id = CPM::getCellIndex( nb_cellid ).celltype;
+
+				double length = i->second;
+
+				std::pair<CPM::CELL_ID, CPM::CELL_ID> cid_pair;
+				if( cellid < nb_cellid )
+					cid_pair = std::make_pair( cellid, nb_cellid );
+				else
+					cid_pair = std::make_pair( nb_cellid, cellid );
+				
+				if ( map_contact_duration.find( cid_pair ) == map_contact_duration.end() ) { // if cell pair not in map
+					if( length > 0.0 ){
+						map_contact_duration[ cid_pair ] = InstantaneousProcessPlugin::timeStep();
+					}
+				} 
+				else { // if cell pair already in map
+					if( length > 0.0 ){
+						map_contact_duration[ cid_pair ] += InstantaneousProcessPlugin::timeStep();
+					}
+					else{ // if cell pair not in contact (anymore), remove key
+						map_contact_duration.erase( cid_pair );
+					}
+				}
+			}
+		}
+	}
 }
 
 void ContactLogger::analyse(double time)
 {
-	vector<CPM::CELL_ID> cells = celltype()->getCellIDs();
-	for(uint c=0; c<cells.size(); c++){
-		CPM::CELL_ID cellid = cells[c];
-		const Cell& cell = CPM::getCell( cellid );
+	vector< weak_ptr<const CellType> > celltypes = CPM::getCellTypes();
+	
+	for(uint ct=0; ct<celltypes.size(); ct++){
+		auto celltype = celltypes[ct].lock();
+		vector<CPM::CELL_ID> cells = celltype->getCellIDs();
+		
+		for(uint c=0; c<cells.size(); c++){
+			CPM::CELL_ID cellid = cells[c];
+			const Cell& cell = CPM::getCell( cellid );
 
-		const auto& interfaces = cell.getInterfaceLengths();
-		for( auto i = interfaces.begin(); i != interfaces.end(); i++){
-			 CPM::CELL_ID nb_cellid = i->first;
-			 if ( CPM::getCellIndex( nb_cellid ).celltype == celltype.get()->getID() ) { // if not medium
-                fout << time << "\t" << cellid << "\t" << nb_cellid << "\t" << i->second << "\n";
+			const auto& interfaces = cell.getInterfaceLengths();
+			for( auto i = interfaces.begin(); i != interfaces.end(); i++){
+				uint ct_id = celltype.get()->getID();
+				CPM::CELL_ID nb_cellid = i->first;
+				uint nb_ct_id = CPM::getCellIndex( nb_cellid ).celltype;
+				double length = i->second;
+				fout << time << "\t" << cellid << "\t" << ct_id << "\t" << nb_cellid << "\t" << nb_ct_id  << "\t" << length;
+				if( log_duration.isDefined() ){
+					std::pair<CPM::CELL_ID, CPM::CELL_ID> cid_pair;
+					if( cellid < nb_cellid )
+						cid_pair = std::make_pair( cellid, nb_cellid );
+					else
+						cid_pair = std::make_pair( nb_cellid, cellid );
+					fout << "\t" << map_contact_duration[cid_pair];
+				}
+				fout << "\n";
+				
+				
+				//if ( CPM::getCellIndex( nb_cellid ).celltype == celltype.get()->getID() ) { // if not medium
+				//}
 			}
 		}
-		fout << "\n";
 	}
+
+	
+/*	if( celltype.isDefined() ){
+		vector<CPM::CELL_ID> cells = celltype()->getCellIDs();
+		for(uint c=0; c<cells.size(); c++){
+			CPM::CELL_ID cellid = cells[c];
+			const Cell& cell = CPM::getCell( cellid );
+
+			const auto& interfaces = cell.getInterfaceLengths();
+			for( auto i = interfaces.begin(); i != interfaces.end(); i++){
+				CPM::CELL_ID nb_cellid = i->first;
+				if ( CPM::getCellIndex( nb_cellid ).celltype == celltype.get()->getID() ) { // if not medium
+					fout << time << "\t" << cellid << "\t" << nb_cellid << "\t" << i->second << "\n";
+				}
+			}
+			fout << "\n";
+		}
+	}
+*/
 }
 
 
