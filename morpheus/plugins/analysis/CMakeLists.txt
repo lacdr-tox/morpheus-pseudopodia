@@ -13,6 +13,8 @@ set(plugin_src
 	cell_tracker.cpp
 	contact_logger.cpp
 	
+	external.cpp
+	
 #	space_time_logger.cpp #obsolete (replaced by logger2)
 #	NetworkLogger.cpp
 #	svgPlotter.cpp
