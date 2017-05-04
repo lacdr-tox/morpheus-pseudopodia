@@ -158,7 +158,7 @@ protected:
 	vector< shared_ptr<CPM_Energy> > energies;
 	vector< shared_ptr<CPM_Check_Update> > check_update_listener;
 	vector< shared_ptr<CPM_Update_Listener> > update_listener;
-	vector< shared_ptr<TimeStepListener> > timestep_listener;
+// 	vector< shared_ptr<TimeStepListener> > timestep_listener;
 // 	vector< shared_ptr<Celltype_MCS_Listener> > mcs_listener;
 	
 	vector< shared_ptr<AbstractProperty> > _default_properties;

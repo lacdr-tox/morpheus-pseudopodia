@@ -162,11 +162,11 @@ void CellType::loadPlugins()
 				SymbolData symbol;
 				symbol.name = membrane->getSymbolName();
 				symbol.fullname = membrane->getName();
-                symbol.link = SymbolData::CellMembraneLink;
+				symbol.link = SymbolData::CellMembraneLink;
 				symbol.granularity = Granularity::MembraneNode;
-                symbol.type_name = TypeInfo<double>::name();
+				symbol.type_name = TypeInfo<double>::name();
 				symbol.writable = true;
-                SIM::defineSymbol(symbol);
+				SIM::defineSymbol(symbol);
 				membrane_by_symbol[symbol.name] = _default_membranePDEs.size()-1;
 				n_interfaces++;
 				cout << "Registered Membrane " << _default_membranePDEs.size() << " " << membrane->getName() << " with diffusion rate " << membrane->getPDE()->getDiffusionRate() << endl;
@@ -176,7 +176,7 @@ void CellType::loadPlugins()
 			if ( dynamic_pointer_cast< CPM_Energy >(p) ) { energies.push_back(dynamic_pointer_cast< CPM_Energy >(p) ); n_interfaces++; }
 			if ( dynamic_pointer_cast< CPM_Check_Update >(p) ) { check_update_listener.push_back(dynamic_pointer_cast< CPM_Check_Update >(p) ); n_interfaces++; }
 			if ( dynamic_pointer_cast< CPM_Update_Listener >(p) ) { update_listener.push_back(dynamic_pointer_cast< CPM_Update_Listener >(p) ); n_interfaces++; }
-			if ( dynamic_pointer_cast< TimeStepListener >(p) ) { timestep_listener.push_back(dynamic_pointer_cast< TimeStepListener >(p) ); n_interfaces++; }
+			if ( dynamic_pointer_cast< TimeStepListener >(p) ) { /*timestep_listener.push_back(dynamic_pointer_cast< TimeStepListener >(p) );*/ n_interfaces++; }
 			if ( ! n_interfaces ) 
 				throw(xml_tag_name + " is not a valid celltype plugin");
 			plugins.push_back( p );
@@ -408,10 +408,10 @@ pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID cell_id, div
 			break;
 		}
 		case CellType::RANDOM:{
-			if ( SIM::getLattice()->getDimensions()==3) {
+			if ( SIM::getLattice()->getDimensions()==2) {
 				division_plane_normal = VDOUBLE::from_radial(VDOUBLE(getRandom01()*2*M_PI,0,1));
 			}
-			else if ( SIM::getLattice()->getDimensions()==2){
+			else if ( SIM::getLattice()->getDimensions()==3){
 				division_plane_normal = VDOUBLE::from_radial(VDOUBLE(getRandom01()*2*M_PI,(getRandom01()-0.5)*M_PI,1));
 			}
 			break;

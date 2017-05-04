@@ -476,6 +476,9 @@ void AdaptiveCPMShapeTracker::trackEllipse(const VINT pos, int dir) {
 				ellipsoid_approx =  computeEllipsoid2D(Ell_I, updated_node_count) ;
 			} else assert(0);
 // 			cout << " -> " << ellipsoid_approx.lengths[0] << " n0 " << old_center <<  " n1 " << updated_center << endl;
+			
+			ellipsoid_approx.center = updated_center;
+			ellipsoid_approx.volume = updated_node_count;
 		}
 	}
 	
