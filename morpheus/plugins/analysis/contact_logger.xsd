@@ -12,8 +12,9 @@
 			<xs:appinfo>Data Export</xs:appinfo>
 		</xs:annotation>
 		<xs:attribute name="time-step" use="required" type="cpmDouble" />
-		<xs:attribute name="log-duration" type="cpmBoolean" use="optional" />
-<!--		<xs:attribute name="celltype" type="cpmCellTypeRef" use="optional" /> -->
+		<xs:attribute name="log-duration" type="cpmBoolean" use="optional" default="false"/>
+		<xs:attribute name="ignore-medium" type="cpmBoolean" use="optional" default="true"/>
+		<xs:attribute name="celltype" type="cpmCellTypeRef" use="optional" />
 <!--		<xs:attribute name="separator" type="cpmCellTypeRef" use="required" />
 		<xs:attribute name="position" type="cpmCellTypeRef" use="required" />-->
    </xs:complexType>

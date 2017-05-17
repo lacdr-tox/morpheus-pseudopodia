@@ -24,6 +24,7 @@ ContactLogger write the cell-cell contacts and their contact lengths/areas to fi
 
 Example of format:
 
+
 	Cell	Neighbor	Contact
 	1	2	160
 	1	21	209
@@ -54,11 +55,41 @@ TODO:
 - optionally add cell positions
 
 \section Examples
-Log cell-cell contacts at the end of simulation
+Periodically write contact length and duration of cell-cell contacts between all cell types 
 \verbatim
-<ContactLogger time-step="-1" celltype="cells"/>
+<ContactLogger time-step="010" log-duration="True" celltype="ct1"/>
 \endverbatim
 
+\verbatim
+time	cell.id	cell.type	neighbor.id	neighbor.type	length	duration
+0	1	0	0	0	1.55556	0
+0	2	0	0	0	1.55556	0
+0	3	0	0	0	1.55556	0
+...
+100	1	0	19	0	8.77778	188
+100	1	0	27	0	2.16667	106
+100	1	0	46	0	15.2778	166
+\endverbatim
+
+
+Log cell-cell contacts at the end of simulation
+\verbatim
+<ContactLogger time-step="100" log-duration="true"/>
+\endverbatim
+
+time	cell.id	cell.type	neighbor.id	neighbor.type	length	duration
+0	1	0	0	2	1.55556	0
+0	2	0	0	2	1.55556	0
+0	3	0	0	2	1.55556	0
+...
+0	51	1	0	2	1.55556	0
+0	52	1	0	2	1.55556	0
+0	53	1	0	2	1.55556	0
+...
+100	1	0	19	0	8.77778	188
+100	1	0	27	0	2.16667	106
+100	1	0	46	0	15.2778	166
+...
 */
 
 class ContactLogger : public AnalysisPlugin, InstantaneousProcessPlugin
@@ -68,6 +99,7 @@ class ContactLogger : public AnalysisPlugin, InstantaneousProcessPlugin
 		PluginParameterCellType<OptionalPolicy> celltype;
 		ofstream fout;
 		
+		PluginParameter2<bool, XMLValueReader, DefaultValPolicy > ignore_medium;
 		// record duration
 		PluginParameter2<bool, XMLValueReader, OptionalPolicy > log_duration;
 		map< std::pair< CPM::CELL_ID, CPM::CELL_ID>, double> map_contact_duration;
