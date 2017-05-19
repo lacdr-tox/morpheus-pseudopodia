@@ -3,8 +3,11 @@
 REGISTER_PLUGIN(ContactLogger);
 
 ContactLogger::ContactLogger() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_NONE ) {
-	celltype.setXMLPath("celltype");
-	registerPluginParameter(celltype);
+	celltype_from.setXMLPath("celltype-from");
+	registerPluginParameter(celltype_from);
+	celltype_to.setXMLPath("celltype-to");
+	registerPluginParameter(celltype_to);
+	
 	ignore_medium.setXMLPath("ignore-medium");
 	ignore_medium.setDefault("true");
 	registerPluginParameter(ignore_medium);
@@ -16,15 +19,20 @@ ContactLogger::ContactLogger() : InstantaneousProcessPlugin( TimeStepListener::X
 void ContactLogger::init(const Scope* scope){
 	AnalysisPlugin::init(scope);
 	InstantaneousProcessPlugin::init( scope );
+	//if( log_duration.isDefined() ) // TODO: does this result in optmized performance by only calling xecuteTimeStep() when applicable? Or is the handled by the scedule?
 	InstantaneousProcessPlugin::setTimeStep( CPM::getMCSDuration() );
 
+	if( celltype_to.isDefined() && !celltype_from.isDefined() )
+		throw MorpheusException("Cannot specify 'celltype_to' without speficying 'celltype_from'.", stored_node);
 	
 	// open file
 	stringstream ss;
 	ss << "contact_logger";
-	if( celltype.isDefined() )
-		ss << "_" << celltype()->getName();
-	ss << ".log";
+	if( celltype_from.isDefined() )
+		ss << "_" << celltype_from()->getName();
+	if( celltype_to.isDefined() )
+		ss << "_" << celltype_to()->getName();
+	ss << ".txt";
 	fout.open(ss.str().c_str(), fstream::out );
 	if( !fout.is_open() ){
 		cout << "Error opening file " << ss.str() << endl;
@@ -50,8 +58,8 @@ void ContactLogger::executeTimeStep(){
 		return;
 
 	vector< weak_ptr<const CellType> > celltypes;
-	if( celltype.isDefined() ){
-		celltypes.push_back( celltype() );
+	if( celltype_from.isDefined() ){
+		celltypes.push_back( celltype_from() );
 	}
 	else{
 		celltypes = CPM::getCellTypes();
@@ -71,7 +79,7 @@ void ContactLogger::executeTimeStep(){
 				CPM::CELL_ID nb_cellid = i->first;
 				
 				uint nb_ct_id = CPM::getCellIndex( nb_cellid ).celltype;
-				if( celltype.isDefined() && (nb_ct_id != ct_id) )
+				if( celltype_to.isDefined() && (nb_ct_id != celltype_to().get()->getID() ) )
 					continue;
 				
 				if( ignore_medium.isDefined() && (nb_ct_id == CPM::getEmptyCelltypeID() ))
@@ -107,8 +115,8 @@ void ContactLogger::analyse(double time)
 {
 	
 	vector< weak_ptr<const CellType> > celltypes;
-	if( celltype.isDefined() ){
-		celltypes.push_back( celltype() );
+	if( celltype_from.isDefined() ){
+		celltypes.push_back( celltype_from() );
 	}
 	else{
 		celltypes = CPM::getCellTypes();
@@ -128,7 +136,8 @@ void ContactLogger::analyse(double time)
 				CPM::CELL_ID nb_cellid = i->first;
 				uint nb_ct_id = CPM::getCellIndex( nb_cellid ).celltype;
 				
-				if( celltype.isDefined() && (nb_ct_id != ct_id) )
+				//if( celltype_to.isDefined() && (nb_ct_id != ct_id) )
+				if( celltype_to.isDefined() && (nb_ct_id != celltype_to().get()->getID() ) )
 					continue;
 				
 				if( ignore_medium.isDefined() && (nb_ct_id == CPM::getEmptyCelltypeID() ))

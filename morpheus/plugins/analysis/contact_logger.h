@@ -20,83 +20,42 @@
  *  \brief Write the contacts and contact lengths between cells to file
  * 
 \section Description
-ContactLogger write the cell-cell contacts and their contact lengths/areas to file.
+ContactLogger write the cell-cell contacts, their contact lengths/areas and, optionally their duration, to file.
 
-Example of format:
+If no celltypes are specified, reports on cell-cell contacts between all celltypes. This includes the medium if ignore-medium is false.
 
-
-	Cell	Neighbor	Contact
-	1	2	160
-	1	21	209
-	1	28	199
-	1	57	194
-	1	74	131
-	1	99	169
-
-	2	1	160
-	2	3	160
-	2	57	191
-	2	58	196
-	2	99	184
-	2	100	189
-
-	3	2	160
-	3	4	159
-	3	58	194
-	3	59	200
-	3	100	179
-	3	101	184
 
 \section Input
-- celltype (required)
-
-TODO: 
-- configurable separator
-- optionally add cell positions
+- \b celltype-from: Only report on contacts of cells of this celltype.
+- \b celltype-to: Only report on contacts between this celltype and celltype-from (requires specification of celltype-from).
+- \b ignore-medium: Do not report on contact to medium (default=true). 
+- \b log-duration: Report on the duration (in time) of each cell-cell contact. Note that keeping track of this contact duration invokes a computational penalty.
 
 \section Examples
-Periodically write contact length and duration of cell-cell contacts between all cell types 
+Periodically write all contact length of cell-cell contacts between all cell types (excluding medium)
 \verbatim
-<ContactLogger time-step="010" log-duration="True" celltype="ct1"/>
+<ContactLogger time-step="100"/>
 \endverbatim
 
+Log all contacts of ct1 (including medium)
 \verbatim
-time	cell.id	cell.type	neighbor.id	neighbor.type	length	duration
-0	1	0	0	0	1.55556	0
-0	2	0	0	0	1.55556	0
-0	3	0	0	0	1.55556	0
-...
-100	1	0	19	0	8.77778	188
-100	1	0	27	0	2.16667	106
-100	1	0	46	0	15.2778	166
+<ContactLogger time-step="100" celltype-from="ct1" ignore-medium="false"/>
+\endverbatim
+
+Log all contacts between ct1 and ct2 (ignoring medium)
+\verbatim
+<ContactLogger time-step="100" celltype-from="ct1" celltype-to="ct2" log-duration="true"/>
 \endverbatim
 
 
-Log cell-cell contacts at the end of simulation
-\verbatim
-<ContactLogger time-step="100" log-duration="true"/>
-\endverbatim
-
-time	cell.id	cell.type	neighbor.id	neighbor.type	length	duration
-0	1	0	0	2	1.55556	0
-0	2	0	0	2	1.55556	0
-0	3	0	0	2	1.55556	0
-...
-0	51	1	0	2	1.55556	0
-0	52	1	0	2	1.55556	0
-0	53	1	0	2	1.55556	0
-...
-100	1	0	19	0	8.77778	188
-100	1	0	27	0	2.16667	106
-100	1	0	46	0	15.2778	166
-...
 */
 
 class ContactLogger : public AnalysisPlugin, InstantaneousProcessPlugin
 {
 
 	private:
-		PluginParameterCellType<OptionalPolicy> celltype;
+		PluginParameterCellType<OptionalPolicy> celltype_from;
+		PluginParameterCellType<OptionalPolicy> celltype_to;
 		ofstream fout;
 		
 		PluginParameter2<bool, XMLValueReader, DefaultValPolicy > ignore_medium;
