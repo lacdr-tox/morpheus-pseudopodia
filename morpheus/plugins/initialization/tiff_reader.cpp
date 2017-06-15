@@ -342,13 +342,13 @@ bool TIFFReader::loadTIFF(){
 								switch( mode ){
 									case CELLS:
 									{
- 										uint64 value = uint64(raster64[col]);
+ 										uint64_t value = uint64_t(raster64[col]);
 										// Cells need to be initialized with an Integer
 										if( std::floor( value ) != raster64[col] ){
 											cerr << "TIFFReader: Cannot initialize cells with non-integer value: " << raster64[col] << " @ " << row << ", " << col << endl;
 											exit(-1);
 										}
-										addNode( offset_+pos, (uint64)(value) );
+										addNode( offset_+pos, (uint64_t)(value) );
 										break;
 									}
 									case PDE:
