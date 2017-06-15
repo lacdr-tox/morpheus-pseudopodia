@@ -25,6 +25,8 @@ void Plugin::registerPluginParameter(PluginParameterBase& parameter ) {
 	plugin_parameters2.push_back(&parameter);
 }
 
+
+
 void Plugin::registerInputSymbol(string name, const Scope* scope)
 {
 	if (! scope) 

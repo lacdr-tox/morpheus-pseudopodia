@@ -3,10 +3,10 @@
 REGISTER_PLUGIN(CellReporter);
 
 CellReporter::CellReporter() {
-	input.setXMLPath("Input/value");
-	this->registerPluginParameter(input);
+	input->setXMLPath("Input/value");
+	this->registerPluginParameter(*input);
 	
-	polarity_output.setXMLPath("Polarity/symbol-ref");
+	polarity_output->setXMLPath("Polarity/symbol-ref");
 	this->registerPluginParameter(polarity_output);
 } 
 
@@ -16,12 +16,12 @@ void CellReporter::loadFromXML(const XMLNode xNode)
 
 	
 	for (uint i=0; i<xNode.nChildNode("Output"); i++) {
-		shared_ptr<OutputSpec> out(new OutputSpec());
-		out->mapping.setXMLPath("Output["+to_str(i)+"]/mapping");
-		out->mapping.setConversionMap(output_mode_map);
-		out->symbol.setXMLPath("Output["+to_str(i)+"]/symbol-ref");
-		registerPluginParameter(out->mapping);
-		registerPluginParameter(out->symbol);
+		OutputSpec out;
+		out.mapping->setXMLPath("Output["+to_str(i)+"]/mapping");
+		out.mapping->setConversionMap(output_mode_map);
+		out.symbol->setXMLPath("Output["+to_str(i)+"]/symbol-ref");
+		registerPluginParameter(out.mapping);
+		registerPluginParameter(out.symbol);
 		outputs.push_back(out);
 	}
 	
@@ -37,10 +37,10 @@ void CellReporter::init(const Scope* scope)
 	celltype = scope->getCellType();
 	assert(celltype);
 	
-	if (input.granularity() == Granularity::MembraneNode) {
-		for (auto out : outputs) { 
-			if (out->symbol.granularity() == Granularity::Node) {
-				out->effective_granularity = Granularity::Node;
+	if (input->granularity() == Granularity::MembraneNode) {
+		for (auto& out : outputs) { 
+			if (out.symbol->granularity() == Granularity::Node) {
+				out.effective_granularity = Granularity::Node;
 				surface_outputs.push_back(out);
 			}
 			else {
@@ -49,11 +49,11 @@ void CellReporter::init(const Scope* scope)
 		}
 	}
 	else {
-		for (auto out : outputs) { 
-			if (out->symbol.granularity() == Granularity::MembraneNode && input.granularity() == Granularity::Node) {
-				out->effective_granularity = Granularity::Node;
-				out->membrane_mapper = shared_ptr<MembraneMapper>(new MembraneMapper(MembraneMapper::MAP_CONTINUOUS) );
-				out->membrane_acc = celltype->findMembrane(out->symbol.name());
+		for (auto& out : outputs) { 
+			if (out.symbol->granularity() == Granularity::MembraneNode && input->granularity() == Granularity::Node) {
+				out.effective_granularity = Granularity::Node;
+				out.membrane_mapper = shared_ptr<MembraneMapper>(new MembraneMapper(MembraneMapper::MAP_CONTINUOUS) );
+				out.membrane_acc = celltype->findMembrane(out.symbol->name());
 				surface_outputs.push_back(out);
 			} else {
 				volume_outputs.push_back(out);
@@ -61,30 +61,52 @@ void CellReporter::init(const Scope* scope)
 		}
 	}
 	
-	for (auto out : volume_outputs) { 
-		if (out->symbol.granularity()==Granularity::MembraneNode || input.granularity()==Granularity::MembraneNode) {
-			out->effective_granularity = Granularity::MembraneNode;
+	for (auto& out : volume_outputs) { 
+		if (out.symbol->granularity()==Granularity::MembraneNode || input->granularity()==Granularity::MembraneNode) {
+			out.effective_granularity = Granularity::MembraneNode;
 		}				
-		else if (out->symbol.granularity()==Granularity::Node || input.granularity()==Granularity::Node)
-			out->effective_granularity = Granularity::Node;
+		else if (out.symbol->granularity()==Granularity::Node || input->granularity()==Granularity::Node)
+			out.effective_granularity = Granularity::Node;
 		else 
-			out->effective_granularity = Granularity::Cell;
+			out.effective_granularity = Granularity::Cell;
 		
-		if (out->mapping.isDefined()) {
-			out->mapper = DataMapper::create(out->mapping());
+		if (out.mapping->isDefined()) {
+			out.mapper = DataMapper::create(out.mapping());
 		}
-		else if (out->effective_granularity != out->symbol.granularity()) {
-			throw MorpheusException(string("Missing mapping in CellReporter Output to symbol ") + out->symbol.name() + ".",this->stored_node);
+		else if (out.effective_granularity != out.symbol->granularity()) {
+			throw MorpheusException(string("Missing mapping in CellReporter Output to symbol ") + out.symbol->name() + ".",this->stored_node);
 		}
 	}
 	
-	if (polarity_output.isDefined()) {
-		if (polarity_output.granularity() != Granularity::Cell) {
+	if (polarity_output->isDefined()) {
+		if (polarity_output->granularity() != Granularity::Cell) {
 			throw MorpheusException("Reporting Polarity in CellReporter requires a reference to a CellPropertyVector.",this->stored_node);
 		}
 	}
 }
 
+void CellReporter::report_output(const OutputSpec& output) {
+    // 3 modes out == iter_gran --> assign
+    FocusRange range(output.effective_granularity, scope);
+    if (output.effective_granularity == output.symbol->granularity()) {
+    }
+    else if (output.symbol->granularity()==Granularity::Global) { // single element in local scope ...
+        // Need to reduce globally
+       
+       
+    }
+    else {
+        // create write_out lambda trigger to be registered in focusrange ...
+		
+//        auto range_iter = range.begin();
+// 		range_iter.register_cell_change_callback(
+//         [&output] (const SymbolFocus& focus) {
+//             output.symbol->set(focus, output.mapper->get());
+//             output.mapper->reset();
+//         }
+// 		);
+    }
+}
 
 void CellReporter::report() {
 	
@@ -97,19 +119,19 @@ void CellReporter::report() {
 			auto cell_surface = f.cell().getSurface();
 			
 			for (const auto& out : surface_outputs) {
-				if (out->membrane_mapper) {
-					out->membrane_mapper->attachToCell(cell_id);
+				if (out.membrane_mapper) {
+					out.membrane_mapper->attachToCell(cell_id);
 					for (auto node : cell_surface) {
 						f.setPosition(node);
-						out->membrane_mapper->map(node, input(f));
+						out.membrane_mapper->map(node, (*input)(f));
 					}
-					out->membrane_mapper->fillGaps();
-					out->membrane_mapper->copyData(out->membrane_acc.getMembrane(cell_id));
+					out.membrane_mapper->fillGaps();
+					out.membrane_mapper->copyData(out.membrane_acc.getMembrane(cell_id));
 				}
 				else {
 					for (auto node : cell_surface) {
 						f.setPosition(node);
-						out->symbol.set(f,input(f));
+						out.symbol->set(f,(*input)(f));
 					}
 				}
 			}
@@ -120,38 +142,38 @@ void CellReporter::report() {
 		// Initialize the global outputs
 		for (const auto& out : volume_outputs) {
 			// We need to collapse input data via mapping
-			if (out->mapper) {
+			if (out.mapper) {
 				valarray<double> data;
 				for (const auto cell_id : cells) {
-					FocusRange range(out->effective_granularity, cell_id);
+					FocusRange range(out.effective_granularity, cell_id);
 					for (auto focus : range) {
-						out->mapper->addVal(input(focus));
+						out.mapper->addVal(input(focus));
 					}
 					
 					// Write mapped data to cell
-					if (out->symbol.granularity() == Granularity::Cell) {
-						out->symbol.set(SymbolFocus(cell_id), out->mapper->get());
-						out->mapper->reset();
+					if (out.symbol->granularity() == Granularity::Cell) {
+						out.symbol->set(SymbolFocus(cell_id), out.mapper->get());
+						out.mapper->reset();
 					}
 				}
 				// Write mapped data to global
-				if (out->symbol.granularity() == Granularity::Global) {
-					out->symbol.set(SymbolFocus(), out->mapper->get());
-					out->mapper->reset();
+				if (out.symbol->granularity() == Granularity::Global) {
+					out.symbol->set(SymbolFocus(), out.mapper->get());
+					out.mapper->reset();
 				}
 			} 
 			// Sufficient output granularity. Output without data mapping.
 			else {
-				FocusRange range(out->effective_granularity, this->scope());
+				FocusRange range(out.effective_granularity, this->scope);
 				for (auto focus : range) {
-					out->symbol.set(focus,input(focus));
+					out.symbol->set(focus, input(focus));
 				}
 			}
 		}
 		
 	}
-	if ( polarity_output.isDefined()) {
-		if (input.granularity() == Granularity::Node) {
+	if ( polarity_output->isDefined()) {
+		if (input->granularity() == Granularity::Node) {
 			const Lattice& lattice = SIM::lattice();
 			for (const auto cell_id: cells)  {
 				VDOUBLE polarisation;
@@ -161,10 +183,10 @@ void CellReporter::report() {
 					polarisation += input(focus) * orientation;
 				}
 				polarisation = polarisation / range.size();
-				polarity_output.set(SymbolFocus(cell_id), polarisation);
+				polarity_output->set(SymbolFocus(cell_id), polarisation);
 			}
 		}
-		else if (input.granularity() == Granularity::MembraneNode) {
+		else if (input->granularity() == Granularity::MembraneNode) {
 			for (const auto cell_id: cells)  {
 				VDOUBLE polarisation;
 // 				double theta_scale = 2.0 * M_PI / MembraneProperty::getSize().x;
@@ -178,7 +200,7 @@ void CellReporter::report() {
 					polarisation += input(focus) * orientation * d_surf;
 				}
 				polarisation = polarisation / surface;
-				polarity_output.set(SymbolFocus(cell_id), polarisation);
+				polarity_output->set(SymbolFocus(cell_id), polarisation);
 			}
 		}
 		

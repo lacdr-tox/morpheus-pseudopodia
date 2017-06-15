@@ -76,12 +76,13 @@ class CellReporter : public ReporterPlugin //Celltype_MCS_Listener
 {
 private:
 	CellType* celltype;
+	const Scope* scope;
 	
-	PluginParameter2<double, XMLEvaluator, RequiredPolicy> input;
+	PluginParameter<double, XMLEvaluator, RequiredPolicy> input;
 	
 	struct OutputSpec {
-		PluginParameter2<DataMapper::Mode, XMLNamedValueReader, OptionalPolicy> mapping;
-		PluginParameter2<double, XMLWritableSymbol> symbol;
+		PluginParameter<DataMapper::Mode, XMLNamedValueReader, OptionalPolicy> mapping;
+		PluginParameter<double, XMLWritableSymbol> symbol;
 		bool need_cell_surface_granularity;
 		Granularity effective_granularity;
 		shared_ptr<DataMapper> mapper;
@@ -89,20 +90,20 @@ private:
 		CellMembraneAccessor membrane_acc;
 	};
 	
-	vector< shared_ptr<OutputSpec> > outputs;
-	vector< shared_ptr<OutputSpec> > surface_outputs;
-	vector< shared_ptr<OutputSpec> > volume_outputs;
-
+	vector< OutputSpec > outputs;
+	vector< OutputSpec > surface_outputs;
+	vector< OutputSpec > volume_outputs;
+	void report_output(const OutputSpec& output);
 	
-	PluginParameter2<VDOUBLE, XMLWritableSymbol, OptionalPolicy> polarity_output;
+	PluginParameter<VDOUBLE, XMLWritableSymbol, OptionalPolicy> polarity_output;
 
 public:
 	DECLARE_PLUGIN("CellReporter");
     CellReporter();
 
-    virtual void init(const Scope* scope);
-    virtual void loadFromXML(const XMLNode );
-    virtual void report();
+    void init(const Scope* scope) override;
+    void loadFromXML(const XMLNode ) override;
+    void report() override;
 };
 
 #endif // CELLREPORTER_H

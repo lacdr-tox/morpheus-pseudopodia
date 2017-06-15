@@ -590,10 +590,13 @@ public:
  *  @tparam RequirementPolicy one of RequiredPolicy / OptionalPolicy
  * 
  */
+
+
 template <class T, template <class S, class R> class XMLValueInterpreter = XMLValueReader, class RequirementPolicy = RequiredPolicy >
 class PluginParameter2 : public PluginParameterBase, public XMLValueInterpreter<T, RequirementPolicy> {
 public:
 	typedef  T ValType;
+	
 	PluginParameter2() : PluginParameterBase(), xml_path("") {};
 	void setXMLPath(string xml_path) { this->xml_path = xml_path; }
 	string XMLPath() const override { return this->xml_path; }
@@ -752,15 +755,46 @@ class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPoli
 		~XMLStringifyExpression() {}
 	
 	private:
-		mutable stringstream out;
-		Type type;
 		string string_val;
 		string undef_val;
 		const Scope* scope;
 		bool require_global_scope;
+		
+		mutable stringstream out;
+		Type type;
 		PluginParameter2<double, XMLEvaluator, RequiredPolicy> double_expr;
 		PluginParameter2<double, XMLEvaluator, RequiredPolicy> vdouble_expr;
 };
+
+/// Wrapper around the PluginParamter_internal to get an implicitely shared behavior with the convenience of having static allocation in the plugin.
+
+template <class T, template <class S, class R> class XMLValueInterpreter, class RequirementPolicy>
+using PluginParameter_internal = PluginParameter2<T, XMLValueInterpreter, RequirementPolicy>;
+
+template <class T, template <class S, class R> class XMLValueInterpreter = XMLValueReader, class RequirementPolicy = RequiredPolicy >
+class PluginParameter {
+public:
+	typedef PluginParameter_internal<T, XMLValueInterpreter, RequirementPolicy> ParamType;
+	
+private:
+	shared_ptr< ParamType > d;
+	
+public:
+	PluginParameter() { this->d = make_shared< ParamType >(); }
+	ParamType& operator*() { return *(this->d); }
+	ParamType* operator->() { return this->d.get(); }
+
+	/// convenience parenthese operators
+	typename ParamType::ValType operator()() { return d->get(); }
+	template <class A> 
+	typename ParamType::ValType operator()(const A& f) { return d->get(f); }
+
+	const ParamType& operator*() const { return *(this->d); }
+	const ParamType* operator->() const { return (this->d).get(); }
+	PluginParameter<T, XMLValueInterpreter, RequirementPolicy> clone();
+};
+
+
 
 template < class RequirementPolicy >
 using PluginParameterCellType = PluginParameter2< shared_ptr<const CellType>, XMLNamedValueReader, RequirementPolicy >;
