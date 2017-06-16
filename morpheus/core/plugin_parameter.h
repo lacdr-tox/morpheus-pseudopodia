@@ -17,37 +17,6 @@
 #include "simulation.h"
 #include "expression_evaluator.h"
 #include "symbol_accessor.h"
-/* Can we get an implicitely shared behavior for PluginParameters?
-   That would help largely to move Parameter objects around.
-   
-   * We should preserve the policy based interface enrichment
-   * We also have to preserve the joint virtual base-class
-   
-   What about a template wrapper
-   
-	class PluginParameterBase {
-		public:
-			virtual PluginParameterBasePrivate* operator->() =0;
-		protected:
-			PluginParameterBase() {};
-// 			shared_ptr<PluginParameterBasePrivate> base_d;
-		private:
-	}
-	
-	template <class T, template <class T, class R> class XMLValueInterpreter = XMLValueReader, class RequirementPolicy = RequiredPolicy >
-	class PluginParameter : public PluginParameterBase {
-		public:
-			PluginParameterBase() { d= make_shared<ParameterPrivate>(); }
-			
-			typdef PluginParameterPrivate<T, XMLValueInterpreter, RequirementPolicy> ParameterPrivate;
-			
-			// TODO : does this work to override to the baseclass operator ???
-			ParameterPrivate* operator->() override { return d; };
-		protected:
-			shared_ptr<ParameterPrivate> d;
-   }
-   
-*/
 
 /**
  * 
@@ -578,9 +547,8 @@ public:
 
 // Make a distinction between declaration and functional class of the PluginParamter Template ...
 
-/** Creating a PluginParameter that is coupled to the XML with a statically inherited policy for string value interpretation
+/** Creates PluginParameter that is coupled to the XML with a statically inherited policy for string value interpretation
  * 
- *  This is really neat meta programming ... 
  *  @tparam T the value type
  *  @tparam XMLValueInterpreter one of the following Reader Policies:
  *    - XMLValueReader -- Just reads the value from XML and converts it via operator>> 
@@ -766,7 +734,22 @@ class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPoli
 		PluginParameter2<double, XMLEvaluator, RequiredPolicy> vdouble_expr;
 };
 
-/// Wrapper around the PluginParamter_internal to get an implicitely shared behavior with the convenience of having static allocation in the plugin.
+/** PluginParameter -- parses a parameter from the XML and provides values
+ * 
+ *  Using template meta programming, PluginParameter assembles an accessor class based on policy classes.
+ *  @tparam T the value type
+ *  @tparam XMLValueInterpreter one of the following Reader Policies:
+ *    - XMLValueReader -- Just reads the value from XML and converts it via operator>> 
+ *    - XMLEvaluator -- Reads numerical expressions (VDOUBLE/double type only) and interpretes them via muParser
+ *    - XMLNamedValueReader -- Reads strings from XML and converts them via a user provided conversion map
+ *    - XMLReadWriteSymbol -- Reads a string that represents a symbol and generates RW access to the symbol
+ *  @tparam RequirementPolicy one of RequiredPolicy / OptionalPolicy
+ * 
+ * For reading in a CellType, the PluginParameterCellType class is a preconfigured specialization.
+ * 
+ * Actually, PluginParameter is a wrapper around the PluginParamter_internal class, such that it has implicitely shared behavior.
+ * Thus, because we don't know in advance the interface of PluginParamter_internal accessing it's members has to be done via the pointer operator '->'.
+ */ 
 
 template <class T, template <class S, class R> class XMLValueInterpreter, class RequirementPolicy>
 using PluginParameter_internal = PluginParameter2<T, XMLValueInterpreter, RequirementPolicy>;
@@ -781,16 +764,16 @@ private:
 	
 public:
 	PluginParameter() { this->d = make_shared< ParamType >(); }
-	ParamType& operator*() { return *(this->d); }
-	ParamType* operator->() { return this->d.get(); }
+	/// Dereference to the underlying shared object.
+	ParamType& operator*() { return *d; }
+	ParamType* operator->() { return d.get(); }
+	const ParamType& operator*() const { return *d; }
+	const ParamType* operator->() const { return d.get(); }
 
-	/// convenience parenthese operators
-	typename ParamType::ValType operator()() { return d->get(); }
-	template <class A> 
-	typename ParamType::ValType operator()(const A& f) { return d->get(f); }
+	/// Convenience parenthesis operators for accessing the parameter value
+	template <typename... Arguments> 
+	typename TypeInfo<typename ParamType::ValType>::SReturn operator()(Arguments... params) const { return d->get(params ...); }
 
-	const ParamType& operator*() const { return *(this->d); }
-	const ParamType* operator->() const { return (this->d).get(); }
 	PluginParameter<T, XMLValueInterpreter, RequirementPolicy> clone();
 };
 
