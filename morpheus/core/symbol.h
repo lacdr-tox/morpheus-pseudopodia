@@ -113,6 +113,10 @@ class Scope;
 enum class Granularity {
 	 Undef, Global, Node, Cell, MembraneNode
 };
+
+bool operator<(Granularity a, Granularity b);
+bool operator<=(Granularity a, Granularity b);
+
 Granularity operator+(Granularity a, Granularity b);
 Granularity& operator+=(Granularity& g, Granularity b);
 ostream& operator<<(ostream& out, Granularity g);

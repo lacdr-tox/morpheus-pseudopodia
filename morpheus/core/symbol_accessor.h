@@ -84,6 +84,7 @@ class SymbolAccessorBase {
 		bool isInteger() const { return data.integer; };
 		bool isConst() const { return data.invariant; }
 		SymbolData::LinkType getLinkType() const  { return data.link; }
+		bool isComposite() const { return data.is_composite; }
 		bool valid() const;
 		
 		/// Tells whether the symbol is defined for CellType ct
@@ -130,7 +131,8 @@ class SymbolAccessorBase {
 		// allow the ODESystem access to all symbol interna
 		template <SystemType s> friend class System;
 		friend class Diffusion;
-// 		friend class Equation;
+		friend class Mapper;
+		friend class CellReporter;
 		friend class FocusRange;
 };
 

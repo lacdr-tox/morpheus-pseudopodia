@@ -72,7 +72,7 @@ Determine the binding rate of a soluble substance to a membrane bound molecule
 #include "core/data_mapper.h"
 #include "core/membranemapper.h"
 
-class CellReporter : public ReporterPlugin //Celltype_MCS_Listener
+class CellReporter : public ReporterPlugin
 {
 private:
 	CellType* celltype;
@@ -83,17 +83,19 @@ private:
 	struct OutputSpec {
 		PluginParameter<DataMapper::Mode, XMLNamedValueReader, OptionalPolicy> mapping;
 		PluginParameter<double, XMLWritableSymbol> symbol;
-		bool need_cell_surface_granularity;
-		Granularity effective_granularity;
-		shared_ptr<DataMapper> mapper;
-		shared_ptr<MembraneMapper> membrane_mapper;
-		CellMembraneAccessor membrane_acc;
+// 		bool need_cell_surface_granularity;
+// 		Granularity effective_granularity;
+// 		shared_ptr<DataMapper> mapper;
+// 		shared_ptr<MembraneMapper> membrane_mapper;
+// 		CellMembraneAccessor membrane_acc;
 	};
 	
 	vector< OutputSpec > outputs;
-	vector< OutputSpec > surface_outputs;
-	vector< OutputSpec > volume_outputs;
-	void report_output(const OutputSpec& output);
+	
+	void report_output(const OutputSpec& output,  const Scope* scope);
+	void report_output(const OutputSpec& output, const SymbolFocus& focus);
+	
+	void report_polarity(const Scope* scope);
 	
 	PluginParameter<VDOUBLE, XMLWritableSymbol, OptionalPolicy> polarity_output;
 
