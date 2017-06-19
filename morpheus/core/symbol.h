@@ -111,7 +111,7 @@ extern string sym_Modulo;
 class Scope;
 
 enum class Granularity {
-	 Undef, Global, Node, Cell, MembraneNode
+	 Undef, Global, Node, Cell, MembraneNode, SurfaceNode
 };
 
 bool operator<(Granularity a, Granularity b);

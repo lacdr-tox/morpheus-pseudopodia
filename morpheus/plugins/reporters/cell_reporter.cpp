@@ -142,6 +142,7 @@ void CellReporter::report_output(const OutputSpec& output, const Scope* scope) {
 
 		FocusRange range(Granularity::Cell, scope);
 		for (auto focus : range) {
+			
 			auto cell_surface = focus.cell().getSurface();
 			
 			membrane_mapper.attachToCell(focus.cellID());
@@ -186,7 +187,9 @@ void CellReporter::report_polarity(const Scope* scope) {
 			throw string("Insufficient information for calculation of a polarity");
 		}
 		else if (polarity_output->granularity() == Granularity::Global) {
-			FocusRange range(input->granularity(),scope);
+			Granularity g = input->granularity();
+			if (g == Granularity::MembraneNode ) g = Granularity::SurfaceNode;
+			FocusRange range(g,scope);
 			VDOUBLE center;
 			for (const auto& focus : range) {
 				center+=focus.pos();
@@ -205,23 +208,15 @@ void CellReporter::report_polarity(const Scope* scope) {
 			FocusRange out_range(Granularity::Cell, scope);
 			for (auto out_focus : out_range) {
 				VDOUBLE polarisation;
-				if (input->granularity() == Granularity::MembraneNode) {
-					auto surface = out_focus.cell().getSurface();
-					for (const auto& node : surface) {
-						out_focus.setPosition(node);
-						VDOUBLE orientation( (lattice.to_orth(node) - out_focus.cell().getCenter()).norm());
-						polarisation += input(out_focus) * orientation;
-					}
-					polarisation = polarisation / surface.size();
+				Granularity g = input->granularity();
+				if (g == Granularity::MembraneNode ) g = Granularity::SurfaceNode;
+				FocusRange range(g,out_focus.cellID());
+				
+				for (const auto& focus : range) {
+					VDOUBLE orientation( (lattice.to_orth(focus.pos()) - focus.cell().getCenter()).norm());
+					polarisation += input(focus) * orientation;
 				}
-				else {
-					FocusRange range(input->granularity(),out_focus.cellID());
-					for (const auto& focus : range) {
-						VDOUBLE orientation( (lattice.to_orth(focus.pos()) - focus.cell().getCenter()).norm());
-						polarisation += input(focus) * orientation;
-					}
-					polarisation = polarisation / range.size();
-				}
+				polarisation = polarisation / range.size();
 				polarity_output->set(out_focus, polarisation);
 			}
 		}
