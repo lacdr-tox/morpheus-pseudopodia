@@ -380,9 +380,9 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 				auto cell_range = restrictions.equal_range(FocusRangeAxis::CELL);
 				for (auto cell  = cell_range.first; cell != cell_range.second; cell++ ) {
 					range->cell_range.push_back(cell->second);
-					if (data->iter_mode == FocusRangeDescriptor::IT_CellNodes)
+					if (range->iter_mode == FocusRangeDescriptor::IT_CellNodes)
 						range->cell_nodes.push_back( &(CPM::getCell(cell->second).getSurface()) );
-					else // if (data->iter_mode == FocusRangeDescriptor::IT_CellSurfaceNodes)
+					else // if (range->iter_mode == FocusRangeDescriptor::IT_CellSurfaceNodes)
 						range->cell_nodes.push_back( &(CPM::getCell(cell->second).getNodes()) );
 					range->cell_sizes.push_back(range->cell_nodes.back()->size());
 				}
@@ -396,9 +396,9 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 			else if (range->spatial_restriction == FocusRangeDescriptor::RESTR_CELLPOP) {
 				range->cell_range = ct->getCellIDs();
 				for (auto it : range->cell_range) {
-					if (data->iter_mode == FocusRangeDescriptor::IT_CellNodes)
+					if (range->iter_mode == FocusRangeDescriptor::IT_CellNodes)
 						range->cell_nodes.push_back( &(CPM::getCell(it).getSurface()) );
-					else // if (data->iter_mode == FocusRangeDescriptor::IT_CellSurfaceNodes)
+					else // if (range->iter_mode == FocusRangeDescriptor::IT_CellSurfaceNodes)
 						range->cell_nodes.push_back( &(CPM::getCell(it).getNodes()) );
 					range->cell_sizes.push_back(range->cell_nodes.back()->size());
 				}
