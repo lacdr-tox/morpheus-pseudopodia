@@ -48,7 +48,7 @@ double Protrusion::local_activity(SymbolFocus f) const{
 			num_nbs++;
 		}
 	}
-	return pow( multiplication, 1.0/(double)num_nbs );
+	return pow( multiplication, 1.0/((double)num_nbs+1.0));
 }
 
 double Protrusion::delta(const SymbolFocus& cell_focus, const CPM::Update& update) const
