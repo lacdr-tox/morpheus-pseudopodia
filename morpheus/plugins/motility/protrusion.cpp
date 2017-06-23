@@ -58,7 +58,10 @@ double Protrusion::delta(const SymbolFocus& cell_focus, const CPM::Update& updat
 // 	if ( todo & CPM::REMOVE )
 // 		return 0.0;
 	
- 	if (update.source().celltype() == CPM::getEmptyCelltypeID() ) {
+    if (maxact(cell_focus) == 0){
+        return 0.0;
+    }
+    if (update.source().celltype() == CPM::getEmptyCelltypeID() ) {
  		return 0.0;
  	}
 
