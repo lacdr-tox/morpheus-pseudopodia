@@ -53,7 +53,7 @@ SET(morpheus_src ${morpheus_src} ${tools_src} )
 CONFIGURE_FILE(config.h.cmake config.h)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR} ${TIFF_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
 
-option(MORPHEUS_CORE_CATCH "Catch excaptions in the simulator core. Required for GUI integration. May be switched off for debuging purposese. " ON)
+option(MORPHEUS_CORE_CATCH "Catch exceptions in the simulator core. Required for GUI integration. May be switched off for debuging purposese. " ON)
 mark_as_advanced(MORPHEUS_CORE_CATCH)
 
 if (NOT(MORPHEUS_CORE_CATCH))
