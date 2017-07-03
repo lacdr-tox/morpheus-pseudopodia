@@ -566,6 +566,9 @@ public:
 	typedef  T ValType;
 	
 	PluginParameter2() : PluginParameterBase(), xml_path("") {};
+	PluginParameter2( const PluginParameter2& ) = delete;
+	const PluginParameter2& operator=( const PluginParameter2& ) = delete;
+	
 	void setXMLPath(string xml_path) { this->xml_path = xml_path; }
 	string XMLPath() const override { return this->xml_path; }
 	void loadFromXML(XMLNode node) override {
@@ -755,7 +758,7 @@ template <class T, template <class S, class R> class XMLValueInterpreter, class 
 using PluginParameter_internal = PluginParameter2<T, XMLValueInterpreter, RequirementPolicy>;
 
 template <class T, template <class S, class R> class XMLValueInterpreter = XMLValueReader, class RequirementPolicy = RequiredPolicy >
-class PluginParameter {
+class PluginParameter_Shared {
 public:
 	typedef PluginParameter_internal<T, XMLValueInterpreter, RequirementPolicy> ParamType;
 	
@@ -763,7 +766,7 @@ private:
 	shared_ptr< ParamType > d;
 	
 public:
-	PluginParameter() { this->d = make_shared< ParamType >(); }
+	PluginParameter_Shared() { this->d = make_shared< ParamType >(); }
 	/// Dereference to the underlying shared object.
 	ParamType& operator*() { return *d; }
 	ParamType* operator->() { return d.get(); }
@@ -774,7 +777,7 @@ public:
 	template <typename... Arguments> 
 	typename TypeInfo<typename ParamType::ValType>::SReturn operator()(Arguments... params) const { return d->get(params ...); }
 
-	PluginParameter<T, XMLValueInterpreter, RequirementPolicy> clone();
+	PluginParameter_Shared<T, XMLValueInterpreter, RequirementPolicy> clone();
 };
 
 

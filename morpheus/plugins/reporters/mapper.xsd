@@ -3,18 +3,18 @@
 	
 	<xs:group name="GlobalPlugins">
 		<xs:choice>
-			<xs:element name="Mapping"	type="CellReporter"/>
+			<xs:element name="Mapping"	type="Mapping_t"/>
 		</xs:choice>
 	</xs:group>
 	
 	<xs:group name="CellTypePlugins">
 		<xs:choice>
-			<xs:element name="CellReporter"	type="CellReporter"/>
-			<xs:element name="Mapping"	type="CellReporter"/>
+<!-- 			<xs:element name="CellReporter"	type="Mapping_t"/> -->
+			<xs:element name="Mapping"	type="Mapping_t"/>
 		</xs:choice>
 	</xs:group>
 	
-	<xs:complexType name="CellReporter">
+	<xs:complexType name="Mapping_t">
 		<xs:annotation>
 			<xs:appinfo>Reporter</xs:appinfo>
 		</xs:annotation>

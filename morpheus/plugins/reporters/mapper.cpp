@@ -1,16 +1,15 @@
-#include "cell_reporter.h"
+#include "mapper.h"
 
-// REGISTER_PLUGIN(CellReporter);
+REGISTER_PLUGIN(Mapper);
 
-Plugin* CellReporter::createInstance() { return new CellReporter(); }
-
-bool CellReporter::factory_registration =
-	PluginFactory::RegisterCreatorFunction("CellReporter", CellReporter::createInstance ) &&
-	PluginFactory::RegisterCreatorFunction("Mapping", CellReporter::createInstance );
-
+// Plugin* Mapper::createInstance() { return new CellReporter(); }
+// bool CellReporter::factory_registration =
+// 	PluginFactory::RegisterCreatorFunction("CellReporter", CellReporter::createInstance ) &&
+// 	PluginFactory::RegisterCreatorFunction("Mapping", CellReporter::createInstance );
 
 
-CellReporter::CellReporter() {
+
+Mapper::Mapper() {
 	input->setXMLPath("Input/value");
 	this->registerPluginParameter(*input);
 	
@@ -18,7 +17,7 @@ CellReporter::CellReporter() {
 	this->registerPluginParameter(polarity_output);
 } 
 
-void CellReporter::loadFromXML(const XMLNode xNode)
+void Mapper::loadFromXML(const XMLNode xNode)
 {
 	map<string, DataMapper::Mode> output_mode_map = DataMapper::getModeNames();
 	
@@ -35,7 +34,7 @@ void CellReporter::loadFromXML(const XMLNode xNode)
 	ReporterPlugin::loadFromXML(xNode);
 }
 
-void CellReporter::init(const Scope* scope)
+void Mapper::init(const Scope* scope)
 {
 	this->scope = scope;
 	TimeStepListener::init(scope);
@@ -44,7 +43,7 @@ void CellReporter::init(const Scope* scope)
 		registerCellPositionDependency();
 }
 
-void CellReporter::report_output(const OutputSpec& output, const SymbolFocus& focus) {
+void Mapper::report_output(const OutputSpec& output, const SymbolFocus& focus) {
 	if ( input->granularity() <= output.symbol->granularity() || output.symbol->granularity() ==  Granularity::Node) {
 		output.symbol->set(focus,input(focus));
 	}
@@ -70,7 +69,7 @@ void CellReporter::report_output(const OutputSpec& output, const SymbolFocus& fo
 	}
 }
 
-void CellReporter::report_output(const OutputSpec& output, const Scope* scope) {
+void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 
 	FocusRange range(output.symbol->granularity(), scope);
 	
@@ -132,7 +131,7 @@ void CellReporter::report_output(const OutputSpec& output, const Scope* scope) {
 	}
 }
 
-void CellReporter::report_polarity(const Scope* scope) {
+void Mapper::report_polarity(const Scope* scope) {
 	if ( polarity_output->isDefined()) {
 		const Lattice& lattice = SIM::lattice();
 		
@@ -179,7 +178,7 @@ void CellReporter::report_polarity(const Scope* scope) {
 	}
 }
 
-void CellReporter::report() {
+void Mapper::report() {
 	
 	for ( auto& out : outputs) {
 		if (out.symbol->accessor().isComposite() ) {

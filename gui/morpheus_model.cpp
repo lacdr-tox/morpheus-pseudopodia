@@ -280,9 +280,11 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		fix_version=3;
 		MorphModel::AutoFix a;
 		a.copy = false;
+		a.match_path = "MorpheusModel/CellType/CellReporter"; a.move_path = "MorpheusModel/CellType/Mapping"; fixes.append(a);
 		a.match_path = "MorpheusModel/CPM/ShapeBoundary"; a.move_path = "MorpheusModel/CPM/ShapeSurface"; fixes.append(a);
 		a.match_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@symbol-ref";a.move_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@value"; fixes.append(a);
 		a.match_path = "MorpheusModel/Analysis/Logger/Restriction/@force-node-granularity";a.move_path = "MorpheusModel/Analysis/Logger/Input/@force-node-granularity"; fixes.append(a);
+		
 	}
 	else if (morpheus_file_version == 2) {
 		// return edits;

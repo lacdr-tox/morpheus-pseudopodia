@@ -19,7 +19,7 @@
 
 class AbstractPluginParameter;
 class PluginParameterBase;
-template <class T, template <class S, class R> class XMLValueInterpreter, class RequirementPolicy> class PluginParameter;
+template <class T, template <class S, class R> class XMLValueInterpreter, class RequirementPolicy> class PluginParameter_Shared;
 template <class T> class ExpressionEvaluator;
 template <class T> class ThreadedExpressionEvaluator;
 class CellType;
@@ -207,7 +207,7 @@ class Plugin {
 		void registerPluginParameter( PluginParameterBase& parameter );
 		
 		template <class T, template <class S, class R> class XMLValueInterpreter, class RequirementPolicy >
-		void registerPluginParameter( PluginParameter<T, XMLValueInterpreter, RequirementPolicy>& parameter ) { registerPluginParameter(*parameter); }
+		void registerPluginParameter( PluginParameter_Shared<T, XMLValueInterpreter, RequirementPolicy>& parameter ) { registerPluginParameter(*parameter); }
 /*		// Can be used to 
 		template <class T>
 		void registerUsedSymbol( const SymbolAccessor<T>& parameter );

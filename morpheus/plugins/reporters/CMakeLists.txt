@@ -2,7 +2,7 @@ set(plugin_src
 	
 	neighborhood_reporter.cpp
 	neighborhood_vector_reporter.cpp
-	cell_reporter.cpp
+	mapper.cpp
 	motility_reporter.cpp
 
 #	population_reporter.cpp

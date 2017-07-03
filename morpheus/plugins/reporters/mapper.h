@@ -9,60 +9,83 @@
 //
 //////
 
-/** \defgroup CellReporter
+/** 
+ * \defgroup Mapping
 \ingroup ML_CellType
+
+
 \ingroup ReporterPlugins
-\brief Reports data about the spatial area covered by a cell.
+\brief Map data from a spatial context into another symbol, usually reducing spatial information by a mapping function.
+
+former CellReporter
 
 \section Description
 
-CellReporter reports data about the spatial area covered by a cell. 
+A Mapping defines how data within a spatial context, e.g. a cell, a cell population or at global scope, can be mapped to a symbol with a different spatial granularity (i.e. resolution). Note that defining a Mapping within a CellType also restricts the mapping to the spatial range occupied by the respectiv cell population.
 
 A single \b Input element must be specified:
-- \b value: input variable (e.g. Property, MembraneProperty or Field). May contain expression.
+- \b value: input variable (e.g. Property, MembraneProperty or Field). May contain an expression.
 
 That information can be written to an output symbol, if necessary, mapped to a single value by means of a statistic.
-Writing to a Field or MembraneProperty does not require a mapping to be specified, since their granularity is sufficient.
+If the output granularity is sufficient, i.e. when writing to a Field or MembraneProperty, no mapping function needs to be specified.
 
 Multiple \b Output elements can be specified:
 - \b mapping: statistic used for data mapping (if needed)
-- \b symbol-ref: ouput variable (e.g. Property or MembraneProperty)
+- \b symbol-ref: ouput symbol (referencing e.g. a Variable, a Property or a MembraneProperty)
 
-Via the \b Polarisation tag, the degree of asymmetry in the spatial distribution can be mapped into a vector of polarisation, heading into the direction of maximum information.
-
+Via the \b Polarisation tag, the degree of polarization in a spatial distribution of a quantity wrt. the center of the spatial range can be mapped into a vector, heading into the direction of the maximum quantity.
 \section Example
+
+Count number of cells within a celltype or globally.
+(Assume 'A' refers to Variable)
+\verbatim
+<Mapping>
+	<Input value="cell.id>0" />
+	<Output symbol-ref="A" mapping="sum" />
+</Mapping>
+\endverbatim
+
+Compute the sum and the variance of concentrations in a Field.
+(Assume 'A' refers to a Field and  'B1' and 'B2' to global Variables)
+\verbatim
+<Mapping>
+	<Input value="A" />
+	<Output symbol-ref="B1" mapping="sum" />
+	<Output symbol-ref="B2" mapping="variance" />
+</Mapping>
+\endverbatim
 
 Average concentration of an agent in a Field in the range of a cell.
 (Assume 'A' to refer to a Field and 'B' refer to a CellProperty)
 \verbatim
-<CellReporter>
-	<Input value="A" scaling="cell"/>
+<Mapping>
+	<Input value="A" />
 	<Output symbol-ref="B" mapping="avg" />
-</CellReporter>
+</Mapping>
 \endverbatim
 
 Polarisation and variance of a membrane property
 (Assume B to refer to a CellProperty, C to refer to a MembraneProperty and D to refer to a VectorProperty)
 \verbatim
-<CellReporter>
-	<Input value="C" scaling="cell"/>
+<Mapping>
+	<Input value="C" />
 	<Output symbol-ref="B" mapping="variance" />
 	<Polarisation symbol-ref="D" />
-</CellReporter>
+</Mapping>
 \endverbatim
 
 Determine the binding rate of a soluble substance to a membrane bound molecule
 (Assume 'A' to refer to a Field  and 'C' and 'C_r' to refer to MembraneProperties)
 \verbatim
-<CellReporter>
-	<Input value="C*A" scaling="cell"/>
+<Mapping>
+	<Input value="C*A"/>
 	<Output symbol-ref="C_r" />
-</CellReporter>
+</Mapping>
 \endverbatim
 **/
 
-#ifndef CELLREPORTER_H
-#define CELLREPORTER_H
+#ifndef MAPPER_H
+#define MAPPER_H
 
 #include "core/simulation.h"
 #include "core/plugin_parameter.h"
@@ -72,22 +95,17 @@ Determine the binding rate of a soluble substance to a membrane bound molecule
 #include "core/data_mapper.h"
 #include "core/membranemapper.h"
 
-class CellReporter : public ReporterPlugin
+class Mapper : public ReporterPlugin
 {
 private:
 	CellType* celltype;
 	const Scope* scope;
 	
-	PluginParameter<double, XMLEvaluator, RequiredPolicy> input;
+	PluginParameter_Shared<double, XMLEvaluator, RequiredPolicy> input;
 	
 	struct OutputSpec {
-		PluginParameter<DataMapper::Mode, XMLNamedValueReader, OptionalPolicy> mapping;
-		PluginParameter<double, XMLWritableSymbol> symbol;
-// 		bool need_cell_surface_granularity;
-// 		Granularity effective_granularity;
-// 		shared_ptr<DataMapper> mapper;
-// 		shared_ptr<MembraneMapper> membrane_mapper;
-// 		CellMembraneAccessor membrane_acc;
+		PluginParameter_Shared<DataMapper::Mode, XMLNamedValueReader, OptionalPolicy> mapping;
+		PluginParameter_Shared<double, XMLWritableSymbol> symbol;
 	};
 	
 	vector< OutputSpec > outputs;
@@ -97,15 +115,15 @@ private:
 	
 	void report_polarity(const Scope* scope);
 	
-	PluginParameter<VDOUBLE, XMLWritableSymbol, OptionalPolicy> polarity_output;
+	PluginParameter_Shared<VDOUBLE, XMLWritableSymbol, OptionalPolicy> polarity_output;
 
 public:
-	DECLARE_PLUGIN("CellReporter");
-    CellReporter();
+	DECLARE_PLUGIN("Mapper");
+    Mapper();
 
     void init(const Scope* scope) override;
     void loadFromXML(const XMLNode ) override;
     void report() override;
 };
 
-#endif // CELLREPORTER_H
+#endif // MAPPER_H
