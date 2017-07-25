@@ -1,6 +1,6 @@
 PROJECT(morpheus)
 cmake_minimum_required(VERSION 2.8.0)
-# cmake_policy(SET CMP0054 NEW)
+cmake_policy(SET CMP0054 NEW)
  
 SET(VERSION_MAJOR "1")
 SET(VERSION_MINOR "9")
