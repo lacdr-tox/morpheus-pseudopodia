@@ -82,21 +82,25 @@ IF(NOT CMAKE_BUILD_TYPE)
 		"Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 
-OPTION(MORPHEUS_GUI "Build the graphical user interface." ON)
-IF(MORPHEUS_GUI)
-	ADD_SUBDIRECTORY( Examples )
-	ADD_SUBDIRECTORY( gui )
-ENDIF()
-
 ADD_SUBDIRECTORY( 3rdparty )
 INCLUDE_DIRECTORIES( 3rdparty)
 
 FIND_PACKAGE(TIFF REQUIRED)
 ADD_SUBDIRECTORY( morpheus )
 
+
+
 #IF(NOT ${MORPHEUS_OS} STREQUAL "WIN32")
 # ADD_SUBDIRECTORY( Scripts )
 #ENDIF()
+
+OPTION(MORPHEUS_GUI "Build the graphical user interface." ON)
+IF(MORPHEUS_GUI)
+	ADD_SUBDIRECTORY( Examples )
+	ADD_SUBDIRECTORY( gui )
+ENDIF()
+
+
 
 INCLUDE(InstallRequiredSystemLibraries)
 
