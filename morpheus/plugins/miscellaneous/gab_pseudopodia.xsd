@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- First line must be the XML declaration line -->
+<!-- XSD root element. All XSD elements must be prefixed with "xs" -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+	<!-- Declaration of plugin group and name of its XML element -->
+	<!-- This plugin will be merged with other CellTypePlugins -->
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<!-- Plugin will appear as "Pseudopodia" in XML and GUI -->
+			<xs:element name="Pseudopodia" type="Pseudopodia"/>
+		</xs:choice>
+	</xs:group>
+
+	<!-- Specification of XML element, its subelements and its attributes -->
+	<xs:complexType name="Pseudopodia">
+		<!-- Attributes with their type, usage and default value -->
+		<xs:attribute name="field" 				type="cpmMathExpression"	use="required" />
+		<xs:attribute name="max-growth-time" type="cpmInteger" use="optional" default="100"/>
+		<xs:attribute name="max-pseudopods" type="cpmInteger" use="optional" default="0"/>
+	</xs:complexType>
+
+</xs:schema>

@@ -5,6 +5,7 @@ set(plugin_src
 	add_cell.cpp
 	change_celltype.cpp
 	insert_medium.cpp
+	gab_pseudopodia.cpp
 	# distance_transform.cpp
 	# example_plugin.cpp
 	
