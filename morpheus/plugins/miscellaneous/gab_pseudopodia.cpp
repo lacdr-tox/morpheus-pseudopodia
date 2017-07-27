@@ -3,7 +3,8 @@
 // macro to register plugin in framework
 REGISTER_PLUGIN(Pseudopodia);
 
-Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpec::XML_OPTIONAL) {
+Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpec::XML_OPTIONAL)
+{
 
     maxGrowthTime.setXMLPath("max-growth-time");
     maxGrowthTime.setDefault("100");
@@ -16,17 +17,18 @@ Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpe
     field.setXMLPath("field");
     field.setGlobalScope();
     registerPluginParameter(field);
-
 };
 
 // called before initialization
-void Pseudopodia::loadFromXML(const XMLNode xNode) {
+void Pseudopodia::loadFromXML(const XMLNode xNode)
+{
     // plugin loads parameters according to the XML paths set in constructor
     InstantaneousProcessPlugin::loadFromXML(xNode);
 }
 
 // called during initialization
-void Pseudopodia::init(const Scope *scope) {
+void Pseudopodia::init(const Scope *scope)
+{
     // initialize the plugin
     InstantaneousProcessPlugin::init(scope);
     setTimeStep(CPM::getMCSDuration());
@@ -35,21 +37,24 @@ void Pseudopodia::init(const Scope *scope) {
     celltype = scope->getCellType();
 }
 
-void Pseudopodia::resizePseudopods(size_t size) {
-    pseudopods.resize(size,
-                      vector<Pseudopod>((unsigned int) maxPseudopods(),
-                                        Pseudopod((unsigned int) maxGrowthTime(), cpmLayer.get())));
-}
-
 // called periodically during simulation
-void Pseudopodia::executeTimeStep() {
-    cout << "lala" << endl;
-    auto cellCount = celltype->getCellIDs().size();
-    if(pseudopods.size() < cellCount) resizePseudopods(cellCount);
-    for (auto &pseudopodList : pseudopods) {
-        for (auto &pseudopod : pseudopodList) {
-            pseudopod.timeStep();
+void Pseudopodia::executeTimeStep()
+{
+    auto cells = celltype->getCellIDs();
+    call_once(initPseudopods, [&]() {
+        for (auto &cellId : cells)
+        {
+            pseudopods.insert(make_pair(cellId,
+                                        vector<Pseudopod>((size_t)maxPseudopods(),
+                                                          Pseudopod((unsigned int)maxGrowthTime(), cpmLayer.get(), cellId))));
         }
+    });
+    assert(pseudopods.size() == cells.size());
+    for (auto &it : pseudopods)
+    {
+        for (auto &pseudopod : it.second)
+        {
+            pseudopod.timeStep();
+        } 
     }
-    cout << "end" <<endl;
 }

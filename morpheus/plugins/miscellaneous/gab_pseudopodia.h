@@ -1,9 +1,11 @@
 #ifndef GAB_PSEUDOPODIA_H
 #define GAB_PSEUDOPODIA_H
 
-// include the plugin interfaces (required) and plugin parameters (very useful) 
+// include the plugin interfaces (required) and plugin parameters (very useful)
 #include "core/interfaces.h"
 #include "core/plugin_parameter.h"
+
+#include <mutex>
 
 using namespace SIM;
 
@@ -20,11 +22,13 @@ A detailed description of my example plugin that can contain mathematical formul
 \endverbatim
 */
 
-VDOUBLE RandomVonMisesPoint(double mu, double kappa, double *theta) {
+VDOUBLE RandomVonMisesPoint(double mu, double kappa, double *theta)
+{
     double ar;
     VDOUBLE pos;
 
-    do {
+    do
+    {
         ar = getRandom01();
         *theta = 2 * M_PI * (getRandom01() - 0.5);
     } while (ar > exp(kappa * (cos(*theta - mu) - 1.0)));
@@ -34,17 +38,19 @@ VDOUBLE RandomVonMisesPoint(double mu, double kappa, double *theta) {
     pos.y = sin(*theta);
 
     return pos;
-
 }
 
 // class declaration, and inheritance of plugin interface
-class Pseudopodia : InstantaneousProcessPlugin {
-private:
-    static VDOUBLE RandomVonMisesPoint(double mu, double kappa, double *theta) {
+class Pseudopodia : InstantaneousProcessPlugin
+{
+  private:
+    static VDOUBLE RandomVonMisesPoint(double mu, double kappa, double *theta)
+    {
         double ar;
         VDOUBLE pos;
 
-        do {
+        do
+        {
             ar = getRandom01();
             *theta = 2 * M_PI * (getRandom01() - 0.5);
         } while (ar > exp(kappa * (cos(*theta - mu) - 1.0)));
@@ -54,15 +60,19 @@ private:
         pos.y = sin(*theta);
 
         return pos;
-
     }
 
-    class Pseudopod {
-    public:
-        enum class State {
-            INIT, GROWING, RETRACTING
+    class Pseudopod
+    {
+      public:
+        enum class State
+        {
+            INIT,
+            GROWING,
+            RETRACTING
         };
-    private:
+
+      private:
         int nextBundlePositionNumber;
         vector<VDOUBLE> bundlePositions;
         int timeLeftForGrowth;
@@ -75,32 +85,36 @@ private:
         CPM::CELL_ID cellId;
         const CPM::LAYER *_cpm_layer;
         PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field;
-    public:
-        Pseudopod(unsigned int maxGrowthTime, const CPM::LAYER *cpm_layer) :
-                _maxGrowthTime(maxGrowthTime),
-                _cpm_layer(cpm_layer) {
+
+      public:
+        Pseudopod(unsigned int maxGrowthTime, const CPM::LAYER *cpm_layer, CPM::CELL_ID cellId) : 
+        _maxGrowthTime(maxGrowthTime), _cpm_layer(cpm_layer), cellId(cellId)
+        {
             bundlePositions.resize(maxGrowthTime);
             reset();
         };
 
-        State getState() {
+        State getState()
+        {
             return state;
         }
 
-        void reset() {
+        void reset()
+        {
             state = State::INIT;
             timeLeftForGrowth = _maxGrowthTime;
             noExtensionTime = 0;
-
         }
 
-        void startNewBundle() {
+        void startNewBundle()
+        {
             cout << "exists " << (int)CPM::cellExists(cellId) << endl;
             cout << "size" << CPM::getCell(cellId).getNodes().size() << endl;
 
             auto cell_center = VINT(CPM::getCell(cellId).getCenter());
             //TODO periodic boundary conditions
-            if (_cpm_layer->get(cell_center).cell_id != cellId) {
+            if (_cpm_layer->get(cell_center).cell_id != cellId)
+            {
                 //com is not in the cell, return
                 return;
             }
@@ -112,31 +126,38 @@ private:
             RandomVonMisesPoint(targetDirection, kappa, &polarisationDirection);
         }
 
-        void growBundle() {
+        void growBundle()
+        {
         }
 
-        void retractBundle() {
+        void retractBundle()
+        {
         }
 
-        void timeStep() {
-            switch (state) {
-                case State::INIT:
-                    startNewBundle();
-                    break;
-                case State::GROWING:
-                    growBundle();
-                    break;
-                case State::RETRACTING:
-                    retractBundle();
-                    break;
+        void timeStep()
+        {
+            switch (state)
+            {
+            case State::INIT:
+                startNewBundle();
+                break;
+            case State::GROWING:
+                growBundle();
+                break;
+            case State::RETRACTING:
+                retractBundle();
+                break;
             }
             return;
             //cout << static_cast<std::underlying_type<State>::type>(getState()) << endl;
         }
     };
 
-    enum class RetractionMethod {
-        FORWARD, BACKWARD, WEIRD
+    enum class RetractionMethod
+    {
+        FORWARD,
+        BACKWARD,
+        WEIRD
     };
     RetractionMethod retractionMethod = RetractionMethod::BACKWARD;
     // parameters that are specified in XML (as values, strings or symbolic expressions)
@@ -144,14 +165,16 @@ private:
     PluginParameter2<double, XMLValueReader, DefaultValPolicy> maxGrowthTime;
     PluginParameter2<unsigned int, XMLValueReader, DefaultValPolicy> maxPseudopods;
 
+    once_flag initPseudopods;
+
     // auxiliary plugin-internal variables and functions can be declared here.
     shared_ptr<const CPM::LAYER> cpmLayer;
     CellType *celltype;
-    vector<vector<Pseudopod>> pseudopods;
+    map<CPM::CELL_ID, vector<Pseudopod>> pseudopods;
 
     void resizePseudopods(size_t size);
 
-public:
+  public:
     // constructor
     Pseudopodia();
     // macro required for plugin integration
@@ -165,7 +188,6 @@ public:
 
     // - execute plugin, called periodically during simulation (automatically scheduled)
     void executeTimeStep() override;
-
 };
 
 #endif
