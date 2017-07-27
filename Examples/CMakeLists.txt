@@ -43,6 +43,7 @@ SET(EXAMPLE_SOURCES
 	Miscellaneous/FrenchFlag.xml
 	Miscellaneous/ParticleAggregation.xml
 	Miscellaneous/ShellCA.xml
+    Miscellaneous/Pseudopodia.xml
 
 )
 
