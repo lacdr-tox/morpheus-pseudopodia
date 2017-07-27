@@ -58,10 +58,11 @@ private:
     }
 
     class Pseudopod {
-    private:
+    public:
         enum class State {
             INIT, GROWING, RETRACTING
         };
+    private:
         int nextBundlePositionNumber;
         vector<VDOUBLE> bundlePositions;
         int timeLeftForGrowth;
@@ -72,15 +73,19 @@ private:
         double kappa;
         State state;
         CPM::CELL_ID cellId;
-        const CPM::LAYER* _cpm_layer;
+        const CPM::LAYER *_cpm_layer;
         PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field;
     public:
-        Pseudopod(unsigned int maxGrowthTime, const CPM::LAYER* cpm_layer) :
+        Pseudopod(unsigned int maxGrowthTime, const CPM::LAYER *cpm_layer) :
                 _maxGrowthTime(maxGrowthTime),
                 _cpm_layer(cpm_layer) {
             bundlePositions.resize(maxGrowthTime);
             reset();
         };
+
+        State getState() {
+            return state;
+        }
 
         void reset() {
             state = State::INIT;
@@ -90,6 +95,9 @@ private:
         }
 
         void startNewBundle() {
+            cout << "exists " << (int)CPM::cellExists(cellId) << endl;
+            cout << "size" << CPM::getCell(cellId).getNodes().size() << endl;
+
             auto cell_center = VINT(CPM::getCell(cellId).getCenter());
             //TODO periodic boundary conditions
             if (_cpm_layer->get(cell_center).cell_id != cellId) {
@@ -105,11 +113,9 @@ private:
         }
 
         void growBundle() {
-
         }
 
         void retractBundle() {
-
         }
 
         void timeStep() {
@@ -124,6 +130,8 @@ private:
                     retractBundle();
                     break;
             }
+            return;
+            //cout << static_cast<std::underlying_type<State>::type>(getState()) << endl;
         }
     };
 
@@ -138,23 +146,26 @@ private:
 
     // auxiliary plugin-internal variables and functions can be declared here.
     shared_ptr<const CPM::LAYER> cpmLayer;
-    CellType* celltype;
+    CellType *celltype;
     vector<vector<Pseudopod>> pseudopods;
+
+    void resizePseudopods(size_t size);
+
 public:
     // constructor
     Pseudopodia();
     // macro required for plugin integration
     DECLARE_PLUGIN("Pseudopodia");
 
-    // the following functions are inherited from plugin interface and are overwritten
     // - load parameters from XML, called before initialization
-    void loadFromXML(const XMLNode);
+    void loadFromXML(XMLNode xNode) override;
 
     // - initialize plugin, called during initialization
-    void init(const Scope *);
+    void init(const Scope *scope) override;
 
     // - execute plugin, called periodically during simulation (automatically scheduled)
-    void executeTimeStep();
+    void executeTimeStep() override;
+
 };
 
 #endif

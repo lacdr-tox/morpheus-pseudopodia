@@ -15,9 +15,9 @@
 	<!-- Specification of XML element, its subelements and its attributes -->
 	<xs:complexType name="Pseudopodia">
 		<!-- Attributes with their type, usage and default value -->
-		<xs:attribute name="field" 				type="cpmMathExpression"	use="required" />
+		<xs:attribute name="field" 		     type="cpmMathExpression"	use="required" />
 		<xs:attribute name="max-growth-time" type="cpmInteger" use="optional" default="100"/>
-		<xs:attribute name="max-pseudopods" type="cpmInteger" use="optional" default="0"/>
+		<xs:attribute name="max-pseudopods"  type="cpmInteger" use="optional" default="0"/>
 	</xs:complexType>
 
 </xs:schema>

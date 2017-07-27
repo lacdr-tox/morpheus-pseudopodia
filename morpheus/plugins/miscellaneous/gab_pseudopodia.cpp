@@ -33,7 +33,10 @@ void Pseudopodia::init(const Scope *scope) {
 
     cpmLayer = CPM::getLayer();
     celltype = scope->getCellType();
-    pseudopods.resize(celltype->getCellIDs().size(),
+}
+
+void Pseudopodia::resizePseudopods(size_t size) {
+    pseudopods.resize(size,
                       vector<Pseudopod>((unsigned int) maxPseudopods(),
                                         Pseudopod((unsigned int) maxGrowthTime(), cpmLayer.get())));
 }
@@ -41,4 +44,12 @@ void Pseudopodia::init(const Scope *scope) {
 // called periodically during simulation
 void Pseudopodia::executeTimeStep() {
     cout << "lala" << endl;
+    auto cellCount = celltype->getCellIDs().size();
+    if(pseudopods.size() < cellCount) resizePseudopods(cellCount);
+    for (auto &pseudopodList : pseudopods) {
+        for (auto &pseudopod : pseudopodList) {
+            pseudopod.timeStep();
+        }
+    }
+    cout << "end" <<endl;
 }
