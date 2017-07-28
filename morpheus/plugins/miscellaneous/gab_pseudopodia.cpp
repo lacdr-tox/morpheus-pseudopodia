@@ -3,7 +3,7 @@
 // macro to register plugin in framework
 REGISTER_PLUGIN(Pseudopodia);
 
-Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpec::XML_OPTIONAL) {
+Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpec::XML_NONE) {
 
     maxGrowthTime.setXMLPath("max-growth-time");
     maxGrowthTime.setDefault("100");
@@ -23,6 +23,9 @@ Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpe
 
 // called before initialization
 void Pseudopodia::loadFromXML(const XMLNode xNode) {
+    if(SIM::getLattice()->getStructure() != Lattice::Structure::square){
+        throw MorpheusException("Pseudopodia: Only works for square lattices", xNode);
+    }
     // plugin loads parameters according to the XML paths set in constructor
     InstantaneousProcessPlugin::loadFromXML(xNode);
 }
@@ -33,8 +36,11 @@ void Pseudopodia::init(const Scope *scope) {
     InstantaneousProcessPlugin::init(scope);
     setTimeStep(CPM::getMCSDuration());
 
+
     cpmLayer = CPM::getLayer();
     celltype = scope->getCellType();
+
+    //TODO addProperty for the pseudopods instead of map?
 }
 
 // called periodically during simulation
@@ -45,15 +51,20 @@ void Pseudopodia::executeTimeStep() {
             pseudopods.insert(make_pair(cellId,
                                         vector<Pseudopod>((size_t) maxPseudopods(),
                                                           Pseudopod((unsigned int) maxGrowthTime(), cpmLayer.get(),
-                                                                    cellId))));
+                                                                    cellId, &movingDirection, &field))));
         }
     });
-    assert(pseudopods.size() == cells.size());
+    assert(pseudopods.size() == cells.size()); // We don't handle cell death or proliferation
     for (auto &it : pseudopods) {
         assert(CPM::cellExists(it.first));
-        cout << "moving direction" << movingDirection( SymbolFocus(it.first)) / M_PI << " pi" << endl;
+        if(CPM::getCell(it.first).getNodes().empty()
+           //FIXME HACK 0.0 is the default, we want to wait for a real moving direction
+           || movingDirection(SymbolFocus(it.first)) == 0.0) continue;
+        int test = 0;
+
         for (auto &pseudopod : it.second) {
             pseudopod.timeStep();
+            test++;
         }
     }
 }
