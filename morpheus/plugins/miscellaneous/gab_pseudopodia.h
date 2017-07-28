@@ -108,6 +108,7 @@ class Pseudopodia : InstantaneousProcessPlugin
 
         void startNewBundle()
         {
+            return;
             cout << "exists " << (int)CPM::cellExists(cellId) << endl;
             cout << "size" << CPM::getCell(cellId).getNodes().size() << endl;
 
@@ -148,8 +149,7 @@ class Pseudopodia : InstantaneousProcessPlugin
                 retractBundle();
                 break;
             }
-            return;
-            //cout << static_cast<std::underlying_type<State>::type>(getState()) << endl;
+            cout << static_cast<std::underlying_type<State>::type>(getState()) << endl;
         }
     };
 
@@ -164,6 +164,7 @@ class Pseudopodia : InstantaneousProcessPlugin
     PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> field;
     PluginParameter2<double, XMLValueReader, DefaultValPolicy> maxGrowthTime;
     PluginParameter2<unsigned int, XMLValueReader, DefaultValPolicy> maxPseudopods;
+    PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> movingDirection;
 
     once_flag initPseudopods;
 
@@ -171,8 +172,6 @@ class Pseudopodia : InstantaneousProcessPlugin
     shared_ptr<const CPM::LAYER> cpmLayer;
     CellType *celltype;
     map<CPM::CELL_ID, vector<Pseudopod>> pseudopods;
-
-    void resizePseudopods(size_t size);
 
   public:
     // constructor
@@ -188,6 +187,7 @@ class Pseudopodia : InstantaneousProcessPlugin
 
     // - execute plugin, called periodically during simulation (automatically scheduled)
     void executeTimeStep() override;
+
 };
 
 #endif
