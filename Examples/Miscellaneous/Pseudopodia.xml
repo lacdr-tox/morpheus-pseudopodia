@@ -44,7 +44,7 @@ Beltman JB, Marée AFM, de Boer RJ. Spatial modelling of brief and long interact
     </CellTypes>
     <CPM>
         <Interaction>
-            <Contact type1="amoeba" type2="medium" value="140"/>
+            <Contact type1="amoeba" type2="medium" value="50"/>
             <Contact type1="medium" type2="medium" value="0"/>
         </Interaction>
         <MonteCarloSampler stepper="edgelist">
@@ -72,7 +72,7 @@ Beltman JB, Marée AFM, de Boer RJ. Spatial modelling of brief and long interact
         </Population>
     </CellPopulations>
     <Analysis>
-        <Gnuplotter time-step="50" interpolation="false" decorate="false">
+        <Gnuplotter time-step="1" interpolation="false" decorate="false">
             <Terminal opacity="0.2" name="png"/>
             <Plot>
                 <Cells value="cell.id"/>

@@ -26,7 +26,7 @@ A detailed description of my example plugin that can contain mathematical formul
 */
 
 // class declaration, and inheritance of plugin interface
-class Pseudopodia : InstantaneousProcessPlugin {
+class Pseudopodia : CPM_Energy, CPM_Check_Update, InstantaneousProcessPlugin {
 private:
     Pseudopod::RetractionMethod retractionMethod = Pseudopod::RetractionMethod::BACKWARD;
     // parameters that are specified in XML (as values, strings or symbolic expressions)
@@ -56,6 +56,13 @@ public:
 
     // - execute plugin, called periodically during simulation (automatically scheduled)
     void executeTimeStep() override;
+
+private:
+    double delta(const SymbolFocus &cell_focus, const CPM::Update &update) const override;
+
+    bool update_check(CPM::CELL_ID cell_id, const CPM::Update &update) override;
+
+    double hamiltonian(CPM::CELL_ID cell_id) const override;
 
 };
 
