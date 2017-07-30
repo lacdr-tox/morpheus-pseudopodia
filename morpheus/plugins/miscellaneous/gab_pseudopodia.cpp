@@ -40,6 +40,7 @@ void Pseudopodia::init(const Scope *scope) {
 
     cpmLayer = CPM::getLayer();
     celltype = scope->getCellType();
+    neighboringActinBonus = 10000.0;
 
     //TODO addProperty for the pseudopods instead of map?
 }
@@ -47,12 +48,13 @@ void Pseudopodia::init(const Scope *scope) {
 // called periodically during simulation
 void Pseudopodia::executeTimeStep() {
     auto cells = celltype->getCellIDs();
+
+    // This is only called the first time to allocate space for pseudopod storage
     call_once(initPseudopods, [&]() {
         for (auto &cellId : cells) {
-            pseudopods.insert(make_pair(cellId,
-                                        vector<Pseudopod>((size_t) maxPseudopods(),
-                                                          Pseudopod((unsigned int) maxGrowthTime(), cpmLayer.get(),
-                                                                    cellId, &movingDirection, &field))));
+            auto pseudopod = Pseudopod((unsigned int) maxGrowthTime(), cpmLayer.get(),
+                                       cellId, &movingDirection, &field);
+            pseudopods.insert(make_pair(cellId, vector<Pseudopod>((size_t) maxPseudopods(), pseudopod)));
         }
     });
     assert(pseudopods.size() == cells.size()); // We don't handle cell death or proliferation
@@ -72,33 +74,42 @@ void Pseudopodia::executeTimeStep() {
 }
 
 double Pseudopodia::delta(const SymbolFocus &cell_focus, const CPM::Update &update) const {
-    return 0;
+    // We are only interested in adding stuff, the rest is unchanged
+    if(!update.opAdd()) return 0.0;
+
+    auto pos = update.focus().pos();
+    auto neighbors = SIM::getLattice()->getNeighborhoodByOrder(2).neighbors();
+    for(auto const& neighbor : neighbors) {
+        auto neighborPos = pos + neighbor;
+        // if neighbor belongs to the same cell and has positive actin level -> give bonus
+        if(cpmLayer->get(neighborPos).cell_id == update.source().cellID()
+            && field.get(neighborPos) > 0) {
+            return -neighboringActinBonus;
+        }
+
+    }
+    // no change
+    return 0.0;
 }
 
 double Pseudopodia::hamiltonian(CPM::CELL_ID cell_id) const {
     return 0;
 };
 
+// We want to block removal of cells in the neighborhood of the actin bundles
 bool Pseudopodia::update_check(CPM::CELL_ID cell_id, const CPM::Update &update) {
-    // We want to block removal of cells in the neighborhood of the actin bundles
+    // If not removal continue
     if (!update.opRemove()) {
         return true;
     }
 
-    auto cellPos = update.focusStateBefore().pos;
+    auto pos = update.focusStateBefore().pos;
     auto latticeStencil = update.surfaceStencil();
     auto states = latticeStencil->getStates();
     auto stencil = latticeStencil->getStencil();
-    auto inCellNeighbors = vector<VINT>({cellPos});
-    for(auto it = states.begin(); it != states.end(); ++it) {
-        if(*it == cell_id) {
-            inCellNeighbors.push_back(cellPos + stencil.at(distance(states.begin(), it)));
-        }
-    }
-    for(auto &pos: inCellNeighbors) {
-        // Check if there is actin in the field for any of these
-        if(field.get(pos) > 0) {
-            cout << "blocked!" << endl;
+    for(size_t i = 0; i < states.size(); ++i) {
+        // if Neighbor has the same cell && has an actin bundle
+        if(states.at(i) == cell_id && field.get(pos + stencil.at(i)) > 0) {
             return false;
         }
     }

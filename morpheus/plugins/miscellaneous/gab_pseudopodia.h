@@ -42,6 +42,8 @@ private:
     CellType *celltype;
     map<CPM::CELL_ID, vector<Pseudopod>> pseudopods;
 
+    double neighboringActinBonus;
+
 public:
     // constructor
     Pseudopodia();

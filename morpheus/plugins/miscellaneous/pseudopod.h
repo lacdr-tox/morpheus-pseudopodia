@@ -30,7 +30,7 @@ public:
     enum class RetractionMethod {
         FORWARD,
         BACKWARD,
-        WEIRD
+        IN_MOVING_DIR
     };
 
 private:
@@ -41,7 +41,7 @@ private:
     static constexpr auto timeNoExtensionLimit_ = 20;
     static constexpr auto retractionMethod_ = RetractionMethod::BACKWARD;
     VDOUBLE polarisationDirection_;
-    static constexpr auto kappa_ = 4.0;
+    static constexpr auto kappa_ = 8.0;
     static constexpr auto retractprob_ = .3;
     static constexpr auto extendprob_ = .3;
     State state_;
@@ -134,9 +134,9 @@ public:
         field_->set(VINT(lastBundlePos), prevFieldVal - 1);
         bundlePositions_.pop_back();
 
-        if(bundlePositions_.empty()) {
-            cout << "done retracting" << endl;
-            state_ = State::INACTIVE;
+        if (bundlePositions_.empty()) {
+            // completely retracted, start over
+            state_ = State::INIT;
         }
     }
 
