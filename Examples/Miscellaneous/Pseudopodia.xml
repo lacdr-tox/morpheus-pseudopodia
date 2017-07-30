@@ -4,8 +4,10 @@
         <Title>Example-Pseudopodia</Title>
         <Details>Model for cell pseudopodia using an actin skeleton
 
-Reference:
-Beltman JB, Marée AFM, de Boer RJ. Spatial modelling of brief and long interactions between T cells and dendritic cells. Immunol Cell Biol (2007) 85:306–314. doi:10.1038/sj.icb.7100054</Details>
+            Reference:
+            Beltman JB, Marée AFM, de Boer RJ. Spatial modelling of brief and long interactions between T cells and
+            dendritic cells. Immunol Cell Biol (2007) 85:306–314. doi:10.1038/sj.icb.7100054
+        </Details>
     </Description>
     <Global>
         <Field symbol="act" value="0" name="actin skeleton">
@@ -14,13 +16,13 @@ Beltman JB, Marée AFM, de Boer RJ. Spatial modelling of brief and long interact
     </Global>
     <Space>
         <Lattice class="square">
-            <Size symbol="size" value="200, 200, 0"/>
+            <Size symbol="size" value="400, 400, 0"/>
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>
             <BoundaryConditions>
-                <Condition boundary="x" type="periodic"/>
-                <Condition boundary="y" type="periodic"/>
+                <Condition boundary="x" type="noflux"/>
+                <Condition boundary="y" type="noflux"/>
             </BoundaryConditions>
         </Lattice>
         <SpaceSymbol symbol="l" name="lattice"/>
@@ -34,7 +36,7 @@ Beltman JB, Marée AFM, de Boer RJ. Spatial modelling of brief and long interact
         <CellType class="biological" name="amoeba">
             <VolumeConstraint target="250" strength="50"/>
             <ConnectivityConstraint/>
-            <Pseudopodia max-pseudopods="3" field="act" moving-direction="d.phi" max-growth-time="20"/>
+            <Pseudopodia max-pseudopods="3" field="act" moving-direction="d.phi" retraction-mode="in-moving-direction" max-growth-time="20"/>
             <PropertyVector symbol="d" value="0, 0, 0" name="moving direction"/>
             <MotilityReporter time-step="50">
                 <Velocity symbol-ref="d"/>
@@ -66,7 +68,7 @@ Beltman JB, Marée AFM, de Boer RJ. Spatial modelling of brief and long interact
             <InitCellObjects mode="distance">
                 <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
                     <Object>
-                        <Sphere radius="10" center="100,100,0"/>
+                        <Sphere radius="10" center="200,200,0"/>
                     </Object>
                 </Arrangement>
             </InitCellObjects>
@@ -91,29 +93,31 @@ Beltman JB, Marée AFM, de Boer RJ. Spatial modelling of brief and long interact
                 <Symbol symbol-ref="cell.center.y"/>
             </Input>
             <Output>
-                <TextOutput file-separation="cell"/>
+                <TextOutput/>
             </Output>
-            <Plots>
-                <Plot time-step="-1">
-                    <Style style="lines" line-width="2.0"/>
-                    <Terminal terminal="png"/>
-                    <X-axis>
-                        <Symbol symbol-ref="cell.center.x"/>
-                    </X-axis>
-                    <Y-axis>
-                        <Symbol symbol-ref="cell.center.y"/>
-                    </Y-axis>
-                    <Color-bar>
-                        <Symbol symbol-ref="time"/>
-                    </Color-bar>
-                    <!--    <Disabled>
-        <Range>
-            <Time mode="history"/>
-        </Range>
+            <!--    <Disabled>
+        <Plots>
+            <Plot time-step="-1">
+                <Style style="lines" line-width="2.0"/>
+                <Terminal terminal="png"/>
+                <X-axis>
+                    <Symbol symbol-ref="cell.center.x"/>
+                </X-axis>
+                <Y-axis>
+                    <Symbol symbol-ref="cell.center.y"/>
+                </Y-axis>
+                <Color-bar>
+                    <Symbol symbol-ref="time"/>
+                </Color-bar>
+                <Disabled>
+                    <Range>
+                        <Time mode="history"/>
+                    </Range>
+                </Disabled>
+            </Plot>
+        </Plots>
     </Disabled>
 -->
-                </Plot>
-            </Plots>
             <Restriction>
                 <Celltype celltype="amoeba"/>
             </Restriction>
