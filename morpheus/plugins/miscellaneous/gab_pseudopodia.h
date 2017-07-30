@@ -28,12 +28,12 @@ A detailed description of my example plugin that can contain mathematical formul
 // class declaration, and inheritance of plugin interface
 class Pseudopodia : CPM_Energy, CPM_Check_Update, InstantaneousProcessPlugin {
 private:
-    Pseudopod::RetractionMethod retractionMethod = Pseudopod::RetractionMethod::BACKWARD;
     // parameters that are specified in XML (as values, strings or symbolic expressions)
     PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> field;
     PluginParameter2<double, XMLValueReader, DefaultValPolicy> maxGrowthTime;
     PluginParameter2<unsigned int, XMLValueReader, DefaultValPolicy> maxPseudopods;
     PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> movingDirection;
+    PluginParameter2<Pseudopod::RetractionMethod, XMLNamedValueReader, DefaultValPolicy> retractionMethod;
 
     once_flag initPseudopods;
 

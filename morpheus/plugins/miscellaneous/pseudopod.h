@@ -2,11 +2,11 @@
 // Created by gerhard on 28/07/17.
 //
 
-#include "core/interfaces.h"
-#include "core/plugin_parameter.h"
-
 #ifndef MORPHEUS_PSEUDOPOD_H
 #define MORPHEUS_PSEUDOPOD_H
+
+#include "core/interfaces.h"
+#include "core/plugin_parameter.h"
 
 // returns a radial in phi, theta, radius. convert with from_radial()
 VDOUBLE RandomVonMisesPoint(VDOUBLE mu, double kappa) {
@@ -39,7 +39,8 @@ private:
     unsigned int maxGrowthTime_;
     unsigned int timeNoExtension_;
     static constexpr auto timeNoExtensionLimit_ = 20;
-    static constexpr auto retractionMethod_ = RetractionMethod::BACKWARD;
+    RetractionMethod paramRetractionMethod_;
+    RetractionMethod currRetractionMethod_;
     VDOUBLE polarisationDirection_;
     static constexpr auto kappa_ = 8.0;
     static constexpr auto retractprob_ = .3;
@@ -53,10 +54,10 @@ private:
 public:
     Pseudopod(unsigned int maxGrowthTime, const CPM::LAYER *cpm_layer, CPM::CELL_ID cellId,
               PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> *movingDirection,
-              PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field) :
+              PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field, RetractionMethod retractionMethod) :
             maxGrowthTime_(maxGrowthTime), _cpm_layer(cpm_layer), cellId(cellId),
             movingDirection_(movingDirection), state_(State::INIT), field_(field),
-            timeLeftForGrowth_(0), timeNoExtension_(0) {
+            timeLeftForGrowth_(0), timeNoExtension_(0), paramRetractionMethod_(retractionMethod) {
         bundlePositions_.reserve(maxGrowthTime);
     }
 
@@ -87,14 +88,27 @@ public:
         bundlePositions_.emplace_back(pos);
     }
 
+    void setRetracting() {
+        state_ = State::RETRACTING;
+        if(paramRetractionMethod_ == RetractionMethod::IN_MOVING_DIR) {
+            // Implementation JBB
+            if(cos(polarisationDirection_.x - movingDirection_->get(SymbolFocus(cellId))) > 0.8) {
+                currRetractionMethod_ = RetractionMethod::FORWARD;
+            } else {
+                currRetractionMethod_ = RetractionMethod::BACKWARD;
+            }
+        } else {
+            currRetractionMethod_ = paramRetractionMethod_;
+        }
+    }
+
     void growBundle() {
         assert(timeLeftForGrowth_ > 0);
         if (getRandom01() > extendprob_) {
             // No extension this time
             timeNoExtension_++;
             if (timeNoExtension_ > timeNoExtensionLimit_) {
-                cout << "retracting" << endl;
-                state_ = State::RETRACTING;
+                setRetracting();
             }
             return;
         }
@@ -114,9 +128,16 @@ public:
         timeNoExtension_ = 0;
         timeLeftForGrowth_--;
         if (timeLeftForGrowth_ == 0) {
-            state_ = State::RETRACTING;
+            setRetracting();
         }
     }
+
+    void decrementActinLevelAt(VINT pos) const {
+        auto prevFieldVal = field_->get(pos);
+        assert(prevFieldVal > 0);
+        field_->set(pos, prevFieldVal - 1);
+    }
+
 
     void retractBundle() {
         if (getRandom01() > retractprob_) {
@@ -124,15 +145,20 @@ public:
             return;
         }
 
-        if(retractionMethod_ != RetractionMethod::BACKWARD){
-            throw MorpheusException("Only backward retraction is supported");
+        VINT pos;
+        if(currRetractionMethod_ == RetractionMethod::BACKWARD) {
+            pos = bundlePositions_.back();
+        } else if (currRetractionMethod_ == RetractionMethod::FORWARD) {
+            pos = bundlePositions_.front();
         }
 
-        auto &lastBundlePos = bundlePositions_.back();
-        auto prevFieldVal = field_->get(VINT(lastBundlePos));
-        assert(prevFieldVal > 0);
-        field_->set(VINT(lastBundlePos), prevFieldVal - 1);
-        bundlePositions_.pop_back();
+        decrementActinLevelAt(VINT(pos));
+
+        if(currRetractionMethod_ == RetractionMethod::BACKWARD) {
+            bundlePositions_.pop_back();
+        } else if (currRetractionMethod_ == RetractionMethod::FORWARD) {
+            bundlePositions_.erase(bundlePositions_.begin());
+        }
 
         if (bundlePositions_.empty()) {
             // completely retracted, start over

@@ -6,7 +6,7 @@ REGISTER_PLUGIN(Pseudopodia);
 Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpec::XML_NONE) {
 
     maxGrowthTime.setXMLPath("max-growth-time");
-    maxGrowthTime.setDefault("100");
+    maxGrowthTime.setDefault("20");
     registerPluginParameter(maxGrowthTime);
 
     maxPseudopods.setXMLPath("max-pseudopods");
@@ -19,6 +19,15 @@ Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpe
 
     movingDirection.setXMLPath("moving-direction");
     registerPluginParameter(movingDirection);
+
+    retractionMethod.setXMLPath("retraction-mode");
+    retractionMethod.setDefault("backward");
+    map<string, Pseudopod::RetractionMethod> retractionMethodMap;
+    retractionMethodMap["backward"] = Pseudopod::RetractionMethod::BACKWARD;
+    retractionMethodMap["forward"] = Pseudopod::RetractionMethod::FORWARD;
+    retractionMethodMap["in-moving-direction"] = Pseudopod::RetractionMethod::IN_MOVING_DIR;
+    retractionMethod.setConversionMap(retractionMethodMap);
+    registerPluginParameter(retractionMethod);
 }
 
 
@@ -53,7 +62,7 @@ void Pseudopodia::executeTimeStep() {
     call_once(initPseudopods, [&]() {
         for (auto &cellId : cells) {
             auto pseudopod = Pseudopod((unsigned int) maxGrowthTime(), cpmLayer.get(),
-                                       cellId, &movingDirection, &field);
+                                       cellId, &movingDirection, &field, retractionMethod());
             pseudopods.insert(make_pair(cellId, vector<Pseudopod>((size_t) maxPseudopods(), pseudopod)));
         }
     });
