@@ -27,25 +27,26 @@ Beltman JB, Marée AFM, de Boer RJ. Spatial modelling of brief and long interact
     </Space>
     <Time>
         <StartTime value="0"/>
-        <StopTime value="500"/>
+        <StopTime value="10000"/>
         <TimeSymbol symbol="time"/>
     </Time>
     <CellTypes>
         <CellType class="biological" name="amoeba">
-            <VolumeConstraint target="2500" strength="50"/>
+            <VolumeConstraint target="250" strength="50"/>
             <ConnectivityConstraint/>
-            <Pseudopodia max-pseudopods="2" field="act" moving-direction="d.phi"/>
+            <Pseudopodia max-pseudopods="3" field="act" moving-direction="d.phi" max-growth-time="20"/>
             <PropertyVector symbol="d" value="0, 0, 0" name="moving direction"/>
             <MotilityReporter time-step="50">
                 <Velocity symbol-ref="d"/>
             </MotilityReporter>
+            <SurfaceConstraint target="0.9" mode="aspherity" strength="1"/>
         </CellType>
         <CellType class="medium" name="medium"/>
     </CellTypes>
     <CPM>
         <Interaction>
-            <Contact type1="amoeba" type2="medium" value="50"/>
-            <Contact type1="medium" type2="medium" value="0"/>
+            <Contact type1="amoeba" type2="medium" value="16"/>
+            <Contact type1="medium" type2="medium" value="1"/>
         </Interaction>
         <MonteCarloSampler stepper="edgelist">
             <MCSDuration value="1"/>
@@ -65,14 +66,14 @@ Beltman JB, Marée AFM, de Boer RJ. Spatial modelling of brief and long interact
             <InitCellObjects mode="distance">
                 <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
                     <Object>
-                        <Sphere radius="25" center="100,100,0"/>
+                        <Sphere radius="10" center="100,100,0"/>
                     </Object>
                 </Arrangement>
             </InitCellObjects>
         </Population>
     </CellPopulations>
     <Analysis>
-        <Gnuplotter time-step="1" interpolation="false" decorate="false">
+        <Gnuplotter time-step="10" interpolation="false" decorate="false">
             <Terminal opacity="0.2" name="png"/>
             <Plot>
                 <Cells value="cell.id"/>
