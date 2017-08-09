@@ -239,15 +239,12 @@ Note: when (membrane) property has been selected, you MUST provide a symbol-ref 
 				<xs:documentation>Symbol referring to a PDE reaction-diffusion layer.</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
+		
 		<xs:attribute name="min" 	type="cpmDouble" use="optional" />
 		<xs:attribute name="max" 	type="cpmDouble" use="optional" />
 		<xs:attribute name="data-cropping" 	type="cpmBoolean" use="optional" />
 		<xs:attribute name="slice"	type="cpmUnsignedInteger" use="optional"/>
-		<xs:attribute name="resolution" type="cpmInteger" use="optional">
-			<xs:annotation>
-				<xs:documentation>Reduce resolution of PDE layer (for faster output, smaller files).</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
+		<xs:attribute name="coarsening" type="cpmInteger" use="optional" />
 		<xs:attribute name="isolines" 	type="cpmUnsignedInteger" use="optional" />
 		<xs:attribute name="surface"	type="cpmBoolean" use="optional" />
 	</xs:complexType>

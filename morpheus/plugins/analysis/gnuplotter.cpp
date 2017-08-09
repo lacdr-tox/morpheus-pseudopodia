@@ -95,6 +95,12 @@ void FieldPainter::loadFromXML(const XMLNode node)
 	field_value.setXMLPath("symbol-ref");
 	field_value.loadFromXML(node);
 	
+	coarsening.setXMLPath("coarsening");
+	coarsening.setDefault("1");
+	coarsening.loadFromXML(node);
+	if (coarsening()<0)
+		throw MorpheusException("Invalid coarsening value.", node);
+	
 	min_value.setXMLPath("min");
 	min_value.loadFromXML(node);
 	
@@ -110,6 +116,9 @@ void FieldPainter::loadFromXML(const XMLNode node)
 	z_slice.setXMLPath("slice");
 	z_slice.setDefault("0");
 	z_slice.loadFromXML(node);
+	if (z_slice()<0 || z_slice() >= SIM::lattice().size().z)
+		throw MorpheusException("Invalid z_slice.", node);
+		
 	
 // 	getXMLAttribute(xPlotChild, "data-cropping", plot.pde_data_cropping);
 // 	getXMLAttribute(xPlotChild, "resolution", plot.pde_max_resolution);
@@ -184,42 +193,60 @@ string FieldPainter::getColorMap() const
 
 void FieldPainter::plotData(ostream& out)
 {
-	VINT pos;
-	pos.z = z_slice.get();
-	VINT size = SIM::lattice().size();
 	bool is_hexagonal = SIM::lattice().getStructure() == Lattice::hexagonal;
+
+	VINT size = SIM::lattice().size();
+	VINT out_size = size / coarsening();
 	
 	string xsep(" "), ysep("\n");
-
-	int x_iter = 1;
+		
+	VINT out_pos;
+	VINT pos(0,0,z_slice.get());
 	
-	int max_resolution = 200;
+	valarray<float> out_data(out_size.x), out_data2(out_size.x);
+	valarray<float> out_data_count(out_size.x);
 	
-	if (max_resolution) x_iter = max (1, size.x / max_resolution);
-	int y_iter = 1;
-	if (max_resolution) y_iter = max (1, size.y / max_resolution);
-	
-	valarray<float> out_data(size.x), out_data2(size.x);
-
-	pos.z = z_slice.get();
-// 	bool first_row = true;
-	for (pos.y=(y_iter)/2; pos.y<size.y; pos.y+=y_iter) {
-		// copy & convert the raw data
-		for ( pos.x=0; pos.x<size.x; pos.x+=x_iter) {
-			out_data[pos.x] = float(field_value.get(SymbolFocus(pos)));
+	for (out_pos.y=0; out_pos.y<out_size.y; out_pos.y+=1) {
+		pos.y= out_pos.y*coarsening();
+		if ( coarsening()>1) {
+			// reset the output buffer
+			out_data = 0;
+			out_data_count = 0;
+			// accumulate data
+			for (uint y_c=0; y_c<coarsening(); y_c++, pos.y++ ) {
+				uint x_c=0;
+				out_pos.x=0;
+				for ( pos.x=0; pos.x<size.x; pos.x++, x_c++) {
+					if (x_c==coarsening()) {
+						x_c=0;
+						out_pos.x++;
+					}
+					out_data[out_pos.x] += float(field_value.get(SymbolFocus(pos)));
+					out_data_count[out_pos.x] ++;
+				}
+			}
+			// averaging data
+			out_data /= out_data_count;
 		}
+		else {
+			// copy & convert the raw data
+			for ( pos.x=0; pos.x<size.x; pos.x++) {
+				out_data[pos.x] = float(field_value.get(SymbolFocus(pos)));
+			}
 
+		}
+		
 		// shifting the data to map hex coordinate system
 		if (is_hexagonal) {
-			out_data = out_data.cshift(-pos.y/2);
+			out_data = out_data.cshift(-out_pos.y/2);
 			// add an interpolation step
-			if (pos.y%2==1) {
+			if (out_pos.y%2==1) {
 				out_data2 = out_data.cshift(-1);
 				out_data+= out_data2;
 				out_data/=2;
 			}
 		}
-
+		
 		// Cropping data
 		if (min_value.isDefined()) {
 			float fmin_value = min_value.get(SymbolFocus::global);
@@ -237,19 +264,13 @@ void FieldPainter::plotData(ostream& out)
 				}
 			}
 		}
-
+			
 		out << out_data[0];
 		for (int i=1; i<out_data.size() ;i++) {
 			out << xsep << out_data[i];
 		}
 		
 		out << ysep;
-		
-// 		if (first_row) {
-// 			first_row = false;
-// 			if ( ! (pos.y+y_iter)<l_size.y )
-// 				pos.y-=y_iter;
-// 		}
 	}
 }
 

@@ -162,6 +162,7 @@ public:
 private:
 // 	vector <shared_ptr <const CellType > > celltypes;
 	PluginParameter2<double,XMLEvaluator> field_value;
+	PluginParameter2<int,XMLValueReader,DefaultValPolicy> coarsening;
 	PluginParameter2<float,XMLEvaluator,OptionalPolicy> min_value, max_value;
 	PluginParameter2<int,XMLValueReader,OptionalPolicy> isolines;
 	PluginParameter2<bool,XMLValueReader,OptionalPolicy> surface;
