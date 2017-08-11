@@ -17,6 +17,7 @@
 #include "gnuplot_i/gnuplot_i.h"
 /**
 \defgroup MembraneLogger
+\ingroup ML_Analysis
 \ingroup AnalysisPlugins
 \brief Logs and plots 2D MembraneProperties
 

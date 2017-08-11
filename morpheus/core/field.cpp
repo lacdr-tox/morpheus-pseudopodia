@@ -9,7 +9,7 @@
 // Copyright: See COPYING file that comes with this distribution
 //
 //
-#include "pde_layer.h"
+#include "field.h"
 #include "lattice_data_layer.cpp"
 #include "expression_evaluator.h"
 #include "focusrange.h"

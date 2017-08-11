@@ -18,6 +18,7 @@
 using namespace SIM;
 
 /** \defgroup VolumeConstraint
+\ingroup ML_CellType
 \ingroup CellShapePlugins
 \brief Penalizes deviations from target cell area (2D) or volume (3D)
 \ingroup CPM_EnergyPlugins
@@ -69,8 +70,8 @@ public:
 	VolumeConstraint();
 	DECLARE_PLUGIN("VolumeConstraint");
 
-	double delta( const SymbolFocus& cell_focus, const CPM::Update& update) const;
-	double hamiltonian(CPM::CELL_ID  cell_id ) const;
+	double delta( const SymbolFocus& cell_focus, const CPM::Update& update) const override;
+	double hamiltonian(CPM::CELL_ID  cell_id ) const override;
 };
 
 #endif

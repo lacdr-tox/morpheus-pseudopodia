@@ -17,7 +17,7 @@
 #include "cell.h"
 #include "ClassFactory.h"
 #include "cell_membrane_accessor.h"
-#include "membrane_pde.h"
+#include "membrane_property.h"
 
 class CellIndexStorage {
 public:

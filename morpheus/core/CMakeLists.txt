@@ -16,11 +16,11 @@ SET(morpheus_src
 	interaction_energy.cpp
 	simulation.cpp
 	cpm_layer.cpp
-    	cpm_shape.cpp
+	cpm_shape.cpp
 	cpm_shape_tracker.cpp
 	edge_tracker.cpp
 	cpm.cpp
-	pde_layer.cpp
+	field.cpp
 	diffusion.cpp
 	property.cpp
 	symbol.cpp
@@ -35,7 +35,7 @@ SET(morpheus_src
 	diff_eqn.cpp
 	system.cpp
 	cell_membrane_accessor.cpp
-	membrane_pde.cpp
+	membrane_property.cpp
 	membranemapper.cpp
 	data_mapper.cpp
 	super_cell.cpp

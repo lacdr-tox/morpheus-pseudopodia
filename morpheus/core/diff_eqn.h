@@ -17,7 +17,7 @@
 /** @brief Differential Equation Plugin
  * 
  *  A plain Plugin loading differential  equations from XML.
- *  Evaluation is responisbility of the enclosing "System".
+ *  The enclosing "System" is responsible for the actual computation.
  */
 
 class DifferentialEqn : public Plugin

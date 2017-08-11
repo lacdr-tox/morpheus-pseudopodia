@@ -10,6 +10,7 @@
 //////
 
 /** \defgroup clustering_tracker Clustering Tracker
+\ingroup ML_Analysis
 \ingroup AnalysisPlugins
 \brief Identifies and writes distribution of cell clusters within a single celltype
 

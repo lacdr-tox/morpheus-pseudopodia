@@ -17,8 +17,10 @@
 #include "gnuplot_i/gnuplot_i.h"
 #include <fstream>
 #include <sstream>
-/** \ingroup AnalysisPlugins
+/** 
  *  \defgroup Gnuplotter Gnuplotter
+ *  \ingroup ML_Analysis
+ *  \ingroup AnalysisPlugins
  *  \brief Visualisation of spatial simulation states (cells, fields) using GnuPlot.
  * 
 \section Description

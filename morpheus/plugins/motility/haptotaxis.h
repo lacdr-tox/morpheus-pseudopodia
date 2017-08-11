@@ -16,7 +16,8 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup Haptotaxis
-\ingroup motility_plugins
+\ingroup ML_CellType
+\ingroup CellMotilityPlugins
 \ingroup CPM_EnergyPlugins
 
 \section Description
@@ -44,6 +45,6 @@ class Haptotaxis : virtual public CPM_Energy
 		void init(const Scope* scope) override;
 		void loadFromXML(const XMLNode node) override;
 
-		double delta(const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const;
-		double hamiltonian(CPM::CELL_ID cell_id) const;
+		double delta(const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const override;
+		double hamiltonian(CPM::CELL_ID cell_id) const override;
 };

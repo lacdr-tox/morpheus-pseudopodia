@@ -18,6 +18,7 @@
 #include <sys/time.h>
 
 /** \defgroup TIFFReader
+ * \ingroup ML_Population
 \ingroup InitializerPlugins
 
 \section Description
@@ -105,8 +106,8 @@ public:
 	TIFFReader();
 	DECLARE_PLUGIN("TIFFReader");
 	
-	bool run(CellType* ct);
-	bool run(PDE_Layer* pde);
+	bool run(CellType* ct) override;
+	bool run(PDE_Layer* pde) override;
 	
 };
 

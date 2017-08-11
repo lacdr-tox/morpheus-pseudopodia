@@ -1,7 +1,8 @@
 #include "docu_dock.h"
 
-#include "QtNetwork/QNetworkAccessManager"
-#include "QtNetwork/QNetworkReply"
+#include <QWebHistory>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkReply>
 
 class HelpNetworkReply : public QNetworkReply
 {
@@ -91,7 +92,6 @@ QNetworkReply *HelpNetworkAccessManager::createRequest(Operation op, const QNetw
 DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 {
 	timer = NULL;
-	splitter = new QSplitter(Qt::Horizontal, this);
 	help_engine = config::getHelpEngine();
 	
 	connect(help_engine,SIGNAL(setupFinished()),this,SLOT(setRootOfHelpIndex()));
@@ -105,30 +105,87 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	help_view->page()->settings()->setAttribute(QWebSettings::JavascriptEnabled, true);
 	help_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessRemoteUrls, false);
 	help_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessFileUrls, true);
-
-	splitter->addWidget(help_engine->contentWidget());
-	help_engine->contentWidget()->setRootIsDecorated(true);
+	
+	toc_widget = help_engine->contentWidget();
+	toc_widget->setRootIsDecorated(true);
+	toc_model = new QSortFilterProxyModel(toc_widget);
+	toc_model->setSourceModel(help_engine->contentModel());
+	toc_widget->setModel(toc_model);
+	toc_widget->setSortingEnabled(true);
+	toc_widget->sortByColumn(0,Qt::AscendingOrder);
+	
 	root_reset = false;
-	splitter->addWidget(help_view);
+
+	auto tb = new QToolBar();
+
+	b_back = new QAction(QThemedIcon("go-previous", style()->standardIcon(QStyle::SP_ArrowLeft)),"Back",this);
+	tb->addAction(b_back);
+
+	b_forward = new QAction(QThemedIcon("go-next", style()->standardIcon(QStyle::SP_ArrowRight)),"Fwd",this);
+	tb->addAction(b_forward);
+	
+	tb->addSeparator();
+	
+	QPixmap pm(":/morpheus.png");
+	auto l_icon = new QLabel();
+	l_icon->setPixmap(pm.scaled(25,25,Qt::KeepAspectRatio,Qt::SmoothTransformation));
+	tb->addWidget(l_icon);
+	auto l_doc = new QLineEdit(" Morpheus 2.0 Documentation");
+	l_doc->setEnabled(false);
+	tb->addWidget(l_doc);
+	
+	auto vl = new QVBoxLayout();
+	vl->setSpacing(0);
+	vl->addWidget(tb);
+	
+	
+	vl->addWidget(help_view);
+	auto w_bottom = new QWidget();
+	w_bottom->setLayout(vl);
+	
+	splitter = new QSplitter(Qt::Horizontal, this);
+	splitter->addWidget(toc_widget);
+	splitter->addWidget(w_bottom);
+	
 	help_view->show();
-	connect(help_engine->contentWidget(),SIGNAL(linkActivated(const QUrl&)), this, SLOT(setCurrentURL(const QUrl&)));
+	connect(b_back, SIGNAL(triggered()), help_view, SLOT(back()));
+	connect(b_forward, SIGNAL(triggered()), help_view, SLOT(forward()));
+	connect(help_view, SIGNAL(urlChanged(const QUrl&)), this, SLOT(resetStatus()) );
+	connect(toc_widget, SIGNAL(clicked(const QModelIndex&)), this, SLOT(setCurrentIndex(const QModelIndex&)) );
 	
 	this->setWidget(splitter);
-	
+	resetStatus();
 }
 
 
-void DocuDock::setCurrentNode(nodeController* node)
+void DocuDock::setCurrentElement(QStringList xPath)
 {
-	QMap <QString, QUrl > identifiers;
-	while (node && identifiers.empty()) {
-		identifiers = help_engine->linksForIdentifier(node->getName());
-		if (! identifiers.empty()) {
-			setCurrentURL(identifiers.begin().value());
-			break;
+// 	qDebug() << xPath;
+	auto key_index = MorpheusML_index;
+	QString help_key = "MorpheusML";
+	xPath.pop_front();
+	
+	while ( !xPath.isEmpty() ) {
+		// try to find the key in the current key_index
+		QString key = xPath.front();
+		int rows = toc_model->rowCount(key_index);
+		for (int r=0; ; r++) {
+			// No suitable tag found
+			if (r>=rows) {
+				xPath.clear();
+				break;
+			}
+			if ( key_index.child(r,0).data() == xPath.front() ) {
+				help_key = xPath.front();
+				xPath.pop_front();
+				key_index = key_index.child(r,0);
+				break;
+			}
 		}
-		node = node->getParent();
 	}
+	
+	setCurrentElement(help_key);
+	toc_widget->setCurrentIndex(key_index);
 }
 
 
@@ -140,6 +197,12 @@ void DocuDock::setCurrentElement(QString name) {
 	}
 }
 
+void DocuDock::setCurrentIndex(const QModelIndex& idx)
+{
+	setCurrentElement(idx.data(Qt::DisplayRole).toString());
+}
+
+
 
 void DocuDock::setCurrentURL(const QUrl& url) {
 	if (help_view->url() != url) {
@@ -148,6 +211,11 @@ void DocuDock::setCurrentURL(const QUrl& url) {
 	}
 }
 
+
+void DocuDock::resetStatus() {
+	b_back->setEnabled(help_view->history()->canGoBack());
+	b_forward->setEnabled(help_view->history()->canGoForward());
+}
 
 void DocuDock::resizeEvent(QResizeEvent* event)
 {
@@ -165,9 +233,8 @@ void DocuDock::resizeEvent(QResizeEvent* event)
 
 void DocuDock::setRootOfHelpIndex()
 {
-	QHelpContentWidget* help_index = help_engine->contentWidget();
-	QHelpContentModel* model = help_engine->contentModel();
-	if (model->isCreatingContents()) {
+	auto help_model =  help_engine->contentModel();
+	if (help_model->isCreatingContents()) {
 		if ( ! timer) {
 			timer = new QTimer(this);
 			timer->setSingleShot(true);
@@ -176,20 +243,29 @@ void DocuDock::setRootOfHelpIndex()
 		timer->start(500);
 		return;
 	}
-	QModelIndex root = model->index(0,0);
-	int root_rows = model->rowCount(root);
+	
+	QModelIndex root = toc_model->index(0,0);
+	int rows = toc_model->rowCount(root);
 // 	qDebug() << "I am getting the Docu " <<root_rows ;
 	int modules_row = -1;
-	for (uint row=0; row<root_rows; row++) {
+	for (uint row=0; row<rows; row++) {
 // 		qDebug() << row <<  model->data(model->index(row,0,root),0);
-		 if ( model->data(model->index(row,0,root),0).toString() == "Modules" )
+		 if ( root.child(row,0).data(Qt::DisplayRole) == "Modules" ) {
+			 modules_index =  root.child(row,0);
 			 modules_row = row;
+		 }
+	}
+	
+	rows = toc_model->rowCount(modules_index);
+	for (uint row=0; row<rows; row++) {
+		if ( modules_index.child(row,0).data(Qt::DisplayRole) == "MorpheusML" ) {
+			 MorpheusML_index =  modules_index.child(row,0);
+		 }
 	}
 	
 	if (modules_row>=0) {
-		help_index->setRootIndex(model->index(modules_row,0,root));
-		help_index->setExpanded(model->index(modules_row,0,root),true);
-		
+		toc_widget->setRootIndex(toc_model->index(modules_row,0,root));
+		toc_widget->setExpanded(toc_model->index(modules_row,0,root),true);
 		root_reset = true;
 	}
 }

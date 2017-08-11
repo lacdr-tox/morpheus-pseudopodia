@@ -10,16 +10,18 @@
 //////
 
 /**
-\defgroup Equation
+\defgroup ML_Equation Equation
+\ingroup ML_CellType
+\ingroup ML_Global
 \ingroup MathExpressions
 
 Assignment of mathematical expression to a symbol.
 
 During simulation it is asserted that the provided relation always holds. The assignment is executed whenever the input might have changed and/or the result is needed elsewhere.
 
-For vector data, use \ref VectorEquation.
+For vector data, use \ref ML_VectorEquation.
 
-For recurrence equations (in which the expression depends on the output symbol), use a \ref Rule within a \ref System.
+For recurrence equations (in which the expression depends on the output symbol), use a \ref ML_Rule within a \ref System.
 
 \section Example
 Assume 'a' is a variable or property.
@@ -32,14 +34,16 @@ Assume 'a' is a variable or property.
 **/
 
 /**
-\defgroup Rule
+\defgroup ML_Rule Rule
+\ingroup ML_System
+\ingroup ML_Event
 \ingroup MathExpressions
 
 Assignment of mathematical expression to a symbol.
 
-Differs from \ref Equation in that a Rule:
+Differs from \ref ML_Equation in that a Rule:
 - may contain recurrence relations e.g. \f$ A=A+1 \f$
-- can only appear in \ref System
+- can only appear in \ref ML_System
 - explicitly scheduled based on user-specified System time-step
 
 \section Examples

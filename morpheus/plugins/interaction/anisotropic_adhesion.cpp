@@ -66,8 +66,8 @@ double Anisotropic_Adhesion::computeAdhesive(CPM::STATE s) {
 
 }
 
-void Anisotropic_Adhesion::init(){
-	Interaction_Addon::init();
+void Anisotropic_Adhesion::init(const Scope * scope){
+	Interaction_Addon::init(scope);
 	
 	use_vectors = false;
 	orientation_vec = SIM::findSymbol<VDOUBLE>(orientation_str);
@@ -92,7 +92,7 @@ void Anisotropic_Adhesion::init(){
 	angle = SIM::findRWSymbol<double>(angle_str);
 
 	// initialize function
-	fct_function->init();
+	fct_function->init(scope);
 	
 	
 }
@@ -120,7 +120,6 @@ void Anisotropic_Adhesion::loadFromXML(const XMLNode xNode)
 	if( xNode.nChildNode("Function") ){
 		string expression;
 		getXMLAttribute(xNode,"Function/text",expression);
-		fct_function = shared_ptr<Function> (new Function() );
-		fct_function->setExpr(expression);
+		fct_function = make_shared<ExpressionEvaluator<double> > ( expression );
 	}
 }

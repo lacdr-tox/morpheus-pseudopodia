@@ -29,11 +29,11 @@ private:
 public:
 	Diffusion(shared_ptr<PDE_Layer> pde);
 	Diffusion(CellMembraneAccessor mem_acc);
-	virtual void init(const Scope* scope);
-	virtual void prepareTimeStep() {};
-	virtual void executeTimeStep();
-	virtual std::string XMLName() const;
-    virtual XMLNode saveToXML() const;
+	void init(const Scope* scope) override;
+	void prepareTimeStep()  override {};
+	void executeTimeStep() override;
+	std::string XMLName() const override;
+    XMLNode saveToXML() const override;
 };
 
 #endif // DIFFUSION_H
