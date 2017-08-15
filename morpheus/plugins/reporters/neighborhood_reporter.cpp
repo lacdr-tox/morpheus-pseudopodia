@@ -188,15 +188,15 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 					const CPM::STATE& nb_spin = cpm_layer->get ( neighbor_position );
 
 					if ( cell_id != nb_spin.cell_id ) { // if neighbor is different from me
-						
 						// HACK: NOFLUX BOUNDARY CONDITIONS when halo is in MEDIUM
 						//cout << CPM::getCellIndex( nb_spin.cell_id ).celltype << " != " << CPM::getEmptyCelltypeID() << endl;
-						if( noflux_cell_medium && CPM::getCellIndex( nb_spin.cell_id ).celltype == CPM::getEmptyCelltypeID() ){ // if neighbor is medium, add own node in halo 
-							halo_nodes.insert ( *m ); // add own membrane node to list of unique neighboring points (used for layers below)
-							//cout << *m << "\n";
+						if( noflux_cell_medium ) {
+							// if neighbor is medium, add own node in halo 
+							if (CPM::getCellIndex( nb_spin.cell_id ).celltype == CPM::getEmptyCelltypeID() )
+								halo_nodes.insert ( *m );
 						}
 						else
-							halo_nodes.insert ( neighbor_position ); // add neighbor node to list of unique neighboring points (used for layers below)
+							halo_nodes.insert ( neighbor_position );
 					}
 				}
 			}
