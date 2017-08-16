@@ -20,9 +20,8 @@
 #include "interaction_energy.h"
 
 /**
-\defgroup CPM
-\ingroup ContinuousProcessPlugins
-\ingroup ModelStructure
+\defgroup ML_CPM CPM
+\ingroup MorpheusML ContinuousProcessPlugins
 
 Specifies parameters for a cellular Potts model (CPM) which provides a MonteCarlo sampler that evolves a spatial cell configuration on the basis of a Hamiltonian definition by statistical sampling.
 
@@ -37,7 +36,7 @@ Specifies parameters for a cellular Potts model (CPM) which provides a MonteCarl
     - hexagonal -- 3rd order, corresponding to a distance of 2
     - cubic  -- 7th order  corresponding to a distance of \f$ 2 \sqrt 2 \f$ 
 
-\b Interaction specifies interaction energies \f$ J_{\sigma, \sigma} \f$ for different inter-cellular \ref Contact. The interaction energy given per length unit as defined in ShapeSurface.
+\ref ML_Interaction specifies interaction energies \f$ J_{\sigma, \sigma} \f$ for different inter-cellular \ref ML_Contact. The interaction energy given per length unit as defined in ShapeSurface.
 
 
 \b MonteCarloSampler
@@ -56,7 +55,20 @@ Kafer, Hogeweg and Maree, PLoS Comp Biol, 2006
 
 Magno, Grieneisen and Marée, BMC Biophysics, 2015
 
+
+\defgroup ML_Interaction Interaction
+\ingroup ML_CPM
+specifies interaction energies \f$ J_{\sigma, \sigma} \f$ for different inter-cellular \ref ML_Contact. The interaction energy given per length unit as defined in ShapeSurface.
+
+ - \b default: default value for unspecified interactions
+ - \b negate: negate all defined interaction values
+ 
+
+\defgroup ML_Contact Contact
+\ingroup ML_Interaction
 **/
+
+
 
 class CPMSampler : public ContinuousProcessPlugin {
 public:

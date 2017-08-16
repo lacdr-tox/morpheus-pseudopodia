@@ -1,6 +1,6 @@
 #include "symbolfocus.h"
 #include "cell.h"
-#include "membrane_pde.h"
+#include "membrane_property.h"
 
 
 SymbolFocus::SymbolFocus () :

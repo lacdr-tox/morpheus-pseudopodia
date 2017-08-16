@@ -10,6 +10,7 @@
 //////
 
 /** \defgroup CellReporter
+\ingroup ML_CellType
 \ingroup ReporterPlugins
 \brief Reports data about the spatial area covered by a cell.
 

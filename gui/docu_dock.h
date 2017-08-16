@@ -27,22 +27,30 @@ signals :
 	void elementDoubleClicked(QString element_name);
 	
 public slots :
-	void setCurrentNode( nodeController *node );
+	void setCurrentElement( QStringList xPath );
 	void setCurrentElement( QString name);
+	void setCurrentIndex(const QModelIndex& );
 	void setCurrentURL( const QUrl& url );
 	
 private slots:
 	void setRootOfHelpIndex();
+	void resetStatus();
 	
 protected:
     virtual void resizeEvent(QResizeEvent* event );
 
 private:
+	QAction *b_back, *b_forward;
     QHelpEngine* help_engine;
 	QSplitter* splitter;
 	QWebView* help_view;
 	QTimer *timer;
+	QTreeView* toc_widget;
+	QSortFilterProxyModel* toc_model;
+	QModelIndex modules_index, MorpheusML_index;
+	
 	bool root_reset;
+	
 // 	QListWidget*  index_view;
 	
 };

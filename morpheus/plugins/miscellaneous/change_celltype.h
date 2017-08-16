@@ -16,14 +16,15 @@
 #include "core/plugin_parameter.h"
 #include "core/system.h"
 
-/** \defgroup ChangeCelltype
+/** \defgroup ChangeCellType
+\ingroup ML_CellType
 \ingroup MiscellaneousPlugins
 \brief Conditionally alters CellType of cell
 
 ChangeCelltype alters CellType of cell upon a predefined Condition.
 
 - \b condition: expression to evaluate to trigger Celltype change.
-- \b celltype_new_str: \ref CellType to change to after condition is satisfied.
+- \b celltype_new_str: \ref ML_CellType to change to after condition is satisfied.
 
 - \b Tiggers: (optional): a System of Rules that are triggered for both daughter cells after cell division.
 
@@ -50,9 +51,9 @@ public:
 	ChangeCelltype();
 	DECLARE_PLUGIN("ChangeCellType");
 
-	virtual void init(const Scope* scope);
-	virtual void executeTimeStep();
-	virtual void loadFromXML (const XMLNode);
+	void init(const Scope* scope) override;
+	void executeTimeStep() override;
+	void loadFromXML(const XMLNode) override;
 
 };
 

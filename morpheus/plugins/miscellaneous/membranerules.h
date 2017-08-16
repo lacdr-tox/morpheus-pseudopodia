@@ -24,6 +24,7 @@
 using namespace SIM;
 
 /** \defgroup MembraneRules
+\ingroup ML_CellType
 \ingroup miscellaneous
 */
 

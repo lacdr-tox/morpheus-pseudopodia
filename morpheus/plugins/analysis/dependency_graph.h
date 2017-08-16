@@ -13,8 +13,10 @@
 #include "core/plugin_parameter.h"
 #include <graphviz/gvc.h>
 
-/** \ingroup AnalysisPlugins
- *  \defgroup DependencyGraph
+/** 
+ *  \defgroup ML_DependencyGraph DependencyGraph
+ *  \ingroup ML_Analysis
+ *  \ingroup AnalysisPlugins
  *  \brief Visualisation of the symbol dependency graph and the scheduling
  * 
 \section Description

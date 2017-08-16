@@ -19,8 +19,10 @@
 #include <limits>
 #include <tiffio.h>
 
-/** \ingroup AnalysisPlugins
+/**
 \defgroup TiffPlotter
+\ingroup ML_Analysis
+\ingroup AnalysisPlugins
 \brief Writes cells and fields to multipage TIFF images
 
 TiffPlotter can write 3D(+time) data to file in multistack multichannel TIFF format.

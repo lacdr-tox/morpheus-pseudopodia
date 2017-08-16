@@ -18,8 +18,10 @@
 #include "gnuplot_i/gnuplot_i.h"
 #include "core/plugin_parameter.h"
 
-/** \ingroup AnalysisPlugins
+/** 
  *  \defgroup HistogramLogger HistogramLogger
+ * \ingroup ML_Analysis
+ * \ingroup AnalysisPlugins
  *  \brief Computation of frequency distributions and visualisation of histograms.
  * 
 \section Description

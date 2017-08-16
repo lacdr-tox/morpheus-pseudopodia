@@ -8,6 +8,7 @@ using namespace SIM;
 
 // Doxygen documentation as it will appear in documentation panel of GUI
 /** \defgroup ExamplePlugin
+\ingroup ML_CellType
 \ingroup CellTypePlugins
 \brief Brief description of my example plugin
 
@@ -37,10 +38,10 @@ public:
 
 	// the following functions are inherited from plugin interface and are overwritten
 	// - load parameters from XML, called before initialization
-	void loadFromXML( const XMLNode );
+	void loadFromXML( const XMLNode ) override;
 	// - initialize plugin, called during initialization 
-	void init( const Scope* );
+	void init( const Scope* ) override;
 	// - execute plugin, called periodically during simulation (automatically scheduled)
-	void executeTimeStep();
+	void executeTimeStep() override;
 };
 #endif

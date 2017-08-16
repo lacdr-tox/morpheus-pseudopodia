@@ -16,6 +16,7 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup FlipCellMotion
+\ingroup ML_CellType
 \ingroup CellMotilityPlugins
 \brief Exchanges cell positions (spin flips). For CA-like models.
 
@@ -52,8 +53,8 @@ private:
 public:
 	DECLARE_PLUGIN("FlipCellMotion");
 	FlipCellMotion();
-	void init(const Scope* scope);
-	void executeTimeStep();
+	void init(const Scope* scope) override;
+	void executeTimeStep() override;
 };
 
 #endif // FLIPCELLS_H

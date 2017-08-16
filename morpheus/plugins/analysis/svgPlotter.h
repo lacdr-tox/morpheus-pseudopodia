@@ -22,6 +22,7 @@
 using namespace SIM;
 
 /** \defgroup svgPlotter
+\ingroup ML_Analysis
 \ingroup analysis_plugins
 
 \section Description

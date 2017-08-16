@@ -17,7 +17,7 @@
 #include <core/symbol_accessor.h>
 
 /** \defgroup MatrixGuidance Matrix Guidance
-\ingroup CPM_EnergyPlugins
+\ingroup ML_CellType
 \ingroup CellMotilityPlugin
 */
 

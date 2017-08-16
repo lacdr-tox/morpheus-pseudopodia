@@ -18,8 +18,10 @@
 #include <fstream>
 
 
-/** \ingroup AnalysisPlugins 
- * \defgroup displacement_tracker Displacement Tracker
+/** 
+ * \defgroup ML_DisplacementTracker Displacement Tracker
+ * \ingroup ML_Analysis
+ * \ingroup AnalysisPlugins
  * \brief Track the cell displacement of a population.
 
 \section Description

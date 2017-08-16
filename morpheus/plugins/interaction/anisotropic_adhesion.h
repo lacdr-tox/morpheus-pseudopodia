@@ -9,8 +9,15 @@
 //
 //////
 
-#ifndef COOP_ADHESION_H
-#define COOP_ADHESION_H
+
+/** \defgroup ML_AnisotropicAdhesion AnisotropicAdhesion
+\ingropu ML_Contact
+\ingroup InteractionPlugins
+
+*/
+
+#ifndef ANISO_ADHESION_H
+#define ANISO_ADHESION_H
 
 #include "core/interfaces.h"
 //#include "core/pluginparameter.h"
@@ -32,14 +39,14 @@ class Anisotropic_Adhesion : public Interaction_Addon
 		
 		string angle_str;
 		SymbolRWAccessor<double> angle;
-		shared_ptr<Function> fct_function;
+		shared_ptr< ExpressionEvaluator<double> > fct_function;
 		
 	public:
 		DECLARE_PLUGIN("AnisotropicAdhesion");
-		virtual double interaction(CPM::STATE s1, CPM::STATE s2) ;
-		virtual void init();
-		virtual void loadFromXML(const XMLNode xNode);
+		double interaction(CPM::STATE s1, CPM::STATE s2) override;
+		void init(const Scope * scope) override;
+		void loadFromXML(const XMLNode xNode) override;
 		double computeAdhesive(CPM::STATE s) ;
 };
 
-#endif // COOP_ADHESION_H
+#endif // ANISO_ADHESION_H

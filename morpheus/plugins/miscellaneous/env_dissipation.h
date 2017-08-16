@@ -17,6 +17,7 @@
 #include <core/celltype.h>
 
 /** \defgroup Environment_DissipationPlugin  Environmental Dissipation
+\ingroup ML_CellType
  * \ingroup CPM_EnergyPlugins
  */
 
@@ -26,7 +27,7 @@ class Environment_Dissipation : public CPM_Energy
 		DECLARE_PLUGIN("Dissipation")
 
 		Environment_Dissipation();
-		virtual double hamiltonian ( CPM::CELL_ID cell_id ) const;
+		virtual double hamiltonian ( CPM::CELL_ID cell_id ) const override;
 		virtual double delta ( CPM::CELL_ID cell_id , const CPM::UPDATE& update, CPM::UPDATE_TODO todo ) const;
 		virtual void init ( CellType* ct );
 

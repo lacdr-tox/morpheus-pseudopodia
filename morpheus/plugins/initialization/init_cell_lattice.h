@@ -17,6 +17,7 @@
 #include "core/focusrange.h"
 
 /** \defgroup InitCellLattice
+\ingroup ML_CellPopulation
 \ingroup InitializerPlugins
 \brief Initializes lattice of cell for CA-like models
 
@@ -48,7 +49,7 @@ private:
 public:
 	InitCellLattice(){};
 	DECLARE_PLUGIN("InitCellLattice");
-	bool run(CellType* ct);
+	bool run(CellType* ct) override;
 
 };
 
