@@ -70,7 +70,7 @@ class Function : public ReporterPlugin {
 		DECLARE_PLUGIN("Function");
 		Function();
 		
-		virtual XMLNode saveToXML() const;
+		XMLNode saveToXML() const override;
 		void loadFromXML(const XMLNode) override;
 		
 // 		static shared_ptr<mu::Parser> createParserInstance(); 

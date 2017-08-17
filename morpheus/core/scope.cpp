@@ -151,6 +151,24 @@ void Scope::init()
 }
 
 
+void Scope::init_symbol(SymbolData* data) const {
+	if (initializing_symbols.count(data)) {
+		throw string("Circular dependencies in definition of Symbol ") + data->name;
+	}
+	initializing_symbols.insert(data);
+	if (data->link==SymbolData::FunctionLink) {
+		data->func->init(this);
+		data->granularity = data->func->getGranularity();
+	}
+	else if (data->link==SymbolData::VectorFunctionLink) {
+		data->vec_func->init(this);
+		data->granularity = data->vec_func->getGranularity();
+	}
+	else {
+		throw string("Scope:: Unable to initialize symbol ") + data->name;
+	}
+}
+
 // Currently, this implementation is only available for CellType scopes, that may override the global scope symbol within the lattice part that they occupy
 void Scope::registerSubScopeSymbol(Scope *sub_scope, string symbol_name) {
 	if (sub_scope->ct_component == NULL) {

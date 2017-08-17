@@ -82,8 +82,11 @@ private:
 	Scope* parent;
 	vector< shared_ptr<Scope> > sub_scopes;
 	vector< shared_ptr<Scope> > component_scopes;
-	map<string, SymbolData> local_symbols;
+	mutable map<string, SymbolData> local_symbols;
 	mutable map<string, string> value_overrides;
+	
+	void init_symbol(SymbolData* data) const;
+	mutable set<SymbolData*> initializing_symbols;
 	
 	// INTERFACE FOR SCHEDULING THROUGH THE TimeScheduler
 	friend class TimeScheduler;
@@ -138,7 +141,14 @@ SymbolAccessor<T> Scope::findSymbol(string name, bool allow_partial) const {
 					+ " of type " + it->second.type_name );
 			}
 			cout << "Scope: Creating Accessor for symbol " << name << " from Scope " << this->name << endl;
-			return SymbolAccessor<T>(it->second, this, allow_partial);
+			
+			SymbolData& data = it->second;
+			// Assert dynamic symbols (i.e. functions) to be initialized
+			if (data.granularity == Granularity::Undef) {
+				init_symbol(&data);
+			}
+			
+			return SymbolAccessor<T>(data, this, allow_partial);
 		}
 		else if (parent) {
 			return parent->findSymbol<T>(name, allow_partial);
@@ -177,7 +187,14 @@ SymbolRWAccessor<T> Scope::findRWSymbol(string name) const {
 					+ " for Symbol " + name
 					+ " of type " + it->second.type_name );
 			}
-			return SymbolRWAccessor<T>(it->second, this);
+			
+			SymbolData& data = it->second;
+			// Assert dynamic symbols (i.e. functions) to be initialized
+			if (data.granularity == Granularity::Undef) {
+				init_symbol(&data);
+			}
+			
+			return SymbolRWAccessor<T>(data, this);
 		}
 		else if (parent) {
 			return parent->findRWSymbol<T>(name);
@@ -215,7 +232,14 @@ SymbolAccessor<T> Scope::findSymbol(string name, const T& default_val) const {
 					+ " for Symbol " + name
 					+ " of type " + it->second.type_name );
 			}
-			return SymbolAccessor<T>(it->second, this, default_val);
+			
+			SymbolData& data = it->second;
+			// Assert dynamic symbols (i.e. functions) to be initialized
+			if (data.granularity == Granularity::Undef) {
+				init_symbol(&data);
+			}
+			
+			return SymbolAccessor<T>(data, this, default_val);
 		}
 		else if (parent) {
 			return parent->findSymbol<T>(name, default_val);

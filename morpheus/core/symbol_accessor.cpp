@@ -324,6 +324,7 @@ bool SymbolAccessorBase<VDOUBLE, ReadOnlyAccess>::init_special() {
 			mem_scale.z = 1.0;
 			break;
 		case SymbolData::VectorFunctionLink:
+			if (data.vec_func) throw ("Missing VectorFunction in Symbol");
 			break;
 		case SymbolData::CellCenterLink:
 			break;
