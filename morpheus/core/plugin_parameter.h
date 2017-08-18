@@ -252,8 +252,9 @@ public:
 	{ 
 		RequirementPolicy::assertDefined();
 		
-		if (!is_initialized)
-			const_cast<XMLEvaluatorBase<ValType,RequirementPolicy,Evaluator>* >(this)->init(); // may throw ...
+		if (!is_initialized) {
+			cout << "Warning: Evaluator initialisation during get() for expression '" << evaluator->getExpression() << "'" << endl; const_cast<XMLEvaluatorBase<ValType,RequirementPolicy,Evaluator>* >(this)->init(); // may throw ...
+		}
 		if (is_const)
 			return const_expr;
 		else 

@@ -20,7 +20,8 @@ namespace SIM {
 		else {
 			symbol.const_prop = property;
 			symbol.link = (SymbolData::GlobalLink);
-			symbol.granularity = Granularity::Global;
+			// granularity is set to undef until it's initialized
+			symbol.granularity = Granularity::Undef;
 			
 			symbol.writable = ! property->isConstant();
 			symbol.invariant = property->isConstant();
@@ -45,6 +46,7 @@ template <> const string Property<VDOUBLE>::constant_xml_name() { return "Consta
 
 template <>
 void Property<double>::init(const Scope* scope, const SymbolFocus& f) {
+	if (initialized) return;
 	AbstractProperty::init(scope, f);
 	
 	value = 0;
@@ -66,6 +68,7 @@ void Property<double>::init(const Scope* scope, const SymbolFocus& f) {
 
 template <>
 void Property<VDOUBLE>::init(const Scope* scope, const SymbolFocus& f) {
+	if (initialized) return;
 	AbstractProperty::init(scope, f); 
 	
 	auto overrides = scope->valueOverrides();

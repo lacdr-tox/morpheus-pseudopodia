@@ -76,7 +76,7 @@
 		
 		<xs:attribute name="name" 	type="cpmString"			use="optional" />
 		<xs:attribute name="symbol"	type="cpmDoubleSymbolDef"	use="required" />
-		<xs:attribute name="value" 	type="cpmDouble"			use="required" />
+		<xs:attribute name="value" 	type="cpmMathExpression"			use="required" />
 		
 	</xs:complexType>
 	
@@ -92,7 +92,7 @@
 		
 		<xs:attribute name="name" 	type="cpmString"			use="optional" />
 		<xs:attribute name="symbol"	type="cpmVectorSymbolDef"	use="required" />
-		<xs:attribute name="value" 	type="cpmDoubleVector"		use="required" />
+		<xs:attribute name="value" 	type="cpmVectorMathExpression"		use="required" />
 	</xs:complexType>
 	
 	

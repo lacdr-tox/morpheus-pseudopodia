@@ -26,7 +26,7 @@ class AbstractProperty : public virtual Plugin {
 
 public:
 	virtual void init(const Scope* scope) { init(scope, SymbolFocus::global); }
-	virtual void init(const Scope * scope, const SymbolFocus& f) { Plugin::init(scope); initialized = true; };
+	virtual void init(const Scope * scope, const SymbolFocus& f) { if (initialized) return; Plugin::init(scope); initialized = true; };
 	
 	virtual void restoreData(XMLNode parent_node) = 0;
 	virtual XMLNode storeData() const = 0;
@@ -39,14 +39,15 @@ public:
 
 	bool isCellProperty() { return is_cellproperty; }
 	bool isConstant() { return is_constant;}
+	bool isInitialized() const { return initialized; }
 	
 // a little bit of hacking is needed to get segmented cells running the easy way ...
 	bool isSubCellular() { return sub_cellular; }
 	void setSubCellular(bool value) { sub_cellular = value; };
 	
 protected:
-	AbstractProperty(bool constant, bool cellproperty) : is_cellproperty(cellproperty), is_constant(constant), initialized(true), sub_cellular(false) {};
-	AbstractProperty(string n, string s, bool constant, bool cellproperty) : name(n) , symbolic_name(s), is_cellproperty(cellproperty), is_constant(constant), initialized(true), sub_cellular(false) {};
+	AbstractProperty(bool constant, bool cellproperty) : is_cellproperty(cellproperty), is_constant(constant), initialized(false), sub_cellular(false) {};
+	AbstractProperty(string n, string s, bool constant, bool cellproperty) : name(n) , symbolic_name(s), is_cellproperty(cellproperty), is_constant(constant), initialized(false), sub_cellular(false) {};
 	~AbstractProperty() {};
 	string name, symbolic_name;
 	const bool is_cellproperty;
