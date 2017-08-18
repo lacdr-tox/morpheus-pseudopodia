@@ -824,7 +824,7 @@ void MainWindow::modelActionTriggerd (QAction *act)
 			QTreeWidgetItem* item = model_item->child(model_index.part);
 			item->setDisabled(true);
 			item->setForeground(0,QBrush(Qt::gray));
-			while (model_item->child(model_index.part)->isDisabled()) {
+			while (model_index.part && model_item->child(model_index.part)->isDisabled()) {
 				model_index.part--;
 			}
 			modelList->setCurrentItem(model_item->child(model_index.part));
@@ -948,8 +948,8 @@ void MainWindow::addModel(int index) {
 	c->setFont(0,f);
 	modelList->insertTopLevelItem(index,c);
 
-	connect(model.data(),SIGNAL(modelPartAdded(int)),this,SLOT(reloadModelParts()));
-	connect(model.data(),SIGNAL(modelPartRemoved(int)),this,SLOT(reloadModelParts()));
+// 	connect(model.data(),SIGNAL(modelPartAdded(int)),this,SLOT(reloadModelParts()));
+// 	connect(model.data(),SIGNAL(modelPartRemoved(int)),this,SLOT(reloadModelParts()));
 
 	domNodeViewer *viewer = new domNodeViewer(this);
 	viewer->setModel(model,0);
@@ -980,8 +980,8 @@ void MainWindow::addModel(int index) {
 
 void MainWindow::removeModel(int index) {
     SharedMorphModel model = config::getOpenModels()[index];
-    disconnect(model.data(),SIGNAL(modelPartAdded(int)),this,SLOT(reloadModelParts()));
-    disconnect(model.data(),SIGNAL(modelPartRemoved(int)),this,SLOT(reloadModelParts()));
+//     disconnect(model.data(),SIGNAL(modelPartAdded(int)),this,SLOT(reloadModelParts()));
+//     disconnect(model.data(),SIGNAL(modelPartRemoved(int)),this,SLOT(reloadModelParts()));
     editorStack->removeWidget(modelViewer[model]);
     modelViewer.remove(model);
 
