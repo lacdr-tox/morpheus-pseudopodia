@@ -233,7 +233,7 @@ int InitCellObjects::setNodes(CellType* ct)
 						case BOX:{
 							// if pos is falls inside of specified box
 							if( orth_pos.x >= co.origin.x && orth_pos.y >= co.origin.y && orth_pos.z >= co.origin.z 
-								&& orth_pos.x <= (co.origin.x + co.boxsize.x) && orth_pos.y <= (co.origin.y + co.boxsize.y) && orth_pos.z <= (co.origin.z + co.boxsize.z) ){
+								&& orth_pos.x < (co.origin.x + co.boxsize.x) && orth_pos.y < (co.origin.y + co.boxsize.y) && orth_pos.z < (co.origin.z + co.boxsize.z) ){
 								
 								cand.distance = lattice->orth_distance( co.center, orth_pos );
 								cand.abs_distance = cand.distance.abs();
