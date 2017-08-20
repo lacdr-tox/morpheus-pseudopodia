@@ -98,6 +98,7 @@ void parameterSweeper::selectModel(int index) {
 		model->disconnect( SIGNAL(layoutChanged()));
     }
     model = config::getOpenModels()[index];
+	sweep_name->setText(model->rootNodeContr->getModelDescr().title + "_sweep");
 	param_sweep_view->setModel(&model->param_sweep);
 	param_sweep_view->setColumnWidth(0,300);
 	param_sweep_view->setColumnWidth(1,150);
@@ -210,6 +211,7 @@ void parameterSweeper::submitSweep()
 		parameter_sets = summary.getJobList();
 		int sweep_id = newSweepID();
 		QString sweep_name = summary.getGroupName();
+		sweep_name.replace(" ","_");
 		QString sweep_sub_dir = sweep_name + "_" + QString::number(sweep_id);
 		QString sweep_header;
 		
