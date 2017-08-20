@@ -94,6 +94,8 @@ InitCellObjects::CellObject InitCellObjects::getObjectProperties(const XMLNode o
 		c.type = BOX;
 		getXMLAttribute(oNode,"Box/origin", c.origin);
 		getXMLAttribute(oNode,"Box/size", c.boxsize);
+		if (c.boxsize.z<1) c.boxsize.z=1;
+		if (c.boxsize.y<1) c.boxsize.y=1;
 		c.center = (c.origin + c.boxsize) / 2.0;
 	}
 	else if( oNode.nChildNode("Cylinder") ){
@@ -213,6 +215,7 @@ int InitCellObjects::setNodes(CellType* ct)
 				// check whether multiple objects claim this lattice point
 				vector<Candidate> candidates;
 				VDOUBLE orth_pos = lattice->to_orth(pos);
+				lattice->orth_resolve(orth_pos);
 				
 				for(int o = 0; o < cellobjects.size() ; o++){
 					

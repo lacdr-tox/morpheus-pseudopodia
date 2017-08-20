@@ -12,18 +12,37 @@ VDOUBLE Gnuplotter::PlotSpec::size()
 {
 	
 	VDOUBLE latticeDim = SIM::lattice().to_orth(SIM::lattice().size());
+	
 	if (SIM::lattice().getStructure() == Lattice::hexagonal) {
-		latticeDim.x = SIM::lattice().size().x;
-		if (SIM::lattice().get_boundary_type(Boundary::mx) != Boundary::periodic) {
-			latticeDim.x += ceil(double(SIM::lattice().size().y)) * 0.5;
+		if (SIM::lattice().get_boundary_type(Boundary::mx) == Boundary::periodic) {
+			latticeDim.x = SIM::lattice().size().x;
 		}
 	}
-	if (latticeDim.y<3) {
-		latticeDim.y = max(2.0,0.1*latticeDim.x);
-	}
-	latticeDim += VDOUBLE(1,1,1); //VDOUBLE(1,1,1);
+// 	if (latticeDim.y<3) {
+// 		latticeDim.y = max(2.0,0.1*latticeDim.x);
+// 	}
+// 	latticeDim += VDOUBLE(1,1,1); //VDOUBLE(1,1,1);
 	
 	return latticeDim;
+}
+
+VDOUBLE Gnuplotter::PlotSpec::view_size()
+{
+	
+	VDOUBLE size = PlotSpec::size();
+	
+	if (SIM::lattice().getStructure() == Lattice::hexagonal) {
+		size.y += 0.25 ;
+		if (SIM::lattice().get_boundary_type(Boundary::mx) == Boundary::periodic) {
+			size.x = SIM::lattice().size().x+0.5;
+		}
+	}
+	if (size.y<3) {
+		size.y = max(2.0,0.1*size.x);
+	}
+// 	latticeDim += VDOUBLE(1,1,1); //VDOUBLE(1,1,1);
+	
+	return size;
 }
 
 ArrowPainter::ArrowPainter() {
@@ -60,7 +79,7 @@ const string& ArrowPainter::getDescription() const
 void ArrowPainter::plotData(ostream& out)
 {
 	const Lattice& lattice = SIM::lattice();
-	VDOUBLE orth_lattice_size = Gnuplotter::PlotSpec::size();
+	VDOUBLE orth_lattice_size = lattice.size();
 	
 // 	out.precision(2);
 	auto celltypes = CPM::getCellTypes();
@@ -75,13 +94,13 @@ void ArrowPainter::plotData(ostream& out)
 			SymbolFocus f(cells[c]);
 			try {
 				VDOUBLE a = arrow(f);
-				VINT centerl = f.cell().getCenterL();
-				lattice.resolve (centerl);
-				VDOUBLE center = ( lattice.to_orth(centerl) + VDOUBLE(0.5,0.5,0) ) % orth_lattice_size;
+				VDOUBLE center = f.cell().getCenter();
+				lattice.orth_resolve (center);
+				center = (center) % orth_lattice_size;
 				
 				
 				if (! (a.x == 0 && a.y==0) ) {
-					out << center.x-a.x  << "\t" <<  center.y-a.y << "\t" << 2*a.x << "\t" << 2*a.y << endl;
+					out << center.x-0.5*a.x  << "\t" <<  center.y-0.5*a.y << "\t" << a.x << "\t" << a.y << endl;
 				}
 			}
 			catch (const SymbolError &e) {
@@ -307,12 +326,17 @@ set< SymbolDependency > VectorFieldPainter::getInputSymbols() const
 
 void VectorFieldPainter::plotData(ostream& out)
 {
+	auto& lattice = SIM::lattice();
 	VINT pos(0, 0, slice);
-	VINT size = SIM::lattice().size();
+	VINT size = lattice.size();
 	for (pos.y=coarsening/2; pos.y<size.y; pos.y+=coarsening) {
 		for (pos.x=coarsening/2; pos.x<size.x; pos.x+=coarsening) {
             VDOUBLE arrow = value.get(SymbolFocus(pos));
-			out << pos.x - 0.5*arrow.x << "\t" << pos.y - 0.5*arrow.y << "\t" << arrow.x << "\t" << arrow.y << "\n";
+			VDOUBLE opos = lattice.to_orth(pos);
+			if (lattice.getStructure() == Lattice::hexagonal) {
+				lattice.orth_resolve(opos);
+			}
+			out << opos.x - 0.5*arrow.x << "\t" << opos.y - 0.5*arrow.y << "\t" << arrow.x << "\t" << arrow.y << "\n";
 		}
 	}
 }
@@ -728,7 +752,7 @@ void CellPainter::writeCellLayer(ostream& out)
 vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell::Nodes& node_list, bool (*comp)(const CPM::STATE& a, const CPM::STATE& b))
 {
 	VDOUBLE latticeDim = Gnuplotter::PlotSpec::size();
-	latticeDim -= VDOUBLE(1.0,1.1,0);
+	latticeDim += VDOUBLE(0.01,0.01,0);
 	
 	// we assume that the neighbors are sorted either clockwise or anti-clockwise.
 	// we could also add a sorting step after the filtering of nodes belonging to the plane
@@ -769,8 +793,9 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 		if (pos.z != z_level) continue;
 		
 		// get the proper position in the drawing area
-		VDOUBLE orth_pos  = cpm_layer->lattice().to_orth(pos) % latticeDim;
-
+		VDOUBLE orth_pos  = cpm_layer->lattice().to_orth(pos);
+		cpm_layer->lattice().orth_resolve(orth_pos);
+		
 		const CPM::STATE& node = CPM::getNode(pos);
 		for(int i = 0; i < plane_neighbors.size(); i++)
 		{
@@ -1119,7 +1144,8 @@ void Gnuplotter::analyse(double time) {
 	}
 	const static string outputDir = ".";
 
-	string points_pm3d = " with pm3d ";
+// 	string points_pm3d = " with pm3d ";
+	string points_pm3d = " with image ";
 
 	
 
@@ -1209,10 +1235,16 @@ void Gnuplotter::analyse(double time) {
 		command << "set style fill transparent solid 1;\n";
 
 		
+		VDOUBLE origin(0.5,0.5,0);
+		
 		/*
 			PLOT PDE SURFACE + ISOLINES
 		*/
-
+		stringstream s;
+		s << "[" << - origin.x << ":" << PlotSpec::view_size().x - origin.x << "]"
+		  <<  "[" << - origin.y << ":" << PlotSpec::view_size().y - origin.y << "]";
+		string splot_range = s.str();
+		
 		if (plots[i].field) {
 			if (!interpolation_pm3d)
 				command << "set pm3d corners2color c4;\n";
@@ -1241,6 +1273,8 @@ void Gnuplotter::analyse(double time) {
 
 			command << "set cbrange " << plots[i].field_painter->getValueRange() << ";\n";
 			
+			
+			
 			if (plots[i].field_painter->getSurface() ) {
 				command << "unset contour;\n"
 						<< "set surface;\n";
@@ -1250,7 +1284,7 @@ void Gnuplotter::analyse(double time) {
 				// set background pattern to ease data / no-data discrimination
 				//command << "set object 1 rectangle from graph 0, graph 0 to graph 1, graph 1 behind fc rgb 'light-grey' fs pattern 2\n";
 
-				command << "splot [][]" << plots[i].field_painter->getValueRange();
+				command << "splot "<< splot_range << " " << plots[i].field_painter->getValueRange();
 
 				if (pipe_data)
 					command << " '-' ";
@@ -1270,7 +1304,7 @@ void Gnuplotter::analyse(double time) {
 						<< "set cntrparam levels auto "<< plots[i].field_painter->getIsolines() <<" ;\n"
 						<< "unset surface;\n"
 						<< "unset clabel;\n"
-						<< "splot [][][]";
+						<< "splot " << splot_range << "[]";
 				if (pipe_data)
 					command << " '-' ";
 				else
@@ -1313,7 +1347,7 @@ void Gnuplotter::analyse(double time) {
 				command << "set title \"" << plot_title << "\" offset 0,-0.5 ;\n";
 			}
 
-			command << "plot ";
+			command << "plot " << splot_range << " ";
 			if(pipe_data)
 				command << "'-' ";
 			else{
@@ -1415,12 +1449,12 @@ void Gnuplotter::analyse(double time) {
 				if (plots[i].cell_painter->getDataLayout() == CellPainter::ascii_matrix)
 					layout = "matrix";
 				// TODO Try to use plot with image here to get rid of the pixel size issue
-				command << "splot [0:"<< PlotSpec::size().x << "][0:" << PlotSpec::size().y << "][] ";
+				command << "splot " << splot_range;
 				if (pipe_data) 
 					command << " '-' ";
 				else
 					command << " '" << outputDir << "/" << plots[i].cells_data_file << "' " ;
-				command << layout << " using (1+$1):(1+$2):3 ";
+				command << layout << " using 1:2:3 ";
 				command << " w p pt 5 ps " << pointsize() << " pal not";
 				if (pipe_data) 
 					command << ", '-' ";
@@ -1435,7 +1469,7 @@ void Gnuplotter::analyse(double time) {
 				else{
 					command << ", '" << outputDir << "/" << plots[i].labels_data_file << "' ";
 				}
-				command << " using (1.0+$1):(1.0+$2)"<< (using_splot ? "" : ":(0)") << ":3 with labels font \"Helvetica,"
+				command << " using ($1):($2)"<< (using_splot ? "" : ":(0)") << ":3 with labels font \"Helvetica,"
 						<< plots[i].label_painter->fontsize() << "\" textcolor rgb \"" << plots[i].label_painter->fontcolor().c_str() << "\" notitle";
 			}
 
@@ -1445,7 +1479,7 @@ void Gnuplotter::analyse(double time) {
 				else{
 					command << ", '" << outputDir << "/" << plots[i].arrow_data_file << "' ";
 				}
-				command << " u (0.5+$1):(0.5+$2)"<< (using_splot ? "" : ":(0)") << ":3:4" <<  (using_splot ? "" : ":(0)")  << " ";
+				command << " u ($1):($2)"<< (using_splot ? "" : ":(0)") << ":3:4" <<  (using_splot ? "" : ":(0)")  << " ";
 				command << "w vectors arrowstyle " << plots[i].arrow_painter->getStyle() << " notitle";
 			}
 			
@@ -1459,7 +1493,7 @@ void Gnuplotter::analyse(double time) {
 					for (uint o=0; o<cell_boundary_data.size(); o++) {
 						for (uint p=0; p<cell_boundary_data[o].polygons.size(); p++) {
 							for (uint q=0; q < cell_boundary_data[o].polygons[p].size(); q++) {
-								command << cell_boundary_data[o].polygons[p][q].x+1 << "\t" << cell_boundary_data[o].polygons[p][q].y+1 << "\n";
+								command << cell_boundary_data[o].polygons[p][q].x << "\t" << cell_boundary_data[o].polygons[p][q].y << "\n";
 							}
 							command << "\n\n";
 						}
@@ -1467,7 +1501,7 @@ void Gnuplotter::analyse(double time) {
 						if ( ! isnan(cell_boundary_data[o].value) && cell_boundary_data[o].value != CellPainter::getTransparentValue()) {
 							for (uint p=0; p<cell_boundary_data[o].polygons.size(); p++) {
 								for (uint q=0; q < cell_boundary_data[o].polygons[p].size(); q++) {
-									command << cell_boundary_data[o].polygons[p][q].x+1 << "\t" << cell_boundary_data[o].polygons[p][q].y+1 << "\n";
+									command << cell_boundary_data[o].polygons[p][q].x << "\t" << cell_boundary_data[o].polygons[p][q].y << "\n";
 								}
 								command << "\n\n";
 							}
@@ -1483,7 +1517,7 @@ void Gnuplotter::analyse(double time) {
 					for (uint o=0; o<cell_boundary_data.size(); o++) {
 						for (uint p=0; p<cell_boundary_data[o].polygons.size(); p++) {
 							for (uint q=0; q < cell_boundary_data[o].polygons[p].size(); q++) {
-								command << cell_boundary_data[o].polygons[p][q].x+1 << "\t" << cell_boundary_data[o].polygons[p][q].y+1 << "\n";
+								command << cell_boundary_data[o].polygons[p][q].x << "\t" << cell_boundary_data[o].polygons[p][q].y << "\n";
 							}
 							command << "\n\n";
 						}
@@ -1505,7 +1539,7 @@ void Gnuplotter::analyse(double time) {
 				for (uint o=0; o<cell_boundary_data.size(); o++) {
 					for (uint p=0; p<cell_boundary_data[o].polygons.size(); p++) {
 						for (uint q=0; q < cell_boundary_data[o].polygons[p].size(); q++) {
-							out_file << cell_boundary_data[o].polygons[p][q].x +1 << "\t" << cell_boundary_data[o].polygons[p][q].y+1 << "\n";
+							out_file << cell_boundary_data[o].polygons[p][q].x << "\t" << cell_boundary_data[o].polygons[p][q].y << "\n";
 						}
 						out_file << "\n\n";
 					}
