@@ -92,7 +92,7 @@ public:
     
 	const Value_Type& get() const { assert(initialized); return value; }
 	Value_Type& getRef() { return value; }
-	virtual void set(Value_Type value) { this->value = value; }
+	virtual void set(Value_Type value) { this->value = value; initialized = true;}
 	virtual void setBuffer(Value_Type value) { this->buffer = value; }
 	virtual void applyBuffer() { value = buffer; }
 	virtual shared_ptr<AbstractProperty> clone() const;

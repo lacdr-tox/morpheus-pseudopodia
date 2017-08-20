@@ -18,10 +18,6 @@ VDOUBLE Gnuplotter::PlotSpec::size()
 			latticeDim.x = SIM::lattice().size().x;
 		}
 	}
-// 	if (latticeDim.y<3) {
-// 		latticeDim.y = max(2.0,0.1*latticeDim.x);
-// 	}
-// 	latticeDim += VDOUBLE(1,1,1); //VDOUBLE(1,1,1);
 	
 	return latticeDim;
 }
@@ -752,7 +748,7 @@ void CellPainter::writeCellLayer(ostream& out)
 vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell::Nodes& node_list, bool (*comp)(const CPM::STATE& a, const CPM::STATE& b))
 {
 	VDOUBLE latticeDim = Gnuplotter::PlotSpec::size();
-	latticeDim += VDOUBLE(0.01,0.01,0);
+// 	latticeDim += VDOUBLE(0.01,0.01,0);
 	
 	// we assume that the neighbors are sorted either clockwise or anti-clockwise.
 	// we could also add a sorting step after the filtering of nodes belonging to the plane

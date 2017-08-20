@@ -182,6 +182,7 @@ void Scope::init_symbol(SymbolData* data) const {
 		default :
 			throw string("Scope: Unable to initialize symbol '") + data->name + "' of LinkType " + SymbolData::getLinkTypeName(data->link);
 	}
+	initializing_symbols.erase(data);
 }
 
 // Currently, this implementation is only available for CellType scopes, that may override the global scope symbol within the lattice part that they occupy
