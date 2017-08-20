@@ -22,21 +22,21 @@ VDOUBLE Gnuplotter::PlotSpec::size()
 	return latticeDim;
 }
 
-VDOUBLE Gnuplotter::PlotSpec::view_size()
+VDOUBLE Gnuplotter::PlotSpec::view_oversize()
 {
 	
-	VDOUBLE size = PlotSpec::size();
+	VDOUBLE size;
 	
 	if (SIM::lattice().getStructure() == Lattice::hexagonal) {
-		size.y += 0.25 ;
+		size.y = 0.25 ;
 		if (SIM::lattice().get_boundary_type(Boundary::mx) == Boundary::periodic) {
-			size.x = SIM::lattice().size().x+0.5;
+			size.x = 0.5;
 		}
 	}
-	if (size.y<3) {
-		size.y = max(2.0,0.1*size.x);
+	
+	if (SIM::lattice().size().y<3) {
+		size.y = max(2.0,0.1*size.x) - size.y;
 	}
-// 	latticeDim += VDOUBLE(1,1,1); //VDOUBLE(1,1,1);
 	
 	return size;
 }
@@ -1237,9 +1237,16 @@ void Gnuplotter::analyse(double time) {
 			PLOT PDE SURFACE + ISOLINES
 		*/
 		stringstream s;
-		s << "[" << - origin.x << ":" << PlotSpec::view_size().x - origin.x << "]"
-		  <<  "[" << - origin.y << ":" << PlotSpec::view_size().y - origin.y << "]";
-		string splot_range = s.str();
+		VDOUBLE view_size = PlotSpec::size() + PlotSpec::view_oversize();
+		s << "[" << - origin.x << ":" << view_size.x - origin.x << "]"
+		  <<  "[" << - origin.y << ":" << view_size.y - origin.y << "]";
+		string plot_range = s.str();
+		s.str("");
+		view_size.y = lattice().size().y + PlotSpec::view_oversize().y;
+		origin.y += 0.5 * PlotSpec::view_oversize().y;
+		s << "[" << - origin.x << ":" << view_size.x - origin.x << "]"
+		  <<  "[" << - origin.y << ":" << view_size.y - origin.y << "]";
+		string field_range = s.str();
 		
 		if (plots[i].field) {
 			if (!interpolation_pm3d)
@@ -1280,7 +1287,7 @@ void Gnuplotter::analyse(double time) {
 				// set background pattern to ease data / no-data discrimination
 				//command << "set object 1 rectangle from graph 0, graph 0 to graph 1, graph 1 behind fc rgb 'light-grey' fs pattern 2\n";
 
-				command << "splot "<< splot_range << " " << plots[i].field_painter->getValueRange();
+				command << "splot "<< field_range << " " << plots[i].field_painter->getValueRange();
 
 				if (pipe_data)
 					command << " '-' ";
@@ -1300,7 +1307,7 @@ void Gnuplotter::analyse(double time) {
 						<< "set cntrparam levels auto "<< plots[i].field_painter->getIsolines() <<" ;\n"
 						<< "unset surface;\n"
 						<< "unset clabel;\n"
-						<< "splot " << splot_range << "[]";
+						<< "splot " << field_range << "[]";
 				if (pipe_data)
 					command << " '-' ";
 				else
@@ -1343,7 +1350,7 @@ void Gnuplotter::analyse(double time) {
 				command << "set title \"" << plot_title << "\" offset 0,-0.5 ;\n";
 			}
 
-			command << "plot " << splot_range << " ";
+			command << "plot " << plot_range << " ";
 			if(pipe_data)
 				command << "'-' ";
 			else{
@@ -1445,7 +1452,7 @@ void Gnuplotter::analyse(double time) {
 				if (plots[i].cell_painter->getDataLayout() == CellPainter::ascii_matrix)
 					layout = "matrix";
 				// TODO Try to use plot with image here to get rid of the pixel size issue
-				command << "splot " << splot_range;
+				command << "splot " << plot_range;
 				if (pipe_data) 
 					command << " '-' ";
 				else

@@ -275,7 +275,7 @@ class Gnuplotter : public AnalysisPlugin
 		struct PlotSpec {
 			PlotSpec();
 			static VDOUBLE size();
-			static VDOUBLE view_size();
+			static VDOUBLE view_oversize();
 			bool field, cells, labels, arrows, vectors;
 			shared_ptr<CellPainter> cell_painter;
 			shared_ptr<LabelPainter> label_painter;
