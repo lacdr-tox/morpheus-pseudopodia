@@ -41,7 +41,9 @@ parameterSweeper::parameterSweeper()
 	edit_delegate = QSharedPointer<attrController>(new attrController(this, NULL,true));
 	param_sweep_view->setItemDelegate(edit_delegate.data());
 	main_layout->addWidget(param_sweep_view);
-	
+	preset_random_seed  = new QCheckBox(this);
+	preset_random_seed -> setText("preset random seeds");
+	main_layout->addWidget(preset_random_seed);
 
 	
 	
@@ -199,14 +201,27 @@ void parameterSweeper::submitSweep()
 	QList<AbstractAttribute* > parameters;
 	QList<QStringList> parameter_sets;
 	model->param_sweep.createJobList(parameters, parameter_sets);
-    if (parameter_sets.empty()) {
-        QMessageBox(QMessageBox::Warning,QString("Action denied"),QString("No valid parameter sets defined!!"));
-        return;
-    }
-    
-    jobSummary summary(parameters, parameter_sets, sweep_name->text());
-    summary.exec();
-    if (summary.result() == QDialog::Accepted) {
+	if (parameter_sets.empty()) {
+		QMessageBox(QMessageBox::Warning,QString("Action denied"),QString("No valid parameter sets defined!!"));
+		return;
+	}
+
+	if (preset_random_seed->isChecked())  {
+		 // pick the random seed attribute
+		 nodeController* seed = model->rootNodeContr->firstChild("Time")->firstChild("RandomSeed");
+		 if (!seed) { seed = model->rootNodeContr->firstChild("Time")->insertChild("RandomSeed"); }
+		 auto seed_value = seed->attribute("value");
+		 if (seed_value) {
+			parameters.push_back(seed_value);
+			for (auto& set : parameter_sets) {
+				set.push_back(QString::number(qrand()));
+			}
+		 }
+	 }
+	 
+	jobSummary summary(parameters, parameter_sets, sweep_name->text());
+	summary.exec();
+	if (summary.result() == QDialog::Accepted) {
 
 		parameter_sets = summary.getJobList();
 		int sweep_id = newSweepID();
