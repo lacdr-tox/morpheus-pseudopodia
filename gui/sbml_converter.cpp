@@ -205,42 +205,57 @@ void SBMLImporter::readSBML(QString sbml_file)
 
 	QString plain_morpheus_model(
 "<?xml version='1.0' encoding='UTF-8'?> \
-<MorpheusModel version=\"1\">\
-    <Description>\
-        <Title>title</Title>\
-        <Details>details</Details>\
-    </Description>\
-    <Space>\
-        <Lattice class=\"linear\">\
-            <Size value=\"1 0 0\"/>\
-        </Lattice>\
-    </Space>\
-    <Time>\
-        <StartTime value=\"0\"/>\
-        <StopTime value=\"1\"/>\
-        <TimeSymbol symbol=\"t\" name=\"time\"/>\
-    </Time>\
-    <CellTypes>\
-        <CellType class=\"biological\" name=\"sbml_ct\">\
-            <System solver=\"runge-kutta\" time-step=\"0.01\">\
-            </System>\
-        </CellType>\
-    </CellTypes>\
-    <CellPopulations>\
-        <Population size=\"1\" type=\"sbml_ct\"/>\
-    </CellPopulations>\
-    <Analysis>\
-        <Logger interval=\"0.01\">\
-            <Format string=\"\"/>\
-            <Input>\
-                <Cell mapping=\"all\" celltype=\"sbml_ct\"/>\
-            </Input>\
-            <Plot endstate=\"true\" terminal=\"png\">\
-                <X-axis column=\"1\"/>\
-                <Y-axis columns=\"\"/>\
-            </Plot>\
-        </Logger>\
-    </Analysis>\
+<MorpheusModel version=\"3\"> \
+    <Description> \
+        <Details>details</Details> \
+        <Title>title</Title> \
+    </Description> \
+    <Space> \
+        <Lattice class=\"linear\"> \
+            <Neighborhood> \
+                <Order>1</Order> \
+            </Neighborhood> \
+            <Size symbol=\"size\" value=\"1, 0, 0\"/> \
+        </Lattice> \
+        <SpaceSymbol symbol=\"space\"/> \
+    </Space> \
+    <Time> \
+        <StartTime value=\"0\"/> \
+        <StopTime value=\"1\"/> \
+        <TimeSymbol symbol=\"time\"/> \
+    </Time> \
+    <Global> \
+    </Global> \
+    <CellTypes> \
+        <CellType class=\"biological\" name=\"sbml_ct\"> \
+            <System solver=\"runge-kutta\" time-step=\"0.01\"/> \
+        </CellType> \
+    </CellTypes> \
+    <CellPopulations> \
+        <Population size=\"1\" type=\"sbml_ct\"/> \
+    </CellPopulations> \
+    <Analysis> \
+        <Logger time-step=\"0.01\"> \
+            <Input> \
+				<Symbol symbol-ref=\"cell.id\"/> \
+            </Input> \
+            <Output> \
+                <TextOutput/> \
+            </Output> \
+            <Plots> \
+                <Plot time-step=\"-1\"> \
+                    <Style style=\"lines\"/> \
+                    <Terminal terminal=\"png\"/> \
+                    <X-axis> \
+                        <Symbol symbol-ref=\"time\"/> \
+                    </X-axis> \
+                    <Y-axis> \
+						<Symbol symbol-ref=\"cell.id\"/> \
+					</Y-axis> \
+                </Plot> \
+            </Plots>  \
+        </Logger> \
+    </Analysis> \
 </MorpheusModel>\"");
 
 	QDomDocument morph_doc;
@@ -250,7 +265,7 @@ void SBMLImporter::readSBML(QString sbml_file)
 	nodeController* description = morph_model->rootNodeContr->firstChild("Description");
 	if (!description) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Description node not found." );
 
-	std::string title;
+	string title;
 	if (sbml_doc->isSetName())
 		title = sbml_model->getName();
 	else
@@ -286,7 +301,35 @@ void SBMLImporter::readSBML(QString sbml_file)
 	nodeController* logger = morph_model->rootNodeContr->firstChild("Analysis")->firstChild("Logger");
 	if (!logger) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Logger node not found.");
 
-	logger->firstChild("Format")->attribute("string")->set(QStringList(QList<QString>::fromSet(variables)).join(" "));
+	// add symbols to GLobal and Logger (both in Logger/Input and in Logger/Plots/Plot/Y-axis)
+	nodeController* global      = morph_model->rootNodeContr->firstChild("Global");
+	if (!global) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Global node not found.");
+	nodeController* logger_log  = logger->firstChild("Input");
+	nodeController* logger_plot = logger->firstChild("Plots")->firstChild("Plot")->firstChild("Y-axis");
+
+	bool first=true;
+	foreach (const QString& var, variables){
+		cout << "Variable : " << var.toStdString() << endl; 
+		nodeController* global_const = global->insertChild("Constant");
+		global_const->attribute("symbol")->set(var);
+		global_const->attribute("value")->set("0.0");
+		
+		if( first ){
+			logger_log->firstChild("Symbol")->attribute("symbol-ref")->set(var);
+			logger_plot->firstChild("Symbol")->attribute("symbol-ref")->set(var);
+			first = false;
+		}
+		else{
+			nodeController* symbol_log = logger_log->insertChild("Symbol");			
+			symbol_log->attribute("symbol-ref")->set(var);
+			nodeController* symbol_plot = logger_plot->insertChild("Symbol");
+			symbol_plot->attribute("symbol-ref")->set(var);
+		}
+	}
+	cout << flush;
+	
+
+/*	logger->firstChild("Format")->attribute("string")->set(QStringList(QList<QString>::fromSet(variables)).join(" "));
 	QStringList columns;
 	int col=3;
 	foreach (const QString& var,variables) {
@@ -294,6 +337,7 @@ void SBMLImporter::readSBML(QString sbml_file)
 		col++;
 	}
 	logger->firstChild("Plot")->firstChild("Y-axis")->attribute("columns")->set(columns.join(" "));
+*/
 
 	SBMLDocument_free(sbml_doc);
 
@@ -309,6 +353,7 @@ void SBMLImporter::readSBML(QString sbml_file)
 		morph_model->rootNodeContr->trackInformation(conversion_messages[i]);
 	}
 	model = morph_model;
+	
 };
 
 void SBMLImporter::addSBMLSpecies(nodeController* celltype, Model* sbml_model)
