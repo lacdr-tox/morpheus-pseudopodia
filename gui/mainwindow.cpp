@@ -988,6 +988,7 @@ void MainWindow::removeModel(int index) {
     modelList->takeTopLevelItem(index);
     if (model_index.model == index) {
         model_index.model = -1;
+		config::switchModel(model_index.model) ;
     }
 }
 
