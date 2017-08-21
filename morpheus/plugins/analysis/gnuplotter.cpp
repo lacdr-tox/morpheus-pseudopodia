@@ -92,7 +92,7 @@ void ArrowPainter::plotData(ostream& out)
 				VDOUBLE a = arrow(f);
 				VDOUBLE center = f.cell().getCenter();
 				lattice.orth_resolve (center);
-				center = (center) % orth_lattice_size;
+// 				center = (center) % orth_lattice_size;
 				
 				
 				if (! (a.x == 0 && a.y==0) ) {

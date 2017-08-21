@@ -1,6 +1,6 @@
 #include "lattice.h"
 #include "simulation.h"
-const double sin_60 = 0.86602540378443864676;
+
 
 
 
