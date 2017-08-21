@@ -112,7 +112,9 @@ void TimeScheduler::init()
 	for (uint i=0; i<ts.all_phase2.size(); i++) {
 		set<SymbolDependency> out_sym = ts.all_phase2[i]->getOutputSymbols();
 		for (auto sym : out_sym) {
-			const_cast<Scope*>(sym.scope)->addUnresolvedSymbol(sym.name);
+			if (!sym.scope->isSymbolDelayed(sym.name)) {
+				const_cast<Scope*>(sym.scope)->addUnresolvedSymbol(sym.name);
+			}
 		}
 	}
 	
@@ -132,7 +134,6 @@ void TimeScheduler::init()
 				continue;
 			
 			set<SymbolDependency> dep_syms = ts.all_phase2[j]->getDependSymbols();
-			
 			set<string> unresolved_symbols;
 			for (auto dep: dep_syms ){
 				if (const_cast<Scope*>(dep.scope)->isUnresolved(dep.name)) {
@@ -142,7 +143,7 @@ void TimeScheduler::init()
 			
 			// Try to remove the ouput symbols of the Listener, in case they were wrongly registered also as input symbols
 			if ( ! unresolved_symbols.empty()) {
-				set<SymbolDependency> out_syms = ts.all_phase2[j]->getDependSymbols();
+				set<SymbolDependency> out_syms = ts.all_phase2[j]->getOutputSymbols();
 				for (auto out: out_syms ){
 					if (unresolved_symbols.count(out.name)) {
 						unresolved_symbols.erase(out.name);
@@ -153,7 +154,7 @@ void TimeScheduler::init()
 			// 
 			if (unresolved_symbols.empty()) {
 				// Remove the output symbols from beeing unresolved
-				set<SymbolDependency> out_syms = ts.all_phase2[j]->getDependSymbols();
+				set<SymbolDependency> out_syms = ts.all_phase2[j]->getOutputSymbols();
 				for (auto out: out_syms ){
 					const_cast<Scope*>(out.scope)->removeUnresolvedSymbol(out.name);
 				}

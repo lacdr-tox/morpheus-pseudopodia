@@ -9,6 +9,7 @@ namespace SIM {
 		symbol.fullname = property->getName();
 		symbol.name = property->getSymbol();
 		symbol.integer = false;
+		symbol.is_delayed = property->isDelayed();
 		if (property->isCellProperty()) {
 			symbol.link = SymbolData::CellPropertyLink;
 			symbol.granularity = Granularity::Cell;
@@ -87,13 +88,13 @@ void Property<VDOUBLE>::init(const Scope* scope, const SymbolFocus& f) {
 }
 
 DelayProperty::DelayProperty(bool cellproperty):
-  Property<double>(false, cellproperty),
+  Property<double>("","",false, cellproperty,true),
   ContinuousProcessPlugin(ContinuousProcessPlugin::DELAY, XMLSpec::XML_NONE),
   tsl_initialized(false)
 { };
 
 DelayProperty::DelayProperty(string name, string symbol, bool cellproperty) :
-  Property<double>(name, symbol, false, cellproperty),
+  Property<double>(name, symbol, false, cellproperty,true),
   ContinuousProcessPlugin(ContinuousProcessPlugin::DELAY, XMLSpec::XML_NONE),
   tsl_initialized(false)
 { };

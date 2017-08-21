@@ -273,6 +273,19 @@ string Scope::getSymbolType(string name) const {
 	}
 }
 
+bool Scope::isSymbolDelayed(string name) const {
+	auto it = local_symbols.find(name);
+	if (it!=local_symbols.end()) {
+		return it->second.is_delayed;
+	}
+	else if (parent) {
+		return parent->isSymbolDelayed(name);
+	}
+	else {
+		throw string("Unknown symbol '") + name + string("' in isSymbolDelayed.");
+	}
+}
+
 
 
 string Scope::getSymbolBaseName(string name) const

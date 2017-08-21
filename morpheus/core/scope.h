@@ -59,6 +59,7 @@ public:
 	
 	string getSymbolType(string name) const;
 	string getSymbolBaseName(string name) const;
+	bool isSymbolDelayed(string name) const;
 	
 	struct DepGraphConf { set<string> exclude_symbols; set<string> exclude_plugins; };
 	void write_graph(ostream& out, const DepGraphConf& config) const;
