@@ -70,6 +70,7 @@ typedef unsigned int uint;
 
 // due to non-linearity of the dependencies, we need forward declarations for all the classes using the plugin system
 class PDE_Layer;
+class VectorField_Layer;
 class PDE_Sim;
 class CellType;
 class Cell;
@@ -230,6 +231,7 @@ namespace SIM {
 	inline string getSymbolType(string name) { return getGlobalScope()->getSymbolType(name); };
 
 	shared_ptr<PDE_Layer> findPDELayer(string symbol);
+	shared_ptr<VectorField_Layer> findVectorFieldLayer(string symbol);
 
 }
 

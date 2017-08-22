@@ -146,4 +146,17 @@ private:
 	void tridiag_solver(const valarray<value_type>& a, const valarray<value_type>& b,  valarray<value_type> c, valarray<value_type> d,  valarray<value_type>& x);
 };
 
+
+class VectorField_Layer : public Lattice_Data_Layer<VDOUBLE> {
+public: 
+	VectorField_Layer(shared_ptr< const Lattice > lattice, double node_length);
+	void loadFromXML(XMLNode node);
+	string getSymbol() const { return symbol_name; }
+	string getName() const { return name; }
+
+private:
+	string symbol_name;
+	double node_length;
+};
+
 #endif

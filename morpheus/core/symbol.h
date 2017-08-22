@@ -155,6 +155,7 @@ public:
 					FunctionLink,
 					VectorFunctionLink,
 					PDELink,
+					VectorFieldLink,
 					Space,
 					MembraneSpace,
 					Time,

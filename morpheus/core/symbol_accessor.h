@@ -140,6 +140,7 @@ class SymbolAccessorBase {
 		vector< typename AccessPolicy<S>::Accessor > component_accessors;
 		bool allow_partial_spec;
 		shared_ptr<PDE_Layer> pde_layer;
+		shared_ptr<VectorField_Layer> vector_field_layer;
 
 		const Lattice* lattice;
 		VDOUBLE orth_size, mem_scale;
@@ -547,6 +548,10 @@ bool SymbolAccessorBase<VDOUBLE, ReadOnlyAccess>::init_special();
 // GETTERS
 template <>
 TypeInfo<VDOUBLE>::SReturn SymbolAccessorBase<VDOUBLE,ReadOnlyAccess>::get(const SymbolFocus& f) const;
+
+// SETTERS
+template <>
+bool SymbolRWAccessor<VDOUBLE>::set(const SymbolFocus& f, TypeInfo<VDOUBLE>::Parameter value) const;
 
 ///////////////////////////////////////////777
 // 			SPECIAL CASE double

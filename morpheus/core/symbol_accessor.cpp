@@ -326,6 +326,10 @@ bool SymbolAccessorBase<VDOUBLE, ReadOnlyAccess>::init_special() {
 		case SymbolData::VectorFunctionLink:
 			if (data.vec_func) throw ("Missing VectorFunction in Symbol");
 			break;
+		case SymbolData::VectorFieldLink:
+			vector_field_layer = SIM::findVectorFieldLayer(data.name);
+			if (!vector_field_layer) throw(string("Unknown pdelayer " + data.name));
+			break;
 		case SymbolData::CellCenterLink:
 			break;
 		case SymbolData::CellOrientationLink:
@@ -350,6 +354,8 @@ TypeInfo<VDOUBLE>::SReturn SymbolAccessorBase<VDOUBLE,ReadOnlyAccess>::get(const
 			return cell_property.get(f);
 		case SymbolData::VectorFunctionLink:
 			return data.vec_func->get(f);
+		case SymbolData::VectorFieldLink:
+			return vector_field_layer->get(f.pos());
 		case SymbolData::Space:
 		{
 			VDOUBLE orth_pos = lattice->to_orth(f.pos());
@@ -370,5 +376,31 @@ TypeInfo<VDOUBLE>::SReturn SymbolAccessorBase<VDOUBLE,ReadOnlyAccess>::get(const
 		default:
 			throw SymbolError(SymbolError::Type::InvalidLink, string("SymbolAccessor: Link type '") + this->data.getLinkTypeName() + "' is not defined for type " + TypeInfo<ValType>::name() );
 
+	}
+}
+
+
+template <> 
+bool SymbolRWAccessor<VDOUBLE>::set(const SymbolFocus& f, typename TypeInfo<VDOUBLE>::Parameter  value)  const
+{
+	switch (this->internal_link) {
+		case SymbolData::PureCompositeLink :
+			return this->component_accessors[f.cell_index().celltype].set(f,value);
+			
+		case SymbolData::GlobalLink:
+			this->global_value->getRef() = value;
+			return true;
+			
+		case SymbolData::CellPropertyLink: 
+			return this->cell_property.set(f, value);
+			
+		case SymbolData::VectorFieldLink:
+			return vector_field_layer->set(f.pos(),value);
+			
+		case SymbolData::UnLinked:
+			throw SymbolError(SymbolError::Type::Undefined, "Write access to unlinked symbol");
+			
+		default:
+			throw SymbolError(SymbolError::Type::InvalidLink, string("SymbolAccessor: Link type '") + this->data.getLinkTypeName() + "' is not defined for type " + TypeInfo<VDOUBLE>::name() );
 	}
 }
