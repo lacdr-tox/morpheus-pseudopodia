@@ -3,14 +3,14 @@
 	
 	<xs:group name="GlobalPlugins">
 		<xs:choice>
-			<xs:element name="Mapping"	type="Mapping_t"/>
+			<xs:element name="Mapper"	type="Mapping_t"/>
 		</xs:choice>
 	</xs:group>
 	
 	<xs:group name="CellTypePlugins">
 		<xs:choice>
 <!-- 			<xs:element name="CellReporter"	type="Mapping_t"/> -->
-			<xs:element name="Mapping"	type="Mapping_t"/>
+			<xs:element name="Mapper"	type="Mapping_t"/>
 		</xs:choice>
 	</xs:group>
 	

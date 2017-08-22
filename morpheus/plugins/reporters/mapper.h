@@ -10,77 +10,78 @@
 //////
 
 /** 
- * \defgroup Mapping
+ * \defgroup ML_Mapper Mapper
+\ingroup ML_Global
 \ingroup ML_CellType
-
-
 \ingroup ReporterPlugins
+
 \brief Map data from a spatial context into another symbol, usually reducing spatial information by a mapping function.
 
 former CellReporter
 
 \section Description
 
-A Mapping defines how data within a spatial context, e.g. a cell, a cell population or at global scope, can be mapped to a symbol with a different spatial granularity (i.e. resolution). Note that defining a Mapping within a CellType also restricts the mapping to the spatial range occupied by the respectiv cell population.
+A \b Mapper defines how data within a spatial context, e.g. a cell, a cell population or at global scope, can be mapped to a symbol with a different spatial granularity (i.e. resolution). Note that defining a \n Mapper within a \ref ML_CellType also restricts the mapping to the spatial range occupied by the respectiv cell population.
 
 A single \b Input element must be specified:
-- \b value: input variable (e.g. Property, MembraneProperty or Field). May contain an expression.
+- \b value: input variable (e.g. \ref ML_Property, \ref ML_MembraneProperty or \ref ML_Field) or a respective expression.
 
-That information can be written to an output symbol, if necessary, mapped to a single value by means of a statistic.
-If the output granularity is sufficient, i.e. when writing to a Field or MembraneProperty, no mapping function needs to be specified.
+That information can be written to an output symbol, if necessary, reduced in spatial granularity by means of the \b mapping statistics.
+If the output granularity is sufficient, i.e. when writing to a \ref ML_Field or \ref ML_MembraneProperty, no \b mapping function needs to be specified.
 
 Multiple \b Output elements can be specified:
 - \b mapping: statistic used for data mapping (if needed)
-- \b symbol-ref: ouput symbol (referencing e.g. a Variable, a Property or a MembraneProperty)
+- \b symbol-ref: ouput symbol (referencing e.g. a \ref ML_Variable, a \ref ML_Property or a \ref ML_MembraneProperty)
 
 Via the \b Polarisation tag, the degree of polarization in a spatial distribution of a quantity wrt. the center of the spatial range can be mapped into a vector, heading into the direction of the maximum quantity.
+
 \section Example
 
 Count number of cells within a celltype or globally.
 (Assume 'A' refers to Variable)
 \verbatim
-<Mapping>
+<Mapper>
 	<Input value="cell.id>0" />
 	<Output symbol-ref="A" mapping="sum" />
-</Mapping>
+</Mapper>
 \endverbatim
 
 Compute the sum and the variance of concentrations in a Field.
 (Assume 'A' refers to a Field and  'B1' and 'B2' to global Variables)
 \verbatim
-<Mapping>
+<Mapper>
 	<Input value="A" />
 	<Output symbol-ref="B1" mapping="sum" />
 	<Output symbol-ref="B2" mapping="variance" />
-</Mapping>
+</Mapper>
 \endverbatim
 
 Average concentration of an agent in a Field in the range of a cell.
 (Assume 'A' to refer to a Field and 'B' refer to a CellProperty)
 \verbatim
-<Mapping>
+<Mapper>
 	<Input value="A" />
 	<Output symbol-ref="B" mapping="avg" />
-</Mapping>
+</Mapper>
 \endverbatim
 
 Polarisation and variance of a membrane property
 (Assume B to refer to a CellProperty, C to refer to a MembraneProperty and D to refer to a VectorProperty)
 \verbatim
-<Mapping>
+<Mapper>
 	<Input value="C" />
 	<Output symbol-ref="B" mapping="variance" />
 	<Polarisation symbol-ref="D" />
-</Mapping>
+</Mapper>
 \endverbatim
 
 Determine the binding rate of a soluble substance to a membrane bound molecule
 (Assume 'A' to refer to a Field  and 'C' and 'C_r' to refer to MembraneProperties)
 \verbatim
-<Mapping>
+<Mapper>
 	<Input value="C*A"/>
 	<Output symbol-ref="C_r" />
-</Mapping>
+</Mapper>
 \endverbatim
 **/
 
