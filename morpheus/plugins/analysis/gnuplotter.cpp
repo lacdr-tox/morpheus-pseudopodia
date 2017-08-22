@@ -1420,7 +1420,7 @@ void Gnuplotter::analyse(double time) {
 			if (CellPainter::boundary_cell_wise == plots[i].cell_painter->getDataLayout()) {
 				
 				VDOUBLE s = PlotSpec::size();
-				command << "plot [0.2:" << s.x+0.2 << "][0:" << s.y << "] ";
+				command << "plot " << plot_range << " ";
 				uint current_index = 0;
 				for (uint p=0; p<cell_boundary_data.size(); p++) {
 					if (p>0)

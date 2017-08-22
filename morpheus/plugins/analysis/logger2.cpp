@@ -390,12 +390,12 @@ void LoggerTextWriter::init() {
 					output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::Space_symbol+".z") );
 					break;
 				case FocusRangeAxis::MEM_X :
-					csv_header.push_back(SymbolData::MembraneSpace_symbol+".x");
-					output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::MembraneSpace_symbol+".x") );
+					csv_header.push_back(SymbolData::MembraneSpace_symbol+".phi");
+					output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::MembraneSpace_symbol+".phi") );
 					break;
 				case FocusRangeAxis::MEM_Y :
-					csv_header.push_back(SymbolData::MembraneSpace_symbol+".y");
-					output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::MembraneSpace_symbol+".y") );
+					csv_header.push_back(SymbolData::MembraneSpace_symbol+".theta");
+					output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::MembraneSpace_symbol+".theta") );
 					break;
 				case FocusRangeAxis::NODE :
 					csv_header.push_back(SymbolData::Space_symbol+".x");
