@@ -545,6 +545,9 @@ bool SymbolRWAccessor<S>::swapBuffer() const
 template <>
 bool SymbolAccessorBase<VDOUBLE, ReadOnlyAccess>::init_special();
 
+template <>
+bool SymbolAccessorBase<VDOUBLE, ReadWriteAccess>::init_special();
+
 // GETTERS
 template <>
 TypeInfo<VDOUBLE>::SReturn SymbolAccessorBase<VDOUBLE,ReadOnlyAccess>::get(const SymbolFocus& f) const;

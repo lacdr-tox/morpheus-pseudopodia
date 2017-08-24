@@ -328,11 +328,24 @@ bool SymbolAccessorBase<VDOUBLE, ReadOnlyAccess>::init_special() {
 			break;
 		case SymbolData::VectorFieldLink:
 			vector_field_layer = SIM::findVectorFieldLayer(data.name);
-			if (!vector_field_layer) throw(string("Unknown pdelayer " + data.name));
+			if (!vector_field_layer) throw(string("Unknown VectorField " + data.name));
 			break;
 		case SymbolData::CellCenterLink:
 			break;
 		case SymbolData::CellOrientationLink:
+			break;
+		default:
+			return false;
+	}
+	return true;
+}
+
+template <>
+bool SymbolAccessorBase<VDOUBLE, ReadWriteAccess>::init_special() {
+	switch (data.link) {
+		case SymbolData::VectorFieldLink:
+			vector_field_layer = SIM::findVectorFieldLayer(data.name);
+			if (!vector_field_layer) throw(string("Unknown VectorField " + data.name));
 			break;
 		default:
 			return false;

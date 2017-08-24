@@ -151,12 +151,14 @@ class VectorField_Layer : public Lattice_Data_Layer<VDOUBLE> {
 public: 
 	VectorField_Layer(shared_ptr< const Lattice > lattice, double node_length);
 	void loadFromXML(XMLNode node);
+	void init(const Scope* scope);
 	string getSymbol() const { return symbol_name; }
 	string getName() const { return name; }
 
 private:
 	string symbol_name;
 	double node_length;
+	string initial_expression;
 };
 
 #endif
