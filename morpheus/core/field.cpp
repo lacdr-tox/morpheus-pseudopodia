@@ -1002,7 +1002,7 @@ double PDE_Layer::sum() const
 	double s=0;
 	for (int z=0; z<l_size.z; z++) {
 		for (int y=0; y<l_size.y; y++) {
-			int i = get_data_index(VINT(0,0,0));
+			int i = get_data_index(VINT(0,y,z));
 			for ( int x=0; x<l_size.x; x++ ) {
 				s+=data[i++];
 			}
@@ -1028,7 +1028,7 @@ double PDE_Layer::variance() const
 	double s=0;
 	for (int z=0; z<l_size.z; z++) {
 		for (int y=0; y<l_size.y; y++) {
-			int i = get_data_index(VINT(0,0,0));
+			int i = get_data_index(VINT(0,y,z));
 			for ( int x=0; x<l_size.x; x++ ) {
 				s+=sqr(data[i++]-average);
 			}
@@ -1045,7 +1045,7 @@ double PDE_Layer::min_val() const {
 	double m = data[get_data_index(VINT(0,0,0))];
 	for (int z=0; z<l_size.z; z++) {
 		for (int y=0; y<l_size.y; y++) {
-			int i = get_data_index(VINT(0,0,0));
+			int i = get_data_index(VINT(0,y,z));
 			for ( int x=0; x<l_size.x; x++,i++ ) {
 				m = m>data[i] ? m : data[i];
 			}
@@ -1061,7 +1061,7 @@ double PDE_Layer::max_val() const {
 	double m = data[get_data_index(VINT(0,0,0))];
 	for (int z=0; z<l_size.z; z++) {
 		for (int y=0; y<l_size.y; y++) {
-			int i = get_data_index(VINT(0,0,0));
+			int i = get_data_index(VINT(0,y,z));
 			for ( int x=0; x<l_size.x; x++,i++ ) {
 				m = m<data[i] ? m : data[i];
 			}
