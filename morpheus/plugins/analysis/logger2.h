@@ -515,7 +515,7 @@ protected:
 		bool defined;
 		PluginParameter2<string, XMLValueReader, OptionalPolicy> symbol;
 		int column_num;
-		vector< PluginParameter2<string, XMLValueReader, OptionalPolicy> > symbols;
+		vector< PluginParameter_Shared<string, XMLValueReader, OptionalPolicy> > symbols;
 		vector<int> column_nums;
 		string label;
 		

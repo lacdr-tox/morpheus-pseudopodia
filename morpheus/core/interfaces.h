@@ -19,6 +19,7 @@
 
 class AbstractPluginParameter;
 class PluginParameterBase;
+template <class T, template <class S, class R> class XMLValueInterpreter, class RequirementPolicy> class PluginParameter_Shared;
 template <class T> class ExpressionEvaluator;
 template <class T> class ThreadedExpressionEvaluator;
 class CellType;
@@ -204,6 +205,9 @@ class Plugin {
 		/// Loading from XML, initialisation and dependency tracking is done automatically
 		/// **Note**  The platform takes a reference to the parameter, so don't move/copy the parameter after registration.
 		void registerPluginParameter( PluginParameterBase& parameter );
+		
+		template <class T, template <class S, class R> class XMLValueInterpreter, class RequirementPolicy >
+		void registerPluginParameter( PluginParameter_Shared<T, XMLValueInterpreter, RequirementPolicy>& parameter ) { registerPluginParameter(*parameter); }
 /*		// Can be used to 
 		template <class T>
 		void registerUsedSymbol( const SymbolAccessor<T>& parameter );

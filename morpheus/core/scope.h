@@ -27,6 +27,7 @@ public:
 	~Scope()  { cout << "Deleting scope " << name << endl;} 
 	// TODO Shall we use weak_ptr here ?? --> There is no Ownership concept for scopes present !!
 	Scope* getParent() const {return parent;}; /// Pointer to parental scope. Null if this is the global scope.
+	const vector< shared_ptr<Scope> >& getSubScopes() const { return sub_scopes; }
 	Scope* createSubScope(string name, CellType *ct = nullptr);
 		
 	CellType* getCellType() const;

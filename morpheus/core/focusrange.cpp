@@ -22,12 +22,12 @@ void FocusRangeIterator::setIndex(int index) {
 	idx = index;
 	switch (data->iter_mode) {
 		case FocusRangeDescriptor::IT_CellNodes :
+		case FocusRangeDescriptor::IT_CellSurfaceNodes : 
 		{
 			if (idx==0) {
 				cell = 0;
-				focus = SymbolFocus(data->cell_range[0]);
-				current_cellnode = focus.cell().getNodes().begin();
-				pos = *current_cellnode;
+				current_cell_node = data->cell_nodes[cell]->begin();
+				pos = *current_cell_node;
 				focus.setCell(data->cell_range[0],pos);
 			}
 			else {
@@ -35,10 +35,9 @@ void FocusRangeIterator::setIndex(int index) {
 				uint fcs_left = idx;
 				for (cell=0; 1; cell++) {
 					if (data->cell_sizes[cell] > fcs_left) {
-						focus = SymbolFocus(data->cell_range[cell]);
-						current_cellnode = focus.cell().getNodes().begin();
-						while (fcs_left>0)  { current_cellnode++; fcs_left--; }
-						pos = *current_cellnode;
+						current_cell_node = data->cell_nodes[cell]->begin();
+						while (fcs_left>0)  { current_cell_node++; fcs_left--; }
+						pos = *current_cell_node;
 						focus.setCell(data->cell_range[cell], pos);
 						break;
 					}
@@ -60,8 +59,8 @@ void FocusRangeIterator::setIndex(int index) {
 		{
 			if (idx==0) {
 				cell = 0;
-				current_cellnode = data->cell_nodes[cell].begin();
-				pos = *current_cellnode;
+				current_cell_node = data->cell_nodes_int[cell].begin();
+				pos = *current_cell_node;
 				focus.setCell(data->cell_range[0],pos);
 			}
 			else {
@@ -69,9 +68,9 @@ void FocusRangeIterator::setIndex(int index) {
 				uint fcs_left = idx;
 				for (cell=0; 1; cell++) {
 					if (data->cell_sizes[cell] > fcs_left) {
-						current_cellnode = data->cell_nodes[cell].begin();
-						while (fcs_left>0)  { current_cellnode++; fcs_left--; }
-						pos = *current_cellnode;
+						current_cell_node = data->cell_nodes_int[cell].begin();
+						while (fcs_left>0)  { current_cell_node++; fcs_left--; }
+						pos = *current_cell_node;
 						focus.setCell(data->cell_range[cell], pos);
 						break;
 					}
@@ -152,11 +151,11 @@ void FocusRangeIterator::setIndex(int index) {
 		
 		case FocusRangeDescriptor::IT_Domain_int :
 		{
-			if (idx>=data->domain_nodes.size()) {
+			if (idx>=data->domain_nodes_int.size()) {
 				focus.unset();
 				break;
 			}
-			pos = data->domain_nodes.at(idx);
+			pos = data->domain_nodes_int.at(idx);
 			
 			focus.setPosition(pos);
 			
@@ -180,34 +179,32 @@ FocusRangeIterator& FocusRangeIterator::operator++()
 			focus.setCell(data->cell_range[cell]);
 			break;
 		case FocusRangeDescriptor::IT_CellNodes:
-			current_cellnode++;
-			if ( current_cellnode == focus.cell().getNodes().end() ) {
+		case FocusRangeDescriptor::IT_CellSurfaceNodes:
+			current_cell_node++;
+			if ( current_cell_node == data->cell_nodes[cell]->end() ) {
 				cell++;
-// 				cout << "cell " << cell << " is id=" <<  data->cell_range[cell] << endl;;
-				focus.setCell(data->cell_range[cell]);
-				current_cellnode = focus.cell().getNodes().begin();
-				pos = *current_cellnode;
+				current_cell_node = data->cell_nodes[cell]->begin();
+				pos = *current_cell_node;
 				focus.setCell(data->cell_range[cell], pos);
 			}
 			else {
-				pos = *current_cellnode;
+				pos = *current_cell_node;
 				focus.setCell(data->cell_range[cell], pos);
 			}
 			break;
 		case FocusRangeDescriptor::IT_CellNodes_int:
-			current_cellnode++;
-			if ( current_cellnode == data->cell_nodes[cell].end() ) {
+			current_cell_node++;
+			if ( current_cell_node == data->cell_nodes_int[cell].end() ) {
 				cell++;
-// 				cout << "cell " << cell << " is id=" <<  data->cell_range[cell] << endl;;
-				current_cellnode = data->cell_nodes[cell].begin();
-				pos = *current_cellnode;
+				current_cell_node = data->cell_nodes_int[cell].begin();
+				pos = *current_cell_node;
 				focus.setCell(data->cell_range[cell], pos);
 			}
 			else {
-				pos = *current_cellnode;
+				pos = *current_cell_node;
 				focus.setCell(data->cell_range[cell], pos);
 			}
-			break;	
+			break;
 		case FocusRangeDescriptor::IT_CellMembrane :
 			pos.x++;
 			if (pos.x >= data->pos_range.x) {
@@ -238,7 +235,7 @@ FocusRangeIterator& FocusRangeIterator::operator++()
 			focus.setPosition(data->domain_enumeration->at(idx));
 			break;
 		case FocusRangeDescriptor::IT_Domain_int :
-			focus.setPosition(data->domain_nodes[idx]);
+			focus.setPosition(data->domain_nodes_int[idx]);
 			break;
 	}
 	return *this;
@@ -372,6 +369,7 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 				throw string("Can not iterate with membrane node granularity over global range in FocusRange");
 			}
 			break;
+		case Granularity::SurfaceNode:
 		case Granularity::Node : {
 			VINT l_size = SIM::lattice().size();
 			range->spatial_dimensions.insert(FocusRangeAxis::X);
@@ -382,9 +380,13 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 				auto cell_range = restrictions.equal_range(FocusRangeAxis::CELL);
 				for (auto cell  = cell_range.first; cell != cell_range.second; cell++ ) {
 					range->cell_range.push_back(cell->second);
-					range->cell_sizes.push_back(CPM::getCell(range->cell_range.back()).nNodes());
+					if (range->iter_mode == FocusRangeDescriptor::IT_CellNodes)
+						range->cell_nodes.push_back( &(CPM::getCell(cell->second).getSurface()) );
+					else // if (range->iter_mode == FocusRangeDescriptor::IT_CellSurfaceNodes)
+						range->cell_nodes.push_back( &(CPM::getCell(cell->second).getNodes()) );
+					range->cell_sizes.push_back(range->cell_nodes.back()->size());
 				}
-				
+				range->iter_mode = FocusRangeDescriptor::IT_CellNodes;
 				range->iter_mode = FocusRangeDescriptor::IT_CellNodes;
 				if (range->cell_range.size()>1)
 					range->data_axis.push_back(FocusRangeAxis::CELL);
@@ -394,7 +396,11 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 			else if (range->spatial_restriction == FocusRangeDescriptor::RESTR_CELLPOP) {
 				range->cell_range = ct->getCellIDs();
 				for (auto it : range->cell_range) {
-					range->cell_sizes.push_back(CPM::getCell(it).nNodes());
+					if (range->iter_mode == FocusRangeDescriptor::IT_CellNodes)
+						range->cell_nodes.push_back( &(CPM::getCell(it).getSurface()) );
+					else // if (range->iter_mode == FocusRangeDescriptor::IT_CellSurfaceNodes)
+						range->cell_nodes.push_back( &(CPM::getCell(it).getNodes()) );
+					range->cell_sizes.push_back(range->cell_nodes.back()->size());
 				}
 				range->iter_mode = FocusRangeDescriptor::IT_CellNodes;
 				range->data_axis.push_back(FocusRangeAxis::NODE);
@@ -458,12 +464,10 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 				vector< const set <VINT, less_VINT >* > cell_nodes;
 				const vector<CPM::CELL_ID>& cell_range = range->cell_range;
 				if (range->iter_mode == FocusRangeDescriptor::IT_CellNodes) {
-					for (auto cell : cell_range) {
-						cell_nodes.push_back(&CPM::getCell(cell).getNodes());
-					}
+					cell_nodes = range->cell_nodes;
 				}
 				else if (range->iter_mode == FocusRangeDescriptor::IT_CellNodes_int) {
-					for (auto& nodes : range->cell_nodes) {
+					for (auto& nodes : range->cell_nodes_int) {
 						cell_nodes.push_back(&nodes);
 					}
 				}
@@ -485,7 +489,7 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 						new_cell_range.push_back(cell_range[i]);
 					}
 				}
-				swap(range->cell_nodes, new_cell_nodes);
+				swap(range->cell_nodes_int, new_cell_nodes);
 				swap(range->cell_range, new_cell_range);
 				range->iter_mode = FocusRangeDescriptor::IT_CellNodes_int;
 				
@@ -518,7 +522,7 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 					domain_nodes = range->domain_enumeration;
 				}
 				else /*if (range->iter_mode == FocusRangeDescriptor::IT_Domain_int)*/ {
-					domain_nodes = & range->domain_nodes;
+					domain_nodes = & range->domain_nodes_int;
 				}
 				vector<VINT> new_domain_nodes;
 				for (const auto& node : *domain_nodes) {
@@ -530,7 +534,7 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 					}
 				}
 				
-				swap(range->domain_nodes,new_domain_nodes);
+				swap(range->domain_nodes_int,new_domain_nodes);
 				range->iter_mode = FocusRangeDescriptor::IT_Domain_int;
 				
 				if (filter_enabled.x) {
@@ -587,8 +591,8 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 			range->sizes.push_back(range->domain_enumeration->size());
 			break;
 		case FocusRangeDescriptor::IT_Domain_int :
-			range->size = range->domain_nodes.size();
-			range->sizes.push_back(range->domain_nodes.size());
+			range->size = range->domain_nodes_int.size();
+			range->sizes.push_back(range->domain_nodes_int.size());
 			break;
 		case FocusRangeDescriptor::IT_CellNodes : 
 			range->size = 0;
@@ -600,12 +604,12 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 			break;
 		case FocusRangeDescriptor::IT_CellNodes_int:
 			range->size=0;
-			for (uint i=0; i< range->cell_nodes.size(); i++) {
-				range->cell_sizes[i] = range->cell_nodes[i].size();
+			for (uint i=0; i< range->cell_nodes_int.size(); i++) {
+				range->cell_sizes[i] = range->cell_nodes_int[i].size();
 				range->size += range->cell_sizes[i];
 			}
 			range->sizes.push_back(-1);
-			range->sizes.push_back(range->cell_nodes.size());
+			range->sizes.push_back(range->cell_nodes_int.size());
 			break;
 		default:
 			 // IT_Space, IT_Cell, IT_CellMembrane

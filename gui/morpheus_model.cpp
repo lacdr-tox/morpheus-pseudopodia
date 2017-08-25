@@ -275,16 +275,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 	
 	
 	
-	if (morpheus_file_version == morpheus_ml_version) {
-// 		return edits;
-		fix_version=3;
-		MorphModel::AutoFix a;
-		a.copy = false;
-		a.match_path = "MorpheusModel/CPM/ShapeBoundary"; a.move_path = "MorpheusModel/CPM/ShapeSurface"; fixes.append(a);
-		a.match_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@symbol-ref";a.move_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@value"; fixes.append(a);
-		a.match_path = "MorpheusModel/Analysis/Logger/Restriction/@force-node-granularity";a.move_path = "MorpheusModel/Analysis/Logger/Input/@force-node-granularity"; fixes.append(a);
-	}
-	else if (morpheus_file_version == 2) {
+	if (morpheus_file_version == 2) {
 		// return edits;
 		fix_version=3;
 		MorphModel::AutoFix a;
@@ -373,6 +364,18 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 	else {
 		throw  ModelException(ModelException::InvalidVersion, QString("Incompatible MorpheusML version %1").arg(morpheus_file_version) );
 	}
+	// Current language patches, will become ml_version 4
+	if (morpheus_file_version == morpheus_ml_version || fix_version == morpheus_ml_version ) {
+// 		return edits;
+		fix_version=3;
+		MorphModel::AutoFix a;
+		a.copy = false;
+		a.match_path = "MorpheusModel/CellTypes/CellType/CellReporter"; a.move_path = "MorpheusModel/CellTypes/CellType/Mapper"; fixes.append(a);
+		a.match_path = "MorpheusModel/CPM/ShapeBoundary"; a.move_path = "MorpheusModel/CPM/ShapeSurface"; fixes.append(a);
+		a.match_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@symbol-ref";a.move_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@value"; fixes.append(a);
+		a.match_path = "MorpheusModel/Analysis/Logger/Restriction/@force-node-granularity";a.move_path = "MorpheusModel/Analysis/Logger/Input/@force-node-granularity"; fixes.append(a);
+	}
+
 	qDebug() << QString("Applying fixes from version %1 to %2").arg(morpheus_file_version).arg(fix_version);
 	qDebug() << "Number of AutoFix rules = " << fixes.size();
 	

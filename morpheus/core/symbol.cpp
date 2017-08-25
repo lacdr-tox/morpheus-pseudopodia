@@ -8,6 +8,27 @@ template <> const string TypeInfo<VDOUBLE>::name() { return "Vector"; };
 template <> const string TypeInfo<vector<double> >::name() { return "Array";};
 template <> const string TypeInfo<double_queue >::name() { return "Queue"; };
 
+bool operator<(Granularity a, Granularity b) {
+	switch(b) {
+		case Granularity::Global:
+			return a!=Granularity::Global;
+		case Granularity::Cell:
+			return a!=Granularity::Global && a!=Granularity::Cell;
+		default:
+			return false;
+	}
+}
+
+bool operator<=(Granularity a, Granularity b) {
+		switch(b) {
+		case Granularity::Global:
+			return true;
+		case Granularity::Cell:
+			return a!=Granularity::Global;
+		default:
+			return a==b;
+	}
+}
 
 Granularity operator+(Granularity a, Granularity b) {
 	switch (a) {

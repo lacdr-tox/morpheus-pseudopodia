@@ -1025,8 +1025,7 @@ LoggerLinePlot::LoggerLinePlot(Logger& logger, string xml_base_path) : LoggerPlo
 	int num_ycols = 10;
 	axes.y.symbols.resize(num_ycols);
 	for(uint i=0; i<num_ycols;i++){
-		// BUG: only registers the first occurrence of Symbol/symbol-ref. WHY?
-		axes.y.symbols[i].setXMLPath(xml_base_path+"/"+tag+"/Symbol["+to_str(i)+"]/symbol-ref");
+		axes.y.symbols[i]->setXMLPath(xml_base_path+"/"+tag+"/Symbol["+to_str(i)+"]/symbol-ref");
 		logger.registerPluginParameter(axes.y.symbols[i]);
 	}
 	axes.y.min.setXMLPath(xml_base_path+"/"+tag+"/"+"minimum");
@@ -1116,7 +1115,7 @@ void LoggerLinePlot::init() {
 	// count the number of defined symbols
 	num_defined_symbols = 0;
 	for (int i=0; i< axes.y.symbols.size(); i++) {
-		if (axes.y.symbols[i].isDefined())
+		if (axes.y.symbols[i]->isDefined())
 			num_defined_symbols++;
 		else
 			break;
@@ -1155,7 +1154,7 @@ void LoggerLinePlot::init() {
 	// y label
 	axes.y.label = "\"";
 	for (auto s : axes.y.symbols){
-		if (s.isDefined()) {
+		if (s->isDefined()) {
 			if ( axes.y.label.size() > 1 ) // cannot check for empty() because it already contains a '"' character
 				axes.y.label += ", ";
 			axes.y.label += s();
