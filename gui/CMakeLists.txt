@@ -69,7 +69,7 @@ endforeach()
 #message(STATUS "AppDoc header files (${APP_DOC_HEADER_NUM}) are ${APP_DOC_HEADERS}")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/appdoc/morpheus.doxy.in ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy @ONLY)
 
-SET(DOXYGEN_EXTRA_FILES  "appdoc/doxygen_header.html" "appdoc/doxygen_footer.html" "appdoc/morpheus_style.css" "appdoc/dynsections.js")
+SET(DOXYGEN_EXTRA_FILES  "appdoc/doxygen_header.html" "appdoc/doxygen_footer.html" "appdoc/morpheus_style.css" "appdoc/dynsections.js" "appdoc/jquery.js")
 
 
 IF (DOXYGEN_QHP_PATCH)
