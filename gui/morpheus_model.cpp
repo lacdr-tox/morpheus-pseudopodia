@@ -274,8 +274,10 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 	QList<MorphModelEdit> edits;
 	
 	
-	
-	if (morpheus_file_version == 2) {
+	if (morpheus_file_version == morpheus_ml_version) {
+		// nothing to do ...
+	}
+	else if (morpheus_file_version == 2) {
 		// return edits;
 		fix_version=3;
 		MorphModel::AutoFix a;
