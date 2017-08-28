@@ -32,8 +32,54 @@ class PDE_Layer;
 #include <iterator>
 
 /**
-        @author
-*/
+\defgroup ML_Field Field
+\ingroup Symbols
+\ingroup ML_Global
+
+A \b Field defines a variable scalar field, associating a scalar value to every lattice site, and defines a symbol with it.
+
+
+Spatio-temporal dynamics can be implemented explicitly by using an \ref ML_Equation, an \ref ML_Event or by using \ref ML_DiffEqn.
+In addition, homogeneous \b Diffusion can optionally be specified.
+The \ref ML_Space symbol allows the initial expression to directly depend on the spatial position. 
+
+
+- \b value: initial condition for the scalar field. May be given as expression.
+
+Optionally, a \b Diffusion rate may be specified.
+
+- \b rate: diffusion coefficient
+- \b well-mixed (optional): if true, homogenizes scalar field. Requires rate=0.
+
+
+**/
+
+
+
+
+/**
+\defgroup ML_VectorField VectorField
+\ingroup Symbols
+\ingroup ML_Global
+
+A \b VectorField  defines a variable vector field, associating an (x,y,z) value to every lattice site, and defines a \b symbol for it.
+
+Spatio-temporal dynamics can be implemented explicitly by using a \ref ML_VectorEquation or \ref ML_VectorRule.
+The \ref ML_Space symbol allows the initial expression to directly depend on the spatial position. 
+
+
+- \b value: initial condition for the vector field. May be given as expression.
+
+**/
+
+
+
+
+/** \brief Class representing the State of a scalar Field atop the \ref Lattice_Data_Layer
+ * 
+ * Also takes care of the implementation of Diffusion on all Lattice types (incl. spherical lattices) and the respective
+ * boundary handling.
+ */
 
 class PDE_Layer : public Lattice_Data_Layer<double>
 {

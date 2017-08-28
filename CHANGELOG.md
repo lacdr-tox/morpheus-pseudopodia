@@ -7,6 +7,7 @@
   * The new *External* plugin allows to run external code during analysis steps
   * The new *ContactLogger* tracks cell contacts over time
   * The value of a *Constant* can be provided via expression
+  * The new *VectorField* can represent spatial vector data
   * Binary *VTK* export (performance)
 
   * Removed any remains of time / space units

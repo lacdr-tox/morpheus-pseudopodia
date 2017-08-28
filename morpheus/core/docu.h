@@ -198,22 +198,6 @@ Symbol with cell-bound variable 3D vector value.
 
 Syntax is comma-separated: x,y,z
 **/
-/**
-\defgroup ML_Field Field
-\ingroup Symbols
-\ingroup ML_Global
-
-Symbol with a variable scalar field, associating a scalar value to every lattice site in the domain.
-
-- \b value: initial condition for the scalar field. May be given as symbolic expression.
-
-Optionally, a \b Diffusion rate may be specified.
-
-- \b rate: diffusion coefficient
-- \b unit (optional): physical unit of diffusion coefficient
-- \b well-mixed (optional): if true, homogenizes scalar field. Requires rate=0.
-
-**/
 
 
 /**
