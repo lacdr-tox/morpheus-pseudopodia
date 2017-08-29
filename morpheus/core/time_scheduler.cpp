@@ -299,10 +299,10 @@ void TimeScheduler::compute()
 		while (ts.current_time + ts.time_precision_patch < stop_time) {
 
 			// compute the maximum time we may travel to fullfill output requirements 
-			double min_current_time = 10e20;
+			double min_current_time = stop_time;
 			for (const auto& output : ts.analysers) {
-				if (output->currentTime() + output->timeStep() < min_current_time)
-					min_current_time = output->currentTime() + output->timeStep();
+				if (output->currentTime() /*+ output->timeStep()*/ < min_current_time)
+					min_current_time = output->currentTime() /*+ output->timeStep()*/;
 			}
 			
 			// We provide a time schedule for time CONTINUOUS processes, where X(t) just depends on X(t-1)
