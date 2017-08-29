@@ -50,6 +50,7 @@ private:
 	vector<AnalysisPlugin *> analysers;
 	double current_time;
 	double last_save_time;
+	double minimal_time_step;
 	double time_precision_patch;
 	double progress_notify_interval;
 	double last_progress_notification;
