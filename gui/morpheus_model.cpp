@@ -1137,7 +1137,8 @@ bool MorphModel::dropMimeData( const QMimeData * data, Qt::DropAction action, in
             action = Qt::CopyAction;
         }
     }
-    else if (action==Qt::CopyAction) {
+    
+    if (action==Qt::CopyAction) {
         if (data->hasText()) {
             QDomDocument doc;
             doc.setContent(data->text());
