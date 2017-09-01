@@ -254,14 +254,8 @@ FocusRange::FocusRange(Granularity granularity, const Scope* scope) {
 	const CellType* ct = nullptr;
     multimap<FocusRangeAxis, int> restrictions;
 	// Extract the default range for the Granularity
-	if (scope) {
-		ct = scope->getCellType();
-		while(scope->getParent() && ! ct) {
-			scope =  scope->getParent();
-			ct = scope->getCellType();
-		}
-		if (ct)
-			restrictions.insert( make_pair(FocusRangeAxis::CellType,ct->getID()) );
+	if (scope && scope->getCellType()) {
+		restrictions.insert( make_pair(FocusRangeAxis::CellType,scope->getCellType()->getID()) );
 	}
 	
 	init_range(granularity, restrictions, true);

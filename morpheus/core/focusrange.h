@@ -122,8 +122,6 @@ private:
 // enum class FocusRangeRestriction {
 // 	Xaxis, Yaxis, Zaxis, CellID, MemXaxis, MemYaxis
 // };
-
-enum class FocusRangeAxis { X, Y, Z, NODE, MEM_X, MEM_Y, MEM_NODE, CELL, CellType };
 	
 // {
 // public:
@@ -150,7 +148,14 @@ public:
 	
 	/// Create a FocusRange through all valid elements, restricted to the range of scope provided
 	template <class T, template <class> class AccessPolicy>
-	FocusRange(const SymbolAccessorBase<T,AccessPolicy>& sym, const Scope* scope = nullptr) : FocusRange(sym.getGranularity(), scope ? scope : sym.getScope()) {};
+	FocusRange(const SymbolAccessorBase<T,AccessPolicy>& sym, const Scope* scope = nullptr) { 
+		auto restrictions = sym.getRestrictions();
+		if (scope && scope->getCellType()) {
+			restrictions.erase(FocusRangeAxis::CellType);
+			restrictions.insert( make_pair(FocusRangeAxis::CellType,scope->getCellType()->getID()) );
+		}
+		init_range(sym.getGranularity(), restrictions, true);
+	};
 	
 	/// Create a FocusRange constrained to the spatial domain of a cell
 	template <class T, template <class> class AccessPolicy>

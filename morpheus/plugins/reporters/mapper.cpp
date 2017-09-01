@@ -71,13 +71,33 @@ void Mapper::report_output(const OutputSpec& output, const SymbolFocus& focus) {
 
 void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 
-	FocusRange range(output.symbol->granularity(), scope);
+	FocusRange range(output.symbol->accessor(), scope);
 	
 	if ( output.symbol->granularity() <= input->granularity()  || output.symbol->granularity() ==  Granularity::Node) {
-		// Just write input to the output
-		FocusRange range(output.symbol->granularity(), scope);
-		for (auto focus : range) {
+		auto extends = range.spatialExtends();
+		auto input_extends = FocusRange(input->granularity(), scope).spatialExtends();
+		bool dimensions_lost = extends.size() < input_extends.size();
+		
+		if (dimensions_lost) {
+			auto mapper =  DataMapper::create(output.mapping());
+			for (const auto& focus : range) {
+				multimap<FocusRangeAxis,int> restrictions;
+				for (auto e : extends) {
+					restrictions.insert(make_pair(e,focus.get(e)));
+				}
+				FocusRange inner_range(input->granularity(),restrictions);
+				mapper->reset();
+				for (const auto& inner_focus : inner_range ){
+					mapper->addVal(input(inner_focus));
+				}
+				output.symbol->set(focus,mapper->get());
+			}
+		}
+		else {
+			// Just write input to the output
+			for (const auto& focus : range) {
 				output.symbol->set(focus,input(focus));
+			}
 		}
 	}
 	else if (output.symbol->granularity() == Granularity::MembraneNode ) {

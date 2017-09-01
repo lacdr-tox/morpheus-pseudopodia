@@ -72,6 +72,29 @@ class SymbolAccessorBase {
 			}
 		};
 		
+		multimap<FocusRangeAxis,int> getRestrictions() const {
+			multimap<FocusRangeAxis,int> r;
+			if (scope->getCellType()) {
+				r.insert(make_pair(FocusRangeAxis::CellType,scope->getCellType()->getID()));
+			}
+			
+			if (internal_link==SymbolData::PDELink) {
+				auto field_size = pde_layer->getWritableSize();
+				auto lattice_size = SIM::lattice().size();
+				if (field_size.x == 1 && lattice_size.x>1) {
+					r.insert(make_pair(FocusRangeAxis::X,1));
+				}
+				if (field_size.y == 1 && lattice_size.y>1) {
+					r.insert(make_pair(FocusRangeAxis::Y,1));
+				}
+				if (field_size.z == 1 && lattice_size.z>1) {
+					r.insert(make_pair(FocusRangeAxis::Z,1));
+				}
+			}
+			
+			return r;
+		}
+		
 		typename TypeInfo<S>::SReturn get(CPM::CELL_ID cell_id) const;
 		typename TypeInfo<S>::SReturn get(const VINT& pos) const;
 		typename TypeInfo<S>::SReturn get(CPM::CELL_ID cell_id, const VINT& pos) const;

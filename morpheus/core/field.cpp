@@ -146,7 +146,16 @@ void PDE_Layer::init(const Scope* scope, const SymbolFocus& focus)
 			}
 		}
 		else {
-			FocusRange range(Granularity::Node, scope);
+			multimap<FocusRangeAxis,int> r;
+			if (has_reduction) {
+				if (reduction == Boundary::px || reduction == Boundary::mx)
+					r.insert(make_pair(FocusRangeAxis::X,0));
+				if (reduction == Boundary::py || reduction == Boundary::my)
+					r.insert(make_pair(FocusRangeAxis::Y,0));
+				if (reduction == Boundary::pz || reduction == Boundary::mz)
+					r.insert(make_pair(FocusRangeAxis::Z,0));
+			}
+			FocusRange range(Granularity::Node, r);
 			for (auto focus : range) {
 				this->set(focus.pos(),init_val.get(focus));
 			}
