@@ -253,7 +253,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 				for ( auto const & i :halo_nodes) {
 					SymbolFocus f(i);
 					double value = input(SymbolFocus(i));
-					cell_mapper[f.cellID()].val += isnan(value) ? 0 : value ;
+					cell_mapper[f.cellID()].val += std::isnan(value) ? 0 : value ;
 					cell_mapper[f.cellID()].count ++;
 				}
 				
