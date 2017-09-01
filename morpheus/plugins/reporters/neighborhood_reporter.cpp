@@ -216,7 +216,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 				for ( auto const & i :halo_nodes) {
 					SymbolFocus f(i);
 					double value = input(SymbolFocus(i));
-					mapper.map(i, isnan(value) ? 0 : value );
+					mapper.map(i, std::isnan(value) ? 0 : value );
 				}
 
 				mapper.fillGaps();
