@@ -110,6 +110,21 @@ Globals provides section for:
 // ============================================================
 /**
 \defgroup Symbols
+
+\b Symbols represent data sources that may vary in time, space. 
+
+Valid symbol identifiers may contain the following characters
+
+- Latin chars: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+- Greek chars: αβγδεζηθικλμνξοπρσςτυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ
+- Numbers: 0123456789
+- Special chars: ._
+
+and may not start with a number.
+
+The \b name attribute is used for descriptive purpose only. In particular, graph labels will carry this information. You may use latex style super- and subscripts
+  * (c_{1})^{2} will become \f$ (c_1)^{2} \f$
+
 \defgroup MathExpressions
 **/
 

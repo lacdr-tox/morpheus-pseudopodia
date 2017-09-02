@@ -969,8 +969,8 @@ void Gnuplotter::loadFromXML(const XMLNode xNode)
 	decorate = true;
 	getXMLAttribute(xNode,"decorate",decorate);
 
-	interpolation_pm3d = true;
-	getXMLAttribute(xNode,"interpolation",interpolation_pm3d);
+// 	interpolation_pm3d = true;
+// 	getXMLAttribute(xNode,"interpolation",interpolation_pm3d);
 	
 	log_plotfiles = false;
 	getXMLAttribute(xNode,"log-commands",log_plotfiles);
@@ -1229,7 +1229,8 @@ void Gnuplotter::analyse(double time) {
 				<< "set tmargin at screen " << plot_layout.plots[i].top << ";\n"
 				<< "set bmargin at screen " << plot_layout.plots[i].bottom << ";\n";
 		command << "set style fill transparent solid 1;\n";
-
+		
+		bool suppress_xlabel = i < plot_layout.cols*plot_layout.rows-1;
 		
 		VDOUBLE origin(0.5,0.5,0);
 		
@@ -1249,28 +1250,22 @@ void Gnuplotter::analyse(double time) {
 		string field_range = s.str();
 		
 		if (plots[i].field) {
-			if (!interpolation_pm3d)
-				command << "set pm3d corners2color c4;\n";
-			if (! decorate)
-				command << "unset colorbox;\n" << "unset title;\n";
-			else if (plots[i].cells)
+// 			if (!interpolation_pm3d)
+// 				command << "set pm3d corners2color c4;\n";
+			if (! decorate || plots[i].cells || plots[i].vectors)
 				command << "unset colorbox;\n" << "unset title;\n" << "unset xlabel;\n";			
 			else{
 				string plot_title;
 				if ( ! plots[i].title.empty())
-					plot_title = plots[i].title;
+					plot_title = Gnuplot::sanitize(plots[i].title);
 				else 
-					plot_title = plots[i].field_painter->getDescription();
-				string escape_char = "_^";
-				size_t pos = plot_title.find_first_of(escape_char);
-				while (pos != string::npos) {
-// 					plot_title.replace(pos,1,string("\\") + plot_title[pos]);
-// 					pos+=2;
-					plot_title[pos] = ' ';
-					pos = plot_title.find_first_of(escape_char,pos);
-				}
+					plot_title = Gnuplot::sanitize(plots[i].field_painter->getDescription());
+
 				command << "set colorbox; set cbtics\n";
-				command << "set xlabel '" << time << " "/* << SIM::getTimeScaleUnit()*/ << "' offset 0,2 ;\n";
+				if (suppress_xlabel)
+					command << "unset xlabel\n";
+				else 
+					command << "set xlabel '" << time << " "/* << SIM::getTimeScaleUnit()*/ << "' offset 0,2 ;\n";
 				command << "set title \"" << plot_title << "\" offset 0,-0.5 ;\n";
 			}
 
@@ -1330,23 +1325,19 @@ void Gnuplotter::analyse(double time) {
 
 		if ( plots[i].vectors ) {
 			command << "unset colorbox;\n";
-			if (plots[i].cells)
+			if (! decorate || plots[i].cells)
 				command << "unset title;\n" << "unset xlabel;\n";
 			else{
 				string plot_title;
 				if ( ! plots[i].title.empty())
-					plot_title = plots[i].title;
+					plot_title = Gnuplot::sanitize(plots[i].title);
 				else 
-					plot_title = plots[i].vector_field_painter->getDescription();
-				string escape_char = "_^";
-				size_t pos = plot_title.find_first_of(escape_char);
-				while (pos != string::npos) {
-// 					plot_title.replace(pos,1,string("\\") + plot_title[pos]);
-// 					pos+=2;
-					plot_title[pos] = ' ';
-					pos = plot_title.find_first_of(escape_char,pos);
-				}
-				command << "set xlabel '" << time << " " /*<< SIM::getTimeScaleUnit() */<< "' offset 0,0 ;\n";
+					plot_title = Gnuplot::sanitize(plots[i].vector_field_painter->getDescription());
+
+				if (suppress_xlabel)
+					command << "unset xlabel\n";
+				else 
+					command << "set xlabel '" << time << " " /*<< SIM::getTimeScaleUnit() */<< "' offset 0,0 ;\n";
 				command << "set title \"" << plot_title << "\" offset 0,-0.5 ;\n";
 			}
 
@@ -1395,20 +1386,16 @@ void Gnuplotter::analyse(double time) {
 			else {
 				string plot_title;
 				if ( ! plots[i].title.empty())
-					plot_title = plots[i].title;
+					plot_title = Gnuplot::sanitize(plots[i].title);
 				else 
-					plot_title = plots[i].cell_painter->getDescription();
-				string escape_char = "_^";
-				size_t pos = plot_title.find_first_of(escape_char);
-				while (pos != string::npos) {
-// 					plot_title.replace(pos,1,string("\\") + plot_title[pos]);
-// 					pos+=2;
-					plot_title[pos] = ' ';
-					pos = plot_title.find_first_of(escape_char,pos);
-				}
+					plot_title = Gnuplot::sanitize(plots[i].cell_painter->getDescription());
+				
 				command << "set colorbox; set cbtics; set clabel;\n";
 				
-				command << "set xlabel '" << time << " " /*<< SIM::getTimeScaleUnit() */ << "' offset 0," << (using_splot ? "0.1" : "2") << ";\n";
+				if (suppress_xlabel)
+					command << "unset xlabel\n";
+				else 
+					command << "set xlabel '" << time << " " /*<< SIM::getTimeScaleUnit() */ << "' offset 0," << (using_splot ? "0.1" : "2") << ";\n";
 
 				if (plots[i].cell_painter->getSlice() > 0)
 					command << "set title '" << plot_title << " (z-slice: " << plots[i].cell_painter->getSlice() << ")' offset 0,-0.5;\n";

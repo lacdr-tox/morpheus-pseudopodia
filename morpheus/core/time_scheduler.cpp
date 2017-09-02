@@ -254,7 +254,7 @@ void TimeScheduler::init()
 	cout << "======================================================\n";
 	cout << endl;
 	
-	ts.current_time = 0;
+	ts.current_time = SIM::getStartTime();
 	
 	if (ts.stop_condition) {
 		ts.stop_condition->init(SIM::getGlobalScope());
@@ -270,17 +270,15 @@ void TimeScheduler::compute()
 	TimeScheduler& ts = getInstance(); 
 	try {
 		if (! ts.is_state_valid ) {
-			// Now run all Reporters, Equations.
+			// Now run all Reporters, Equations to obtain a valid data state
 			for (uint i=0; i<ts.reporter.size(); i++) {
-				// if (ts.reporter[i]->currentTime() <= ts.current_time + ts.time_precision_patch ) {
-					current_plugin = ts.reporter[i];
-					ts.reporter[i]->executeTimeStep_internal();
-				//}
+				current_plugin = ts.reporter[i];
+				ts.reporter[i]->executeTimeStep_internal();
 			}
 
 			// Now run all analysers
 			for (uint i=0; i<ts.analysers.size(); i++) {
-				if ( ! ts.analysers[i]->endState() ) {
+				if (ts.analysers[i]->currentTime() <= ts.current_time + ts.time_precision_patch) {
 					current_plugin = ts.analysers[i];
 					ts.analysers[i]->executeTimeStep_internal();
 				}
@@ -300,8 +298,9 @@ void TimeScheduler::compute()
 
 			// compute the maximum time we may travel to fullfill output requirements 
 			double min_current_time = stop_time;
+			
 			for (const auto& output : ts.analysers) {
-				if (output->currentTime() /*+ output->timeStep()*/ < min_current_time)
+				if (output->currentTime() /*+ output->timeStep()*/ < min_current_time /*&& !output->endState()*/)
 					min_current_time = output->currentTime() /*+ output->timeStep()*/;
 			}
 			
@@ -357,10 +356,8 @@ void TimeScheduler::compute()
 			
 			for (uint i=0; i<ts.analysers.size(); i++) {
 				if (ts.analysers[i]->currentTime() <= ts.current_time + ts.time_precision_patch) {
-					if( !ts.analysers[i]->endState() ) {
-						current_plugin = ts.analysers[i];
-						ts.analysers[i]->executeTimeStep_internal();
-					}
+					current_plugin = ts.analysers[i];
+					ts.analysers[i]->executeTimeStep_internal();
 				}
 			}
 			

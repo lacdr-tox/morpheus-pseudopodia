@@ -17,7 +17,7 @@
 			<xs:element name="Plots" type="cpmLoggerPlots" minOccurs="0" maxOccurs="1" />
 			<xs:element name="Restriction"	type="cpmLoggerRestrictions"   minOccurs="0" maxOccurs="1" />
 		</xs:all>
-		<xs:attribute name="time-step"	type="cpmDouble" use="required" />
+		<xs:attribute name="time-step"	type="cpmDouble" use="optional" default="1"/>
 		<xs:attribute name="name"	type="cpmString" use="optional" />
 	</xs:complexType>
 

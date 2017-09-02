@@ -507,9 +507,8 @@ private:
 class AnalysisPlugin : public TimeStepListener {
 public :
 	AnalysisPlugin() : TimeStepListener(TimeStepListener::XMLSpec::XML_OPTIONAL) {};
-	
-	void init(const Scope* scope) override { TimeStepListener::init(scope); end_state = (timeStep() <= 0);}
-	bool endState() { return end_state; };
+// 	void loadFromXML(const XMLNode node) override { TimeStepListener::loadFromXML(node); if (timeStep()==0) is_adjustable = true;};
+	void init(const Scope* scope) override;
 	void setTimeStep(double ts) override;
 	/** Callback for scheduled notifications. **/
 	virtual void analyse(double time) = 0;
@@ -523,7 +522,6 @@ public :
 	static int max_time_precision;
 private:
 	void executeTimeStep_impl() final { analyse(SIM::getTime()); };
-	bool end_state;
 };
 
 

@@ -24,7 +24,7 @@ Note: this plugin requires stand-alone installation of Gnuplot 4.4+. When not fo
 <!-- 			<xs:element name="Membrane" 	type="cpmMembraneRef" 		minOccurs="0" /> -->
 		</xs:choice>
 
-		<xs:attribute name="time-step" use="required" type="cpmDouble">
+		<xs:attribute name="time-step" use="optional" type="cpmDouble" default="1">
 			<xs:annotation>
 				<xs:documentation>Time interval of plots.</xs:documentation>
 			</xs:annotation>
@@ -46,11 +46,11 @@ Note: this plugin requires stand-alone installation of Gnuplot 4.4+. When not fo
 		</xs:attribute>
 		<xs:attribute name="file-numbering"   use="optional" type="cpmFileNumbering" default="time" />
 		<xs:attribute name="decorate" 		type="cpmBoolean" 		use="optional" default="true" />
-		<xs:attribute name="interpolation" type="cpmBoolean" use="optional" default="true">
-			<xs:annotation>
-				<xs:documentation>Interpolation using pm3d.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
+<!-- 		<xs:attribute name="interpolation" type="cpmBoolean" use="optional" default="true"> -->
+<!-- 			<xs:annotation> -->
+<!-- 				<xs:documentation>Interpolation using pm3d.</xs:documentation> -->
+<!-- 			</xs:annotation> -->
+<!-- 		</xs:attribute> -->
 
 	</xs:complexType>
 	

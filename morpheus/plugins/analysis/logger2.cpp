@@ -177,6 +177,20 @@ void Logger::init(const Scope* scope){
     }
 };
 
+string  Logger::getInputsDescription(const string& s) const {
+	if (! writers.empty() && dynamic_pointer_cast<LoggerTextWriter>(writers.front()) ) {
+		const auto& writer = dynamic_pointer_cast<LoggerTextWriter>(writers.front());
+		for (const auto &i : writer->getSymbols()) {
+			if (i.getName() == s) {
+				return Gnuplot::sanitize(i.getFullName());
+			}
+		}
+	}
+	cout << "Description for " << s << " not found." << endl;
+	return Gnuplot::sanitize(s);
+}
+
+
 int Logger::addWriter(shared_ptr<LoggerWriterBase> writer)
 {
 // 	cout << "Adding another Writer to the Logger" << endl;
@@ -1150,21 +1164,22 @@ void LoggerLinePlot::init() {
 	
 	// set the axis labels
 	// x label
-	axes.x.label = "\""+axes.x.symbol()+"\"";
+	axes.x.label = "\""+this->logger.getInputsDescription(axes.x.symbol())+"\"";
+	
 	// y label
 	axes.y.label = "\"";
 	for (auto s : axes.y.symbols){
 		if (s->isDefined()) {
 			if ( axes.y.label.size() > 1 ) // cannot check for empty() because it already contains a '"' character
 				axes.y.label += ", ";
-			axes.y.label += s();
+			axes.y.label += logger.getInputsDescription(s());
 		}
 	}
 	axes.y.label += "\"";
 	
 	axes.cb.defined = axes.cb.symbol.isDefined();
 	if (axes.cb.defined) {
-		axes.cb.label = "\""+axes.cb.symbol()+"\"";
+		axes.cb.label = "\""+logger.getInputsDescription(axes.cb.symbol())+"\"";
 	}
 	
 }
@@ -1415,7 +1430,7 @@ void LoggerLinePlot::plot()
 					ss << "'' ";
 				ss << datarange_ss.str() << " us " << timerange_x.str() << ":"<< axes.y.column_nums[c] <<":" << \
 				( axes.cb.defined ? timerange_cb.str() : "(0)")  << \
-				linespoints_ss.str() << (axes.cb.defined ? " pal":"") << " title \"" << axes.y.symbols[c]() << "\"";
+				linespoints_ss.str() << (axes.cb.defined ? " pal":"") << " title \"" << logger.getInputsDescription(axes.y.symbols[c]()) << "\"";
 			}
 		}
 		ss << ";\n";

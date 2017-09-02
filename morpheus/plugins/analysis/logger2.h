@@ -70,7 +70,7 @@ Versatile interface to
 
 \subsection Input
 
-- \b time-step (required): time between logging events
+- \b time-step (optional): time between logging events. If unspecified adopts to the frequency of input updates. Setting \b time-step<=0 will log only the final state of the simulation.
 - \b name (optional, default=none): shows in GUI, only for user-convenience
 
 \subsubsection Symbol (required)
@@ -396,6 +396,7 @@ public:
 	void finish() override;
 	
 	const vector< shared_ptr< PluginParameter2<double, XMLReadableSymbol> > >& getInputs() const { return inputs;};
+	string getInputsDescription(const string& s) const;
 	int addWriter(shared_ptr<LoggerWriterBase> writer);
 	const vector<shared_ptr<LoggerWriterBase> >& getWriters() const { return writers; };
 	int getInstanceID() const { return instance_id; };
