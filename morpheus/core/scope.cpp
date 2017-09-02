@@ -128,7 +128,7 @@ void Scope::registerSymbol(SymbolData data)
 	// look up the value overrides
 	if (value_overrides.count(data.name)) {
 		if (data.granularity == Granularity::Global) {
-			
+			// Value overriding is dealt with during the initialisation of Constants
 		}
 	}
 }
@@ -150,6 +150,40 @@ void Scope::init()
 
 }
 
+
+void Scope::init_symbol(SymbolData* data) const {
+	
+	if (initializing_symbols.count(data)) {
+		throw string("Circular dependencies in definition of Symbol ") + data->name;
+	}
+	initializing_symbols.insert(data);
+	cout << "Scope: '" << name << "' intitalizes symbol " << data->name << endl;
+	switch (data->link) {
+		case SymbolData::FunctionLink:
+			data->func->init(this);
+			data->granularity = data->func->getGranularity();
+		break;
+		case SymbolData::VectorFunctionLink:
+			data->vec_func->init(this);
+			data->granularity = data->vec_func->getGranularity();
+		break;
+		case SymbolData::GlobalLink:
+			data->const_prop->init(this);
+			data->granularity = Granularity::Global;
+		break;
+		case SymbolData::PureCompositeLink:
+		case SymbolData::VecAbsLink:
+		case SymbolData::VecPhiLink:
+		case SymbolData::VecThetaLink:
+		case SymbolData::VecXLink:
+		case SymbolData::VecYLink:
+		case SymbolData::VecZLink:
+		break;
+		default :
+			throw string("Scope: Unable to initialize symbol '") + data->name + "' of LinkType " + SymbolData::getLinkTypeName(data->link);
+	}
+	initializing_symbols.erase(data);
+}
 
 // Currently, this implementation is only available for CellType scopes, that may override the global scope symbol within the lattice part that they occupy
 void Scope::registerSubScopeSymbol(Scope *sub_scope, string symbol_name) {
@@ -236,6 +270,19 @@ string Scope::getSymbolType(string name) const {
 	}
 	else {
 		throw string("Unknown symbol '") + name + string("' in getSymbolType.");
+	}
+}
+
+bool Scope::isSymbolDelayed(string name) const {
+	auto it = local_symbols.find(name);
+	if (it!=local_symbols.end()) {
+		return it->second.is_delayed;
+	}
+	else if (parent) {
+		return parent->isSymbolDelayed(name);
+	}
+	else {
+		throw string("Unknown symbol '") + name + string("' in isSymbolDelayed.");
 	}
 }
 

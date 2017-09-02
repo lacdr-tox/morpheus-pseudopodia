@@ -56,8 +56,10 @@ Future features:
 
 */
 
-/** \ingroup AnalysisPlugins
+/**
 \defgroup Logger
+\ingroup ML_Analysis
+\ingroup AnalysisPlugins
 \brief Writes output to text file. Optionally, plots graphs.
 
 \section Description
@@ -75,7 +77,7 @@ Versatile interface to
 
 Specifies at one or more symbols to write to data file. Symbol can be flexibly combined, but the data format is determined by the symbol with the smallest granularity.
 
-- \b symbol-ref (required): symbol referring to e.g. a global \ref Variable, a cell \ref Property, a \ref MembraneProperty, or a \ref Field.
+- \b symbol-ref (required): symbol referring to e.g. a global \ref ML_Variable, a cell \ref ML_Property, a \ref ML_MembraneProperty, or a \ref ML_Field.
 
 \subsection Output (required)
 
@@ -97,9 +99,9 @@ Restrict the data query to a certain slice, a cell type or certain cell ids.
   - \b value (required): position along axis at which to slice the space (can be expression)
 
 - \b Celltype: restrict query to cell of specific celltype
-  - \b celltype (required): name of \ref CellType to query
+  - \b celltype (required): name of \ref ML_CellType to query
 
-- \b Cells: write values of \ref Property or \ref MembraneProperty
+- \b Cells: write values of \ref ML_Property or \ref ML_MembraneProperty
   - \b cell-ids (required): range of cell IDs to include. Syntax:
     - list of comma-separated IDs: "1,2,5", or
     - range of IDs with dash: "4-8", or
@@ -513,7 +515,7 @@ protected:
 		bool defined;
 		PluginParameter2<string, XMLValueReader, OptionalPolicy> symbol;
 		int column_num;
-		vector< PluginParameter2<string, XMLValueReader, OptionalPolicy> > symbols;
+		vector< PluginParameter_Shared<string, XMLValueReader, OptionalPolicy> > symbols;
 		vector<int> column_nums;
 		string label;
 		

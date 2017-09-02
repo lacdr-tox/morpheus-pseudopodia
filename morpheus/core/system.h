@@ -215,7 +215,9 @@ public:
 };
 
 
-/** \defgroup Event
+/** \defgroup ML_Event Event
+\ingroup ML_Global
+\ingroup ML_CellType
 \ingroup InstantaneousProcessPlugins
 
 \section Description

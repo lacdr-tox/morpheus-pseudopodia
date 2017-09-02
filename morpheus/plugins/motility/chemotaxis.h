@@ -16,9 +16,10 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup Chemotaxis
-\ingroup CellMotilityPlugins Celltype
-\brief Energetically favors updates in direction of increasing concentration in \ref Field
+\ingroup ML_CellType
+\ingroup CellMotilityPlugins
 \ingroup CPM_EnergyPlugins
+\brief Energetically favors updates in direction of increasing concentration in \ref ML_Field
 
 
 \section Description
@@ -73,8 +74,8 @@ class Chemotaxis : public CPM_Energy
 		DECLARE_PLUGIN("Chemotaxis");
 		Chemotaxis();
 
-		double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const;
-		double hamiltonian(CPM::CELL_ID cell_id) const;
+		double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const  override;
+		double hamiltonian(CPM::CELL_ID cell_id) const  override;
 };
 
 #endif

@@ -16,6 +16,7 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup InitCircle
+\ingroup ML_Population
 \ingroup InitializerPlugins
 \brief Initializes cells as single nodes arranged in a circle 
 
@@ -77,7 +78,7 @@ private:
 public:
 	InitCircle();
 	DECLARE_PLUGIN("InitCircle");
-	bool run(CellType* ct);
+	bool run(CellType* ct) override;
 
 };
 

@@ -66,6 +66,7 @@ VINT MembraneMapper::getMembranePosition( const VDOUBLE& pos_3D){
 
 	VDOUBLE orientation = global_lattice->orth_distance(pos_3D, cell_center);
 	
+	
 	if( rotation_matrices.size() > 0 ){
 		for(uint i=0; i<rotation_matrices.size(); i++){
 			//cout << "Rotation " << i << ", orientation: " <<  orientation << "\n";
@@ -77,22 +78,7 @@ VINT MembraneMapper::getMembranePosition( const VDOUBLE& pos_3D){
 		//cout << "Rotation end, orientation: " <<  orientation << "\n";
 	} 
 	
-	VDOUBLE radial;
-	if (membrane_lattice->getDimensions()==1) {
-		radial.x = orientation.angle_xy() * double(data_map->l_size.x) / ( 2.0*M_PI );
-		radial.x = MOD(radial.x, double(data_map->l_size.x));
-	}
-	else {
-		radial = orientation.to_radial();
-		radial.x *= double(data_map->l_size.x) / (2.0*M_PI);
-		radial.y *= double(data_map->l_size.y) / M_PI;
-		radial.x = MOD(radial.x, double(data_map->l_size.x));
-		radial.y = MOD(radial.y, double(data_map->l_size.y));
-		radial.z = 0;
-	}
-	
-	VINT membrane_pos(radial);
-	return membrane_pos;
+	return MembraneProperty::orientationToMemPos(orientation);
 }
 
 void MembraneMapper::setRotationMatrix( Eigen::Matrix3f rot_matrix ){

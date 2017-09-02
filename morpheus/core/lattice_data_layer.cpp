@@ -101,6 +101,7 @@ void Lattice_Data_Layer<T>::loadFromXML(const XMLNode xNode, T (* converter)(con
 	
 	if ( (xNode.nChildNode("Reduction") && getXMLAttribute(xNode,"Reduction/text", restr_name)) || (getXMLAttribute(xNode,"Reduction/value", restr_name)) ) {
 		reduction = Boundary::name_to_code(restr_name);
+		has_reduction = true;
 		allocate();
 	}
 	

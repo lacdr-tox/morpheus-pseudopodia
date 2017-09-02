@@ -17,6 +17,7 @@
 #include "core/cell_property_accessor.h" // to access data that is strored in Property and VectorProperty
 
 /** \defgroup PersistentMotion
+ \ingroup ML_CellType
  \ingroup CellMotilityPlugin
  \ingroup CPM_EnergyPlugins
 
@@ -88,10 +89,10 @@ public:
 	PersistentMotion();
 	DECLARE_PLUGIN("PersistentMotion")
 
-    void init(const Scope* scope);
-	void report();
-	double delta( const SymbolFocus& cell_focus, const CPM::Update& update) const;
-	double hamiltonian(CPM::CELL_ID cell_id) const;  
+    void init(const Scope* scope) override;
+	void report() override;
+	double delta( const SymbolFocus& cell_focus, const CPM::Update& update) const override;
+	double hamiltonian(CPM::CELL_ID cell_id) const override;  
 
 };
 

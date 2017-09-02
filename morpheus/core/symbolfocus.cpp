@@ -1,6 +1,6 @@
 #include "symbolfocus.h"
 #include "cell.h"
-#include "membrane_pde.h"
+#include "membrane_property.h"
 
 
 SymbolFocus::SymbolFocus () :
@@ -92,7 +92,23 @@ void SymbolFocus::setMembrane(CPM::CELL_ID cell_id, const VINT& pos ) {
 	d_membrane_pos = pos;
 	has_membrane=true;
 	has_pos=false;
-};;
+};
+
+int SymbolFocus::get(FocusRangeAxis axis) const {
+	switch (axis) {
+		case FocusRangeAxis::X: return pos().x;
+		case FocusRangeAxis::Y: return pos().y;
+		case FocusRangeAxis::Z: return pos().z;
+		case FocusRangeAxis::MEM_X: return membrane_pos().x;
+		case FocusRangeAxis::MEM_Y: return membrane_pos().y;
+		case FocusRangeAxis::CELL: return cellID();
+		case FocusRangeAxis::CellType: return cell_index().celltype;
+// 		case FocusRangeAxis::NODE: return 0;
+// 		case FocusRangeAxis::MEM_NODE: return 0;
+		default:
+			return 0;
+	}
+}
 
 void SymbolFocus::unset() {
 	has_pos=false;

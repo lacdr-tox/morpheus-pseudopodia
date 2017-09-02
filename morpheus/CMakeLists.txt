@@ -58,7 +58,7 @@ SET (APP_DOC_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/core/equation.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/vector_equation.h 
 	${CMAKE_CURRENT_SOURCE_DIR}/core/function.h 
-	${CMAKE_CURRENT_SOURCE_DIR}/core/membrane_pde.h
+	${CMAKE_CURRENT_SOURCE_DIR}/core/membrane_property.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/property.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/system.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/cpm.h

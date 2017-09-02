@@ -21,8 +21,10 @@
 #include <fstream>
 
 using namespace SIM;
-/** \ingroup AnalysisPlugins
+/**
 \defgroup VtkPlotter
+\ingroup ML_Analysis
+\ingroup AnalysisPlugins
 \brief Writes cells and fields to legacy VTK files
 
 Writes cells and fields to legacy VTK files. Currently, only ASCII format is supported and no compression is applied. 

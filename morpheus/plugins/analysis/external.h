@@ -9,7 +9,9 @@
 //
 //////
 
-/** \defgroup External
+/** 
+\defgroup ML_External External
+\ingroup ML_Analysis
 \ingroup AnalysisPlugins
 \brief Execute external shell script
 

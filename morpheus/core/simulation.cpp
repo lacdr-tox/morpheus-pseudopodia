@@ -1352,6 +1352,9 @@ void loadFromXML(const XMLNode xNode) {
 	// all model constituents are loaded. let's initialize them (i.e. interlink)
 	global_scope->init();
 	for (auto glob : global_section_plugins) {
+#ifdef NO_CORE_CATCH
+		glob->init(SIM::getGlobalScope());
+#else
 		try {
 			glob->init(SIM::getGlobalScope());
 		}
@@ -1360,8 +1363,8 @@ void loadFromXML(const XMLNode xNode) {
 			s+= glob->XMLName() + "\n" + e;
 			throw MorpheusException(s,glob->getXMLNode());
 		}
+#endif
 	}
-	
 	// Creation of Fields
 	for (auto pde : pde_layers) {
 		pde.second->init(SIM::getGlobalScope());

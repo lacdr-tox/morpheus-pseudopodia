@@ -16,6 +16,7 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup SurfaceConstraint
+\ingroup ML_CellType
 \ingroup CellShapePlugins
 \brief Penalizes deviations from target cell perimeter (2D) or surface area (3D)
 
@@ -89,8 +90,8 @@ public:
 	SurfaceConstraint();
 	DECLARE_PLUGIN("SurfaceConstraint");
 
-	double hamiltonian ( CPM::CELL_ID  cell_id ) const;
-    double delta ( const SymbolFocus& cell_focus, const CPM::Update& update) const;
+	double hamiltonian ( CPM::CELL_ID  cell_id ) const override;
+    double delta ( const SymbolFocus& cell_focus, const CPM::Update& update) const override;
 
 };
 

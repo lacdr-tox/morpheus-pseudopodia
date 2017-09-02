@@ -10,6 +10,7 @@
 //////
 
 /** \defgroup CellTracker
+\ingroup ML_Analysis
 \ingroup AnalysisPlugins
 \brief Writes cell tracks in XML format
 

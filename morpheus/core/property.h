@@ -26,7 +26,7 @@ class AbstractProperty : public virtual Plugin {
 
 public:
 	virtual void init(const Scope* scope) { init(scope, SymbolFocus::global); }
-	virtual void init(const Scope * scope, const SymbolFocus& f) { Plugin::init(scope); initialized = true; };
+	virtual void init(const Scope * scope, const SymbolFocus& f) { if (initialized) return; Plugin::init(scope); initialized = true; };
 	
 	virtual void restoreData(XMLNode parent_node) = 0;
 	virtual XMLNode storeData() const = 0;
@@ -37,20 +37,23 @@ public:
 	string getName() const { return name;}
 	string getSymbol() const { return symbolic_name; }
 
-	bool isCellProperty() { return is_cellproperty; }
-	bool isConstant() { return is_constant;}
+	bool isCellProperty() const { return is_cellproperty; }
+	bool isConstant() const { return is_constant;}
+	bool isDelayed() const { return is_delayed; } 
+	bool isInitialized() const { return initialized; }
 	
 // a little bit of hacking is needed to get segmented cells running the easy way ...
 	bool isSubCellular() { return sub_cellular; }
 	void setSubCellular(bool value) { sub_cellular = value; };
 	
 protected:
-	AbstractProperty(bool constant, bool cellproperty) : is_cellproperty(cellproperty), is_constant(constant), initialized(true), sub_cellular(false) {};
-	AbstractProperty(string n, string s, bool constant, bool cellproperty) : name(n) , symbolic_name(s), is_cellproperty(cellproperty), is_constant(constant), initialized(true), sub_cellular(false) {};
+	AbstractProperty(bool constant, bool cellproperty) : is_cellproperty(cellproperty), is_constant(constant), is_delayed(false), initialized(false), sub_cellular(false) {};
+	AbstractProperty(string n, string s, bool constant, bool cellproperty, bool delayed ) : name(n) , symbolic_name(s), is_cellproperty(cellproperty), is_constant(constant), is_delayed(delayed), initialized(false), sub_cellular(false) {};
 	~AbstractProperty() {};
 	string name, symbolic_name;
 	const bool is_cellproperty;
 	const bool is_constant;
+	const bool is_delayed;
 	bool initialized;
 	bool sub_cellular;
 
@@ -76,7 +79,7 @@ protected:
 	static Plugin* createConstantInstance();
 	Value_Type value, buffer;
 	string string_val;
-	Property(string name, string symbol, bool constant, bool cellproperty=false) : AbstractProperty(name, symbol, constant, cellproperty) {};
+	Property(string name, string symbol, bool constant, bool cellproperty=false, bool delayed=false) : AbstractProperty(name, symbol, constant, cellproperty, delayed) {};
 	Property(bool constant=false, bool cellproperty = false) : AbstractProperty(constant, cellproperty) {};
 	
 public:
@@ -91,7 +94,7 @@ public:
     
 	const Value_Type& get() const { assert(initialized); return value; }
 	Value_Type& getRef() { return value; }
-	virtual void set(Value_Type value) { this->value = value; }
+	virtual void set(Value_Type value) { this->value = value; initialized = true;}
 	virtual void setBuffer(Value_Type value) { this->buffer = value; }
 	virtual void applyBuffer() { value = buffer; }
 	virtual shared_ptr<AbstractProperty> clone() const;

@@ -10,14 +10,16 @@
 //////
 
 /**
-\defgroup VectorEquation
+\defgroup ML_VectorEquation VectorEquation
+\ingroup ML_Global
+\ingroup ML_CellType
 \ingroup MathExpressions
 
 Assignment of mathematical expression to a vector symbol.
 
 Syntax is comma-separated: x,y,z
 
-During simulation it is asserted that the provided relation always holds. Therefore, the expression may not depend on the referred output symbol. For recurrence equations, use a \ref VectorRule within Systems.
+During simulation it is asserted that the provided relation always holds. Therefore, the expression may not depend on the referred output symbol. For recurrence equations, use a \ref ML_VectorRule within Systems.
 
 
 \section Examples
@@ -44,14 +46,16 @@ Using spherical coordinates
 **/
 
 /**
-\defgroup VectorRule
+\defgroup ML_VectorRule VectorRule
+\ingroup ML_System
+\ingroup ML_Event
 \ingroup MathExpressions
 
 Assignment of mathematical expression to a symbol.
 
-Differs from \ref VectorEquation in that a VectorRule:
+Differs from \ref ML_VectorEquation in that a VectorRule:
 - may contain recurrence relations e.g. \f$ v = v.x, 2,0*v.y, v.z\f$
-- can only appear in \ref System
+- can only appear in \ref ML_System
 - explicitly scheduled based on user-specified System time-step
 
 Syntax is comma-separated: x,y,z
@@ -89,7 +93,7 @@ class VectorEquation : public ReporterPlugin {
 
 		VectorEquation();
 
-		virtual void report();
+		void report() override;
 		
 		string getExpr() { return expression.stringVal(); }
 		string getSymbol() { return symbol.name(); };

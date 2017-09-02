@@ -15,10 +15,12 @@
 #include <core/interfaces.h>
 #include "core/plugin_parameter.h"
 
-/** \ingroup ContactLogger
- *  \defgroup ContactLogger ContactLogger
- *  \brief Write the contacts and contact lengths between cells to file
- * 
+/** 
+\defgroup ContactLogger ContactLogger
+\ingroup ML_Analysis
+\ingroup AnalysisPlugin
+\brief Write the contacts and contact lengths between cells to file
+
 \section Description
 ContactLogger write the cell-cell contacts, their contact lengths/areas and, optionally their duration, to file.
 

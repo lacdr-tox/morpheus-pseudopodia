@@ -69,7 +69,7 @@ endforeach()
 #message(STATUS "AppDoc header files (${APP_DOC_HEADER_NUM}) are ${APP_DOC_HEADERS}")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/appdoc/morpheus.doxy.in ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy @ONLY)
 
-SET(DOXYGEN_EXTRA_FILES  "appdoc/doxygen_header.html" "appdoc/doxygen_footer.html" "appdoc/morpheus_style.css")
+SET(DOXYGEN_EXTRA_FILES  "appdoc/doxygen_header.html" "appdoc/doxygen_footer.html" "appdoc/morpheus_style.css" "appdoc/dynsections.js" "appdoc/jquery.js")
 
 
 IF (DOXYGEN_QHP_PATCH)
@@ -82,6 +82,7 @@ IF (DOXYGEN_QHP_PATCH)
 	  COMMAND ${CMAKE_COMMAND} -E rename ${QT_HELP_PROJECT} ${QT_HELP_PROJECT}.tmp
 	  COMMAND awk "BEGIN{lvl=0; occ=0;} { closing=0; if (/<section.+\\/>/) lvl+=0; else if (/<section/) lvl++; else  if (/<\\/section/) { closing=1; lvl--;} if ( !(lvl==0 && closing==1 && occ==0) ) {print \$0} else occ=1; }"  ${QT_HELP_PROJECT}.tmp > ${QT_HELP_PROJECT}
 	  COMMAND ${CMAKE_COMMAND} -E remove ${QT_HELP_PROJECT}.tmp
+	  COMMAND sed -itmp "s/<files>/<files> <file>morpheus\\.png<\\/file><file>menu\\.js<\\/file><file>menudata\\.js<\\/file>/" ${QT_HELP_PROJECT}
 	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy ${APP_DOC_HEADERS} ${DOXYGEN_EXTRA_FILES}
 	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	  COMMENT "Generating in-application documentation with Doxygen" VERBATIM
@@ -91,6 +92,7 @@ ELSE()
   ADD_CUSTOM_COMMAND(
 	  OUTPUT ${QT_HELP_PROJECT}
 	  COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy
+	  COMMAND sed -itmp "s/<files>/<files> <file>morpheus\\.png<\\/file><file>menu\\.js<\\/file><file>menudata\\.js<\\/file>/" ${QT_HELP_PROJECT}
 	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy ${APP_DOC_HEADERS}  ${DOXYGEN_EXTRA_FILES}
 	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	  COMMENT "Generating in-application documentation with Doxygen" VERBATIM

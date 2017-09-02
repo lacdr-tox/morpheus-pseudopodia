@@ -16,11 +16,11 @@ SET(morpheus_src
 	interaction_energy.cpp
 	simulation.cpp
 	cpm_layer.cpp
-    	cpm_shape.cpp
+	cpm_shape.cpp
 	cpm_shape_tracker.cpp
 	edge_tracker.cpp
 	cpm.cpp
-	pde_layer.cpp
+	field.cpp
 	diffusion.cpp
 	property.cpp
 	symbol.cpp
@@ -35,7 +35,7 @@ SET(morpheus_src
 	diff_eqn.cpp
 	system.cpp
 	cell_membrane_accessor.cpp
-	membrane_pde.cpp
+	membrane_property.cpp
 	membranemapper.cpp
 	data_mapper.cpp
 	super_cell.cpp
@@ -53,7 +53,7 @@ SET(morpheus_src ${morpheus_src} ${tools_src} )
 CONFIGURE_FILE(config.h.cmake config.h)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR} ${TIFF_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
 
-option(MORPHEUS_CORE_CATCH "Catch excaptions in the simulator core. Required for GUI integration. May be switched off for debuging purposese. " ON)
+option(MORPHEUS_CORE_CATCH "Catch exceptions in the simulator core. Required for GUI integration. May be switched off for debuging purposese. " ON)
 mark_as_advanced(MORPHEUS_CORE_CATCH)
 
 if (NOT(MORPHEUS_CORE_CATCH))

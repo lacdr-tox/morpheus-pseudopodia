@@ -71,6 +71,7 @@ void NeighborhoodReporter::init(const Scope* scope)
 					if ( ! out->mapping.isDefined())
 						throw MorpheusException(string("NeighborhoodReporter requires a mapping for reporting into Symbol ") + out->symbol.name(), stored_node);
 					out->mapper = DataMapper::create(out->mapping());
+					out->mapper->setWeightsAreBuckets(true);
 					
 					if (input_is_halo) {
 						halo_output.push_back(out);
@@ -170,15 +171,18 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 		//  draw in the membrane mapper ...
 		vector<VINT> neighbor_offsets = CPM::getSurfaceNeighborhood().neighbors();
 
-#pragma omp parallel
-{
+// #pragma omp parallel
+// {
 		// There might also be boolean input, that we cannot easily handle this way. But works for concentrations and rates, i.e. all continuous quantities.
 		MembraneMapper mapper(MembraneMapper::MAP_CONTINUOUS,false);
-#pragma omp for schedule(static)
+		struct count_data { double val; double count; };
+		map<CPM::CELL_ID,count_data> cell_mapper;
+// #pragma omp for schedule(static)
 		for ( auto i_cell_id = cells.begin(); i_cell_id<cells.end(); ++i_cell_id) {
 //		for ( auto cell_id : cells) {
 			// Create halo of nodes surrounding the cell
 			auto cell_id = *i_cell_id;
+			SymbolFocus cell_focus(cell_id);
 			Cell::Nodes halo_nodes; // holds nodes of neighbors of membrane nodes. Used for <concentration>
 			const Cell::Nodes& surface_nodes = CPM::getCell (cell_id).getSurface();
 			for ( Cell::Nodes::const_iterator m = surface_nodes.begin(); m != surface_nodes.end(); ++m ) {
@@ -188,15 +192,15 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 					const CPM::STATE& nb_spin = cpm_layer->get ( neighbor_position );
 
 					if ( cell_id != nb_spin.cell_id ) { // if neighbor is different from me
-						
 						// HACK: NOFLUX BOUNDARY CONDITIONS when halo is in MEDIUM
 						//cout << CPM::getCellIndex( nb_spin.cell_id ).celltype << " != " << CPM::getEmptyCelltypeID() << endl;
-						if( noflux_cell_medium && CPM::getCellIndex( nb_spin.cell_id ).celltype == CPM::getEmptyCelltypeID() ){ // if neighbor is medium, add own node in halo 
-							halo_nodes.insert ( *m ); // add own membrane node to list of unique neighboring points (used for layers below)
-							//cout << *m << "\n";
+						if( noflux_cell_medium ) {
+							// if neighbor is medium, add own node in halo 
+							if (CPM::getCellIndex( nb_spin.cell_id ).celltype == CPM::getEmptyCelltypeID() )
+								halo_nodes.insert ( *m );
 						}
 						else
-							halo_nodes.insert ( neighbor_position ); // add neighbor node to list of unique neighboring points (used for layers below)
+							halo_nodes.insert ( neighbor_position );
 					}
 				}
 			}
@@ -206,41 +210,66 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 				continue;
 			}
 			
-			// Report halo input into membrane mapper, coordinating the transfer into an intermediate membrane property
-			mapper.attachToCell(cell_id);
-			for ( auto const & i :halo_nodes) {
-				SymbolFocus f(i);
-				double value = input(SymbolFocus(i));
-				if (std::isnan(value)){ 
-					mapper.map(i,0);
+			if (input_mode() == INTERFACES) {
+				// Report halo input into membrane mapper, coordinating the transfer into an intermediate membrane property
+				mapper.attachToCell(cell_id);
+				for ( auto const & i :halo_nodes) {
+					SymbolFocus f(i);
+					double value = input(SymbolFocus(i));
+					mapper.map(i, std::isnan(value) ? 0 : value );
 				}
-				else{
-					mapper.map(i,value);
+
+				mapper.fillGaps();
+				valarray<double> raw_data;
+				for (auto & out : halo_output) {
+					// TODO There must be a lock on the out->mapper if using it in multithreading !
+					if (out->symbol.granularity() == Granularity::MembraneNode) {
+						mapper.copyData(out->membrane_acc.getMembrane(cell_id));
+					}
+					else {
+						if (raw_data.size() == 0) {
+							raw_data =  mapper.getData().getData();
+						}
+						for (uint i=0; i<raw_data.size(); i++) {
+							out->mapper->addVal(raw_data[i]);
+						}
+						
+						if (out->symbol.granularity() == Granularity::Cell) {
+							if (out->mapper->getMode() == DataMapper::SUM) {
+								// Rescale to Interface length
+								out->symbol.set(cell_focus, out->mapper->get() / raw_data.size() *  cell_focus.cell().getInterfaceLength() );
+							}
+							else {
+								out->symbol.set(cell_focus, out->mapper->get());
+							}
+							out->mapper->reset();
+						}
+					}
 				}
 			}
-
-			mapper.fillGaps();
-			valarray<double> raw_data;
-			SymbolFocus cell_focus(cell_id);
-			for (auto & out : halo_output) {
-				if (out->symbol.granularity() == Granularity::MembraneNode) {
-					mapper.copyData(out->membrane_acc.getMembrane(cell_id));
+			else if (input_mode() == CELLS) {
+				
+				cell_mapper.clear();
+				for ( auto const & i :halo_nodes) {
+					SymbolFocus f(i);
+					double value = input(SymbolFocus(i));
+					cell_mapper[f.cellID()].val += std::isnan(value) ? 0 : value ;
+					cell_mapper[f.cellID()].count ++;
 				}
-				else {
-					if (raw_data.size() == 0) {
-						raw_data =  mapper.getData().getData();
+				
+				for (auto & out : halo_output) {
+					for ( const auto & cell_stat : cell_mapper ) {
+						out->mapper->addVal(cell_stat.second.val / cell_stat.second.count);
 					}
-					for (uint i=0; i<raw_data.size(); i++) {
-						out->mapper->addVal(raw_data[i]);
-					}
-					if (out->symbol.granularity() == Granularity::Cell){
+					if (out->symbol.granularity() == Granularity::Cell) {
 						out->symbol.set(cell_focus, out->mapper->get());
 						out->mapper->reset();
 					}
 				}
+				
 			}
 		}
-}
+// }
 		// Post hoc writing of global output 
 		for (auto const& out : halo_output) {
 			if (out->symbol.granularity() == Granularity::Global) {
@@ -265,13 +294,6 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 				continue;
 			}
 			
-			double cell_interface = 0;
-			double first_val  = input.get(SymbolFocus(interfaces.begin()->first));
-			double min = first_val;
-			double max = first_val;
-			double sum = 0;
-			double sq_sum =0;
-
 			uint i=0;
 
 			for (map<CPM::CELL_ID,double>::const_iterator nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {

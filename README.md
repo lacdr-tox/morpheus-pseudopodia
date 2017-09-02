@@ -40,10 +40,10 @@ Install
 
 build tools required:
   - g++ (>= 4.6)
-  - cmake (>= 2.6)
+  - cmake (>= 2.8)
   - cmake-curses-gui (for ccmake, optional)
   - xsltproc
-  - xmlint (optional)
+  - xmllint (optional)
   - doxygen
   - git
 
@@ -68,8 +68,17 @@ sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen g
 ``` 
 To install all dependencies on Ubuntu 14.04 and other Debian based systems run:
 ```  
-sudo apt-get install g++ cmake cmake-curses-gui xsltproc xmlint doxygen git zlib1g-dev libtiff-dev libgraphviz-dev libqt4-dev libqt4-sql-sqlite libqt4-network libqt4-webkit libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools
+sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libtiff-dev libgraphviz-dev libqt4-dev libqt4-sql-sqlite libqt4-network libqt4-webkit libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools
 ``` 
+
+Building/Installing on Arch/Manjaro
+------------------------------------
+
+Morpheus has been added to AUR (https://aur.archlinux.org/packages/morpheus-modeling/) so to install the dependencies and build from source simply run
+
+```
+yaourt morpheus-modeling
+```
 
 <!--  StatCounter -->
 <script type="text/javascript">

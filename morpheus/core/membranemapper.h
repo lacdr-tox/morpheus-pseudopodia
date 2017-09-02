@@ -13,7 +13,7 @@
 #define MEMBRANEMAPPER_H
 
 #include "simulation.h"
-#include "membrane_pde.h"
+#include "membrane_property.h"
 #include "cell_membrane_accessor.h"
 #include "Eigen/Eigenvalues"
 

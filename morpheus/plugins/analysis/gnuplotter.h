@@ -17,8 +17,10 @@
 #include "gnuplot_i/gnuplot_i.h"
 #include <fstream>
 #include <sstream>
-/** \ingroup AnalysisPlugins
+/** 
  *  \defgroup Gnuplotter Gnuplotter
+ *  \ingroup ML_Analysis
+ *  \ingroup AnalysisPlugins
  *  \brief Visualisation of spatial simulation states (cells, fields) using GnuPlot.
  * 
 \section Description
@@ -162,6 +164,7 @@ public:
 private:
 // 	vector <shared_ptr <const CellType > > celltypes;
 	PluginParameter2<double,XMLEvaluator> field_value;
+	PluginParameter2<int,XMLValueReader,DefaultValPolicy> coarsening;
 	PluginParameter2<float,XMLEvaluator,OptionalPolicy> min_value, max_value;
 	PluginParameter2<int,XMLValueReader,OptionalPolicy> isolines;
 	PluginParameter2<bool,XMLValueReader,OptionalPolicy> surface;
@@ -272,6 +275,7 @@ class Gnuplotter : public AnalysisPlugin
 		struct PlotSpec {
 			PlotSpec();
 			static VDOUBLE size();
+			static VDOUBLE view_oversize();
 			bool field, cells, labels, arrows, vectors;
 			shared_ptr<CellPainter> cell_painter;
 			shared_ptr<LabelPainter> label_painter;
