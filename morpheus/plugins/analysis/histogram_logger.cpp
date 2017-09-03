@@ -360,7 +360,7 @@ void HistogramLogger::plotData(double time){
 }
 
 
-void HistogramLogger::finish(double time)
+void HistogramLogger::finish()
 {
 	if( fout.is_open() ){
 		fout << endl;

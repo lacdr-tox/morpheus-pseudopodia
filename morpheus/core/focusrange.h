@@ -78,9 +78,9 @@ public:
 	FocusRangeIterator& operator--() {setIndex(idx-1); return *this; };
 	FocusRangeIterator& operator+=(int n) { if (n==1) return operator++(); setIndex(idx+n); return *this;}
 	FocusRangeIterator& operator-=(int n) { setIndex(idx-n); return *this; }
-	FocusRangeIterator operator+(int n)   { return FocusRangeIterator(data,idx+n); }
-	FocusRangeIterator operator-(int n)   { return FocusRangeIterator(data,idx-n); }
-	int operator-(const FocusRangeIterator& other)   { return idx-other.idx; }
+	FocusRangeIterator operator+(int n) const  { return FocusRangeIterator(data,idx+n); }
+	FocusRangeIterator operator-(int n) const  { return FocusRangeIterator(data,idx-n); }
+	int operator-(const FocusRangeIterator& other) const  { return idx-other.idx; }
 	bool operator==(const FocusRangeIterator& other) const { return idx == other.idx; };
 	bool operator!=(const FocusRangeIterator& other) const { return idx != other.idx; };
 	bool operator<(const FocusRangeIterator& other)  const { return idx <  other.idx; };

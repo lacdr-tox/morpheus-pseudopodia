@@ -113,12 +113,12 @@ public:
 	~MembraneLogger(); // default destructor for cleanup
 	DECLARE_PLUGIN("MembraneLogger");
 	
-	virtual void analyse(double time);
-	virtual void loadFromXML(const XMLNode );
-	virtual set< string > getDependSymbols();
+	void analyse(double time) override;
+	void loadFromXML(const XMLNode ) override;
+// 	virtual set< string > getDependSymbols();
 
-	virtual void init(const Scope* scope);
-	virtual void finish(double time);
+	void init(const Scope* scope) override;
+	void finish() override;
 };
 
 #endif // LOGGER_H

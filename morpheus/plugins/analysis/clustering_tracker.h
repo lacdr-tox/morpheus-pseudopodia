@@ -66,10 +66,10 @@ public:
 	DECLARE_PLUGIN("ClusteringTracker");
 	Clustering_Tracker();
 		
-	virtual void finish(double time);
-	virtual void analyse(double time);
-	virtual void init(const Scope* scope);
-	virtual void loadFromXML(const XMLNode );
+	virtual void finish() override;
+	virtual void analyse(double time) override;
+	virtual void init(const Scope* scope) override;
+	virtual void loadFromXML(const XMLNode ) override;
 	
 private:
 	fstream storage;

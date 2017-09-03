@@ -48,7 +48,6 @@ public:
 /**
  * Reflect the changes in the cell due to an update in the cpm lattice
  * @param update provides the whole udate story
- * @param todo selects which changes contribute to the cell
  */
 	virtual void setUpdate(const CPM::Update& update);
 	virtual void applyUpdate(const CPM::Update& update);  ///< apply the requested changes to the cell (either add_state or remove_state are NULL)

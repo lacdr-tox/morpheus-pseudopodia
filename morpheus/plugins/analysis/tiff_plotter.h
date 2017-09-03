@@ -155,11 +155,11 @@ private:
 public:
 	DECLARE_PLUGIN("TiffPlotter");
 	
-	virtual void init(const Scope* scope);
-	virtual void analyse(double time);	
-	virtual void finish(double time);
+	virtual void init(const Scope* scope) override;
+	virtual void analyse(double time) override;	
+	virtual void finish() override;
 	
-	void loadFromXML(const XMLNode);
+	void loadFromXML(const XMLNode) override;
 	
 	TiffPlotter();
 	~TiffPlotter();

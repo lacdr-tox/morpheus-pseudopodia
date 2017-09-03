@@ -54,7 +54,7 @@ private:
 public:
 	DECLARE_PLUGIN("MembraneProperty");
 	
-	void loadFromXML(const XMLNode );
+	void loadFromXML(const XMLNode ) override;
 	
 	string getSymbolName( void );
 	string getName( void );

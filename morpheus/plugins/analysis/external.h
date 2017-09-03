@@ -107,12 +107,12 @@ public:
     DECLARE_PLUGIN("External");
     External();
 
-    virtual void loadFromXML(const XMLNode );
-    virtual void init(const Scope* scope);
+    virtual void loadFromXML(const XMLNode  override);
+    virtual void init(const Scope* scope) override;
     /// record cell positions
-    virtual void analyse(double time);
+    virtual void analyse(double time) override;
     /// write cell tracks to XML file
-    virtual void finish();
+    virtual void finish() override;
 	void execute();
 
 };

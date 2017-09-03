@@ -334,10 +334,6 @@ void VtkPlotter::writePDELayer(double time)
 		cout << time << ": VtkPlotter wrote '" << fn.str() << "'" << endl;
 };
 */
-//-------------------------------------------------------------------
-
-void VtkPlotter::finish(double time){};
-
 
 //-------------------------------------------------------------------
 

@@ -29,9 +29,9 @@ class DifferentialEqn : public Plugin
 		valarray<double> delta_data;
 	public:
 		DECLARE_PLUGIN("DiffEqn");
-		virtual void loadFromXML(const XMLNode );
+		virtual void loadFromXML(const XMLNode ) override;
 		/// This init method is called by PDE_Sim
-		virtual void init(const Scope* scope);
+		virtual void init(const Scope* scope) override;
 		string getExpr() { return expression; }
 		string getSymbol() { return symbol_name; }
 };

@@ -382,18 +382,6 @@ void MembraneLogger::analyse(double time)
 	
 }
 
-set< string > MembraneLogger::getDependSymbols()
-{
-	set< string > symbols;
-	for(uint p=0; p<symbol_names.size(); p++){
-		symbols.insert(symbol_names[p]);
-	}
-	return symbols;
-}
-
-
-
-
 void MembraneLogger::writeCommand3D(vector<string> logfilenames){
 	
 	// rotate.plt
@@ -560,7 +548,7 @@ vector<CPM::CELL_ID> MembraneLogger::parseCellIDs(){
 	return ids;
 }
 
-void MembraneLogger::finish(double time)
+void MembraneLogger::finish()
 { 
 	if( fout.is_open() ){
 		fout << endl;

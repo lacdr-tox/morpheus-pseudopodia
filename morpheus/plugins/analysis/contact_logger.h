@@ -68,11 +68,11 @@ class ContactLogger : public AnalysisPlugin, InstantaneousProcessPlugin
 	public:
 		DECLARE_PLUGIN("ContactLogger");
 		ContactLogger();
-		void analyse(double time);
-		void loadFromXML(const XMLNode );
-		void init(const Scope* scope);
- 		void finish();
-		void executeTimeStep();
+		void analyse(double time) override;
+		void loadFromXML(const XMLNode ) override;
+		void init(const Scope* scope) override;
+ 		void finish() override;
+		void executeTimeStep() override;
 };
 
 #endif // CONTACTLOGGER_H

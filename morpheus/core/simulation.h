@@ -65,6 +65,7 @@ typedef unsigned int uint;
     inline int omp_get_thread_num()  { return 0;} 
     inline int omp_get_num_threads() { return 1;}
     inline int omp_get_max_threads() { return 1;}
+    typedef int omp_lock_t;
 #endif
 
 // due to non-linearity of the dependencies, we need forward declarations for all the classes using the plugin system

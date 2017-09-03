@@ -355,10 +355,10 @@ class Gnuplotter : public AnalysisPlugin
 
 		DECLARE_PLUGIN("Gnuplotter");
 
-		virtual void loadFromXML (const XMLNode xNode);
+		virtual void loadFromXML (const XMLNode xNode) override;
 
-		virtual void init(const Scope* scope);
-		virtual void analyse(double time);
-		virtual void finish() {};
+		virtual void init(const Scope* scope) override;
+		virtual void analyse(double time) override;
+		virtual void finish() override {};
 
 };

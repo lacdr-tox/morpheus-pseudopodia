@@ -78,7 +78,7 @@ class Equation : public ReporterPlugin
 		DECLARE_PLUGIN("Equation");
 
 		Equation();
-		virtual void report();
+		virtual void report() override;
 		string getExpr() { return expression.stringVal(); }
 		string getSymbol() { return symbol.name(); };
 };

@@ -243,7 +243,7 @@ void TiffPlotter::analyse(double time)
 		writeTIFF();
 };
 
-void TiffPlotter::finish(double time){
+void TiffPlotter::finish() {
 	if(file_boundingbox.is_open())
 		file_boundingbox.close();
 };

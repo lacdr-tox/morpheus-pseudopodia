@@ -118,13 +118,9 @@ private:
 public:
 	DECLARE_PLUGIN("VtkPlotter");
 	
-	virtual void loadFromXML(const XMLNode);
-	virtual void init(const Scope* scope);
-	virtual void analyse(double time);	
-	virtual void finish(double time);
-
-	VtkPlotter(){};
-	~VtkPlotter(){};
+	virtual void loadFromXML(const XMLNode) override;
+	virtual void init(const Scope* scope) override;
+	virtual void analyse(double time) override;
 };
 
 #endif
