@@ -62,6 +62,9 @@ void Scope::registerSymbol(SymbolData data)
 			// if existing definition is purely composite, just inherit the subscopes and override definition
 				data.component_subscopes = it->second.component_subscopes;
 				data.is_composite = true;
+				if (data.fullname.empty()) {
+					data.fullname = it->second.fullname;
+				}
 			}
 			else {
 				throw SymbolError(SymbolError::Type::InvalidDefinition, string("Redefinition of a symbol \"") + data.name + "\" in scope \""  + this->name + "\"");
@@ -77,7 +80,7 @@ void Scope::registerSymbol(SymbolData data)
 
 	// Assert correct meta-data 
 	if (data.base_name.empty()) data.base_name = data.name;
-	if (data.fullname.empty()) data.fullname = data.name;
+// 	if (data.fullname.empty()) data.fullname = data.name;
 	
 	local_symbols[data.name] = data;
 	

@@ -287,8 +287,25 @@ bool SymbolAccessorBase<S,AccessPolicy>::init_special() { return false; };
 
 
 template <class S,template <class> class AccessPolicy>
-const string& SymbolAccessorBase<S,AccessPolicy>::getFullName() const{
-	return ( !data.fullname.empty() ? data.fullname : data.name );
+const string&SymbolAccessorBase<S,AccessPolicy>::getFullName() const{
+	if (!data.fullname.empty()) return data.fullname;
+	switch (internal_link) {
+		case SymbolData::PureCompositeLink:
+			for ( const auto&  ac : component_accessors) {
+				if (!ac.getFullName().empty()) 
+					return ac.getFullName();
+			}
+			return data.name;
+		case SymbolData::VecXLink:
+		case SymbolData::VecYLink:
+		case SymbolData::VecZLink:
+		case SymbolData::VecPhiLink:
+		case SymbolData::VecThetaLink:
+		case SymbolData::VecAbsLink:
+			return vec->getFullName();
+		default:
+			return data.name;
+	}
 }
 
 template <class S,template <class> class AccessPolicy>
