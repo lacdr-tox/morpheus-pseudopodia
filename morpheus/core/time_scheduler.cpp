@@ -114,7 +114,7 @@ void TimeScheduler::init()
 	for (uint i=0; i<ts.all_phase2.size(); i++) {
 		set<SymbolDependency> out_sym = ts.all_phase2[i]->getOutputSymbols();
 		for (const auto& sym : out_sym) {
-			if (!sym.scope->isSymbolDelayed(sym.name)) {
+			if (!sym.scope->isSymbolDelayed(sym.name) && sym.name != SymbolData::CellCenter_symbol) {
 				const_cast<Scope*>(sym.scope)->addUnresolvedSymbol(sym.name);
 			}
 		}
