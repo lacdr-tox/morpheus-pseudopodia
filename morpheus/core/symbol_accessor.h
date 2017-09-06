@@ -292,8 +292,9 @@ const string&SymbolAccessorBase<S,AccessPolicy>::getFullName() const{
 	switch (internal_link) {
 		case SymbolData::PureCompositeLink:
 			for ( const auto&  ac : component_accessors) {
-				if (!ac.getFullName().empty()) 
-					return ac.getFullName();
+				if (!ac.data.fullname.empty()) {
+					return ac.data.fullname;
+				}
 			}
 			return data.name;
 		case SymbolData::VecXLink:
