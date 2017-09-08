@@ -82,17 +82,23 @@ IF (DOXYGEN_QHP_PATCH)
 	  COMMAND ${CMAKE_COMMAND} -E rename ${QT_HELP_PROJECT} ${QT_HELP_PROJECT}.tmp
 	  COMMAND awk "BEGIN{lvl=0; occ=0;} { closing=0; if (/<section.+\\/>/) lvl+=0; else if (/<section/) lvl++; else  if (/<\\/section/) { closing=1; lvl--;} if ( !(lvl==0 && closing==1 && occ==0) ) {print \$0} else occ=1; }"  ${QT_HELP_PROJECT}.tmp > ${QT_HELP_PROJECT}
 	  COMMAND ${CMAKE_COMMAND} -E remove ${QT_HELP_PROJECT}.tmp
-	  COMMAND sed -itmp "s/<files>/<files> <file>morpheus\\.png<\\/file><file>menu\\.js<\\/file><file>menudata\\.js<\\/file>/" ${QT_HELP_PROJECT}
 	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy ${APP_DOC_HEADERS} ${DOXYGEN_EXTRA_FILES}
 	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	  COMMENT "Generating in-application documentation with Doxygen" VERBATIM
   )
-ELSE()
-  #message("Doxygen Version ${DOXYGEN_VERSION} is above 1.8.9. Not applying QHP patch.")
+ELSEIF(DOXYGEN_VERSION STREQUAL "1.8.11")
   ADD_CUSTOM_COMMAND(
 	  OUTPUT ${QT_HELP_PROJECT}
 	  COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy
-	  COMMAND sed -itmp "s/<files>/<files> <file>morpheus\\.png<\\/file><file>menu\\.js<\\/file><file>menudata\\.js<\\/file>/" ${QT_HELP_PROJECT}
+	  COMMAND sed -itmp "s/<files>/<files><file>dynsections\\.js<\\/file> <file>morpheus\\.png<\\/file>/" ${QT_HELP_PROJECT} 
+	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy ${APP_DOC_HEADERS}  ${DOXYGEN_EXTRA_FILES}
+	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	  COMMENT "Generating in-application documentation with Doxygen" VERBATIM
+  )
+ELSE()  
+  ADD_CUSTOM_COMMAND(
+	  OUTPUT ${QT_HELP_PROJECT}
+	  COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy
 	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy ${APP_DOC_HEADERS}  ${DOXYGEN_EXTRA_FILES}
 	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	  COMMENT "Generating in-application documentation with Doxygen" VERBATIM
