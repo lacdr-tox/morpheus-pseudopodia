@@ -126,6 +126,10 @@ void DelayProperty::loadFromXML(XMLNode node)
 		cout << "Don't ever remove me! " << " I take care to register this Plugin !!" << endl;
 }
 
+void DelayProperty::init(const Scope* scope) {
+	init(scope, SymbolFocus::global); 
+};
+
 void DelayProperty::init(const Scope* scope, const SymbolFocus& f)
 {
 	cout << "Initializing DelayProperty " << symbolic_name << endl;;

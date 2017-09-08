@@ -133,24 +133,23 @@ protected:
 public:
 	DelayProperty(string name, string symbol, bool cellproperty);
 
-	virtual string XMLName() const { return this->is_cellproperty ? property_xml_name() : global_xml_name(); }
-	string XMLDataName() const { return XMLName() +"Data"; }
+	string XMLName() const override { return this->is_cellproperty ? property_xml_name() : global_xml_name(); }
 
-    virtual void setTimeStep(double t);
-	virtual void prepareTimeStep() {};
-	virtual void executeTimeStep();
+    void setTimeStep(double t) override;
+	void prepareTimeStep() override {};
+	void executeTimeStep() override;
 
 // 	virtual Value_Type& getRef() { return queue.front(); }
-	virtual void set(Value_Type value) { queue.back() = value; }
-	virtual void setBuffer(Value_Type value) { buffer = value; }
-	virtual void applyBuffer() { queue.back() = buffer;}
+	void set(Value_Type value) override { queue.back() = value; }
+	void setBuffer(Value_Type value) override { buffer = value; }
+	void applyBuffer() override { queue.back() = buffer;}
 	shared_ptr<AbstractProperty> clone() const;
-	virtual void loadFromXML(XMLNode node); //--> passed to any derived type without mods
-	virtual void init(const Scope* scope) { init(scope, SymbolFocus::global); };
-    virtual void init(const Scope* scope, const SymbolFocus& f);
+	void loadFromXML(XMLNode node) override; //--> passed to any derived type without mods
+	void init(const Scope* scope) override;
+    void init(const Scope* scope, const SymbolFocus& f) override;
 // 	virtual XMLNode saveToXML() const; //--> passed to any derived type without mods
-	virtual void restoreData(XMLNode node); //--> passed to any derived type without mods
-	virtual XMLNode storeData() const;//--> passed to any derived type without mods
+	void restoreData(XMLNode node) override; //--> passed to any derived type without mods
+	XMLNode storeData() const override;//--> passed to any derived type without mods
 };
 
 namespace SIM {

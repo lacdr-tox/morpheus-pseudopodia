@@ -137,13 +137,11 @@ IF  ( "${MORPHEUS_OS}" STREQUAL "WIN32")
 	IF (GNUPLOT_ROOT)
 		message(STATUS "Gnuplot Path is ${GNUPLOT_ROOT}")
 		SET(GNUPLOT_LIBRARIES 
-			${GNUPLOT_ROOT}/zlib1.dll
 			${GNUPLOT_ROOT}/freetype6.dll
 			${GNUPLOT_ROOT}/intl.dll
 			${GNUPLOT_ROOT}/libcairo-2.dll
 			${GNUPLOT_ROOT}/libexpat-1.dll
 			${GNUPLOT_ROOT}/libfontconfig-1.dll
-#			${GNUPLOT_ROOT}/libgcc_s_dw2-1.dll
 			${GNUPLOT_ROOT}/libgd-2-733361a31aab.dll
 			${GNUPLOT_ROOT}/libglib-2.0-0.dll
 			${GNUPLOT_ROOT}/libgmodule-2.0-0.dll
@@ -156,7 +154,6 @@ IF  ( "${MORPHEUS_OS}" STREQUAL "WIN32")
 			${GNUPLOT_ROOT}/libpangoft2-1.0-0.dll
 			${GNUPLOT_ROOT}/libpangowin32-1.0-0.dll
 			${GNUPLOT_ROOT}/libpng14-14.dll
-#			${GNUPLOT_ROOT}/libstdc++-6.dll
 			${GNUPLOT_ROOT}/lua51.dll
 			${GNUPLOT_ROOT}/wxbase28_gcc_custom.dll
 			${GNUPLOT_ROOT}/wxmsw28_core_gcc_custom.dll
