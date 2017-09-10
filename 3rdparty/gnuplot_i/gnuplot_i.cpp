@@ -62,6 +62,11 @@
 #include <cstdlib>              // for getenv()
 #include "gnuplot_i.h"
 
+#ifdef NEW_IMPL
+	#include "gnuplot.cpp"
+#else
+
+
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__) //defined for 32 and 64-bit environments
  #include <io.h>                // for _access(), _mktemp()
@@ -73,7 +78,6 @@
 #else
  #error unsupported or unknown operating system
 #endif
-
 
 
 
@@ -1364,3 +1368,4 @@ std::string Gnuplot::create_tmpfile(std::ofstream &tmp)
 
     return name;
 }
+#endif

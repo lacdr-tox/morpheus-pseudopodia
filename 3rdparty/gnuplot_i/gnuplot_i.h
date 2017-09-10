@@ -23,6 +23,11 @@
 ///
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#define NEW_IMPL 1
+
+#ifdef NEW_IMPL
+	#include "gnuplot.h"
+#else
 
 #ifndef _GNUPLOT_PIPES_H_
 #define _GNUPLOT_PIPES_H_
@@ -808,4 +813,5 @@ Gnuplot& Gnuplot::plot_xyz(const X &x,
 }
 
 
+#endif
 #endif
