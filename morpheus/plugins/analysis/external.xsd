@@ -18,6 +18,7 @@
 		<xs:attribute name="name" type="cpmString" use="optional"/>
 		<xs:attribute name="time-step" type="cpmDouble" use="optional"/>
 		<xs:attribute name="separate-thread" type="cpmBoolean" use="optional" default="true"/>
+		<xs:attribute name="timeout" type="cpmInteger" use="optional" default="30"/>
     </xs:complexType>
 
     <xs:complexType name="ExternalEnvVarCommand">

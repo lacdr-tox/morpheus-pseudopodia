@@ -46,7 +46,8 @@ Use "%" (percentage) to provide global symbols as arguments in the script. For i
 
 Stdout and sdterr are written to the file "external_output.txt" and "external_error.txt"
 
-- \b separate-thread: Execute process as a fork (appends '&').
+- \b separate-thread: Execute process in a seprate thread.
+- \b timeout: Timeout for running the external process. Defaults to 30 seconds. (Only applicable with \b separate-thread enabled)
 - \b Command: Executable shell command, e.g. "tail -n 1 logger.txt" or "python analysis.py"
 - \b Environment: variable/value, e.g. PATH=\usr\local\bin
 
@@ -91,23 +92,35 @@ Execute script in a separate thread. This is identical to appending the shell fo
 #include <core/interfaces.h>
 #include <core/simulation.h>
 #include <core/plugin_parameter.h>
-#include <plugins/analysis/subprocess.hpp>
+#include "tiny-process/process.hpp"
+#include <thread>
+
+struct DetachedProcess {
+	enum { RUNNING, KILLED, FINISHED } state;
+	int return_code;
+	shared_ptr<TinyProcessLib::Process> process;
+};
 
 class External : public AnalysisPlugin
 {
 
 private:
-	string command_orig;
 	map<string, string> environvars; // environmental variables
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> fork; // run shell command in separate thread
+	PluginParameter2<int, XMLValueReader, DefaultValPolicy> timeout; // run shell command in separate thread
+	PluginParameter2<string, XMLValueReader, RequiredPolicy> command_orig;
 
 	bool replace_symbols; // to replace global symbols indicated with %, e.g. %time
 	string update_command(string command);
+	static int instance_counter;
+	int instance_id;
+	list< shared_ptr<DetachedProcess> > detached_processes;
 public:
     DECLARE_PLUGIN("External");
     External();
+	~External();
 
-    virtual void loadFromXML(const XMLNode  override);
+    virtual void loadFromXML(const XMLNode xNode) override;
     virtual void init(const Scope* scope) override;
     /// record cell positions
     virtual void analyse(double time) override;
