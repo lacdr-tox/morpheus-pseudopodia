@@ -98,6 +98,7 @@ namespace SIM {
 	
 // 	PDE_Sim* pde_sim=NULL;
 	std::map<string, shared_ptr<PDE_Layer> > pde_layers;
+	std::map<string, shared_ptr<VectorField_Layer> > vector_field_layers;
 	vector< shared_ptr<AnalysisPlugin> > analysers;
 	vector< shared_ptr<Plugin> > analysis_section_plugins;
 	vector< shared_ptr<Plugin> > global_section_plugins;

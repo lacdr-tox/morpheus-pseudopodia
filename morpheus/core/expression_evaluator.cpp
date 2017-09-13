@@ -55,6 +55,15 @@ template <>
 int ExpressionEvaluator<VDOUBLE>::expectedNumResults() const { return 3; }
 
 template <>
+const string& ExpressionEvaluator<VDOUBLE>::getDescription() const
+{
+	if (expr_is_symbol)
+		return v_symbols[0].getFullName();
+	else 
+		return expression;
+}
+
+template <>
 VDOUBLE ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus) const
 {
 	if (expr_is_const)

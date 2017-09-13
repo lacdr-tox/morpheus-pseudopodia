@@ -368,10 +368,11 @@ typename TypeInfo<double>::SReturn  ExpressionEvaluator<double>::get(const Symbo
 template <>
 typename TypeInfo<float>::SReturn  ExpressionEvaluator<float>::get(const SymbolFocus& focus) const;
 
-
 template <>
 typename TypeInfo<VDOUBLE>::SReturn  ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus) const;
 
+template <>
+const string&  ExpressionEvaluator<VDOUBLE>::getDescription() const;
 
 
 template <class T>

@@ -17,6 +17,7 @@
 
 // Explicit template instantiation
 template class Lattice_Data_Layer<double>;
+template class Lattice_Data_Layer<VDOUBLE>;
 
 const float PDE_Layer::NO_VALUE = -10e6;
 
@@ -1079,3 +1080,28 @@ double PDE_Layer::max_val() const {
 	return m;
 }
 
+
+VectorField_Layer::VectorField_Layer(shared_ptr<const Lattice> lattice, double node_length) : Lattice_Data_Layer<VDOUBLE>(lattice,1,VDOUBLE(0,0,0),""), node_length(node_length)
+{
+	
+}
+
+void VectorField_Layer::loadFromXML(XMLNode node)
+{
+	getXMLAttribute(node,"symbol",symbol_name);
+	getXMLAttribute(node,"name",name);
+	getXMLAttribute(node,"value", initial_expression);
+}
+
+
+void VectorField_Layer::init(const Scope* scope) {
+	
+	if (!initial_expression.empty()) {
+		ExpressionEvaluator<VDOUBLE> init_val(initial_expression);
+		init_val.init(scope);
+		FocusRange range(Granularity::Node, scope);
+		for (auto focus : range) {
+			this->set(focus.pos(),init_val.get(focus));
+		}
+	}
+}

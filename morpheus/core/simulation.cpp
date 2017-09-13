@@ -1313,6 +1313,27 @@ void loadFromXML(const XMLNode xNode) {
 				symbol.writable = true;
 				SIM::defineSymbol(symbol);
 			}
+			else if (xml_tag_name == "VectorField") {
+				auto layer = make_shared<VectorField_Layer>(global_lattice, SIM::getNodeLength());
+				layer->loadFromXML(xGlobalChild);
+				
+				if (vector_field_layers.find(layer->getSymbol()) !=  vector_field_layers.end()) {
+					throw MorpheusException(string("Redefinition of Vector Field \"") + layer->getSymbol()  + "\"!",xGlobalChild);
+				}
+				vector_field_layers[layer->getSymbol()] = layer;
+				
+				
+				SymbolData symbol;
+				symbol.name = layer->getSymbol();
+				symbol.base_name = layer->getSymbol();
+				symbol.fullname = layer->getName();
+				symbol.link = SymbolData::VectorFieldLink;
+				symbol.granularity = Granularity::Node;
+				symbol.type_name = TypeInfo<VDOUBLE>::name();
+				symbol.writable = true;
+				SIM::defineSymbol(symbol);
+	
+			}
 			else {
 				shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
 				
@@ -1366,8 +1387,11 @@ void loadFromXML(const XMLNode xNode) {
 #endif
 	}
 	// Creation of Fields
-	for (auto pde : pde_layers) {
-		pde.second->init(SIM::getGlobalScope());
+	for (auto field : pde_layers) {
+		field.second->init(SIM::getGlobalScope());
+	}
+	for (auto field : vector_field_layers) {
+		field.second->init(SIM::getGlobalScope());
 	}
 	
 	// Initialising cell populations
@@ -1515,8 +1539,17 @@ shared_ptr<PDE_Layer> findPDELayer(string symbol) {
 	if (pde_layers.find(symbol) != pde_layers.end())
 		return pde_layers[symbol];
 	else 
-		throw string("Unable to local Field \"") + symbol +"\"";
+		throw string("Unable to locate Field \"") + symbol +"\"";
 		return shared_ptr<PDE_Layer>();
+}
+
+shared_ptr<VectorField_Layer> findVectorFieldLayer(string symbol)
+{
+	if (vector_field_layers.find(symbol) != vector_field_layers.end())
+		return vector_field_layers[symbol];
+	else 
+		throw string("Unable to locate VectorField \"") + symbol +"\"";
+		return shared_ptr<VectorField_Layer>();
 }
 
 const Scope* getScope() { return current_scope; }
