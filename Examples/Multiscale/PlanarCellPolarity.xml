@@ -80,16 +80,16 @@
                 <Input scaling="length" value="C"/>
                 <Output symbol-ref="c" mapping="average"/>
             </NeighborhoodReporter>
-            <CellReporter>
-                <Input value="C"/>
-                <Polarity symbol-ref="polC"/>
-            </CellReporter>
             <Property symbol="orientation" value="0.2"/>
             <Property symbol="sumC" value="0"/>
-            <CellReporter>
+            <Mapper>
+                <Input value="C"/>
+                <Polarity symbol-ref="polC"/>
+            </Mapper>
+            <Mapper>
                 <Input value="C"/>
                 <Output symbol-ref="sumC" mapping="sum"/>
-            </CellReporter>
+            </Mapper>
         </CellType>
         <CellType class="medium" name="medium"/>
     </CellTypes>
@@ -148,7 +148,7 @@
                 </Cells>
             </Plot>
         </Gnuplotter>
-        <ContactLogger time-step="-1" celltype="cells"/>
+        <ContactLogger time-step="-1" celltype-from="cells"/>
         <HistogramLogger minimum="0.0" normalized="false" maximum="6.28" number-of-bins="36" time-step="250">
             <Column symbol-ref="polC.phi" celltype="cells"/>
             <Plot minimum="0.0" terminal="png"/>

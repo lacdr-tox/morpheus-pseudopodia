@@ -87,10 +87,6 @@ Morpeus implementation by ECMI 2012 summer course:
             <Property symbol="phase" value="1"/>
             <Property symbol="phaseTime" value="0"/>
             <Property symbol="phase2duration" value="0.1"/>
-            <CellReporter>
-                <Input value="c"/>
-                <Output symbol-ref="max_c" mapping="maximum"/>
-            </CellReporter>
             <Function symbol="mu">
                 <Expression>if(phase == 2, 300, 0)</Expression>
             </Function>
@@ -106,6 +102,10 @@ phase
 ))) </Expression>
                 </Rule>
             </System>
+            <Mapper>
+                <Input value="c"/>
+                <Output symbol-ref="max_c" mapping="maximum"/>
+            </Mapper>
         </CellType>
         <CellType class="biological" name="autoAmoeba">
             <VolumeConstraint target="40" strength="1"/>

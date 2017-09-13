@@ -1,4 +1,4 @@
-<MorpheusModel version="1">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-FrenchFlag</Title>
         <Details>Wolpert L (1969). "Positional information and the spatial pattern of cellular differentiation". J. Theor. Biol. 25 (1): 1–47.</Details>
@@ -15,11 +15,14 @@
     <Space>
         <Lattice class="square">
             <Size symbol="size" value="20 20 0"/>
-            <NodeLength unit="micron" value="1"/>
+            <NodeLength value="1"/>
             <BoundaryConditions>
                 <Condition boundary="x" type="constant"/>
                 <Condition boundary="y" type="constant"/>
             </BoundaryConditions>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="l" name="location"/>
     </Space>
@@ -34,13 +37,13 @@
             <Property symbol="celltype" value="0.0" name="cell type"/>
             <Constant symbol="t1" value="0.7"/>
             <Constant symbol="t2" value="0.4"/>
-            <CellReporter name="report morphogen concentration">
-                <Input value="m"/>
-                <Output symbol-ref="p" mapping="average"/>
-            </CellReporter>
             <Equation symbol-ref="celltype">
                 <Expression>if(p>t1,3, if(p>t2, 2, 1))</Expression>
             </Equation>
+            <Mapper name="report morphogen concentration">
+                <Input value="m"/>
+                <Output symbol-ref="p" mapping="average"/>
+            </Mapper>
         </CellType>
     </CellTypes>
     <CellPopulations>

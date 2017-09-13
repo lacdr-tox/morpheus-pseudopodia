@@ -71,7 +71,7 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
             <Property symbol="c" value="0" name="division timeout"/>
             <Property symbol="Vt" value="25000" name="Target volume"/>
             <VolumeConstraint target="Vt" strength="1"/>
-            <SurfaceConstraint target="1.0" strength="0.5"/>
+            <SurfaceConstraint target="1.0" mode="aspherity" strength="0.5"/>
             <Event trigger="on change" name="reset timeout">
                 <Condition>CDK1&lt;0.25</Condition>
                 <Rule symbol-ref="c">
@@ -93,11 +93,11 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
                     </Rule>
                 </Triggers>
             </CellDivision>
-            <CellReporter name="report field">
+            <Property symbol="dist" value="sqrt( (cell.center.x-size.x/2)^2 + (cell.center.y-size.y/2)^2 )  "/>
+            <Mapper name="report field">
                 <Input value="g"/>
                 <Output symbol-ref="g_l" mapping="average"/>
-            </CellReporter>
-            <Property symbol="dist" value="sqrt( (cell.center.x-size.x/2)^2 + (cell.center.y-size.y/2)^2 )  "/>
+            </Mapper>
         </CellType>
         <CellType class="medium" name="Medium">
             <Property symbol="APC" value="0" name="Anaphase-promoting complex"/>
@@ -126,7 +126,7 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
             <InitCellObjects mode="order">
                 <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
                     <Object>
-                        <Sphere radius="45" center="125, 125, 0"/>
+                        <Sphere radius="45" center="125, 110, 0"/>
                     </Object>
                 </Arrangement>
             </InitCellObjects>
@@ -145,7 +145,7 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
                         <Color value="0.25" color="white"/>
                     </ColorMap>
                 </Cells>
-                <Field resolution="100" symbol-ref="g" isolines="5" min="0.0">
+                <Field coarsening="2" symbol-ref="g" isolines="5" min="0.0">
                     <ColorMap>
                         <Color value="1.0" color="red"/>
                         <Color value="0.5" color="yellow"/>

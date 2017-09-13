@@ -46,10 +46,10 @@
             <FlipCellMotion neighborhood="2" time-step="1">
                 <Condition>s > 0 and rand_uni(0,1) &lt; (1-(s_n/12)*p)</Condition>
             </FlipCellMotion>
-            <CellReporter>
+            <Mapper>
                 <Input value="ni"/>
                 <Output symbol-ref="sn" mapping="sum"/>
-            </CellReporter>
+            </Mapper>
         </CellType>
     </CellTypes>
     <CellPopulations>

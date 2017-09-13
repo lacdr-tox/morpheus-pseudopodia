@@ -9,7 +9,10 @@ Walter de Back, Joseph X. Zhou, Lutz Brusch, On the Role of Lateral Stabilizatio
 http://dx.doi.org/10.1098/rsif.2012.0766
 </Details>
     </Description>
-    <Global/>
+    <Global>
+        <Constant symbol="X" value="0"/>
+        <Constant symbol="Y" value="0"/>
+    </Global>
     <Space>
         <Lattice class="hexagonal">
             <Size symbol="size" value="20 20 0"/>
@@ -67,10 +70,6 @@ http://dx.doi.org/10.1098/rsif.2012.0766
                 </Rule>
             </Event>
             <Property symbol="tau" value="-1" name="time to cell fate decision"/>
-        </CellType>
-        <CellType class="medium" name="medium">
-            <Property symbol="X" value="0.0" name="Ngn3"/>
-            <Property symbol="Y" value="0" name="Ptf1a"/>
         </CellType>
     </CellTypes>
     <CellPopulations>

@@ -1,17 +1,16 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="1">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-CellCycle</Title>
         <Details>James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: Why Do Certain Circuits Oscillate?, Cell 144, p874-885. http://dx.doi.org/10.1016/j.cell.2011.03.006</Details>
     </Description>
-    <Global>
-        <Variable symbol="APC" value="0.0"/>
-        <Variable symbol="Plk1" value="0.0"/>
-        <Variable symbol="CDK1" value="0.0"/>
-    </Global>
+    <Global/>
     <Space>
         <Lattice class="square">
             <Size symbol="size" value="1,1,0"/>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="space"/>
     </Space>
@@ -53,6 +52,9 @@
     </CellPopulations>
     <Analysis>
         <Logger time-step="1e-2">
+            <Restriction>
+                <Celltype celltype="cells"/>
+            </Restriction>
             <Input>
                 <Symbol symbol-ref="APC"/>
                 <Symbol symbol-ref="CDK1"/>

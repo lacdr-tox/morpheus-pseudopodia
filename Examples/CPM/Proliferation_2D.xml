@@ -31,7 +31,7 @@
             <Property symbol="d" value="0" name="divisions"/>
             <Property symbol="c" value="0" name="color"/>
             <VolumeConstraint target="500" strength="1"/>
-            <SurfaceConstraint target="0.9" strength="1"/>
+            <SurfaceConstraint target="0.9" mode="aspherity" strength="1"/>
             <System solver="euler" time-step="1.0">
                 <Rule symbol-ref="c">
                     <Expression>if( c > 0, c-1, 0)</Expression>
