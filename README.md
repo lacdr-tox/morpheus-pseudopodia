@@ -80,6 +80,23 @@ Morpheus has been added to AUR (https://aur.archlinux.org/packages/morpheus-mode
 yaourt morpheus-modeling
 ```
 
+How to cite Morpheus
+---------------------------
+
+Please use this reference when citing Morpheus:
+
+> J. Starruß, W. de Back, L. Brusch and A. Deutsch.
+> Morpheus: a user-friendly modeling environment for multiscale and multicellular systems biology.
+> Bioinformatics, 30(9):1331-1332, 2014. https://doi.org/10.1093/bioinformatics/btt772
+
+Additionaly, use the Morpheus [Research Resource Identifier (RRID)](https://scicrunch.org/resources) ([SCR_014975](https://scicrunch.org/browse/resources/SCR_014975)) in your method section.
+Include the version number or commit hash for reproducability. Valid examples are:
+
+> Morpheus, RRID:SCR_014975
+> Morpheus, v1.9.2, RRID:SCR_014975
+> Morpheus, e45739bc, RRID:SCR_014975
+
+
 <!--  StatCounter -->
 <script type="text/javascript">
 var sc_project=10858269; 
