@@ -59,7 +59,7 @@ class InteractionEnergy : public Plugin {
 		
 		string XMLName() const override { return "InteractionEnergy"; }
 		void loadFromXML(const XMLNode xNode) override;
-		XMLNode saveToXML() const;
+		XMLNode saveToXML() const override;
 
 		void init(const Scope* scope) override;
 		

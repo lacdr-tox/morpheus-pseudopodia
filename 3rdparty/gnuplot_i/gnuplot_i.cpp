@@ -239,7 +239,42 @@ std::string Gnuplot::get_screen_terminal()
 	return "";
 }
 
-
+std::string Gnuplot::sanitize(const string& s)
+{
+	string out;
+	
+	string token_bdry = "()[].;: _^";
+	
+	int pos = s.find_first_of("_^");
+	if (pos == string::npos) {
+		out = s;
+	}
+	else {
+		out = s.substr(0,pos);
+		
+		while (pos!=string::npos) {
+			bool insert_braces = ((s[pos] == '_' || s[pos] == '^') && s[pos+1] != '{');
+			
+			out+=s[pos];
+			pos++;
+			if (insert_braces) out+="{";
+			
+			
+			int new_pos = s.find_first_of(token_bdry,pos);
+			
+			if (new_pos == string::npos) {
+				out += s.substr(pos,s.size()-pos);
+			}
+			else {
+				out += s.substr(pos,new_pos-pos);
+			}
+			
+			if (insert_braces) out+="}";
+			pos = new_pos;
+		}
+	}
+	return out;
+}
 
 std::string Gnuplot::version()
 {
@@ -309,7 +344,7 @@ Gnuplot::~Gnuplot()
 #elif defined(unix) || defined(__unix) || defined(__unix__) || defined(__APPLE__)
     if (pclose(gnucmd) == -1)
 #endif
-        throw GnuplotException("Problem closing communication to gnuplot");
+        cerr << "Problem closing communication to gnuplot";
 }
 
 

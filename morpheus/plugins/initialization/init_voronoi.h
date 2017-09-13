@@ -16,6 +16,7 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup InitVoronoi
+ * \ingroup ML_Population
 \ingroup InitializerPlugins
 \brief Compute cell areas according to the Voronoi tesselation
 
@@ -23,7 +24,7 @@ Computes the Voronoi tesselation of the empty areas and sets cell IDs according 
 
 - Assumes cell positions have already been initialized.
 - Only uses non-occupied lattice nodes.
-- Respects \ref Domain
+- Respects \ref ML_Domain
 
 \section Example
 \verbatim
@@ -51,8 +52,7 @@ private:
 public:
 	InitVoronoi(){};
 	DECLARE_PLUGIN("InitVoronoi");
-	bool init(CellType* ct);
-	bool run(CellType* ct);
+	bool run(CellType* ct) override;
 
 };
 

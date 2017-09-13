@@ -61,6 +61,8 @@ public:
     };
 
     QString getName() const { return name; }
+    QStringList getXPath() const { if (!parent) return QStringList() << name; else return parent->getXPath() << name; };
+	 QStringList getQualifiedXPath() const;
     nodeController* getParent() const { return parent; }
     QDomNode cloneXML() const {return xmlDataNode.cloneNode(true);}
 

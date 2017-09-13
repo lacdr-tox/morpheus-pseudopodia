@@ -72,6 +72,29 @@ class SymbolAccessorBase {
 			}
 		};
 		
+		multimap<FocusRangeAxis,int> getRestrictions() const {
+			multimap<FocusRangeAxis,int> r;
+			if (scope->getCellType()) {
+				r.insert(make_pair(FocusRangeAxis::CellType,scope->getCellType()->getID()));
+			}
+			
+			if (internal_link==SymbolData::PDELink) {
+				auto field_size = pde_layer->getWritableSize();
+				auto lattice_size = SIM::lattice().size();
+				if (field_size.x == 1 && lattice_size.x>1) {
+					r.insert(make_pair(FocusRangeAxis::X,1));
+				}
+				if (field_size.y == 1 && lattice_size.y>1) {
+					r.insert(make_pair(FocusRangeAxis::Y,1));
+				}
+				if (field_size.z == 1 && lattice_size.z>1) {
+					r.insert(make_pair(FocusRangeAxis::Z,1));
+				}
+			}
+			
+			return r;
+		}
+		
 		typename TypeInfo<S>::SReturn get(CPM::CELL_ID cell_id) const;
 		typename TypeInfo<S>::SReturn get(const VINT& pos) const;
 		typename TypeInfo<S>::SReturn get(CPM::CELL_ID cell_id, const VINT& pos) const;
@@ -84,6 +107,7 @@ class SymbolAccessorBase {
 		bool isInteger() const { return data.integer; };
 		bool isConst() const { return data.invariant; }
 		SymbolData::LinkType getLinkType() const  { return data.link; }
+		bool isComposite() const { return data.is_composite; }
 		bool valid() const;
 		
 		/// Tells whether the symbol is defined for CellType ct
@@ -116,6 +140,7 @@ class SymbolAccessorBase {
 		vector< typename AccessPolicy<S>::Accessor > component_accessors;
 		bool allow_partial_spec;
 		shared_ptr<PDE_Layer> pde_layer;
+		shared_ptr<VectorField_Layer> vector_field_layer;
 
 		const Lattice* lattice;
 		VDOUBLE orth_size, mem_scale;
@@ -130,7 +155,8 @@ class SymbolAccessorBase {
 		// allow the ODESystem access to all symbol interna
 		template <SystemType s> friend class System;
 		friend class Diffusion;
-// 		friend class Equation;
+		friend class Mapper;
+		friend class CellReporter;
 		friend class FocusRange;
 };
 
@@ -262,8 +288,26 @@ bool SymbolAccessorBase<S,AccessPolicy>::init_special() { return false; };
 
 
 template <class S,template <class> class AccessPolicy>
-const string& SymbolAccessorBase<S,AccessPolicy>::getFullName() const{
-	return ( !data.fullname.empty() ? data.fullname : data.name );
+const string&SymbolAccessorBase<S,AccessPolicy>::getFullName() const{
+	if (!data.fullname.empty()) return data.fullname;
+	switch (internal_link) {
+		case SymbolData::PureCompositeLink:
+			for ( const auto&  ac : component_accessors) {
+				if (!ac.data.fullname.empty()) {
+					return ac.data.fullname;
+				}
+			}
+			return data.name;
+		case SymbolData::VecXLink:
+		case SymbolData::VecYLink:
+		case SymbolData::VecZLink:
+		case SymbolData::VecPhiLink:
+		case SymbolData::VecThetaLink:
+		case SymbolData::VecAbsLink:
+			return vec->getFullName();
+		default:
+			return data.name;
+	}
 }
 
 template <class S,template <class> class AccessPolicy>
@@ -501,9 +545,16 @@ bool SymbolRWAccessor<S>::swapBuffer() const
 template <>
 bool SymbolAccessorBase<VDOUBLE, ReadOnlyAccess>::init_special();
 
+template <>
+bool SymbolAccessorBase<VDOUBLE, ReadWriteAccess>::init_special();
+
 // GETTERS
 template <>
 TypeInfo<VDOUBLE>::SReturn SymbolAccessorBase<VDOUBLE,ReadOnlyAccess>::get(const SymbolFocus& f) const;
+
+// SETTERS
+template <>
+bool SymbolRWAccessor<VDOUBLE>::set(const SymbolFocus& f, TypeInfo<VDOUBLE>::Parameter value) const;
 
 ///////////////////////////////////////////777
 // 			SPECIAL CASE double

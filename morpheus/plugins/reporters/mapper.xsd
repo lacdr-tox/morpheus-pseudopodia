@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
-	<xs:group name="CellTypePlugins">
+	<xs:group name="GlobalPlugins">
 		<xs:choice>
-			<xs:element name="CellReporter"	type="CellReporter"/>
+			<xs:element name="Mapper"	type="Mapping_t"/>
 		</xs:choice>
 	</xs:group>
 	
-	<xs:complexType name="CellReporter">
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+<!-- 			<xs:element name="CellReporter"	type="Mapping_t"/> -->
+			<xs:element name="Mapper"	type="Mapping_t"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="Mapping_t">
 		<xs:annotation>
 			<xs:appinfo>Reporter</xs:appinfo>
 		</xs:annotation>
@@ -27,20 +34,6 @@
 			
 			<xs:element name="Polarity" type="cpmVectorPropertyRef" minOccurs="0" />
 
-<!--			<xs:element name="Surface" >
-				<xs:annotation>
-					<xs:documentation>Number of lattice sites at the cell membrane.
-					
-For example, a cell consisting of a single lattice sites will have as surface of 1 site.
-					</xs:documentation>
-				</xs:annotation>
-				<xs:complexType>
-					<xs:all>
-						<xs:element name="Output" type="cpmDoublePropertyRef" />
-					</xs:all>
-					<xs:attribute name="interval" type="cpmUnsignedInteger" use="optional"/>
-				</xs:complexType>
-			</xs:element>-->
 		</xs:all>
 		<xs:attribute name="name" type="cpmString" use="optional" />
 	</xs:complexType>

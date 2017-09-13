@@ -16,6 +16,7 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup InitCellObjects
+ * \ingroup ML_Population
 \ingroup InitializerPlugins
 \brief Initialize a population of cells with predefined geometrical objects in a regular lattice
 
@@ -180,8 +181,8 @@ public:
 	InitCellObjects();
 	DECLARE_PLUGIN("InitCellObjects");
 
-	void loadFromXML(const XMLNode);
-	bool run(CellType* ct);
+	void loadFromXML(const XMLNode) override;
+	bool run(CellType* ct) override;
 
 };
 

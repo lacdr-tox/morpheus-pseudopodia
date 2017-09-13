@@ -9,6 +9,7 @@ namespace SIM {
 		symbol.fullname = property->getName();
 		symbol.name = property->getSymbol();
 		symbol.integer = false;
+		symbol.is_delayed = property->isDelayed();
 		if (property->isCellProperty()) {
 			symbol.link = SymbolData::CellPropertyLink;
 			symbol.granularity = Granularity::Cell;
@@ -20,7 +21,8 @@ namespace SIM {
 		else {
 			symbol.const_prop = property;
 			symbol.link = (SymbolData::GlobalLink);
-			symbol.granularity = Granularity::Global;
+			// granularity is set to undef until it's initialized
+			symbol.granularity = Granularity::Undef;
 			
 			symbol.writable = ! property->isConstant();
 			symbol.invariant = property->isConstant();
@@ -45,6 +47,7 @@ template <> const string Property<VDOUBLE>::constant_xml_name() { return "Consta
 
 template <>
 void Property<double>::init(const Scope* scope, const SymbolFocus& f) {
+	if (initialized) return;
 	AbstractProperty::init(scope, f);
 	
 	value = 0;
@@ -66,6 +69,7 @@ void Property<double>::init(const Scope* scope, const SymbolFocus& f) {
 
 template <>
 void Property<VDOUBLE>::init(const Scope* scope, const SymbolFocus& f) {
+	if (initialized) return;
 	AbstractProperty::init(scope, f); 
 	
 	auto overrides = scope->valueOverrides();
@@ -84,13 +88,13 @@ void Property<VDOUBLE>::init(const Scope* scope, const SymbolFocus& f) {
 }
 
 DelayProperty::DelayProperty(bool cellproperty):
-  Property<double>(false, cellproperty),
+  Property<double>("","",false, cellproperty,true),
   ContinuousProcessPlugin(ContinuousProcessPlugin::DELAY, XMLSpec::XML_NONE),
   tsl_initialized(false)
 { };
 
 DelayProperty::DelayProperty(string name, string symbol, bool cellproperty) :
-  Property<double>(name, symbol, false, cellproperty),
+  Property<double>(name, symbol, false, cellproperty,true),
   ContinuousProcessPlugin(ContinuousProcessPlugin::DELAY, XMLSpec::XML_NONE),
   tsl_initialized(false)
 { };
@@ -121,6 +125,10 @@ void DelayProperty::loadFromXML(XMLNode node)
 	if (!type_registration)
 		cout << "Don't ever remove me! " << " I take care to register this Plugin !!" << endl;
 }
+
+void DelayProperty::init(const Scope* scope) {
+	init(scope, SymbolFocus::global); 
+};
 
 void DelayProperty::init(const Scope* scope, const SymbolFocus& f)
 {

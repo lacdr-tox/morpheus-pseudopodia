@@ -20,6 +20,9 @@ class Symbol;
 // 	 * Resolving symbols during a simulation often demands to determine the context -- a cell or a position or whatsoever
 // 	 * Finally, it is more efficient to just use a single object to fill that gap for all required symbols, which also slenderizes the interface for symbol retrieval.
 // 	*/
+
+enum class FocusRangeAxis { X, Y, Z, NODE, MEM_X, MEM_Y, MEM_NODE, CELL, CellType };
+
 class SymbolFocus {
 public:
 	SymbolFocus();
@@ -35,6 +38,7 @@ public:
 	/// Retrive a membrane position in spherical coordinates. Throws an error if membrane position is not set. 
 	const VINT& membrane_pos() const;
 	const VINT& pos() const;
+	int get(FocusRangeAxis) const;
 	const CPM::INDEX& cell_index() const;
 	void setCell(CPM::CELL_ID cell_id);
 	void setCell(CPM::CELL_ID cell_id, const VINT& pos);

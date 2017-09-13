@@ -17,6 +17,7 @@
 
 
 /** \defgroup CellDeath
+\ingroup ML_CellType
 \ingroup MiscellaneousPlugins
 \brief Remove cell based on a condition
 
@@ -57,8 +58,8 @@ private:
 public:
 	DECLARE_PLUGIN("CellDeath");
 	CellDeath();
-	void init(const Scope* scope);
-	void executeTimeStep();
+	void init(const Scope* scope) override;
+	void executeTimeStep() override;
 };
 
 #endif // APOPTOSIS_H

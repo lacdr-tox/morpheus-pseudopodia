@@ -17,6 +17,7 @@
 #include "core/system.h" // TriggeredSystem
 
 /** \defgroup CellDivision
+\ingroup ML_CellType
 \ingroup MiscellaneousPlugins
 \brief Divide cell based on condition
 
@@ -106,9 +107,9 @@ public:
 	CellDivision();
 	~CellDivision();
 	DECLARE_PLUGIN("CellDivision");
-	void loadFromXML (const XMLNode);
-	void init(const Scope* scope);
-	void executeTimeStep();
+	void loadFromXML (const XMLNode) override;
+	void init(const Scope* scope) override;
+	void executeTimeStep() override;
 };
 
 #endif // CELLDIVISION_H

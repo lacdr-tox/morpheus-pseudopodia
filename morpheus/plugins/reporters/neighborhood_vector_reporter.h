@@ -10,6 +10,7 @@
 //////
 
 /** \defgroup NeighborhoodVectorReporter
+\ingroup ML_CellType
 \ingroup ReporterPlugins
 \brief Reports data about the cell's neighborhood or 'microenvironment' using Vector input. 
 
@@ -19,7 +20,7 @@ NeighborhoodVectorReporter reports about the adjacent Neighborhood of a cell, i.
 
 Information can be retrieved from all contexts within the neighborhood and, if necessary, mapped to a single value.
 
-The neighorhood size is retrieved from the \ref Lattice definition of the boundary neighborhood (Space/Lattice/Neighborhood). 
+The neighorhood size is retrieved from the \ref ML_Lattice definition of the boundary neighborhood (Space/Lattice/Neighborhood). 
 
 A single \b Input element must be specified:
 - \b value: input variable (e.g. VectorProperty). May contain expression.
@@ -75,9 +76,9 @@ class NeighborhoodVectorReporter : public ReporterPlugin
 		DECLARE_PLUGIN("NeighborhoodVectorReporter");
 		NeighborhoodVectorReporter();
 	
-		void init(const Scope* scope);
-		void loadFromXML(const XMLNode);
-		virtual void report();
+		void init(const Scope* scope) override;
+		void loadFromXML(const XMLNode) override;
+		void report() override;
 		
 		int getNeighborCells(const Cell& cell);
 };

@@ -337,6 +337,7 @@ int config::importModel(QSharedPointer< MorphModel > model)
 	if ( ! conf->openModels.isEmpty() && conf->openModels.back()->isEmpty()) {
 		conf->openModels.back()->close();
 		emit conf->modelClosing(conf->openModels.size()-1);
+
 		conf->openModels.pop_back();
 	}
 

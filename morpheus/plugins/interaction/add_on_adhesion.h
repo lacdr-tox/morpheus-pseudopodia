@@ -15,8 +15,9 @@
 #include "core/interfaces.h"
 #include "core/plugin_parameter.h"
 
-/** \defgroup AddOnAdhesionDoc AddOn Adhesion
-\ingroup InteractionEnergyPlugins CPM_InteractionPlugins
+/** \defgroup ML_AddOnAdhesion AddOnAdhesion
+\ingroup ML_Contact
+\ingroup InteractionPlugins
 \brief Increases adhesion between neighboring CPM cells based on cell or membrane property
 
 Increases adhesion (i.e. decreases cell-contact energy) between neighboring CPM cells based on cell property or membrane property.
@@ -51,7 +52,7 @@ class AddonAdhesion: public Interaction_Addon
 	public:
 		DECLARE_PLUGIN("AddonAdhesion");
 		AddonAdhesion();
-		double interaction(CPM::STATE s1, CPM::STATE s2);
+		double interaction(CPM::STATE s1, CPM::STATE s2) override;
 };
 
 #endif // ADDONADHESION_H

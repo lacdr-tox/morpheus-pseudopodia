@@ -40,44 +40,46 @@ void TimeScheduler::init()
 		const_cast<Scope*>(tsl->scope())->registerTimeStepListener(tsl);
 		
 		set<SymbolDependency> dep_sym = tsl->getDependSymbols();
-		for (auto dep : dep_sym) {
+		for (const auto& dep : dep_sym) {
 			assert(dep.scope);
 			const_cast<Scope*>(dep.scope)->registerSymbolReader(tsl,dep.name);
 		}
 		
 		set<SymbolDependency> out_sym = tsl->getOutputSymbols();
-		for (auto out : out_sym) {
+		for (const auto& out : out_sym) {
 			assert(out.scope);
 			const_cast<Scope*>(out.scope)->registerSymbolWriter(tsl,out.name);
 		}
 	}
 	
 	/// Propagate the intrinsic TSL time steps through to scopes of their dependencies
-	double minimal_time_step = 1.0;
+	const double unset_time = 10e10;
+	ts.minimal_time_step = 10e10;
 
 	for (auto tsl : ts.all_listeners) {
 		if (tsl->timeStep() > 0) {
 			
 			double time_step = tsl->timeStep();
-			if (time_step < minimal_time_step)
-				minimal_time_step = time_step;
+			if (time_step < ts.minimal_time_step)
+				ts.minimal_time_step = time_step;
 			
 			cout << "\n TimeStepListener \"" << tsl->XMLName() << "\" propagates its time step " << time_step << endl;
 			cout << " Upstream: " << endl;
 			set<SymbolDependency> dep_sym = tsl->getDependSymbols();
-			for (auto dep : dep_sym) {
+			for (const auto& dep : dep_sym) {
 				cout << " -> " << dep.name  << endl;
 				const_cast<Scope*>(dep.scope)->propagateSinkTimeStep(dep.name, time_step);
 			}
 			cout << " Downstream: " << endl;
 			set<SymbolDependency> out_sym = tsl->getOutputSymbols();
-			for (auto out : out_sym) {
+			for (const auto& out : out_sym) {
 				cout << "-> "<< out.name << endl;
 				const_cast<Scope*>(out.scope)->propagateSourceTimeStep(out.name, time_step);
 			}
 		}
 	}
 	
+	const_cast<Scope*>(SIM::getGlobalScope())->propagateSourceTimeStep( SymbolData::Time_symbol, ts.minimal_time_step);
 	
 	// Splitting up the listeners in the various subclasses
 	for (uint i=0; i<ts.all_listeners.size(); i++) {
@@ -111,8 +113,10 @@ void TimeScheduler::init()
 	// symbol dependencies can be registered multiple times
 	for (uint i=0; i<ts.all_phase2.size(); i++) {
 		set<SymbolDependency> out_sym = ts.all_phase2[i]->getOutputSymbols();
-		for (auto sym : out_sym) {
-			const_cast<Scope*>(sym.scope)->addUnresolvedSymbol(sym.name);
+		for (const auto& sym : out_sym) {
+			if (!sym.scope->isSymbolDelayed(sym.name) && sym.name != SymbolData::CellCenter_symbol) {
+				const_cast<Scope*>(sym.scope)->addUnresolvedSymbol(sym.name);
+			}
 		}
 	}
 	
@@ -132,9 +136,8 @@ void TimeScheduler::init()
 				continue;
 			
 			set<SymbolDependency> dep_syms = ts.all_phase2[j]->getDependSymbols();
-			
 			set<string> unresolved_symbols;
-			for (auto dep: dep_syms ){
+			for (const auto& dep: dep_syms ){
 				if (const_cast<Scope*>(dep.scope)->isUnresolved(dep.name)) {
 					unresolved_symbols.insert(dep.name);
 				}
@@ -142,8 +145,8 @@ void TimeScheduler::init()
 			
 			// Try to remove the ouput symbols of the Listener, in case they were wrongly registered also as input symbols
 			if ( ! unresolved_symbols.empty()) {
-				set<SymbolDependency> out_syms = ts.all_phase2[j]->getDependSymbols();
-				for (auto out: out_syms ){
+				set<SymbolDependency> out_syms = ts.all_phase2[j]->getOutputSymbols();
+				for (const auto& out: out_syms ){
 					if (unresolved_symbols.count(out.name)) {
 						unresolved_symbols.erase(out.name);
 					}
@@ -153,8 +156,8 @@ void TimeScheduler::init()
 			// 
 			if (unresolved_symbols.empty()) {
 				// Remove the output symbols from beeing unresolved
-				set<SymbolDependency> out_syms = ts.all_phase2[j]->getDependSymbols();
-				for (auto out: out_syms ){
+				set<SymbolDependency> out_syms = ts.all_phase2[j]->getOutputSymbols();
+				for (const auto& out: out_syms ){
 					const_cast<Scope*>(out.scope)->removeUnresolvedSymbol(out.name);
 				}
 				// Add the Listener to the ordered container
@@ -188,6 +191,10 @@ void TimeScheduler::init()
 	ts.all_phase2 = ordered_phase2;
 	ts.reporter = ordered_reporters;
 	ts.instantaneous = ordered_instant;
+	if (ts.minimal_time_step != unset_time)
+		ts.time_precision_patch = ts.minimal_time_step * 1e-3;
+	else 
+		ts.time_precision_patch = 1e-3;
 	
 	
 	cout << " \n";
@@ -247,7 +254,7 @@ void TimeScheduler::init()
 	cout << "======================================================\n";
 	cout << endl;
 	
-	ts.current_time = 0;
+	ts.current_time = SIM::getStartTime();
 	
 	if (ts.stop_condition) {
 		ts.stop_condition->init(SIM::getGlobalScope());
@@ -263,17 +270,15 @@ void TimeScheduler::compute()
 	TimeScheduler& ts = getInstance(); 
 	try {
 		if (! ts.is_state_valid ) {
-			// Now run all Reporters, Equations.
+			// Now run all Reporters, Equations to obtain a valid data state
 			for (uint i=0; i<ts.reporter.size(); i++) {
-				// if (ts.reporter[i]->currentTime() <= ts.current_time + ts.time_precision_patch ) {
-					current_plugin = ts.reporter[i];
-					ts.reporter[i]->executeTimeStep_internal();
-				//}
+				current_plugin = ts.reporter[i];
+				ts.reporter[i]->executeTimeStep_internal();
 			}
 
 			// Now run all analysers
 			for (uint i=0; i<ts.analysers.size(); i++) {
-				if ( ! ts.analysers[i]->endState() ) {
+				if (ts.analysers[i]->currentTime() <= ts.current_time + ts.time_precision_patch) {
 					current_plugin = ts.analysers[i];
 					ts.analysers[i]->executeTimeStep_internal();
 				}
@@ -288,8 +293,16 @@ void TimeScheduler::compute()
 		}
 			
 		double stop_time = ts.getStopTime();
+		
 		while (ts.current_time + ts.time_precision_patch < stop_time) {
+
+			// compute the maximum time we may travel to fullfill output requirements 
 			double min_current_time = stop_time;
+			
+			for (const auto& output : ts.analysers) {
+				if (output->currentTime() /*+ output->timeStep()*/ < min_current_time /*&& !output->endState()*/)
+					min_current_time = output->currentTime() /*+ output->timeStep()*/;
+			}
 			
 			// We provide a time schedule for time CONTINUOUS processes, where X(t) just depends on X(t-1)
 			// And a second schedule for INSTANTANEOUS events for which we use the synchronous X(t) = f (X(t-1))events
@@ -343,10 +356,8 @@ void TimeScheduler::compute()
 			
 			for (uint i=0; i<ts.analysers.size(); i++) {
 				if (ts.analysers[i]->currentTime() <= ts.current_time + ts.time_precision_patch) {
-					if( !ts.analysers[i]->endState() ) {
-						current_plugin = ts.analysers[i];
-						ts.analysers[i]->executeTimeStep_internal();
-					}
+					current_plugin = ts.analysers[i];
+					ts.analysers[i]->executeTimeStep_internal();
 				}
 			}
 			

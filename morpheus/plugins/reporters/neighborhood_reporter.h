@@ -10,6 +10,8 @@
 //////
 
 /** \defgroup NeighborhoodReporter
+\ingroup ML_Global
+\ingroup ML_CellType
 \ingroup ReporterPlugins
 
 \brief Reports data about a node's or a cell's neighborhood or 'microenvironment'. 
@@ -25,7 +27,7 @@ NeighborhoodReporter reports about the adjacent Neighborhood of a cell, i.e. the
 
 Information can be retrieved from all contexts within the neighborhood (i.e. Property or MembraneProperty of neighboring cells, Field concentrations) and, if necessary, mapped to a single value.
 
-The neighorhood size is retrieved from the \ref CPM definition of the ShapeSurface neighborhood (CPM/). 
+The neighorhood size is retrieved from the \ref ML_CPM definition of the ShapeSurface neighborhood (CPM/). 
 
 A single \b Input element must be specified:
 - \b value: input variable (e.g. Property, MembraneProperty or Field). May contain expression.

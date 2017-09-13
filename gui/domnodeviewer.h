@@ -102,7 +102,7 @@ signals:
 //    void nameChanged(nodeController* node); /*!< Signal sends when the specified name of the root node changed. */
     void xmlElementCopied(QDomNode node); /*!< Signal sends a xmlNode which shall be copied. */
 	void nodeSelected(nodeController* node);
-	void xmlElementSelected(QString element);
+	void xmlElementSelected(QStringList xPath);
 };
 
 #endif // DOMNODEVIEWER_H

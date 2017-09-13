@@ -17,7 +17,8 @@
 #include "core/cell_property_accessor.h"
 using namespace SIM;
 
-/** \defgroup LengthConstraint Length Constraint
+/** \defgroup LengthConstraint LengthConstraint
+\ingroup ML_CellType
 \ingroup CellShapePlugins
 \brief Penalizes deviations from target cell length
 \ingroup CPM_EnergyPlugins
@@ -28,7 +29,7 @@ using namespace SIM;
 
 The length constraint penalizes deviations of the length of a cell \f$ l_{\sigma, t} \f$ from a given target length \f$ L_{target} \f$, specified in units of lattice sites.
 
-The length of a cell is the length of the semimajor axis of an ellipsoid approximation of the cell shape, using the inertia tensor.
+The length of a cell is estimated as the length of the semimajor axis of an ellipsoid approximation of the cell shape, using the inertia tensor.
 
 The Hamiltonian is given by: \f$ E_{Length} = \sum_{\sigma} \lambda_L \cdot ( l_{\sigma, t} - L_{target} )^2 \f$
 
@@ -81,8 +82,8 @@ public:
 	LengthConstraint();
 	DECLARE_PLUGIN("LengthConstraint");
 
-	double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const;
-	double hamiltonian(CPM::CELL_ID cell_id) const;
+	double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const override;
+	double hamiltonian(CPM::CELL_ID cell_id) const override;
 // 	double long_cell_axis2(CPM::CELL_ID id) const ;
 // 	void set_update_notify( CPM::CELL_ID cell_id, const CPM::Update& update);
 // 	void update_notify(CPM::CELL_ID cell_id, const CPM::Update& update);

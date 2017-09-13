@@ -69,7 +69,7 @@ endforeach()
 #message(STATUS "AppDoc header files (${APP_DOC_HEADER_NUM}) are ${APP_DOC_HEADERS}")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/appdoc/morpheus.doxy.in ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy @ONLY)
 
-SET(DOXYGEN_EXTRA_FILES  "appdoc/doxygen_header.html" "appdoc/doxygen_footer.html" "appdoc/morpheus_style.css")
+SET(DOXYGEN_EXTRA_FILES  "appdoc/doxygen_header.html" "appdoc/doxygen_footer.html" "appdoc/morpheus_style.css" "appdoc/dynsections.js" "appdoc/jquery.js")
 
 
 IF (DOXYGEN_QHP_PATCH)
@@ -86,8 +86,16 @@ IF (DOXYGEN_QHP_PATCH)
 	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	  COMMENT "Generating in-application documentation with Doxygen" VERBATIM
   )
-ELSE()
-  #message("Doxygen Version ${DOXYGEN_VERSION} is above 1.8.9. Not applying QHP patch.")
+ELSEIF(DOXYGEN_VERSION STREQUAL "1.8.11")
+  ADD_CUSTOM_COMMAND(
+	  OUTPUT ${QT_HELP_PROJECT}
+	  COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy
+	  COMMAND sed -itmp "s/<files>/<files><file>dynsections\\.js<\\/file> <file>morpheus\\.png<\\/file>/" ${QT_HELP_PROJECT} 
+	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy ${APP_DOC_HEADERS}  ${DOXYGEN_EXTRA_FILES}
+	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	  COMMENT "Generating in-application documentation with Doxygen" VERBATIM
+  )
+ELSE()  
   ADD_CUSTOM_COMMAND(
 	  OUTPUT ${QT_HELP_PROJECT}
 	  COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy
@@ -327,12 +335,15 @@ ELSEIF("${MORPHEUS_OS}" STREQUAL "APPLE")
 		DESTINATION share/morpheus
 	)
 ELSEIF("${MORPHEUS_OS}" STREQUAL "WIN32")
+	find_library(LIB_STDCXX "libstdc++-6" )
+	find_library(LIB_GCC_S_DW2 "libgcc_s_dw2-1")
+	find_library(LIB_WINPTHREAD "libwinpthread-1" PATHS ${QT_BINARY_DIR} )
 	INSTALL( TARGETS ${GUI_EXEC_NAME} RUNTIME DESTINATION .)
-	INSTALL( FILES ${QT_BINARY_DIR}/QtCore4.dll ${QT_BINARY_DIR}/QtGui4.dll ${QT_BINARY_DIR}/QtCLucene4.dll ${QT_BINARY_DIR}/QtHelp4.dll ${QT_BINARY_DIR}/QtNetwork4.dll ${QT_BINARY_DIR}/QtWebKit4.dll ${QT_BINARY_DIR}/QtXml4.dll ${QT_BINARY_DIR}/QtSvg4.dll ${QT_BINARY_DIR}/QtSql4.dll ${QT_BINARY_DIR}/libstdc++-6.dll ${QT_BINARY_DIR}/libgcc_s_dw2-1.dll ${QT_BINARY_DIR}/libwinpthread-1.dll DESTINATION .)
+	INSTALL( FILES ${LIB_STDCXX} ${LIB_GCC_S_DW2} DESTINATION . )
+	INSTALL( FILES ${QT_BINARY_DIR}/QtCore4.dll ${QT_BINARY_DIR}/QtGui4.dll ${QT_BINARY_DIR}/QtCLucene4.dll ${QT_BINARY_DIR}/QtHelp4.dll ${QT_BINARY_DIR}/QtNetwork4.dll ${QT_BINARY_DIR}/QtWebKit4.dll ${QT_BINARY_DIR}/QtXml4.dll ${QT_BINARY_DIR}/QtSvg4.dll ${QT_BINARY_DIR}/QtSql4.dll ${LIB_WINPTHREAD} DESTINATION .)
+
 	INSTALL (FILES ${QT_QSQLITE_PLUGIN_RELEASE} DESTINATION sqldrivers )
-	INSTALL( FILES ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED} ${QT_HELP_MATHJAX_COMPRESSED}
-		DESTINATION .
-	)
+	INSTALL( FILES ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED} ${QT_HELP_MATHJAX_COMPRESSED} DESTINATION . )
 ENDIF()
 
 SET(GUI_EXEC_NAME ${GUI_EXEC_NAME} PARENT_SCOPE)

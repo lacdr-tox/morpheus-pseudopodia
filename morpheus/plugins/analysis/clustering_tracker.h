@@ -10,6 +10,7 @@
 //////
 
 /** \defgroup clustering_tracker Clustering Tracker
+\ingroup ML_Analysis
 \ingroup AnalysisPlugins
 \brief Identifies and writes distribution of cell clusters within a single celltype
 
@@ -65,10 +66,10 @@ public:
 	DECLARE_PLUGIN("ClusteringTracker");
 	Clustering_Tracker();
 		
-	virtual void finish(double time);
-	virtual void analyse(double time);
-	virtual void init(const Scope* scope);
-	virtual void loadFromXML(const XMLNode );
+	virtual void finish() override;
+	virtual void analyse(double time) override;
+	virtual void init(const Scope* scope) override;
+	virtual void loadFromXML(const XMLNode ) override;
 	
 private:
 	fstream storage;

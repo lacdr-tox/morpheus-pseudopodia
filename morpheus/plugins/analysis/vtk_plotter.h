@@ -21,8 +21,10 @@
 #include <fstream>
 
 using namespace SIM;
-/** \ingroup AnalysisPlugins
+/**
 \defgroup VtkPlotter
+\ingroup ML_Analysis
+\ingroup AnalysisPlugins
 \brief Writes cells and fields to legacy VTK files
 
 Writes cells and fields to legacy VTK files. Currently, only ASCII format is supported and no compression is applied. 
@@ -116,13 +118,9 @@ private:
 public:
 	DECLARE_PLUGIN("VtkPlotter");
 	
-	virtual void loadFromXML(const XMLNode);
-	virtual void init(const Scope* scope);
-	virtual void analyse(double time);	
-	virtual void finish(double time);
-
-	VtkPlotter(){};
-	~VtkPlotter(){};
+	virtual void loadFromXML(const XMLNode) override;
+	virtual void init(const Scope* scope) override;
+	virtual void analyse(double time) override;
 };
 
 #endif

@@ -46,10 +46,17 @@ Cell::Cell(CPM::CELL_ID cell_name, CellType* ct)
 void Cell::init()
 {
 	for (auto prop : p_properties) {
-		prop->init(celltype->getScope(), SymbolFocus(id));
+		try {
+			prop->init(celltype->getScope(), SymbolFocus(id));
+		}
+		catch (string e) { throw MorpheusException(e, prop->saveToXML()); }
 	}
+
 	for (auto mem : p_membranes) {
-		mem->init(celltype->getScope(), SymbolFocus(id));
+		try {
+			mem->init(celltype->getScope(), SymbolFocus(id));
+		}
+		catch (string e) { throw MorpheusException(e, mem->saveToXML()); }
 	}
 }
 

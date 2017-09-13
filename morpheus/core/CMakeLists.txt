@@ -16,11 +16,11 @@ SET(morpheus_src
 	interaction_energy.cpp
 	simulation.cpp
 	cpm_layer.cpp
-    	cpm_shape.cpp
+	cpm_shape.cpp
 	cpm_shape_tracker.cpp
 	edge_tracker.cpp
 	cpm.cpp
-	pde_layer.cpp
+	field.cpp
 	diffusion.cpp
 	property.cpp
 	symbol.cpp
@@ -35,7 +35,7 @@ SET(morpheus_src
 	diff_eqn.cpp
 	system.cpp
 	cell_membrane_accessor.cpp
-	membrane_pde.cpp
+	membrane_property.cpp
 	membranemapper.cpp
 	data_mapper.cpp
 	super_cell.cpp
@@ -53,7 +53,7 @@ SET(morpheus_src ${morpheus_src} ${tools_src} )
 CONFIGURE_FILE(config.h.cmake config.h)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR} ${TIFF_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
 
-option(MORPHEUS_CORE_CATCH "Catch excaptions in the simulator core. Required for GUI integration. May be switched off for debuging purposese. " ON)
+option(MORPHEUS_CORE_CATCH "Catch exceptions in the simulator core. Required for GUI integration. May be switched off for debuging purposese. " ON)
 mark_as_advanced(MORPHEUS_CORE_CATCH)
 
 if (NOT(MORPHEUS_CORE_CATCH))
@@ -137,13 +137,11 @@ IF  ( "${MORPHEUS_OS}" STREQUAL "WIN32")
 	IF (GNUPLOT_ROOT)
 		message(STATUS "Gnuplot Path is ${GNUPLOT_ROOT}")
 		SET(GNUPLOT_LIBRARIES 
-			${GNUPLOT_ROOT}/zlib1.dll
 			${GNUPLOT_ROOT}/freetype6.dll
 			${GNUPLOT_ROOT}/intl.dll
 			${GNUPLOT_ROOT}/libcairo-2.dll
 			${GNUPLOT_ROOT}/libexpat-1.dll
 			${GNUPLOT_ROOT}/libfontconfig-1.dll
-#			${GNUPLOT_ROOT}/libgcc_s_dw2-1.dll
 			${GNUPLOT_ROOT}/libgd-2-733361a31aab.dll
 			${GNUPLOT_ROOT}/libglib-2.0-0.dll
 			${GNUPLOT_ROOT}/libgmodule-2.0-0.dll
@@ -156,7 +154,6 @@ IF  ( "${MORPHEUS_OS}" STREQUAL "WIN32")
 			${GNUPLOT_ROOT}/libpangoft2-1.0-0.dll
 			${GNUPLOT_ROOT}/libpangowin32-1.0-0.dll
 			${GNUPLOT_ROOT}/libpng14-14.dll
-#			${GNUPLOT_ROOT}/libstdc++-6.dll
 			${GNUPLOT_ROOT}/lua51.dll
 			${GNUPLOT_ROOT}/wxbase28_gcc_custom.dll
 			${GNUPLOT_ROOT}/wxmsw28_core_gcc_custom.dll

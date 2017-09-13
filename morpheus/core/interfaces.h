@@ -19,6 +19,7 @@
 
 class AbstractPluginParameter;
 class PluginParameterBase;
+template <class T, template <class S, class R> class XMLValueInterpreter, class RequirementPolicy> class PluginParameter_Shared;
 template <class T> class ExpressionEvaluator;
 template <class T> class ThreadedExpressionEvaluator;
 class CellType;
@@ -114,11 +115,13 @@ void init() {
  * Several inteface classes to derive from allow a Plugin to interfere with the simulation
  * system.
  * 
- *  - CPM_Check_Update
- *  - CPM_Energy
- *  - CPM_Update_Listener
- *  - TimeStepListener
- *  - Analysis_Listener
+ *  - \ref CPM_Check_Update
+ *  - \ref CPM_Energy
+ *  - \ref CPM_Update_Listener
+ *  - \ref ContinuousProcessPlugin
+ *  - \ref InstantaneousProcessPlugin
+ *  - \ref ReporterPlugin
+ *  - \ref AnalysisPlugin
  * 
  * Derive from this class, add plugin interfaces and develop your own plugins
  * 
@@ -151,6 +154,7 @@ inline bool operator==(const SymbolDependency& lhs, const SymbolDependency& rhs)
 	return (lhs.name == rhs.name && lhs.scope == rhs.scope);
 }
 
+/** \defgroup Plugins Plugins */
 
 /** \brief Abstract plugin base class
  * 
@@ -185,7 +189,7 @@ class Plugin {
 // 		static multiset<string> plugins_alive;
 		static int plugins_alive;
 		/// Get an XMLNode containing the XML specification the plugin has loaded
-		XMLNode saveToXML() const;
+		virtual XMLNode saveToXML() const;
 		
 		/** \brief Load a plugin confuguration from XML
 		 *  You just have to take care for the XML Tags not treated by the plugin interface or PluginParmeters
@@ -201,6 +205,9 @@ class Plugin {
 		/// Loading from XML, initialisation and dependency tracking is done automatically
 		/// **Note**  The platform takes a reference to the parameter, so don't move/copy the parameter after registration.
 		void registerPluginParameter( PluginParameterBase& parameter );
+		
+		template <class T, template <class S, class R> class XMLValueInterpreter, class RequirementPolicy >
+		void registerPluginParameter( PluginParameter_Shared<T, XMLValueInterpreter, RequirementPolicy>& parameter ) { registerPluginParameter(*parameter); }
 /*		// Can be used to 
 		template <class T>
 		void registerUsedSymbol( const SymbolAccessor<T>& parameter );
@@ -254,9 +261,10 @@ bool PClass::factory_registration = registerPlugin<PClass>(); /* PluginFactory::
 
 
 /** \defgroup CPM_EnergyPlugins CPM Hamiltonian Plugins
- *  \ingroup CPM
- * 
- * Plugin interface for defining an energy term in the CPM hamiltonian.
+ *  \ingroup Plugins
+ */
+
+/** \brief Plugin interface for defining an energy term in the CPM hamiltonian.
  * The delta method has to provide the change in energy due to a potential update with respect to cell cell_id.
  * The hamiltonian is the total energy of a cell with respect to this energy term, but is currently not used at all.
  */
@@ -277,12 +285,12 @@ class CPM_Energy : virtual public Plugin {
 // };
 
 
-/** \defgroup CPM_CheckUpdatePlugins CPM Check Update Plugins
- *  \ingroup CPM
+/** \defgroup CPM_Check_UpdatePlugins CPM Check Update Plugins
+ *  \ingroup Plugins
  *  Plugin interface for defining a rule to check for the CPM before updates take place.
  */
 
-/** Plugin interface for defining an update check rule for the CPM.
+/** \brief Plugin interface for defining an update check rule for the CPM.
  * The update_check is called for any cell_id involved in an update. This way certain updates can be prevented, e.g
  * for creating a connectivity constraint or freezing certain cells.
  */
@@ -299,11 +307,11 @@ class CPM_Check_Update : virtual public Plugin
 };
 
 /** \defgroup CPM_UpdateListenerPlugins CPM Update Listener Plugins
- *  \ingroup CPM
+ *  \ingroup Plugins
  *  Plugin interface for getting notifications of cell updates check rule for the CPM.
  */
 
-/** Plugin interface for getting notifications of cell updates check rule for the CPM.
+/** \brief Plugin interface for getting notifications of cell updates check rule for the CPM.
  * 
  * In addition, when a cell is selected for update, the set_update_notify method is called.
  */
@@ -402,7 +410,9 @@ private:
 		std::chrono::high_resolution_clock highc;
 };
 
-/// \defgroup ContinuousProcessPlugins Continuous Process Plugins
+/** \defgroup ContinuousProcessPlugins Continuous Process Plugins
+\ingroup Plugins
+**/
 
 /** \brief Interface providing basic functionality and methods to develop plugins for time continuous processes
  * 
@@ -436,7 +446,9 @@ private:
 
 };
 
-/// \defgroup InstantaneousProcessPlugins Instantaneous Process Plugins
+/** \defgroup InstantaneousProcessPlugins Instantaneous Process Plugins
+\ingroup Plugins
+*/
 
 /** \brief Interface providing basic functionality and methods to develop plugins for instantaneous processes
  * 
@@ -495,9 +507,8 @@ private:
 class AnalysisPlugin : public TimeStepListener {
 public :
 	AnalysisPlugin() : TimeStepListener(TimeStepListener::XMLSpec::XML_OPTIONAL) {};
-	
-	void init(const Scope* scope) override { TimeStepListener::init(scope); end_state = (timeStep() <= 0);}
-	bool endState() { return end_state; };
+// 	void loadFromXML(const XMLNode node) override { TimeStepListener::loadFromXML(node); if (timeStep()==0) is_adjustable = true;};
+	void init(const Scope* scope) override;
 	void setTimeStep(double ts) override;
 	/** Callback for scheduled notifications. **/
 	virtual void analyse(double time) = 0;
@@ -511,7 +522,6 @@ public :
 	static int max_time_precision;
 private:
 	void executeTimeStep_impl() final { analyse(SIM::getTime()); };
-	bool end_state;
 };
 
 
@@ -530,10 +540,8 @@ class Field_Initializer : virtual public Plugin
 		virtual bool run(PDE_Layer* pde) =0;
 };
 
-/**
- * \defgroup CPM_InteractionPlugins CPM Interaction Plugins
- *  \ingroup CPM
- *  \ingroup Plugins
+/** \defgroup CPM_InteractionPlugins CPM Interaction Plugins
+ \ingroup Plugins
  */
 
 /// Interface to override the interaction energies between CPM cells computed by the CPM logic

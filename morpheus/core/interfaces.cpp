@@ -25,6 +25,8 @@ void Plugin::registerPluginParameter(PluginParameterBase& parameter ) {
 	plugin_parameters2.push_back(&parameter);
 }
 
+
+
 void Plugin::registerInputSymbol(string name, const Scope* scope)
 {
 	if (! scope) 
@@ -120,6 +122,7 @@ TimeStepListener::TimeStepListener(TimeStepListener::XMLSpec spec) : xml_spec(sp
 	 
 	valid_time = -1;
 	time_step = -1;
+	latest_time_step = -1;
 	execute_systemtime = 0;
 }
 
@@ -141,7 +144,7 @@ void TimeStepListener::updateSourceTS(double ts) {
 	
 	// This is the case for the most processes, that run on the freq of their input
 	if (is_adjustable) {
-		if (time_step == -1 || time_step > ts) {
+		if (time_step <= 0 || time_step > ts) {
 			setTimeStep(ts);
 			propagateSourceTS(ts);
 			// This is notifying all dowstream processes
@@ -323,6 +326,15 @@ void ReporterPlugin::updateSinkTS(double ts)
 
 
 int AnalysisPlugin::max_time_precision =0;
+
+void AnalysisPlugin::init(const Scope* scope)
+{
+	TimeStepListener::init(scope);
+	if (!is_adjustable && timeStep() <= 0) {
+		setTimeStep(SIM::getStopTime()-SIM::getStartTime());
+		valid_time=SIM::getStopTime();
+	} 
+}
 
 void AnalysisPlugin::setTimeStep(double ts){
 	TimeStepListener::setTimeStep(ts); 

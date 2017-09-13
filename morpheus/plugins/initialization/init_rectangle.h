@@ -16,6 +16,7 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup InitRectangle
+ * \ingroup ML_Population
 \ingroup InitializerPlugins
 \brief Initializes cells as single nodes arranged in a rectangle
 
@@ -71,7 +72,7 @@ private:
 public:
 	InitRectangle();
 	DECLARE_PLUGIN("InitRectangle");
-	bool run(CellType* ct);
+	bool run(CellType* ct) override;
 };
 
 #endif

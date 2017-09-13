@@ -13,11 +13,12 @@
 #define MEMBRANE_PDE_H
 
 #include "core/interfaces.h"
-#include "core/pde_layer.h"
+#include "core/field.h"
 #include "core/scales.h"
 
 /**
-\defgroup MembraneProperty
+\defgroup ML_MembraneProperty MembraneProperty
+\ingroup ML_CellType
 \ingroup Symbols
 
 Symbol with a variable scalar field, mapped to a cell membrane that associates a scalar value to every lattice site in the domain.
@@ -53,7 +54,7 @@ private:
 public:
 	DECLARE_PLUGIN("MembraneProperty");
 	
-	void loadFromXML(const XMLNode );
+	void loadFromXML(const XMLNode ) override;
 	
 	string getSymbolName( void );
 	string getName( void );

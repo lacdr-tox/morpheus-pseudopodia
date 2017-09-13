@@ -15,8 +15,9 @@
 #include "core/interfaces.h"
 #include "core/plugin_parameter.h"
 
-/** \defgroup HomophilicAdhesionDoc Homophilic Adhesion 
-\ingroup InteractionEnergyPlugins CPM_InteractionPlugins
+/** \defgroup ML_HomophilicAdhesion HomophilicAdhesion 
+\ingroup  ML_Contact
+\ingroup InteractionPlugins
 \brief Homophilic adhesive interaction between neighboring CPM cells.
 
 Change cell-contact energy by factor based on binding between two identical adhesives \f$ a_{\sigma} \f$ on adjacent cells (i.e. cadherins).
@@ -76,7 +77,7 @@ class HomophilicAdhesion : public Interaction_Addon
 	public:
 		DECLARE_PLUGIN("HomophilicAdhesion");
 		HomophilicAdhesion();
-		double interaction(CPM::STATE s1, CPM::STATE s2);
+		double interaction(CPM::STATE s1, CPM::STATE s2) override;
 };
 
 #endif // HOMOPHILICADHESION_H

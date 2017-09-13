@@ -170,6 +170,13 @@ class Gnuplot
 		static std::string get_screen_terminal();
 
 		// ----------------------------------------------------------------------------
+		/// \brief sanitize a string for plotting
+		///
+		/// \return sanitized string
+		// ----------------------------------------------------------------------------
+		static std::string sanitize(const string& s);
+
+		// ----------------------------------------------------------------------------
 		/// \brief read GnuPlot version
 		///
 		/// \return version number

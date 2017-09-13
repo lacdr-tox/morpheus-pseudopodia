@@ -15,13 +15,13 @@
 #include "core/interfaces.h"
 #include "core/plugin_parameter.h"
 
-/** \defgroup HeterophilicAdhesionDoc  Heterophilic Adhesion 
-\ingroup InteractionEnergyPlugins CPM_InteractionPlugins
+/** \defgroup ML_HeterophilicAdhesion  HeterophilicAdhesion 
+\ingroup ML_Contact InteractionPlugins
 \brief Heterophilic adhesive interaction between neighboring CPM cells.
 
 Increases adhesion (i.e. decreases cell-contact energy) between neighboring CPM cells based on heterophilic binding, represented in cell or membrane properties.
 
-\f$ \Delta E = s \cdot \big( a_{\sigma1}^{1} \cdot a_{\sigma2}^{2} + a_{\sigma1}^{1} \cdot a_{\sigma2}^{2}  \big)
+\f$ \Delta E = s \cdot \big( a_{\sigma1}^{1} \cdot a_{\sigma2}^{2} + a_{\sigma1}^{2} \cdot a_{\sigma2}^{1}  \big) \f$
 
 */
 
@@ -35,7 +35,7 @@ class HeterophilicAdhesion : public Interaction_Addon
 	public:
 		DECLARE_PLUGIN("HeterophilicAdhesion");
 		HeterophilicAdhesion();
-		double interaction(CPM::STATE s1, CPM::STATE s2);
+		double interaction(CPM::STATE s1, CPM::STATE s2) override;
 };
 
 #endif // HETEROPHILICADHESION_H

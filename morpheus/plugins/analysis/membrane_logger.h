@@ -17,6 +17,7 @@
 #include "gnuplot_i/gnuplot_i.h"
 /**
 \defgroup MembraneLogger
+\ingroup ML_Analysis
 \ingroup AnalysisPlugins
 \brief Logs and plots 2D MembraneProperties
 
@@ -62,7 +63,7 @@ private:
 	vector<CPM::CELL_ID> cellids;
  	PluginParameter2< string , XMLValueReader, OptionalPolicy> cell_ids_str;
 
-	vector< PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> > symbols;
+	vector< PluginParameter_Shared<double, XMLReadableSymbol, RequiredPolicy> > symbols;
 	vector< string > symbol_names;
 
 	
@@ -102,7 +103,7 @@ private:
 	void plotData(vector<string> symbol_names, double time, uint cellid=-1);
 	
 	string getFileName(string symbol, string extension, uint cellid=-1);
-	void writeMembrane(const PluginParameter2<double, XMLReadableSymbol, RequiredPolicy>& symbol, CPM::CELL_ID id, ostream& output=cout);
+	void writeMembrane(const PluginParameter_Shared<double, XMLReadableSymbol, RequiredPolicy> symbol, CPM::CELL_ID id, ostream& output=cout);
 	void writeCommand3D(vector<string> filenames);
 	void log(double time);
 	vector<CPM::CELL_ID> parseCellIDs();
@@ -112,12 +113,12 @@ public:
 	~MembraneLogger(); // default destructor for cleanup
 	DECLARE_PLUGIN("MembraneLogger");
 	
-	virtual void analyse(double time);
-	virtual void loadFromXML(const XMLNode );
-	virtual set< string > getDependSymbols();
+	void analyse(double time) override;
+	void loadFromXML(const XMLNode ) override;
+// 	virtual set< string > getDependSymbols();
 
-	virtual void init(const Scope* scope);
-	virtual void finish(double time);
+	void init(const Scope* scope) override;
+	void finish() override;
 };
 
 #endif // LOGGER_H

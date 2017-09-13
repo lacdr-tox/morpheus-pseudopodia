@@ -17,25 +17,40 @@
 #include "gnuplot_i/gnuplot_i.h"
 #include <fstream>
 #include <sstream>
-/** \ingroup AnalysisPlugins
+/** 
  *  \defgroup Gnuplotter Gnuplotter
+ *  \ingroup ML_Analysis
+ *  \ingroup AnalysisPlugins
  *  \brief Visualisation of spatial simulation states (cells, fields) using GnuPlot.
  * 
 \section Description
 
 Gnuplotter plots the Cell configurations (and optionally Fields) to screen or to file during simulation.
+Requires GNUPlot 4.2.5 or higher.
+
 
 Organised in Plots, several artistic representations can be selected :
   - Cells can be colorized using the value attribute.
   - Spatial Fields can be superimposed under the plot.
   - Additional information can be visualized using CellLabels and CellArrows.
-  - Experimental! VectorFields can be plotted by providing x and y components seperately. 
+  - VectorFields can be plotted by providing x and y components seperately. 
 
-The output format can be specified via the Terminal name (e.g. wxt, x11, aqua, png, postscript). Default is Gnuplot default.
+\subsection Attributes
+- \b time-step (optional): Frequency of plotting events. If unspecified adopts to the frequency of input updates. Setting \b time-step<=0 will plot only the final state of the simulation.
+- \b decorate (optional, true): Enables axis labels and legends.
+- \b log-commands (optional, false): Enables logging of data and plot commands to disc. Allows to manually repeat and manipulate the plots.
+- \b file-numbering (optional, time): Set the numbering of the plot images to either be consecutive or based on simulation time.
 
-Requires GNUPlot 4.2.5 or higher.
-*/
-/*
+\subsection Terminal
+- \b name: Specifies the output format (e.g. wxt, x11, aqua, png, postscript). Default is Gnuplot default.
+
+\subsection Plot
+- \b Cells: Plot the spatial cell pattern restricted to a 2d scenario. Cell coloring is determined by the \b value attribute.
+- \b CellLabels: Put labels at the cell center according to the expression provided with the \b value attribute.
+- \b CellArrows: Put arrows at the cell center according to the expression provided with the \b value attribute.
+- \b Field: Plot a scalare field given by the expression in \b value. \b Coarsening will reduce the spatial data resolution.
+- \b VectorField: Plot a vector field given by the expression in \b value. \b Coarsening will reduce the spatial data resolution.
+
 \section Examples
 
 Plot CPM state (showing cell types) to screen using WxWidgets terminal
@@ -162,6 +177,7 @@ public:
 private:
 // 	vector <shared_ptr <const CellType > > celltypes;
 	PluginParameter2<double,XMLEvaluator> field_value;
+	PluginParameter2<int,XMLValueReader,DefaultValPolicy> coarsening;
 	PluginParameter2<float,XMLEvaluator,OptionalPolicy> min_value, max_value;
 	PluginParameter2<int,XMLValueReader,OptionalPolicy> isolines;
 	PluginParameter2<bool,XMLValueReader,OptionalPolicy> surface;
@@ -272,10 +288,10 @@ class Gnuplotter : public AnalysisPlugin
 		struct PlotSpec {
 			PlotSpec();
 			static VDOUBLE size();
+			static VDOUBLE view_oversize();
 			bool field, cells, labels, arrows, vectors;
 			shared_ptr<CellPainter> cell_painter;
 			shared_ptr<LabelPainter> label_painter;
-// 			shared_ptr<PDE_Layer> pde_layer;
 			shared_ptr<FieldPainter> field_painter;
 			shared_ptr<ArrowPainter> arrow_painter;
 			shared_ptr<VectorFieldPainter> vector_field_painter;
@@ -286,14 +302,6 @@ class Gnuplotter : public AnalysisPlugin
 			string arrow_data_file;
 			string vector_field_file;
 			string title;
-// 			string pde_symbol;
-// 			string pde_fullname;
-// 			uint isolines;
-// 			VINT palette;
-// 			float pde_min, pde_max;
-// 			int pde_max_resolution;
-// 			map<double,string> pde_color_map;
-// 			bool pde_data_cropping;
 		};
 		
 	private:
@@ -334,15 +342,12 @@ class Gnuplotter : public AnalysisPlugin
 		PluginParameter2<FileNumbering, XMLNamedValueReader, DefaultValPolicy > file_numbering;
 		bool log_plotfiles;
 		bool decorate;
-		bool interpolation_pm3d;
-		bool data_cropping;
+// 		bool interpolation_pm3d;
 
 		vector<PlotSpec> plots;				// vector storing all plots
 		plotLayout getPlotLayout( uint plot_count, bool border = true );
 		
 		bool pipe_data; 			// do not put data into files but directly pipe them to gnuplot
-		
-		int max_resolution;
 		
 	public:
 		Gnuplotter(); // default values
@@ -350,10 +355,10 @@ class Gnuplotter : public AnalysisPlugin
 
 		DECLARE_PLUGIN("Gnuplotter");
 
-		virtual void loadFromXML (const XMLNode xNode);
+		virtual void loadFromXML (const XMLNode xNode) override;
 
-		virtual void init(const Scope* scope);
-		virtual void analyse(double time);
-		virtual void finish() {};
+		virtual void init(const Scope* scope) override;
+		virtual void analyse(double time) override;
+		virtual void finish() override {};
 
 };
