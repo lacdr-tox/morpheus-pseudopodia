@@ -492,44 +492,37 @@ string LoggerTextWriter::getDataFile(const SymbolFocus& f, double time, string s
 vector<string> LoggerTextWriter::getDataFiles() {
 	vector<string> ret;
 	for (auto file : files_opened)  {
-		ret.push_back(file.first);
+		ret.push_back(file);
 	}
 	return ret;
 }
 
-ofstream& LoggerTextWriter::getOutFile(const SymbolFocus& focus, string symbol) {
+unique_ptr<ofstream> LoggerTextWriter::getOutFile(const SymbolFocus& focus, string symbol) {
 	
 	string filename = getDataFile(focus, SIM::getTime(), symbol);
 	
-	auto cached_fs = files_opened.find(filename);
-	if (cached_fs != files_opened.end()) {
-		if (!cached_fs->second->is_open()) {
-			cached_fs->second->open(cached_fs->first,  ofstream::out | ofstream::app );
-		}
-		return *cached_fs->second;
-		
-	}
-	cout << "opening file " << filename << endl;
+	// if we already had the file just open it
+	bool file_was_opened = files_opened.find(filename) != files_opened.end();
+	if (file_was_opened)
+		return make_unique<ofstream>(filename, ofstream::out | ofstream::app);
 	
-	files_opened[filename] = make_shared<ofstream>(filename, ofstream::out | ofstream::trunc);
-	// files_opened[filename] = ofstream(filename,  ofstream::out | ofstream::trunc);
-	// files_opened.insert( std::make_pair(filename, ofstream(filename,  ofstream::out | ofstream::trunc) ) );
-	ofstream& out = *files_opened[filename];
-	// out.open(filename,  ofstream::out | ofstream::trunc);
-	
-	if (file_format == OutputFormat::CSV && header() /* && f.tellp()==0 */ ) {
+	// first time opened : truncate and write header
+	auto out = make_unique<ofstream>(filename, ofstream::out | ofstream::trunc);
+	if (file_format == OutputFormat::CSV && header() ) {
 		//out << "#";
 		bool first = true;
 		for (auto& h : csv_header) {
-			out << (first ? "" : separator())<< "\"" << h << "\"";
+			*out << (first ? "" : separator())<< "\"" << h << "\"";
 			first = false;
 		}
-		out << "\n";
+		*out << "\n";
 	}
-	if (file_format == OutputFormat::MATRIX && header() /* && f.tellp()==0 */) {
+	if (file_format == OutputFormat::MATRIX && header() ) {
 		// write header
 		// TODO Matrix header missing ...
 	}
+	
+	files_opened.insert(filename);
 	
 	return out;
 }
@@ -543,10 +536,6 @@ void LoggerTextWriter::write()
 		writeCSV();
 	else
 		writeMatrix();
-	
-	for ( auto &file : files_opened) {
-		file.second->close();
-	}
 }
 
 
@@ -572,27 +561,27 @@ void LoggerTextWriter::writeCSV() {
 			multimap<FocusRangeAxis,int> restrictions = plain_restrictions;
 			restrictions.insert(make_pair(FocusRangeAxis::CELL, cell) );
 			FocusRange cell_range(granularity, restrictions, logger.getDomainOnly());
-			ofstream& out = getOutFile( *(cell_range.begin()) );
+			auto out = getOutFile( *(cell_range.begin()) );
 			for (const SymbolFocus& focus : cell_range) {
 				// write point of data row
 				for (uint i=0; i<output_symbols.size(); i++ ) {
-					if (i!=0) out << separator();
-					out << output_symbols[i]( focus );
+					if (i!=0) *out << separator();
+					*out << output_symbols[i]( focus );
 				}
-				out << "\n";
+				*out << "\n";
 			}
 		}
 		
 	}
 	else {
-		ofstream& out = getOutFile( *(range.begin()) );
+		auto out = getOutFile( *(range.begin()) );
 		for (const SymbolFocus& focus : range) {
 			// write point of data row header
 			for (uint i=0; i<output_symbols.size(); i++ ) {
-				if (i!=0) out << separator();
-				out << output_symbols[i]( focus );
+				if (i!=0) *out << separator();
+				*out << output_symbols[i]( focus );
 			}
-			out << "\n";
+			*out << "\n";
 		}
 		// treat single cell as 0-dimensional data
 		int dim = range.dimensions();
@@ -600,7 +589,7 @@ void LoggerTextWriter::writeCSV() {
 			dim = 0;
 		// only separate multi-dimensional data
 		if( dim > 0 )
-			out << "\n";
+			*out << "\n";
 
 	}
 }
@@ -638,7 +627,7 @@ void LoggerTextWriter::writeMatrix() {
 					restrictions.insert( make_pair(FocusRangeAxis::CELL,cells[c]) );
 					FocusRange range(granularity,restrictions);
 // 					ofstream out(getOutFile( *(range.begin()), symbol->name()), ofstream::out | ofstream::app);
-					ostream& out = getOutFile( *(range.begin()), symbol.getName());
+					auto out = getOutFile( *(range.begin()), symbol.getName());
 					
 					if( header() ){
 						// not implemented yet
@@ -647,22 +636,22 @@ void LoggerTextWriter::writeMatrix() {
 					uint col=0;
 					uint row=0;
 					for (auto f : range) {
-						out << symbol(f);
+						*out << symbol(f);
 						col++;
 						if (col==row_length) {
-							out << "\n";
+							*out << "\n";
 							col=0; row++;
 							if (row == row_count) {
-								out << "\n";
+								*out << "\n";
 								row=0;
 							}
 						}
 						else 
-							out << sep;
+							*out << sep;
 					}
 					// if 2D surface (e.g. membraneprop), separate the data sets by double blank line (to use gnuplot's index keyword)
 					if( range.dimensions() > 1 )
-						out << "\n\n";
+						*out << "\n\n";
 				}
 			}
 			else {
@@ -674,7 +663,7 @@ void LoggerTextWriter::writeMatrix() {
 		}
 		else {
 			if (range.size() == 0) return;
-			ofstream& out = getOutFile( *(range.begin()), symbol.getName());
+			auto out = getOutFile( *(range.begin()), symbol.getName());
 // 			FocusRange range(granularity,logger.getRestrictions());
 			bool write_header_block=header();
 			uint col=0;
@@ -684,36 +673,36 @@ void LoggerTextWriter::writeMatrix() {
 					// write header above columns
 					// for multiD, write header at the start of each data block
 					if ( range.dimensions() > 1 ){
-						writeMatrixColHeader(range, out);
+						writeMatrixColHeader(range, *out);
 						cout << "writeMatrixColHeader" << endl;
 					}
 					// for a 1D range, only write header at start (single data block)
 					else if ( range.dimensions() == 1 && SIM::getTime() == SIM::getStartTime()){
-						writeMatrixColHeader(range, out);
+						writeMatrixColHeader(range, *out);
 					}
 					write_header_block=false;
 				}
 				if (col==0 && header() )
 					// write header for row
-					writeMatrixRowHeader(f, range, out);
+					writeMatrixRowHeader(f, range, *out);
 				
-				out << symbol(f);
+				*out << symbol(f);
 				col++;
 				if (col==row_length) {
-					out << "\n";
+					*out << "\n";
 					col=0; row++;
 					if (row == row_count && row_count > 1) {
-						out << "\n";
+						*out << "\n";
 						row=0;
 						write_header_block=header();
 					}
 				}
 				else 
-					out << sep;
+					*out << sep;
 			}
 			// if 2D surface, separate the data sets by double blank line (to use gnuplot's index keyword)
 			if( range.dimensions() > 1 )
-				out << "\n\n";
+				*out << "\n\n";
 		}
 	}
 }
@@ -1532,7 +1521,7 @@ void LoggerMatrixPlot::init()
 	
 	cb_axis.defined = cb_axis.symbol.isDefined();
 	if( cb_axis.defined){
-		cb_axis.label = cb_axis.symbol();
+		cb_axis.label = logger.getInputsDescription(cb_axis.symbol());
 	}
 	else
 		throw string("Logger: Matrix plot requires specification of a symbol for the Colorbar");

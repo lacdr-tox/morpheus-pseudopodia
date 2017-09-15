@@ -171,6 +171,7 @@ public:
 	int getIsolines() { if( isolines.isDefined() ) return isolines.get(); else return 0;}
 	const string& getDescription() const;
 	string getValueRange() const;
+	int getCoarsening() const;
 	
 	string getColorMap() const;
 	

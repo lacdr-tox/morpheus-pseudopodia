@@ -186,6 +186,12 @@ string FieldPainter::getValueRange() const
 	return string("[")+ min_val_str + ":" + max_val_str + "]";
 }
 
+int FieldPainter::getCoarsening() const
+{
+	return coarsening();
+}
+
+
 string FieldPainter::getColorMap() const
 {
 	stringstream color_map_string;
@@ -1288,6 +1294,11 @@ void Gnuplotter::analyse(double time) {
 					command << " '-' ";
 				else
 					command << " \'"<< outputDir << "/" << plots[i].field_data_file.c_str() << "' ";
+				
+				if (plots[i].field_painter->getCoarsening() != 1) {
+					auto c = plots[i].field_painter->getCoarsening();
+					command <<  "u (" << c <<  "*$1):(" << c << "*$2):3 ";
+				}
 				command << " matrix " << points_pm3d << " pal not\n";
 				
 				if (pipe_data) {
@@ -1307,6 +1318,10 @@ void Gnuplotter::analyse(double time) {
 					command << " '-' ";
 				else
 					command << " '" << outputDir << "/" << plots[i].field_data_file.c_str() << "' ";
+				if (plots[i].field_painter->getCoarsening() != 1) {
+					auto c = plots[i].field_painter->getCoarsening();
+					command <<  "u (" << c <<  "*$1):(" << c << "*$2):3 ";
+				}
 				command << " matrix w l lw 1 lc rgb \"red\"  not;\n" << endl;
 				if (pipe_data) {
 					plots[i].field_painter->plotData(command);
