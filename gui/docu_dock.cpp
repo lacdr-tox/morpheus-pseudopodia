@@ -1,8 +1,20 @@
 #include "docu_dock.h"
 
+#ifndef MORPHEUS_NO_QTWEBKIT
 #include <QWebHistory>
+#endif
+
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkReply>
+#include <QThread>    
+
+class Sleeper : public QThread
+{
+public:
+    static void usleep(unsigned long usecs){QThread::usleep(usecs);}
+    static void msleep(unsigned long msecs){QThread::msleep(msecs);}
+    static void sleep(unsigned long secs){QThread::sleep(secs);}
+};
 
 class HelpNetworkReply : public QNetworkReply
 {
@@ -89,6 +101,21 @@ QNetworkReply *HelpNetworkAccessManager::createRequest(Operation op, const QNetw
 }
 
 
+class HelpBrowser : public QTextBrowser {
+public:
+	QVariant loadResource(int type, const QUrl & name) override;
+	void setNetworkAccessManager(QNetworkAccessManager* nam) { this->nam = nam; };
+private:
+	QNetworkAccessManager* nam;
+};
+
+QVariant HelpBrowser::loadResource(int type, const QUrl & name) {
+	QNetworkRequest request(name);
+	qDebug() << "Requesting " << name;
+	auto reply = nam->get(request);
+	return reply->readAll();
+}
+
 DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 {
 	timer = NULL;
@@ -97,7 +124,13 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	connect(help_engine,SIGNAL(setupFinished()),this,SLOT(setRootOfHelpIndex()));
 	help_engine->setupData();
 	
-	HelpNetworkAccessManager* hnam = new HelpNetworkAccessManager(help_engine,this);
+	hnam = new HelpNetworkAccessManager(help_engine,this);
+
+#ifdef MORPHEUS_NO_QTWEBKIT
+	auto realViewer = new HelpBrowser();
+	realViewer->setNetworkAccessManager(hnam);
+	help_view = realViewer;
+#else
 	help_view = new QWebView();
 	
 	help_view->page()->setNetworkAccessManager(hnam);
@@ -105,6 +138,7 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	help_view->page()->settings()->setAttribute(QWebSettings::JavascriptEnabled, true);
 	help_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessRemoteUrls, false);
 	help_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessFileUrls, true);
+#endif
 	
 	toc_widget = help_engine->contentWidget();
 	toc_widget->setRootIsDecorated(true);
@@ -120,9 +154,11 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 
 	b_back = new QAction(QThemedIcon("go-previous", style()->standardIcon(QStyle::SP_ArrowLeft)),"Back",this);
 	tb->addAction(b_back);
+	b_back->setEnabled(false);
 
 	b_forward = new QAction(QThemedIcon("go-next", style()->standardIcon(QStyle::SP_ArrowRight)),"Fwd",this);
 	tb->addAction(b_forward);
+	b_forward->setEnabled(false);
 	
 	tb->addSeparator();
 	
@@ -148,9 +184,18 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	splitter->addWidget(w_bottom);
 	
 	help_view->show();
+
+#ifdef MORPHEUS_NO_QTWEBKIT
+	connect(b_back, SIGNAL(triggered()), help_view, SLOT(backward()));
+	connect(b_forward, SIGNAL(triggered()), help_view, SLOT(forward()));
+	connect(help_view, SIGNAL(backwardAvailable(bool)), b_back, SLOT(setEnabled(bool)) );
+	connect(help_view, SIGNAL(forwardAvailable(bool)), b_forward, SLOT(setEnabled(bool)) );
+// 	connect(help_view, SIGNAL(historyChanged(const QUrl&)), this, SLOT(resetStatus()) );
+#else
 	connect(b_back, SIGNAL(triggered()), help_view, SLOT(back()));
 	connect(b_forward, SIGNAL(triggered()), help_view, SLOT(forward()));
 	connect(help_view, SIGNAL(urlChanged(const QUrl&)), this, SLOT(resetStatus()) );
+#endif
 	connect(toc_widget, SIGNAL(clicked(const QModelIndex&)), this, SLOT(setCurrentIndex(const QModelIndex&)) );
 	
 	this->setWidget(splitter);
@@ -205,16 +250,25 @@ void DocuDock::setCurrentIndex(const QModelIndex& idx)
 
 
 void DocuDock::setCurrentURL(const QUrl& url) {
+#ifdef MORPHEUS_NO_QTWEBKIT
+	help_view->setSource(url);
+#else
 	if (help_view->url() != url) {
 		help_view->setUrl(url);
 // 		qDebug() << url;
 	}
+#endif
 }
 
 
 void DocuDock::resetStatus() {
+#ifdef MORPHEUS_NO_QTWEBKIT
+	b_back->setEnabled(help_view->isBackwardAvailable());
+	b_back->setEnabled(help_view->isForwardAvailable());
+#else
 	b_back->setEnabled(help_view->history()->canGoBack());
 	b_forward->setEnabled(help_view->history()->canGoForward());
+#endif
 }
 
 void DocuDock::resizeEvent(QResizeEvent* event)
