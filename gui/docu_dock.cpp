@@ -79,19 +79,23 @@ QNetworkReply *HelpNetworkAccessManager::createRequest(Operation op, const QNetw
 // 	qDebug() << "Creating Help File Request for URL " << request.url();
 	QString scheme = request.url().scheme();
 	if (scheme == QLatin1String("qthelp") || scheme == QLatin1String("about")) {
-			QString mimeType/* = QMimeDatabase().mimeTypeForUrl(request.url()).name()*/;
-			if (request.url().path().endsWith(".png")) 
-				mimeType = "image/png";
-			else if (request.url().path().endsWith(".html"))
-				mimeType = "text/html";
-			else if (request.url().path().endsWith(".js"))
-				mimeType = "text/javascript";
-			else if (request.url().path().endsWith(".css"))
-				mimeType = "text/css";
-			auto data = m_helpEngine->fileData(request.url());
-			if (data.isEmpty())
-				qDebug() << "Empty URL" << request.url().path() << " / " << mimeType << " of " << data.size() << " bytes";
-			return new HelpNetworkReply(request, data , mimeType);
+		QString mimeType/* = QMimeDatabase().mimeTypeForUrl(request.url()).name()*/;
+		auto path = request.url().path();
+		path.replace("$relpath^","");
+		if (path.endsWith(".png")) 
+			mimeType = "image/png";
+		else if (path.endsWith(".html"))
+			mimeType = "text/html";
+		else if (path.endsWith(".js"))
+			mimeType = "text/javascript";
+		else if (path.endsWith(".css"))
+			mimeType = "text/css";
+		auto url = request.url();
+		url.setPath(path);
+		auto data = m_helpEngine->fileData(url);
+		if (data.isEmpty())
+			qDebug() << "Empty URL" << path << " / " << mimeType << " of " << data.size() << " bytes";
+		return new HelpNetworkReply(request, data , mimeType);
 	}
 	else {
 		QDesktopServices::openUrl(request.url());
