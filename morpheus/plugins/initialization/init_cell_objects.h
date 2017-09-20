@@ -182,7 +182,7 @@ public:
 	DECLARE_PLUGIN("InitCellObjects");
 
 	void loadFromXML(const XMLNode) override;
-	bool run(CellType* ct) override;
+	vector<CPM::CELL_ID> run(CellType* ct) override;
 
 };
 

@@ -97,6 +97,7 @@ class AbstractProperty;
 
 // Forward declarations for platform provided computation symbols
 extern string sym_RandomUni;
+extern string sym_RandomInt;
 extern string sym_RandomNorm;
 extern string sym_RandomBool;
 extern string sym_RandomGamma;

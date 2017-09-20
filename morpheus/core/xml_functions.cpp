@@ -91,10 +91,8 @@ bool setXMLAttribute(XMLNode XML_base, string path, const string& value) {
 
 	XMLNode xNode = getXMLNode(XML_base,path);
 	if (xNode.isEmpty()) return false;
-	XMLCSTR str_val;
 	if (lower_case(attribute) == "text") {
 		xNode.updateText(value.c_str(),0);
-		str_val = xNode.getText();
 	}
 	else xNode.addAttribute( attribute.c_str(), value.c_str());
 	return true;

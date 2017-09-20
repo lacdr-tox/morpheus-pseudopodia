@@ -113,6 +113,9 @@ VDOUBLE ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus) const
 double getRandomUniValue(double min, double max) {
         return getRandom01()*(max-min)+min;
 }
+double getRandomIntValue(double min, double max) {
+	return floor(getRandom01()*(max+1-min)+min);
+}
 double getRandomNormValue(double mean, double stdev) {
         return mean+getRandomGauss(stdev);
 }
@@ -149,6 +152,7 @@ unique_ptr< mu::Parser > createMuParserInstance()
 	parser->DefineNameChars(name_chars.c_str());
 	parser->DefineConst("pi",M_PI);
 	parser->DefineFun( sym_RandomUni,	&getRandomUniValue,  false);
+	parser->DefineFun( sym_RandomInt,	&getRandomIntValue,  false);
 	parser->DefineFun( sym_RandomNorm,	&getRandomNormValue, false);
 	parser->DefineFun( sym_RandomBool,	&getRandomBoolValue, false);
 	parser->DefineFun( sym_RandomGamma, &getRandomGammaValue, false);

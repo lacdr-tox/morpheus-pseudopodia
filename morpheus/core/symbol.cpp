@@ -116,6 +116,7 @@ string SymbolData::CellLength_symbol = "cell.length";
 string SymbolData::Temperature_symbol = "TEMPERATURE";
 
 string sym_RandomUni  = "rand_uni";
+string sym_RandomInt  = "rand_int";
 string sym_RandomNorm = "rand_norm";
 string sym_RandomBool = "rand_bool";
 string sym_RandomGamma= "rand_gamma";

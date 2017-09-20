@@ -975,6 +975,7 @@ void init(int argc, char *argv[]) {
 
 	if (cmd_line.find("gnuplot-path") != cmd_line.end()) {
 		Gnuplot::set_GNUPlotPath(cmd_line["gnuplot-path"]);
+		cmd_line.erase(cmd_line.find("gnuplot-path"));
 	}
 	
 	if (cmd_line.find("gnuplot-version") != cmd_line.end()) {
@@ -992,6 +993,7 @@ void init(int argc, char *argv[]) {
 
 	if (cmd_line.find("symbol-graph") != cmd_line.end()) {
 		generate_symbol_graph_and_exit = true;
+		cmd_line.erase(cmd_line.find("symbol-graph"));
 	}
 	else {
 		generate_symbol_graph_and_exit = false;
@@ -1010,6 +1012,7 @@ void init(int argc, char *argv[]) {
 // TODO Handling missing file( a file parameter must be provided and the file must exist)
 
 	string filename = cmd_line["file"];
+	cmd_line.erase(cmd_line.find("file"));
 
 	struct stat filestatus;
 	int filenotexists = stat( filename.c_str(), &filestatus );
@@ -1536,20 +1539,24 @@ const Lattice& lattice()
 
 
 shared_ptr<PDE_Layer> findPDELayer(string symbol) {
-	if (pde_layers.find(symbol) != pde_layers.end())
+	if (pde_layers.find(symbol) != pde_layers.end()) {
 		return pde_layers[symbol];
-	else 
+	}
+	else {
 		throw string("Unable to locate Field \"") + symbol +"\"";
 		return shared_ptr<PDE_Layer>();
+	}
 }
 
 shared_ptr<VectorField_Layer> findVectorFieldLayer(string symbol)
 {
-	if (vector_field_layers.find(symbol) != vector_field_layers.end())
+	if (vector_field_layers.find(symbol) != vector_field_layers.end()) {
 		return vector_field_layers[symbol];
-	else 
+	}
+	else {
 		throw string("Unable to locate VectorField \"") + symbol +"\"";
 		return shared_ptr<VectorField_Layer>();
+	}
 }
 
 const Scope* getScope() { return current_scope; }

@@ -81,7 +81,6 @@ CellType::CellType(uint ct_id) :  default_properties(_default_properties), defau
 {
 	id= ct_id;
 	name ="";
-	xml_pop_size = 0;
 };
 
 CellType* CellType::createInstance(uint ct_id) {
@@ -221,34 +220,85 @@ void CellType::init() {
 		}
 	}
 	
-	for (auto ini : pop_initializers) {
-		ini->init(local_scope);
-		ini->run(this);
-	}
-	
-	// create all yet undefined cells at random positions
-	if (cell_ids.size() < xml_pop_size) {
-		cout << "CellType \'" << name << "\': " << xml_pop_size - cell_ids.size() << " uninitialized cells. Creating them at random positions." << endl ;
-		for (int i=cell_ids.size(); i < xml_pop_size; i++) {
-			//cout << " - Creating cell "<< i <<" at random position" << endl ;
-			createRandomCell();
+	// Create all cell populations through Cell definitions / initializers / at random positions
+	map<CPM::CELL_ID, XMLNode> predefined_cells;
+	for (auto& cp : cell_populations) {
+		// Cell definitions : parse "Cell" nodes and create a cell
+		if (cp.xPopNode.nChildNode("Cell")>0) {
+			cout << "CellType \'" << name << "\': loading " << cp.xPopNode.nChildNode("Cell") << " cells from XML" << endl;
 		}
-	}
-	
-	for ( const auto& ip : init_properties) {
-		
-		SymbolRWAccessor<double> symbol;
-		symbol = local_scope->findRWSymbol<double>(ip.symbol);
+		for (int i=0; i < cp.xPopNode.nChildNode("Cell"); i++) {
+			XMLNode xCellNode = cp.xPopNode.getChildNode("Cell",i);
+			uint cell_id;
+			if ( getXMLAttribute(xCellNode, "name", cell_id) )
+				cell_id =  createCell(cell_id);
+			else
+				cell_id =  createCell();
+			
+			storage.cell(cell_id).loadNodesFromXML(xCellNode);
+			if( storage.cell(cell_id).getNodes().size() == 0){
+				cout << "Created empty cell, removing it again" << endl;
+				removeCell( cell_id );
+			}
+			else {
+				predefined_cells[cell_id] = xCellNode;
+				cp.cells.push_back(cell_id);
+			}
+		}
 
-		ExpressionEvaluator<double> init_expression(ip.expression);
-		init_expression.init(local_scope);
-		
-		// Apply InitProperty expressions for all cells
-		FocusRange range(symbol,local_scope);
-		cout << "Initializers for range "  << range.size() << endl;
-		for (auto focus : range) {
-			symbol.set(focus, init_expression.get(focus));
+		// Cell initializers
+		for (auto ini : cp.pop_initializers) {
+			ini->init(local_scope);
+			auto new_cells = ini->run(this);
+			cp.cells.insert(cp.cells.end(),new_cells.begin(),new_cells.end());
+
 		}
+		
+		// Create all yet undefined cells at random positions
+		if (cell_ids.size() < cp.pop_size) {
+			cout << "CellType \'" << name << "\': " << cp.pop_size - cell_ids.size() << " uninitialized cells. Creating them at random positions." << endl ;
+			for (int i=cell_ids.size(); i < cp.pop_size; i++) {
+				//cout << " - Creating cell "<< i <<" at random position" << endl ;
+				auto new_cell = createRandomCell();
+				cp.cells.push_back(new_cell);
+			}
+		}
+	}
+	
+	
+	// Initialization of Cell Properties
+	
+	// i run individual property initialisation through Cell::init()
+	for (auto cell_id : cell_ids) {
+		storage.cell(cell_id).init();
+	}
+	
+	
+	// ii Run property initialization plugins from Population initializers
+	for (auto& cp : cell_populations) {
+		for ( const auto& ip : cp.property_initializers) {
+			
+			SymbolRWAccessor<double> symbol;
+			symbol = local_scope->findRWSymbol<double>(ip.symbol);
+
+			ExpressionEvaluator<double> init_expression(ip.expression);
+			init_expression.init(local_scope);
+			
+			// Apply InitProperty expressions for all cells
+			for (auto cell : cp.cells) {
+				FocusRange range(symbol.getGranularity(),cell);
+				for ( const auto& focus : range) {
+					symbol.set(focus, init_expression.get(focus));
+				}
+			}
+		}
+	}
+	
+	// iii Override with per cell property definitions from xml
+	for (const auto& cell : predefined_cells) {
+		XMLNode xCellNode = cell.second;
+		CPM::CELL_ID cell_id = cell.first;
+		storage.cell(cell_id).loadFromXML( xCellNode );
 	}
 	
 	SIM::leaveScope();
@@ -295,74 +345,43 @@ void CellType::loadPopulationFromXML(const XMLNode xNode) {
 
 	SIM::enterScope(local_scope);
 	
+	CellPopDesc cp;
+	cp.xPopNode = xNode;
 	// ensure the type is my name
 	string type; getXMLAttribute(xNode,"type",type,false);
 	if ( type != name) throw string("wrong type name in cell population");
-	if ( ! cell_ids.empty() && !dynamic_cast<MediumCellType*>(this) ) throw string("CellType ") + this->name + " has a second CellPopulations defined.\nCurrently, only one Population per CellType is supported";
+// 	if ( ! cell_ids.empty() && !dynamic_cast<MediumCellType*>(this) ) throw string("CellType ") + this->name + " has a second CellPopulations defined.\nCurrently, only one Population per CellType is supported";
 
-	xml_pop_size=1; 
-	getXMLAttribute(xNode,"size",xml_pop_size);
-	// parse for all Cell nodes and create a cell
-	if (xNode.nChildNode("Cell")>0) {
-		cout << "CellType \'" << name << "\': loading " << xNode.nChildNode("Cell") << " cells from XML" << endl;
-	}
-	for (int i=0; i < xNode.nChildNode("Cell"); i++) {
-		//cout << "Cell " << i  << endl;
-		XMLNode xcpNode = xNode.getChildNode("Cell",i);
-		uint cell_id;
-		if ( getXMLAttribute(xcpNode, "name", cell_id) )
-			cell_id =  createCell(cell_id);
-		else
-			cell_id =  createCell();
-		storage.cell(cell_id).loadFromXML( xcpNode );
-		if( storage.cell(cell_id).getNodes().size() == 0){
-			cout << "Created empty cell, removing it again" << endl;
-			removeCell( cell_id );
-		}
-	}
+	cp.pop_size=1; 
+	getXMLAttribute(xNode,"size",cp.pop_size);
 
-// 	vector< CPM::CELL_ID > oldcellids = getCellIDs();
-
-	// parse for all Initializers and run them
+	// parse all Initializers
 	for (int i=0; i < xNode.nChildNode(); i++) {
 		XMLNode xcpNode = xNode.getChildNode(i);
-		if (strcmp(xcpNode.getName(),"Cell")==0) continue;
-		if (strcmp(xcpNode.getName(),"InitProperty")==0) continue;
-		// assume its an initilizer
-		shared_ptr<Plugin> p = PluginFactory::CreateInstance(string(xcpNode.getName()));
-		if ( dynamic_pointer_cast<Population_Initializer>( p ) ) {
-			pop_initializers.push_back(dynamic_pointer_cast<Population_Initializer>( p ));
-			pop_initializers.back()->loadFromXML(xcpNode);
+		// Defer loading cells
+		if (string(xcpNode.getName()) == "Cell") continue;
+		if (string(xcpNode.getName()) =="InitProperty") {
+			IntitPropertyDesc ip;
+			if ( ! getXMLAttribute(xcpNode, "symbol-ref", ip.symbol)) {
+				throw string ("Missing symbol in Population[") + this->name + "]/InitProperty";
+			}
+			if ( ! getXMLAttribute(xcpNode,"Expression/text",ip.expression)) {
+				throw string ("Missing expression in Population[") + this->name + "]/InitProperty["+ip.symbol+"]";
+			}
+			cp.property_initializers.push_back(ip);
 		}
-		// the Initializer is destroyed by the destructor of p
+		else {
+			// assume its an initilizer
+			shared_ptr<Plugin> p = PluginFactory::CreateInstance(string(xcpNode.getName()));
+			if ( dynamic_pointer_cast<Population_Initializer>( p ) ) {
+				cp.pop_initializers.push_back(dynamic_pointer_cast<Population_Initializer>( p ));
+				cp.pop_initializers.back()->loadFromXML(xcpNode);
+			}
+		}
 	}
-
-// 	// make vector of cellids of cells that have been added to population
-// 	vector< CPM::CELL_ID > newcellids = getCellIDs();
-// 	vector< CPM::CELL_ID > newcells;
-// 	for(uint i=0; i<newcellids.size();i++){
-// 		vector<CPM::CELL_ID>::iterator p;
-// 		p = find(oldcellids.begin(), oldcellids.end(), newcellids[i]);
-// 		if(p == oldcellids.end()) // cell is not found in old cell population
-// 			newcells.push_back(newcellids[i]);
-// 	}
 	
-	// set properties for cells of population
-	// This allows the user to create various population of the same celltype, but
-	//  that differ in some property value
-	for (int i=0; i < xNode.nChildNode("InitProperty"); i++) {
-		XMLNode xProp = xNode.getChildNode("InitProperty",i);
-		IntitPropertyDesc ip;
-		
-		if ( ! getXMLAttribute(xProp, "symbol-ref", ip.symbol)) {
-			throw string ("Missing symbol in Population[") + this->name + "]/InitProperty";
-		}
-		if ( ! getXMLAttribute(xProp,"Expression/text",ip.expression)) {
-			throw string ("Missing expression in Population[") + this->name + "]/InitProperty["+ip.symbol+"]";
-		}
-		
-		init_properties.push_back(ip);
-	}
+	cell_populations.push_back(cp);
+
 	SIM::leaveScope();
 }
 
@@ -388,7 +407,7 @@ CPM::CELL_ID  CellType::createCell(CPM::CELL_ID cell_id) {
 	t.status = CPM::REGULAR_CELL;
 	storage.addCell(c,t);
 	
-	c->init();
+// 	c->init();
 	
 	return cell_id;
 }
@@ -435,11 +454,6 @@ pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID mother_id, V
 	Cell& daughter2 = storage.cell(daughter2_id);
 
 	Cell& mother = storage.cell(mother_id);
-	daughter1.assignMatchingProperties(mother.properties);
-	daughter1.assignMatchingMembranes(mother.membranes);
-	daughter2.assignMatchingProperties(mother.properties);
-	daughter2.assignMatchingMembranes(mother.membranes);
-	
 	shared_ptr <const Lattice > lattice = SIM::getLattice();
 
 	// choose a random orientation, split orientation is given 
@@ -490,6 +504,13 @@ pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID mother_id, V
 		cerr << "divideCell2: Mother cell ("<<  mother_id << ") is not empty after cell division (nodes: " <<  mother.nNodes() << " ) and cannot be removed!" << endl;
 		exit(-1);
 	}
+	
+	daughter1.init();
+	daughter1.assignMatchingProperties(mother.properties);
+	daughter1.assignMatchingMembranes(mother.membranes);
+	daughter2.init();
+	daughter2.assignMatchingProperties(mother.properties);
+	daughter2.assignMatchingMembranes(mother.membranes);
 	
 	return pair<CPM::CELL_ID, CPM::CELL_ID>(daughter1_id, daughter2_id);
 }

@@ -41,10 +41,10 @@
                 <Condition>rand_uni(0,1) &lt; p</Condition>
                 <Triggers>
                     <Rule symbol-ref="d">
-                        <Expression>d+0.5</Expression>
+                        <Expression>d+1</Expression>
                     </Rule>
                     <Rule symbol-ref="c" name="color after division">
-                        <Expression>500</Expression>
+                        <Expression>1000</Expression>
                     </Rule>
                 </Triggers>
             </CellDivision>
@@ -84,6 +84,7 @@
                         <Color value="0.0" color="green"/>
                     </ColorMap>
                 </Cells>
+                <CellLabels fontsize="8" value="d"/>
             </Plot>
         </Gnuplotter>
         <Logger time-step="100">

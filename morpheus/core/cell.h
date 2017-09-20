@@ -42,6 +42,7 @@ public:
 	~Cell();
 
 	virtual XMLNode saveToXML() const;                  ///Save the cell state to an XMLNode
+	virtual void loadNodesFromXML(const XMLNode Node);       ///< Loading the cell's positional state from an XMLNode
 	virtual void loadFromXML(const XMLNode Node);       ///< Loading the cell state from an XMLNode
 	void init();										/// Initialize the cell after attaching it to the celltype
 	

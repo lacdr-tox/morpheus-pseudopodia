@@ -94,6 +94,7 @@ private:
 	CellType* celltype;
 	PDE_Layer* pde_layer;
 	CPM::CELL_ID empty_state;
+	vector<CPM::CELL_ID> cells_created;
 
 	map<uint32, uint> color_to_cellid; // maps color to cellID
 	uint skipped_nodes, created_nodes, created_cells;
@@ -106,7 +107,7 @@ public:
 	TIFFReader();
 	DECLARE_PLUGIN("TIFFReader");
 	
-	bool run(CellType* ct) override;
+	vector<CPM::CELL_ID> run(CellType* ct) override;
 	bool run(PDE_Layer* pde) override;
 	
 };

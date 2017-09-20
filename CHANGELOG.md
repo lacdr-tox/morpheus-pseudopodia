@@ -8,6 +8,7 @@
   * The new **ContactLogger** tracks cell contacts over time
   * The value of a **Constant** can be provided via expression
   * The new **VectorField** can represent spatial vector data
+  * Multiple **Population** per CellType are now supported
   * Binary **VTK** export (performance)
 
   * Removed any remains of time / space units

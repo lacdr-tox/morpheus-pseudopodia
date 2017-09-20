@@ -32,6 +32,7 @@ public:
 	virtual XMLNode storeData() const = 0;
 	
 	virtual shared_ptr<AbstractProperty> clone() const =0;
+	virtual void set(const AbstractProperty* other) =0;
 	virtual string getTypeName() const =0;
 	
 	string getName() const { return name;}
@@ -88,21 +89,22 @@ public:
 	static shared_ptr< Property<ValType> > createVariableInstance(string symbol, string name);
 	static shared_ptr< Property<ValType> > createConstantInstance(string symbol, string name);
 	
-	virtual string getTypeName() const { return TypeInfo<ValType>::name(); }
-    virtual string XMLName() const {return is_constant ? constant_xml_name() : (this->is_cellproperty ? property_xml_name() :  global_xml_name()); }
+	string getTypeName() const override { return TypeInfo<ValType>::name(); }
+    virtual string XMLName() const override {return is_constant ? constant_xml_name() : (this->is_cellproperty ? property_xml_name() :  global_xml_name()); }
     string XMLDataName() const { return XMLName() +"Data"; }
     
 	const Value_Type& get() const { assert(initialized); return value; }
 	Value_Type& getRef() { return value; }
 	virtual void set(Value_Type value) { this->value = value; initialized = true;}
+	void set(const AbstractProperty* other) override;
 	virtual void setBuffer(Value_Type value) { this->buffer = value; }
 	virtual void applyBuffer() { value = buffer; }
-	virtual shared_ptr<AbstractProperty> clone() const;
-	virtual void loadFromXML(XMLNode node); //--> passed to any derived type without mods
-	virtual void init(const Scope* scope, const SymbolFocus& f ) { AbstractProperty::init(scope, f); };
+	shared_ptr<AbstractProperty> clone() const override;
+	void loadFromXML(XMLNode node) override; //--> passed to any derived type without mods
+	void init(const Scope* scope, const SymbolFocus& f ) override; /// { AbstractProperty::init(scope, f);  };
 // 	virtual XMLNode saveToXML() const; //--> passed to any derived type without mods
-	virtual void restoreData(XMLNode node); //--> passed to any derived type without mods
-	virtual XMLNode storeData() const;//--> passed to any derived type without mods
+	void restoreData(XMLNode node) override; //--> passed to any derived type without mods
+	XMLNode storeData() const override;//--> passed to any derived type without mods
 	
 	
 
@@ -143,7 +145,7 @@ public:
 	void set(Value_Type value) override { queue.back() = value; }
 	void setBuffer(Value_Type value) override { buffer = value; }
 	void applyBuffer() override { queue.back() = buffer;}
-	shared_ptr<AbstractProperty> clone() const;
+	shared_ptr<AbstractProperty> clone() const override;
 	void loadFromXML(XMLNode node) override; //--> passed to any derived type without mods
 	void init(const Scope* scope) override;
     void init(const Scope* scope, const SymbolFocus& f) override;
@@ -166,7 +168,10 @@ namespace SIM {
 
 template <class T>
 shared_ptr<AbstractProperty> Property<T>::clone() const {
-	return shared_ptr<AbstractProperty>(new Property<T>(*this) );
+	auto new_clone = make_shared<Property<T>>(*this);
+	new_clone->initialized=false;
+	return new_clone;
+	
 }
 
 template <class T> 
@@ -187,6 +192,15 @@ template <class T>
 bool Property<T>::type_registration = PluginFactory::RegisterCreatorFunction( Property<T>::global_xml_name(), Property<T>::createVariableInstance) 
 								   && PluginFactory::RegisterCreatorFunction( Property<T>::constant_xml_name(), Property<T>::createConstantInstance)
 								   && PluginFactory::RegisterCreatorFunction( Property<T>::property_xml_name(), Property<T>::createPropertyInstance);
+
+template <class T> 
+void Property<T>::set(const AbstractProperty* other) {
+	auto property = dynamic_cast<const Property<T>*>(other);
+	if (property) {
+		value = property->value;
+		initialized = true;
+	}
+}
 
 template <class T> 
 XMLNode Property<T>::storeData() const {

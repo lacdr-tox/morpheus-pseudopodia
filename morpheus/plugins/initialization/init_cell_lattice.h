@@ -49,7 +49,7 @@ private:
 public:
 	InitCellLattice(){};
 	DECLARE_PLUGIN("InitCellLattice");
-	bool run(CellType* ct) override;
+	vector<CPM::CELL_ID> run(CellType* ct) override;
 
 };
 

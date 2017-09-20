@@ -57,8 +57,8 @@ PDE Equation:
     <CellTypes>
         <CellType class="biological" name="cells">
             <Chemotaxis field="U" strength="50*(A)" retraction="true"/>
-            <VolumeConstraint target="5000" strength="0.2"/>
-            <SurfaceConstraint target="1" mode="aspherity" strength="0.1"/>
+            <VolumeConstraint target="5000" strength="0.1"/>
+            <SurfaceConstraint target="1" mode="aspherity" strength="0.05"/>
             <MembraneProperty symbol="A" value="0.5" name="A">
                 <Diffusion rate="0.05"/>
             </MembraneProperty>

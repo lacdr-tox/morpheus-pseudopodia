@@ -1,6 +1,6 @@
 #include "time_scheduler.h"
 
-TimeScheduler::TimeScheduler() : start_time("StartTime",0), save_interval("SaveInterval",-1), stop_time("StopTime",1000), is_state_valid(false) {};
+TimeScheduler::TimeScheduler() : start_time("StartTime",0), save_interval("SaveInterval",-1), is_state_valid(false), stop_time("StopTime",1000) {};
 
 TimeScheduler& TimeScheduler::getInstance() {
 	static TimeScheduler sched;

@@ -172,7 +172,7 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 	
 	string clean_expression=expression;
 	string remove_chars="\t\n\r";
-	auto pos=0;
+	string::size_type pos=0;
 	while ( (pos = clean_expression.find_first_of(remove_chars,pos)) != string::npos) {
 		clean_expression[pos]=' ';
 		pos++;
@@ -283,6 +283,7 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 	// random functions prevent an expression from beeing const
 	set<string> volatile_functions;
 	volatile_functions.insert(sym_RandomUni);
+	volatile_functions.insert(sym_RandomInt);
 	volatile_functions.insert(sym_RandomBool);
 	volatile_functions.insert(sym_RandomGamma);
 	volatile_functions.insert(sym_RandomNorm);

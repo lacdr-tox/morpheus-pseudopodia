@@ -68,17 +68,17 @@ private:
 	VDOUBLE center;
 	double radius;
 
-	void setRandom();
-	void setRegular();
+	vector<CPM::CELL_ID> setRandom();
+	vector<CPM::CELL_ID> setRegular();
 
 	void convertPos(string str_Pos);
-	bool createNode(VINT newPos);
+	CPM::CELL_ID createNode(VINT newPos);
 	int calculateLines();
 
 public:
 	InitCircle();
 	DECLARE_PLUGIN("InitCircle");
-	bool run(CellType* ct) override;
+	vector<CPM::CELL_ID> run(CellType* ct) override;
 
 };
 
