@@ -18,7 +18,7 @@
 
 #ifdef MORPHEUS_NO_QTWEBKIT
 #include <QTextBrowser>
-#warning Compiling withour QtWebKit
+#warning Compiling without QtWebKit
 #else 
 #include <QtWebKit/QWebView>
 #endif

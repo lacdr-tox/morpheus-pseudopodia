@@ -429,7 +429,7 @@ void MainWindow::createMainWidgets()
 	
 	docuDock = new DocuDock(this);
 	docuDock->setObjectName("DocuDock");
-	addDockWidget(Qt::BottomDockWidgetArea,docuDock,Qt::Horizontal);
+	addDockWidget(Qt::RightDockWidgetArea,docuDock,Qt::Vertical);
 	
     // The Core Editor Stack
     editorStack = new QStackedWidget();
