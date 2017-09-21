@@ -28,10 +28,13 @@ using TR1_NAMESPACE::const_pointer_cast;
 using TR1_NAMESPACE::static_pointer_cast;
 using TR1_NAMESPACE::unordered_set;
 
+// fix missing make_unique in C++11
+#if __cplusplus == 201103L
 template<typename T, typename ...Args>
 std::unique_ptr<T> make_unique( Args&& ...args )
 {
     return std::unique_ptr<T>( new T( std::forward<Args>(args)... ) );
 }
+#endif
 
 #endif // CONFIG_H

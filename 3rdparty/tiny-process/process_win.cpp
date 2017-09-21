@@ -10,8 +10,10 @@ Process::Data::Data() noexcept : id(0), handle(NULL) {}
 
 // Simple HANDLE wrapper to close it automatically from the destructor.
 class Handle {
+private:
+  HANDLE handle;
 public:
-  Handle() : handle(INVALID_HANDLE_VALUE) noexcept { }
+  Handle() : handle(INVALID_HANDLE_VALUE) { }
   ~Handle() noexcept {
     close();
   }
@@ -25,9 +27,8 @@ public:
     return old_handle;
   }
   operator HANDLE() const noexcept { return handle; }
+  // operator PHANDLE() const noexcept { return &handle; }
   HANDLE* operator&() noexcept { return &handle; }
-private:
-  HANDLE handle;
 };
 
 //Based on the discussion thread: https://www.reddit.com/r/cpp/comments/3vpjqg/a_new_platform_independent_process_library_for_c11/cxq1wsj

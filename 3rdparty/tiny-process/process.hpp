@@ -7,9 +7,14 @@
 #include <mutex>
 #include <thread>
 #include <memory>
-#ifndef _WIN32
-#include <sys/wait.h>
+#ifdef _WIN32
+#ifndef _GLIBCXX_HAS_GTHREADS
+#include "mingw.thread.h"
+#include "mingw.mutex.h"
 #endif
+#else // _WIN32
+#include <sys/wait.h>
+#endif // _WIN32
 
 namespace TinyProcessLib {
 
