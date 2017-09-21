@@ -26,5 +26,5 @@ add_library(tiny-process-library ${process_source_files})
 
 target_link_libraries(tiny-process-library ${CMAKE_THREAD_LIBS_INIT})
 
-install(TARGETS tiny-process-library DESTINATION lib)
-install(FILES process.hpp DESTINATION include)
+# install(TARGETS tiny-process-library DESTINATION lib)
+# install(FILES process.hpp DESTINATION include)
