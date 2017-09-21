@@ -104,7 +104,10 @@ IF(MORPHEUS_GUI)
 	ADD_SUBDIRECTORY( gui )
 ENDIF()
 
-
+add_custom_target( CompressedChangelog ALL
+COMMAND gzip -c -n -9 -f  ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md >  ${CMAKE_CURRENT_BINARY_DIR}/changelog.gz
+COMMAND cmake -E copy ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md ${CMAKE_CURRENT_BINARY_DIR}/copyright
+SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md )
 
 INCLUDE(InstallRequiredSystemLibraries)
 
@@ -113,14 +116,20 @@ SET(M_MAINTAINER "Joern Starruss <joern.starruss@tu-dresden.de>")
 SET(M_APP_NAME "Morpheus")
 SET(M_EXECUTABLES ${SIMULATOR_EXEC_NAME} ${GUI_EXEC_NAME})
 
+STRING(TOLOWER "${M_APP_NAME}" CPACK_PACKAGE_NAME )
+# SET(CPACK_PACKAGE_NAME "${M_APP_NAME}")
+SET(CPACK_PACKAGE_EXECUTABLES  ${GUI_EXEC_NAME}; "Morpheus - Modeling Morphogenesis")
+
 SET(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR} )
 SET(CPACK_PACKAGE_VERSION_MINOR ${VERSION_MINOR} )
 SET(CPACK_PACKAGE_VERSION_PATCH ${VERSION_PATCH} )
 
-SET(CPACK_PACKAGE_NAME "${M_APP_NAME}")
-SET(CPACK_PACKAGE_EXECUTABLES  ${GUI_EXEC_NAME}; "Morpheus - Modeling Morphogenesis")
 
-SET(CPACK_PACKAGE_INSTALL_DIRECTORY "morpheus")
+SET(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_NAME}")
+
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/changelog.gz ${CMAKE_CURRENT_BINARY_DIR}/copyright
+DESTINATION "share/doc/${CPACK_PACKAGE_NAME}/")
+
 #-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
 #SET(CPACK_PACKAGE_VENDOR "IMC, Center for High Performance Computing, TU Dresden")
 SET(CPACK_PACKAGE_VENDOR "Jörn Starruß & Walter de Back (ZIH, TU-Dresden)")
@@ -137,9 +146,13 @@ SET(CPACK_STRIP_FILES "${M_EXECUTABLES}")
 #SET(CPACK_SOURCE_STRIP_FILES "")
 
 
+
+
+
 IF( "${MORPHEUS_OS}" STREQUAL "UNIX" AND  NOT "${MORPHEUS_OS}" STREQUAL "APPLE" )
   
-  SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Modeling environment for Multi-Cellular Systems Biology
+  SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Modeling environment for Multi-Cellular
+  Systems Biology
   Modeling and simulation environment for multi-cellular systems biology.
   Includes simulators for ODEs, PDEs and cellular Potts models. 
   Facilitates model integration into multiscale models.
@@ -153,22 +166,18 @@ IF( "${MORPHEUS_OS}" STREQUAL "UNIX" AND  NOT "${MORPHEUS_OS}" STREQUAL "APPLE" 
   SET(CPACK_DEBIAN_PACKAGE_SECTION "science")
   SET(CPACK_DEBIAN_PACKAGE_MAINTAINTER ${M_MAINTAINTER})
   
+ 
+  
   FIND_PROGRAM(DPKG_PROGRAM dpkg DOC "dpkg program of Debian-based systems")
-  IF(DPKG_PROGRAM)
-    EXECUTE_PROCESS(
-      COMMAND ${DPKG_PROGRAM} -S ${TIFF_LIBRARY}
-      COMMAND cut -d: -f1
-      OUTPUT_VARIABLE DEBIAN_TIFF_PACKAGE
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-  ELSE(DPKG_PROGRAM)
-   SET(DEBIAN_TIFF_PACKAGE "libtiff5")
-  ENDIF(DPKG_PROGRAM)
-  SET(SBML_DEPENDS "")
+  
+  SET(DEBIAN_TIFF_PACKAGE "libtiff5")
+  
+  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.6), libgomp1, libgcc1 (>= 1:4.1), libssh-4, ${DEBIAN_TIFF_PACKAGE}, libqtcore4, libqtgui4, libqt4-xml, libqt4-help, libqt4-svg, libqt4-sql-sqlite, libqtwebkit4, gnuplot-qt (>= 4.4) | gnuplot-x11 (>=4.4), graphviz")
+  
   IF(LIBSBML_FOUND AND MORPHEUS_SBML)
-    SET(SBML_DEPENDS "libsbml5, ")
+    SET(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libsbml5")
   ENDIF()
-  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.6), libgomp1, libgcc1 (>= 1:4.1), libssh-4, ${DEBIAN_TIFF_PACKAGE}, ${SBML_DEPENDS} libqtcore4, libqtgui4, libqt4-xml, libqt4-help, libqt4-svg, libqt4-sql-sqlite, libqtwebkit4, gnuplot-qt (>= 4.4) | gnuplot-x11 (>=4.4), graphviz")
+  
   SET(CPACK_GENERATOR "DEB")
 
   SET(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://imc.zih.tu-dresden.de/wiki/morpheus")
