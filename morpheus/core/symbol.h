@@ -17,6 +17,7 @@
 #include <deque>
 typedef deque<double> double_queue;
 #include "vec.h"
+#include <stdexcept>
 // #include "cpm_layer.h"
 
 /** \defgroup SymbolSystem Symbolic Linking System

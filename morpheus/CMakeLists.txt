@@ -1,8 +1,5 @@
 
 FIND_PACKAGE(ZLIB REQUIRED)
-#SET(GNUPLOT_ROOT "" CACHE PATH "Set root directory to search for Gnuplot" )
-#MARK_AS_ADVANCED(GNUPLOT_ROOT)
-#FIND_PACKAGE(Gnuplot)
 
 SET(GRAPHVIZ_ROOT "" CACHE PATH "Set root directory to search for GraphViz" )
 MARK_AS_ADVANCED(GRAPHVIZ_ROOT)
@@ -27,11 +24,11 @@ option(MORPHEUS_OPENMP "Switch off the usage of OPENMP" ON)
 
 IF (HAVE_OPENMP AND MORPHEUS_OPENMP)
 	MESSAGE(STATUS "Enabling OpenMP support for ${CMAKE_CXX_COMPILER_ID}. ")
-	IF( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" )
+	IF( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" )
 		SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fopenmp")
-	ELSEIF (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 		SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fopenmp")
-	ELSEIF (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+	ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -openmp")
 	ELSE()
 		MESSAGE(FATAL_ERROR "Unknown compiler id ${CMAKE_CXX_COMPILER_ID}, cannot set openmp flag")
@@ -96,7 +93,7 @@ SET(XML_MERGE_TRANS_SCRIPT  "${CMAKE_CURRENT_SOURCE_DIR}/merge.xslt")
 FIND_PROGRAM(XSLTPROC "xsltproc" NAMES "xsltproc xsltproc.exe" DOC "XSLTProc executable")
 FIND_PROGRAM(XMLLINT "xmllint" NAMES "xmllint xsltproc.exe" DOC "XMLLint executable")
 
-IF( ${XSLTPROC} STREQUAL "XSLTPROC-NOTFOUND" )
+IF( NOT XSLTPROC )
 	message(FATAL_ERROR "Unable to locate 'xsltproc' executable")
 ENDIF()
 
@@ -123,7 +120,7 @@ ENDFOREACH()
 SET(MERGED_SCHEMA ${MERGE_INTERMEDIATE})
 
 
-IF ( ${XMLLINT} STREQUAL "XMLLINT-NOTFOUND" )
+IF ( "${XMLLINT}" STREQUAL "XMLLINT-NOTFOUND" )
 	MESSAGE( STATUS "Unable to locate 'xmllint' executable.\nSkipping xsd pretty printing.")
 	ADD_CUSTOM_COMMAND(
 		OUTPUT ${XSD_NAME}
