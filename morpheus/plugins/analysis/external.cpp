@@ -6,9 +6,9 @@ int External::instance_counter=0;
 
 External::External() { 
 	instance_id=instance_counter; instance_counter++;
-	fork.setXMLPath("separate-thread");
-	fork.setDefault("true");
-	registerPluginParameter( fork );
+	detach.setXMLPath("detach");
+	detach.setDefault("true");
+	registerPluginParameter( detach );
 	
 	timeout.setXMLPath("timeout");
 	timeout.setDefault("30");
@@ -122,7 +122,7 @@ void External::execute(){
 			true
 		)
 	);
-	if (fork()) {
+	if (detach()) {
 		cout << "External: running in detached mode"<<endl;
 		auto det = shared_ptr<DetachedProcess>(new DetachedProcess());
 		det->process = process;
