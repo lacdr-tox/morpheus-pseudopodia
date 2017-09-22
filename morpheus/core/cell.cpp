@@ -72,8 +72,6 @@ Cell::Cell( Cell& other_cell, CellType* ct  )
 	for (uint i=0;i< celltype->default_membranes.size(); i++) {
 		p_membranes.push_back(celltype->default_membranes[i]->clone());
 	}
-	assignMatchingProperties(other_cell.properties);
-	assignMatchingMembranes(other_cell.membranes);
 	
 	track_nodes = other_cell.track_nodes;
 	track_shape = other_cell.track_shape;

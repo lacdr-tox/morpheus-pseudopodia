@@ -531,6 +531,11 @@ CPM::CELL_ID CellType::addCell(CPM::CELL_ID cell_id)
 	// change storage associations
 	cell_ids.push_back(new_cell->getID());
 	shared_ptr<Cell> old_cell_ptr = storage.replaceCell(new_cell,t);
+	
+	new_cell->init();
+	new_cell->assignMatchingProperties(old_cell_ptr->properties);
+	new_cell->assignMatchingMembranes(old_cell_ptr->membranes);
+	
 	old_cell_ptr->celltype->removeCell(cell_id);
 	
 	assert( old_cell_ptr.unique() );
