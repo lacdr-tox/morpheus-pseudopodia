@@ -1155,7 +1155,15 @@ void Gnuplotter::analyse(double time) {
 		*/
 	//plot->reset_plot();
 	stringstream command;
+
+// 	Gnuplot& command = *gnuplot;
 	
+	if( log_plotfiles ) {
+		if (file_numbering() == FileNumbering::TIME)
+			gnuplot->setLogfile(string("gnuplot_commands_")+ SIM::getTimeName() + ".gp");
+		else 
+            gnuplot->setLogfile(string("gnuplot_commands_")+ to_str(time/timeStep(),4) + ".gp");
+	}
 
 	//    SETTING UP THE TERMINAL
 	command << "unset multiplot; reset; \n";
@@ -1583,17 +1591,10 @@ void Gnuplotter::analyse(double time) {
 	command << "unset output;" 	  << endl;
 	//command << "system(\"gnuplot --version\");" << endl;
 	//cout << (log_plotfiles?"log_plotfiles = true\n":"log_plotfiles = false \n") << command.str() << endl;
-    if( log_plotfiles ){
-		ofstream command_log;
-		if (file_numbering() == FileNumbering::TIME)
-            command_log.open((string("gnuplot_commands_")+ SIM::getTimeName() + ".gp").c_str(),ios_base::app);
-		else 
-            command_log.open((string("gnuplot_commands_")+ to_str(time/timeStep(),4) + ".gp").c_str(),ios_base::app);
-		command_log << command.str();
-		command_log.close();
-	}
+
 
 	gnuplot->cmd(command.str());
+	
 }
 
 Gnuplotter::plotLayout Gnuplotter::getPlotLayout( uint plot_count, bool border )

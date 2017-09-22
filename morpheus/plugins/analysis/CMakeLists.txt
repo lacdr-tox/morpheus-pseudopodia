@@ -4,7 +4,7 @@ set(plugin_src
 	clustering_tracker.cpp
 	contact_logger.cpp
     displacement_tracker.cpp
-#	external.cpp
+	external.cpp
 	gnuplotter.cpp
 	histogram_logger.cpp
 	logger2.cpp
