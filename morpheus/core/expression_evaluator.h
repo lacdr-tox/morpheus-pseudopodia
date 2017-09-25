@@ -256,6 +256,10 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 		for (uint i=0; i<v_symbols.size(); i++) {
 			parser->DefineVar(v_symbols[i].getName(),&symbol_values[v_sym_cache_offset+i] );
 		}
+		
+		if (expand_scalar_expr && v_symbols.size() == 0) {
+			throw string("Refuse to expand scalar expression to vector");
+		}
 	}
 	else {
 		try{
