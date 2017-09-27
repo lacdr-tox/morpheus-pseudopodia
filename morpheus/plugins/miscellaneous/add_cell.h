@@ -16,7 +16,8 @@
 #include "core/plugin_parameter.h"
 #include "core/system.h"
 
-/** \defgroup AddCell
+/** \defgroup ML_AddCell AddCell
+\ingroup ML_CellType
 \ingroup MiscellaneousPlugins
 \brief Add a new cell based on a condition.
 
@@ -92,9 +93,9 @@ private:
 public:
 	AddCell();
 	DECLARE_PLUGIN("AddCell");
-	void loadFromXML( const XMLNode );
-	void init( const Scope* scope );
-	void executeTimeStep();
+	void loadFromXML( const XMLNode ) override;
+	void init( const Scope* scope ) override;
+	void executeTimeStep() override;
 };
 
 #endif // ADDCELL_H

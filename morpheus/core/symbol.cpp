@@ -8,6 +8,27 @@ template <> const string TypeInfo<VDOUBLE>::name() { return "Vector"; };
 template <> const string TypeInfo<vector<double> >::name() { return "Array";};
 template <> const string TypeInfo<double_queue >::name() { return "Queue"; };
 
+bool operator<(Granularity a, Granularity b) {
+	switch(b) {
+		case Granularity::Global:
+			return a!=Granularity::Global;
+		case Granularity::Cell:
+			return a!=Granularity::Global && a!=Granularity::Cell;
+		default:
+			return false;
+	}
+}
+
+bool operator<=(Granularity a, Granularity b) {
+		switch(b) {
+		case Granularity::Global:
+			return true;
+		case Granularity::Cell:
+			return a!=Granularity::Global;
+		default:
+			return a==b;
+	}
+}
 
 Granularity operator+(Granularity a, Granularity b) {
 	switch (a) {
@@ -95,6 +116,7 @@ string SymbolData::CellLength_symbol = "cell.length";
 string SymbolData::Temperature_symbol = "TEMPERATURE";
 
 string sym_RandomUni  = "rand_uni";
+string sym_RandomInt  = "rand_int";
 string sym_RandomNorm = "rand_norm";
 string sym_RandomBool = "rand_bool";
 string sym_RandomGamma= "rand_gamma";
@@ -109,6 +131,8 @@ string SymbolData::getLinkTypeName(LinkType linktype) {
 			return "CellProperty";
 		case SymbolData::PDELink:
 			return "PDELink";
+		case SymbolData::VectorFieldLink:
+			return "VectorFieldLink";
 		case SymbolData::CellMembraneLink:
 			return "CellMembrane";
 		case SingleCellPropertyLink:

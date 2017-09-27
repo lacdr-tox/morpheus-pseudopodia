@@ -10,6 +10,7 @@
 //////
 
 /** \defgroup CellTracker
+\ingroup ML_Analysis
 \ingroup AnalysisPlugins
 \brief Writes cell tracks in XML format
 
@@ -73,12 +74,12 @@ public:
     DECLARE_PLUGIN("CellTracker");
     CellTracker();
 
-    virtual void loadFromXML(const XMLNode );
-    virtual void init(const Scope* scope);
+    virtual void loadFromXML(const XMLNode ) override;
+    virtual void init(const Scope* scope) override;
     /// record cell positions
-    virtual void analyse(double time);
+    virtual void analyse(double time) override;
     /// write cell tracks to XML file
-    virtual void finish();
+    virtual void finish() override;
 
 private:
     XMLNode stored_node;

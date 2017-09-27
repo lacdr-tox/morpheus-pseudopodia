@@ -1,4 +1,4 @@
-#include "membrane_pde.h"
+#include "membrane_property.h"
 #include "celltype.h"
 
 REGISTER_PLUGIN(MembraneProperty);

@@ -17,6 +17,7 @@
 #include <deque>
 typedef deque<double> double_queue;
 #include "vec.h"
+#include <stdexcept>
 // #include "cpm_layer.h"
 
 /** \defgroup SymbolSystem Symbolic Linking System
@@ -97,6 +98,7 @@ class AbstractProperty;
 
 // Forward declarations for platform provided computation symbols
 extern string sym_RandomUni;
+extern string sym_RandomInt;
 extern string sym_RandomNorm;
 extern string sym_RandomBool;
 extern string sym_RandomGamma;
@@ -111,8 +113,12 @@ extern string sym_Modulo;
 class Scope;
 
 enum class Granularity {
-	 Undef, Global, Node, Cell, MembraneNode
+	 Undef, Global, Node, Cell, MembraneNode, SurfaceNode
 };
+
+bool operator<(Granularity a, Granularity b);
+bool operator<=(Granularity a, Granularity b);
+
 Granularity operator+(Granularity a, Granularity b);
 Granularity& operator+=(Granularity& g, Granularity b);
 ostream& operator<<(ostream& out, Granularity g);
@@ -129,7 +135,7 @@ private:
 
 class SymbolData {
 public:
-	SymbolData() : integer(false), writable(false), invariant(false), time_invariant(false), is_composite(false), granularity(Granularity::Undef), link(UnLinked) {};
+	SymbolData() : integer(false), writable(false), invariant(false), time_invariant(false), is_composite(false), is_delayed(false), granularity(Granularity::Undef), link(UnLinked) {};
 	string name;
 	string base_name;  /// holds the name of the symbol this symbol is derived from, or the symbol name in any other case.
 	string fullname;   /// More descriptive name od the symbol, allows space chars.
@@ -139,6 +145,7 @@ public:
 	bool invariant;     /// Symbol is invariant in time and space
 	bool time_invariant;  /// Symbols is constant in time
 	bool is_composite; /// Symbol is composed of subscope symbols, but may also have a default
+	bool is_delayed;
 	
 // 	enum Granularity { UndefGran, GlobalGran, NodeGran, CellGran, MembraneNodeGran };
 	
@@ -150,6 +157,7 @@ public:
 					FunctionLink,
 					VectorFunctionLink,
 					PDELink,
+					VectorFieldLink,
 					Space,
 					MembraneSpace,
 					Time,

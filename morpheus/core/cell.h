@@ -42,13 +42,13 @@ public:
 	~Cell();
 
 	virtual XMLNode saveToXML() const;                  ///Save the cell state to an XMLNode
+	virtual void loadNodesFromXML(const XMLNode Node);       ///< Loading the cell's positional state from an XMLNode
 	virtual void loadFromXML(const XMLNode Node);       ///< Loading the cell state from an XMLNode
 	void init();										/// Initialize the cell after attaching it to the celltype
 	
 /**
  * Reflect the changes in the cell due to an update in the cpm lattice
  * @param update provides the whole udate story
- * @param todo selects which changes contribute to the cell
  */
 	virtual void setUpdate(const CPM::Update& update);
 	virtual void applyUpdate(const CPM::Update& update);  ///< apply the requested changes to the cell (either add_state or remove_state are NULL)

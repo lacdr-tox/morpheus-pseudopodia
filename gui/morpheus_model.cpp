@@ -274,15 +274,8 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 	QList<MorphModelEdit> edits;
 	
 	
-	
 	if (morpheus_file_version == morpheus_ml_version) {
-// 		return edits;
-		fix_version=3;
-		MorphModel::AutoFix a;
-		a.copy = false;
-		a.match_path = "MorpheusModel/CPM/ShapeBoundary"; a.move_path = "MorpheusModel/CPM/ShapeSurface"; fixes.append(a);
-		a.match_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@symbol-ref";a.move_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@value"; fixes.append(a);
-		a.match_path = "MorpheusModel/Analysis/Logger/Restriction/@force-node-granularity";a.move_path = "MorpheusModel/Analysis/Logger/Input/@force-node-granularity"; fixes.append(a);
+		// nothing to do ...
 	}
 	else if (morpheus_file_version == 2) {
 		// return edits;
@@ -373,6 +366,18 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 	else {
 		throw  ModelException(ModelException::InvalidVersion, QString("Incompatible MorpheusML version %1").arg(morpheus_file_version) );
 	}
+	// Current language patches, will become ml_version 4
+	if (morpheus_file_version == morpheus_ml_version || fix_version == morpheus_ml_version ) {
+// 		return edits;
+		fix_version=3;
+		MorphModel::AutoFix a;
+		a.copy = false;
+		a.match_path = "MorpheusModel/CellTypes/CellType/CellReporter"; a.move_path = "MorpheusModel/CellTypes/CellType/Mapper"; fixes.append(a);
+		a.match_path = "MorpheusModel/CPM/ShapeBoundary"; a.move_path = "MorpheusModel/CPM/ShapeSurface"; fixes.append(a);
+		a.match_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@symbol-ref";a.move_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@value"; fixes.append(a);
+		a.match_path = "MorpheusModel/Analysis/Logger/Restriction/@force-node-granularity";a.move_path = "MorpheusModel/Analysis/Logger/Input/@force-node-granularity"; fixes.append(a);
+	}
+
 	qDebug() << QString("Applying fixes from version %1 to %2").arg(morpheus_file_version).arg(fix_version);
 	qDebug() << "Number of AutoFix rules = " << fixes.size();
 	
@@ -782,7 +787,6 @@ QVariant MorphModel::data(const QModelIndex &index, int role) const {
 					text_node = node->firstChild("Expression");
 					if (text_node) {
 						val = text_node->getText();
-						val;
 						if (val.length() > 100 )
 							val = val.left(96) + " ...";
 					}
@@ -795,7 +799,6 @@ QVariant MorphModel::data(const QModelIndex &index, int role) const {
 						val = text_node->getText().left(96) + " ...";
 					else
 						val = text_node->getText();
-					val;
 				}
 				else if (value) {
 					val = value->get();
@@ -1132,7 +1135,8 @@ bool MorphModel::dropMimeData( const QMimeData * data, Qt::DropAction action, in
             action = Qt::CopyAction;
         }
     }
-    else if (action==Qt::CopyAction) {
+    
+    if (action==Qt::CopyAction) {
         if (data->hasText()) {
             QDomDocument doc;
             doc.setContent(data->text());
@@ -1214,8 +1218,6 @@ void MorphModel::removePart(int idx) {
 
 void MorphModel::loadModelParts() {
 
-	int current_order_id = -1;
-	bool need_resort = true;
 	const QList<nodeController* >& xml_parts = rootNodeContr->getChilds();
 	QMap<QString, nodeController*> named_xml_parts;
 	for (auto part : xml_parts) named_xml_parts[part->getName()] = part;

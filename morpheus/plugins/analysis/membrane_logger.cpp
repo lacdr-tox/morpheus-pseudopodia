@@ -26,7 +26,8 @@ void MembraneLogger::loadFromXML(const XMLNode xNode)
 	// Define PluginParameters for all defined Output tags
 	symbols.resize( xNode.nChildNode("MembraneProperty") );
 	for (uint i=0; i<xNode.nChildNode("MembraneProperty"); i++) {
-		symbols[i].setXMLPath("MembraneProperty["+to_str(i)+"]/symbol-ref");
+		
+		symbols[i]->setXMLPath("MembraneProperty["+to_str(i)+"]/symbol-ref");
 		registerPluginParameter(symbols[i]);
 	}
 	
@@ -90,7 +91,7 @@ void MembraneLogger::init(const Scope* scope)
 	celltype.init();
 	const Scope* ct_scope = celltype()->getScope();
 	for(uint i=0; i<symbols.size(); i++){
-		symbols[i].setScope( ct_scope );
+		symbols[i]->setScope( ct_scope );
 		
 // 		if( symbols[i].granularity() != SymbolData::MembraneNodeGran ){
 // 			cerr << "MembraneLogger: Symbol '" <<  symbols[i].getDescription() << "' does not refer to a MembraneProperty." << endl;
@@ -107,7 +108,7 @@ void MembraneLogger::init(const Scope* scope)
 	
 	// get names of symbols
 	for(uint s=0; s<symbols.size(); s++){
-		symbol_names.push_back( symbols[s].description() );
+		symbol_names.push_back( symbols[s]->description() );
 	}
 
 	
@@ -199,7 +200,7 @@ void MembraneLogger::log(double time){
 		
 		for(uint c=0; c<cells.size(); c++){
 			// open file if filename is given
-			string fn = getFileName(symbols[s].description(), "log", cells[c]);
+			string fn = getFileName(symbols[s]->description(), "log", cells[c]);
 			fout.open(fn.c_str(), ios::out);
 			if( !fout.is_open() ){
 				cerr << "MembraneLogger: cannot open file '" << fn << "'." << endl;
@@ -242,7 +243,7 @@ void MembraneLogger::log(double time){
 	
 }
 
-void MembraneLogger::writeMembrane(const PluginParameter2<double, XMLReadableSymbol, RequiredPolicy>& symbol, CPM::CELL_ID id, ostream& output){
+void MembraneLogger::writeMembrane(const PluginParameter_Shared<double, XMLReadableSymbol, RequiredPolicy> symbol, CPM::CELL_ID id, ostream& output){
 	for(uint theta=0; theta<MembraneProperty::getSize().y; theta++){
 		for(uint phi=0; phi<MembraneProperty::getSize().x; phi++){
 			
@@ -380,18 +381,6 @@ void MembraneLogger::analyse(double time)
 	this->log(time);
 	
 }
-
-set< string > MembraneLogger::getDependSymbols()
-{
-	set< string > symbols;
-	for(uint p=0; p<symbol_names.size(); p++){
-		symbols.insert(symbol_names[p]);
-	}
-	return symbols;
-}
-
-
-
 
 void MembraneLogger::writeCommand3D(vector<string> logfilenames){
 	
@@ -559,7 +548,7 @@ vector<CPM::CELL_ID> MembraneLogger::parseCellIDs(){
 	return ids;
 }
 
-void MembraneLogger::finish(double time)
+void MembraneLogger::finish()
 { 
 	if( fout.is_open() ){
 		fout << endl;

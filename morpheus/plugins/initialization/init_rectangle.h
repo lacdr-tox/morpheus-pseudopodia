@@ -16,6 +16,7 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup InitRectangle
+ * \ingroup ML_Population
 \ingroup InitializerPlugins
 \brief Initializes cells as single nodes arranged in a rectangle
 
@@ -63,15 +64,15 @@ private:
 	int number_of_cells;
 	CellType* celltype;
 
-	void setRandom();
-	void setRegular();
+	vector<CPM::CELL_ID> setRandom();
+	vector<CPM::CELL_ID> setRegular();
 	vector<int> calculateUniformPos();
-	bool createCell(VINT newPos);
+	CPM::CELL_ID createCell(VINT newPos);
 
 public:
 	InitRectangle();
 	DECLARE_PLUGIN("InitRectangle");
-	bool run(CellType* ct);
+	vector<CPM::CELL_ID> run(CellType* ct) override;
 };
 
 #endif

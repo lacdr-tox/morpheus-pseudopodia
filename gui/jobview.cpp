@@ -39,9 +39,9 @@ JobQueueView::JobQueueView ( QWidget* parent) : QSplitter ( parent )
 
 	for ( int i=0; i<jobQueueGroupingMenu->actions().size(); i++) {
 
-		jobQueueGroupingMenu->actions()[i]->setCheckable(true);jobQueueGroupingMenu->actions().size();
+		jobQueueGroupingMenu->actions()[i]->setCheckable(true);
 		if (i==job_view_model->getGroupBy())
-			jobQueueGroupingMenu->actions()[i]->setChecked(true);jobQueueGroupingMenu->actions().size();
+			jobQueueGroupingMenu->actions()[i]->setChecked(true);
 	}
 	jobQueueMenu->addMenu(jobQueueGroupingMenu);
 	connect(jobQueueMenu,SIGNAL(triggered(QAction*)),this,SLOT(jobQueueMenuTriggered(QAction*)));

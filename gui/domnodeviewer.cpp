@@ -243,6 +243,7 @@ void domNodeViewer::setTreeItem( const QModelIndex& index)
 	model_tree_view->blockSignals(false);
 
     emit nodeSelected(node);
+	 emit xmlElementSelected(node->getXPath());
 }
 
 //------------------------------------------------------------------------------
@@ -329,8 +330,9 @@ void domNodeViewer::pluginTreeDoubleClicked(QTreeWidgetItem* item, int column)
 
 void domNodeViewer::pluginTreeItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous)
 {
-    if (current)
-        emit xmlElementSelected(current->text(0));
+    if (current) {
+		 emit xmlElementSelected( model->indexToItem(model_tree_view->currentIndex())->getXPath() << current->text(0) );
+	 }
 }
 
 //------------------------------------------------------------------------------

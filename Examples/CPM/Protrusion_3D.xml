@@ -36,7 +36,7 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
     <CellTypes>
         <CellType class="biological" name="amoeba">
             <VolumeConstraint target="25000" strength="50"/>
-            <SurfaceConstraint target="1.5" strength="5"/>
+            <SurfaceConstraint target="1.5" mode="aspherity" strength="5"/>
             <Protrusion field="act" maximum="150" strength="80"/>
             <!--    <Disabled>
         <ConnectivityConstraint/>
@@ -75,7 +75,7 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
         </Population>
     </CellPopulations>
     <Analysis>
-        <Gnuplotter time-step="100" interpolation="false" decorate="false">
+        <Gnuplotter time-step="100" decorate="false">
             <Terminal opacity="0.2" name="png"/>
             <Plot>
                 <Cells value="cell.id" slice="100">

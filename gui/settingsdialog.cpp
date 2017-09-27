@@ -13,8 +13,6 @@ settingsDialog::settingsDialog()
     QPushButton *bt_cancel = new QPushButton("Cancel", this);
     QPushButton *bt_save = new QPushButton("Save", this);
 
-    QSpacerItem *spacer = new QSpacerItem(1, 1, QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-
     QGridLayout *gl = new QGridLayout(this);
 	gl->setRowStretch(0,1);
     gl->addWidget(tabWid, 0, 0, 1, 3);

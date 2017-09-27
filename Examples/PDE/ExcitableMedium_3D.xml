@@ -1,4 +1,4 @@
-<MorpheusModel version="1">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-ExcitableMedium-3D</Title>
         <Details>Simulates the Barkley model of an excitable medium, see: http://www.scholarpedia.org/article/Barkley_model
@@ -38,6 +38,9 @@ TIFF images can be viewed with external tools such as Fiji / ImageJ (http://fiji
                 <Condition boundary="-z" type="noflux"/>
             </BoundaryConditions>
             <NodeLength value="1.0"/>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="l" name="position in space"/>
     </Space>

@@ -1,4 +1,4 @@
-<MorpheusModel version="1">
+<MorpheusModel version="3">
     <Description>Conway's Game of Life
 ---------------------
 
@@ -46,8 +46,10 @@ Rules:
             <System solver="euler" time-step="1.0" name="Rules of life">
                 <Rule symbol-ref="s">
                     <Expression>if((s == 1 and sum &lt;  2), 0,
-                                 if((s == 1 and sum >  3), 0,
-                                  if((s == 0 and sum == 3), 1, s)))
+  if((s == 1 and sum >  3), 0,
+    if((s == 0 and sum == 3), 1, s)
+  )
+)
                     </Expression>
                 </Rule>
             </System>

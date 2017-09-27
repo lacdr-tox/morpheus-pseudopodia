@@ -16,6 +16,7 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup InsertMedium
+\ingroup ML_CellType
 \ingroup MiscellaneousPlugins
 \brief Inserts medium nodes randomly along a cell membrane.
 
@@ -54,8 +55,8 @@ private:
 public:
     InsertMedium();
 	DECLARE_PLUGIN("InsertMedium");
-	void init(const Scope* scope);
-	void executeTimeStep();
+	void init(const Scope* scope) override;
+	void executeTimeStep() override;
 };
 
 #endif // INSERTMEDIUM_H

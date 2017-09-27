@@ -1,4 +1,4 @@
-<MorpheusModel version="1">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-TuringPatterns</Title>
         <Details>
@@ -48,6 +48,9 @@ Miyazawa, Okamoto and Kondo, Blending of animal colour patterns by hybridization
                 <Condition boundary="x" type="noflux"/>
                 <Condition boundary="y" type="noflux"/>
             </BoundaryConditions>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="l"/>
     </Space>

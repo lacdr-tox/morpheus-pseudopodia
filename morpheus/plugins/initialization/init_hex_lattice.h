@@ -4,7 +4,8 @@
 #include "core/interfaces.h"
 #include "core/plugin_parameter.h"
 
-/** \defgroup InitCellLattice
+/** \defgroup InitHexLattice
+\ingroup ML_Population
 \ingroup InitializerPlugins
 \brief Initializes lattice of cell for CA-like models
 
@@ -40,8 +41,8 @@ private:
 public:
 	InitHexLattice(){};
 	DECLARE_PLUGIN("InitHexLattice");
-	bool run(CellType* ct);
-	void loadFromXML(const XMLNode);
+	vector<CPM::CELL_ID> run(CellType* ct) override;
+	void loadFromXML(const XMLNode) override;
 };
 
 #endif

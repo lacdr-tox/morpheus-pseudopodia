@@ -13,10 +13,10 @@ http://dx.doi.org/10.1371/journal.pone.0024175
     </Description>
     <Global>
         <Field symbol="u" value="1.5e-6" name="VEGF">
-            <Diffusion rate="58.7" unit="µm²/s"/>
+            <Diffusion rate="58.7"/>
         </Field>
         <Field symbol="s" value="0" name="Free ECM">
-            <Diffusion rate="0.001" unit="µm²/s"/>
+            <Diffusion rate="0.001"/>
         </Field>
         <Field symbol="b" value="0" name="VEGF_b">
             <Diffusion rate="0"/>
@@ -52,7 +52,7 @@ http://dx.doi.org/10.1371/journal.pone.0024175
                 <Condition boundary="x" type="periodic"/>
                 <Condition boundary="y" type="periodic"/>
             </BoundaryConditions>
-            <NodeLength unit="micron" value="2"/>
+            <NodeLength value="2"/>
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>

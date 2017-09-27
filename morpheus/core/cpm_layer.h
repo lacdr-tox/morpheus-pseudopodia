@@ -78,15 +78,17 @@ namespace CPM {
 	
 }
 
-/** @brief Extractes Information of a Neighborhood in terms of (CPM::CELL_ID - count) statistics in an efficient way, respecting boundary conditions
+/** @brief Extracts Information of a Neighborhood in terms of statistics in an efficient way.
+
+ *  In particular it provides a CPM::CELL_ID - count statistics and the neighbor states, respecting boundary conditions.
  * 
- *  The stencil neighborhood is arbitrary order, sorted for optimal memory access patterns
+ *  The stencil neighborhood available through getStencil() is in arbitrary order, sorted for optimized memory access patterns.
  */
 class StatisticalLatticeStencil  {
 	public:
 		struct STATS { CPM::CELL_ID cell; uint count; };
 		StatisticalLatticeStencil( shared_ptr< const CPM::LAYER > data_layer, const std::vector< VINT >& neighbors );
-		void setPosition(VINT pos);
+		void setPosition(const VINT& pos);
 		const vector<VINT>& getStencil() const { return stencil_neighbors; };
 		const vector<StatisticalLatticeStencil::STATS>& getStatistics() const { if (!valid_data) applyPos(); return stencil_statistics; };
 		const vector<CPM::CELL_ID>& getStates() const { if (!valid_data) applyPos(); return stencil_states; };
@@ -105,11 +107,18 @@ class StatisticalLatticeStencil  {
 		mutable vector<CPM::CELL_ID> stencil_states;
 };
 
+/** @brief Extracts Information of a Neighborhood in an efficient way.
+
+ *  In particular it provides the neighborhood states, respecting boundary conditions.
+ *
+ *  The stencil neighborhood available through getStencil() is in exactly the order requested within the constructor.
+ */
+
 class LatticeStencil {
 	public:
 		
 		LatticeStencil( shared_ptr< const CPM::LAYER > data_layer, const std::vector< VINT >& neighbors );
-		void setPosition(VINT pos);
+		void setPosition(const VINT& pos);
 		const vector<VINT>& getStencil() const { return stencil_neighbors; };
 		const vector<CPM::CELL_ID>& getStates() const { return stencil_states; };
 		

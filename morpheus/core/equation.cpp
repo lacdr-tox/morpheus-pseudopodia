@@ -22,7 +22,7 @@ void Equation::report()
 	if (fr.size()>500) {
 		auto end = fr.end();
 #pragma omp parallel for
-		for (auto f=fr.begin(); f<end; ++f) {
+		for (auto f=fr.begin(); f<fr.end(); ++f) {
 			symbol.set(*f,expression(*f));
 		}
 	}

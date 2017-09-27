@@ -32,8 +32,54 @@ class PDE_Layer;
 #include <iterator>
 
 /**
-        @author
-*/
+\defgroup ML_Field Field
+\ingroup Symbols
+\ingroup ML_Global
+
+A \b Field defines a variable scalar field, associating a scalar value to every lattice site, and defines a symbol with it.
+
+
+Spatio-temporal dynamics can be implemented explicitly by using an \ref ML_Equation, an \ref ML_Event or by using \ref ML_DiffEqn.
+In addition, homogeneous \b Diffusion can optionally be specified.
+The \ref ML_Space symbol allows the initial expression to directly depend on the spatial position. 
+
+
+- \b value: initial condition for the scalar field. May be given as expression.
+
+Optionally, a \b Diffusion rate may be specified.
+
+- \b rate: diffusion coefficient
+- \b well-mixed (optional): if true, homogenizes scalar field. Requires rate=0.
+
+
+**/
+
+
+
+
+/**
+\defgroup ML_VectorField VectorField
+\ingroup Symbols
+\ingroup ML_Global
+
+A \b VectorField  defines a variable vector field, associating an (x,y,z) value to every lattice site, and defines a \b symbol for it.
+
+Spatio-temporal dynamics can be implemented explicitly by using a \ref ML_VectorEquation or \ref ML_VectorRule.
+The \ref ML_Space symbol allows the initial expression to directly depend on the spatial position. 
+
+
+- \b value: initial condition for the vector field. May be given as expression.
+
+**/
+
+
+
+
+/** \brief Class representing the State of a scalar Field atop the \ref Lattice_Data_Layer
+ * 
+ * Also takes care of the implementation of Diffusion on all Lattice types (incl. spherical lattices) and the respective
+ * boundary handling.
+ */
 
 class PDE_Layer : public Lattice_Data_Layer<double>
 {
@@ -144,6 +190,21 @@ private:
  *              |a_i| + |c_i| < |b_i|  for all i
  */
 	void tridiag_solver(const valarray<value_type>& a, const valarray<value_type>& b,  valarray<value_type> c, valarray<value_type> d,  valarray<value_type>& x);
+};
+
+
+class VectorField_Layer : public Lattice_Data_Layer<VDOUBLE> {
+public: 
+	VectorField_Layer(shared_ptr< const Lattice > lattice, double node_length);
+	void loadFromXML(XMLNode node);
+	void init(const Scope* scope);
+	string getSymbol() const { return symbol_name; }
+	string getName() const { return name; }
+
+private:
+	string symbol_name;
+	double node_length;
+	string initial_expression;
 };
 
 #endif

@@ -120,6 +120,7 @@ public:
 	Neighborhood getNeighborhoodByDistance(const double dist_max) const;
 	Neighborhood getNeighborhoodByOrder(const uint order) const;
 protected:
+	const double sin_60 = 0.86602540378443864676;
 	uint dimensions;
 	VINT _size;
 	Boundary::Type boundaries[Boundary::nCodes];
@@ -180,15 +181,26 @@ inline bool Lattice::orth_resolve ( VDOUBLE& a) const {
 			return false;
 		}
 	}
-	if ( a.y<0 or a.y >= _size.y ) {
-		if (boundaries[Boundary::py] == Boundary::periodic) {
-			if (structure == hexagonal) {
-				a.x -= double(_size.y) * 0.5 * DIV(a.y,double(_size.y));
+	if (structure == hexagonal) {
+		double orth_y_size = sin_60 *_size.y;
+		if ( a.y<0 or a.y >= orth_y_size ) {
+			if (boundaries[Boundary::py] == Boundary::periodic) {
+				a.x -= double(_size.y) * 0.5 * DIV(a.y,orth_y_size);
+				a.y  = MOD(a.y,double(orth_y_size));
 			}
-			a.y = MOD(a.y,double(_size.y));
+			else {
+				return false;
+			}
 		}
-		else {
-			return false;
+	}
+	else {
+		if ( a.y<0 or a.y >= _size.y ) {
+			if (boundaries[Boundary::py] == Boundary::periodic) {
+				a.y = MOD(a.y,double(_size.y));
+			}
+			else {
+				return false;
+			}
 		}
 	}
 	if ( a.x<0 or a.x >= _size.x ) {

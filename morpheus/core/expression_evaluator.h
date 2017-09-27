@@ -172,13 +172,14 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 	
 	string clean_expression=expression;
 	string remove_chars="\t\n\r";
-	auto pos=0;
+	string::size_type pos=0;
 	while ( (pos = clean_expression.find_first_of(remove_chars,pos)) != string::npos) {
 		clean_expression[pos]=' ';
 		pos++;
 	}
 	pos = clean_expression.find_first_not_of(" ");
-	if (pos!=0 && pos!=string::npos) {
+	if (pos!=0) {
+		if (pos==string::npos) pos = clean_expression.end() - clean_expression.begin();
 		clean_expression.erase(clean_expression.begin(), clean_expression.begin()+pos);
 	}
 	pos = clean_expression.find_last_not_of(" ");
@@ -203,25 +204,16 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 				parser->DefineVar( symbol.c_str(), &buzz_value );
 			}
 			catch (mu::Parser::exception_type &e){
-				string scopename = (scope->getParent()?scope->getParent()->getName():"Global");
+				string scopename = ( scope->getName() );
 				throw  (string("Error in declaration of variable \"") +symbol+ ("\"  in ")+ scopename + ("."));
 				//cerr << "Error in declaring variable '"<< symbol <<"'  for Expression: " << e.GetMsg() << ":\n\n" << endl;
 				//assert(0); exit(-1);
 			}
 		}
 		
-		try{
-			parser->SetExpr(clean_expression);
-		}
-		catch (mu::Parser::exception_type &e){
-			string scopename = (scope->getParent()?scope->getParent()->getName():"Global");
-			throw  (string("Error in expression \"")+ e.GetExpr() +("\" in ")+ scopename + ("."));
-			//cerr << "Error in Expression: " << e.GetMsg() << ":\n\n" << e.GetExpr() << endl;
-			//exit(-1);
-		}
-		
 		mu::varmap_type used_symbols;
 		try{
+			parser->SetExpr(clean_expression);
 			used_symbols = parser->GetUsedVar();
 			if (parser->GetNumResults() == 1 && expectedNumResults() > 1) {
 				expand_scalar_expr = true;
@@ -231,13 +223,10 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 			}
 		}
 		catch(mu::Parser::exception_type &e){
-				string scopename = (scope->getParent()?scope->getParent()->getName():"Global");
+			string scopename = ( scope->getName() );
 			throw  (string("Error in expression \"")+ e.GetExpr() +("\" in ")+ scopename + ("."));
-			//string indicator;
-			//for(int i=0; i< e.GetPos(); i++) indicator.append(" ");
-			//indicator.append("Y");
-			//cerr << "Error in Expression: " << e.GetMsg() << ":\n\n" << e.GetExpr() << endl;	
-			//exit(-1);
+			//cerr << "Error in Expression: " << e.GetMsg() << ":\n\n" << e.GetExpr() << endl;   
+
 		}
 		
 		parser->ClearVar();
@@ -267,6 +256,10 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 		for (uint i=0; i<v_symbols.size(); i++) {
 			parser->DefineVar(v_symbols[i].getName(),&symbol_values[v_sym_cache_offset+i] );
 		}
+		
+		if (expand_scalar_expr && v_symbols.size() == 0) {
+			throw string("Refuse to expand scalar expression to vector");
+		}
 	}
 	else {
 		try{
@@ -294,6 +287,7 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 	// random functions prevent an expression from beeing const
 	set<string> volatile_functions;
 	volatile_functions.insert(sym_RandomUni);
+	volatile_functions.insert(sym_RandomInt);
 	volatile_functions.insert(sym_RandomBool);
 	volatile_functions.insert(sym_RandomGamma);
 	volatile_functions.insert(sym_RandomNorm);
@@ -379,10 +373,11 @@ typename TypeInfo<double>::SReturn  ExpressionEvaluator<double>::get(const Symbo
 template <>
 typename TypeInfo<float>::SReturn  ExpressionEvaluator<float>::get(const SymbolFocus& focus) const;
 
-
 template <>
 typename TypeInfo<VDOUBLE>::SReturn  ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus) const;
 
+template <>
+const string&  ExpressionEvaluator<VDOUBLE>::getDescription() const;
 
 
 template <class T>

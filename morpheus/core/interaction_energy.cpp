@@ -1,7 +1,7 @@
 #include "interaction_energy.h"
 #include "cpm_shape.h"
 
-InteractionEnergy::InteractionEnergy() : n_celltypes(0), interaction_details(IA_PLAIN) {
+InteractionEnergy::InteractionEnergy() : interaction_details(IA_PLAIN), n_celltypes(0) {
 }
 
 

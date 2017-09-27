@@ -11,6 +11,12 @@
 
 /**
 \defgroup Function
+\ingroup ML_Global
+\ingroup ML_CellType
+\ingroup ML_System
+\ingroup ML_Event
+\ingroup ML_Contact
+\ingroup ML_Analysis
 \ingroup MathExpressions
 \ingroup Symbols
 
@@ -19,9 +25,9 @@ Symbol that defines a relation between \ref Symbols.
 Functions are not explicitly scheduled. Instead they are evaluated 'on-the-fly' whenever their output symbols are used.
 
 
-For vector data, use \ref VectorFunction.
+For vector data, use \ref ML_VectorFunction.
 
-To assign to a variable or property, use \ref Equation.
+To assign to a variable or property, use \ref ML_Equation.
 
 \section Example
 Assume 'a' is a variable or property.
@@ -30,6 +36,20 @@ Assume 'a' is a variable or property.
 	(u*v)/(1+v)
 </Function>  
 \endverbatim
+
+**/
+
+/**
+\defgroup ML_VectorFunction VectorFunction
+\ingroup ML_Global
+\ingroup ML_CellType
+\ingroup ML_System
+\ingroup ML_Event
+\ingroup ML_Analysis
+\ingroup MathExpressions
+\ingroup Symbols
+
+Symbol that defines a relation between vector \ref Symbols
 **/
 
 #ifndef Function_H
@@ -50,7 +70,7 @@ class Function : public ReporterPlugin {
 		DECLARE_PLUGIN("Function");
 		Function();
 		
-		virtual XMLNode saveToXML() const;
+		XMLNode saveToXML() const override;
 		void loadFromXML(const XMLNode) override;
 		
 // 		static shared_ptr<mu::Parser> createParserInstance(); 

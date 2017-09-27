@@ -12,18 +12,33 @@ VDOUBLE Gnuplotter::PlotSpec::size()
 {
 	
 	VDOUBLE latticeDim = SIM::lattice().to_orth(SIM::lattice().size());
+	
 	if (SIM::lattice().getStructure() == Lattice::hexagonal) {
-		latticeDim.x = SIM::lattice().size().x;
-		if (SIM::lattice().get_boundary_type(Boundary::mx) != Boundary::periodic) {
-			latticeDim.x += ceil(double(SIM::lattice().size().y)) * 0.5;
+		if (SIM::lattice().get_boundary_type(Boundary::mx) == Boundary::periodic) {
+			latticeDim.x = SIM::lattice().size().x;
 		}
 	}
-	if (latticeDim.y<3) {
-		latticeDim.y = max(2.0,0.1*latticeDim.x);
-	}
-	latticeDim += VDOUBLE(1,1,1); //VDOUBLE(1,1,1);
 	
 	return latticeDim;
+}
+
+VDOUBLE Gnuplotter::PlotSpec::view_oversize()
+{
+	
+	VDOUBLE size;
+	
+	if (SIM::lattice().getStructure() == Lattice::hexagonal) {
+		size.y = 0.25 ;
+		if (SIM::lattice().get_boundary_type(Boundary::mx) == Boundary::periodic) {
+			size.x = 0.5;
+		}
+	}
+	
+	if (SIM::lattice().size().y<3) {
+		size.y = max(2.0,0.1*size.x) - size.y;
+	}
+	
+	return size;
 }
 
 ArrowPainter::ArrowPainter() {
@@ -60,7 +75,7 @@ const string& ArrowPainter::getDescription() const
 void ArrowPainter::plotData(ostream& out)
 {
 	const Lattice& lattice = SIM::lattice();
-	VDOUBLE orth_lattice_size = Gnuplotter::PlotSpec::size();
+	VDOUBLE orth_lattice_size = lattice.size();
 	
 // 	out.precision(2);
 	auto celltypes = CPM::getCellTypes();
@@ -75,13 +90,13 @@ void ArrowPainter::plotData(ostream& out)
 			SymbolFocus f(cells[c]);
 			try {
 				VDOUBLE a = arrow(f);
-				VINT centerl = f.cell().getCenterL();
-				lattice.resolve (centerl);
-				VDOUBLE center = ( lattice.to_orth(centerl) + VDOUBLE(0.5,0.5,0) ) % orth_lattice_size;
+				VDOUBLE center = f.cell().getCenter();
+				lattice.orth_resolve (center);
+// 				center = (center) % orth_lattice_size;
 				
 				
 				if (! (a.x == 0 && a.y==0) ) {
-					out << center.x-a.x  << "\t" <<  center.y-a.y << "\t" << 2*a.x << "\t" << 2*a.y << endl;
+					out << center.x-0.5*a.x  << "\t" <<  center.y-0.5*a.y << "\t" << a.x << "\t" << a.y << endl;
 				}
 			}
 			catch (const SymbolError &e) {
@@ -94,6 +109,12 @@ void FieldPainter::loadFromXML(const XMLNode node)
 {
 	field_value.setXMLPath("symbol-ref");
 	field_value.loadFromXML(node);
+	
+	coarsening.setXMLPath("coarsening");
+	coarsening.setDefault("1");
+	coarsening.loadFromXML(node);
+	if (coarsening()<0)
+		throw MorpheusException("Invalid coarsening value.", node);
 	
 	min_value.setXMLPath("min");
 	min_value.loadFromXML(node);
@@ -110,6 +131,9 @@ void FieldPainter::loadFromXML(const XMLNode node)
 	z_slice.setXMLPath("slice");
 	z_slice.setDefault("0");
 	z_slice.loadFromXML(node);
+	if (z_slice()<0 || z_slice() >= SIM::lattice().size().z)
+		throw MorpheusException("Invalid z_slice.", node);
+		
 	
 // 	getXMLAttribute(xPlotChild, "data-cropping", plot.pde_data_cropping);
 // 	getXMLAttribute(xPlotChild, "resolution", plot.pde_max_resolution);
@@ -162,6 +186,12 @@ string FieldPainter::getValueRange() const
 	return string("[")+ min_val_str + ":" + max_val_str + "]";
 }
 
+int FieldPainter::getCoarsening() const
+{
+	return coarsening();
+}
+
+
 string FieldPainter::getColorMap() const
 {
 	stringstream color_map_string;
@@ -184,42 +214,60 @@ string FieldPainter::getColorMap() const
 
 void FieldPainter::plotData(ostream& out)
 {
-	VINT pos;
-	pos.z = z_slice.get();
-	VINT size = SIM::lattice().size();
 	bool is_hexagonal = SIM::lattice().getStructure() == Lattice::hexagonal;
+
+	VINT size = SIM::lattice().size();
+	VINT out_size = size / coarsening();
 	
 	string xsep(" "), ysep("\n");
-
-	int x_iter = 1;
+		
+	VINT out_pos;
+	VINT pos(0,0,z_slice.get());
 	
-	int max_resolution = 200;
+	valarray<float> out_data(out_size.x), out_data2(out_size.x);
+	valarray<float> out_data_count(out_size.x);
 	
-	if (max_resolution) x_iter = max (1, size.x / max_resolution);
-	int y_iter = 1;
-	if (max_resolution) y_iter = max (1, size.y / max_resolution);
-	
-	valarray<float> out_data(size.x), out_data2(size.x);
-
-	pos.z = z_slice.get();
-// 	bool first_row = true;
-	for (pos.y=(y_iter)/2; pos.y<size.y; pos.y+=y_iter) {
-		// copy & convert the raw data
-		for ( pos.x=0; pos.x<size.x; pos.x+=x_iter) {
-			out_data[pos.x] = float(field_value.get(SymbolFocus(pos)));
+	for (out_pos.y=0; out_pos.y<out_size.y; out_pos.y+=1) {
+		pos.y= out_pos.y*coarsening();
+		if ( coarsening()>1) {
+			// reset the output buffer
+			out_data = 0;
+			out_data_count = 0;
+			// accumulate data
+			for (uint y_c=0; y_c<coarsening(); y_c++, pos.y++ ) {
+				uint x_c=0;
+				out_pos.x=0;
+				for ( pos.x=0; pos.x<size.x; pos.x++, x_c++) {
+					if (x_c==coarsening()) {
+						x_c=0;
+						out_pos.x++;
+					}
+					out_data[out_pos.x] += float(field_value.get(SymbolFocus(pos)));
+					out_data_count[out_pos.x] ++;
+				}
+			}
+			// averaging data
+			out_data /= out_data_count;
 		}
+		else {
+			// copy & convert the raw data
+			for ( pos.x=0; pos.x<size.x; pos.x++) {
+				out_data[pos.x] = float(field_value.get(SymbolFocus(pos)));
+			}
 
+		}
+		
 		// shifting the data to map hex coordinate system
 		if (is_hexagonal) {
-			out_data = out_data.cshift(-pos.y/2);
+			out_data = out_data.cshift(-out_pos.y/2);
 			// add an interpolation step
-			if (pos.y%2==1) {
+			if (out_pos.y%2==1) {
 				out_data2 = out_data.cshift(-1);
 				out_data+= out_data2;
 				out_data/=2;
 			}
 		}
-
+		
 		// Cropping data
 		if (min_value.isDefined()) {
 			float fmin_value = min_value.get(SymbolFocus::global);
@@ -237,19 +285,13 @@ void FieldPainter::plotData(ostream& out)
 				}
 			}
 		}
-
+			
 		out << out_data[0];
 		for (int i=1; i<out_data.size() ;i++) {
 			out << xsep << out_data[i];
 		}
 		
 		out << ysep;
-		
-// 		if (first_row) {
-// 			first_row = false;
-// 			if ( ! (pos.y+y_iter)<l_size.y )
-// 				pos.y-=y_iter;
-// 		}
 	}
 }
 
@@ -286,12 +328,17 @@ set< SymbolDependency > VectorFieldPainter::getInputSymbols() const
 
 void VectorFieldPainter::plotData(ostream& out)
 {
+	auto& lattice = SIM::lattice();
 	VINT pos(0, 0, slice);
-	VINT size = SIM::lattice().size();
+	VINT size = lattice.size();
 	for (pos.y=coarsening/2; pos.y<size.y; pos.y+=coarsening) {
 		for (pos.x=coarsening/2; pos.x<size.x; pos.x+=coarsening) {
             VDOUBLE arrow = value.get(SymbolFocus(pos));
-			out << pos.x - 0.5*arrow.x << "\t" << pos.y - 0.5*arrow.y << "\t" << arrow.x << "\t" << arrow.y << "\n";
+			VDOUBLE opos = lattice.to_orth(pos);
+			if (lattice.getStructure() == Lattice::hexagonal) {
+				lattice.orth_resolve(opos);
+			}
+			out << opos.x - 0.5*arrow.x << "\t" << opos.y - 0.5*arrow.y << "\t" << arrow.x << "\t" << arrow.y << "\n";
 		}
 	}
 }
@@ -707,7 +754,7 @@ void CellPainter::writeCellLayer(ostream& out)
 vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell::Nodes& node_list, bool (*comp)(const CPM::STATE& a, const CPM::STATE& b))
 {
 	VDOUBLE latticeDim = Gnuplotter::PlotSpec::size();
-	latticeDim -= VDOUBLE(1.0,1.1,0);
+	latticeDim -= VDOUBLE(0.01,0.01,0);
 	
 	// we assume that the neighbors are sorted either clockwise or anti-clockwise.
 	// we could also add a sorting step after the filtering of nodes belonging to the plane
@@ -748,8 +795,9 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 		if (pos.z != z_level) continue;
 		
 		// get the proper position in the drawing area
-		VDOUBLE orth_pos  = cpm_layer->lattice().to_orth(pos) % latticeDim;
-
+		VDOUBLE orth_pos  = cpm_layer->lattice().to_orth(pos);
+		cpm_layer->lattice().orth_resolve(orth_pos);
+		
 		const CPM::STATE& node = CPM::getNode(pos);
 		for(int i = 0; i < plane_neighbors.size(); i++)
 		{
@@ -927,8 +975,8 @@ void Gnuplotter::loadFromXML(const XMLNode xNode)
 	decorate = true;
 	getXMLAttribute(xNode,"decorate",decorate);
 
-	interpolation_pm3d = true;
-	getXMLAttribute(xNode,"interpolation",interpolation_pm3d);
+// 	interpolation_pm3d = true;
+// 	getXMLAttribute(xNode,"interpolation",interpolation_pm3d);
 	
 	log_plotfiles = false;
 	getXMLAttribute(xNode,"log-commands",log_plotfiles);
@@ -1098,7 +1146,8 @@ void Gnuplotter::analyse(double time) {
 	}
 	const static string outputDir = ".";
 
-	string points_pm3d = " with pm3d ";
+// 	string points_pm3d = " with pm3d ";
+	string points_pm3d = " with image ";
 
 	
 
@@ -1106,7 +1155,15 @@ void Gnuplotter::analyse(double time) {
 		*/
 	//plot->reset_plot();
 	stringstream command;
+
+// 	Gnuplot& command = *gnuplot;
 	
+	if( log_plotfiles ) {
+		if (file_numbering() == FileNumbering::TIME)
+			gnuplot->setLogfile(string("gnuplot_commands_")+ SIM::getTimeName() + ".gp");
+		else 
+            gnuplot->setLogfile(string("gnuplot_commands_")+ to_str(time/timeStep(),4) + ".gp");
+	}
 
 	//    SETTING UP THE TERMINAL
 	command << "unset multiplot; reset; \n";
@@ -1186,39 +1243,49 @@ void Gnuplotter::analyse(double time) {
 				<< "set tmargin at screen " << plot_layout.plots[i].top << ";\n"
 				<< "set bmargin at screen " << plot_layout.plots[i].bottom << ";\n";
 		command << "set style fill transparent solid 1;\n";
-
+		
+		bool suppress_xlabel = i < plot_layout.cols*plot_layout.rows-1;
+		
+		VDOUBLE origin(0.5,0.5,0);
 		
 		/*
 			PLOT PDE SURFACE + ISOLINES
 		*/
-
+		stringstream s;
+		VDOUBLE view_size = PlotSpec::size() + PlotSpec::view_oversize();
+		s << "[" << - origin.x << ":" << view_size.x - origin.x << "]"
+		  <<  "[" << - origin.y << ":" << view_size.y - origin.y << "]";
+		string plot_range = s.str();
+		s.str("");
+		view_size.y = lattice().size().y + PlotSpec::view_oversize().y;
+		origin.y += 0.5 * PlotSpec::view_oversize().y;
+		s << "[" << - origin.x << ":" << view_size.x - origin.x << "]"
+		  <<  "[" << - origin.y << ":" << view_size.y - origin.y << "]";
+		string field_range = s.str();
+		
 		if (plots[i].field) {
-			if (!interpolation_pm3d)
-				command << "set pm3d corners2color c4;\n";
-			if (! decorate)
-				command << "unset colorbox;\n" << "unset title;\n";
-			else if (plots[i].cells)
+// 			if (!interpolation_pm3d)
+// 				command << "set pm3d corners2color c4;\n";
+			if (! decorate || plots[i].cells || plots[i].vectors)
 				command << "unset colorbox;\n" << "unset title;\n" << "unset xlabel;\n";			
 			else{
 				string plot_title;
 				if ( ! plots[i].title.empty())
-					plot_title = plots[i].title;
+					plot_title = Gnuplot::sanitize(plots[i].title);
 				else 
-					plot_title = plots[i].field_painter->getDescription();
-				string escape_char = "_^";
-				size_t pos = plot_title.find_first_of(escape_char);
-				while (pos != string::npos) {
-// 					plot_title.replace(pos,1,string("\\") + plot_title[pos]);
-// 					pos+=2;
-					plot_title[pos] = ' ';
-					pos = plot_title.find_first_of(escape_char,pos);
-				}
+					plot_title = Gnuplot::sanitize(plots[i].field_painter->getDescription());
+
 				command << "set colorbox; set cbtics\n";
-				command << "set xlabel '" << time << " "/* << SIM::getTimeScaleUnit()*/ << "' offset 0,2 ;\n";
+				if (suppress_xlabel)
+					command << "unset xlabel\n";
+				else 
+					command << "set xlabel '" << time << " "/* << SIM::getTimeScaleUnit()*/ << "' offset 0,2 ;\n";
 				command << "set title \"" << plot_title << "\" offset 0,-0.5 ;\n";
 			}
 
 			command << "set cbrange " << plots[i].field_painter->getValueRange() << ";\n";
+			
+			
 			
 			if (plots[i].field_painter->getSurface() ) {
 				command << "unset contour;\n"
@@ -1229,12 +1296,17 @@ void Gnuplotter::analyse(double time) {
 				// set background pattern to ease data / no-data discrimination
 				//command << "set object 1 rectangle from graph 0, graph 0 to graph 1, graph 1 behind fc rgb 'light-grey' fs pattern 2\n";
 
-				command << "splot [][]" << plots[i].field_painter->getValueRange();
+				command << "splot "<< field_range << " " << plots[i].field_painter->getValueRange();
 
 				if (pipe_data)
 					command << " '-' ";
 				else
 					command << " \'"<< outputDir << "/" << plots[i].field_data_file.c_str() << "' ";
+				
+				if (plots[i].field_painter->getCoarsening() != 1) {
+					auto c = plots[i].field_painter->getCoarsening();
+					command <<  "u (" << c <<  "*$1):(" << c << "*$2):3 ";
+				}
 				command << " matrix " << points_pm3d << " pal not\n";
 				
 				if (pipe_data) {
@@ -1249,11 +1321,15 @@ void Gnuplotter::analyse(double time) {
 						<< "set cntrparam levels auto "<< plots[i].field_painter->getIsolines() <<" ;\n"
 						<< "unset surface;\n"
 						<< "unset clabel;\n"
-						<< "splot [][][]";
+						<< "splot " << field_range << "[]";
 				if (pipe_data)
 					command << " '-' ";
 				else
 					command << " '" << outputDir << "/" << plots[i].field_data_file.c_str() << "' ";
+				if (plots[i].field_painter->getCoarsening() != 1) {
+					auto c = plots[i].field_painter->getCoarsening();
+					command <<  "u (" << c <<  "*$1):(" << c << "*$2):3 ";
+				}
 				command << " matrix w l lw 1 lc rgb \"red\"  not;\n" << endl;
 				if (pipe_data) {
 					plots[i].field_painter->plotData(command);
@@ -1272,27 +1348,23 @@ void Gnuplotter::analyse(double time) {
 
 		if ( plots[i].vectors ) {
 			command << "unset colorbox;\n";
-			if (plots[i].cells)
+			if (! decorate || plots[i].cells)
 				command << "unset title;\n" << "unset xlabel;\n";
 			else{
 				string plot_title;
 				if ( ! plots[i].title.empty())
-					plot_title = plots[i].title;
+					plot_title = Gnuplot::sanitize(plots[i].title);
 				else 
-					plot_title = plots[i].vector_field_painter->getDescription();
-				string escape_char = "_^";
-				size_t pos = plot_title.find_first_of(escape_char);
-				while (pos != string::npos) {
-// 					plot_title.replace(pos,1,string("\\") + plot_title[pos]);
-// 					pos+=2;
-					plot_title[pos] = ' ';
-					pos = plot_title.find_first_of(escape_char,pos);
-				}
-				command << "set xlabel '" << time << " " /*<< SIM::getTimeScaleUnit() */<< "' offset 0,0 ;\n";
+					plot_title = Gnuplot::sanitize(plots[i].vector_field_painter->getDescription());
+
+				if (suppress_xlabel)
+					command << "unset xlabel\n";
+				else 
+					command << "set xlabel '" << time << " " /*<< SIM::getTimeScaleUnit() */<< "' offset 0,0 ;\n";
 				command << "set title \"" << plot_title << "\" offset 0,-0.5 ;\n";
 			}
 
-			command << "plot ";
+			command << "plot " << plot_range << " ";
 			if(pipe_data)
 				command << "'-' ";
 			else{
@@ -1337,20 +1409,16 @@ void Gnuplotter::analyse(double time) {
 			else {
 				string plot_title;
 				if ( ! plots[i].title.empty())
-					plot_title = plots[i].title;
+					plot_title = Gnuplot::sanitize(plots[i].title);
 				else 
-					plot_title = plots[i].cell_painter->getDescription();
-				string escape_char = "_^";
-				size_t pos = plot_title.find_first_of(escape_char);
-				while (pos != string::npos) {
-// 					plot_title.replace(pos,1,string("\\") + plot_title[pos]);
-// 					pos+=2;
-					plot_title[pos] = ' ';
-					pos = plot_title.find_first_of(escape_char,pos);
-				}
+					plot_title = Gnuplot::sanitize(plots[i].cell_painter->getDescription());
+				
 				command << "set colorbox; set cbtics; set clabel;\n";
 				
-				command << "set xlabel '" << time << " " /*<< SIM::getTimeScaleUnit() */ << "' offset 0," << (using_splot ? "0.1" : "2") << ";\n";
+				if (suppress_xlabel)
+					command << "unset xlabel\n";
+				else 
+					command << "set xlabel '" << time << " " /*<< SIM::getTimeScaleUnit() */ << "' offset 0," << (using_splot ? "0.1" : "2") << ";\n";
 
 				if (plots[i].cell_painter->getSlice() > 0)
 					command << "set title '" << plot_title << " (z-slice: " << plots[i].cell_painter->getSlice() << ")' offset 0,-0.5;\n";
@@ -1362,7 +1430,7 @@ void Gnuplotter::analyse(double time) {
 			if (CellPainter::boundary_cell_wise == plots[i].cell_painter->getDataLayout()) {
 				
 				VDOUBLE s = PlotSpec::size();
-				command << "plot [0.2:" << s.x+0.2 << "][0:" << s.y << "] ";
+				command << "plot " << plot_range << " ";
 				uint current_index = 0;
 				for (uint p=0; p<cell_boundary_data.size(); p++) {
 					if (p>0)
@@ -1394,12 +1462,12 @@ void Gnuplotter::analyse(double time) {
 				if (plots[i].cell_painter->getDataLayout() == CellPainter::ascii_matrix)
 					layout = "matrix";
 				// TODO Try to use plot with image here to get rid of the pixel size issue
-				command << "splot [0:"<< PlotSpec::size().x << "][0:" << PlotSpec::size().y << "][] ";
+				command << "splot " << plot_range;
 				if (pipe_data) 
 					command << " '-' ";
 				else
 					command << " '" << outputDir << "/" << plots[i].cells_data_file << "' " ;
-				command << layout << " using (1+$1):(1+$2):3 ";
+				command << layout << " using 1:2:3 ";
 				command << " w p pt 5 ps " << pointsize() << " pal not";
 				if (pipe_data) 
 					command << ", '-' ";
@@ -1414,7 +1482,7 @@ void Gnuplotter::analyse(double time) {
 				else{
 					command << ", '" << outputDir << "/" << plots[i].labels_data_file << "' ";
 				}
-				command << " using (1.0+$1):(1.0+$2)"<< (using_splot ? "" : ":(0)") << ":3 with labels font \"Helvetica,"
+				command << " using ($1):($2)"<< (using_splot ? "" : ":(0)") << ":3 with labels font \"Helvetica,"
 						<< plots[i].label_painter->fontsize() << "\" textcolor rgb \"" << plots[i].label_painter->fontcolor().c_str() << "\" notitle";
 			}
 
@@ -1424,7 +1492,7 @@ void Gnuplotter::analyse(double time) {
 				else{
 					command << ", '" << outputDir << "/" << plots[i].arrow_data_file << "' ";
 				}
-				command << " u (0.5+$1):(0.5+$2)"<< (using_splot ? "" : ":(0)") << ":3:4" <<  (using_splot ? "" : ":(0)")  << " ";
+				command << " u ($1):($2)"<< (using_splot ? "" : ":(0)") << ":3:4" <<  (using_splot ? "" : ":(0)")  << " ";
 				command << "w vectors arrowstyle " << plots[i].arrow_painter->getStyle() << " notitle";
 			}
 			
@@ -1438,7 +1506,7 @@ void Gnuplotter::analyse(double time) {
 					for (uint o=0; o<cell_boundary_data.size(); o++) {
 						for (uint p=0; p<cell_boundary_data[o].polygons.size(); p++) {
 							for (uint q=0; q < cell_boundary_data[o].polygons[p].size(); q++) {
-								command << cell_boundary_data[o].polygons[p][q].x+1 << "\t" << cell_boundary_data[o].polygons[p][q].y+1 << "\n";
+								command << cell_boundary_data[o].polygons[p][q].x << "\t" << cell_boundary_data[o].polygons[p][q].y << "\n";
 							}
 							command << "\n\n";
 						}
@@ -1446,7 +1514,7 @@ void Gnuplotter::analyse(double time) {
 						if ( ! isnan(cell_boundary_data[o].value) && cell_boundary_data[o].value != CellPainter::getTransparentValue()) {
 							for (uint p=0; p<cell_boundary_data[o].polygons.size(); p++) {
 								for (uint q=0; q < cell_boundary_data[o].polygons[p].size(); q++) {
-									command << cell_boundary_data[o].polygons[p][q].x+1 << "\t" << cell_boundary_data[o].polygons[p][q].y+1 << "\n";
+									command << cell_boundary_data[o].polygons[p][q].x << "\t" << cell_boundary_data[o].polygons[p][q].y << "\n";
 								}
 								command << "\n\n";
 							}
@@ -1462,7 +1530,7 @@ void Gnuplotter::analyse(double time) {
 					for (uint o=0; o<cell_boundary_data.size(); o++) {
 						for (uint p=0; p<cell_boundary_data[o].polygons.size(); p++) {
 							for (uint q=0; q < cell_boundary_data[o].polygons[p].size(); q++) {
-								command << cell_boundary_data[o].polygons[p][q].x+1 << "\t" << cell_boundary_data[o].polygons[p][q].y+1 << "\n";
+								command << cell_boundary_data[o].polygons[p][q].x << "\t" << cell_boundary_data[o].polygons[p][q].y << "\n";
 							}
 							command << "\n\n";
 						}
@@ -1484,7 +1552,7 @@ void Gnuplotter::analyse(double time) {
 				for (uint o=0; o<cell_boundary_data.size(); o++) {
 					for (uint p=0; p<cell_boundary_data[o].polygons.size(); p++) {
 						for (uint q=0; q < cell_boundary_data[o].polygons[p].size(); q++) {
-							out_file << cell_boundary_data[o].polygons[p][q].x +1 << "\t" << cell_boundary_data[o].polygons[p][q].y+1 << "\n";
+							out_file << cell_boundary_data[o].polygons[p][q].x << "\t" << cell_boundary_data[o].polygons[p][q].y << "\n";
 						}
 						out_file << "\n\n";
 					}
@@ -1523,17 +1591,10 @@ void Gnuplotter::analyse(double time) {
 	command << "unset output;" 	  << endl;
 	//command << "system(\"gnuplot --version\");" << endl;
 	//cout << (log_plotfiles?"log_plotfiles = true\n":"log_plotfiles = false \n") << command.str() << endl;
-    if( log_plotfiles ){
-		ofstream command_log;
-		if (file_numbering() == FileNumbering::TIME)
-            command_log.open((string("gnuplot_commands_")+ SIM::getTimeName() + ".gp").c_str(),ios_base::app);
-		else 
-            command_log.open((string("gnuplot_commands_")+ to_str(time/timeStep(),4) + ".gp").c_str(),ios_base::app);
-		command_log << command.str();
-		command_log.close();
-	}
+
 
 	gnuplot->cmd(command.str());
+	
 }
 
 Gnuplotter::plotLayout Gnuplotter::getPlotLayout( uint plot_count, bool border )

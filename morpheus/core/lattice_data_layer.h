@@ -42,6 +42,7 @@ public:
 
 	typename TypeInfo<T>::Return get(VINT a) const;
 	bool set(VINT a, typename TypeInfo<T>::Parameter b);
+	bool set(const Lattice_Data_Layer<T>& other) { if (shadow_size_size_xyz==other.shadow_size_size_xyz) { data = other.data; return true;} else { assert(shadow_size_size_xyz==other.shadow_size_size_xyz); return false;} };
 	string getName() const { return name; }
 	VINT getWritableSize();
 // 	vector<const T*>  getBlock(VINT reference, vector<VINT> offsets) const;

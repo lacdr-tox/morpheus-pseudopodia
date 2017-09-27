@@ -75,7 +75,8 @@ double Chemotaxis::delta(const SymbolFocus& cell_focus, const CPM::Update& updat
 
 }
 
-double Chemotaxis::hamiltonian(CPM::CELL_ID cell_id) const {
+double Chemotaxis::hamiltonian(CPM::CELL_ID cell_id) const
+{
 	return 0.0;
 }
 

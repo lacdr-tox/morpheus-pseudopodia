@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="1">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-CellCycleDelay</Title>
         <Details>Example of delay differential equations.
@@ -8,15 +8,13 @@ Implements equation 23 and 24 and reproduces figure 7 from:
 
 James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: Why Do Certain Circuits Oscillate?, Cell 144, p874-885. http://dx.doi.org/10.1016/j.cell.2011.03.006</Details>
     </Description>
-    <Global>
-        <Constant symbol="APC" value="0.0"/>
-        <Constant symbol="APC_d" value="0.0"/>
-        <Constant symbol="CDK1" value="0.0"/>
-        <Constant symbol="CDK1_d" value="0.0"/>
-    </Global>
+    <Global/>
     <Space>
         <Lattice class="linear">
             <Size symbol="size" value="1 0 0"/>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="space"/>
     </Space>
@@ -59,6 +57,9 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
     </CellPopulations>
     <Analysis>
         <Logger time-step="1e-2">
+            <Restriction>
+                <Celltype celltype="cells"/>
+            </Restriction>
             <Input>
                 <Symbol symbol-ref="APC"/>
                 <Symbol symbol-ref="APC_d"/>

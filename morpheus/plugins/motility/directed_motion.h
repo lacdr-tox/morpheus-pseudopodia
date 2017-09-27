@@ -16,6 +16,7 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup DirectedMotion
+\ingroup ML_CellType
 \ingroup CellMotilityPlugins
 \ingroup CPM_EnergyPlugins
 
@@ -69,9 +70,9 @@ private:
 public:
 	DECLARE_PLUGIN("DirectedMotion");
 	DirectedMotion();
-    void init(const Scope* scope);
-	double delta (const SymbolFocus& cell_focus, const CPM::Update& update) const;
-	double hamiltonian (CPM::CELL_ID) const;
+    void init(const Scope* scope) override;
+	double delta (const SymbolFocus& cell_focus, const CPM::Update& update) const override;
+	double hamiltonian (CPM::CELL_ID) const override;
 	
 };
 

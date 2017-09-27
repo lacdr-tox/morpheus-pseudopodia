@@ -15,10 +15,12 @@
 #include <core/interfaces.h>
 #include "core/plugin_parameter.h"
 
-/** \ingroup ContactLogger
- *  \defgroup ContactLogger ContactLogger
- *  \brief Write the contacts and contact lengths between cells to file
- * 
+/** 
+\defgroup ContactLogger ContactLogger
+\ingroup ML_Analysis
+\ingroup AnalysisPlugin
+\brief Write the contacts and contact lengths between cells to file
+
 \section Description
 ContactLogger write the cell-cell contacts, their contact lengths/areas and, optionally their duration, to file.
 
@@ -66,11 +68,11 @@ class ContactLogger : public AnalysisPlugin, InstantaneousProcessPlugin
 	public:
 		DECLARE_PLUGIN("ContactLogger");
 		ContactLogger();
-		void analyse(double time);
-		void loadFromXML(const XMLNode );
-		void init(const Scope* scope);
- 		void finish();
-		void executeTimeStep();
+		void analyse(double time) override;
+		void loadFromXML(const XMLNode ) override;
+		void init(const Scope* scope) override;
+ 		void finish() override;
+		void executeTimeStep() override;
 };
 
 #endif // CONTACTLOGGER_H

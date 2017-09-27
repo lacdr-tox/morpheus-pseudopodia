@@ -43,6 +43,7 @@ private:
 	QSharedPointer<attrController> edit_delegate;
 	QTreeView *param_sweep_view;
 	QLineEdit* sweep_name, * n_sweeps;
+	QCheckBox* preset_random_seed;
 	int newSweepID();
 
 signals:

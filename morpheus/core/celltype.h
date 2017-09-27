@@ -17,7 +17,7 @@
 #include "cell.h"
 #include "ClassFactory.h"
 #include "cell_membrane_accessor.h"
-#include "membrane_pde.h"
+#include "membrane_property.h"
 
 class CellIndexStorage {
 public:
@@ -121,12 +121,7 @@ public:
 	virtual void set_update(const CPM::Update& update);
 	virtual void apply_update(const CPM::Update& update);        ///<  the method is called in the cpm update to apply an update to the celltype structure. Note that the lattice at that time still holds the old state.
 
-	/// Interface for time continuous processes
-	/// TODO Those actions should somehow move to a central time sscheduler
-// 	void doTimeStep(double current_time, double time_span);
-// 	virtual void execute_once_each_mcs(int mcs);  ///<  called once each mcs ;-)
 
-// 	friend ostream& operator<< (ostream& os, CellType& ct);
 	friend class SuperCell;
 	friend class Cell;
 
@@ -134,50 +129,37 @@ private:
 	uint id;
 	string name;
 	XMLNode stored_node;
-	
-// 	void CreateCells(uint n);
-protected:
-	/** Creates a cell of the native cell class. Should be simply overridden by a subclass
-	  * @param name unique name (number) assigned to the cell in the simulation
-	  */
-// 	void addCellProperty(Cell_Property* cp);
-// 	static uint max_cell_name;
-// 	static vector<  > cell_index_by_id;
-// 	static vector< shared_ptr<Cell> > cell_by_id;
-	
-// 	vector< shared_ptr<Cell> > cells;
-	vector< CPM::CELL_ID > cell_ids;
 
-	Scope* local_scope;
-	
-	struct IntitPropertyDesc {string symbol; string expression;  } ;
-	vector<IntitPropertyDesc> init_properties;
-	vector< shared_ptr<Population_Initializer> > pop_initializers;
-	int xml_pop_size;
+protected:
+	// Plugins sorted by interface
 	vector< shared_ptr<Plugin> > plugins;
 	vector< shared_ptr<CPM_Energy> > energies;
 	vector< shared_ptr<CPM_Check_Update> > check_update_listener;
 	vector< shared_ptr<CPM_Update_Listener> > update_listener;
-// 	vector< shared_ptr<TimeStepListener> > timestep_listener;
-// 	vector< shared_ptr<Celltype_MCS_Listener> > mcs_listener;
-	
+
+	// Cell specific properties
 	vector< shared_ptr<AbstractProperty> > _default_properties;
 	map<string, uint > property_by_name;
 	map<string, uint > property_by_symbol;
 
 	vector< shared_ptr<PDE_Layer> > _default_membranePDEs;
-// 	map<string, uint > membrane_by_name;
 	map<string, uint > membrane_by_symbol;
+	vector< CPM::CELL_ID > cell_ids;
 
-	
+	Scope* local_scope;
 	Linear_Lattice* membrane_lattice;
-	
-	// allow cellpropertyaccessors to access defaultproperties
-// 	template <class S>
-// 	friend class CellPropertyAccessor;
-// 	friend class CellMembraneAccessor;
 
-// 	Cell& getCell(uint i)  { return *(cells[i]); };
+	// Cell populations
+	struct IntitPropertyDesc {string symbol; string expression;  } ;
+	struct CellPopDesc {
+		int pop_size;
+		XMLNode xPopNode;
+		vector<CPM::CELL_ID> cells;
+		vector<IntitPropertyDesc> property_initializers;
+		vector< shared_ptr<Population_Initializer> > pop_initializers;
+	};
+	vector<CellPopDesc> cell_populations;
+	
 };
 
 

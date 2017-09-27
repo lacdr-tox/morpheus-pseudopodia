@@ -45,11 +45,19 @@ Cell::Cell(CPM::CELL_ID cell_name, CellType* ct)
 
 void Cell::init()
 {
+	cout << "initializing cell " << id << endl;
 	for (auto prop : p_properties) {
-		prop->init(celltype->getScope(), SymbolFocus(id));
+		try {
+			prop->init(celltype->getScope(), SymbolFocus(id));
+		}
+		catch (string e) { throw MorpheusException(e, prop->saveToXML()); }
 	}
+
 	for (auto mem : p_membranes) {
-		mem->init(celltype->getScope(), SymbolFocus(id));
+		try {
+			mem->init(celltype->getScope(), SymbolFocus(id));
+		}
+		catch (string e) { throw MorpheusException(e, mem->saveToXML()); }
 	}
 }
 
@@ -64,8 +72,6 @@ Cell::Cell( Cell& other_cell, CellType* ct  )
 	for (uint i=0;i< celltype->default_membranes.size(); i++) {
 		p_membranes.push_back(celltype->default_membranes[i]->clone());
 	}
-	assignMatchingProperties(other_cell.properties);
-	assignMatchingMembranes(other_cell.membranes);
 	
 	track_nodes = other_cell.track_nodes;
 	track_shape = other_cell.track_shape;
@@ -96,7 +102,7 @@ void Cell::assignMatchingProperties(const vector< shared_ptr<AbstractProperty> >
 		if (other_properties[o_prop]->getSymbol()[0]=='_') continue; // skip intermediates ...
 		for (uint prop=0; prop < p_properties.size(); prop++) {
 			if (p_properties[prop]->getSymbol() == other_properties[o_prop]->getSymbol() && p_properties[prop]->getTypeName() == other_properties[o_prop]->getTypeName()) {
-				p_properties[prop] = other_properties[o_prop]->clone();
+				p_properties[prop]->set(other_properties[o_prop].get());
 				break;
 			}
 		}
@@ -108,44 +114,14 @@ void Cell::assignMatchingMembranes(const vector< shared_ptr<PDE_Layer> > other_m
 		uint j=0;
 		for (; j<other_membranes.size(); j++) {
 			if (other_membranes[j]->getSymbol() == p_membranes[i]->getSymbol() ) {
-				p_membranes[i] = other_membranes[j]->clone();
+				p_membranes[i]->set(*other_membranes[j]);
 				break;
 			}
 		}
 	}
 }
 
-void Cell::loadFromXML(const XMLNode xNode) {
-
-	
-	// load matching properties from XMLNode
-	vector<XMLNode> property_nodes;
-	for (uint p=0; p<properties.size(); p++) {
-		properties[p]->restoreData(xNode);
-	}
-	
-//	TODO: load membraneProperties from XML
-	for (uint mem=0; mem<xNode.nChildNode("MembranePropertyData"); mem++) {
-		XMLNode xMembraneProperty = xNode.getChildNode("MembranePropertyData",mem);
-		string symbol; getXMLAttribute(xMembraneProperty, "symbol-ref", symbol);
-
-		uint p=0;
-		for (; p<membranes.size(); p++) {
-			if (membranes[p]->getSymbol() == symbol) {
-				//string filename = membranes[mem]->getName() + "_" + to_string(id)  + "_" + SIM::getTimeName() + ".dat";
-				membranes[p]->restoreData(xMembraneProperty);
-// 				string filename; getXMLAttribute(xMembraneProperty, "filename", filename);
-// 				cout << "Loading MembranePropertyData '" << symbol << "' from file '" << filename << "'. Sum = " << membranes[p]->sum() << endl;
-				break;
-			}
-		}
-		if (p==membranes.size()) {
-			cerr << "Cell::loadFromXML: Unable to load data for MembranePropertyData " << symbol 
-			     << " cause it's not defined for this celltype (" << celltype->getName() << ")"<<endl;
-			exit(-1);
-		}
-	}
-	
+void Cell::loadNodesFromXML(const XMLNode xNode) {
 	string snodes;
 	if ( getXMLAttribute(xNode,"Nodes/text",snodes,false) ) {
 		stringstream ssnodes(snodes);
@@ -165,6 +141,38 @@ void Cell::loadFromXML(const XMLNode xNode) {
 	else // no nodes specified
 	{
 		cout << "Cell " << id << " already has " << CPM::getCell(id).getNodes().size() << " nodes." << endl;
+	}
+}
+
+void Cell::loadFromXML(const XMLNode xNode) {
+
+	
+	// load matching properties from XMLNode
+	vector<XMLNode> property_nodes;
+	for (uint p=0; p<properties.size(); p++) {
+		properties[p]->restoreData(xNode);
+	}
+	
+//	TODO: load membraneProperties from XML
+	for (int mem=0; mem<xNode.nChildNode("MembranePropertyData"); mem++) {
+		XMLNode xMembraneProperty = xNode.getChildNode("MembranePropertyData",mem);
+		string symbol; getXMLAttribute(xMembraneProperty, "symbol-ref", symbol);
+
+		uint p=0;
+		for (; p<membranes.size(); p++) {
+			if (membranes[p]->getSymbol() == symbol) {
+				//string filename = membranes[mem]->getName() + "_" + to_string(id)  + "_" + SIM::getTimeName() + ".dat";
+				membranes[p]->restoreData(xMembraneProperty);
+// 				string filename; getXMLAttribute(xMembraneProperty, "filename", filename);
+// 				cout << "Loading MembranePropertyData '" << symbol << "' from file '" << filename << "'. Sum = " << membranes[p]->sum() << endl;
+				break;
+			}
+		}
+		if (p==membranes.size()) {
+			cerr << "Cell::loadFromXML: Unable to load data for MembranePropertyData " << symbol 
+			     << " cause it's not defined for this celltype (" << celltype->getName() << ")"<<endl;
+			exit(-1);
+		}
 	}
 }
 

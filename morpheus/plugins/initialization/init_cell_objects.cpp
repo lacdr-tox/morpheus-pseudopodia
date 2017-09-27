@@ -46,7 +46,7 @@ void InitCellObjects::loadFromXML(const XMLNode node)	//einlesen der daten aus d
 	}
 }
 
-bool InitCellObjects::run(CellType* ct)
+vector<CPM::CELL_ID> InitCellObjects::run(CellType* ct)
 {
 	lattice = SIM::getLattice();
 	for(int n = 0; n < cellobjects.size() ; n++){
@@ -57,6 +57,7 @@ bool InitCellObjects::run(CellType* ct)
 
 	int i = setNodes(ct);
 	int unset =0;
+	vector<CPM::CELL_ID> cells;
 	for(int n = 0; n < cellobjects.size() ; n++){
 		uint cellsize = ct->getCell(cellobjects[n].id).getNodes().size();
 // 		cout << "CellObject " << n << " (" << ct->getName() << "), size = " << cellsize << endl;
@@ -66,9 +67,12 @@ bool InitCellObjects::run(CellType* ct)
 			ct->removeCell( cellobjects[n].id );
 			unset++;
 		}
+		else  {
+			cells.push_back(cellobjects[n].id);
+		}
 	}
 	cout << "InitCellObject: Added " <<  cellobjects.size() - unset << " cell(s), occupying " << i << " nodes" << endl;
-	return true;
+	return cells;
 }
 
 
@@ -94,6 +98,8 @@ InitCellObjects::CellObject InitCellObjects::getObjectProperties(const XMLNode o
 		c.type = BOX;
 		getXMLAttribute(oNode,"Box/origin", c.origin);
 		getXMLAttribute(oNode,"Box/size", c.boxsize);
+		if (c.boxsize.z<1) c.boxsize.z=1;
+		if (c.boxsize.y<1) c.boxsize.y=1;
 		c.center = (c.origin + c.boxsize) / 2.0;
 	}
 	else if( oNode.nChildNode("Cylinder") ){
@@ -213,6 +219,7 @@ int InitCellObjects::setNodes(CellType* ct)
 				// check whether multiple objects claim this lattice point
 				vector<Candidate> candidates;
 				VDOUBLE orth_pos = lattice->to_orth(pos);
+				lattice->orth_resolve(orth_pos);
 				
 				for(int o = 0; o < cellobjects.size() ; o++){
 					
@@ -233,7 +240,7 @@ int InitCellObjects::setNodes(CellType* ct)
 						case BOX:{
 							// if pos is falls inside of specified box
 							if( orth_pos.x >= co.origin.x && orth_pos.y >= co.origin.y && orth_pos.z >= co.origin.z 
-								&& orth_pos.x <= (co.origin.x + co.boxsize.x) && orth_pos.y <= (co.origin.y + co.boxsize.y) && orth_pos.z <= (co.origin.z + co.boxsize.z) ){
+								&& orth_pos.x < (co.origin.x + co.boxsize.x) && orth_pos.y < (co.origin.y + co.boxsize.y) && orth_pos.z < (co.origin.z + co.boxsize.z) ){
 								
 								cand.distance = lattice->orth_distance( co.center, orth_pos );
 								cand.abs_distance = cand.distance.abs();

@@ -429,7 +429,7 @@ void MainWindow::createMainWidgets()
 	
 	docuDock = new DocuDock(this);
 	docuDock->setObjectName("DocuDock");
-	addDockWidget(Qt::BottomDockWidgetArea,docuDock,Qt::Horizontal);
+	addDockWidget(Qt::RightDockWidgetArea,docuDock,Qt::Vertical);
 	
     // The Core Editor Stack
     editorStack = new QStackedWidget();
@@ -824,7 +824,7 @@ void MainWindow::modelActionTriggerd (QAction *act)
 			QTreeWidgetItem* item = model_item->child(model_index.part);
 			item->setDisabled(true);
 			item->setForeground(0,QBrush(Qt::gray));
-			while (model_item->child(model_index.part)->isDisabled()) {
+			while (model_index.part && model_item->child(model_index.part)->isDisabled()) {
 				model_index.part--;
 			}
 			modelList->setCurrentItem(model_item->child(model_index.part));
@@ -948,14 +948,14 @@ void MainWindow::addModel(int index) {
 	c->setFont(0,f);
 	modelList->insertTopLevelItem(index,c);
 
-	connect(model.data(),SIGNAL(modelPartAdded()),this,SLOT(reloadModelParts()));
-	connect(model.data(),SIGNAL(modelPartRemoved()),this,SLOT(reloadModelParts()));
+// 	connect(model.data(),SIGNAL(modelPartAdded(int)),this,SLOT(reloadModelParts()));
+// 	connect(model.data(),SIGNAL(modelPartRemoved(int)),this,SLOT(reloadModelParts()));
 
 	domNodeViewer *viewer = new domNodeViewer(this);
 	viewer->setModel(model,0);
 	connect(viewer,SIGNAL(xmlElementCopied(QDomNode)),this,SLOT(copyNodeAction(QDomNode)));
-	connect(viewer,SIGNAL(nodeSelected(nodeController*)),docuDock,SLOT(setCurrentNode(nodeController*)));
-	connect(viewer,SIGNAL(xmlElementSelected(QString)),docuDock,SLOT(setCurrentElement(QString)));
+// 	connect(viewer,SIGNAL(nodeSelected(nodeController*)),docuDock,SLOT(setCurrentNode(nodeController*)));
+	connect(viewer,SIGNAL(xmlElementSelected(QStringList)),docuDock,SLOT(setCurrentElement(QStringList)));
 	
 	editorStack->addWidget(viewer);
 	modelViewer[model] = viewer;
@@ -980,14 +980,15 @@ void MainWindow::addModel(int index) {
 
 void MainWindow::removeModel(int index) {
     SharedMorphModel model = config::getOpenModels()[index];
-    disconnect(model.data(),SIGNAL(modelPartAdded()),this,SLOT(reloadModelParts()));
-    disconnect(model.data(),SIGNAL(modelPartRemoved()),this,SLOT(reloadModelParts()));
+//     disconnect(model.data(),SIGNAL(modelPartAdded(int)),this,SLOT(reloadModelParts()));
+//     disconnect(model.data(),SIGNAL(modelPartRemoved(int)),this,SLOT(reloadModelParts()));
     editorStack->removeWidget(modelViewer[model]);
     modelViewer.remove(model);
 
     modelList->takeTopLevelItem(index);
     if (model_index.model == index) {
         model_index.model = -1;
+		config::switchModel(model_index.model) ;
     }
 }
 
@@ -1000,7 +1001,8 @@ void MainWindow::showCurrentModel() {
 	else if (model_index.part==0) {
 		editorStack->setCurrentWidget(modelAbout[current_model]);
 		modelAbout[current_model]->update();
-		docuDock->setCurrentNode( current_model->parts[model_index.part].element);
+		docuDock->setCurrentElement(current_model->parts[model_index.part].element->getXPath() );
+// 		docuDock->setCurrentNode( current_model->parts[model_index.part].element);
 		QWidget::setTabOrder(modelList,modelAbout[current_model]);
 	}
     else {

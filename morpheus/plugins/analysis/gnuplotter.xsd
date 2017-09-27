@@ -24,7 +24,7 @@ Note: this plugin requires stand-alone installation of Gnuplot 4.4+. When not fo
 <!-- 			<xs:element name="Membrane" 	type="cpmMembraneRef" 		minOccurs="0" /> -->
 		</xs:choice>
 
-		<xs:attribute name="time-step" use="required" type="cpmDouble">
+		<xs:attribute name="time-step" use="optional" type="cpmDouble" default="1">
 			<xs:annotation>
 				<xs:documentation>Time interval of plots.</xs:documentation>
 			</xs:annotation>
@@ -46,11 +46,11 @@ Note: this plugin requires stand-alone installation of Gnuplot 4.4+. When not fo
 		</xs:attribute>
 		<xs:attribute name="file-numbering"   use="optional" type="cpmFileNumbering" default="time" />
 		<xs:attribute name="decorate" 		type="cpmBoolean" 		use="optional" default="true" />
-		<xs:attribute name="interpolation" type="cpmBoolean" use="optional" default="true">
-			<xs:annotation>
-				<xs:documentation>Interpolation using pm3d.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
+<!-- 		<xs:attribute name="interpolation" type="cpmBoolean" use="optional" default="true"> -->
+<!-- 			<xs:annotation> -->
+<!-- 				<xs:documentation>Interpolation using pm3d.</xs:documentation> -->
+<!-- 			</xs:annotation> -->
+<!-- 		</xs:attribute> -->
 
 	</xs:complexType>
 	
@@ -239,15 +239,12 @@ Note: when (membrane) property has been selected, you MUST provide a symbol-ref 
 				<xs:documentation>Symbol referring to a PDE reaction-diffusion layer.</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
+		
 		<xs:attribute name="min" 	type="cpmDouble" use="optional" />
 		<xs:attribute name="max" 	type="cpmDouble" use="optional" />
 		<xs:attribute name="data-cropping" 	type="cpmBoolean" use="optional" />
 		<xs:attribute name="slice"	type="cpmUnsignedInteger" use="optional"/>
-		<xs:attribute name="resolution" type="cpmInteger" use="optional">
-			<xs:annotation>
-				<xs:documentation>Reduce resolution of PDE layer (for faster output, smaller files).</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
+		<xs:attribute name="coarsening" type="cpmInteger" use="optional" />
 		<xs:attribute name="isolines" 	type="cpmUnsignedInteger" use="optional" />
 		<xs:attribute name="surface"	type="cpmBoolean" use="optional" />
 	</xs:complexType>

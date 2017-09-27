@@ -16,6 +16,7 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup MargolusDiffusion
+\ingroup ML_CellType
 \ingroup CellMotilityPlugins
 \brief Diffusion operator for CA-like models.
 
@@ -57,8 +58,8 @@ private:
 public:
 	MargolusDiffusion();
 	DECLARE_PLUGIN("MargolusDiffusion");
-    void init(const Scope* scope);
-	void executeTimeStep();
+    void init(const Scope* scope) override;
+	void executeTimeStep() override;
 };
 
 

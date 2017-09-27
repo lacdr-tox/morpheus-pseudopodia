@@ -16,6 +16,7 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup FreezeMotion
+\ingroup ML_CellType
 \ingroup CellMotilityPlugins
 
 FreezeMotion conditionally prevents all CPM updates, rendering a cell immotile.
@@ -49,8 +50,8 @@ private:
 public:
 	FreezeMotion();
 	DECLARE_PLUGIN("FreezeMotion");
-	void init(const Scope* scope);
-	bool update_check(CPM::CELL_ID  cell_id, const CPM::Update& update);
+	void init(const Scope* scope) override;
+	bool update_check(CPM::CELL_ID  cell_id, const CPM::Update& update) override;
 };
 
 #endif // FREEZER_H

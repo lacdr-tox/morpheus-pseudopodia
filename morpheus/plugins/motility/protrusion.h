@@ -17,7 +17,8 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup Protrusion
-\ingroup CPM_EnergyPlugins CellMotilityPlugins Celltype
+\ingroup ML_CellType
+\ingroup CPM_EnergyPlugins CellMotilityPlugins 
 \brief Energetically favors updates in region of high protusive activity (actin-inspired)
 
 Implements the 'Act model' (Niculescu et al, 2015) which extends the CPM with a local feedback mechanism resulting in cell protrusions and, as a consequence, in cell motility. The mechanism amplifies the inherent membrane fluctuations of CPM cells in a manner depending on the size of the fluctuations and their recent protrusive activity.
@@ -40,7 +41,7 @@ where \f$ GM_{Act}(u) = (  \prod_{y \in N(u)} Act(y)^{1/|N(u)|} )  \f$
 
 with \f$  N(u) \f$ defined as the direct 2nd order or Moore neighborhood of \f$ u \f$ that belongs to the same cell.
 
-- \b field must refer to a \ref Field that store the Activity values.
+- \b field must refer to a \ref ML_Field that store the Activity values.
 - \b strength specifies the strength \f$ \lambda_{Act} \f$ of this energy term.
 - \b maxmimum specifies the maximum activity value \f$ Max_{Act} \f$, related to the length of the 'memory'.
 
@@ -73,12 +74,12 @@ public:
 	DECLARE_PLUGIN("Protrusion");
 	Protrusion();
 
-	double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const;
-	void init(const Scope* scope);
-	double hamiltonian(CPM::CELL_ID cell_id) const;
-	void update_notify(CPM::CELL_ID cell_id, const CPM::Update& update);
+	double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const override;
+	void init(const Scope* scope) override;
+	double hamiltonian(CPM::CELL_ID cell_id) const override;
+	void update_notify(CPM::CELL_ID cell_id, const CPM::Update& update) override;
 	double local_activity(SymbolFocus focus) const;
-	void executeTimeStep();
+	void executeTimeStep() override;
 	
 };
 

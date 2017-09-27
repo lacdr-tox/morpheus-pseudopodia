@@ -50,7 +50,7 @@ public:
 	enum SpatialRestriction { RESTR_GLOBAL, RESTR_DOMAIN, RESTR_CELLPOP , RESTR_CELL};
 	SpatialRestriction spatial_restriction;
 	Granularity granularity;
-	enum IterationMode { IT_Cell, IT_CellNodes, IT_CellNodes_int, IT_Space, IT_CellMembrane, IT_Domain, IT_Domain_int };
+	enum IterationMode { IT_Cell, IT_CellNodes, IT_CellSurfaceNodes, IT_CellNodes_int, IT_Space, IT_CellMembrane, IT_Domain, IT_Domain_int };
 	IterationMode iter_mode;
 	vector<CPM::CELL_ID> cell_range;
 	vector<uint> cell_sizes;
@@ -60,8 +60,9 @@ public:
 	vector<int> sizes;
 	int c_div, x_div, y_div, z_div;
 	const vector<VINT>* domain_enumeration;
-	vector<VINT> domain_nodes;
-    vector<set< VINT, less_VINT > > cell_nodes;
+	vector<VINT> domain_nodes_int;
+	vector< const Cell::Nodes* > cell_nodes;
+    vector< Cell::Nodes > cell_nodes_int;
 	vector<FocusRangeAxis> data_axis;
 	set<FocusRangeAxis> spatial_dimensions;
  
@@ -77,9 +78,9 @@ public:
 	FocusRangeIterator& operator--() {setIndex(idx-1); return *this; };
 	FocusRangeIterator& operator+=(int n) { if (n==1) return operator++(); setIndex(idx+n); return *this;}
 	FocusRangeIterator& operator-=(int n) { setIndex(idx-n); return *this; }
-	FocusRangeIterator operator+(int n)   { return FocusRangeIterator(data,idx+n); }
-	FocusRangeIterator operator-(int n)   { return FocusRangeIterator(data,idx-n); }
-	int operator-(const FocusRangeIterator& other)   { return idx-other.idx; }
+	FocusRangeIterator operator+(int n) const  { return FocusRangeIterator(data,idx+n); }
+	FocusRangeIterator operator-(int n) const  { return FocusRangeIterator(data,idx-n); }
+	int operator-(const FocusRangeIterator& other) const  { return idx-other.idx; }
 	bool operator==(const FocusRangeIterator& other) const { return idx == other.idx; };
 	bool operator!=(const FocusRangeIterator& other) const { return idx != other.idx; };
 	bool operator<(const FocusRangeIterator& other)  const { return idx <  other.idx; };
@@ -109,7 +110,8 @@ private:
 	shared_ptr<const FocusRangeDescriptor> data;
 	
 	///State
-	uint idx; uint cell; VINT pos; Cell::Nodes::const_iterator current_cellnode;
+	uint idx; uint cell; VINT pos; 
+	Cell::Nodes::const_iterator current_cell_node;
 	
 	SymbolFocus focus;
 	friend FocusRange;
@@ -120,8 +122,6 @@ private:
 // enum class FocusRangeRestriction {
 // 	Xaxis, Yaxis, Zaxis, CellID, MemXaxis, MemYaxis
 // };
-
-enum class FocusRangeAxis { X, Y, Z, NODE, MEM_X, MEM_Y, MEM_NODE, CELL, CellType };
 	
 // {
 // public:
@@ -148,7 +148,14 @@ public:
 	
 	/// Create a FocusRange through all valid elements, restricted to the range of scope provided
 	template <class T, template <class> class AccessPolicy>
-	FocusRange(const SymbolAccessorBase<T,AccessPolicy>& sym, const Scope* scope = nullptr) : FocusRange(sym.getGranularity(), scope ? scope : sym.getScope()) {};
+	FocusRange(const SymbolAccessorBase<T,AccessPolicy>& sym, const Scope* scope = nullptr) { 
+		auto restrictions = sym.getRestrictions();
+		if (scope && scope->getCellType()) {
+			restrictions.erase(FocusRangeAxis::CellType);
+			restrictions.insert( make_pair(FocusRangeAxis::CellType,scope->getCellType()->getID()) );
+		}
+		init_range(sym.getGranularity(), restrictions, true);
+	};
 	
 	/// Create a FocusRange constrained to the spatial domain of a cell
 	template <class T, template <class> class AccessPolicy>
@@ -167,9 +174,9 @@ public:
 	bool isRegular() const {
 		if (!data) throw string("Invalid FocusRange");
 		return data->iter_mode != FocusRangeDescriptor::IT_Domain 
-		    &&  data->iter_mode != FocusRangeDescriptor::IT_CellNodes
+		    && data->iter_mode != FocusRangeDescriptor::IT_CellNodes
 		    && data->iter_mode != FocusRangeDescriptor::IT_Domain_int
-		    &&  data->iter_mode != FocusRangeDescriptor::IT_CellNodes_int; 
+		    && data->iter_mode != FocusRangeDescriptor::IT_CellNodes_int; 
 	}
 	/// Iteration Axis of the range
 	const vector<FocusRangeAxis>& dataAxis() const { if (!data) throw string("Invalid FocusRange"); return data->data_axis;};

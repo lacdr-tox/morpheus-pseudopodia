@@ -16,6 +16,7 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup InitPoissonDisk
+\ingroup ML_Population
 \ingroup InitializerPlugins
 \brief Arranges cells approximately equidistantly according to Poisson Disk Sampling
 
@@ -64,7 +65,7 @@ private:
 public:
 	InitPoissonDisk();
 	DECLARE_PLUGIN("InitPoissonDisk");
-	bool run(CellType* ct);
+	bool run(CellType* ct) override;
 };
 
 #endif

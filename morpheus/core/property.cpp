@@ -9,6 +9,7 @@ namespace SIM {
 		symbol.fullname = property->getName();
 		symbol.name = property->getSymbol();
 		symbol.integer = false;
+		symbol.is_delayed = property->isDelayed();
 		if (property->isCellProperty()) {
 			symbol.link = SymbolData::CellPropertyLink;
 			symbol.granularity = Granularity::Cell;
@@ -20,7 +21,8 @@ namespace SIM {
 		else {
 			symbol.const_prop = property;
 			symbol.link = (SymbolData::GlobalLink);
-			symbol.granularity = Granularity::Global;
+			// granularity is set to undef until it's initialized
+			symbol.granularity = Granularity::Undef;
 			
 			symbol.writable = ! property->isConstant();
 			symbol.invariant = property->isConstant();
@@ -45,10 +47,12 @@ template <> const string Property<VDOUBLE>::constant_xml_name() { return "Consta
 
 template <>
 void Property<double>::init(const Scope* scope, const SymbolFocus& f) {
+	if (initialized) return;
 	AbstractProperty::init(scope, f);
 	
 	value = 0;
 	initialized = true;
+	
 	
 	auto overrides = scope->valueOverrides();
 	auto it = overrides.find(this->symbolic_name);
@@ -66,6 +70,7 @@ void Property<double>::init(const Scope* scope, const SymbolFocus& f) {
 
 template <>
 void Property<VDOUBLE>::init(const Scope* scope, const SymbolFocus& f) {
+	if (initialized) return;
 	AbstractProperty::init(scope, f); 
 	
 	auto overrides = scope->valueOverrides();
@@ -84,13 +89,13 @@ void Property<VDOUBLE>::init(const Scope* scope, const SymbolFocus& f) {
 }
 
 DelayProperty::DelayProperty(bool cellproperty):
-  Property<double>(false, cellproperty),
+  Property<double>("","",false, cellproperty,true),
   ContinuousProcessPlugin(ContinuousProcessPlugin::DELAY, XMLSpec::XML_NONE),
   tsl_initialized(false)
 { };
 
 DelayProperty::DelayProperty(string name, string symbol, bool cellproperty) :
-  Property<double>(name, symbol, false, cellproperty),
+  Property<double>(name, symbol, false, cellproperty,true),
   ContinuousProcessPlugin(ContinuousProcessPlugin::DELAY, XMLSpec::XML_NONE),
   tsl_initialized(false)
 { };
@@ -122,9 +127,13 @@ void DelayProperty::loadFromXML(XMLNode node)
 		cout << "Don't ever remove me! " << " I take care to register this Plugin !!" << endl;
 }
 
+void DelayProperty::init(const Scope* scope) {
+	init(scope, SymbolFocus::global); 
+};
+
 void DelayProperty::init(const Scope* scope, const SymbolFocus& f)
 {
-	cout << "Initializing DelayProperty " << symbolic_name << endl;;
+// 	cout << "Initializing DelayProperty " << symbolic_name << endl;;
 	Property::init(scope, f);
 	setTimeStep(delay);
 	
@@ -134,6 +143,7 @@ void DelayProperty::init(const Scope* scope, const SymbolFocus& f)
 		registerOutputSymbol(this->getSymbol(), scope);
 		tsl_initialized = true;
 	}
+	initialized = true;
 }
 
 
@@ -146,11 +156,15 @@ void DelayProperty::setTimeStep(double t)
 	}
 	else {
 		assert(t<=delay);
-		if ( abs(delay/t - rint(delay/t)) > 0.01 ) {
-			throw string("Time Stepping override (") + to_str(t) + ") for DelayProperty " +  symbolic_name + " is not an integer fraction of the time delay ("  + to_str(delay)  + ").";
-			exit(-1);
-		}
-		queue_length = max(int(rint(delay/t)),1);
+		queue_length = floor(delay/t);
+		t = delay / queue_length;
+		queue_length += 1; // need one more storage locations than intervals;
+		
+// 		if ( abs(delay/t - rint(delay/t)) > 0.01 ) {
+// 			throw string("Time Stepping override (") + to_str(t) + ") for DelayProperty " +  symbolic_name + " is not an integer fraction of the time delay ("  + to_str(delay)  + ").";
+// 			exit(-1);
+// 		}
+// 		queue_length = max(int(rint(delay/t)),1);
 		queue_length += 1; // need one more storage locations than intervals;
 	}
 	queue.resize(queue_length,value);
@@ -200,12 +214,3 @@ void DelayProperty::restoreData(XMLNode parent_node)
 		}
 	}
 }
-
-
-
-
-
-// template <> const string Property<double_queue>::property_xml_name() { return "PropertyQueue";};
-// template <> const string Property<double_queue>::global_xml_name() { return "GlobalQueue";};
-// template <> const string Property<double_queue>::global_constant_xml_name() { return "ConstantQueue";};
-//

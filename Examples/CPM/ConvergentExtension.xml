@@ -34,7 +34,7 @@
         <CellType class="biological" name="ct1">
             <PropertyVector symbol="d" value="0.0, 0.0, 0.0"/>
             <VolumeConstraint target="2750" strength="1"/>
-            <SurfaceConstraint target="1" strength="5"/>
+            <SurfaceConstraint target="1" mode="aspherity" strength="5"/>
             <MembraneProperty symbol="c" value="sin( (m.phi - 0.75*pi) * 2 ) + 1.0">
                 <Diffusion rate="0.0"/>
             </MembraneProperty>
@@ -55,7 +55,7 @@
             </Contact>
         </Interaction>
         <MonteCarloSampler stepper="edgelist">
-            <MCSDuration unit="sec" value="1"/>
+            <MCSDuration value="1"/>
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>

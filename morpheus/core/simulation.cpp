@@ -975,6 +975,7 @@ void init(int argc, char *argv[]) {
 
 	if (cmd_line.find("gnuplot-path") != cmd_line.end()) {
 		Gnuplot::set_GNUPlotPath(cmd_line["gnuplot-path"]);
+		cmd_line.erase(cmd_line.find("gnuplot-path"));
 	}
 	
 	if (cmd_line.find("gnuplot-version") != cmd_line.end()) {
@@ -992,6 +993,7 @@ void init(int argc, char *argv[]) {
 
 	if (cmd_line.find("symbol-graph") != cmd_line.end()) {
 		generate_symbol_graph_and_exit = true;
+		cmd_line.erase(cmd_line.find("symbol-graph"));
 	}
 	else {
 		generate_symbol_graph_and_exit = false;
@@ -1010,6 +1012,7 @@ void init(int argc, char *argv[]) {
 // TODO Handling missing file( a file parameter must be provided and the file must exist)
 
 	string filename = cmd_line["file"];
+	cmd_line.erase(cmd_line.find("file"));
 
 	struct stat filestatus;
 	int filenotexists = stat( filename.c_str(), &filestatus );
@@ -1313,6 +1316,27 @@ void loadFromXML(const XMLNode xNode) {
 				symbol.writable = true;
 				SIM::defineSymbol(symbol);
 			}
+			else if (xml_tag_name == "VectorField") {
+				auto layer = make_shared<VectorField_Layer>(global_lattice, SIM::getNodeLength());
+				layer->loadFromXML(xGlobalChild);
+				
+				if (vector_field_layers.find(layer->getSymbol()) !=  vector_field_layers.end()) {
+					throw MorpheusException(string("Redefinition of Vector Field \"") + layer->getSymbol()  + "\"!",xGlobalChild);
+				}
+				vector_field_layers[layer->getSymbol()] = layer;
+				
+				
+				SymbolData symbol;
+				symbol.name = layer->getSymbol();
+				symbol.base_name = layer->getSymbol();
+				symbol.fullname = layer->getName();
+				symbol.link = SymbolData::VectorFieldLink;
+				symbol.granularity = Granularity::Node;
+				symbol.type_name = TypeInfo<VDOUBLE>::name();
+				symbol.writable = true;
+				SIM::defineSymbol(symbol);
+	
+			}
 			else {
 				shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
 				
@@ -1352,6 +1376,9 @@ void loadFromXML(const XMLNode xNode) {
 	// all model constituents are loaded. let's initialize them (i.e. interlink)
 	global_scope->init();
 	for (auto glob : global_section_plugins) {
+#ifdef NO_CORE_CATCH
+		glob->init(SIM::getGlobalScope());
+#else
 		try {
 			glob->init(SIM::getGlobalScope());
 		}
@@ -1360,11 +1387,14 @@ void loadFromXML(const XMLNode xNode) {
 			s+= glob->XMLName() + "\n" + e;
 			throw MorpheusException(s,glob->getXMLNode());
 		}
+#endif
 	}
-	
 	// Creation of Fields
-	for (auto pde : pde_layers) {
-		pde.second->init(SIM::getGlobalScope());
+	for (auto field : pde_layers) {
+		field.second->init(SIM::getGlobalScope());
+	}
+	for (auto field : vector_field_layers) {
+		field.second->init(SIM::getGlobalScope());
 	}
 	
 	// Initialising cell populations
@@ -1509,11 +1539,24 @@ const Lattice& lattice()
 
 
 shared_ptr<PDE_Layer> findPDELayer(string symbol) {
-	if (pde_layers.find(symbol) != pde_layers.end())
+	if (pde_layers.find(symbol) != pde_layers.end()) {
 		return pde_layers[symbol];
-	else 
-		throw string("Unable to local Field \"") + symbol +"\"";
+	}
+	else {
+		throw string("Unable to locate Field \"") + symbol +"\"";
 		return shared_ptr<PDE_Layer>();
+	}
+}
+
+shared_ptr<VectorField_Layer> findVectorFieldLayer(string symbol)
+{
+	if (vector_field_layers.find(symbol) != vector_field_layers.end()) {
+		return vector_field_layers[symbol];
+	}
+	else {
+		throw string("Unable to locate VectorField \"") + symbol +"\"";
+		return shared_ptr<VectorField_Layer>();
+	}
 }
 
 const Scope* getScope() { return current_scope; }

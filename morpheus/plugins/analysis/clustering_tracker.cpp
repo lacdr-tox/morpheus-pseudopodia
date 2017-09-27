@@ -169,5 +169,5 @@ void Clustering_Tracker::analyse(double time)
 	storage.close();
 }
 
-void Clustering_Tracker::finish(double time) { storage.close(); };
+void Clustering_Tracker::finish() { storage.close(); };
 

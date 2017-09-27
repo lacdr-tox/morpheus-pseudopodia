@@ -804,8 +804,8 @@ bool nodeController::setText(QString txt)
 
 nodeController* nodeController::insertChild(QString childName, int pos)
 {
-    if ( ! getAddableChilds(true).contains(childName) )
-        throw(QString("Unable to create NodeController for \"%1\". Child is undefined.").arg(childName));
+	if ( ! getAddableChilds(true).contains(childName) )
+		throw(QString("Unable to create NodeController for \"%1\". Child is undefined.").arg(childName));
 	QDomElement elem = this->xmlNode.ownerDocument().createElement(childName);
 	return insertChild(elem,pos);
 }

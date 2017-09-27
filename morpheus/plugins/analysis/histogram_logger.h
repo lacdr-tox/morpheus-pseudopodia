@@ -18,8 +18,10 @@
 #include "gnuplot_i/gnuplot_i.h"
 #include "core/plugin_parameter.h"
 
-/** \ingroup AnalysisPlugins
+/** 
  *  \defgroup HistogramLogger HistogramLogger
+ * \ingroup ML_Analysis
+ * \ingroup AnalysisPlugins
  *  \brief Computation of frequency distributions and visualisation of histograms.
  * 
 \section Description
@@ -118,11 +120,11 @@ public:
     DECLARE_PLUGIN("HistogramLogger");
 
     
-    virtual void analyse(double time);
-    virtual void loadFromXML(const XMLNode );
+    virtual void analyse(double time) override;
+    virtual void loadFromXML(const XMLNode ) override;
 
-    virtual void init(const Scope* scope);
-    virtual void finish(double time);
+    virtual void init(const Scope* scope) override;
+    virtual void finish() override;
     void writelog(double time);
 };
 /// @endcond

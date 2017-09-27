@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="1">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-ParticleAggregation</Title>
         <Details>Shows new FlipCells plugin
@@ -34,7 +34,7 @@
     <CellTypes>
         <CellType class="biological" name="spins">
             <Property symbol="s" value="0.0" name="state"/>
-            <Property symbol="s_n" value="0.0" name="state_neighbors"/>
+            <DelayProperty symbol="s_n" value="0.0" delay="1" name="state_neighbors"/>
             <Property symbol="p" value="2.25" name="probability"/>
             <Function symbol="ni" name="non-isolated">
                 <Expression>if(s==1 and s_n > 1, 1, 0)</Expression>
@@ -46,10 +46,10 @@
             <FlipCellMotion neighborhood="2" time-step="1">
                 <Condition>s > 0 and rand_uni(0,1) &lt; (1-(s_n/12)*p)</Condition>
             </FlipCellMotion>
-            <CellReporter>
+            <Mapper>
                 <Input value="ni"/>
                 <Output symbol-ref="sn" mapping="sum"/>
-            </CellReporter>
+            </Mapper>
         </CellType>
     </CellTypes>
     <CellPopulations>

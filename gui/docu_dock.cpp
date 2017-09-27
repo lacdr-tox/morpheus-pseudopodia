@@ -1,7 +1,20 @@
 #include "docu_dock.h"
 
-#include "QtNetwork/QNetworkAccessManager"
-#include "QtNetwork/QNetworkReply"
+#ifndef MORPHEUS_NO_QTWEBKIT
+#include <QWebHistory>
+#endif
+
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkReply>
+#include <QThread>    
+
+class Sleeper : public QThread
+{
+public:
+    static void usleep(unsigned long usecs){QThread::usleep(usecs);}
+    static void msleep(unsigned long msecs){QThread::msleep(msecs);}
+    static void sleep(unsigned long secs){QThread::sleep(secs);}
+};
 
 class HelpNetworkReply : public QNetworkReply
 {
@@ -66,19 +79,23 @@ QNetworkReply *HelpNetworkAccessManager::createRequest(Operation op, const QNetw
 // 	qDebug() << "Creating Help File Request for URL " << request.url();
 	QString scheme = request.url().scheme();
 	if (scheme == QLatin1String("qthelp") || scheme == QLatin1String("about")) {
-			QString mimeType/* = QMimeDatabase().mimeTypeForUrl(request.url()).name()*/;
-			if (request.url().path().endsWith(".png")) 
-				mimeType = "image/png";
-			else if (request.url().path().endsWith(".html"))
-				mimeType = "text/html";
-			else if (request.url().path().endsWith(".js"))
-				mimeType = "text/javascript";
-			else if (request.url().path().endsWith(".css"))
-				mimeType = "text/css";
-			auto data = m_helpEngine->fileData(request.url());
-			if (data.isEmpty())
-				qDebug() << "Empty URL" << request.url().path() << " / " << mimeType << " of " << data.size() << " bytes";
-			return new HelpNetworkReply(request, data , mimeType);
+		QString mimeType/* = QMimeDatabase().mimeTypeForUrl(request.url()).name()*/;
+		auto path = request.url().path();
+		path.replace("$relpath^","");
+		if (path.endsWith(".png")) 
+			mimeType = "image/png";
+		else if (path.endsWith(".html"))
+			mimeType = "text/html";
+		else if (path.endsWith(".js"))
+			mimeType = "text/javascript";
+		else if (path.endsWith(".css"))
+			mimeType = "text/css";
+		auto url = request.url();
+		url.setPath(path);
+		auto data = m_helpEngine->fileData(url);
+		if (data.isEmpty())
+			qDebug() << "Empty URL" << path << " / " << mimeType << " of " << data.size() << " bytes";
+		return new HelpNetworkReply(request, data , mimeType);
 	}
 	else {
 		QDesktopServices::openUrl(request.url());
@@ -88,16 +105,36 @@ QNetworkReply *HelpNetworkAccessManager::createRequest(Operation op, const QNetw
 }
 
 
+class HelpBrowser : public QTextBrowser {
+public:
+	QVariant loadResource(int type, const QUrl & name) override;
+	void setNetworkAccessManager(QNetworkAccessManager* nam) { this->nam = nam; };
+private:
+	QNetworkAccessManager* nam;
+};
+
+QVariant HelpBrowser::loadResource(int type, const QUrl & name) {
+	QNetworkRequest request(name);
+	qDebug() << "Requesting " << name;
+	auto reply = nam->get(request);
+	return reply->readAll();
+}
+
 DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 {
 	timer = NULL;
-	splitter = new QSplitter(Qt::Horizontal, this);
 	help_engine = config::getHelpEngine();
 	
 	connect(help_engine,SIGNAL(setupFinished()),this,SLOT(setRootOfHelpIndex()));
 	help_engine->setupData();
 	
-	HelpNetworkAccessManager* hnam = new HelpNetworkAccessManager(help_engine,this);
+	hnam = new HelpNetworkAccessManager(help_engine,this);
+
+#ifdef MORPHEUS_NO_QTWEBKIT
+	auto realViewer = new HelpBrowser();
+	realViewer->setNetworkAccessManager(hnam);
+	help_view = realViewer;
+#else
 	help_view = new QWebView();
 	
 	help_view->page()->setNetworkAccessManager(hnam);
@@ -105,30 +142,99 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	help_view->page()->settings()->setAttribute(QWebSettings::JavascriptEnabled, true);
 	help_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessRemoteUrls, false);
 	help_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessFileUrls, true);
-
-	splitter->addWidget(help_engine->contentWidget());
-	help_engine->contentWidget()->setRootIsDecorated(true);
+#endif
+	
+	toc_widget = help_engine->contentWidget();
+	toc_widget->setRootIsDecorated(true);
+	toc_model = new QSortFilterProxyModel(toc_widget);
+	toc_model->setSourceModel(help_engine->contentModel());
+	toc_widget->setModel(toc_model);
+	toc_widget->setSortingEnabled(true);
+	toc_widget->sortByColumn(0,Qt::AscendingOrder);
+	
 	root_reset = false;
-	splitter->addWidget(help_view);
+
+	auto tb = new QToolBar();
+
+	b_back = new QAction(QThemedIcon("go-previous", style()->standardIcon(QStyle::SP_ArrowLeft)),"Back",this);
+	tb->addAction(b_back);
+	b_back->setEnabled(false);
+
+	b_forward = new QAction(QThemedIcon("go-next", style()->standardIcon(QStyle::SP_ArrowRight)),"Fwd",this);
+	tb->addAction(b_forward);
+	b_forward->setEnabled(false);
+	
+	tb->addSeparator();
+	
+	QPixmap pm(":/morpheus.png");
+	auto l_icon = new QLabel();
+	l_icon->setPixmap(pm.scaled(25,25,Qt::KeepAspectRatio,Qt::SmoothTransformation));
+	tb->addWidget(l_icon);
+	auto l_doc = new QLineEdit(" Morpheus 2.0 Documentation");
+	l_doc->setEnabled(false);
+	tb->addWidget(l_doc);
+	
+	auto vl = new QVBoxLayout();
+	vl->setSpacing(0);
+	vl->addWidget(tb);
+	
+	
+	vl->addWidget(help_view);
+	auto w_bottom = new QWidget();
+	w_bottom->setLayout(vl);
+	
+	splitter = new QSplitter(Qt::Horizontal, this);
+	splitter->addWidget(toc_widget);
+	splitter->addWidget(w_bottom);
+	
 	help_view->show();
-	connect(help_engine->contentWidget(),SIGNAL(linkActivated(const QUrl&)), this, SLOT(setCurrentURL(const QUrl&)));
+
+#ifdef MORPHEUS_NO_QTWEBKIT
+	connect(b_back, SIGNAL(triggered()), help_view, SLOT(backward()));
+	connect(b_forward, SIGNAL(triggered()), help_view, SLOT(forward()));
+	connect(help_view, SIGNAL(backwardAvailable(bool)), b_back, SLOT(setEnabled(bool)) );
+	connect(help_view, SIGNAL(forwardAvailable(bool)), b_forward, SLOT(setEnabled(bool)) );
+// 	connect(help_view, SIGNAL(historyChanged(const QUrl&)), this, SLOT(resetStatus()) );
+#else
+	connect(b_back, SIGNAL(triggered()), help_view, SLOT(back()));
+	connect(b_forward, SIGNAL(triggered()), help_view, SLOT(forward()));
+	connect(help_view, SIGNAL(urlChanged(const QUrl&)), this, SLOT(resetStatus()) );
+#endif
+	connect(toc_widget, SIGNAL(clicked(const QModelIndex&)), this, SLOT(setCurrentIndex(const QModelIndex&)) );
 	
 	this->setWidget(splitter);
-	
+	resetStatus();
 }
 
 
-void DocuDock::setCurrentNode(nodeController* node)
+void DocuDock::setCurrentElement(QStringList xPath)
 {
-	QMap <QString, QUrl > identifiers;
-	while (node && identifiers.empty()) {
-		identifiers = help_engine->linksForIdentifier(node->getName());
-		if (! identifiers.empty()) {
-			setCurrentURL(identifiers.begin().value());
-			break;
+// 	qDebug() << xPath;
+	auto key_index = MorpheusML_index;
+	QString help_key = "MorpheusML";
+	xPath.pop_front();
+	
+	while ( !xPath.isEmpty() ) {
+		// try to find the key in the current key_index
+		QString key = xPath.front();
+		int rows = toc_model->rowCount(key_index);
+		for (int r=0; ; r++) {
+			// No suitable tag found
+			if (r>=rows) {
+				xPath.clear();
+				break;
+			}
+			if ( key_index.child(r,0).data() == xPath.front() ) {
+				help_key = xPath.front();
+				xPath.pop_front();
+				key_index = key_index.child(r,0);
+				break;
+			}
 		}
-		node = node->getParent();
 	}
+	
+	setCurrentElement(help_key);
+	toc_widget->setCurrentIndex(key_index);
 }
 
 
@@ -140,14 +246,34 @@ void DocuDock::setCurrentElement(QString name) {
 	}
 }
 
+void DocuDock::setCurrentIndex(const QModelIndex& idx)
+{
+	setCurrentElement(idx.data(Qt::DisplayRole).toString());
+}
+
+
 
 void DocuDock::setCurrentURL(const QUrl& url) {
+#ifdef MORPHEUS_NO_QTWEBKIT
+	help_view->setSource(url);
+#else
 	if (help_view->url() != url) {
 		help_view->setUrl(url);
 // 		qDebug() << url;
 	}
+#endif
 }
 
+
+void DocuDock::resetStatus() {
+#ifdef MORPHEUS_NO_QTWEBKIT
+	b_back->setEnabled(help_view->isBackwardAvailable());
+	b_back->setEnabled(help_view->isForwardAvailable());
+#else
+	b_back->setEnabled(help_view->history()->canGoBack());
+	b_forward->setEnabled(help_view->history()->canGoForward());
+#endif
+}
 
 void DocuDock::resizeEvent(QResizeEvent* event)
 {
@@ -165,9 +291,8 @@ void DocuDock::resizeEvent(QResizeEvent* event)
 
 void DocuDock::setRootOfHelpIndex()
 {
-	QHelpContentWidget* help_index = help_engine->contentWidget();
-	QHelpContentModel* model = help_engine->contentModel();
-	if (model->isCreatingContents()) {
+	auto help_model =  help_engine->contentModel();
+	if (help_model->isCreatingContents()) {
 		if ( ! timer) {
 			timer = new QTimer(this);
 			timer->setSingleShot(true);
@@ -176,20 +301,29 @@ void DocuDock::setRootOfHelpIndex()
 		timer->start(500);
 		return;
 	}
-	QModelIndex root = model->index(0,0);
-	int root_rows = model->rowCount(root);
+	
+	QModelIndex root = toc_model->index(0,0);
+	int rows = toc_model->rowCount(root);
 // 	qDebug() << "I am getting the Docu " <<root_rows ;
 	int modules_row = -1;
-	for (uint row=0; row<root_rows; row++) {
+	for (uint row=0; row<rows; row++) {
 // 		qDebug() << row <<  model->data(model->index(row,0,root),0);
-		 if ( model->data(model->index(row,0,root),0).toString() == "Modules" )
+		 if ( root.child(row,0).data(Qt::DisplayRole) == "Modules" ) {
+			 modules_index =  root.child(row,0);
 			 modules_row = row;
+		 }
+	}
+	
+	rows = toc_model->rowCount(modules_index);
+	for (uint row=0; row<rows; row++) {
+		if ( modules_index.child(row,0).data(Qt::DisplayRole) == "MorpheusML" ) {
+			 MorpheusML_index =  modules_index.child(row,0);
+		 }
 	}
 	
 	if (modules_row>=0) {
-		help_index->setRootIndex(model->index(modules_row,0,root));
-		help_index->setExpanded(model->index(modules_row,0,root),true);
-		
+		toc_widget->setRootIndex(toc_model->index(modules_row,0,root));
+		toc_widget->setExpanded(toc_model->index(modules_row,0,root),true);
 		root_reset = true;
 	}
 }

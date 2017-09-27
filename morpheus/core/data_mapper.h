@@ -24,8 +24,11 @@ public:
 	virtual void reset() = 0;
 	static shared_ptr<DataMapper> create(Mode mode);
 	static std::map<std::string, DataMapper::Mode> getModeNames();
+	DataMapper::Mode getMode() const { return mode; }
+	void setWeightsAreBuckets(bool enabled) { weightsAreBuckets = enabled; };
 protected:
-	DataMapper() {};
+	DataMapper() :weightsAreBuckets(false) {};
+	bool weightsAreBuckets;
 private:
 	Mode mode;
 };
@@ -68,7 +71,7 @@ class DataMapperMin : public DataMapper{
 public:
 	DataMapperMin() { reset(); };
 	void addVal(double value) { min = value<min ? value : min; } 
-	void addVal(double value, double weight) { min = value<min ? value : min; }
+	void addVal(double value, double weight) { if (weightsAreBuckets) min = value*weight<min ? value*weight : min; else min = value<min ? value : min; }
 	double get() { return min; }
     void reset() { min = std::numeric_limits< double >::max(); };
 private: 
@@ -79,7 +82,7 @@ class DataMapperMax : public DataMapper{
 public:
 	DataMapperMax() { reset(); };
 	void addVal(double value) { max = value>max ? value : max; } 
-	void addVal(double value, double weight) { max = value>max ? value : max; } 
+	void addVal(double value, double weight) { if (weightsAreBuckets) max = value*weight>max ? value*weight : max; else  max = value>max ? value : max; } 
 	double get() { return max; }
     void reset() { max = std::numeric_limits< double >::min(); };
 private: 

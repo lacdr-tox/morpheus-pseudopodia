@@ -16,7 +16,8 @@
 #include "core/plugin_parameter.h"
 
 
-/** \defgroup RemoveCells
+/** \defgroup ML_RemoveCells RemoveCells
+ * \ingroup ML_Population
 \ingroup InitializerPlugins
 \brief Remove cell based on a condition
 
@@ -40,7 +41,7 @@ private:
 public:
 	DECLARE_PLUGIN("RemoveCells");
 	RemoveCells();
-	bool run(CellType* ct);
+	bool run(CellType* ct) override;
 };
 
 #endif // APOPTOSIS_H

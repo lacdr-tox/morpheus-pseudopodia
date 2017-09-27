@@ -19,8 +19,8 @@ template <class T> class CellPropertyAccessor;
  
 class CellMembraneAccessor {
 	public:
-		CellMembraneAccessor() : ct(NULL), shit_value(0) {};
-		CellMembraneAccessor(const CellMembraneAccessor& cma) : ct(cma.ct), pid(cma.pid), shit_value(0) {};
+		CellMembraneAccessor() : ct(NULL), fake_value(0) {};
+		CellMembraneAccessor(const CellMembraneAccessor& cma) : ct(cma.ct), fake_value(0), pid(cma.pid) {};
 		CellMembraneAccessor(const CellType* celltype, uint property_id);
 		bool valid() const {return ct!=NULL;}
 		const CellType * getCellType() {return ct; };
@@ -48,7 +48,7 @@ class CellMembraneAccessor {
 
 		VINT map_global( CPM::CELL_ID cell_id, VINT pos ) const;
 		const CellType* ct;
-		mutable double shit_value;
+		mutable double fake_value;
 		uint pid;
 };
 

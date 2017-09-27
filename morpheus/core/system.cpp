@@ -334,6 +334,9 @@ void System<system_type>::init() {
 	for (int i=0; i<functionals.size(); i++) {
 			// Check uniform output containers for non-contexted application
 		if (functionals[i]->type == SystemFunc::ODE || functionals[i]->type == SystemFunc::EQU) {
+			if (functionals[i]->global_symbol.isComposite()) {
+				throw string("System: Fatal Error! No methods for composite symbols ...");
+			}
 			num_assignments++;
 			if (context == SymbolData::UnLinked) {
 				context = functionals[i]->global_symbol.getLinkType();
@@ -350,6 +353,9 @@ void System<system_type>::init() {
 			}
 		}
 		else if (functionals[i]->type == SystemFunc::VEQU) {
+			if (functionals[i]->v_global_symbol.isComposite()) {
+				throw string("System: Fatal Error! No methods for composite symbols ...");
+			}
 			num_assignments++;
 			if (context == SymbolData::UnLinked) {
 				context = functionals[i]->v_global_symbol.getLinkType();
@@ -367,7 +373,7 @@ void System<system_type>::init() {
 		}
 	}
 	
-	switch (context) {
+	switch (equations[0]->global_symbol.internal_link) {
 		case SymbolData::PureCompositeLink:
 			throw string("No System methods for mixed containers ...");
 			exit(-1);
@@ -487,9 +493,9 @@ void System<system_type>::computeToBuffer(const SymbolFocus& f)
 		if (equations[i]->type == SystemFunc::VEQU){
 			VDOUBLE val = equations[i]->v_global_symbol.get(f);
 			double *v = &solver->cache[equations[i]->cache_pos];
-			*v = val.x;
-			*(v+1) = val.y;
-			*(v+2) = val.z;
+			v[0] = val.x;
+			v[1] = val.y;
+			v[2] = val.z;
 		}
 		else 
 			solver->cache[equations[i]->cache_pos] = equations[i]->global_symbol.get(f);
@@ -501,7 +507,7 @@ void System<system_type>::computeToBuffer(const SymbolFocus& f)
 	for (int i =0; i<equations.size(); i++) {
 		if (equations[i]->type == SystemFunc::VEQU) {
 			double *v = &solver->cache[equations[i]->cache_pos];
-			VDOUBLE value(*v,*(v+1),*(v+2));
+			VDOUBLE value(v[0],v[1],v[2]);
 			if (equations[i]->vec_spherical)
 				equations[i]->v_global_symbol.setBuffer(f,VDOUBLE::from_radial(value));
 			else
@@ -578,7 +584,7 @@ void System<system_type>::computeContextToBuffer()
 		}
 	}
 	else {
-		for (auto focus :range ) {
+		for (const auto& focus :range ) {
 			computeToBuffer(focus);
 		}
 	}

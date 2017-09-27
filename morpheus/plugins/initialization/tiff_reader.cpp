@@ -44,9 +44,8 @@ bool TIFFReader::run(PDE_Layer* pde)
 	return success;
 }
 
-bool TIFFReader::run(CellType* ct)
+vector<CPM::CELL_ID>  TIFFReader::run(CellType* ct)
 {
-	
 	struct timeval t1, t2; double elapsedTime;
 	gettimeofday( &t1, NULL);
 
@@ -63,7 +62,7 @@ bool TIFFReader::run(CellType* ct)
 
 	cout << "TIFFReader: loading TIFF for '"<< ct->getName() << "' took " <<  elapsedTime  << " ms.\n"; 
 	
-	return success;
+	return cells_created;
 }
 
 bool TIFFReader::loadTIFF(){
@@ -413,6 +412,7 @@ void TIFFReader::addNode(VINT pos, uint32 color){
 		else
 			new_cell_id = celltype->createCell();
 		color_to_cellid[color] = new_cell_id;
+		cells_created.push_back(new_cell_id);
 		//cout << "Created new cell " << new_cell_id << "\n";
 	}
 

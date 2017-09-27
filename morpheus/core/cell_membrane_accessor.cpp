@@ -3,7 +3,7 @@
 
 
 CellMembraneAccessor::CellMembraneAccessor(const CellType* celltype, uint property_id) :
-	shit_value(0),
+	   fake_value(0),
 	ct(celltype),
 	pid(property_id)
 { 
@@ -102,7 +102,7 @@ void CellMembraneAccessor::swapBuffers() const {
 
 TypeInfo<double>::Return CellMembraneAccessor::operator()(CPM::CELL_ID cell_id, uint theta, uint phi) const {
 	if (! ct) {
-		return shit_value=0.0; 
+		return fake_value=0.0; 
 	}
 	assert( ct->getID() == CellType::storage.index(cell_id).celltype );
 	return (CPM::getCell(cell_id).membranes[pid]->get( VINT(theta,phi,0) ));
@@ -115,7 +115,7 @@ TypeInfo<double>::Return CellMembraneAccessor::operator()(CPM::CELL_ID cell_id, 
 
 TypeInfo<double>::Return CellMembraneAccessor::operator()(const SymbolFocus& focus)  const {
 	if (! ct) {
-		return shit_value=0.0; 
+		return fake_value=0.0; 
 	}
 	assert(ct && focus.cell_index().celltype == ct->getID());
 	return  (focus.cell().membranes[pid]->get(focus.membrane_pos()));

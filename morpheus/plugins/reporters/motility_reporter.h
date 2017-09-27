@@ -10,6 +10,7 @@
 //////
 
 /** \defgroup MotilityReporter
+\ingroup ML_CellType
 \ingroup ReporterPlugins
 \brief Reports statistics about cell motility.
 

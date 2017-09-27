@@ -20,7 +20,7 @@
 	
 	<xs:complexType name="cpmLength">
 		<xs:attribute name="value" type="cpmUnsignedDouble" use="required" />
-		<xs:attribute name="unit" type="cpmLengthUnit" use="optional" default="micron"/>
+<!-- 		<xs:attribute name="unit" type="cpmLengthUnit" use="optional" default="micron"/> -->
 		<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="optional" />
 	</xs:complexType> 
 
