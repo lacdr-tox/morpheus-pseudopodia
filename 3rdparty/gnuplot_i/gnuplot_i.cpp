@@ -100,7 +100,7 @@ string Gnuplot::get_gnuplot_out(const string& cmd, vector<string> args )
 		[&result](const char *bytes, size_t n) {
 			result.append(bytes,n);
 		},
-		nullptr,
+		[](const char *bytes, size_t n) {},
 		true
 	);
 	if (p.get_exit_status() != 0) {
