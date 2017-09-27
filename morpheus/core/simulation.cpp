@@ -1234,7 +1234,7 @@ void loadFromXML(const XMLNode xNode) {
 
 	setRandomSeeds(xTime.getChildNode("RandomSeed"));
 	
-	XMLNode xSpace = xNode.getChildNode("Space");
+	xSpace = xNode.getChildNode("Space");
 	
 	getXMLAttribute(xSpace,"SpaceSymbol/symbol",SymbolData::Space_symbol);
 	symbol.link = SymbolData::Space;
@@ -1465,18 +1465,7 @@ void saveToXML() {
 
 	xMorpheusNode.addChild("Description").addChild("Title").addText(fileTitle.c_str());
 
-	XMLNode xSpace = xMorpheusNode.addChild("Space");
-	xSpace.addChild ("SpaceSymbol").addAttribute("symbol",SymbolData::Space_symbol.c_str());
-	
-	XMLNode xLattice = global_lattice->saveToXML();
-	xSpace.addChild(xLattice);
-
-	if( MembraneProperty::getResolution() > 0) {
-		XMLNode xMemSize = xSpace.addChild("MembraneLattice");
-		xMemSize.addAttribute("resolution", to_cstr(MembraneProperty::getResolution()));
-		if (!MembraneProperty::getResolutionSymbol().empty()) 
-			xMemSize.addAttribute("symbol", MembraneProperty::getResolutionSymbol().c_str());
-	}
+	xMorpheusNode.addChild(xSpace);
 	
 	// saving global_scope
 	xMorpheusNode.addChild(xGlobals);
