@@ -14,6 +14,7 @@
 
 #include "interfaces.h"
 #include "muParser/muParser.h"
+#include <mutex>
 
 /** Expression Evaluation Wrapper
  * 
@@ -68,21 +69,28 @@ private:
 	set<string> depend_symbols;
 };
 
-
+#ifdef HAVE_OPENMP
 class OMPMutex
 {
 public:
-    OMPMutex()             {omp_init_lock(&_lock);}
-    ~OMPMutex()            {omp_destroy_lock(&_lock);}
-    void lock()         {omp_set_lock(&_lock);}
-    void unlock()           {omp_unset_lock(&_lock);}
-    bool try_to_lock()      {return omp_test_lock(&_lock);}
+	OMPMutex()             {omp_init_lock(&_lock);}
+	~OMPMutex()            {omp_destroy_lock(&_lock);}
+	void lock()         {omp_set_lock(&_lock);}
+	void unlock()           {omp_unset_lock(&_lock);}
+	bool try_to_lock()      {return omp_test_lock(&_lock);}
 private:
-    OMPMutex(const OMPMutex&);
-    OMPMutex&operator=(const OMPMutex&);
-    omp_lock_t _lock;
+	OMPMutex(const OMPMutex&);
+	OMPMutex&operator=(const OMPMutex&);
+	omp_lock_t _lock;
 }; 
 
+typedef OMPMutex GlobalMutex;
+
+#else
+
+typedef std::mutex GlobalMutex;
+
+#endif
 
 template <class T>
 class ThreadedExpressionEvaluator {
@@ -109,7 +117,7 @@ public:
 	set<SymbolDependency> getDependSymbols() const { return evaluators[0]->getDependSymbols(); };
 private:
 	mutable vector<unique_ptr<ExpressionEvaluator<T> > > evaluators;
-	mutable OMPMutex mutex;
+	mutable GlobalMutex mutex;
 };
 
 #include "symbol_accessor.h"
