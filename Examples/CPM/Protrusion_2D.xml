@@ -49,7 +49,7 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
             <ConnectivityConstraint/>
         </CellType>
         <CellType class="medium" name="medium"/>
-        <CellType class="biological" name="obstable">
+        <CellType class="biological" name="obstacle">
             <FreezeMotion>
                 <Condition>1</Condition>
             </FreezeMotion>
@@ -59,6 +59,7 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
         <Interaction>
             <Contact type1="amoeba" type2="medium" value="140"/>
             <Contact type1="medium" type2="medium" value="0"/>
+            <Contact type1="amoeba" type2="obstacle" value="140"/>
         </Interaction>
         <MonteCarloSampler stepper="edgelist">
             <MCSDuration value="1"/>
