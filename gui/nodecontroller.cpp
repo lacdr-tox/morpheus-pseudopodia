@@ -1,114 +1,121 @@
 #include "nodecontroller.h"
 
-nodeController::nodeController(nodeController* parent, QDomNode xml_node) :
+nodeController::nodeController(nodeController* parent,  XSD::ChildInfo info, QDomNode xml_node) :
 QObject(parent)
 {
-    /**
-      Input xml_node xsd_node (<element name="??" (type="??") />) of the element definition, parent for edit puroses
-      Sketch for parsing xsd info for the element that is associated with this nodeController
-      1. is this a complex type (either inline or by reference)
-      1a. find out the info for all attributes
-      1b. find all element childs and under which conditions they may be there
+	/**
+	Input xml_node xsd_node (<element name="??" (type="??") />) of the element definition, parent for edit puroses
+	Sketch for parsing xsd info for the element that is associated with this nodeController
+	1. is this a complex type (either inline or by reference)
+	1a. find out the info for all attributes
+	1b. find all element childs and under which conditions they may be there
 
-      2. is this a simple type or a mixed type
-      2a. set the text type by retrieving the type info from XSD
-      2b. create the validator
-    */
-    xmlNode = xml_node;
-    this->parent = parent;
-    text = NULL;
+	2. is this a simple type or a mixed type
+	2a. set the text type by retrieving the type info from XSD
+	2b. create the validator
+	*/
+	xmlNode = xml_node;
+	this->parent = parent;
+	this->node_type = info.type;
+	text = nullptr;
 
-    if (xmlNode.isComment()) {
-        disabled = true;
-        QDomDocument doc;
-        doc.setContent(xmlNode.toComment().data());
-
-        // DocumentElement must be <Disabled>
-        // the first child below is the real disabled node ...
-        // this is asured by the parent node ...
-        Q_ASSERT(doc.documentElement().nodeName() == "Disabled");
-		xmlDisabledNode = doc.documentElement();
-        xmlDataNode = xmlDisabledNode.firstChild();
-    }
-    else if(xmlNode.nodeName() == "Disabled" ) {
-		disabled = true;
-		xmlDisabledNode = xmlNode;
-		xmlDataNode =  xmlNode.firstChild();
-	}
-    else {
-        disabled = false;
-        xmlDataNode = xmlNode;
-    }
-    name = xmlDataNode.nodeName();
-    orig_disabled = disabled;
-
-    // All child nodeControllers share the same symbolName map
-    // Only the root node creates one
-    if (parent) {
-        model_descr = parent->model_descr;
-        inherited_disabled = parent->isDisabled();
-        xsdTypeNode = parent->childInformation(name).xsdChildType;
-		is_complexType = parent->childInformation(name).is_complexType;
-    }
-    else {
-        // This is an xml root element, and we create a descriptor,
-        // and a schema and take it's root element as xsd type ...
+	// All child nodeControllers share the same symbolName map
+	// Only the root node creates one
+	if (!parent) {
+				// This is an xml root element, and we create a descriptor,
+		// and an XSD, and derive the node type from the XSD's root element ...
 		try {
 			model_descr = QSharedPointer<ModelDescriptor>( new ModelDescriptor);
 			model_descr->change_count =0;
 			model_descr->edits =0;
+			model_descr->track_next_change = false;
+			
+			inherited_disabled = false;
+			disabled = false;
+			QDomNode xsd_element_node = model_descr->xsd.getXSDElement().firstChildElement("xs:element");
+			if (xsd_element_node.attributes().namedItem("name").nodeValue() != xmlNode.nodeName())
+				throw QString("XSD root element (%1) does not fit to the XML root element (%2)").arg(xsd_element_node.attributes().namedItem("name").nodeValue()).arg(xmlNode.nodeName());
+			
+			xmlDataNode = xmlNode;
+			node_type = model_descr->xsd.getComplexType(xsd_element_node.attributes().namedItem("type").nodeValue());
 		}
 		catch (QString s) {
 			qDebug() << "Error creating Root NodeController: " << s;
 			throw s;
 		}
-		model_descr->edits = 0;
-		model_descr->track_next_change = false;
-		inherited_disabled = false;
-		QDomNode xsd_element_node = model_descr->xsd.getXSDElement().firstChildElement("xs:element");
-		NodeInfo default_info;
-		default_info.maxOccure="1";
-		default_info.minOccure="1";
-		default_info.is_exchanging = false;
-		NodeInfo rootInfo = parseChildInfo(xsd_element_node, default_info);
+	}
+	else { // there is a parent node
+		model_descr = parent->model_descr;
+		inherited_disabled = parent->isDisabled();
+		if (xmlNode.isComment()) {
+			QDomDocument doc;
+			doc.setContent(xmlNode.toComment().data());
 
-		xsdTypeNode = rootInfo.xsdChildType;
-		is_complexType = rootInfo.is_complexType;
-    }
-
-    if (xsdTypeNode.isNull()) {
-        throw( QString("Unable to create NodeController for \"") + name + "\". " + "Type information for Node " + name + " is not defined in XSD !!");
-    }
-
-    // 1a is a complex type
-    if ( is_complexType ) {
-        parseAttributes();
-        parseChilds();
-		auto i = attributes.begin();
-		while (i != attributes.end()) {
-			// register gnuplot terminal attributes
-			if (i.value()->getType()->name == "cpmGnuplotTerminalEnum" || i.value()->getType()->name == "cpmLoggerTerminalEnum") {
-				model_descr->terminal_names.append(i.value());
-// 				qDebug() << "found terminal " << i.value()->get();
+			// DocumentElement must be <Disabled>
+			// the first child below is the real disabled node ...
+			// this is asured by the parent node ...
+			xmlDisabledNode = doc.documentElement();
+			if (doc.documentElement().nodeName() == "Disabled") {
+				disabled = true;
+				xmlDataNode = xmlDisabledNode.firstChild();
+				if (inherited_disabled) {
+					// throw away the comment and instead put the real data
+					xmlNode.parentNode().replaceChild(xmlDataNode,xmlNode);
+				}
 			}
-			// register system file references
-			if (i.value()->getType()->name == "cpmSystemFile") {
-				model_descr->sys_file_refs.append(i.value());
-// 				qDebug() << "found System File Reference to " << i.value()->get();
+			else {
+				throw QString("Comment does not contain disabled model fragments");
 			}
-			// register the symbol-name-pair as a lookup table to create a symbol - name descriptions.
-		    if (i.key() == "symbol" && attributes.find("name") != attributes.end() ) {
-				model_descr->symbolNames.insert(*i, attributes["name"]);
+				
+		}
+		else if(xmlNode.nodeName() == "Disabled" ) {
+			disabled = true;
+			xmlDisabledNode = xmlNode;
+			xmlDataNode =  xmlNode.firstChild();
+			
+			if (! inherited_disabled) {
+				// move the disabled model fragment into a comment
+				QString dis_node_text;
+				QTextStream s(&dis_node_text);
+				xmlDisabledNode.save(s,4);
+				xmlNode = xmlNode.ownerDocument().createComment(dis_node_text);
 			}
-			++i;
+		}
+		else {
+			disabled = false;
+			xmlDataNode = xmlNode;
 		}
 	}
-	else {
-		text = new AbstractAttribute(this, parent->childInformation(name).xsdChildDef , xmlDataNode, model_descr);
+	
+	name = xmlDataNode.nodeName();
+	orig_disabled = disabled;
+    
+
+	// 1a is a complex type
+	parseAttributes();
+	for ( auto attr : attributes) {
+		// register gnuplot terminal attributes
+		if (attr->getType()->name == "cpmGnuplotTerminalEnum" || attr->getType()->name == "cpmLoggerTerminalEnum") {
+			model_descr->terminal_names.append(attr);
+// 				qDebug() << "found terminal " << attr->get();
+		}
+		// register system file references
+		if (attr->getType()->name == "cpmSystemFile") {
+			model_descr->sys_file_refs.append(attr);
+// 				qDebug() << "found System File Reference to " << attr->get();
+		}
+		// register the symbol-name-pair as a lookup table to create a symbol - name descriptions.
+			if (attr->getName() == "symbol" && attributes.find("name") != attributes.end() ) {
+			model_descr->symbolNames.insert(attr, attributes["name"]);
+		}
+	}
+
+	if ( node_type->content_type == XSD::ComplexTypeInfo::SimpleContent ) {
+		text = new AbstractAttribute(this, node_type->text_type, info.default_val, xmlDataNode, model_descr);
 	}
 
     // read xml data
-	if( is_complexType && xsdTypeNode.firstChildElement("xs:any").isNull() )
+	if( node_type->content_type == XSD::ComplexTypeInfo::ComplexContent )
 	{
 		for(uint i = 0; i < xmlDataNode.childNodes().length(); i++)
 		{
@@ -125,12 +132,12 @@ QObject(parent)
 				else if (child.nodeType() == QDomNode::ElementNode) {
 					disabled_child = child.firstChild();
 				}
-				if ( childInfo.contains(disabled_child.nodeName()) ) {
-					childs.push_back(new nodeController(this, child));
+				if ( node_type->child_info.children.contains(disabled_child.nodeName()) ) {
+					childs.push_back(new nodeController(this,node_type->child_info.children[disabled_child.nodeName()], child));
 				}
 				else {
 					MorphModelEdit e;
-					e.edit_type = NodeRemove;
+					e.edit_type = MorphModelEdit::NodeRemove;
 					e.info = QString("Undefined disabled Node '%1' removed from Node '%2'.").arg(disabled_child.nodeName(),name);
 					e.xml_parent = xmlDataNode;
 					e.name = disabled_child.nodeName();
@@ -144,11 +151,11 @@ QObject(parent)
 			else if (child.nodeType() == QDomNode::ElementNode)
 			{
 				if ( this->getAddableChilds().contains(child.nodeName()) ) {
-						childs.push_back(new nodeController(this, child));
+						childs.push_back(new nodeController(this, node_type->child_info.children[child.nodeName()], child));
 				}
 				else {
 					MorphModelEdit e;
-					e.edit_type = NodeRemove;
+					e.edit_type = MorphModelEdit::NodeRemove;
 					e.info = QString("Undefined Node '%1' removed from Node '%2'.").arg(child.nodeName(),name);
 					e.xml_parent = xmlDataNode;
 					e.name = child.nodeName();
@@ -163,7 +170,7 @@ QObject(parent)
 	}
 	setRequiredElements();
 
-	// Add watchdogs and other ugly siffers
+	// Add watchdogs and other ugly sniffers
 	if ( name=="Title"  ) {
 		model_descr->title = getText();
 	}
@@ -171,8 +178,8 @@ QObject(parent)
 		model_descr->details = getText() ;
 	}
 	if ( name=="Lattice" ) {
-		if (attributes.contains("class") && firstChild("Size")->attributes.contains("value")) {
-			QObject* adapter = new LatticeStructureAdapter(this, attributes["class"], firstChild("Size")->attributes["value"]);
+		if (attributes.contains("class") && firstActiveChild("Size")->attributes.contains("value")) {
+			QObject* adapter = new LatticeStructureAdapter(this, attributes["class"], firstActiveChild("Size")->attributes["value"]);
 			adapters.append(adapter);
 		}
 		else
@@ -182,196 +189,33 @@ QObject(parent)
 
 //------------------------------------------------------------------------------
 
-void nodeController::parseChilds()
-{
-    QDomNode subNode = getSubNode(xsdTypeNode);
-    QDomNodeList xsd_childs = subNode.childNodes();
-    QList<QDomNode> child_elements;
-    // Collapse all childs into the elements list
-    for(int i = 0; i < xsd_childs.size(); i++)
-    {
-        if(xsd_childs.at(i).nodeType() == QDomNode::ElementNode)
-        {
-            if (xsd_childs.at(i).nodeName()=="xs:group") {
-                // parsing elements referenced via a group ref
-                QDomNode groupNode = xsd_childs.at(i);
-                QString groupName = groupNode.attributes().namedItem("ref").nodeValue();
-                QDomNodeList xsd_groups = model_descr->xsd.getXSDElement().elementsByTagName("xs:group");
-				QDomNode xsd_group_node;
-				
-				for(int h = 0; h < xsd_groups.size(); h++)
-				{
-					if( xsd_groups.at(h).attributes().namedItem("name").nodeValue() == groupName) {
-						xsd_group_node = getSubNode(xsd_groups.at(h));
-						break;
-					}
-				}
-				
-				if (xsd_group_node.isNull()) {
-					throw(QString("Unable to find referred XSD group %1.").arg(groupName));
-				}
-				else {
-					for(int m = 0; m < xsd_group_node.childNodes().size(); m++)
-					{
-						if (xsd_group_node.childNodes().at(m).nodeType() ==  QDomNode::ElementNode &&  xsd_group_node.childNodes().at(m).nodeName() == "xs:element")
-							child_elements.push_back(xsd_group_node.childNodes().at(m));
-					}
-				}
-			}
-			else if(xsd_childs.at(i).nodeName() == "xs:element")
-			{ child_elements.push_back(xsd_childs.at(i)); }
-		}
-	}
-
-    NodeInfo defaultChildInfo;
-    defaultChildInfo.info =  QString("");
-    defaultChildInfo.pluginClass = QString("");
-	
-	if(!subNode.attributes().namedItem("minOccurs").isNull())
-        defaultChildInfo.minOccure = subNode.attributes().namedItem("minOccurs").nodeValue();
-    else
-        defaultChildInfo.minOccure = "1";
-
-    if(!subNode.attributes().namedItem("maxOccurs").isNull())
-        defaultChildInfo.maxOccure = subNode.attributes().namedItem("maxOccurs").nodeValue();
-    else
-        defaultChildInfo.maxOccure = "1";
-	
-    if(subNode.nodeName() == "xs:choice" && defaultChildInfo.maxOccure == "1")
-    {
-        defaultChildInfo.group = xsdTypeNode.namedItem("name").nodeValue();
-        defaultChildInfo.is_exchanging = true;
-        defaultChildInfo.is_default_choice = true;
-    }
-    else {
-        defaultChildInfo.group = "";
-        defaultChildInfo.is_exchanging = false;
-        defaultChildInfo.is_default_choice = false;
-    }
-
-    for (int i=0; i<child_elements.size(); i++) {
-        NodeInfo child_info = parseChildInfo(child_elements.at(i), defaultChildInfo);
-// 		qDebug() << "Registering Child " << child_info.name;
-        childInfo[child_info.name] = child_info;
-        defaultChildInfo.is_default_choice = false;
-    }
-}
-
-//------------------------------------------------------------------------------
-
-nodeController::NodeInfo nodeController::parseChildInfo(QDomNode elemNode, const NodeInfo& default_info)
-{
-	NodeInfo child_info = default_info;
-	child_info.xsdChildDef = elemNode;
-    QDomNamedNodeMap xsd_attributes =  elemNode.attributes();
-    child_info.name = xsd_attributes.namedItem("name").nodeValue();
-
-    if ( xsd_attributes.contains("minOccurs"))
-        {child_info.minOccure = xsd_attributes.namedItem("minOccurs").nodeValue();}
-
-    if ( xsd_attributes.contains("maxOccurs"))
-        {child_info.maxOccure = xsd_attributes.namedItem("maxOccurs").nodeValue();}
-        
-    if (xsd_attributes.contains("type") ) {
-		QString type_name = xsd_attributes.namedItem("type").nodeValue();
-		if (model_descr->xsd.getComplexTypes().contains( type_name ) ) {
-			child_info.is_complexType = true;
-			child_info.xsdChildType = model_descr->xsd.getComplexTypes()[type_name];
-		}
-		else if (model_descr->xsd.getSimpleTypes().contains( type_name ) ){
-			child_info.is_complexType = false;
-			child_info.simpleChildType = model_descr->xsd.getSimpleTypes()[type_name];
-			child_info.xsdChildType = child_info.simpleChildType->xsdNode;
-		}
-		else {
-			qDebug() << "Undefined Node Type " << type_name;
-			throw QString("Undefined Node Type ") + type_name;
-		}
-		
-	}
-	else {
-		child_info.xsdChildType = elemNode.firstChildElement("xs:complexType");
-		if ( ! child_info.xsdChildType.isNull()) {
-			child_info.is_complexType = true;
-		}
-		else {
-			throw QString("Embedded complex Type expected ...");
-		}
-	}
-
-    // need to get the referred type in order to read the docu
-    QDomNode infoNode;
-    if ( ! elemNode.firstChildElement("xs:annotation").firstChildElement("xs:documentation").isNull() ) {
-        infoNode = elemNode;
-    }
-    else {
-		if (child_info.is_complexType) {
-			infoNode = child_info.xsdChildType;
-		}
-		else {
-			child_info.info = child_info.simpleChildType->docu;
-		}
-    }
-
-    if (!infoNode.isNull() ) {
-        QStringList docu_lines = infoNode.firstChildElement("xs:annotation").firstChildElement("xs:documentation").text().split("\n");
-        for (int i=0; i<docu_lines.size(); i++) { docu_lines[i] = docu_lines[i].trimmed(); }
-        while (docu_lines.size()>0 && docu_lines.first() == "" ) docu_lines.removeFirst();
-        while (docu_lines.size()>0 && docu_lines.last() == "" ) docu_lines.removeLast();
-        child_info.info = docu_lines.join("\n");
-    }
-
-
-	QDomNode appInfoNode;
-	if(!elemNode.firstChildElement("xs:annotation").firstChildElement("xs:appinfo").isNull()) {
-		appInfoNode = elemNode;
-	}
-	else {
-		appInfoNode = child_info.xsdChildType;
-	}
-    child_info.pluginClass = appInfoNode.firstChildElement("xs:annotation").firstChildElement("xs:appinfo").text();
-	return child_info;
-}
-
-//------------------------------------------------------------------------------
-
 void nodeController::parseAttributes()
 {
-    QDomNode attrNode;
-    for(int  i = 0;  i < this->xsdTypeNode.childNodes().size(); i++)
-    {
-        attrNode = this->xsdTypeNode.childNodes().at(i);
+	QList<QDomNode> attr_xsd_nodes = node_type->attributes;
+	
+	for(int  i = 0;  i < attr_xsd_nodes.size(); i++) {
+		AbstractAttribute* xml_attribute = new AbstractAttribute(this, attr_xsd_nodes[i], xmlDataNode, model_descr);
+		attributes[xml_attribute->getName()] = xml_attribute;
+		if (isDisabled()) { xml_attribute->inheritDisabled(true); }
+	}
 
-        if(attrNode.nodeName() == "xs:attribute")
-        {
-            AbstractAttribute* xml_attribute = new AbstractAttribute(this, attrNode, xmlDataNode, model_descr);
-// 			qDebug() << "Registering Attribute node " << xml_attribute->getName();
-            attributes[xml_attribute->getName()] = xml_attribute;
-			if (isDisabled()) {
-				xml_attribute->inheritDisabled(true);
-			}
-        }
-    }
-    // reverse checking, whether there is an undefined attribute in the xml
-    QDomNamedNodeMap xml_attributes = xmlDataNode.attributes();
-    for (int i=0; i<xml_attributes.count(); i++)
-    {
-        QString a_name = xml_attributes.item(i).nodeName();
-        if ( ! attributes.contains(a_name) ) {
-
-            MorphModelEdit e;
-            e.edit_type = AttribRemove;
-            e.info = QString("Undefined Attribute '%1' removed from Node '%2'.").arg(a_name,name);
-            e.xml_parent = xmlDataNode;
-            e.name = a_name;
-            e.value = a_name + "=\""  + xml_attributes.namedItem(a_name).nodeValue() + "\"";
-            xml_attributes.removeNamedItem( a_name);
-            model_descr->auto_fixes.append(e);
-            i--;
-
-        }
-
-    }
+	// reverse checking, whether there is an undefined attribute in the xml
+	QDomNamedNodeMap xml_attributes = xmlDataNode.attributes();
+	for (int i=0; i<xml_attributes.count(); i++)
+	{
+		QString a_name = xml_attributes.item(i).nodeName();
+		if ( ! attributes.contains(a_name) ) {
+			MorphModelEdit e;
+			e.edit_type = MorphModelEdit::AttribRemove;
+			e.info = QString("Undefined Attribute '%1' removed from Node '%2'.").arg(a_name,name);
+			e.xml_parent = xmlDataNode;
+			e.name = a_name;
+			e.value = a_name + "=\""  + xml_attributes.namedItem(a_name).nodeValue() + "\"";
+			xml_attributes.removeNamedItem( a_name);
+			model_descr->auto_fixes.append(e);
+			i--;
+		}
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -403,28 +247,9 @@ nodeController::~nodeController()
 	tmp.removeChild(xmlNode);
 }
 
-//------------------------------------------------------------------------------
-
-QDomNode nodeController::getSubNode(QDomNode subNode)
-{
-    if(subNode.nodeName() != "xs:simpleType")
-    {
-        for(int i = 0; i < subNode.childNodes().size(); i++)
-        {
-            if(subNode.childNodes().at(i).nodeName() == "xs:all" || subNode.childNodes().at(i).nodeName() == "xs:choice")
-            {
-                QDomNode node = subNode.childNodes().at(i);
-                return node;
-            }
-        }
-        QDomNode node;
-        return node;
-    }
-    else
-    {
-        QDomNode node;
-        return node;
-    }
+QDomNode nodeController::cloneXML() const {
+	QDomNode tmp = xmlDataNode.cloneNode(true);
+	return tmp;
 }
 
 //------------------------------------------------------------------------------
@@ -432,10 +257,15 @@ QDomNode nodeController::getSubNode(QDomNode subNode)
 QList<QString> nodeController::getAddableChilds(bool unfiltered)
 {
 	QList<QString> addableChilds;
-	QMap<QString, NodeInfo>::iterator it;
 	if (unfiltered) {
-		for (it = this->childInfo.begin(); it != this->childInfo.end(); it++)
-			addableChilds.push_back(it.value().name);
+		for (const auto& child : node_type->child_info.children )
+			addableChilds.push_back(child.name);
+	}
+	else if (node_type->child_info.is_choice) {
+		if (node_type->child_info.max_occurs == "unbounded" || activeChilds() < node_type->child_info.max_occurs.toInt() ) {
+			for (const auto& child : node_type->child_info.children )
+				addableChilds.push_back(child.name);
+		}
 	}
 	else {
 		QMap<QString, int> child_count;
@@ -444,20 +274,19 @@ QList<QString> nodeController::getAddableChilds(bool unfiltered)
 			if (! childs[h]->isDisabled())
 				child_count[childs[h]->name] ++ ;
 		}
-		for (it = this->childInfo.begin(); it != this->childInfo.end(); it++)
+		for (const auto& child : node_type->child_info.children )
 		{
-			if (it.value().maxOccure == "unbounded") {
-				addableChilds.push_back(it.value().name);
+			if (child.max_occurs == "unbounded" || node_type->child_info.max_occurs == "unbounded") {
+				addableChilds.push_back(child.name);
 			}
 			else {
-				int count = 0;
-				int max = it.value().maxOccure.toInt();
-				QMap<QString, int>::const_iterator r = child_count.find(it.value().name);
-				if ( r != child_count.end() ) {
-					count = r.value();
-				}
+				int count;
+				int max = child.max_occurs.toInt() * node_type->child_info.max_occurs.toInt();
+				QMap<QString, int>::const_iterator r = child_count.find(child.name);
+				count = ( r != child_count.end() ) ? r.value() : 0;
+				
 				if (count < max) {
-					addableChilds.push_back(it.value().name);
+					addableChilds.push_back(child.name);
 				}
 			}
 		}
@@ -490,8 +319,11 @@ int nodeController::childIndex(nodeController *node) const {
 
 //------------------------------------------------------------------------------
 
-nodeController::NodeInfo nodeController::childInformation(QString n) {
-    return childInfo.value(n);
+XSD::ChildInfo nodeController::childInformation(QString n) {
+	if (node_type->child_info.children.contains(n))
+		return node_type->child_info.children[n];
+	else
+		return XSD::ChildInfo();
 }
 
 
@@ -660,7 +492,7 @@ nodeController* nodeController::find(QStringList path) {
 			return NULL;
 		}
 		else {
-			nodeController* child = firstChild(child_name);
+			nodeController* child = firstActiveChild(child_name);
 			if (child) {
 				return child->find(path);
 			}
@@ -700,8 +532,8 @@ QList<AbstractAttribute*> nodeController::getOptionalAttributes() {
 
 //------------------------------------------------------------------------------
 
-QString nodeController::getInfo()
-{return this->parent->childInfo[this->name].info;}
+QString nodeController::getNodeInfo()
+{ return node_type->name; }
 
 //------------------------------------------------------------------------------
 
@@ -720,7 +552,7 @@ QSharedPointer<XSD::SimpleTypeInfo> nodeController::textType()
     if (text)
         return text->getType();
     else
-        return model_descr->xsd.getSimpleTypes()["cpmText"];
+        return model_descr->xsd.getSimpleType("cpmText");
 }
 
 //------------------------------------------------------------------------------
@@ -733,21 +565,8 @@ AbstractAttribute* nodeController::textAttribute() {
 
 bool nodeController::isDeletable()
 {
-    int count = 0;
-    if (!parent) return false;
+	if (!parent) return false;
 	return ( ! parent->isChildRequired(this));
-		return false;
-//     for(int i = 0; i < this->parent->childs.size(); i++)
-//     {
-//         if(this->parent->childs[i]->name == this->name)
-//         {count++;}
-//     }
-// 
-//     int min = parent->childInfo[this->name].minOccure.toInt();
-//     if((count - 1) < min)
-//         {return false;}
-//     else
-//         {return true;}
 }
 
 //------------------------------------------------------------------------------
@@ -759,30 +578,40 @@ bool nodeController::hasText()
 
 //------------------------------------------------------------------------------
 
-nodeController* nodeController::firstChild(QString childName) {
-    for(int i = 0; i < this->childs.size(); i++)
-    {
-        if(this->childs[i]->name == childName && ! this->childs[i]->isDisabled())
-        {
-            return this->childs[i];
-        }
-    }
-    return NULL;
+int nodeController::activeChilds(QString childName) {
+	int count=0;
+	for (const auto& child : childs) {
+		count += (! child->isDisabled()) && (childName.isEmpty() || childName == child->getName());
+	}
+	return count;
 }
 
 //------------------------------------------------------------------------------
 
-nodeController* nodeController::findGroupChild(QString group) {
-	for (int i=0; i<childs.size(); i++)
+nodeController* nodeController::firstActiveChild(QString childName) {
+	for(int i = 0; i < this->childs.size(); i++)
 	{
-		QString childName = childs[i]->name;
-		if (this->childInfo[childName].group == group &&  ! childs[i]->isDisabled() )
-		{
-			return childs[i];
+		if ( ! childs[i]->isDisabled() && (childName.isEmpty() || this->childs[i]->name == childName )) {
+			return this->childs[i];
 		}
 	}
-	return NULL;
+	return nullptr;
 }
+
+//------------------------------------------------------------------------------
+
+// nodeController* nodeController::findGroupChild(QString group) {
+// 	for (int i=0; i<childs.size(); i++)
+// 	{
+// 		QString childName = childs[i]->name;
+// 		if (this->childInfo[childName].group == group &&  ! childs[i]->isDisabled() )
+// 		{
+// 			return childs[i];
+// 		}
+// 	}
+// 	return NULL;
+// }
+
 //------------------------------------------------------------------------------
 
 bool nodeController::setText(QString txt)
@@ -815,13 +644,17 @@ nodeController* nodeController::insertChild(QString childName, int pos)
 nodeController* nodeController::insertChild(QDomNode xml_node, int pos)
 {
 	QString childName = xml_node.nodeName();
+	qDebug() << "Inserting Node " << childName;
+	QDomNode disabled_content;
 
 	if (xml_node.nodeType() == QDomNode::CommentNode) {
+		qDebug() << "Comment: " << xml_node.toComment().data();
 		if (xml_node.toComment().data().contains("<Disabled>")) {
 			QDomDocument doc;
 			doc.setContent(xml_node.toComment().data());
-			if (doc.documentElement().nodeName() == "Disabled")
+			if (doc.documentElement().nodeName() == "Disabled") {
 				childName = doc.documentElement().firstChild().nodeName();
+			}
 		}
 	}
 	
@@ -836,7 +669,7 @@ nodeController* nodeController::insertChild(QDomNode xml_node, int pos)
 		xmlDataNode.insertBefore(xml_node,childs[pos]->xmlNode);
 	}
 	
-	nodeController* contr(new nodeController(this, xml_node));
+	nodeController* contr = new nodeController(this, node_type->child_info.children[childName], xml_node);
 	
 	if (pos == childs.size()) {
 		childs.append(contr);
@@ -854,108 +687,73 @@ nodeController* nodeController::insertChild(QDomNode xml_node, int pos)
 
 void nodeController::setRequiredElements()
 {
-    QMap<QString, NodeInfo>::iterator it;
+	for ( auto& attr : attributes)
+	{
+		if ( attr->isRequired() && ! attr->isActive())
+		{
+			attr->setActive(true);
+			MorphModelEdit e;
+			e.edit_type = MorphModelEdit::AttribAdd;
+			e.info = QString("Required Attribute '%1' added to Node '%2'.").arg(attr->getName(), name);
+			e.xml_parent = xmlDataNode;
+			e.name = attr->getName();
+			model_descr->auto_fixes.append(e);
+		}
+	}
 
-    for (auto it_attr = this->attributes.begin(); it_attr != this->attributes.end(); it_attr++)
-    {
-        if ( it_attr.value()->isRequired() && ! it_attr.value()->isActive())
-        {
-            it_attr.value()->setActive(true);
-            MorphModelEdit e;
-            e.edit_type = AttribAdd;
-            e.info = QString("Required Attribute '%1' added to Node '%2'.").arg(it_attr.value()->getName(), name);
-            e.xml_parent = xmlDataNode;
-            e.name = it_attr.value()->getName();
-            model_descr->auto_fixes.append(e);
-        }
-    }
+	for (const auto &child_def : node_type->child_info.children)
+	{
+		int min = 0;
+		if (node_type->child_info.is_choice && node_type->child_info.default_choice == child_def.name) 
+			min = node_type->child_info.min_occurs.toInt();
+		else
+			min = child_def.min_occurs.toInt() * node_type->child_info.min_occurs.toInt();
 
-    for (it = this->childInfo.begin(); it != this->childInfo.end(); it++)
-    {
-        int min = it.value().minOccure.toInt();
+		if (min>0)
+		{
+			int child_count = 0;
+			if ( node_type->child_info.is_choice)
+				child_count = childs.size();
+			else {
+				for(int i = 0; i < childs.size(); i++)
+				{
+					child_count += (childs[i]->name == child_def.name);
+				}
+			}
 
-        if (min == 1)
-        {
-            bool isSet = false;
-            for(int i = 0; i < childs.size(); i++)
-            {
-                if(childs[i]->name == it.value().name)
-                {
-                    isSet = true;
-                    break;
-                }
-            }
+			if (child_count<min) {
+				MorphModelEdit e;
+				e.edit_type = MorphModelEdit::NodeAdd;
+				e.info = QString("Required Node '%1' added to Node '%2'.").arg(child_def.name, name);
+				e.xml_parent = xmlDataNode;
+				e.name = child_def.name;
+				model_descr->auto_fixes.append(e);
 
-            if (!isSet)
-            {
-                if (it.value().is_exchanging)
-                {
-                    if (it.value().is_default_choice)
-                    {
-                        bool hasGroupMember = false;
-                        for(int i = 0; i < childs.size(); i++)
-                        {
-                            QString tmp = childInfo[childs[i]->name].group;
-                            if(tmp == it.value().group)
-                            {
-                                hasGroupMember = true;
-                                break;
-                            }
-                        }
+				int message_pos = this->model_descr->auto_fixes.size();
+				for (int i=child_count; i<min; i++)
+					this->insertChild(child_def.name,childs.size());
 
-                        if (!hasGroupMember)
-                        {
-                            MorphModelEdit e;
-                            e.edit_type = NodeAdd;
-                            e.info = QString("Required Node '%1' added to Node '%2'.").arg(it.value().name, name);
-                            e.xml_parent = xmlDataNode;
-                            e.name = it.value().name;
-                            model_descr->auto_fixes.append(e);
-
-                            int message_pos = this->model_descr->auto_fixes.size();
-
-                            this->insertChild(it.value().name,childs.size());
-
-                            while (this->model_descr->auto_fixes.size() > message_pos)
-                                this->model_descr->auto_fixes.pop_back();
-                        }
-                    }
-                }
-                else
-                {
-                    MorphModelEdit e;
-                    e.edit_type = NodeAdd;
-                    e.info = QString("Required Node '%1' added to Node '%2'.").arg(it.value().name, name);
-                    e.xml_parent = xmlDataNode;
-                    e.name = it.value().name;
-                    model_descr->auto_fixes.append(e);
-
-                    int message_pos = this->model_descr->auto_fixes.size();
-
-                    this->insertChild(it.value().name,childs.size());
-
-                    while (this->model_descr->auto_fixes.size() > message_pos)
-                        this->model_descr->auto_fixes.pop_back();
-                }
-            }
-        }
-    }
+				while (this->model_descr->auto_fixes.size() > message_pos)
+					this->model_descr->auto_fixes.pop_back();
+			}
+		}
+	}
 }
 
 //------------------------------------------------------------------------------
 
 void nodeController::moveChild(int from, int to) {
-    // Here we need the index of the neighboring child before the move ...
-    if (to==0) {
-        xmlDataNode.insertBefore(childs[from]->xmlNode,QDomNode());
-    } else {
-        xmlDataNode.insertAfter(childs[from]->xmlNode, childs[(from<to) ? to : to-1]->xmlNode);
-    }
+	// Here we need the index of the neighboring child before the move ...
+	if (to==0) {
+		xmlDataNode.insertBefore(childs[from]->xmlNode,QDomNode());
+	} else {
+		xmlDataNode.insertAfter(childs[from]->xmlNode, childs[(from<to) ? to : to-1]->xmlNode);
+	}
 
-    // Here we use the index the child will have after move ...
-    childs.move(from,to);
+	// Here we use the index the child will have after move ...
+	childs.move(from,to);
 
-    model_descr->edits++;
+	model_descr->edits++;
 	model_descr->change_count++;
 }
 
@@ -964,7 +762,7 @@ void nodeController::moveChild(int from, int to) {
 bool nodeController::canInsertChild(QString child, int dest_pos) {
 	if (dest_pos > childs.size())
 		return false;
-	if ( ! childInfo.contains(child) )
+	if ( ! node_type->child_info.children.contains(child) )
 		return false;
 	
 	return true;
@@ -975,9 +773,9 @@ bool nodeController::canInsertChild(QString child, int dest_pos) {
 bool nodeController::canInsertChild(nodeController* source, int dest_pos) {
 	if (dest_pos > childs.size())
 		return false;
-	if ( ! childInfo.contains(source->name))
+	if ( ! node_type->child_info.children.contains(source->name))
 		return false;
-	if (childInfo[source->name].xsdChildType != source->xsdTypeNode) 
+	if ( node_type->child_info.children[source->name].type != source->node_type ) 
 		return false;
 	
 	return true;
@@ -1026,28 +824,12 @@ bool nodeController::isChildRequired(nodeController* node)
 	if (node->isDisabled())
 		return false;
 	
-	QStringList search_mask;
-	if (childInfo[node->getName()].is_exchanging) {
-		QString group_name = childInfo[node->getName()].group;
-		QMapIterator<QString, NodeInfo> node_info(childInfo);
-		while (node_info.hasNext()) {
-			node_info.next();
-			if (node_info.value().group == group_name) {
-				search_mask.append(node_info.value().name);
-			}
-		}
+	if (node_type->child_info.is_choice) {
+		return (node_type->child_info.min_occurs.toInt() >= activeChilds());
 	}
 	else {
-		search_mask.append(node->getName());
+		return (node_type->child_info.min_occurs.toInt()*node_type->child_info.children[node->name].min_occurs.toInt() >= activeChilds(node->name));
 	}
-	
-	int count=0;
-	for (int i=0; i<childs.size(); i++) {
-		if ( ! childs[i]->isDisabled() and search_mask.contains(childs[i]->getName()) ) {
-			count++;
-		}
-	}
-	return count <= childInfo[node->getName()].minOccure.toInt();
 }
 
 //------------------------------------------------------------------------------
@@ -1065,16 +847,15 @@ bool nodeController::isInheritedDisabled() {
 //------------------------------------------------------------------------------
 
 bool nodeController::setDisabled(bool b) {
-    if ( b == disabled ) return true;
-    if ( b ) {
-//         if ( ! isDeletable() ) return false;
-        // remove the node from the xml
-        disabled = true;
+	if ( b == disabled ) return true;
+	if ( b ) {
+		// remove the node from the xml
+		disabled = true;
 
-        for (int c=0; c<childs.size(); c++) {
-            childs[c]->inheritDisabled(true);
-        }
-        for ( auto a=attributes.begin(); a!=attributes.end(); a++) {
+		for (int c=0; c<childs.size(); c++) {
+			childs[c]->inheritDisabled(true);
+		}
+		for ( auto a=attributes.begin(); a!=attributes.end(); a++) {
 			a.value()->inheritDisabled(true);
 		}
 		
@@ -1088,10 +869,10 @@ bool nodeController::setDisabled(bool b) {
 		xmlDisabledNode.appendChild(xmlDataNode);
 		QString dis_node_text;
 		QTextStream s(&dis_node_text);
-        xmlDisabledNode.save(s,4);
+		xmlDisabledNode.save(s,4);
 		xmlNode.setNodeValue(dis_node_text);
 
-        if (orig_disabled)
+		if (orig_disabled)
 			model_descr->change_count--;
 		else
 			model_descr->change_count++;
@@ -1099,12 +880,12 @@ bool nodeController::setDisabled(bool b) {
 		model_descr->edits++;
     }
     else {
-        disabled = false;
-        parent->xmlDataNode.replaceChild(xmlDataNode, xmlNode);
+		disabled = false;
+		parent->xmlDataNode.replaceChild(xmlDataNode, xmlNode);
 		xmlNode = xmlDataNode;
-        for (int c=0; c<childs.size(); c++) {
-            childs[c]->inheritDisabled(false);
-        }
+		for (int c=0; c<childs.size(); c++) {
+			childs[c]->inheritDisabled(false);
+		}
 		for (auto a=attributes.begin(); a!=attributes.end(); a++) {
 			a.value()->inheritDisabled(false);
 		}
@@ -1114,8 +895,8 @@ bool nodeController::setDisabled(bool b) {
 			model_descr->change_count--;
 
 		model_descr->edits++;
-    }
-    return true;
+	}
+	return true;
 }
 
 //------------------------------------------------------------------------------

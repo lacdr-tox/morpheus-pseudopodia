@@ -136,7 +136,7 @@ void domNodeEditor::setNode(nodeController* node, SharedMorphModel model)
 		}
 		else {
 			
-			line_editor->setValidator(node->textType()->validator);
+			line_editor->setValidator(&(node->textType()->validator));
 			line_editor->setText(node->getText());
 			line_editor->show();
 			current_value_edit = LineText;

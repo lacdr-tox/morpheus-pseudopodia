@@ -89,26 +89,30 @@ public:
     bool sweep_lock;
 	
 private:
-    friend class parameterSweeper;
+	friend class parameterSweeper;
 	friend class JobQueue;
 
+	struct AutoFix {
+		QString match_path;
+		QString move_path;
+		QString require_path;
+		bool copy;
+	};
+	QList<MorphModelEdit> applyAutoFixes(QDomDocument document);
+	
 	QDir temp_folder;
 	int dep_graph_model_edit_stamp;
 	ParamSweepModel param_sweep;
-//     QList<QList<AbstractAttribute*> > sweeperAttributes;
-//     QMap<AbstractAttribute*, QString> sweeperValues;
-    struct AutoFix {
-        QString match_path;
-        QString move_path;
-        QString require_path;
-        bool copy;
-    };
-    QList<MorphModelEdit> applyAutoFixes(QDomDocument document);
+
 	void initModel();
-    void loadModelParts();
+	void loadModelParts();
+	
+	void prepareActivationOrInsert(nodeController* node, QString name);
 	bool removeDir(QString dir_path);
+	
 //     void addRecentFile(QString fileName);
     /*!< Sets the name of current loaded file to 'filename'. */
+	 
     QModelIndex internalDropIndex;
     int internalDropRow;
 

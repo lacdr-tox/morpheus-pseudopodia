@@ -232,7 +232,7 @@ void domNodeViewer::setTreeItem( const QModelIndex& index)
     QStringList addableChilds = node->getAddableChilds(false);
     for(int i = 0; i < allChilds.size(); i++)
     {
-        QTreeWidgetItem* trWItem = new QTreeWidgetItem(plugin_tree_widget, QStringList() << allChilds.at(i)  << node->childInformation(allChilds.at(i)).pluginClass);
+        QTreeWidgetItem* trWItem = new QTreeWidgetItem(plugin_tree_widget, QStringList() << allChilds.at(i)  << node->childInformation(allChilds.at(i)).type->pluginClass);
         if (! addableChilds.contains(allChilds.at(i))) {
             trWItem->setIcon(0,style()->standardIcon(QStyle::SP_MessageBoxWarning));
             trWItem->setToolTip(0,"This node will disable an existing node!");
@@ -243,7 +243,7 @@ void domNodeViewer::setTreeItem( const QModelIndex& index)
 	model_tree_view->blockSignals(false);
 
     emit nodeSelected(node);
-	 emit xmlElementSelected(node->getXPath());
+	emit xmlElementSelected(node->getXPath());
 }
 
 //------------------------------------------------------------------------------

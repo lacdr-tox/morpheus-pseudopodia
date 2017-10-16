@@ -34,17 +34,16 @@ XSD::XSD() {
 // 
 //     schema_path = schema;
 //     cout << "Loading XML-Schema from " << schema_path.toStdString() << endl;
-    QFile xsdSchemaFile(":/morpheus.xsd");
+	QFile xsdSchemaFile(":/morpheus.xsd");
 
-    xsdSchemaFile.open(QIODevice::ReadOnly);
-    if ( ! xsdSchema.setContent(&xsdSchemaFile) ) {
-         cerr <<"Cannot create internal DOM structure from the given XSD document!" << std::endl;
-         exit(-1);
-    }
-    xsdSchemaFile.close();
-
-    createTypeMaps();
-
+	xsdSchemaFile.open(QIODevice::ReadOnly);
+	if ( ! xsdSchema.setContent(&xsdSchemaFile) ) {
+		cerr <<"Cannot create internal DOM structure from the given XSD document!" << std::endl;
+		exit(-1);
+	}
+      
+	xsdSchemaFile.close();
+	createTypeMaps();
 }
 
 //------------------------------------------------------------------------------
@@ -60,246 +59,624 @@ QDomElement XSD::getXSDElement()
     return xsdSchema.documentElement();
 }
 
+QSharedPointer<XSD::SimpleTypeInfo> XSD::getSimpleType(QString name) const {
+	auto it = simple_types.constFind(name);
+	if (it==simple_types.constEnd()) {
+		throw QString("Referred Simple Type '%1'not defined ").arg(name);
+	}
+	
+	if ( ! (*it)->initialized ) {
+		const_cast<XSD*>(this)->initSimpleType(*it);
+	}
+	return *it;
+}
+
+QSharedPointer<XSD::ComplexTypeInfo> XSD::getSimpleContentType(QString name) const {
+	auto it = simple_content_types.constFind(name);
+	if (it==simple_content_types.constEnd()) {
+		throw QString("Referred Simple Type '%1'not defined ").arg(name);
+	}
+	
+	if ( ! (*it)->initialized ) {
+		const_cast<XSD*>(this)->initComplexType(*it);
+	}
+	return *it;
+}
+
+QSharedPointer<XSD::ComplexTypeInfo> XSD::getComplexType(QString name) const {
+	auto it = complex_types.constFind(name);
+	if (it!=complex_types.constEnd()) {
+		if ( ! (*it)->initialized ) {
+			const_cast<XSD*>(this)->initComplexType(*it);
+		}
+		return *it;
+	}
+
+	auto it2 = simple_content_types.constFind(name);
+	if (it2 != simple_content_types.constEnd()) {
+		if ( ! (*it2)->initialized ) {
+			const_cast<XSD*>(this)->initComplexType(*it2);
+		}
+		return *it2;
+	}
+
+	auto it3 = simple_types.constFind(name);
+	if (it3 != simple_types.constEnd()) {
+		if ( ! (*it3)->initialized ) {
+			const_cast<XSD*>(this)->initSimpleType(*it3);
+		}
+		auto info = QSharedPointer<XSD::ComplexTypeInfo>::create();
+// 		info->name = it3->name;
+		info->text_type = *it3;
+		info->content_type = ComplexTypeInfo::SimpleContent;
+		
+		return info;
+	}
+	
+	throw QString("Referred Complex Type '%1'not defined ").arg(name);
+}
+
+void XSD::initSimpleType(QSharedPointer<XSD::SimpleTypeInfo> info) {
+	if (info->initialized) return;
+	info->initialized = true; // TODO: prevents circular dependencies to create infinite loops, should be done by tracking the initialisation
+	if (! info->base_type.isEmpty()) {
+		if (simple_types.contains(info->base_type)) {
+			auto base_type = getSimpleType(info->base_type);
+			if (info->pattern.isEmpty()) {
+				info->pattern = base_type->pattern;
+			}
+			if (info->default_val.isEmpty()) {
+				info->default_val = base_type->default_val;
+			}
+		}
+		else if (simple_content_types.contains(info->base_type)) {
+			auto base_type = getSimpleContentType(info->base_type);
+			info->attributes.append(base_type->attributes);
+			if (info->pattern.isEmpty()) {
+				info->pattern = base_type->text_type->pattern;
+			}
+			if (info->default_val.isEmpty()) {
+				info->default_val = base_type->text_type->default_val;
+			}
+		}
+		else {
+			auto base_type = getSimpleType(info->base_type);
+		}
+	}
+
+	if (info->name == "cpmMathExpression")
+		info->default_val = "0.0";
+	else if (info->name == "cpmDoubleVector" || info->name == "cpmVectorMathExpression")
+		info->default_val = "0.0, 0.0, 0.0";
+	else if (info->name == "cpmIntegerVector")
+		info->default_val =  "0, 0, 0";
+	else if (info->name == "cpmDoubleQueue")
+		info->default_val =  "0, 0";
+	
+	info->validator.setRegExp( QRegExp(info->pattern) );
+// 	info->initialized = true;
+}
+
+QSharedPointer<XSD::SimpleTypeInfo>  XSD::parseSimpleType(QDomNode xsdNode) {
+	auto info = QSharedPointer<XSD::SimpleTypeInfo>::create();
+	info->is_enum = false;
+	info->xsdNode = xsdNode;
+	info->initialized = false;
+	if (xsdNode.attributes().contains("name")) {
+		info->name = xsdNode.attributes().namedItem("name").nodeValue();
+	}
+	
+	auto sub_node = info->xsdNode.firstChildElement();
+	if (info->xsdNode.firstChildElement("xs:restriction").isElement()) {
+		info->base_type = info->xsdNode.firstChildElement("xs:restriction").attributes().namedItem("base").nodeValue();
+		if ( ! info->xsdNode.firstChildElement("xs:restriction").firstChildElement("xs:enumeration").isNull() )
+		{
+			info->is_enum = true;
+			QDomNodeList enums = info->xsdNode.firstChildElement("xs:restriction").toElement().elementsByTagName("xs:enumeration");
+			for (int i=0; i<enums.size(); i++ )
+			{
+				info->value_set.push_back( enums.at(i).attributes().namedItem("value").nodeValue() );
+			}
+			info->default_val = info->value_set.first();
+			info->pattern = QString("^(") + info->value_set.join("|") + ")$";
+		}
+		else if ( ! info->xsdNode.firstChildElement("xs:restriction").firstChildElement("xs:pattern").isNull() ) {
+			info->pattern = info->xsdNode.firstChildElement("xs:restriction").firstChildElement("xs:pattern").attributes().namedItem("value").nodeValue();
+		}
+		else {
+			/* TODO  Missing implementation for numeric range restrictions like 
+			<xs:minInclusive value="0"/>
+			<xs:maxInclusive value="120"/>
+			*/
+			/* TODO Fail on Length and WhiteSpace Restrictions. */
+		}
+	}
+	else if (info->xsdNode.firstChildElement("xs:extension").isElement()) {
+		auto type_root = info->xsdNode.firstChildElement("xs:extension");
+		info->base_type = type_root.attributes().namedItem("base").nodeValue();
+		auto attr = type_root.firstChildElement("xs:attribute");
+		while ( attr.isElement() ) {
+			info->attributes.append(attr);
+			attr = attr.nextSiblingElement("xs:attribute");
+		}
+	}
+	else {
+		QTextStream s;
+		xsdNode.save(s,QDomNode::EncodingPolicy::EncodingFromTextStream);
+		throw QString("Ill defined simpleType / simpleContent\n") + *s.string();
+	}
+	
+	auto docu =  info->xsdNode.firstChildElement("xs:annotation").firstChildElement("xs:documentation");
+	if( ! docu.isNull() ) {
+		QStringList docu_lines = docu.text().trimmed().split("\n",QString::KeepEmptyParts);
+		for ( auto& line : docu_lines) { line = line.trimmed(); }
+		info->documentation = docu_lines.join("\n");
+	}
+	else {
+		info->documentation = "";
+	}
+
+	if (! init_phase) {
+		initSimpleType(info);
+	}
+
+	return info;
+}
+
+XSD::GroupInfo XSD::parseGroup(QDomNode xsdNode) {
+// 	QDomNodeList xsd_childs = xsdNode.childNodes();
+// 	QList<QDomNode> child_elements;
+	XSD::GroupInfo info;
+	
+	if (xsdNode.nodeName() == "xs:group") {
+		info.name = xsdNode.attributes().namedItem("name").nodeValue();
+		xsdNode = xsdNode.firstChildElement();
+		while (xsdNode.nodeName() != "xs:choice" && xsdNode.nodeName() != "xs:all" &&  xsdNode.nodeName() != "xs:sequence") {
+			if (xsdNode.isNull()) return info;
+			xsdNode = xsdNode.nextSiblingElement();
+		}
+	}
+	
+	info.max_occurs="1";
+	if (xsdNode.attributes().contains("maxOccurs"))
+		info.max_occurs = xsdNode.attributes().namedItem("maxOccurs").nodeValue();
+	info.min_occurs="1";
+	if (xsdNode.attributes().contains("minOccurs"))
+		info.min_occurs = xsdNode.attributes().namedItem("minOccurs").nodeValue();
+	
+	QString default_min_occurs = "";
+	QString default_max_occurs = "1";
+	if ( xsdNode.nodeName() == "xs:choice" ) {
+		info.is_choice = true;
+		default_min_occurs = "0";
+	}
+	else {
+		info.is_choice = false;
+		default_min_occurs = "1";
+	}
+
+	// Collapse all childs into the elements list
+	auto child = xsdNode.firstChildElement();
+	while ( ! child.isNull() )
+	{
+		if (child.nodeName()=="xs:group") {
+			// parsing elements referenced via a group ref
+			QString group_name = child.attributes().namedItem("ref").nodeValue();
+			auto gr_ref = group_defs.constFind(group_name);
+			if (gr_ref==group_defs.constEnd()) {
+				throw(QString("Unable to find referred XSD group %1.").arg(group_name));
+			}
+			const auto& group = gr_ref.value();
+			if (info.is_choice != group.is_choice) {
+				throw QString("Unable to merge XSD group %1 into a %2.\n Incompatible compositors.").arg(group_name).arg(xsdNode.nodeName());
+			}
+
+			for (auto gr_child = group.children.begin(); gr_child != group.children.end(); gr_child++) {
+				info.children.insert(gr_child.key(), gr_child.value());
+			}
+			if (info.is_choice && info.default_choice.isEmpty())
+				info.default_choice = gr_ref.value().default_choice;
+		}
+		else if(child.nodeName() == "xs:element") {
+			XSD::ChildInfo child_info;
+			auto attr = child.attributes() ;
+			child_info.name = attr.namedItem("name").nodeValue();
+			
+			child_info.max_occurs = default_max_occurs;
+			child_info.min_occurs = default_min_occurs;
+			if ( attr.contains("minOccurs")) { child_info.min_occurs = attr.namedItem("minOccurs").nodeValue(); }
+			if ( attr.contains("maxOccurs")) { child_info.max_occurs = attr.namedItem("maxOccurs").nodeValue(); }
+			if ( attr.contains("default")) { child_info.default_val = attr.namedItem("default").nodeValue(); }
+
+			if ( attr.contains("type") ) { 
+				child_info.type_name = attr.namedItem("type").nodeValue();
+			}
+			else {
+				auto xsd_type = child.firstChildElement("xs:complexType");
+				if ( ! xsd_type.isNull() ) {
+					child_info.type = parseComplexType(xsd_type);
+				}
+				else if ( !(xsd_type = child.firstChildElement("xs:SimpleType")).isNull() ) {
+					child_info.type = QSharedPointer<XSD::ComplexTypeInfo>::create();
+					child_info.type->text_type = parseSimpleType(xsd_type);
+					child_info.type->content_type = ComplexTypeInfo::SimpleContent;
+				}
+				else {
+					throw QString("Embedded simple or complex Type expected when parsing element %1").arg(child_info.name);
+				}
+			}
+			
+			if (info.is_choice && info.default_choice.isEmpty())
+				info.default_choice = child_info.name;
+			
+			info.children[child_info.name] = child_info;
+		}
+		else {
+			throw QString("Unknown child type %1 ").arg(child.nodeName());
+		}
+		child = child.nextSiblingElement();
+	}
+
+//     // need to get the referred type in order to read the docu
+//     QDomNode infoNode;
+//     if ( ! elemNode.firstChildElement("xs:annotation").firstChildElement("xs:documentation").isNull() ) {
+//         infoNode = elemNode;
+//     }
+//     else {
+// 		if (child_info.is_complexType) {
+// 			infoNode = child_info.xsdChildType;
+// 		}
+// 		else {
+// 			child_info.info = child_info.simpleContentType->docu;
+// 		}
+//     }
+// 
+//     if (!infoNode.isNull() ) {
+//         QStringList docu_lines = infoNode.firstChildElement("xs:annotation").firstChildElement("xs:documentation").text().split("\n");
+//         for (int i=0; i<docu_lines.size(); i++) { docu_lines[i] = docu_lines[i].trimmed(); }
+//         while (docu_lines.size()>0 && docu_lines.first() == "" ) docu_lines.removeFirst();
+//         while (docu_lines.size()>0 && docu_lines.last() == "" ) docu_lines.removeLast();
+//         child_info.info = docu_lines.join("\n");
+//     }
+// 
+// 
+// 	QDomNode appInfoNode;
+// 	if(!elemNode.firstChildElement("xs:annotation").firstChildElement("xs:appinfo").isNull()) {
+// 		appInfoNode = elemNode;
+// 	}
+// 	else {
+// 		appInfoNode = child_info.xsdChildType;
+// 	}
+//     child_info.pluginClass = appInfoNode.firstChildElement("xs:annotation").firstChildElement("xs:appinfo").text();
+	
+	return info;
+}
+
+QSharedPointer<XSD::ComplexTypeInfo> XSD::parseComplexType(QDomNode xsdNode) {
+	Q_ASSERT(xsdNode.nodeName() == "xs:complexType");
+	auto info = QSharedPointer<XSD::ComplexTypeInfo>::create();
+	info->name = xsdNode.attributes().namedItem("name").nodeValue();
+	info->xsdNode = xsdNode;
+	info->content_type = ComplexTypeInfo::ComplexContent;
+	auto sub_node = xsdNode.firstChildElement();
+	while (! sub_node.isNull()) {
+		if (sub_node.nodeName() == "xs:attribute") {
+			info->attributes.append(sub_node);
+		}
+		else if (sub_node.nodeName() == "xs:sequence" || sub_node.nodeName() == "xs:choice" || sub_node.nodeName() == "xs:all") {
+			info->child_info = parseGroup(sub_node);
+		}
+		else if (sub_node.nodeName() == "xs:complexContent") {
+			info = XSD::parseComplexType(sub_node);
+		}
+		else if (sub_node.nodeName() == "xs:simpleContent") {
+			auto simple_content = parseSimpleType(sub_node);
+// 		simple_content->name = info->name;
+// 		auto compl_type = QSharedPointer<XSD::ComplexTypeInfo>::create();
+			info->content_type = XSD::ComplexTypeInfo::SimpleContent;
+			info->text_type = simple_content;
+			info->attributes.swap( simple_content->attributes );
+			simple_content_types[info->name] = info;
+		}
+		else if (sub_node.nodeName() == "xs:annotation") {
+			auto docu =  sub_node.firstChildElement("xs:documentation");
+			if( ! docu.isNull() ) {
+				QStringList docu_lines = docu.text().trimmed().split("\n",QString::KeepEmptyParts);
+				for ( auto& line : docu_lines) { line = line.trimmed(); }
+				info->documentation = docu_lines.join("\n");
+			}
+			auto appinfo = sub_node.firstChildElement("xs:appinfo");
+			if( ! appinfo.isNull() ) {
+				info->pluginClass = appinfo.text();
+			}
+		}
+		else {
+			throw QString("Unknown definition '%1' in complexType.").arg(sub_node.nodeName());
+		}
+		sub_node = sub_node.nextSiblingElement();
+	}
+	
+	if (! init_phase) {
+		initComplexType(info);
+	}
+	
+	return info;
+}
+
+void XSD::initComplexType(QSharedPointer<XSD::ComplexTypeInfo> info)
+{
+	if (info->initialized) return;
+	
+	if (info->content_type == ComplexTypeInfo::SimpleContent) {
+			initSimpleType(info->text_type);
+			// in case we have attributes attached to the simple content
+			info->attributes.append( info->text_type->attributes );
+	}
+	else/* if (info->content_type == ComplexTypeInfo::ComplexContent) */ {
+		// Mix in the referred base type
+		if ( ! info->base_type.isEmpty() ) {
+			
+			auto base_type = getComplexType(info->base_type);
+			if (base_type->content_type == ComplexTypeInfo::SimpleContent) {
+				// Cannot be
+				if (! info->child_info.children.isEmpty()) {
+					throw QString("Refusing to derive a ComlexType %1 from SimpleType %2. ComlexTypes may not contain text data").arg(info->name).arg(info->base_type);
+				}
+				info->text_type = base_type->text_type;
+				info->attributes.append( base_type->attributes );
+				info->content_type = ComplexTypeInfo::SimpleContent;
+			}
+			else {
+				info->attributes.append( base_type->attributes );
+				for ( auto& child : base_type->child_info.children) {
+					info->child_info.children.insert(child.name, child);
+				}
+			}
+		}
+		
+		for (auto& child : info->child_info.children) {
+			if (child.type)
+				initComplexType(child.type);
+			else
+				child.type = getComplexType(child.type_name);
+		}
+	}
+	info->initialized = true;
+}
+
+
 //------------------------------------------------------------------------------
 
 void XSD::createTypeMaps()
 {
-    simple_types.clear();
-    complex_types.clear();
+	simple_types.clear();
+	complex_types.clear();
+	init_phase = true;
 
-    QDomNodeList list = xsdSchema.elementsByTagName("xs:simpleType");
-    for(int i = 0; i < list.size(); i++)
-    {
-        SimpleTypeInfo info;
-        info.is_enum = false;
-        info.xsdNode = list.at(i);
-        info.name = info.xsdNode.attributes().namedItem("name").nodeValue();
-        info.base_type = info.xsdNode.firstChildElement("xs:restriction").attributes().namedItem("base").nodeValue();
-        if( ! info.xsdNode.firstChildElement("xs:annotation").firstChildElement("xs:documentation").isNull() ) {
-            QStringList docu_lines = info.xsdNode.firstChildElement("xs:annotation").firstChildElement("xs:documentation").text().split("\n",QString::KeepEmptyParts);
-            for (int i=0; i<docu_lines.size(); i++) { docu_lines[i] = docu_lines[i].trimmed(); }
-            while (docu_lines.size()>0 && docu_lines.first() == "" ) docu_lines.removeFirst();
-            while (docu_lines.size()>0 && docu_lines.last() == "" ) docu_lines.removeLast();
-            info.docu = docu_lines.join("\n");
+	auto info = QSharedPointer<SimpleTypeInfo>::create();
+	info->initialized = false;
+	info->name = "xs:token";
+	info->pattern = "^\\S*$";
+	info->default_val= "";
+	simple_types[info->name] = info;
 
-        }
-        else {
-            info.docu = "(empty)";
-        }
+	info = QSharedPointer<SimpleTypeInfo>::create();
+	info->initialized = false;
+	info->name ="xs:integer";
+	info->pattern = "^-?\\d+$";
+	info->default_val= "0";
+	simple_types[info->name] = info;
 
-        if ( ! info.xsdNode.firstChildElement("xs:restriction").firstChildElement("xs:enumeration").isNull() )
-        {
-            QDomNodeList enums = info.xsdNode.firstChildElement("xs:restriction").toElement().elementsByTagName("xs:enumeration");
-            for (int i=0; i<enums.size(); i++ )
-            {
-                info.value_set.push_back( enums.at(i).attributes().namedItem("value").nodeValue() );
-            }
-            info.pattern = QString("^(") + info.value_set.join("|") + ")$";
-            info.is_enum = true;
-        }
-        else if (info.base_type == "xs:boolean" ){
-            info.value_set.push_back("false");
-            info.value_set.push_back("true");
-            info.pattern = "^\\b(true|false)\\b$";
-            info.is_enum = true;
-        }
-        else if ( ! info.xsdNode.firstChildElement("xs:restriction").firstChildElement("xs:pattern").isNull() ) {
-            info.pattern = info.xsdNode.firstChildElement("xs:restriction").firstChildElement("xs:pattern").attributes().namedItem("value").nodeValue();
-        }
-        else
-        {
-            info.pattern = XSD::getPattern(info.base_type);
-        }
-        info.default_val = XSD::getDefaultValue(info);
-        info.validator = new QRegExpValidator( QRegExp (info.pattern), 0 );
-        
-        if ( info.name.endsWith("SymbolRef") ) {
-            QStringList tmp = info.value_set;
-            info.value_set.clear();
-            simple_types[info.name] = QSharedPointer< XSD::SimpleTypeInfo>( new XSD::SimpleTypeInfo(info) );
-            for (int i=0; i<tmp.size(); i++ )
-            {
-                registerEnumValue(info.name,tmp[i]);
-            }
-        }
-        else {
-            simple_types[info.name] = QSharedPointer< XSD::SimpleTypeInfo>( new XSD::SimpleTypeInfo(info) );
-        }
-            
-    }
+	info = QSharedPointer<SimpleTypeInfo>::create();
+	info->initialized = false;
+	info->name ="xs:decimal";
+	info->pattern = "^-?\\d+(\\.\\d+)?(e[+-]?\\d+)?$";
+	info->default_val= "0";
+	simple_types[info->name] = info;
 
-    list = xsdSchema.elementsByTagName("xs:complexType");
-    for(int i = 0; i < list.size(); i++)
-    {
-        QDomNode node = list.at(i);
-        QString simpleName = node.attributes().namedItem("name").nodeValue();
-        complex_types[simpleName] = node;
-    }
+	info = QSharedPointer<SimpleTypeInfo>::create();
+	info->initialized = false;
+	info->name ="xs:double";
+	info->pattern = "^-?\\d+(\\.\\d+)?(e[+-]?\\d+)?$";
+	info->default_val= "0";
+	simple_types[info->name] = info;
+
+	info = QSharedPointer<SimpleTypeInfo>::create();
+	info->initialized = false;
+	info->name ="xs:normalizedString";
+	info->pattern = ".*";
+	info->default_val= "";
+	simple_types[info->name] = info;
+
+	info = QSharedPointer<SimpleTypeInfo>::create();
+	info->initialized = false;
+	info->name ="xs:string";
+	info->pattern = ".*";
+	info->default_val= "";
+	simple_types[info->name] = info;
+
+	info = QSharedPointer<SimpleTypeInfo>::create();
+	info->initialized = false;
+	info->name ="xs:boolean";
+	info->pattern = "^(true|false)$";
+	info->default_val= "true";
+	info->is_enum= true;
+	simple_types[info->name] = info;
+
+	QDomNodeList list = xsdSchema.elementsByTagName("xs:simpleType");
+	for(int i = 0; i < list.size(); i++)
+	{
+		if (list.at(i).attributes().namedItem("name").nodeValue().isEmpty())
+			continue;
+		auto info = parseSimpleType(list.at(i));
+		if ( dynamicTypeRefs.contains(info->name) ) {
+			QStringList tmp = info->value_set;
+			info->value_set.clear();
+			simple_types[info->name] = info;
+			for (int i=0; i<tmp.size(); i++ )
+			{
+				registerEnumValue(info->name,tmp[i]);
+			}
+		}
+		else {
+			simple_types[info->name] = info;
+		}
+		qDebug() << "Added Type "<< info->name;
+	}
+	
+	list = xsdSchema.elementsByTagName("xs:group");
+	for(int i = 0; i < list.size(); i++)
+	{
+		if (list.at(i).attributes().namedItem("name").nodeValue().isEmpty())
+			continue;
+		auto info = parseGroup(list.at(i));
+		group_defs[info.name] = info;
+		qDebug() << "Added Group "<< info.name;
+	}
+
+	list = xsdSchema.elementsByTagName("xs:complexType");
+	for(int i = 0; i < list.size(); i++)
+	{
+		if (list.at(i).attributes().namedItem("name").nodeValue().isEmpty())
+			continue;
+		auto info = parseComplexType(list.at(i));
+		if (info->content_type == ComplexTypeInfo::SimpleContent) {
+			simple_content_types[info->name] = info;
+		}
+		complex_types[info->name] = info;
+		qDebug() << "Added Type "<< info->name;
+	}
+
+	for (auto type : simple_types) {
+		initSimpleType(type);
+	}
+	init_phase = false;
+	qDebug() << "done";
 }
 
 //------------------------------------------------------------------------------
 
-QString XSD::getDefaultValue(XSD::SimpleTypeInfo info)
-{
-
-    if ( ! info.value_set.empty() )
-        { return info.value_set.front(); }
-    else
-    {
-        if ( info.base_type == "xs:integer" )
-            {return "0";}
-        if ( info.base_type == "xs:decimal" )
-            {return "0.0";}
-        if ( info.base_type == "xs:double" )
-            {return "0.0";}
-		if (info.name == "cpmDoubleVector")
-			return "0.0, 0.0, 0.0";
-		if (info.name == "cpmIntegerVector")
-			return "0, 0, 0";
-		if (info.name == "cpmDoubleQueue")
-			return "0, 0";
-
-        if ( info.base_type == "xs:string" ) {
-            if (info.pattern == "-?\\d+(\\.\\d+)?\\s-?\\d+(\\.\\d+)?\\s-?\\d+(\\.\\d+)?")
-                return "0.0, 0.0, 0.0";
-            if (info.pattern == "-?\\d+(\\.\\d+)?(e[-\\+]\\d{2})?\\s-?\\d+(\\.\\d+)?(e[-\\+]\\d{2})?\\s-?\\d+(\\.\\d+)?(e[-\\+]\\d{2})?")
-                return "0.0, 0.0, 0.0";
-            if (info.pattern == "-?\\d+\\s-?\\d+\\s-?\\d+")
-                {return "0 0 0";}
-            if (info.pattern == "(-?\\d+\\s-?\\d+\\s-?\\d+;){1,}")
-                {return "0 0 0";}
-            if (info.pattern == "(-?\\d+\\s-?\\d+\\s-?\\d+;)*(-?\\d+\\s-?\\d+\\s-?\\d+)")
-                return "0 0 0";
-            if (info.pattern == "(-?\\d+(\\.\\d+)?\\s)*-?\\d+(\\.\\d+)?")
-                {return "0";}
-            if (info.pattern == ".*")
-                {return "";}
-//            QMessageBox::information(null,"Error", "XSD::getDefaultValue: No default value available for the pattern specified in XSD!!!\nPattern: '" + info.pattern + "'!");
-            Q_ASSERT(0);
-        }
-
-        // info.base_type == "xs:token"  | "xs:normalizedString" | "xs:string"
-        return "";
-    }
-
-}
-
-//------------------------------------------------------------------------------
-
-QString XSD::getPattern(QString base)
-{
-    if(base == "xs:token")
-    {return QString("^\\S*$");}
-
-    if(base == "xs:integer")
-    {return QString("^-?\\d+$");}
-
-    if(base == "xs:boolean")
-    {return QString("^\\b(true|false)\\b$");}
-
-    if(base == "xs:decimal")
-//    {return QString("^-?\\d+(\\.\\d+)?$");}
-    {return QString("^-?\\d+(\\.\\d+)?(e[+-]?\\d+)?$");}
-
-    if(base == "xs:double")
-//    {return QString("^-?\\d+(\\.\\d+)?$");}
-    {return QString("^-?\\d+(\\.\\d+)?(e[+-]?\\d+)?$");}
-
-    if(base == "xs:normalizedString")
-    {return QString(".*");}
-
-    if(base == "xs:string")
-    {return QString(".*");}
-
-    return QString(".*");
-}
+// QString XSD::getPattern(QString base)
+// {
+// 	if (simple_types.contains(base)) {
+// 		if ( ! simple_types[base]->pattern.isEmpty())
+// 			return simple_types[base]->pattern;
+// 		else 
+// 			return getPattern(simple_types[base]->base_type);
+// 	}
+// //     if(base == "xs:token")
+// //     {return QString("^\\S*$");}
+// // 
+// //     if(base == "xs:integer")
+// //     {return QString("^-?\\d+$");}
+// // 
+// //     if(base == "xs:boolean")
+// //     {return QString("^\\b(true|false)\\b$");}
+// // 
+// //     if(base == "xs:decimal")
+// // //    {return QString("^-?\\d+(\\.\\d+)?$");}
+// //     {return QString("^-?\\d+(\\.\\d+)?(e[+-]?\\d+)?$");}
+// // 
+// //     if(base == "xs:double")
+// // //    {return QString("^-?\\d+(\\.\\d+)?$");}
+// //     {return QString("^-?\\d+(\\.\\d+)?(e[+-]?\\d+)?$");}
+// // 
+// //     if(base == "xs:normalizedString")
+// //     {return QString(".*");}
+// // 
+// //     if(base == "xs:string")
+// //     {return QString(".*");}
+// 
+//     return QString(".*");
+// }
 
 //------------------------------------------------------------------------------
 
 void XSD::registerEnumValue(QString simple_type, QString value)
 {
-    Q_ASSERT(simple_types.find(simple_type) != simple_types.end() );
+	Q_ASSERT(simple_types.find(simple_type) != simple_types.end() );
 
 	if (simple_type == "cpmCellTypeRef") {
 		registerEnumValue("cpmDoubleSymbolRef", QString("celltype.").append(value).append(".id"));
 		registerEnumValue("cpmDoubleSymbolRef", QString("celltype.").append(value).append(".size"));
 	}
 
-    if ( ! simple_types[simple_type]->value_set.contains( value ) )
-    {
-        simple_types[simple_type]->value_set.push_back(value);
-        simple_types[simple_type]->value_instances[value]=1;
-        simple_types[simple_type]->value_set.sort();
-        simple_types[simple_type]->is_enum=true;
+	if ( ! simple_types[simple_type]->value_set.contains( value ) )
+	{
+		simple_types[simple_type]->value_set.push_back(value);
+		simple_types[simple_type]->value_instances[value]=1;
+		simple_types[simple_type]->value_set.sort();
+		simple_types[simple_type]->is_enum=true;
 
-        if (simple_type == "cpmVectorSymbolRef") {
-            registerEnumValue("cpmDoubleSymbolRef", value+".x");
-            registerEnumValue("cpmDoubleSymbolRef", value+".y");
-            registerEnumValue("cpmDoubleSymbolRef", value+".z");
+		if (simple_type == "cpmVectorSymbolRef") {
+			registerEnumValue("cpmDoubleSymbolRef", value+".x");
+			registerEnumValue("cpmDoubleSymbolRef", value+".y");
+			registerEnumValue("cpmDoubleSymbolRef", value+".z");
 			registerEnumValue("cpmDoubleSymbolRef", value+".abs");
 			registerEnumValue("cpmDoubleSymbolRef", value+".phi");
 			registerEnumValue("cpmDoubleSymbolRef", value+".theta");
-        }
-        else if (simple_type == "cpmWritableDoubleVectorSymbolRef") {
+		}
+		else if (simple_type == "cpmWritableDoubleVectorSymbolRef") {
 			registerEnumValue("cpmDoubleVectorSymbolRef", value);
-        }
-        else  if (simple_type == "cpmWritableDoubleSymbolRef") {
-			 registerEnumValue("cpmDoubleSymbolRef", value);
-        }
-        
+		}
+		else  if (simple_type == "cpmWritableDoubleSymbolRef") {
+			registerEnumValue("cpmDoubleSymbolRef", value);
+		}
+		
 //         qDebug() << "registering enum value " << value << " for type " << simple_type;
-        // --> update pattern !!
-        QStringList enums = simple_types[simple_type]->value_set;
-        simple_types[simple_type]->pattern = QString("^(") + enums.join("|") + ")$";
-        simple_types[simple_type]->validator->setRegExp(QRegExp(simple_types[simple_type]->pattern));
-    }
-    else {
-        simple_types[simple_type]->value_instances[value]+=1;
-    }
+		// --> update pattern !!
+		QStringList enums = simple_types[simple_type]->value_set;
+		simple_types[simple_type]->pattern = QString("^(") + enums.join("|") + ")$";
+		simple_types[simple_type]->validator.setRegExp(QRegExp(simple_types[simple_type]->pattern));
+	}
+	else {
+		simple_types[simple_type]->value_instances[value]+=1;
+	}
 }
 
 //------------------------------------------------------------------------------
 
 void XSD::removeEnumValue(QString simple_type, QString value)
 {
-    Q_ASSERT(simple_types.find(simple_type) != simple_types.end() );
+	Q_ASSERT(simple_types.find(simple_type) != simple_types.end() );
 
-    if ( simple_types[simple_type]->value_set.contains( value ) && simple_types[simple_type]->value_instances.contains(value))
-    {
+	if ( simple_types[simple_type]->value_set.contains( value ) && simple_types[simple_type]->value_instances.contains(value))
+	{
 		if (simple_type == "cpmCellTypeRef") {
 			removeEnumValue("cpmDoubleSymbolRef", QString("celltype.").append(value));
 		}
-        if (simple_types[simple_type]->value_instances[value] == 1) {
-            simple_types[simple_type]->value_instances.remove(value);
-            simple_types[simple_type]->value_set.removeAll(value);
-            simple_types[simple_type]->is_enum=true;
+		if (simple_types[simple_type]->value_instances[value] == 1) {
+			simple_types[simple_type]->value_instances.remove(value);
+			simple_types[simple_type]->value_set.removeAll(value);
+			simple_types[simple_type]->is_enum=true;
 
-            if (simple_type == "cpmVectorSymbolRef") {
-                removeEnumValue("cpmDoubleSymbolRef", value+".x");
-                removeEnumValue("cpmDoubleSymbolRef", value+".y");
-                removeEnumValue("cpmDoubleSymbolRef", value+".z");
+			if (simple_type == "cpmVectorSymbolRef") {
+				removeEnumValue("cpmDoubleSymbolRef", value+".x");
+				removeEnumValue("cpmDoubleSymbolRef", value+".y");
+				removeEnumValue("cpmDoubleSymbolRef", value+".z");
 				removeEnumValue("cpmDoubleSymbolRef", value+".abs");
 				removeEnumValue("cpmDoubleSymbolRef", value+".phi");
 				removeEnumValue("cpmDoubleSymbolRef", value+".theta");
-            }
+			}
 
-            // --> update pattern !!
-            QStringList enums = simple_types[simple_type]->value_set;
-            if(enums.size() != 0)
-            {
-                simple_types[simple_type]->pattern = QString("^(") + enums.join("|") + ")$";
-            }
-            else
-            {
-                simple_types[simple_type]->pattern = "^(...)$";
-            }
-            simple_types[simple_type]->validator->setRegExp(QRegExp(simple_types[simple_type]->pattern));
-        }
-        else {
-            simple_types[simple_type]->value_instances[value] -= 1;
+			// --> update pattern !!
+			QStringList enums = simple_types[simple_type]->value_set;
+			if(enums.size() != 0)
+			{
+				simple_types[simple_type]->pattern = QString("^(") + enums.join("|") + ")$";
+			}
+			else
+			{
+				simple_types[simple_type]->pattern = "^(...)$";
+			}
+			simple_types[simple_type]->validator.setRegExp(QRegExp(simple_types[simple_type]->pattern));
+		}
+		else {
+			simple_types[simple_type]->value_instances[value] -= 1;
 
-        }
-    }
-    else
-        cout << "XSD: not removing non-dynamic value '" << value.toStdString() << "' from SimpleType '" << simple_type.toStdString() << "' !"<< endl;
+		}
+	}
+	else
+		cout << "XSD: not removing non-dynamic value '" << value.toStdString() << "' from SimpleType '" << simple_type.toStdString() << "' !"<< endl;
 }
+

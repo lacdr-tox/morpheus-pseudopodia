@@ -21,10 +21,10 @@ abstractProcess::abstractProcess(SharedMorphModel model, int job_id, QString sub
 	_info.sim_dir += _info.title.replace(" ","_") + "_" + QString::number(_info.job_id);
 
 	// Reading simulation data ...
-	nodeController* time = model->rootNodeContr->firstChild("Time");
+	nodeController* time = model->rootNodeContr->firstActiveChild("Time");
     // read StartTime/StopTime as double, because they can be in scientific notation (e.g. "1.5+e3")
-    _info.start_time = floor( time->firstChild("StartTime")->attribute("value")->get().toDouble() );
-    _info.stop_time = ceil( time->firstChild("StopTime")->attribute("value")->get().toDouble() );
+    _info.start_time = floor( time->firstActiveChild("StartTime")->attribute("value")->get().toDouble() );
+    _info.stop_time = ceil( time->firstActiveChild("StopTime")->attribute("value")->get().toDouble() );
 	_info.current_time = _info.start_time;
 
 	
