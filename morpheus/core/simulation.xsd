@@ -163,16 +163,16 @@ This allows the user to create populations a heterogeneous initial population. T
 	</xs:complexType>
 	
 	<xs:complexType name="cpmCell">
-	  <xs:choice maxOccurs="unbounded" minOccurs="0">
+	  <xs:choice minOccurs="0" maxOccurs="unbounded">
 		<xs:group  ref="PropertyDataGroup"/>
-		<xs:element name="MembranePropertyData" type="MembranePropertyData" minOccurs="0">
+		<xs:element name="MembranePropertyData" type="MembranePropertyData">
 			<xs:annotation>
 				<xs:documentation>Sets values for MembraneProperty. Overrides initial values.</xs:documentation>
 			</xs:annotation>
 		</xs:element>
-		<xs:element name="Center" type="cpmDoubleVector" minOccurs="0"/>
-		<xs:element name="Nodes" type="cpmNodes" minOccurs="0"/>
-		<xs:element name="SubCell" minOccurs="0">
+		<xs:element name="Center" type="cpmDoubleVector"/>
+		<xs:element name="Nodes" type="cpmNodes"/>
+		<xs:element name="SubCell">
 			<xs:complexType>
 				<xs:attribute name="cell-id" type="cpmUnsignedInteger" />
 			</xs:complexType>
@@ -226,12 +226,12 @@ This allows the user to create populations a heterogeneous initial population. T
 
 	<xs:complexType name="Description">
 		<xs:all minOccurs="1">
-			<xs:element name="Details" type="cpmText" >
+			<xs:element name="Details" type="xs:string" >
 				<xs:annotation>
 					<xs:documentation>Text to describe and annotate model, put references and track changes.</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-			<xs:element name="Title" type="cpmString" >
+			<xs:element name="Title" type="xs:string" >
 				<xs:annotation>
 					<xs:documentation>Model title.
 						

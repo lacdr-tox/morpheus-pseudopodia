@@ -94,7 +94,7 @@ public:
 	XMLNode saveToXML() const;
 	
 	bool restoreData(const XMLNode xnode);
-	XMLNode storeData(string fn="") const;
+	XMLNode storeData(string filename="") const;
 
 	void init(const Scope* scope, const SymbolFocus& focus = SymbolFocus::global);
 

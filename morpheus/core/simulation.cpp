@@ -1484,6 +1484,10 @@ void saveToXML() {
 
 	xMorpheusNode.addChild(xSpace);
 	
+	// saving Field data
+	for (auto pde : pde_layers) {
+		pde.second->saveToXML();
+	}
 	// saving global_scope
 	xMorpheusNode.addChild(xGlobals);
 

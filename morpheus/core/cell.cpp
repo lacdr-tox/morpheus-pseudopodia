@@ -187,17 +187,10 @@ XMLNode Cell::saveToXML() const {
 
 	for (uint mem=0; mem < membranes.size(); mem++) {
 		
-// 		string path_cwd;
-// 		char *path = NULL;
-// 		path = getcwd(NULL, 0); // or _getcwd
-// 		if ( path != NULL){
-// 			path_cwd = string(path);
-// 			//cout << path_cwd << endl;
-// 		}
-// 		string filename =  string(path) + "/" + membranes[mem]->getName() + "_" + to_str(id)  + "_" + SIM::getTimeName() + ".dat";
+		bool save_to_file = false;
 		string filename = membranes[mem]->getName() + "_" + to_str(id)  + "_" + SIM::getTimeName() + ".dat";
 
-		XMLNode node = membranes[mem]->storeData(filename);
+		XMLNode node = membranes[mem]->storeData(save_to_file ? filename : "");
 		node.updateName("MembranePropertyData");
 		node.addAttribute("symbol-ref",membranes[mem]->getSymbol().c_str());
 		xCNode.addChild(node);

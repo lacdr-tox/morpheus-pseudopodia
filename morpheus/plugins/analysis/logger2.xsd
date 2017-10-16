@@ -35,8 +35,8 @@
 <!--  -->
 
 	<xs:complexType name="cpmLoggerOutput">
-		<xs:choice>
-			<xs:element name="TextOutput" 	type="cpmLoggerTextOutput"	minOccurs="1" maxOccurs="1" />
+		<xs:choice minOccurs="1" maxOccurs="1" >
+			<xs:element name="TextOutput" 	type="cpmLoggerTextOutput"/>
 <!-- 			<xs:element name="HDF5Output" 	type="cpmLoggerHDF5Output"	minOccurs="0" maxOccurs="1" /> -->
 		</xs:choice>
 	</xs:complexType>

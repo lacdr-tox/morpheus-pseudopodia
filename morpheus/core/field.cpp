@@ -171,54 +171,47 @@ void PDE_Layer::init(const Scope* scope, const SymbolFocus& focus)
 
 XMLNode PDE_Layer::saveToXML() const
 {
-	XMLNode xNode =  Lattice_Data_Layer<double>::saveToXML();
-	xNode.updateName("Layer");
-	xNode.addAttribute("symbol", to_cstr(symbol_name));
-
-	int node_pos=0;
-	XMLNode xDiffusion = xNode.addChild("Diffusion",FALSE,node_pos++);
-	xDiffusion.addAttribute("rate", to_cstr(diffusion_rate));
-
-	if( wellmixed )
-		xDiffusion.addAttribute("well-mixed", to_cstr(true));
-
-	if (!diffusion_units.empty())
-		xDiffusion.addAttribute("unit", diffusion_units.c_str());
-
-	xNode.addChild(storeData());
-	
-	return xNode;
+	XMLNode saved = Lattice_Data_Layer<double>::saveToXML();
+	while (saved.nChildNode("Data")) {
+		saved.getChildNode("Data").deleteNodeContent();
+	}
+	saved.addChild(storeData(""));
+	return saved;
 }
 
-XMLNode PDE_Layer::storeData(string fn) const
+XMLNode PDE_Layer::storeData(string filename) const
 {
-	const bool to_file = true;
+	const bool to_file = ! filename.empty();
 	XMLNode xNode =  XMLNode::createXMLTopNode("Data");
 
 	if (to_file) {
-		string filename;
-		if (fn.empty())
-			filename = symbol_name + "_" + SIM::getTimeName() + ".dat";
-		else 
-			filename = fn;
-		
 		ofstream out(filename.c_str(),ios_base::trunc);
 		out.setf(ios_base::scientific);
 		out.precision(3);
 		xNode.addAttribute("filename",filename.c_str());
+		xNode.addAttribute("encoding","ascii");
 		Lattice_Data_Layer< double >::storeData(out);
 		out.close();
 	}
 	else {
 		stringstream out;
+		
 		out.setf(ios_base::scientific);
 		out.precision(3);
 		Lattice_Data_Layer< double >::storeData(out);
-		xNode.addText(out.str().c_str());
+		VINT pos;
+		XMLParserBase64Tool encoder;
+		valarray<double> data = getData();
+// 		cout << "Field size " << getData().size() << " " << l_size.x <<  " " << data.size() ;
+		auto encoded_data = encoder.encode((unsigned char *)&(data[0]), data.size() * sizeof(double),true);
+		xNode.addText(encoded_data);
+		xNode.addAttribute("encoding","base64");
 	}
 	
 	return xNode;
 }
+
+
 
 bool PDE_Layer::restoreData(const XMLNode node)
 {
@@ -242,10 +235,29 @@ bool PDE_Layer::restoreData(const XMLNode node)
 			Lattice_Data_Layer< double >::restoreData(in, [] (istream& in) -> double { double t; in >> t; return t; });
 			in.close();
 		} else {
-			string s;
-			getXMLAttribute(node,"#text",s);
-			stringstream in(s);
-			Lattice_Data_Layer< double >::restoreData(in, [] (istream& in) -> double { double t; in >> t; return t; });
+			XMLParserBase64Tool decoder;
+			int len;
+			XMLError* error = nullptr;
+			auto decoded = decoder.decode(node.getText(),&len,error);
+			
+			if (error){
+				throw MorpheusException(string("Unable to load Field data:\n")+XMLNode::getError(*error),node);
+			}
+			if ( len != l_size.x * l_size.y * l_size.z * sizeof(double)) {
+				throw MorpheusException(string("Unable to load Field data:\n")+"Wrong data size " + to_str(l_size.x * l_size.y * l_size.z * sizeof(double)) + " != " + to_str(len),node);
+			}
+			
+			double *decoded_data = (double*) decoded;
+			VINT pos;
+			int i=0;
+			for (pos.z=0; pos.z<l_size.z; pos.z++) {
+				for (pos.y=0; pos.y<l_size.y; pos.y++) {
+					for (pos.x=0; pos.x<l_size.x; pos.x++) {
+						data[get_data_index(pos)] = decoded_data[i++];
+					}
+				}
+			}
+			reset_boundaries();
 		}
 // 	}
 // 	catch (string s) {

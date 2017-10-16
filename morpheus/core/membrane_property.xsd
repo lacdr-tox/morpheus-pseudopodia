@@ -35,7 +35,7 @@ Note:
 			
 			<xs:element name="TIFFReader" type="TIFFReaderField" minOccurs="0" />
 		
-			<xs:element name="Data" type="cpmFieldData" minOccurs="0">
+			<xs:element name="Data" type="MembranePropertyData" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>
 						Read initial data from file.
@@ -57,15 +57,11 @@ Note:
 
 
 	<xs:complexType name="MembranePropertyData">
-		<xs:all>
-			<xs:element name="Data"  type="cpmText" minOccurs="0" />
-		</xs:all>
-		<xs:attribute name="symbol-ref"	type="cpmDoubleSymbolRef" use="required" />
-		<xs:attribute name="filename" use="required" type="cpmSystemFile" >
-			<xs:annotation>
-				<xs:documentation>Absolute path to file containing data.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
+		<xs:simpleContent>
+			<xs:extension base="cpmFieldData">
+				<xs:attribute name="symbol-ref"	type="cpmDoubleSymbolRef" use="required" />
+			</xs:extension>
+		</xs:simpleContent>
 	</xs:complexType>
 
 </xs:schema>

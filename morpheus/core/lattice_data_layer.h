@@ -68,6 +68,7 @@ public:
 
 protected:
 	string name;
+	XMLNode stored_node;
 	valarray<value_type> data;
 	value_type default_value, default_boundary_value, shit_value;
 	
