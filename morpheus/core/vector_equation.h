@@ -86,7 +86,6 @@ class VectorEquation : public ReporterPlugin {
 		PluginParameter2<VDOUBLE,XMLWritableSymbol,RequiredPolicy> symbol;
 		PluginParameter2<bool,XMLValueReader,DefaultValPolicy> spherical;
 		PluginParameter2<VDOUBLE, XMLThreadsaveEvaluator, RequiredPolicy> expression;
-		const Scope* scope;
 		
 	public:
 		DECLARE_PLUGIN("VectorEquation");
