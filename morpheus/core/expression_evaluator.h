@@ -96,7 +96,7 @@ template <class T>
 class ThreadedExpressionEvaluator {
 public:
 	ThreadedExpressionEvaluator(string expression, bool partial_spec = false) { evaluators.push_back( unique_ptr<ExpressionEvaluator<T> >(new ExpressionEvaluator<T>(expression,partial_spec)) );};
-	void init(const Scope* scope) { evaluators[0]->init(scope); }
+	void init(const Scope* scope) { for (auto& evaluator : evaluators) evaluator->init(scope); }
 	bool isConst() const { return evaluators[0]->isConst(); };
 	const string& getDescription() const { return evaluators[0]->getDescription(); };
 	Granularity getGranularity() const { return evaluators[0]->getGranularity(); };
@@ -138,26 +138,32 @@ ExpressionEvaluator< T >::ExpressionEvaluator(string expression, bool partial_sp
 template <class T>
 ExpressionEvaluator<T>::ExpressionEvaluator(const ExpressionEvaluator<T> & other) 
 {
-	// explicit copies
-	if (other.parser) {
-		parser = unique_ptr<mu::Parser>( new mu::Parser(*other.parser));
-	}
+	// at first, copy all configuration
 	expression = other.expression;
 	expr_is_symbol = other.expr_is_symbol;
 	expr_is_const = other.expr_is_const;
 	const_val = other.const_val;
 	allow_partial_spec = other.allow_partial_spec;
+	expand_scalar_expr = other.expand_scalar_expr;
 	
 	have_factory = false;
 	scope = other.scope;
 	symbols = other.symbols; 
 	v_symbols = other.v_symbols;
+	v_sym_cache_offset = other. v_sym_cache_offset;
 	depend_symbols = other.depend_symbols;
 	
-	// relink the symbol_values cache to the parser
-	symbol_values.resize(symbols.size());
+	// explicit copies
+	if (other.parser) {
+		parser = unique_ptr<mu::Parser>( new mu::Parser(*other.parser));
+	}
+	// create a local symbol value cache and relink to the local parser
+	symbol_values.resize(other.symbol_values.size());
 	for( int i_sym=0; i_sym<symbols.size(); i_sym++) {
 		parser->DefineVar(symbols[i_sym].getName(), &symbol_values[i_sym]);
+	}
+	for (uint i=0; i<v_symbols.size(); i++) {
+		parser->DefineVar(v_symbols[i].getName(),&symbol_values[v_sym_cache_offset+i] );
 	}
 }
 
@@ -225,6 +231,7 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 			used_symbols = parser->GetUsedVar();
 			if (parser->GetNumResults() == 1 && expectedNumResults() > 1) {
 				expand_scalar_expr = true;
+				cout << "Scalar expansion for " << clean_expression << endl;
 			}
 			else {
 				expand_scalar_expr = false;
@@ -266,7 +273,7 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 		}
 		
 		if (expand_scalar_expr && v_symbols.size() == 0) {
-			throw string("Refuse to expand scalar expression to vector");
+			throw string("Refuse to expand scalar expression '") + expression + string("' to vector") ;
 		}
 	}
 	else {

@@ -99,6 +99,7 @@ VDOUBLE ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus) const
 		int n;
 		double* results = parser->Eval(n);
 		if (n != expectedNumResults()) {
+			cerr << "Wrong number of results " << n << " of 3 in VectorExpression " << this->expression << endl;
 			throw string("Wrong number of expressions in VectorExpression ") + this->expression;
 		}
 		result = VDOUBLE(results[0],results[1],results[2]);
