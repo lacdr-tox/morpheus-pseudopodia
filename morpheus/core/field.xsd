@@ -105,7 +105,7 @@
 <!-- 			<xs:element name="Initial" minOccurs="0">
 				<xs:group  ref="FieldInitPlugins" />
 			</xs:element>-->
-<!-- 			<xs:element name="Data" type="cpmFieldData" minOccurs="0" /> -->
+			<xs:element name="Data" type="cpmFieldData" minOccurs="0" />
 			
 		</xs:all>
 		<xs:attribute name="name" 	type="cpmString" 	use="optional" />

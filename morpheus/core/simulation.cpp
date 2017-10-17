@@ -1488,6 +1488,10 @@ void saveToXML() {
 	for (auto pde : pde_layers) {
 		pde.second->saveToXML();
 	}
+	
+	for (auto vfield : vector_field_layers){
+		vfield.second->saveToXML();
+	}
 	// saving global_scope
 	xMorpheusNode.addChild(xGlobals);
 
