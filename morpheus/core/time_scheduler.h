@@ -66,7 +66,7 @@ public:
 	/// Register a TimeStepListener based plugin
 	static void reg(TimeStepListener *tsl);
 	static void loadFromXML(XMLNode xTime);
-	static XMLNode saveToXML() { return getInstance().xmlTime; };
+	static XMLNode saveToXML();
 	static void init();
 	/// compute until time 
 	static void compute();

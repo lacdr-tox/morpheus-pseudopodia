@@ -27,6 +27,11 @@ void TimeScheduler::loadFromXML(XMLNode xTime)
 	
 }
 
+XMLNode TimeScheduler::saveToXML() { 
+	auto xmlTime = getInstance().xmlTime; 
+	xmlTime.getChildNode("StartTime").updateAttribute(to_cstr(getInstance().current_time),"value");
+	return xmlTime;
+};
 
 void TimeScheduler::init()
 {
