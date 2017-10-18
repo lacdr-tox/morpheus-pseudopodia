@@ -130,14 +130,27 @@ void domNodeEditor::setNode(nodeController* node, SharedMorphModel model)
 			current_value_edit = MathText;
 		}
 		else if ( node->textType()->name == "cpmText") {
-			multi_line_text_editor->setText(node->getText());
+			if (node->getText().size()>500 || node->getName().endsWith("Data")) {
+				multi_line_text_editor->setText(node->getText().left(100) + " ...");
+				multi_line_text_editor->setEnabled(false);
+			}
+			else {
+				multi_line_text_editor->setText(node->getText());
+				multi_line_text_editor->setEnabled(true);
+			}
 			multi_line_text_editor->show();
 			current_value_edit = MultiText;
 		}
 		else {
-			
 			line_editor->setValidator(&(node->textType()->validator));
-			line_editor->setText(node->getText());
+			if (node->getText().size()>300 || node->getName().endsWith("Data")) {
+				line_editor->setText(node->getText().left(60) + " ...");
+				line_editor->setEnabled(false);
+			}
+			else {
+				line_editor->setText(node->getText());
+				line_editor->setEnabled(true);
+			}
 			line_editor->show();
 			current_value_edit = LineText;
 		}

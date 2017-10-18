@@ -781,23 +781,22 @@ QVariant MorphModel::data(const QModelIndex &index, int role) const {
 
 //                qDebug() << "node->name: " << node->name  << " | value: "<<  (value?value->get():"N.A.")  << " | symbol-ref: "<< (symbol_ref ? symbol_ref->get() : "N.A.") ;
 
-				QString text("");
 				if ( node->name == "Equation" || node->name== "Rule" || node->name == "Function" || node->name == "DiffEqn" || node->name == "InitPDEExpression") {
 					text_node = node->firstActiveChild("Expression");
 					if (text_node) {
+						
 						val = text_node->getText();
 						if (val.length() > 100 )
-							val = val.left(96) + " ...";
+							val = val.left(60) + " ...";
 					}
 				}
 				else if (node->name == "Expression" ){
 					val = "";
 				}
 				else if ( text_node->hasText() ) {
-					if (text.length() > 100 )
-						val = text_node->getText().left(96) + " ...";
-					else
-						val = text_node->getText();
+					val = text_node->getText();
+					if (val.length() > 100 )
+						val = val.left(60) + " ...";
 				}
 				else if (value) {
 					val = value->get();
