@@ -295,25 +295,32 @@ JobQueue* config::getJobQueue() {
 
 int config::openModel(QString filepath) {
 	if (filepath.isEmpty()) return -1;
-    // if the model is already open, just switch to that model
-    config* conf = getInstance();
+	// if the model is already open, just switch to that model
+	config* conf = getInstance();
 	QString xmlFile = QFileInfo(filepath).absoluteFilePath();
-    for (int i=0; i<conf->openModels.size(); i++) {
-       if (xmlFile==conf->openModels[i]->xml_file.path) {
-           return i;
-       }
-    }
+	for (int i=0; i<conf->openModels.size(); i++) {
+		if (xmlFile==conf->openModels[i]->xml_file.path) {
+			return i;
+		}
+	}
 
-    SharedMorphModel m;
-    try {
-        m = SharedMorphModel( new MorphModel(xmlFile,conf));
-    }
-    catch(ModelException e)
-    {
-        // TODO activate this message ...
-        QMessageBox::critical(qApp->activeWindow(),"Error opening morpheus model",e.message);
+	SharedMorphModel m;
+	try {
+		m = SharedMorphModel( new MorphModel(xmlFile,conf));
+	}
+	catch(ModelException e) {
+		// TODO activate this message ...
+		QMessageBox::critical(qApp->activeWindow(),"Error opening morpheus model",e.message);
 		return -1;
-    }
+	}
+	catch(QString e) {
+		QMessageBox::critical(qApp->activeWindow(),"Error opening morpheus model",e);
+		return -1; 
+	}
+	catch(...) {
+		QMessageBox::critical(qApp->activeWindow(),"Error opening morpheus model","Unknown error");
+		return -1; 
+	}
     // substitude the last model if it was created from scratch and is still unchanged
     if ( ! conf->openModels.isEmpty() && conf->openModels.back()->isEmpty()) {
         conf->openModels.back()->close();
@@ -362,31 +369,29 @@ int config::createModel(QString xml_path)
         conf->openModels.pop_back();
     }
     SharedMorphModel m;
-    if (xml_path.isEmpty()) {
-		try {
+	try {
+		if (xml_path.isEmpty()) {
 			m =  SharedMorphModel(new MorphModel(conf));
 		}
-		catch(ModelException e)
-		{
-			QMessageBox::critical(qApp->activeWindow(),"Error creating morpheus model",e.message ,QMessageBox::Ok,QMessageBox::NoButton);
-			return -1;
+		else {
+			m = SharedMorphModel( new MorphModel(xml_path,conf));
+			m->xml_file.path = "";
+			m->xml_file.name = MorpheusXML::getNewModelName();
+			m->rootNodeContr->saved();
 		}
 	}
-	else {
-
-		try {
-			m = SharedMorphModel( new MorphModel(xml_path,conf));
-		}
-		catch(ModelException e)
-		{
-			QMessageBox::critical(qApp->activeWindow(),"Error creating morpheus model",e.message ,QMessageBox::Ok,QMessageBox::NoButton);
-			return -1;
-		}
-        
-        m->xml_file.path = "";
-        m->xml_file.name = MorpheusXML::getNewModelName();
-        m->rootNodeContr->saved();
-    }
+	catch(ModelException e) {
+		QMessageBox::critical(qApp->activeWindow(),"Error creating morpheus model",e.message ,QMessageBox::Ok,QMessageBox::NoButton);
+		return -1;
+	}
+	catch(QString e) {
+		QMessageBox::critical(qApp->activeWindow(),"Error creating morpheus model",e ,QMessageBox::Ok,QMessageBox::NoButton);
+		return -1;
+	}
+	catch(...){
+		QMessageBox::critical(qApp->activeWindow(),"Error opening morpheus model","Unknown error");
+		return -1; 
+	}
     int id = conf->openModels.size();
     conf->openModels.push_back(m);
     emit conf->modelAdded(id);

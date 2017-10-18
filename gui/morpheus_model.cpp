@@ -44,6 +44,7 @@ MorphModel::MorphModel(QObject *parent) :
 		qDebug() << "Error creating MorpheusModel from plain template ... ";
 		qDebug() << error;
 		rootNodeContr = nullptr;
+		throw error;
 	}
 }
 
