@@ -326,7 +326,8 @@ void EdgeListTracker::defragment() {
 			
 			auto& edge = edges[new_id] = edges.back();
 			(*edge.eid_list_a)[edge.direction_a2b] = new_id;
-			(*edge.eid_list_b)[inverse_neighbor[edge.direction_a2b]] = new_id;
+			if (edge.eid_list_b)
+				(*edge.eid_list_b)[inverse_neighbor[edge.direction_a2b]] = new_id;
 			
 			edges.pop_back();
 			invalid_edge_ids.pop_back();
