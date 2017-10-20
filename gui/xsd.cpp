@@ -122,8 +122,20 @@ void XSD::initSimpleType(QSharedPointer<XSD::SimpleTypeInfo> info) {
 	if (! info->base_type.isEmpty()) {
 		if (simple_types.contains(info->base_type)) {
 			auto base_type = getSimpleType(info->base_type);
-			if (info->pattern.isEmpty()) {
+			if (base_type->is_enum) {
+				info->is_enum = true;
+				if (info->value_set.isEmpty()) {
+					info->value_set = base_type->value_set;
+					info->pattern = base_type->pattern;
+					info->default_val = base_type->default_val;
+				}
+			}
+			else if (info->pattern.isEmpty()) {
 				info->pattern = base_type->pattern;
+				if (info->default_val.isEmpty()) {
+					// assume the parental default also works here
+					info->default_val = base_type->default_val;
+				}
 			}
 			if (info->default_val.isEmpty()) {
 				info->default_val = base_type->default_val;
@@ -498,6 +510,7 @@ void XSD::createTypeMaps()
 	info = QSharedPointer<SimpleTypeInfo>::create();
 	info->initialized = false;
 	info->name ="xs:boolean";
+	info->value_set << "true" << "false";
 	info->pattern = "^(true|false)$";
 	info->default_val= "true";
 	info->is_enum= true;
