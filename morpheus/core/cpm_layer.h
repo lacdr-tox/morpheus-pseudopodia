@@ -120,15 +120,18 @@ class LatticeStencil {
 		LatticeStencil( shared_ptr< const CPM::LAYER > data_layer, const std::vector< VINT >& neighbors );
 		void setPosition(const VINT& pos);
 		const vector<VINT>& getStencil() const { return stencil_neighbors; };
-		const vector<CPM::CELL_ID>& getStates() const { return stencil_states; };
+		const vector<CPM::CELL_ID>& getStates() const { if (!valid_data) applyPos(); return stencil_states; };
 		
 	private:
 		void setStencil(const std::vector< VINT >& neighbors);
+		void applyPos() const;
 		
+		VINT pos;
+		mutable bool valid_data;
 		shared_ptr< const CPM::LAYER > data_layer;
 		vector<VINT> stencil_neighbors;
 		vector<int> stencil_offsets;
-		vector<CPM::CELL_ID> stencil_states;
+		mutable vector<CPM::CELL_ID> stencil_states;
 };
 
 

@@ -32,8 +32,9 @@ double SurfaceConstraint::delta ( const SymbolFocus& cell_focus, const CPM::Upda
 		new_target_surface = target_surface = target( cell_focus ) ;
 	}
 	else { // (target_mode() == TargetMode::ASPHERITY)
-		target_surface = target( cell_focus ) * targetSurfaceFromVolume(cell_focus.cell().currentShape().size());
-		new_target_surface = target( cell_focus ) * targetSurfaceFromVolume(cell_focus.cell().updatedShape().size());
+		auto aspherity = target( cell_focus );
+		target_surface =  aspherity * targetSurfaceFromVolume(cell_focus.cell().currentShape().size());
+		new_target_surface = aspherity * targetSurfaceFromVolume(cell_focus.cell().updatedShape().size());
 	}
 	if( exponent.isDefined() ){
 		dE = s * ( pow(d_new_surface_length - new_target_surface, exponent()) - pow(d_surface_length - target_surface, exponent()) );

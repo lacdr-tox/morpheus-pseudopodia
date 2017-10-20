@@ -13,8 +13,11 @@ namespace CPM {
 		class SymbolFocus focus, source, focus_updated;
 		STATE add_state;
 		STATE remove_state;
+		/// Neighborhood stencil used for selecting Updates of the spatial configuration, in particular for the Monte Carlo Sampler of the CPM.
 		shared_ptr<LatticeStencil> update;
+		/// Neighborhood stencil used to select surface nodes. Any node having a different state in the surface neigborhood is a surface node.
 		shared_ptr<LatticeStencil> surface;
+		/// Neighborhood stencil used to estimate the boundary length and the interaction length with neighboring cells
 		shared_ptr<StatisticalLatticeStencil> boundary;
 		uint source_top_ct;
 		uint focus_top_ct;

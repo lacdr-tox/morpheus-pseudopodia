@@ -289,7 +289,12 @@ void loadFromXML(XMLNode xMorph) {
 		global_update_data.boundary = unique_ptr<StatisticalLatticeStencil>(new StatisticalLatticeStencil(layer, boundary_neighborhood.neighbors()));
 		global_update_data.surface = unique_ptr<LatticeStencil>(new LatticeStencil(layer, surface_neighborhood.neighbors()));
 		if ( ! update_neighborhood.empty() ) {
-			global_update_data.update = unique_ptr<LatticeStencil>(new LatticeStencil(layer, update_neighborhood.neighbors()));
+			if (update_neighborhood.neighbors() == surface_neighborhood.neighbors()) {
+				global_update_data.update = global_update_data.surface;
+			}
+			else {
+				global_update_data.update = make_unique<LatticeStencil>(layer, update_neighborhood.neighbors());
+			}
 			// Setting up the EdgeTracker
 			edgeTracker = shared_ptr<EdgeTrackerBase>(new NoEdgeTracker(layer, update_neighborhood.neighbors(), surface_neighborhood.neighbors()));
 		}
