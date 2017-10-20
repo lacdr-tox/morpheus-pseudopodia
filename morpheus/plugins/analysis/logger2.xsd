@@ -208,7 +208,7 @@
 		
 		<xs:attribute name="time-step" type="cpmDouble" use="optional" default="-1" />
         <xs:attribute name="log-commands"   use="optional" type="cpmBoolean" default="false" />
-		<xs:attribute name="name" type="cpmString" use="optional" default="" />
+		<xs:attribute name="title" type="cpmString" use="optional" default="" />
 		<xs:attribute name="file-numbering" type="cpmFileNumbering" use="optional" default="time" />
 
 	</xs:complexType>
