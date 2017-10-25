@@ -911,9 +911,9 @@ Gnuplotter::Gnuplotter(): AnalysisPlugin(), gnuplot(NULL) {
 	terminal_size.setXMLPath("Terminal/size");
 	registerPluginParameter(terminal_size);
 	
-	pointsize.setXMLPath("Terminal/pointsize");
-	pointsize.setDefault("0.5");
-	registerPluginParameter(pointsize);
+// 	pointsize.setXMLPath("Terminal/pointsize");
+// 	pointsize.setDefault("0.5");
+// 	registerPluginParameter(pointsize);
 	
 	cell_opacity.setXMLPath("Terminal/opacity");
 	registerPluginParameter(cell_opacity);
@@ -1400,10 +1400,12 @@ void Gnuplotter::analyse(double time) {
 			command << plots[i].cell_painter->getPaletteCmd() << endl;
 			command << "unset contour;\n";
 			
+			double cell_contour_width = max(1.0/terminal_spec.line_width, 200.0 / Gnuplotter::PlotSpec::size().x);
+			
 			if (cell_opacity.isDefined() && cell_opacity() < 1.0 && cell_opacity() >= 0)
 				command << "set style fill transparent solid " << cell_opacity() << " noborder;\n";
 			//command << "set cbrange ["<< plots[i].cell_painter->getMinVal() << ":"<< plots[i].cell_painter->getMaxVal() << "]" << endl;
-
+			command << "set style line 40 lc rgb \"black\" lw " << cell_contour_width << "\n";
 			if ( ! decorate)
 				command << "unset colorbox;\n";
 			else {
@@ -1442,12 +1444,12 @@ void Gnuplotter::analyse(double time) {
 					if ( ! isnan(cell_boundary_data[p].value) && cell_boundary_data[p].value != CellPainter::getTransparentValue()) {
 						if (!pipe_data )
 							command << " index " << current_index << ":" << current_index + cell_boundary_data[p].polygons.size()-1;
-						command << " us 1:2 w filledc c lt pal cb "  << cell_boundary_data[p].value << " notitle";
+						command << " us 1:2 w filledc c lt pal cb " << cell_boundary_data[p].value << " lw " << 1.0/terminal_spec.line_width <<" notitle";
 						command << ",\\\n''";
 					}
 					if (!pipe_data)
 						command << " index " << current_index << ":" << current_index + cell_boundary_data[p].polygons.size()-1;
-					command << " us 1:2 w l lt -1 notitle";
+					command << " us 1:2 w l ls 40 notitle";
 					current_index +=cell_boundary_data[p].polygons.size();
 				}
 				
@@ -1467,13 +1469,14 @@ void Gnuplotter::analyse(double time) {
 					command << " '-' ";
 				else
 					command << " '" << outputDir << "/" << plots[i].cells_data_file << "' " ;
-				command << layout << " using 1:2:3 ";
-				command << " w p pt 5 ps " << pointsize() << " pal not";
+// 				command << layout << " using 1:2:3 ";
+// 				command << " w p pt 5 ps " << pointsize() << " pal not";
+				command << layout << " w image pal not";
 				if (pipe_data) 
 					command << ", '-' ";
 				else 
 					command << ", '" << outputDir << "/" << plots[i].membranes_data_file << "' ";
-				command << "using 1:2:(0) w l ls -1 notitle";
+				command << "using 1:2:(0) w l ls 40 notitle";
 			}
 
 			if ( plots[i].labels ){
@@ -1483,7 +1486,7 @@ void Gnuplotter::analyse(double time) {
 					command << ", '" << outputDir << "/" << plots[i].labels_data_file << "' ";
 				}
 				command << " using ($1):($2)"<< (using_splot ? "" : ":(0)") << ":3 with labels font \"Helvetica,"
-						<< plots[i].label_painter->fontsize() << "\" textcolor rgb \"" << plots[i].label_painter->fontcolor().c_str() << "\" notitle";
+						<< plots[i].label_painter->fontsize() * terminal_spec.line_width << "\" textcolor rgb \"" << plots[i].label_painter->fontcolor().c_str() << "\" notitle";
 			}
 
 			if ( plots[i].arrows ){

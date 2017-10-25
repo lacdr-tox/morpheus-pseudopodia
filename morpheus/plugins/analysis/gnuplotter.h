@@ -321,7 +321,7 @@ class Gnuplotter : public AnalysisPlugin
 		PluginParameter2<Terminal,XMLNamedValueReader,DefaultValPolicy> terminal;
 		PluginParameter2<VINT,XMLValueReader,OptionalPolicy> terminal_size;
 		PluginParameter2<double,XMLValueReader,OptionalPolicy> cell_opacity;
-		PluginParameter2<double,XMLValueReader,DefaultValPolicy> pointsize;
+// 		PluginParameter2<double,XMLValueReader,DefaultValPolicy> pointsize;
 		
 		struct TerminalSpec {
 			string name;
