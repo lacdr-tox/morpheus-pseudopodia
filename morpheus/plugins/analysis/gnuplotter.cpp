@@ -1218,21 +1218,30 @@ void Gnuplotter::analyse(double time) {
 	
 
 	/*
-		DEFAULT ARROW STYLES
+		DEFAULT STYLES
 	*/
+	
+	double cell_contour_width = 200.0 / Gnuplotter::PlotSpec::size().x;
+	double cell_arrow_width = 400.0 / Gnuplotter::PlotSpec::size().x;
+	double cell_label_scaling = terminal_spec.line_width;
+	
+	if ( ! terminal_spec.vectorized ) {
+		cell_contour_width = max(1.0/terminal_spec.line_width, cell_contour_width);
+		cell_arrow_width = max(1.0/terminal_spec.line_width, cell_arrow_width);
+	}
 
 	command << "set multiplot;\n"
 			<< "unset tics;\n"
 			<< "set datafile missing \"NaN\";\n"
 			<< "set view map;\n"
-			<< "set style arrow 1 head   filled   size screen 0.015,15,45  lc 0 lw 1.5;\n"
-			<< "set style arrow 2 head   nofilled size screen 0.015,15,135 lc 0 lw 1.5;\n"
-			<< "set style arrow 3 head   filled   size screen 0.015,15,45  lc 0 lw 1.5;\n"
-			<< "set style arrow 4 head   filled   size screen 0.015,15,90  lc 0 lw 1.5;\n"
-			<< "set style arrow 5 head   nofilled size screen 0.015,15,135 lc 0 lw 1.5 ;\n"
-			<< "set style arrow 6 heads  filled   size screen 0.015,15,135 lc 0 lw 1.5;\n"
-			<< "set style arrow 7 heads  nofilled size screen 0.004,90,90  lc 0 lw 1.5;\n"
-			<< "set style arrow 8 nohead nofilled                          lc 0 lw 1.5;\n";
+			<< "set style arrow 1 head   filled   size screen 0.015,15,45  lc 0 lw " << cell_arrow_width << ";\n"
+			<< "set style arrow 2 head   nofilled size screen 0.015,15,135 lc 0 lw " << cell_arrow_width << ";\n"
+			<< "set style arrow 3 head   filled   size screen 0.015,15,45  lc 0 lw " << cell_arrow_width << ";\n"
+			<< "set style arrow 4 head   filled   size screen 0.015,15,90  lc 0 lw " << cell_arrow_width << ";\n"
+			<< "set style arrow 5 head   nofilled size screen 0.015,15,135 lc 0 lw " << cell_arrow_width << ";\n"
+			<< "set style arrow 6 heads  filled   size screen 0.015,15,135 lc 0 lw " << cell_arrow_width << ";\n"
+			<< "set style arrow 7 heads  nofilled size screen 0.004,90,90  lc 0 lw " << cell_arrow_width << ";\n"
+			<< "set style arrow 8 nohead nofilled                          lc 0 lw " << cell_arrow_width << ";\n";
 			
 	/*
 		MULTI PLOTS
@@ -1400,8 +1409,6 @@ void Gnuplotter::analyse(double time) {
 			command << plots[i].cell_painter->getPaletteCmd() << endl;
 			command << "unset contour;\n";
 			
-			double cell_contour_width = max(1.0/terminal_spec.line_width, 200.0 / Gnuplotter::PlotSpec::size().x);
-			
 			if (cell_opacity.isDefined() && cell_opacity() < 1.0 && cell_opacity() >= 0)
 				command << "set style fill transparent solid " << cell_opacity() << " noborder;\n";
 			//command << "set cbrange ["<< plots[i].cell_painter->getMinVal() << ":"<< plots[i].cell_painter->getMaxVal() << "]" << endl;
@@ -1486,7 +1493,7 @@ void Gnuplotter::analyse(double time) {
 					command << ", '" << outputDir << "/" << plots[i].labels_data_file << "' ";
 				}
 				command << " using ($1):($2)"<< (using_splot ? "" : ":(0)") << ":3 with labels font \"Helvetica,"
-						<< plots[i].label_painter->fontsize() * terminal_spec.line_width << "\" textcolor rgb \"" << plots[i].label_painter->fontcolor().c_str() << "\" notitle";
+						<< plots[i].label_painter->fontsize() * cell_label_scaling << "\" textcolor rgb \"" << plots[i].label_painter->fontcolor().c_str() << "\" notitle";
 			}
 
 			if ( plots[i].arrows ){
@@ -1610,11 +1617,12 @@ Gnuplotter::plotLayout Gnuplotter::getPlotLayout( uint plot_count, bool border )
 	double x_margin = 0;
 	double y_margin = 0;
 	if (border) {
-		x_margin = 0.2 * max(lattice_size.x, (lattice_size.y + lattice_size.x)/2);
-		plot_size.x = lattice_size.x + x_margin;
+		double extend =  max(lattice_size.x, lattice_size.y);
+		x_margin = 0.2 * extend;
+		plot_size.x += x_margin;
 		
-		y_margin = 0.15 * max(lattice_size.y, (lattice_size.y + lattice_size.x)/2);
-		plot_size.y = lattice_size.y + y_margin;
+		y_margin = 0.15 * extend;
+		plot_size.y += y_margin;
 	}
 	layout.plot_aspect_ratio = (plot_size.y / plot_size.x);
 	layout.rows = max(1,int(floor(sqrt(plot_count/layout.plot_aspect_ratio))));
