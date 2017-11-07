@@ -225,7 +225,6 @@ void loadFromXML(XMLNode xMorph) {
 		cout << "Creating cell layer ";
 		// look for predefined cell names in the medium poulations ...
 		
-		uint i;
 		for (uint i=0;; i++) {
 			if (i == celltypes.size()) {
 				// create a default medium celltype, in case no medium was defined
