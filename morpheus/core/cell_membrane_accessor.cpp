@@ -45,13 +45,10 @@ TypeInfo<double>::Return CellMembraneAccessor::get(CPM::CELL_ID cell_id, uint th
     return (CPM::getCell(cell_id).membranes[pid]->get( VINT(theta,phi,0) ));
 }
 
-
-TypeInfo<double>::Return CellMembraneAccessor::get(CPM::CELL_ID cell_id, VINT pos) const {
-	VINT membrane_pos = map_global(cell_id,pos);
-	return get( cell_id, membrane_pos.x, membrane_pos.y );
-}
-
 TypeInfo<double>::Return CellMembraneAccessor::get(const SymbolFocus& focus) const {
+	if ( focus.hasPosition() && ! CPM::isSurface(focus.pos())) {
+			return 0.0;
+	}
 	return (focus.cell().membranes[pid]->get(focus.membrane_pos()));
 }
 

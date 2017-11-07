@@ -71,32 +71,43 @@ void Mapper::report_output(const OutputSpec& output, const SymbolFocus& focus) {
 
 void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 
-	FocusRange range(output.symbol->accessor(), scope);
+// 	
 	
 	if ( output.symbol->granularity() <= input->granularity()  || output.symbol->granularity() ==  Granularity::Node) {
-		auto extends = range.spatialExtends();
-		auto input_extends = FocusRange(input->granularity(), scope).spatialExtends();
-		bool dimensions_lost = extends.size() < input_extends.size();
 		
-		if (dimensions_lost) {
-			auto mapper =  DataMapper::create(output.mapping());
-			for (const auto& focus : range) {
-				multimap<FocusRangeAxis,int> restrictions;
-				for (auto e : extends) {
-					restrictions.insert(make_pair(e,focus.get(e)));
-				}
-				FocusRange inner_range(input->granularity(),restrictions);
-				mapper->reset();
-				for (const auto& inner_focus : inner_range ){
-					mapper->addVal(input(inner_focus));
-				}
-				output.symbol->set(focus,mapper->get());
-			}
-		}
-		else {
+		if ( input->granularity() == Granularity::MembraneNode ) {
+			FocusRange range(Granularity::SurfaceNode, scope);
+			cout << "Membrane node size " << range.size() << endl;
 			// Just write input to the output
 			for (const auto& focus : range) {
 				output.symbol->set(focus,input(focus));
+			}
+		}
+		else {
+			FocusRange range(output.symbol->accessor(), scope);
+			auto extends = range.spatialExtends();
+			auto input_extends = FocusRange(input->granularity(), scope).spatialExtends();
+			bool dimensions_lost = extends.size() < input_extends.size();
+			if (  output.symbol->granularity() ==  input->granularity() &&  dimensions_lost) {
+				auto mapper =  DataMapper::create(output.mapping());
+				for (const auto& focus : range) {
+					multimap<FocusRangeAxis,int> restrictions;
+					for (auto e : extends) {
+						restrictions.insert(make_pair(e,focus.get(e)));
+					}
+					FocusRange inner_range(input->granularity(),restrictions);
+					mapper->reset();
+					for (const auto& inner_focus : inner_range ){
+						mapper->addVal(input(inner_focus));
+					}
+					output.symbol->set(focus,mapper->get());
+				}
+			}
+			else {
+				// Just write input to the output
+				for (const auto& focus : range) {
+					output.symbol->set(focus,input(focus));
+				}
 			}
 		}
 	}
@@ -109,11 +120,10 @@ void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 		// we need to iterate over the cells and use a membrane mapper to get data from nodes to the membrane
 		MembraneMapper membrane_mapper(MembraneMapper::MAP_CONTINUOUS);
 
-		FocusRange range(Granularity::Cell, scope);
-		for (auto focus : range) {
+		FocusRange cell_range(Granularity::Cell, scope);
+		for (auto focus : cell_range) {
 			
 			auto cell_surface = focus.cell().getSurface();
-			
 			membrane_mapper.attachToCell(focus.cellID());
 			for (auto node : cell_surface) {
 				focus.setPosition(node);
@@ -127,8 +137,8 @@ void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 	}
 	else {
 		auto mapper =  DataMapper::create(output.mapping());
-		
 		if (output.symbol->granularity() == Granularity::Cell) {
+			FocusRange range(output.symbol->accessor(), scope);
 			for (auto out_focus : range) {
 				FocusRange input_range(input->granularity(),out_focus.cellID());
 				for (auto focus: input_range) {

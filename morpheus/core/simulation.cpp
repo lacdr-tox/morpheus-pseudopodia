@@ -156,9 +156,12 @@ const Neighborhood& getSurfaceNeighborhood()
 	return surface_neighborhood;
 }
 
+void setInteractionSurface(bool enabled) {
+	surface_everywhere = enabled;
+}
 
 bool isSurface(const VINT& pos) {
-	return edgeTracker->has_surface(pos);
+	return surface_everywhere ? true : edgeTracker->has_surface(pos);
 }
 
 uint nSurfaces(const VINT& pos) {

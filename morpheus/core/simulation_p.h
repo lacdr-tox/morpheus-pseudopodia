@@ -69,6 +69,7 @@ namespace CPM {
 	Neighborhood boundary_neighborhood;
 	Neighborhood update_neighborhood;
 	Neighborhood surface_neighborhood;
+	bool surface_everywhere=false;
 // // 	vector<VINT> interaction_neighborhood;
 	shared_ptr<EdgeTrackerBase> edgeTracker;
 	

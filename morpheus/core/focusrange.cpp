@@ -22,7 +22,7 @@ void FocusRangeIterator::setIndex(int index) {
 	idx = index;
 	switch (data->iter_mode) {
 		case FocusRangeDescriptor::IT_CellNodes :
-		case FocusRangeDescriptor::IT_CellSurfaceNodes : 
+// 		case FocusRangeDescriptor::IT_CellSurfaceNodes : 
 		{
 			if (idx==0) {
 				cell = 0;
@@ -179,7 +179,7 @@ FocusRangeIterator& FocusRangeIterator::operator++()
 			focus.setCell(data->cell_range[cell]);
 			break;
 		case FocusRangeDescriptor::IT_CellNodes:
-		case FocusRangeDescriptor::IT_CellSurfaceNodes:
+// 		case FocusRangeDescriptor::IT_CellSurfaceNodes:
 			current_cell_node++;
 			if ( current_cell_node == data->cell_nodes[cell]->end() ) {
 				cell++;
@@ -365,6 +365,8 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 			break;
 		case Granularity::SurfaceNode:
 		case Granularity::Node : {
+			bool surface_only = range->granularity ==  Granularity::SurfaceNode;
+			surface_only = false;
 			VINT l_size = SIM::lattice().size();
 			range->spatial_dimensions.insert(FocusRangeAxis::X);
 			if (l_size.y>1) range->spatial_dimensions.insert(FocusRangeAxis::Y);
@@ -374,13 +376,12 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 				auto cell_range = restrictions.equal_range(FocusRangeAxis::CELL);
 				for (auto cell  = cell_range.first; cell != cell_range.second; cell++ ) {
 					range->cell_range.push_back(cell->second);
-					if (range->iter_mode == FocusRangeDescriptor::IT_CellNodes)
+					if (surface_only)
 						range->cell_nodes.push_back( &(CPM::getCell(cell->second).getSurface()) );
-					else // if (range->iter_mode == FocusRangeDescriptor::IT_CellSurfaceNodes)
+					else
 						range->cell_nodes.push_back( &(CPM::getCell(cell->second).getNodes()) );
 					range->cell_sizes.push_back(range->cell_nodes.back()->size());
 				}
-				range->iter_mode = FocusRangeDescriptor::IT_CellNodes;
 				range->iter_mode = FocusRangeDescriptor::IT_CellNodes;
 				if (range->cell_range.size()>1)
 					range->data_axis.push_back(FocusRangeAxis::CELL);
@@ -390,9 +391,9 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 			else if (range->spatial_restriction == FocusRangeDescriptor::RESTR_CELLPOP) {
 				range->cell_range = ct->getCellIDs();
 				for (auto it : range->cell_range) {
-					if (range->iter_mode == FocusRangeDescriptor::IT_CellNodes)
+					if (surface_only)
 						range->cell_nodes.push_back( &(CPM::getCell(it).getSurface()) );
-					else // if (range->iter_mode == FocusRangeDescriptor::IT_CellSurfaceNodes)
+					else
 						range->cell_nodes.push_back( &(CPM::getCell(it).getNodes()) );
 					range->cell_sizes.push_back(range->cell_nodes.back()->size());
 				}
