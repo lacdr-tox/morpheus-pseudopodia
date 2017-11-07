@@ -294,7 +294,7 @@ Gnuplot::Gnuplot()
 	filename << "gnuplot_error_" << instance_counter << ".log";
 	string gnuplot_error_log = filename.str();
 
-	cout << "Starting gnuplot Path " << Gnuplot::m_sGNUPlotPath << " exec " << Gnuplot::m_sGNUPlotFileName << endl;
+// 	cout << "Starting gnuplot Path " << Gnuplot::m_sGNUPlotPath << " exec " << Gnuplot::m_sGNUPlotFileName << endl;
 	process = shared_ptr<TinyProcessLib::Process>(new 
 		TinyProcessLib::Process( 
 			Gnuplot::m_sGNUPlotPath,

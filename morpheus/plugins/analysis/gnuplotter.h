@@ -233,7 +233,7 @@ class CellPainter  {
 		
 
 		
-		uint z_level; // denotes the z level to slice a 3d simulation
+		int z_level; // denotes the z level to slice a 3d simulation
 		float min_val, max_val;
 		static const float transparency_value;
 		static bool same_cell ( const CPM::STATE& a, const CPM::STATE& b) { return ( a.cell_id == b.cell_id && a.super_cell_id == b.super_cell_id); };
@@ -266,6 +266,7 @@ class CellPainter  {
 		const string& getDescription() const;
 		void writeCellLayer(ostream& out);
 		DataLayout getDataLayout();
+		void setDataLayout(CellPainter::DataLayout layout);
 		vector<CellPainter::CellBoundarySpec> getCellBoundaries();
 		string getPaletteCmd();
 		static float getTransparentValue() { return transparency_value; };

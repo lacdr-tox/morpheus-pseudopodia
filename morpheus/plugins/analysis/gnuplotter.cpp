@@ -75,7 +75,6 @@ const string& ArrowPainter::getDescription() const
 void ArrowPainter::plotData(ostream& out)
 {
 	const Lattice& lattice = SIM::lattice();
-	VDOUBLE orth_lattice_size = lattice.size();
 	
 // 	out.precision(2);
 	auto celltypes = CPM::getCellTypes();
@@ -92,8 +91,6 @@ void ArrowPainter::plotData(ostream& out)
 				VDOUBLE a = arrow(f);
 				VDOUBLE center = f.cell().getCenter();
 				lattice.orth_resolve (center);
-// 				center = (center) % orth_lattice_size;
-				
 				
 				if (! (a.x == 0 && a.y==0) ) {
 					out << center.x-0.5*a.x  << "\t" <<  center.y-0.5*a.y << "\t" << a.x << "\t" << a.y << endl;
@@ -234,8 +231,8 @@ void FieldPainter::plotData(ostream& out)
 			out_data = 0;
 			out_data_count = 0;
 			// accumulate data
-			for (uint y_c=0; y_c<coarsening(); y_c++, pos.y++ ) {
-				uint x_c=0;
+			for (int y_c=0; y_c<coarsening(); y_c++, pos.y++ ) {
+				int x_c=0;
 				out_pos.x=0;
 				for ( pos.x=0; pos.x<size.x; pos.x++, x_c++) {
 					if (x_c==coarsening()) {
@@ -271,7 +268,7 @@ void FieldPainter::plotData(ostream& out)
 		// Cropping data
 		if (min_value.isDefined()) {
 			float fmin_value = min_value.get(SymbolFocus::global);
-			for (int i = 0; i< out_data.size(); i++) {
+			for (uint i = 0; i< out_data.size(); i++) {
 				if (out_data[i] < fmin_value) {
 					out_data[i] = fmin_value;
 				}
@@ -279,7 +276,7 @@ void FieldPainter::plotData(ostream& out)
 		}
 		if (max_value.isDefined()) {
 			float fmax_value = float(max_value.get(SymbolFocus::global));
-			for (int i = 0; i<out_data.size(); i++) {
+			for (uint i = 0; i<out_data.size(); i++) {
 				if (out_data[i] > fmax_value) {
 					out_data[i] = fmax_value;
 				}
@@ -287,7 +284,7 @@ void FieldPainter::plotData(ostream& out)
 		}
 			
 		out << out_data[0];
-		for (int i=1; i<out_data.size() ;i++) {
+		for (uint i=1; i<out_data.size() ;i++) {
 			out << xsep << out_data[i];
 		}
 		
@@ -491,8 +488,8 @@ void CellPainter::updateDataLayout() {
 		// this does not plot cells using points, but fills the boundary !
 		// Know that this currently is based on piping data;
 		data_layout = boundary_cell_wise;
-	else if (is_hexagonal) 
-		data_layout = point_wise;
+// 	else if (is_hexagonal) 
+// 		data_layout = point_wise;
 	else
 		data_layout = ascii_matrix;
 }
@@ -669,6 +666,10 @@ CellPainter::DataLayout CellPainter::getDataLayout()
 	return data_layout;
 }
 
+void CellPainter::setDataLayout(CellPainter::DataLayout layout) {
+	data_layout = layout;
+}
+
 const string& CellPainter::getDescription() const {
 	return symbol.description();
 }
@@ -729,21 +730,32 @@ void CellPainter::writeCellLayer(ostream& out)
 					out << MOD(x+double(y)/2,double(size.x)) << "\t" << double(y)*sin(M_PI/3);
 				else
 					out << x << "\t" << y; 
-                if (isnan(view[y][x]) || view[y][x] == transparency_value)
-                    out << "\t" << "NaN" << "\n";
-                else
-                    out << "\t" << view[y][x] << "\n";
+				if (isnan(view[y][x]) || view[y][x] == transparency_value)
+					out << "\t" << "NaN" << "\n";
+				else
+					out << "\t" << view[y][x] << "\n";
 			}
 			out << "\n";
 		}
 	}
 	else if (data_layout == ascii_matrix) {
 		for (int y = 0; y < size.y; ++y) {
-			for (int x = 0; x < size.x; ++x) {
-				if (isnan(view[y][x]) || view[y][x] == transparency_value)
-                    out << "NaN" << "\t";
-                else
-                    out << view[y][x] << "\t";
+			if (is_hexagonal) {
+				for (int x = 0; x < size.x*2; ++x) {
+					int x_l = MOD(int(round(0.5*x - 0.5*y)), size.x);
+					if (isnan(view[y][x_l]) || view[y][x_l] == transparency_value)
+						out << "NaN" << "\t";
+					else
+						out << view[y][x_l] << "\t";
+				}
+			}
+			else {
+				for (int x = 0; x < size.x; ++x) {
+					if (isnan(view[y][x]) || view[y][x] == transparency_value)
+						out << "NaN" << "\t";
+					else
+						out << view[y][x] << "\t";
+				}
 			}
 			out << "\n";
 		}
@@ -779,16 +791,15 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 	// start and end  point of the line snippet towards neighbor i relative to the node center
 	vector<VDOUBLE> snippet_begin_offset; 
 	vector<VDOUBLE> snippet_end_offset;
-	for  ( int i=0; i<orth_neighbors.size(); i++) {
+	for  ( uint i=0; i<orth_neighbors.size(); i++) {
 			// those offsets serve all lattice structures
-			snippet_begin_offset.push_back((orth_neighbors[i] + orth_neighbors[MOD(i+1,orth_neighbors.size())]) / plane_neighbors.size() * 2.0);
-			snippet_end_offset.push_back((orth_neighbors[i] + orth_neighbors[MOD(i-1,orth_neighbors.size())]) / plane_neighbors.size() * 2.0);
+			snippet_begin_offset.push_back((orth_neighbors[i] + orth_neighbors[MOD(int(i)+1,orth_neighbors.size())]) / plane_neighbors.size() * 2.0);
+			snippet_end_offset.push_back((orth_neighbors[i] + orth_neighbors[MOD(int(i)-1,orth_neighbors.size())]) / plane_neighbors.size() * 2.0);
 	}
 
 	vector<boundarySegment> snippets;
 
-	Cell::Nodes::const_iterator it;
-	for (it = node_list.begin(); it != node_list.end(); it++ )
+	for ( auto it = node_list.begin(); it != node_list.end(); it++ )
 	{
 		VINT pos = (*it);
 		cpm_layer->lattice().resolve(pos);
@@ -799,7 +810,7 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 		cpm_layer->lattice().orth_resolve(orth_pos);
 		
 		const CPM::STATE& node = CPM::getNode(pos);
-		for(int i = 0; i < plane_neighbors.size(); i++)
+		for (uint i = 0; i < plane_neighbors.size(); i++)
 		{
 			const CPM::STATE& neighborNode = CPM::getNode((pos + plane_neighbors[i]));
 
@@ -1040,10 +1051,12 @@ void Gnuplotter::init(const Scope* scope) {
 	try {
 		gnuplot = new Gnuplot();
     
-		for(int i=0;i<plots.size();i++) {
+		for (uint i=0;i<plots.size();i++) {
 			if (plots[i].cells) {
 				plots[i].cell_painter->init();
 				registerInputSymbols( plots[i].cell_painter->getInputSymbols() );
+				if (plots[i].field)
+					plots[i].cell_painter->setDataLayout(CellPainter::point_wise);
 			}
 			if (plots[i].label_painter) {
 				plots[i].label_painter->init();
@@ -1077,7 +1090,7 @@ void Gnuplotter::analyse(double time) {
 		return;
 	
 	if ( ! pipe_data ) {
-		for(int i=0;i<plots.size();i++) {
+		for (uint i=0;i<plots.size();i++) {
 			stringstream sstr;
 			sstr << "_";
 			if (Gnuplotter::instances>1)
@@ -1146,7 +1159,6 @@ void Gnuplotter::analyse(double time) {
 	}
 	const static string outputDir = ".";
 
-// 	string points_pm3d = " with pm3d ";
 	string points_pm3d = " with image ";
 
 	
@@ -1159,10 +1171,8 @@ void Gnuplotter::analyse(double time) {
 // 	Gnuplot& command = *gnuplot;
 	
 	if( log_plotfiles ) {
-		if (file_numbering() == FileNumbering::TIME)
-			gnuplot->setLogfile(string("gnuplot_commands_")+ SIM::getTimeName() + ".gp");
-		else 
-            gnuplot->setLogfile(string("gnuplot_commands_")+ to_str(time/timeStep(),4) + ".gp");
+		string time_id = (file_numbering() == FileNumbering::TIME) ? SIM::getTimeName() :  to_str(time/timeStep(),4);
+		gnuplot->setLogfile(string("gnuplot_commands_") + (to_str(instance_id) + "_") + time_id + ".gp");
 	}
 
 	//    SETTING UP THE TERMINAL
@@ -1221,13 +1231,14 @@ void Gnuplotter::analyse(double time) {
 		DEFAULT STYLES
 	*/
 	
-	double cell_contour_width = 200.0 / Gnuplotter::PlotSpec::size().x;
-	double cell_arrow_width = 400.0 / Gnuplotter::PlotSpec::size().x;
+	double cell_contour_width = (plot_layout.plots[0].right - plot_layout.plots[0].left) * terminal_spec.size.x / 4 / Gnuplotter::PlotSpec::size().x;
+	double cell_arrow_width = 1.6 * cell_contour_width;
+	double cell_node_size = 0.54 * cell_contour_width;
 	double cell_label_scaling = terminal_spec.line_width;
 	
 	if ( ! terminal_spec.vectorized ) {
-		cell_contour_width = max(1.0/terminal_spec.line_width, cell_contour_width);
-		cell_arrow_width = max(1.0/terminal_spec.line_width, cell_arrow_width);
+		cell_contour_width = (cell_contour_width<1.3 ?  1.0 : cell_contour_width)/terminal_spec.line_width;
+		cell_arrow_width = (cell_arrow_width<1.3 ? 1.0 : cell_arrow_width)/terminal_spec.line_width;
 	}
 
 	command << "set multiplot;\n"
@@ -1241,7 +1252,8 @@ void Gnuplotter::analyse(double time) {
 			<< "set style arrow 5 head   nofilled size screen 0.015,15,135 lc 0 lw " << cell_arrow_width << ";\n"
 			<< "set style arrow 6 heads  filled   size screen 0.015,15,135 lc 0 lw " << cell_arrow_width << ";\n"
 			<< "set style arrow 7 heads  nofilled size screen 0.004,90,90  lc 0 lw " << cell_arrow_width << ";\n"
-			<< "set style arrow 8 nohead nofilled                          lc 0 lw " << cell_arrow_width << ";\n";
+			<< "set style arrow 8 nohead nofilled                          lc 0 lw " << cell_arrow_width << ";\n"
+			<< "mod(a,b) = (a-int(a/b)*b + (a<0)*b);\n";
 			
 	/*
 		MULTI PLOTS
@@ -1253,7 +1265,7 @@ void Gnuplotter::analyse(double time) {
 				<< "set bmargin at screen " << plot_layout.plots[i].bottom << ";\n";
 		command << "set style fill transparent solid 1;\n";
 		
-		bool suppress_xlabel = i < plot_layout.cols*plot_layout.rows-1;
+		bool suppress_xlabel = int(i) < plot_layout.cols*plot_layout.rows-1;
 		
 		VDOUBLE origin(0.5,0.5,0);
 		
@@ -1438,7 +1450,6 @@ void Gnuplotter::analyse(double time) {
 			
 			if (CellPainter::boundary_cell_wise == plots[i].cell_painter->getDataLayout()) {
 				
-				VDOUBLE s = PlotSpec::size();
 				command << "plot " << plot_range << " ";
 				uint current_index = 0;
 				for (uint p=0; p<cell_boundary_data.size(); p++) {
@@ -1466,19 +1477,26 @@ void Gnuplotter::analyse(double time) {
 				}
 			}
 			else {
-				
-				string layout = "";
-				if (plots[i].cell_painter->getDataLayout() == CellPainter::ascii_matrix)
-					layout = "matrix";
 				// TODO Try to use plot with image here to get rid of the pixel size issue
 				command << "splot " << plot_range;
 				if (pipe_data) 
 					command << " '-' ";
 				else
 					command << " '" << outputDir << "/" << plots[i].cells_data_file << "' " ;
-// 				command << layout << " using 1:2:3 ";
-// 				command << " w p pt 5 ps " << pointsize() << " pal not";
-				command << layout << " w image pal not";
+				
+				if (plots[i].cell_painter->getDataLayout() == CellPainter::ascii_matrix) {
+					command << " matrix";
+					if ((SIM::lattice().getStructure() == Lattice::hexagonal)) {
+						// half size pixel approximation for in hexagonal lattice data
+						command << " u (0.5*$1+0.25):(0.866025*$2):3";
+					}
+					command << " w image pal not";
+				}
+				else  /* if (plots[i].cell_painter->getDataLayout() == CellPainter::point_wise) */ {
+					command << " using 1:2:3 ";
+					command << " w p pt 5 ps " << cell_node_size << " pal not";
+				}
+				
 				if (pipe_data) 
 					command << ", '-' ";
 				else 
@@ -1632,7 +1650,7 @@ Gnuplotter::plotLayout Gnuplotter::getPlotLayout( uint plot_count, bool border )
 	uint x_panel = 0;
 	uint y_panel = 0;
 	
-	for(int i=0; i<plot_count; i++){  
+	for (uint i=0; i<plot_count; i++){  
 	  
 		p.left   = x_panel * plot_size.x;
 		p.right  = (x_panel+1) * plot_size.x;
@@ -1655,7 +1673,7 @@ Gnuplotter::plotLayout Gnuplotter::getPlotLayout( uint plot_count, bool border )
 
 		// set plot dimensions rowsfirst
 		x_panel++;
-		if(x_panel >= layout.cols){
+		if (x_panel >= layout.cols){
 			y_panel++;
 			x_panel = 0;
 		}

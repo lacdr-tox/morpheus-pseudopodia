@@ -9,6 +9,7 @@
   * The value of a **Constant** can be provided via expression
   * The new **VectorField** can represent spatial vector data
   * Multiple **Population** per CellType are now supported
+  * **GnuPlotter** layout adjustments to efficiently support large lattices
   * Binary **VTK** export (performance)
 
   * Removed any remains of time / space units
