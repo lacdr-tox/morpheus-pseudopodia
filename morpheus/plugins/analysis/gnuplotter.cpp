@@ -1055,8 +1055,6 @@ void Gnuplotter::init(const Scope* scope) {
 			if (plots[i].cells) {
 				plots[i].cell_painter->init();
 				registerInputSymbols( plots[i].cell_painter->getInputSymbols() );
-				if (plots[i].field)
-					plots[i].cell_painter->setDataLayout(CellPainter::point_wise);
 			}
 			if (plots[i].label_painter) {
 				plots[i].label_painter->init();
