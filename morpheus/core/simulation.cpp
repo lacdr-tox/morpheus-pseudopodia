@@ -176,14 +176,16 @@ void loadFromXML(XMLNode xMorph) {
 	boundary_neighborhood = SIM::lattice().getDefaultNeighborhood();
 	CPMShape::boundaryNeighborhood = boundary_neighborhood;
 	
-	if (SIM::lattice().getStructure() == Lattice::square)
-		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(2);
-	else if (SIM::lattice().getStructure() == Lattice::hexagonal)
-		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
-	else if (SIM::lattice().getStructure() == Lattice::cubic)
-		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(3);
-	else if (SIM::lattice().getStructure() == Lattice::linear)
-		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
+// 	if (SIM::lattice().getStructure() == Lattice::square)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(2);
+// 	else if (SIM::lattice().getStructure() == Lattice::hexagonal)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
+// 	else if (SIM::lattice().getStructure() == Lattice::cubic)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(3);
+// 	else if (SIM::lattice().getStructure() == Lattice::linear)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
+	
+	surface_neighborhood = SIM::lattice().getDefaultNeighborhood();
 	
 	if ( surface_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && surface_neighborhood.order()>5)) {
 		throw string("Default neighborhood is too large for estimation of cell surface nodes");

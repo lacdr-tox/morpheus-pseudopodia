@@ -151,6 +151,7 @@ void EdgeListTracker::init_edge_list() {
 			}
 		}
 	}
+	cout << "EdgeListTracker::init() : Created Tracker with Neighborhood size " << surface_neighbors.size() << endl;
 	cout << "EdgeListTracker::init() : Found " << initial_edges << " initial edges, wherof " << update_edges << " can be modified." << endl;
 }
 

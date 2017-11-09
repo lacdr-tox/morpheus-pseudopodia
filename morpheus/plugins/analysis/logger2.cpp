@@ -59,7 +59,7 @@ void Logger::loadFromXML(const XMLNode xNode){
 	// output
 	XMLNode xOutput = xNode.getChildNode("Output");
 	if (xOutput.nChildNode("TextOutput")) {
-		cout << "Output/TextOutput" << endl;
+// 		cout << "Output/TextOutput" << endl;
 		auto output = make_shared<LoggerTextWriter>(*this,"Output/TextOutput");
 		writers.push_back(output);
 	}
@@ -71,7 +71,7 @@ void Logger::loadFromXML(const XMLNode xNode){
 	XMLNode xPlots = xNode.getChildNode("Plots");
 	for (uint i=0; i<xPlots.nChildNode("Plot"); i++) {
 // 		cout << "Logger::loadFromXML: Line " << i << endl;
-		cout << "Number of Y-axis Symbols = " << xPlots.getChildNode("Plot",0).getChildNode("Y-axis",0).nChildNode("Symbol") << endl;
+// 		cout << "Number of Y-axis Symbols = " << xPlots.getChildNode("Plot",0).getChildNode("Y-axis",0).nChildNode("Symbol") << endl;
 		shared_ptr<LoggerPlotBase> p( new LoggerLinePlot(*this, string("Plots/Plot[") + to_str(i) + "]") );
 		plots.push_back(p);
 	}
@@ -117,7 +117,7 @@ void Logger::init(const Scope* scope){
 		// if node granularity is forced, set to node granularity
 		if( force_node_granularity() == true ){
 			logger_granularity = Granularity::Node;
-			cout << "Logger: Forced node granularity" <<  endl;
+// 			cout << "Logger: Forced node granularity" <<  endl;
 		}
         
         if (slice_axis.isDefined() && slice_value.isDefined()) {
@@ -152,8 +152,8 @@ void Logger::init(const Scope* scope){
 		// Now, we can set the FocusRange of the Logger
 		range = FocusRange(logger_granularity, restrictions, domain_only());
 
-		cout << "Logger INIT:  " << endl;
-		cout << "Granularity:  " << logger_granularity <<  endl;
+// 		cout << "Logger INIT:  " << endl;
+// 		cout << "Granularity:  " << logger_granularity <<  endl;
 // 		cout << "Restrictions: " <<  endl;
 // 		for(auto &r : restrictions)
 // 			cout << int(r.first) << " = " << int(r.second) << endl;
@@ -186,7 +186,7 @@ string  Logger::getInputsDescription(const string& s) const {
 			}
 		}
 	}
-	cout << "Description for " << s << " not found." << endl;
+	cout << "Logger: Description for " << s << " not found." << endl;
 	return Gnuplot::sanitize(s);
 }
 
@@ -217,7 +217,7 @@ void Logger::finish(){
 }
 
 vector<CPM::CELL_ID> Logger::parseCellIDs(string cell_ids_string){
-	cout << "Logger::parseCellIDs" << endl;
+// 	cout << "Logger::parseCellIDs" << endl;
 	vector<CPM::CELL_ID> ids;
 	vector<string> tokens;
 	tokens = tokenize(cell_ids_string, ",");
@@ -674,7 +674,7 @@ void LoggerTextWriter::writeMatrix() {
 					// for multiD, write header at the start of each data block
 					if ( range.dimensions() > 1 ){
 						writeMatrixColHeader(range, *out);
-						cout << "writeMatrixColHeader" << endl;
+// 						cout << "writeMatrixColHeader" << endl;
 					}
 					// for a 1D range, only write header at start (single data block)
 					else if ( range.dimensions() == 1 && SIM::getTime() == SIM::getStartTime()){
@@ -1126,7 +1126,7 @@ void LoggerLinePlot::init() {
 		else
 			break;
 	}
-	cout << "Found " << num_defined_symbols << " symbols to plot" << endl; 
+// 	cout << "Found " << num_defined_symbols << " symbols to plot" << endl; 
 	axes.y.column_nums.resize(num_defined_symbols);
 	
 	for (int i=0; i<num_defined_symbols; i++) {
