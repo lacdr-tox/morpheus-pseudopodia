@@ -11,7 +11,7 @@
         <Lattice class="square">
             <Size symbol="size" value="200, 200, 0"/>
             <Neighborhood>
-                <Distance>3</Distance>
+                <Order>2</Order>
             </Neighborhood>
             <Domain boundary-type="constant">
                 <Circle diameter="200"/>
@@ -37,7 +37,7 @@
             </MotilityReporter>
         </CellType>
         <CellType class="medium" name="medium"/>
-        <CellType class="biological" name="obstable">
+        <CellType class="biological" name="obstacle">
             <FreezeMotion>
                 <Condition>1</Condition>
             </FreezeMotion>
@@ -67,7 +67,7 @@
                 <Dimensions radius="100" center="100, 100, 0"/>
             </InitCircle>
         </Population>
-        <Population size="1" type="obstable">
+        <Population size="1" type="obstacle">
             <InitCellObjects mode="distance">
                 <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
                     <Object>

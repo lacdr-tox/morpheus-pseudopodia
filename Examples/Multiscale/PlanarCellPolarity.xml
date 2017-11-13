@@ -21,11 +21,7 @@
             </BoundaryConditions>
             <NodeLength value="5"/>
             <Neighborhood>
-                <!--    <Disabled>
-        <Distance>1</Distance>
-    </Disabled>
--->
-                <Order>5</Order>
+                <Order>1</Order>
             </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="l"/>
@@ -120,7 +116,7 @@
     </CellPopulations>
     <Analysis>
         <Gnuplotter time-step="100" decorate="false">
-            <Terminal pointsize="1" name="png"/>
+            <Terminal name="png"/>
             <Plot>
                 <Cells value="C">
                     <ColorMap>
@@ -133,7 +129,7 @@
             </Plot>
         </Gnuplotter>
         <Gnuplotter time-step="100" decorate="true">
-            <Terminal pointsize="1" name="png"/>
+            <Terminal name="png"/>
             <Plot>
                 <Cells value="polC.phi" min="0.0" max="6.28">
                     <ColorMap>

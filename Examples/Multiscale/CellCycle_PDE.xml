@@ -32,7 +32,7 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
                 <Condition boundary="y" type="periodic"/>
             </BoundaryConditions>
             <Neighborhood>
-                <Order>3</Order>
+                <Order>1</Order>
             </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="space"/>
@@ -111,7 +111,7 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
         <MonteCarloSampler stepper="edgelist">
             <MCSDuration value="1e-4"/>
             <Neighborhood>
-                <Order>2</Order>
+                <Order>1</Order>
             </Neighborhood>
             <MetropolisKinetics temperature="2" yield="0.1"/>
         </MonteCarloSampler>

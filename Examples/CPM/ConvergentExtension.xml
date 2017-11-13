@@ -8,7 +8,7 @@
         <Lattice class="square">
             <Size symbol="size" value="500,500,0"/>
             <Neighborhood>
-                <Distance>3</Distance>
+                <Order>2</Order>
             </Neighborhood>
         </Lattice>
         <MembraneLattice>
@@ -92,7 +92,7 @@
     </CellPopulations>
     <Analysis>
         <Gnuplotter time-step="500" decorate="false">
-            <Terminal pointsize="0.60" name="png"/>
+            <Terminal size="1000,1000,0" name="png"/>
             <Plot>
                 <Cells value="c"/>
             </Plot>
