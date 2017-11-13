@@ -1229,7 +1229,7 @@ void Gnuplotter::analyse(double time) {
 		DEFAULT STYLES
 	*/
 	
-	double cell_contour_width = (plot_layout.plots[0].right - plot_layout.plots[0].left) * terminal_spec.size.x / 4 / Gnuplotter::PlotSpec::size().x;
+	double cell_contour_width = (plot_layout.plots[0].right - plot_layout.plots[0].left) * terminal_spec.size.x / 4 / (Gnuplotter::PlotSpec::size().x+50);
 	double cell_arrow_width = 1.6 * cell_contour_width;
 	double cell_node_size = 0.54 * cell_contour_width;
 	double cell_label_scaling = terminal_spec.line_width;
