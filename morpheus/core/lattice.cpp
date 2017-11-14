@@ -391,7 +391,8 @@ vector<VINT> Hex_Lattice::get_all_neighbors() const {
 } */
 
 vector<int> Hex_Lattice::get_all_neighbors_per_order() const {
-	int neighbors[]	 = {6, 6, 6, 12, 6, 6, 12, 6, 12, 12, 6};
+	// Shadow region size is limited to 3, thus we prohibit larger Neighborhoods
+	int neighbors[]	 = {6, 6, 6, 12, 6}; // , 6, 12, 6, 12, 12, 6};
 	std::vector<int> acc(c_array_begin(neighbors), c_array_end(neighbors));
 	return acc;	
 }

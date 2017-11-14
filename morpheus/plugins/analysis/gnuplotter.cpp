@@ -28,15 +28,15 @@ VDOUBLE Gnuplotter::PlotSpec::view_oversize()
 	VDOUBLE size;
 	
 	if (SIM::lattice().getStructure() == Lattice::hexagonal) {
-		size.y = 0.25 ;
+		size.y = 0.3 ;
 		if (SIM::lattice().get_boundary_type(Boundary::mx) == Boundary::periodic) {
 			size.x = 0.5;
 		}
 	}
 	
-	if (SIM::lattice().size().y<3) {
-		size.y = max(2.0,0.1*size.x) - size.y;
-	}
+// 	if (SIM::lattice().size().y<3) {
+// 		size.y = max(1.0,0.1*size.x) - size.y;
+// 	}
 	
 	return size;
 }
@@ -224,14 +224,18 @@ void FieldPainter::plotData(ostream& out)
 	valarray<float> out_data(out_size.x), out_data2(out_size.x);
 	valarray<float> out_data_count(out_size.x);
 	
+	if (out_size.y < 2) out_size.y = 2;
 	for (out_pos.y=0; out_pos.y<out_size.y; out_pos.y+=1) {
+		
 		pos.y= out_pos.y*coarsening();
+			
 		if ( coarsening()>1) {
 			// reset the output buffer
 			out_data = 0;
 			out_data_count = 0;
 			// accumulate data
 			for (int y_c=0; y_c<coarsening(); y_c++, pos.y++ ) {
+				if (pos.y>=size.y) pos.y = size.y-1;
 				int x_c=0;
 				out_pos.x=0;
 				for ( pos.x=0; pos.x<size.x; pos.x++, x_c++) {
@@ -739,22 +743,31 @@ void CellPainter::writeCellLayer(ostream& out)
 		}
 	}
 	else if (data_layout == ascii_matrix) {
-		for (int y = 0; y < size.y; ++y) {
+		for (int y = 0; y < max(2,size.y); ++y) {
+			int y_l = min(y,size.y-1);
 			if (is_hexagonal) {
-				for (int x = 0; x < size.x*2; ++x) {
-					int x_l = MOD(int(round(0.5*x - 0.5*y)), size.x);
-					if (isnan(view[y][x_l]) || view[y][x_l] == transparency_value)
-						out << "NaN" << "\t";
-					else
-						out << view[y][x_l] << "\t";
+				for (int x = 0; x < size.x*2+1; ++x) {
+					if (y_l%2==0 && x==size.x*2) {
+						out << "0" << "\t";
+					}
+					else if (y_l%2==1 && x==0) {
+						out << "0" << "\t";
+					}
+					else {
+						int x_l = MOD(int((0.5*x - 0.5*y_l)+0.01), size.x);
+						if (isnan(view[y_l][x_l]) || view[y_l][x_l] == transparency_value)
+							out << "0" << "\t";
+						else
+							out << view[y_l][x_l] << "\t";
+					}
 				}
 			}
 			else {
 				for (int x = 0; x < size.x; ++x) {
-					if (isnan(view[y][x]) || view[y][x] == transparency_value)
+					if (isnan(view[y_l][x]) || view[y_l][x] == transparency_value)
 						out << "NaN" << "\t";
 					else
-						out << view[y][x] << "\t";
+						out << view[y_l][x] << "\t";
 				}
 			}
 			out << "\n";
@@ -765,13 +778,14 @@ void CellPainter::writeCellLayer(ostream& out)
 
 vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell::Nodes& node_list, bool (*comp)(const CPM::STATE& a, const CPM::STATE& b))
 {
-	VDOUBLE latticeDim = Gnuplotter::PlotSpec::size();
-	latticeDim -= VDOUBLE(0.01,0.01,0);
+	VDOUBLE view_size = Gnuplotter::PlotSpec::size();
+	view_size -= VDOUBLE(0.01,0.01,0);
+	auto lattice = SIM::getLattice();
 	
 	// we assume that the neighbors are sorted either clockwise or anti-clockwise.
 	// we could also add a sorting step after the filtering of nodes belonging to the plane
 	vector<VINT> neighbors = SIM::lattice().getNeighborhood(1).neighbors();
-	if( SIM::lattice().getStructure() == Lattice::linear ) {
+	if( lattice->getStructure() == Lattice::linear ) {
 		neighbors.resize(4);
 		neighbors[0] = VINT(1, 0, 0);
 		neighbors[1] = VINT(0, 1, 0);
@@ -784,7 +798,7 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 	for  ( vector< VINT >::iterator n = neighbors.begin(); n!=neighbors.end();n++) {
 		if ( n->z == 0) {
 			plane_neighbors.push_back(*n);
-			orth_neighbors.push_back(SIM::lattice().to_orth(*n));
+			orth_neighbors.push_back(lattice->to_orth(*n));
 		}
 	}
 
@@ -802,7 +816,7 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 	for ( auto it = node_list.begin(); it != node_list.end(); it++ )
 	{
 		VINT pos = (*it);
-		cpm_layer->lattice().resolve(pos);
+		lattice->resolve(pos);
 		if (pos.z != z_level) continue;
 		
 		// get the proper position in the drawing area
@@ -815,14 +829,19 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 			const CPM::STATE& neighborNode = CPM::getNode((pos + plane_neighbors[i]));
 
 			if ( comp (neighborNode, node) ) {
-				// identical states
-				VDOUBLE orth_nei = (orth_pos + orth_neighbors[i]) % latticeDim;
-				if ( (orth_pos-orth_nei).abs() <= 1.1) {
-					// neighbor is inside of the drawing area
+				VDOUBLE orth_nei = ((orth_pos + orth_neighbors[i]));
+				if ((orth_nei.x>=0) &&
+				    (orth_nei.x<view_size.x) &&
+				    (orth_nei.y>=0 ) &&
+				    (orth_nei.y<view_size.y) &&
+				    (orth_nei.z>=0) &&
+				    (orth_nei.z<view_size.z))
+				{
+					// neighbor is outside of the drawing area
 					continue;
 				}
 			}
-			// create the edge : this alg. serves all lattice structures
+			// create the edge
 			boundarySegment boundary;
 			boundary.pos1 = orth_pos + snippet_begin_offset[i];
 			boundary.pos2 = orth_pos + snippet_end_offset[i];
@@ -872,9 +891,10 @@ vector< vector<VDOUBLE> > CellPainter::polygons(vector<boundarySegment> v_snippe
 					// break through !!;
 					cout << "Cannot close polygon !" << endl;
 					cout << polygon.front() << "  - - - " << polygon.back() << endl;
-// 					for (current = snippets.begin(); current != snippets.end(); current++) {
-// 						cout << "("<< current->pos1 << "; " << current->pos2 << "),";
-// 					}
+					for (current = snippets.begin(); current != snippets.end(); current++) {
+						cout << "("<< current->pos1 << "; " << current->pos2 << "),";
+					}
+					cout << endl;
 					break;
 				}
 			}
@@ -1272,12 +1292,13 @@ void Gnuplotter::analyse(double time) {
 		*/
 		stringstream s;
 		VDOUBLE view_size = PlotSpec::size() + PlotSpec::view_oversize();
+		origin.y += 0.25 * PlotSpec::view_oversize().y;
 		s << "[" << - origin.x << ":" << view_size.x - origin.x << "]"
 		  <<  "[" << - origin.y << ":" << view_size.y - origin.y << "]";
 		string plot_range = s.str();
 		s.str("");
-		view_size.y = lattice().size().y + PlotSpec::view_oversize().y;
-		origin.y += 0.5 * PlotSpec::view_oversize().y;
+// 		view_size.y = lattice().size().y + PlotSpec::view_oversize().y;
+		
 		s << "[" << - origin.x << ":" << view_size.x - origin.x << "]"
 		  <<  "[" << - origin.y << ":" << view_size.y - origin.y << "]";
 		string field_range = s.str();
@@ -1324,6 +1345,7 @@ void Gnuplotter::analyse(double time) {
 				
 				if (plots[i].field_painter->getCoarsening() != 1) {
 					auto c = plots[i].field_painter->getCoarsening();
+					plot_layout.plots[i];
 					command <<  "u (" << c <<  "*$1):(" << c << "*$2):3 ";
 				}
 				command << " matrix " << points_pm3d << " pal not\n";
@@ -1486,7 +1508,7 @@ void Gnuplotter::analyse(double time) {
 					command << " matrix";
 					if ((SIM::lattice().getStructure() == Lattice::hexagonal)) {
 						// half size pixel approximation for in hexagonal lattice data
-						command << " u (0.5*$1+0.25):(0.866025*$2):3";
+						command << " u (0.5*$1-0.25):(0.866025*$2):3";
 					}
 					command << " w image pal not";
 				}
@@ -1630,21 +1652,33 @@ Gnuplotter::plotLayout Gnuplotter::getPlotLayout( uint plot_count, bool border )
 
 	VDOUBLE lattice_size = PlotSpec::size();
 	VDOUBLE plot_size = lattice_size;
+	double view_aspect_ratio = (plot_size.y / plot_size.x); 
+	if (view_aspect_ratio < 1.0/20) {
+		view_aspect_ratio = 1.0/20;
+		plot_size.y = plot_size.x * view_aspect_ratio;
+	}
+	if (view_aspect_ratio > 20) {
+		view_aspect_ratio = 20;
+		plot_size.x =  plot_size.y / view_aspect_ratio;
+	}
+	
 	double x_margin = 0;
 	double y_margin = 0;
 	if (border) {
-		double extend =  max(lattice_size.x, lattice_size.y);
-		x_margin = 0.2 * extend;
+		double view_extend =  max(lattice_size.x, lattice_size.y);
+		x_margin = 0.2 * view_extend;
 		plot_size.x += x_margin;
 		
-		y_margin = 0.15 * extend;
+		y_margin = 0.15 * view_extend;
 		plot_size.y += y_margin;
 	}
-	layout.plot_aspect_ratio = (plot_size.y / plot_size.x);
+	
+	layout.plot_aspect_ratio = plot_size.y / plot_size.x;
+	cout << "Plot size " << plot_size.x <<"x"<<plot_size.y<< " -> " << layout.plot_aspect_ratio << endl;
+	
 	layout.rows = max(1,int(floor(sqrt(plot_count/layout.plot_aspect_ratio))));
 	layout.cols = ceil(double(plot_count) / double(layout.rows));
 	layout.layout_aspect_ratio = (layout.plot_aspect_ratio * layout.rows) / layout.cols;
-
 	uint x_panel = 0;
 	uint y_panel = 0;
 	
@@ -1661,12 +1695,12 @@ Gnuplotter::plotLayout Gnuplotter::getPlotLayout( uint plot_count, bool border )
 			p.top    -= y_margin * 0.55;
 			p.bottom += y_margin * 0.45;
 		}
-
+ 
 		p.left /= (layout.cols * plot_size.x);
 		p.right /= (layout.cols * plot_size.x);
 		p.top /= (layout.rows * plot_size.y);
 		p.bottom /= (layout.rows * plot_size.y);
-		
+		cout << "Plot " << p.left <<"--"<<p.right<< "," << p.top << "--" << p.bottom << endl;
 		layout.plots.push_back(p);
 
 		// set plot dimensions rowsfirst
