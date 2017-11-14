@@ -748,15 +748,15 @@ void CellPainter::writeCellLayer(ostream& out)
 			if (is_hexagonal) {
 				for (int x = 0; x < size.x*2+1; ++x) {
 					if (y_l%2==0 && x==size.x*2) {
-						out << "0" << "\t";
+						out << "Nan" << "\t";
 					}
 					else if (y_l%2==1 && x==0) {
-						out << "0" << "\t";
+						out << "Nan" << "\t";
 					}
 					else {
 						int x_l = MOD(int((0.5*x - 0.5*y_l)+0.01), size.x);
 						if (isnan(view[y_l][x_l]) || view[y_l][x_l] == transparency_value)
-							out << "0" << "\t";
+							out << "Nan" << "\t";
 						else
 							out << view[y_l][x_l] << "\t";
 					}
@@ -1674,7 +1674,7 @@ Gnuplotter::plotLayout Gnuplotter::getPlotLayout( uint plot_count, bool border )
 	}
 	
 	layout.plot_aspect_ratio = plot_size.y / plot_size.x;
-	cout << "Plot size " << plot_size.x <<"x"<<plot_size.y<< " -> " << layout.plot_aspect_ratio << endl;
+// 	cout << "Plot size " << plot_size.x <<"x"<<plot_size.y<< " -> " << layout.plot_aspect_ratio << endl;
 	
 	layout.rows = max(1,int(floor(sqrt(plot_count/layout.plot_aspect_ratio))));
 	layout.cols = ceil(double(plot_count) / double(layout.rows));
@@ -1700,7 +1700,7 @@ Gnuplotter::plotLayout Gnuplotter::getPlotLayout( uint plot_count, bool border )
 		p.right /= (layout.cols * plot_size.x);
 		p.top /= (layout.rows * plot_size.y);
 		p.bottom /= (layout.rows * plot_size.y);
-		cout << "Plot " << p.left <<"--"<<p.right<< "," << p.top << "--" << p.bottom << endl;
+// 		cout << "Plot " << p.left <<"--"<<p.right<< "," << p.top << "--" << p.bottom << endl;
 		layout.plots.push_back(p);
 
 		// set plot dimensions rowsfirst
