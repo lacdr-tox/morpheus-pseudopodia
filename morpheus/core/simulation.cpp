@@ -185,13 +185,23 @@ void loadFromXML(XMLNode xMorph) {
 	else if (SIM::lattice().getStructure() == Lattice::linear)
 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
 	
+	if ( surface_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && surface_neighborhood.order()>5)) {
+		throw string("Default neighborhood is too large for estimation of cell surface nodes");
+	}
+	
 	if ( ! xMorph.getChildNode("CPM").isEmpty() ) {
 		xCPM = xMorph.getChildNode("CPM");
 		try {
-		// CPM Cell representation requires the definition of the CPM ShapeSurface for shape length estimations
-		boundary_neighborhood = SIM::lattice().getNeighborhood(xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood"));
-		CPMShape::boundaryNeighborhood = boundary_neighborhood;
-		} catch (string e) { throw MorpheusException(e, xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood")); }
+			// CPM Cell representation requires the definition of the CPM ShapeSurface for shape length estimations
+			boundary_neighborhood = SIM::lattice().getNeighborhood(xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood"));
+			if ( boundary_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && boundary_neighborhood.order()>5)) {
+				throw string("Shape neighborhood is too large");
+			}
+			CPMShape::boundaryNeighborhood = boundary_neighborhood;
+		} 
+		catch (string e) { 
+			throw MorpheusException(e, xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood"));
+		}
 		string boundary_scaling;
 		if (getXMLAttribute(xCPM,"ShapeSurface/scaling",boundary_scaling)) {
 			if (boundary_scaling == "none") {

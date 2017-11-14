@@ -263,7 +263,7 @@ Neighborhood Lattice::getNeighborhoodByOrder(const uint order) const {
 	std::vector<VINT> neighbors = get_all_neighbors();
 	std::vector<int> neighbors_per_order = get_all_neighbors_per_order();
 	if (neighbors_per_order.size()<order) {
-		throw string("Maximum neighborhood order for the current lattice is ") + to_str(neighbors_per_order.size());
+		throw string("Maximum neighborhood order for the current lattice is ") + to_str(neighbors_per_order.size()) + string(" requested ") + to_str(order);
 	}
 	uint n_neighbors=0;
 	for (uint i=0; i<order; i++) n_neighbors += neighbors_per_order[i]; 
@@ -391,8 +391,7 @@ vector<VINT> Hex_Lattice::get_all_neighbors() const {
 } */
 
 vector<int> Hex_Lattice::get_all_neighbors_per_order() const {
-	// Shadow region size is limited to 3, thus we prohibit larger Neighborhoods
-	int neighbors[]	 = {6, 6, 6, 12, 6}; // , 6, 12, 6, 12, 12, 6};
+	int neighbors[]	 = { 6, 6, 6, 12, 6 , 6, 12, 6, 12, 12, 6 };
 	std::vector<int> acc(c_array_begin(neighbors), c_array_end(neighbors));
 	return acc;	
 }

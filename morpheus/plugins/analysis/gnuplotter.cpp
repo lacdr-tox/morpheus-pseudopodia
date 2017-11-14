@@ -754,7 +754,7 @@ void CellPainter::writeCellLayer(ostream& out)
 						out << "Nan" << "\t";
 					}
 					else {
-						int x_l = MOD(int((0.5*x - 0.5*y_l)+0.01), size.x);
+						int x_l = int(MOD((0.5*x - 0.5*y_l)+0.01, double(size.x)));
 						if (isnan(view[y_l][x_l]) || view[y_l][x_l] == transparency_value)
 							out << "Nan" << "\t";
 						else
@@ -787,10 +787,10 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 	vector<VINT> neighbors = SIM::lattice().getNeighborhood(1).neighbors();
 	if( lattice->getStructure() == Lattice::linear ) {
 		neighbors.resize(4);
-		neighbors[0] = VINT(1, 0, 0);
-		neighbors[1] = VINT(0, 1, 0);
+		neighbors[0] = VINT( 1, 0, 0);
+		neighbors[1] = VINT( 0, 1, 0);
 		neighbors[2] = VINT(-1, 0, 0);
-		neighbors[3] = VINT(0, -1, 0);
+		neighbors[3] = VINT( 0,-1, 0);
 	}
 
 	vector<VINT> plane_neighbors;
@@ -831,11 +831,11 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 			if ( comp (neighborNode, node) ) {
 				VDOUBLE orth_nei = ((orth_pos + orth_neighbors[i]));
 				if ((orth_nei.x>=0) &&
-				    (orth_nei.x<view_size.x) &&
+				    (orth_nei.x<=view_size.x) &&
 				    (orth_nei.y>=0 ) &&
-				    (orth_nei.y<view_size.y) &&
+				    (orth_nei.y<=view_size.y) &&
 				    (orth_nei.z>=0) &&
-				    (orth_nei.z<view_size.z))
+				    (orth_nei.z<=view_size.z))
 				{
 					// neighbor is outside of the drawing area
 					continue;
