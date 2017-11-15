@@ -216,6 +216,9 @@ void FieldPainter::plotData(ostream& out)
 	VINT size = SIM::lattice().size();
 	VINT out_size = size / coarsening();
 	
+	VINT view_size = Gnuplotter::PlotSpec::size();
+	VDOUBLE view_out_size = VDOUBLE(view_size) / double(coarsening());
+	
 	string xsep(" "), ysep("\n");
 		
 	VINT out_pos;
@@ -258,17 +261,6 @@ void FieldPainter::plotData(ostream& out)
 
 		}
 		
-		// shifting the data to map hex coordinate system
-		if (is_hexagonal) {
-			out_data = out_data.cshift(-out_pos.y/2);
-			// add an interpolation step
-			if (out_pos.y%2==1) {
-				out_data2 = out_data.cshift(-1);
-				out_data+= out_data2;
-				out_data/=2;
-			}
-		}
-		
 		// Cropping data
 		if (min_value.isDefined()) {
 			float fmin_value = min_value.get(SymbolFocus::global);
@@ -286,10 +278,21 @@ void FieldPainter::plotData(ostream& out)
 				}
 			}
 		}
-			
-		out << out_data[0];
-		for (uint i=1; i<out_data.size() ;i++) {
-			out << xsep << out_data[i];
+		
+		if (is_hexagonal) {
+			for (int x = 0; x < view_out_size.x*2; ++x) {
+				int x_l = int(MOD((0.5*x - 0.5*out_pos.y)+0.01, view_out_size.x));
+				if (x_l<0 || x_l>= out_data.size())
+					out << "Nan" << "\t";
+				else
+					out << out_data[x_l] << "\t";
+			}
+		}
+		else {
+			out << out_data[0];
+			for (uint i=1; i<out_data.size() ;i++) {
+				out << xsep << out_data[i];
+			}
 		}
 		
 		out << ysep;
@@ -726,7 +729,6 @@ void CellPainter::writeCellLayer(ostream& out)
 			}
 		}
 	}
-
 	if (data_layout == point_wise ) {
 		for (int y = 0; y < size.y; ++y) {
 			for (int x = 0; x < size.x; ++x) {
@@ -743,19 +745,33 @@ void CellPainter::writeCellLayer(ostream& out)
 		}
 	}
 	else if (data_layout == ascii_matrix) {
+		auto view_size = Gnuplotter::PlotSpec::size();
 		for (int y = 0; y < max(2,size.y); ++y) {
 			int y_l = min(y,size.y-1);
 			if (is_hexagonal) {
-				for (int x = 0; x < size.x*2+1; ++x) {
-					if (y_l%2==0 && x==size.x*2) {
-						out << "Nan" << "\t";
+				if (SIM::lattice().get_boundary_type(Boundary::mx) == Boundary::periodic) {
+					for (int x = 0; x < view_size.x*2+1; ++x) {
+						if (y_l%2==0 && x==size.x*2) {
+							out << "Nan" << "\t";
+						}
+						else if (y_l%2==1 && x==0) {
+							out << "Nan" << "\t";
+						}
+						else {
+							int x_l = int(MOD(0.5*x - 0.5*y_l+0.01,double(size.x)));
+							if (isnan(view[y_l][x_l]) || view[y_l][x_l] == transparency_value)
+								out << "Nan" << "\t";
+							else
+								out << view[y_l][x_l] << "\t";
+						}
 					}
-					else if (y_l%2==1 && x==0) {
-						out << "Nan" << "\t";
-					}
-					else {
-						int x_l = int(MOD((0.5*x - 0.5*y_l)+0.01, double(size.x)));
-						if (isnan(view[y_l][x_l]) || view[y_l][x_l] == transparency_value)
+				}
+				else {
+					for (int x = 0; x < view_size.x*2+1; ++x) {
+						int x_l = 0.5*x - 0.5*y_l+0.01;
+						if (x_l<0 || x_l>=size.x)
+							out << "Nan" << "\t";
+						else if (isnan(view[y_l][x_l]) || view[y_l][x_l] == transparency_value)
 							out << "Nan" << "\t";
 						else
 							out << view[y_l][x_l] << "\t";
@@ -1302,6 +1318,7 @@ void Gnuplotter::analyse(double time) {
 		s << "[" << - origin.x << ":" << view_size.x - origin.x << "]"
 		  <<  "[" << - origin.y << ":" << view_size.y - origin.y << "]";
 		string field_range = s.str();
+		bool is_hexagonal = (SIM::lattice().getStructure() == Lattice::hexagonal);
 		
 		if (plots[i].field) {
 // 			if (!interpolation_pm3d)
@@ -1343,10 +1360,11 @@ void Gnuplotter::analyse(double time) {
 				else
 					command << " \'"<< outputDir << "/" << plots[i].field_data_file.c_str() << "' ";
 				
-				if (plots[i].field_painter->getCoarsening() != 1) {
+				if (plots[i].field_painter->getCoarsening() != 1 || is_hexagonal) {
 					auto c = plots[i].field_painter->getCoarsening();
-					plot_layout.plots[i];
-					command <<  "u (" << c <<  "*$1):(" << c << "*$2):3 ";
+					auto cx = c * (is_hexagonal ? 0.5:1);
+					auto cy = c * (is_hexagonal ? 0.866025:1);
+					command <<  "u (" << cx <<  "*$1):(" << cy << "*$2):3 ";
 				}
 				command << " matrix " << points_pm3d << " pal not\n";
 				
@@ -1367,9 +1385,11 @@ void Gnuplotter::analyse(double time) {
 					command << " '-' ";
 				else
 					command << " '" << outputDir << "/" << plots[i].field_data_file.c_str() << "' ";
-				if (plots[i].field_painter->getCoarsening() != 1) {
+				if (plots[i].field_painter->getCoarsening() != 1 || is_hexagonal) {
 					auto c = plots[i].field_painter->getCoarsening();
-					command <<  "u (" << c <<  "*$1):(" << c << "*$2):3 ";
+					auto cx = c * (is_hexagonal ? 0.5:1);
+					auto cy = c * (is_hexagonal ? 0.866025:1);
+					command <<  "u (" << cx <<  "*$1):(" << cy << "*$2):3 ";
 				}
 				command << " matrix w l lw 1 lc rgb \"red\"  not;\n" << endl;
 				if (pipe_data) {
@@ -1506,7 +1526,7 @@ void Gnuplotter::analyse(double time) {
 				
 				if (plots[i].cell_painter->getDataLayout() == CellPainter::ascii_matrix) {
 					command << " matrix";
-					if ((SIM::lattice().getStructure() == Lattice::hexagonal)) {
+					if (is_hexagonal) {
 						// half size pixel approximation for in hexagonal lattice data
 						command << " u (0.5*$1-0.25):(0.866025*$2):3";
 					}
