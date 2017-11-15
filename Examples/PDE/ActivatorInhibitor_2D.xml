@@ -1,14 +1,14 @@
-<MorpheusModel version="1">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-ActivatorInhibitor-2D</Title>
         <Details></Details>
     </Description>
     <Global>
         <Field symbol="a" value="rand_norm(0.5,0.1)" name="activator">
-            <Diffusion rate="0.02" unit="µm²/s"/>
+            <Diffusion rate="0.02"/>
         </Field>
         <Field symbol="i" value="0.1" name="inhibitor">
-            <Diffusion rate="1" unit="µm²/s"/>
+            <Diffusion rate="1"/>
         </Field>
         <System solver="runge-kutta" time-step="5" name="Meinhardt">
             <Constant symbol="rho" value="0.001"/>
@@ -27,11 +27,14 @@
     <Space>
         <Lattice class="square">
             <Size symbol="size" value="150 150 0"/>
-            <NodeLength unit="micron" value="1"/>
+            <NodeLength value="1"/>
             <BoundaryConditions>
                 <Condition boundary="x" type="periodic"/>
                 <Condition boundary="y" type="periodic"/>
             </BoundaryConditions>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="space"/>
     </Space>

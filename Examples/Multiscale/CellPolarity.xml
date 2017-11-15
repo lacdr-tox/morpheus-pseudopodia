@@ -1,4 +1,4 @@
-<MorpheusModel version="2">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-CellPolarity</Title>
         <Details>Chemotaxis of polarized cell
@@ -24,7 +24,10 @@ PDE Equation:
     </Disabled>
 -->
         <Constant symbol="c" value="0.0"/>
+        <!--    <Disabled>
         <Constant symbol="A" value="0.0"/>
+    </Disabled>
+-->
     </Global>
     <Space>
         <Lattice class="cubic">
@@ -33,7 +36,7 @@ PDE Equation:
                 <Condition boundary="x" type="noflux"/>
                 <Condition boundary="y" type="periodic"/>
             </BoundaryConditions>
-            <NodeLength unit="micron" value="1.0"/>
+            <NodeLength value="1.0"/>
             <Neighborhood>
                 <Distance>2.0</Distance>
             </Neighborhood>
@@ -53,20 +56,20 @@ PDE Equation:
     </Time>
     <CellTypes>
         <CellType class="biological" name="cells">
-            <Chemotaxis field="U" strength="30*(A+2)" retraction="true"/>
-            <VolumeConstraint target="5000" strength="1"/>
-            <SurfaceConstraint target="1" strength="1"/>
+            <Chemotaxis field="U" strength="50*(A)" retraction="true"/>
+            <VolumeConstraint target="5000" strength="0.1"/>
+            <SurfaceConstraint target="1" mode="aspherity" strength="0.05"/>
             <MembraneProperty symbol="A" value="0.5" name="A">
-                <Diffusion rate="0.05" unit="µm²/s"/>
+                <Diffusion rate="0.05"/>
             </MembraneProperty>
             <MembraneProperty symbol="B" value="0.5" name="B">
-                <Diffusion rate="1" unit="µm²/s"/>
+                <Diffusion rate="1"/>
             </MembraneProperty>
             <MembraneProperty symbol="c" value="0" name="chemotactic strength">
-                <Diffusion rate="0" unit="µm²/s"/>
+                <Diffusion rate="0"/>
             </MembraneProperty>
             <MembraneProperty symbol="s" value="0" name="signal">
-                <Diffusion rate="0" unit="µm²/s"/>
+                <Diffusion rate="0"/>
             </MembraneProperty>
             <Property symbol="l_U" value="0"/>
             <!--    <Disabled>
@@ -107,10 +110,10 @@ PDE Equation:
                     <Expression>A^2*1000</Expression>
                 </Rule>
             </System>
-            <CellReporter>
+            <Mapper>
                 <Input value="U"/>
                 <Output symbol-ref="s" mapping="average"/>
-            </CellReporter>
+            </Mapper>
         </CellType>
         <CellType class="medium" name="medium">
             <Property symbol="l_U" value="0"/>
@@ -118,21 +121,21 @@ PDE Equation:
     </CellTypes>
     <CPM>
         <Interaction default="0.0">
-            <!--    <Disabled>
-        <Contact type1="cells" type2="medium" value="-10"/>
-    </Disabled>
--->
-            <!--    <Disabled>
-        <Contact type1="cells" type2="cells" value="-20"/>
-    </Disabled>
--->
+            <Contact type1="cells" type2="medium" value="-10"/>
+            <Contact type1="cells" type2="cells" value="-20"/>
         </Interaction>
-        <MetropolisKinetics temperature="1" yield="0.05" stepper="edgelist">
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1"/>
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>
-        </MetropolisKinetics>
-        <MCSDuration value="1"/>
+            <MetropolisKinetics temperature="1" yield="0.05"/>
+        </MonteCarloSampler>
+        <ShapeSurface scaling="norm">
+            <Neighborhood>
+                <Order>6</Order>
+            </Neighborhood>
+        </ShapeSurface>
     </CPM>
     <CellPopulations>
         <Population size="0" type="cells">

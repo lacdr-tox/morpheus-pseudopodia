@@ -1,7 +1,7 @@
 #include "interaction_energy.h"
 #include "cpm_shape.h"
 
-InteractionEnergy::InteractionEnergy() : n_celltypes(0), interaction_details(IA_PLAIN) {
+InteractionEnergy::InteractionEnergy() : interaction_details(IA_PLAIN), n_celltypes(0) {
 }
 
 
@@ -366,6 +366,7 @@ double InteractionEnergy::delta(const CPM::Update& update) const {
 			if (interaction_details & IA_PLUGINS) {
 				CPM::STATE neighbor_state;
 				neighbor_state.pos = update.focus().pos();
+				CPM::setInteractionSurface(true);
 				for (uint i=0; i<ia_neighborhood_offsets.size(); i++) {
 					const CPM::STATE& neighbor_state =layer->data[ focus_offset + ia_neighborhood_offsets[i] ];
 					const CPM::INDEX& neighbor_index = CellType::storage.index( neighbor_state.cell_id );
@@ -387,6 +388,7 @@ double InteractionEnergy::delta(const CPM::Update& update) const {
 						dH += interaction_add;
 					}
 				}
+				CPM::setInteractionSurface(false);
 			}
 			else {
 				for (uint i=0; i<ia_neighborhood_offsets.size(); i++) {

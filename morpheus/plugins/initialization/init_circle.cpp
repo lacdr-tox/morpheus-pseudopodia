@@ -5,6 +5,7 @@ REGISTER_PLUGIN(InitCircle);
 
 InitCircle::InitCircle()							//kreis-initialisierer
 {
+	celltype = nullptr;
     numcells.setXMLPath("number-of-cells");
 	registerPluginParameter( numcells );
 	
@@ -23,33 +24,32 @@ InitCircle::InitCircle()							//kreis-initialisierer
 	
 };
 
-bool InitCircle::run(CellType* ct)					//start & auswahl der initialisierungsmethode
+vector<CPM::CELL_ID> InitCircle::run(CellType* ct)					//start & auswahl der initialisierungsmethode
 {
 	celltype = ct;
+	vector<CPM::CELL_ID> cells;
 	number_of_cells = numcells( SymbolFocus() );
 	center 		= center_eval( SymbolFocus() );
 	radius   	= radius_eval( SymbolFocus() );
 
 	switch( mode() ){
 		case InitCircle::RANDOM:
-			setRandom();
+			return setRandom();
 			break;
 		case InitCircle::REGULAR:
-			setRegular();
+			return setRegular();
 			break;
 		default:
 			cout << "no type defined" << endl;
-			break;
+			return vector<CPM::CELL_ID>();
 	}
-
-	return true;
 }
 
-void InitCircle::setRandom()				//zufallsbelegung des bereichs
+vector<CPM::CELL_ID> InitCircle::setRandom()				//zufallsbelegung des bereichs
 {
 	shared_ptr< const Lattice > lattice = SIM::getLattice();
 	int i = 0;
-	
+	vector<CPM::CELL_ID> cells;
 	int attempts = 100000;
 	while(i < number_of_cells and attempts > 0)									//solange maximalzahl der knoten nicht erreicht ist setze neue knoten
 	{
@@ -58,21 +58,24 @@ void InitCircle::setRandom()				//zufallsbelegung des bereichs
 	
 		if( lattice->orth_distance( center , lattice->to_orth(newPos)).abs() <= radius )
 		{
-			if(createNode(newPos)){	//wenn centerition im gewünschten bereich, dann setze knoten
+			auto cell = createNode(newPos);
+			if (cell != CPM::NO_CELL) {
+				cells.push_back(cell);
 				i++;
 			}
 		}
 		attempts--;
 		//cout << "i = " << i << endl;
 	}
+	return cells;
 }
 
 //============================================================================
 
-void InitCircle::setRegular()			//gleichmäßige belegung des bereichs
+vector<CPM::CELL_ID> InitCircle::setRegular()			//gleichmäßige belegung des bereichs
 {
 	int i_lines = calculateLines();				//berechnung der bahnkreise
-
+	vector<CPM::CELL_ID> cells;
 	double dist_lines = double(radius / i_lines);	//abstand der bahnen
 	double allCircuit = 0.0;
 	shared_ptr<const Lattice> lattice = SIM::getLattice();
@@ -88,7 +91,9 @@ void InitCircle::setRegular()			//gleichmäßige belegung des bereichs
 	}
 	cells_per_circuit.back() += number_of_cells - accumulate(cells_per_circuit.begin(),cells_per_circuit.end(), 0 );
 
-	createNode(lattice->from_orth(center));
+	auto cell = createNode(lattice->from_orth(center));
+	if (cell != CPM::NO_CELL)
+		cells.push_back(cell);
 	
 	for(int i = 1; i <= i_lines; i++)			//berechnung der knotencenteritionen auf den kreisbahnen
 	{
@@ -99,28 +104,31 @@ void InitCircle::setRegular()			//gleichmäßige belegung des bereichs
 			
 			newPos.x += cos(alpha) * radius;
 			newPos.y += sin(alpha) * radius;
-			createNode(lattice->from_orth(newPos));
+			cell = createNode(lattice->from_orth(newPos));
+			if (cell != CPM::NO_CELL)
+				cells.push_back(cell);
 		}
 	}
+	return cells;
 }
 
 //============================================================================
 
-bool InitCircle::createNode(VINT newPos)
+CPM::CELL_ID InitCircle::createNode(VINT newPos)
 {
 	if(CPM::getNode(newPos) == CPM::getEmptyState())
 	{
 		CPM::CELL_ID newID = celltype->createCell();
 		if (!CPM::setNode(newPos, newID))  {
 			celltype->removeCell(newID);
-			return false;
+			return CPM::NO_CELL;
 		}
-		return true;
+		return newID;
 	}
 	else
 	{
 // 		cout << " - creating cell at " << newPos << " FAILED" << endl;
-		return false;
+		return CPM::NO_CELL;
 	}
 }
 

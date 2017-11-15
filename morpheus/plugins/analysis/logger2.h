@@ -450,7 +450,7 @@ private:
 	FileSeparation file_separation;
 	string file_basename;
 	string file_extension;
-	map<string,shared_ptr<ofstream> > files_opened;
+	set<string> files_opened;
 	
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> header;
 	PluginParameter2<string, XMLNamedValueReader, DefaultValPolicy> separator;
@@ -461,7 +461,7 @@ private:
 	PluginParameter2<FileSeparation, XMLNamedValueReader, DefaultValPolicy> xml_file_separation;
 	PluginParameter2<OutputFormat, XMLNamedValueReader, OptionalPolicy> xml_file_format;
 		
-	ofstream& getOutFile(const SymbolFocus& f, string symbol = "");
+	unique_ptr<ofstream> getOutFile(const SymbolFocus& f, string symbol = "");
 	void writeCSV();
 	void writeMatrix();
 	void writeMatrixColHeader(FocusRange range, ofstream& fs);
@@ -505,6 +505,7 @@ protected:
 	PluginParameter2<Terminal, XMLNamedValueReader, DefaultValPolicy> terminal;
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> logcommands;
 	PluginParameter2<double, XMLValueReader, OptionalPolicy> time_step;
+	PluginParameter2<string, XMLValueReader, OptionalPolicy> title;
 	double last_plot_time;
 	uint plot_num;
 	

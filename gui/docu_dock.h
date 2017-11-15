@@ -14,7 +14,14 @@
 
 #include "config.h"
 #include "nodecontroller.h"
-#include "QtWebKit/QWebView"
+#include <QtNetwork/QNetworkAccessManager>
+
+#ifdef MORPHEUS_NO_QTWEBKIT
+#include <QTextBrowser>
+#warning Compiling without QtWebKit
+#else 
+#include <QtWebKit/QWebView>
+#endif
 
 class DocuDock : public QDockWidget
 {
@@ -43,12 +50,16 @@ private:
 	QAction *b_back, *b_forward;
     QHelpEngine* help_engine;
 	QSplitter* splitter;
+#ifdef MORPHEUS_NO_QTWEBKIT
+	QTextBrowser* help_view;
+#else
 	QWebView* help_view;
+#endif
 	QTimer *timer;
 	QTreeView* toc_widget;
 	QSortFilterProxyModel* toc_model;
 	QModelIndex modules_index, MorpheusML_index;
-	
+	QNetworkAccessManager* hnam ;
 	bool root_reset;
 	
 // 	QListWidget*  index_view;

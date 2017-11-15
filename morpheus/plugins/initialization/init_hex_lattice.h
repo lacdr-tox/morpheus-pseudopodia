@@ -41,7 +41,7 @@ private:
 public:
 	InitHexLattice(){};
 	DECLARE_PLUGIN("InitHexLattice");
-	bool run(CellType* ct) override;
+	vector<CPM::CELL_ID> run(CellType* ct) override;
 	void loadFromXML(const XMLNode) override;
 };
 

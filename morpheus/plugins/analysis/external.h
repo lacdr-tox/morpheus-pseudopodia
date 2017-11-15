@@ -23,30 +23,12 @@ Commands are executed via shell, which means that .bashrc or .profile are read.
 
 To customize the environment, one can set (override) environmental variables (e.g. $PATH).
 
-One can run the shell command in a separate thread in which case the command is simply appended with '&' to fork the process.
-
 Use "%" (percentage) to provide global symbols as arguments in the script. For instance the substring "%time" will be replaced with the current time.
 
 Stdout and sdterr are written to the file "external_output.txt" and "external_error.txt"
 
-- \b separate-thread: Execute process as a fork (appends '&').
-\brief Execute external shell script
-
-\section Description
-
-Executes shell command periodically or at the end of simulation, e.g. to perform analysis using external command line tools. 
-
-Commands are executed via shell, which means that .bashrc or .profile are read.
-
-To customize the environment, one can set (override) environmental variables (e.g. $PATH).
-
-One can run the shell command in a separate thread in which case the command is simply appended with '&' to fork the process.
-
-Use "%" (percentage) to provide global symbols as arguments in the script. For instance the substring "%time" will be replaced with the current time.
-
-Stdout and sdterr are written to the file "external_output.txt" and "external_error.txt"
-
-- \b separate-thread: Execute process as a fork (appends '&').
+- \b detach: Run the process in the background while continuing simulation. Note that **timeout** is the maximum time the command may run after the simulation finished.
+- \b timeout: Timeout for running the external process. Defaults to 30 seconds. (Only applicable with \b detach enabled)
 - \b Command: Executable shell command, e.g. "tail -n 1 logger.txt" or "python analysis.py"
 - \b Environment: variable/value, e.g. PATH=\usr\local\bin
 
@@ -73,7 +55,7 @@ Provide the current time as argument to a python script
 </External>
 \endverbatim
 
-Execute script in a separate thread. This is identical to appending the shell fork command '&'.
+Execute script along the simulation in a background process.
 \verbatim
 <External time-step="100" separate-thread="true">
 	<Command string="python /home/USER/scripts/analysis.py">
@@ -82,7 +64,7 @@ Execute script in a separate thread. This is identical to appending the shell fo
 */
 
 /**
-    @author Walter de Back
+    @author Walter de Back, Jörn Starruß
 */
 
 #ifndef EXTERNAL_H
@@ -91,23 +73,35 @@ Execute script in a separate thread. This is identical to appending the shell fo
 #include <core/interfaces.h>
 #include <core/simulation.h>
 #include <core/plugin_parameter.h>
-#include <plugins/analysis/subprocess.hpp>
+#include "tiny-process/process.hpp"
+#include <thread>
+
+struct DetachedProcess {
+	enum { RUNNING, KILLED, FINISHED } state;
+	int return_code;
+	shared_ptr<TinyProcessLib::Process> process;
+};
 
 class External : public AnalysisPlugin
 {
 
 private:
-	string command_orig;
 	map<string, string> environvars; // environmental variables
-	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> fork; // run shell command in separate thread
+	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> detach; // run shell command in separate thread
+	PluginParameter2<int, XMLValueReader, DefaultValPolicy> timeout; // run shell command in separate thread
+	PluginParameter2<string, XMLValueReader, RequiredPolicy> command_orig;
 
 	bool replace_symbols; // to replace global symbols indicated with %, e.g. %time
 	string update_command(string command);
+	static int instance_counter;
+	int instance_id;
+	list< shared_ptr<DetachedProcess> > detached_processes;
 public:
     DECLARE_PLUGIN("External");
     External();
+	~External();
 
-    virtual void loadFromXML(const XMLNode  override);
+    virtual void loadFromXML(const XMLNode xNode) override;
     virtual void init(const Scope* scope) override;
     /// record cell positions
     virtual void analyse(double time) override;

@@ -52,7 +52,7 @@ private:
 public:
 	InitVoronoi(){};
 	DECLARE_PLUGIN("InitVoronoi");
-	bool run(CellType* ct) override;
+	vector<CPM::CELL_ID> run(CellType* ct) override;
 
 };
 

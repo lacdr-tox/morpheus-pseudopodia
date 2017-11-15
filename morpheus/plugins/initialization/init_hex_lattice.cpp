@@ -19,7 +19,7 @@ void InitHexLattice::loadFromXML(const XMLNode node)
 
 }
 
-bool InitHexLattice::run(CellType* ct)
+vector<CPM::CELL_ID> InitHexLattice::run(CellType* ct)
 {
 	shared_ptr<const Lattice> lattice = SIM::getLattice();
 	
@@ -28,7 +28,7 @@ bool InitHexLattice::run(CellType* ct)
 	if( lattice->size().x % 91 > 1e-6 || lattice->size().y % 91 > 1e-6    )
 		throw MorpheusException("InitHexLattice: This plugin requires a hexagonal lattice of size (91,91,1) or a multiple thereof.", stored_node);
 		
-	
+	vector<CPM::CELL_ID> cells;
 	int nbh_order = 11;
 	vector<VINT> nbh = lattice->getNeighborhoodByOrder( nbh_order ).neighbors();
 	cout << "nbh_order : " << nbh_order << ", size: " << nbh.size() << endl;
@@ -52,8 +52,9 @@ bool InitHexLattice::run(CellType* ct)
 				center.y += getRandom01()*randomness();
 				cout << "Randomness: " << center << endl;
 			}
-			cout << x << "\t" << y << " --> \t" << center << endl;
+// 			cout << x << "\t" << y << " --> \t" << center << endl;
 			CPM::CELL_ID id1 = makeCell(center, nbh, ct);
+			cells.push_back(id1);
 		}
 	}
 
@@ -71,44 +72,25 @@ bool InitHexLattice::run(CellType* ct)
 				center = origin2 + VINT(16*x-6*y, (12-1)*y+x, 0);
 			else
 				center = origin2 + VINT(17*x-5*y, (12-1)*y-x, 0);
-			if( randomness.isDefined() )
+			if( randomness.isDefined() ) {
 				center.x += getRandom01()*randomness();
 				center.y += getRandom01()*randomness();
+			}
 			cout << x << "\t" << y << " --> \t" << center << endl;
 			CPM::CELL_ID id1 = makeCell(center, nbh, ct);
+			cells.push_back(id1);
 		}
 	}
 
 	// remove empty cells
-	vector<CPM::CELL_ID> cellids = ct->getCellIDs();
-	for(auto &id : cellids){
-		if( CPM::getCell( id ).getNodes().size() == 0 )
+	for(auto &id : cells){
+		if( CPM::getCell( id ).getNodes().size() == 0 ){
 			ct->removeCell( id );
+			cells.erase(std::remove(cells.begin(), cells.end(), id));
+		}
 	}
 
-	return true;
-// 	center += VINT(6, 5, 0);
-// 	CPM::CELL_ID id2 = makeCell(center, nbh, ct);
-// 	
-// 	const map<CPM::CELL_ID,uint>& interfaces = CPM::getCell( id1 ).getInterfaces();
-// 	uint interface_length = 0;
-// 	for( auto i : interfaces )
-// 		interface_length += i.second;
-// 	cout << "INTERFACE LENGTH = " << interface_length << endl;
-
-		
-// 	uint cell_count = 0;
-// 	for(int y=0; y < lattice->size().y; y++){
-// 		for(int x=0; x < lattice->size().x; x++){
-// 			CPM::CELL_ID ID = ct->createCell();
-// 			cout << ID << ":\t" << x << "\t" << y << "\n";
-// 			//if( CPM::setNode(VINT(x,y,z), ID) ){
-// 				//cout << "InitHexLattice: Cell " <<  ID << " -> " << VINT(x,y,z) << "\n";
-// 				cell_count++;
-// 			//}
-// 		}
-// 	}
-// 	cout << "InitHexLattice: " << cell_count << " cells created." << endl;
+	return cells;
 }
 
 CPM::CELL_ID InitHexLattice::makeCell(VINT pos, vector<VINT> nbh, CellType* ct){

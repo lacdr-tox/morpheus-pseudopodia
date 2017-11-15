@@ -171,6 +171,7 @@ public:
 	int getIsolines() { if( isolines.isDefined() ) return isolines.get(); else return 0;}
 	const string& getDescription() const;
 	string getValueRange() const;
+	int getCoarsening() const;
 	
 	string getColorMap() const;
 	
@@ -232,7 +233,7 @@ class CellPainter  {
 		
 
 		
-		uint z_level; // denotes the z level to slice a 3d simulation
+		int z_level; // denotes the z level to slice a 3d simulation
 		float min_val, max_val;
 		static const float transparency_value;
 		static bool same_cell ( const CPM::STATE& a, const CPM::STATE& b) { return ( a.cell_id == b.cell_id && a.super_cell_id == b.super_cell_id); };
@@ -265,6 +266,7 @@ class CellPainter  {
 		const string& getDescription() const;
 		void writeCellLayer(ostream& out);
 		DataLayout getDataLayout();
+		void setDataLayout(CellPainter::DataLayout layout);
 		vector<CellPainter::CellBoundarySpec> getCellBoundaries();
 		string getPaletteCmd();
 		static float getTransparentValue() { return transparency_value; };
@@ -320,7 +322,7 @@ class Gnuplotter : public AnalysisPlugin
 		PluginParameter2<Terminal,XMLNamedValueReader,DefaultValPolicy> terminal;
 		PluginParameter2<VINT,XMLValueReader,OptionalPolicy> terminal_size;
 		PluginParameter2<double,XMLValueReader,OptionalPolicy> cell_opacity;
-		PluginParameter2<double,XMLValueReader,DefaultValPolicy> pointsize;
+// 		PluginParameter2<double,XMLValueReader,DefaultValPolicy> pointsize;
 		
 		struct TerminalSpec {
 			string name;

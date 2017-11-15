@@ -6,11 +6,7 @@
 
 James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: Why Do Certain Circuits Oscillate?, Cell 144, p874-885. http://dx.doi.org/10.1016/j.cell.2011.03.006</Details>
     </Description>
-    <Global>
-        <Constant symbol="CDK1" value="0.0"/>
-        <Constant symbol="APC" value="0.0"/>
-        <Constant symbol="Plk1" value="0.0"/>
-    </Global>
+    <Global/>
     <Space>
         <Lattice class="hexagonal">
             <Size symbol="size" value="250 250 0"/>
@@ -60,7 +56,7 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
             <Property symbol="cc" value="1" name="cellcount"/>
             <Property symbol="Vt" value="25000" name="Target volume"/>
             <VolumeConstraint target="Vt" strength="1"/>
-            <SurfaceConstraint target="1.0" strength="1"/>
+            <SurfaceConstraint target="1.0" mode="aspherity" strength="1"/>
             <Event>
                 <Condition>CDK1&lt;0.2</Condition>
                 <Rule symbol-ref="c">
@@ -105,7 +101,7 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
             <InitCellObjects mode="order">
                 <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
                     <Object>
-                        <Sphere radius="40" center="125 125 0"/>
+                        <Sphere radius="40" center="125 100 0"/>
                     </Object>
                 </Arrangement>
             </InitCellObjects>
@@ -162,6 +158,9 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
                     </Color-bar>
                 </Plot>
             </Plots>
+            <Restriction>
+                <Celltype celltype="cells"/>
+            </Restriction>
         </Logger>
     </Analysis>
 </MorpheusModel>

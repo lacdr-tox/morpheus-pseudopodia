@@ -787,7 +787,6 @@ QVariant MorphModel::data(const QModelIndex &index, int role) const {
 					text_node = node->firstChild("Expression");
 					if (text_node) {
 						val = text_node->getText();
-						val;
 						if (val.length() > 100 )
 							val = val.left(96) + " ...";
 					}
@@ -800,7 +799,6 @@ QVariant MorphModel::data(const QModelIndex &index, int role) const {
 						val = text_node->getText().left(96) + " ...";
 					else
 						val = text_node->getText();
-					val;
 				}
 				else if (value) {
 					val = value->get();
@@ -1220,8 +1218,6 @@ void MorphModel::removePart(int idx) {
 
 void MorphModel::loadModelParts() {
 
-	int current_order_id = -1;
-	bool need_resort = true;
 	const QList<nodeController* >& xml_parts = rootNodeContr->getChilds();
 	QMap<QString, nodeController*> named_xml_parts;
 	for (auto part : xml_parts) named_xml_parts[part->getName()] = part;

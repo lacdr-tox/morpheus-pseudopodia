@@ -590,7 +590,7 @@ public:
 		}
 		catch (string e) {
 			auto tokens = tokenize(xml_path,"/");
-			tokens.pop_back();
+			if (!tokens.empty()) tokens.pop_back();
 			throw (MorpheusException(e, getXMLPath(stored_node)+"/"+join(tokens,"/")));
 		}
 	}
@@ -601,7 +601,7 @@ public:
 		try { XMLValueInterpreter<T, RequirementPolicy>::init();}
 		catch (string e) {
 			auto tokens = tokenize(xml_path,"/");
-			tokens.pop_back();
+			if (!tokens.empty()) tokens.pop_back();
 			throw (MorpheusException(e, getXMLPath(stored_node)+"/"+join(tokens,"/")));
 		}
 	};
@@ -658,7 +658,7 @@ class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPoli
 					catch (...) {
 						// "something went rong"
 						type = Type::Undef;
-						throw string("Can't evaluate ") + string_val + " and convert string";
+						throw string("Can't evaluate ") + string_val + " and convert to string";
 					}
 				}
 			}
@@ -691,6 +691,8 @@ class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPoli
 					case Type::VD :
 						out << this->vdouble_expr.get(f);
 						return out.str();
+					default:
+						throw string("Can't evaluate ") + string_val + " and convert to string";
 				}
 			}
 			catch (const SymbolError& e) {

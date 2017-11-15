@@ -44,12 +44,12 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
     <CellTypes>
         <CellType class="biological" name="amoeba">
             <VolumeConstraint target="2500" strength="50"/>
-            <SurfaceConstraint target="0.9" strength="5"/>
+            <SurfaceConstraint target="0.9" mode="aspherity" strength="5"/>
             <Protrusion field="act" maximum="200" strength="80"/>
             <ConnectivityConstraint/>
         </CellType>
         <CellType class="medium" name="medium"/>
-        <CellType class="biological" name="obstable">
+        <CellType class="biological" name="obstacle">
             <FreezeMotion>
                 <Condition>1</Condition>
             </FreezeMotion>
@@ -59,6 +59,7 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
         <Interaction>
             <Contact type1="amoeba" type2="medium" value="140"/>
             <Contact type1="medium" type2="medium" value="0"/>
+            <Contact type1="amoeba" type2="obstacle" value="140"/>
         </Interaction>
         <MonteCarloSampler stepper="edgelist">
             <MCSDuration value="1"/>
@@ -98,7 +99,7 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
         </Population>
     </CellPopulations>
     <Analysis>
-        <Gnuplotter time-step="250" interpolation="false" decorate="false">
+        <Gnuplotter time-step="250" decorate="false">
             <Terminal opacity="0.2" name="png"/>
             <Plot>
                 <Cells value="cell.id">

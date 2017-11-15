@@ -46,7 +46,7 @@ void InitCellObjects::loadFromXML(const XMLNode node)	//einlesen der daten aus d
 	}
 }
 
-bool InitCellObjects::run(CellType* ct)
+vector<CPM::CELL_ID> InitCellObjects::run(CellType* ct)
 {
 	lattice = SIM::getLattice();
 	for(int n = 0; n < cellobjects.size() ; n++){
@@ -57,6 +57,7 @@ bool InitCellObjects::run(CellType* ct)
 
 	int i = setNodes(ct);
 	int unset =0;
+	vector<CPM::CELL_ID> cells;
 	for(int n = 0; n < cellobjects.size() ; n++){
 		uint cellsize = ct->getCell(cellobjects[n].id).getNodes().size();
 // 		cout << "CellObject " << n << " (" << ct->getName() << "), size = " << cellsize << endl;
@@ -66,9 +67,12 @@ bool InitCellObjects::run(CellType* ct)
 			ct->removeCell( cellobjects[n].id );
 			unset++;
 		}
+		else  {
+			cells.push_back(cellobjects[n].id);
+		}
 	}
 	cout << "InitCellObject: Added " <<  cellobjects.size() - unset << " cell(s), occupying " << i << " nodes" << endl;
-	return true;
+	return cells;
 }
 
 

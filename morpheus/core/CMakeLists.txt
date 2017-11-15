@@ -78,9 +78,9 @@ IF (MORPHEUS_STATIC_BUILD)
 	SET_TARGET_PROPERTIES(${SIMULATOR_EXEC_NAME} PROPERTIES LINK_SEARCH_END_STATIC 1)
 ENDIF()
 
-TARGET_LINK_LIBRARIES(${SIMULATOR_EXEC_NAME} ${ZLIB_LIBRARY} ${TIFF_LIBRARY} xmlParser gnuplot_interface)
+TARGET_LINK_LIBRARIES(${SIMULATOR_EXEC_NAME} ${ZLIB_LIBRARY} ${TIFF_LIBRARY} xmlParser gnuplot_interface tiny-process-library)
 
-IF (EXISTS ${GRAPHVIZ_GRAPH_LIBRARY})
+IF (EXISTS "${GRAPHVIZ_GRAPH_LIBRARY}")
 	TARGET_LINK_LIBRARIES(${SIMULATOR_EXEC_NAME} ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_GRAPH_LIBRARY} )
 ELSE()
 	TARGET_LINK_LIBRARIES(${SIMULATOR_EXEC_NAME} ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_CGRAPH_LIBRARY} )
@@ -113,6 +113,12 @@ ENDIF()
 # Installation of the program
 IF  ( "${MORPHEUS_OS}" STREQUAL "WIN32")
 	INSTALL(TARGETS ${SIMULATOR_EXEC_NAME} RUNTIME DESTINATION . COMPONENT morpheus )
+	find_library(LIB_STDCXX "libstdc++-6" )
+	find_library(LIB_GCC_S_DW2 "libgcc_s_dw2-1")
+	find_library(LIB_OPENMP "libgomp-1")
+	find_library(LIB_PTHREAD "pthreadGC-3")
+	INSTALL( FILES ${LIB_STDCXX} ${LIB_GCC_S_DW2} ${LIB_OPENMP} ${LIB_PTHREAD} DESTINATION . )
+	
 	IF (GRAPHVIZ_FOUND)
 		SET(GRAPHVIZ_RUNTIME
 			${GRAPHVIZ_ROOT}/bin/config6
@@ -134,35 +140,37 @@ IF  ( "${MORPHEUS_OS}" STREQUAL "WIN32")
 		)
 		INSTALL(FILES ${GRAPHVIZ_RUNTIME} DESTINATION . COMPONENT GraphViz)
 	ENDIF()
-	IF (GNUPLOT_ROOT)
-		message(STATUS "Gnuplot Path is ${GNUPLOT_ROOT}")
-		SET(GNUPLOT_LIBRARIES 
-			${GNUPLOT_ROOT}/freetype6.dll
-			${GNUPLOT_ROOT}/intl.dll
-			${GNUPLOT_ROOT}/libcairo-2.dll
-			${GNUPLOT_ROOT}/libexpat-1.dll
-			${GNUPLOT_ROOT}/libfontconfig-1.dll
-			${GNUPLOT_ROOT}/libgd-2-733361a31aab.dll
-			${GNUPLOT_ROOT}/libglib-2.0-0.dll
-			${GNUPLOT_ROOT}/libgmodule-2.0-0.dll
-			${GNUPLOT_ROOT}/libgobject-2.0-0.dll
-			${GNUPLOT_ROOT}/libgthread-2.0-0.dll
-			${GNUPLOT_ROOT}/libiconv-2.dll
-			${GNUPLOT_ROOT}/libjpeg-8.dll
-			${GNUPLOT_ROOT}/libpango-1.0-0.dll
-			${GNUPLOT_ROOT}/libpangocairo-1.0-0.dll
-			${GNUPLOT_ROOT}/libpangoft2-1.0-0.dll
-			${GNUPLOT_ROOT}/libpangowin32-1.0-0.dll
-			${GNUPLOT_ROOT}/libpng14-14.dll
-			${GNUPLOT_ROOT}/lua51.dll
-			${GNUPLOT_ROOT}/wxbase28_gcc_custom.dll
-			${GNUPLOT_ROOT}/wxmsw28_core_gcc_custom.dll
-			${GNUPLOT_ROOT}/zlib1.dll
-		)
-		INSTALL(FILES ${GNUPLOT_LIBRARIES} DESTINATION . COMPONENT GnuPlot)
-		INSTALL(FILES ${GNUPLOT_ROOT}/gnuplot.exe DESTINATION . COMPONENT GnuPlot)
+	
+	SET(GNUPLOT_ROOT "" CACHE PATH "Set root directory to search for Gnuplot" )
+	MARK_AS_ADVANCED(GNUPLOT_ROOT)
+	
+	message(STATUS "Gnuplot Path is ${GNUPLOT_ROOT}")
+	SET(GNUPLOT_LIBRARIES 
+		${GNUPLOT_ROOT}/freetype6.dll
+		${GNUPLOT_ROOT}/intl.dll
+		${GNUPLOT_ROOT}/libcairo-2.dll
+		${GNUPLOT_ROOT}/libexpat-1.dll
+		${GNUPLOT_ROOT}/libfontconfig-1.dll
+		${GNUPLOT_ROOT}/libgd-2-733361a31aab.dll
+		${GNUPLOT_ROOT}/libglib-2.0-0.dll
+		${GNUPLOT_ROOT}/libgmodule-2.0-0.dll
+		${GNUPLOT_ROOT}/libgobject-2.0-0.dll
+		${GNUPLOT_ROOT}/libgthread-2.0-0.dll
+		${GNUPLOT_ROOT}/libiconv-2.dll
+		${GNUPLOT_ROOT}/libjpeg-8.dll
+		${GNUPLOT_ROOT}/libpango-1.0-0.dll
+		${GNUPLOT_ROOT}/libpangocairo-1.0-0.dll
+		${GNUPLOT_ROOT}/libpangoft2-1.0-0.dll
+		${GNUPLOT_ROOT}/libpangowin32-1.0-0.dll
+		${GNUPLOT_ROOT}/libpng14-14.dll
+		${GNUPLOT_ROOT}/lua51.dll
+		${GNUPLOT_ROOT}/wxbase28_gcc_custom.dll
+		${GNUPLOT_ROOT}/wxmsw28_core_gcc_custom.dll
+		${GNUPLOT_ROOT}/zlib1.dll
+	)
+	INSTALL(FILES ${GNUPLOT_LIBRARIES} DESTINATION . COMPONENT GnuPlot)
+	INSTALL(FILES ${GNUPLOT_ROOT}/gnuplot.exe DESTINATION . COMPONENT GnuPlot)
 		
-	ENDIF()
 ELSE()
 	INSTALL(TARGETS ${SIMULATOR_EXEC_NAME} RUNTIME DESTINATION bin COMPONENT morpheus )
 ENDIF()

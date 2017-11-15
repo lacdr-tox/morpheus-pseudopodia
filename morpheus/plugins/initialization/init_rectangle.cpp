@@ -24,13 +24,15 @@ InitRectangle::InitRectangle() {
 	registerPluginParameter( size_eval );
 };
 
-bool InitRectangle::run(CellType* ct)
+vector<CPM::CELL_ID> InitRectangle::run(CellType* ct)
 {
+	vector<CPM::CELL_ID> cells;
 	SymbolFocus global_focus = SymbolFocus();
 	number_of_cells = numcells( global_focus );
 	origin = origin_eval( global_focus );
 	size   = size_eval( global_focus );
 	shared_ptr<const Lattice> lattice = SIM::getLattice();
+	
 	
 	cout << "InitRectangle: number of cells = " << number_of_cells << ", origin = " << origin << ", size = " << size << endl;
 
@@ -56,41 +58,40 @@ bool InitRectangle::run(CellType* ct)
 	
 	switch( mode() ){
 		case InitRectangle::RANDOM:
-			setRandom();
+			return setRandom();
 			break;
 		case InitRectangle::REGULAR:
-			setRegular();
+			return setRegular();
 			break;
 		default:
 			cout << "no type defined" << endl;
-			break;
+			return vector<CPM::CELL_ID>();
 	}
-	return true;
 }
 
 
 //============================================================================
 
-bool InitRectangle::createCell(VINT newPos)
+CPM::CELL_ID InitRectangle::createCell(VINT newPos)
 {
 	if(CPM::getLayer()->get(newPos) == CPM::getEmptyState() && CPM::getLayer()->writable(newPos))
 	{
 		uint newID = celltype->createCell();
 		CPM::setNode(newPos, newID);
 		//cout << " - creating cell " <<  ct->getCell(newID).getName() << endl;
-		return true;
+		return newID;
 	}
 	else // position is already occupied
 	{
-		return false;
+		return CPM::NO_CELL;
 	}
 }
 
 //============================================================================
 
-void InitRectangle::setRandom()			//zufallsbelegung des angegebenen bereichs
+vector<CPM::CELL_ID> InitRectangle::setRandom()			//zufallsbelegung des angegebenen bereichs
 {
-	uint created_cells=0;
+	vector<CPM::CELL_ID> cells;
 	for(uint i=0; i < number_of_cells; i++){
 
 		int rnd_x = origin.x +  getRandomUint( size.x );
@@ -99,26 +100,28 @@ void InitRectangle::setRandom()			//zufallsbelegung des angegebenen bereichs
 		
 		VINT newPos(rnd_x, rnd_y, rnd_z);
 		//= SIM::findEmptyCPMNode(origin,size); // zufallige leere Position im Gitter
-		if ( createCell(newPos) ) created_cells++;
+		auto new_cell = createCell(newPos);
+		if ( new_cell != CPM::NO_CELL)
+			cells.push_back(new_cell);
 	
 	}
-	cout << "successfully created " << created_cells << " cells." << endl;
-	if (created_cells < number_of_cells) {
-		cout << "failed to create " << number_of_cells - created_cells << " cells." << endl;
+	cout << "successfully created " << cells.size() << " cells." << endl;
+	if (cells.size() < number_of_cells) {
+		cout << "failed to create " << number_of_cells - cells.size() << " cells." << endl;
 		
 	}
-	
+	return cells;
 }
 
 //============================================================================
 
-void InitRectangle::setRegular()
+vector<CPM::CELL_ID> InitRectangle::setRegular()
 {
+	vector<CPM::CELL_ID> cells;
 	vector<double> vec_ids, vec_lines;	//koordinaten der knoten
 	int i_lines, i_hlines, i_dlines, zeile, spalte, reihe;	//anzahl der linien, nummer der zeile, reihe und spalte
 
 	shared_ptr<const Lattice> l = SIM::getLattice();
-	uint created_cells=0;
 
 	if (l->getDimensions() == 1) {
 		double cell_distance = double (size.x) / (number_of_cells);
@@ -133,8 +136,10 @@ void InitRectangle::setRegular()
 			if(random_displacement( SymbolFocus() ) != 0.0){
                 newPos.x += getRandom01() * random_displacement( SymbolFocus() ) - random_displacement( SymbolFocus() )/2 ;
 			}
-
-			created_cells += createCell(l->from_orth(newPos));
+			
+			auto new_cell = createCell(l->from_orth(newPos));
+			if ( new_cell != CPM::NO_CELL)
+				cells.push_back(new_cell);
 		}
 	}
 	if (l->getDimensions() == 2)	// wenn "2D", dann...
@@ -160,7 +165,9 @@ void InitRectangle::setRegular()
                 newPos.z += 0;
 			}
 			
-			created_cells += createCell(l->from_orth(newPos));
+			auto new_cell = createCell(l->from_orth(newPos));
+			if ( new_cell != CPM::NO_CELL)
+				cells.push_back(new_cell);
 		}
 
 	}
@@ -202,15 +209,17 @@ void InitRectangle::setRegular()
                 newPos.z += 0;
             }
 
-			created_cells += createCell(newPos + offset);
+			auto new_cell = createCell(l->from_orth(newPos + offset));
+			if ( new_cell != CPM::NO_CELL)
+				cells.push_back(new_cell);
 		}
 	}
 	
-	cout << "successfully created " << created_cells << " cells." << endl;
-	if (created_cells < number_of_cells) {
-		cout << "failed to create " << number_of_cells - created_cells << " cells." << endl;
+	cout << "successfully created " << cells.size() << " cells." << endl;
+	if (cells.size() < number_of_cells) {
+		cout << "failed to create " << number_of_cells - cells.size() << " cells." << endl;
 	}
-	
+	return cells;
 }
 
 //============================================================================

@@ -156,9 +156,12 @@ const Neighborhood& getSurfaceNeighborhood()
 	return surface_neighborhood;
 }
 
+void setInteractionSurface(bool enabled) {
+	surface_everywhere = enabled;
+}
 
 bool isSurface(const VINT& pos) {
-	return edgeTracker->has_surface(pos);
+	return surface_everywhere ? true : edgeTracker->has_surface(pos);
 }
 
 uint nSurfaces(const VINT& pos) {
@@ -182,13 +185,23 @@ void loadFromXML(XMLNode xMorph) {
 	else if (SIM::lattice().getStructure() == Lattice::linear)
 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
 	
+	if ( surface_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && surface_neighborhood.order()>5)) {
+		throw string("Default neighborhood is too large for estimation of cell surface nodes");
+	}
+	
 	if ( ! xMorph.getChildNode("CPM").isEmpty() ) {
 		xCPM = xMorph.getChildNode("CPM");
 		try {
-		// CPM Cell representation requires the definition of the CPM ShapeSurface for shape length estimations
-		boundary_neighborhood = SIM::lattice().getNeighborhood(xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood"));
-		CPMShape::boundaryNeighborhood = boundary_neighborhood;
-		} catch (string e) { throw MorpheusException(e, xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood")); }
+			// CPM Cell representation requires the definition of the CPM ShapeSurface for shape length estimations
+			boundary_neighborhood = SIM::lattice().getNeighborhood(xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood"));
+			if ( boundary_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && boundary_neighborhood.order()>5)) {
+				throw string("Shape neighborhood is too large");
+			}
+			CPMShape::boundaryNeighborhood = boundary_neighborhood;
+		} 
+		catch (string e) { 
+			throw MorpheusException(e, xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood"));
+		}
 		string boundary_scaling;
 		if (getXMLAttribute(xCPM,"ShapeSurface/scaling",boundary_scaling)) {
 			if (boundary_scaling == "none") {
@@ -222,7 +235,6 @@ void loadFromXML(XMLNode xMorph) {
 		cout << "Creating cell layer ";
 		// look for predefined cell names in the medium poulations ...
 		
-		uint i;
 		for (uint i=0;; i++) {
 			if (i == celltypes.size()) {
 				// create a default medium celltype, in case no medium was defined
@@ -289,7 +301,12 @@ void loadFromXML(XMLNode xMorph) {
 		global_update_data.boundary = unique_ptr<StatisticalLatticeStencil>(new StatisticalLatticeStencil(layer, boundary_neighborhood.neighbors()));
 		global_update_data.surface = unique_ptr<LatticeStencil>(new LatticeStencil(layer, surface_neighborhood.neighbors()));
 		if ( ! update_neighborhood.empty() ) {
-			global_update_data.update = unique_ptr<LatticeStencil>(new LatticeStencil(layer, update_neighborhood.neighbors()));
+			if (update_neighborhood.neighbors() == surface_neighborhood.neighbors()) {
+				global_update_data.update = global_update_data.surface;
+			}
+			else {
+				global_update_data.update = make_unique<LatticeStencil>(layer, update_neighborhood.neighbors());
+			}
 			// Setting up the EdgeTracker
 			edgeTracker = shared_ptr<EdgeTrackerBase>(new NoEdgeTracker(layer, update_neighborhood.neighbors(), surface_neighborhood.neighbors()));
 		}
@@ -975,6 +992,7 @@ void init(int argc, char *argv[]) {
 
 	if (cmd_line.find("gnuplot-path") != cmd_line.end()) {
 		Gnuplot::set_GNUPlotPath(cmd_line["gnuplot-path"]);
+		cmd_line.erase(cmd_line.find("gnuplot-path"));
 	}
 	
 	if (cmd_line.find("gnuplot-version") != cmd_line.end()) {
@@ -992,6 +1010,7 @@ void init(int argc, char *argv[]) {
 
 	if (cmd_line.find("symbol-graph") != cmd_line.end()) {
 		generate_symbol_graph_and_exit = true;
+		cmd_line.erase(cmd_line.find("symbol-graph"));
 	}
 	else {
 		generate_symbol_graph_and_exit = false;
@@ -1010,6 +1029,7 @@ void init(int argc, char *argv[]) {
 // TODO Handling missing file( a file parameter must be provided and the file must exist)
 
 	string filename = cmd_line["file"];
+	cmd_line.erase(cmd_line.find("file"));
 
 	struct stat filestatus;
 	int filenotexists = stat( filename.c_str(), &filestatus );
@@ -1231,7 +1251,7 @@ void loadFromXML(const XMLNode xNode) {
 
 	setRandomSeeds(xTime.getChildNode("RandomSeed"));
 	
-	XMLNode xSpace = xNode.getChildNode("Space");
+	xSpace = xNode.getChildNode("Space");
 	
 	getXMLAttribute(xSpace,"SpaceSymbol/symbol",SymbolData::Space_symbol);
 	symbol.link = SymbolData::Space;
@@ -1462,18 +1482,7 @@ void saveToXML() {
 
 	xMorpheusNode.addChild("Description").addChild("Title").addText(fileTitle.c_str());
 
-	XMLNode xSpace = xMorpheusNode.addChild("Space");
-	xSpace.addChild ("SpaceSymbol").addAttribute("symbol",SymbolData::Space_symbol.c_str());
-	
-	XMLNode xLattice = global_lattice->saveToXML();
-	xSpace.addChild(xLattice);
-
-	if( MembraneProperty::getResolution() > 0) {
-		XMLNode xMemSize = xSpace.addChild("MembraneLattice");
-		xMemSize.addAttribute("resolution", to_cstr(MembraneProperty::getResolution()));
-		if (!MembraneProperty::getResolutionSymbol().empty()) 
-			xMemSize.addAttribute("symbol", MembraneProperty::getResolutionSymbol().c_str());
-	}
+	xMorpheusNode.addChild(xSpace);
 	
 	// saving global_scope
 	xMorpheusNode.addChild(xGlobals);
@@ -1536,20 +1545,24 @@ const Lattice& lattice()
 
 
 shared_ptr<PDE_Layer> findPDELayer(string symbol) {
-	if (pde_layers.find(symbol) != pde_layers.end())
+	if (pde_layers.find(symbol) != pde_layers.end()) {
 		return pde_layers[symbol];
-	else 
+	}
+	else {
 		throw string("Unable to locate Field \"") + symbol +"\"";
 		return shared_ptr<PDE_Layer>();
+	}
 }
 
 shared_ptr<VectorField_Layer> findVectorFieldLayer(string symbol)
 {
-	if (vector_field_layers.find(symbol) != vector_field_layers.end())
+	if (vector_field_layers.find(symbol) != vector_field_layers.end()) {
 		return vector_field_layers[symbol];
-	else 
+	}
+	else {
 		throw string("Unable to locate VectorField \"") + symbol +"\"";
 		return shared_ptr<VectorField_Layer>();
+	}
 }
 
 const Scope* getScope() { return current_scope; }

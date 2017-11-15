@@ -745,7 +745,6 @@ bool PDE_Layer::solve_fwd_euler_diffusion_spheric(double time_interval)
 	VINT pos(0,0,0);
 	
 	const valarray<double>& const_data = data;
-	const valarray<double>& const_buffer = write_buffer;
 	
 	// X COARSENING
 	for (pos.y=0; pos.y<l_size.y; pos.y++) {

@@ -378,7 +378,14 @@ void Scope::write_graph(ostream& out, const DepGraphConf& config) const
 	stringstream links;
 	this->write_graph_local_variables(out, links, config);
 	out << "}" << endl;
-	out << links.str();
+	vector<string> link_lines = tokenize(links.str(),"\n");
+	set<string> filter;
+	for (const auto& line : link_lines )  {
+		if ( filter.count(line) == 0 ) {
+			filter.insert(line);
+			out << line << "\n";
+		}
+	}
 	out << "}" << endl;
 
 }

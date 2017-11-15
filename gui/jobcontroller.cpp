@@ -450,11 +450,11 @@ void JobView::previewSelectedFile(const QModelIndex & selected, const QModelInde
 	QImageReader reader;
 	reader.setFileName(file_name);
 	if (! reader.format().isEmpty()) {
-		qDebug() <<  reader.format();
+// 		qDebug() <<  reader.format();
 		QImage image = reader.read();
 		if (!image.isNull() ){
 			imagePreview->scene()->clear();
-			qDebug() << "previewing image: Filename: " << QString(file_name) << " count: " << reader.imageCount();
+// 			qDebug() << "previewing image: Filename: " << QString(file_name) << " count: " << reader.imageCount();
 			QGraphicsPixmapItem* item = new QGraphicsPixmapItem(QPixmap::fromImage(image));
 			item->setTransformationMode(Qt::SmoothTransformation);
 			imagePreview->scene()->addItem(item);

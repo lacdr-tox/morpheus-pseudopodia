@@ -41,7 +41,7 @@ class CellPropertyAccessor {
 		typename TypeInfo<T>::Reference operator()(CPM::CELL_ID cell_id) const;
 	
 	private:
-		mutable T shit_value;
+		mutable T fake_value;
 		const CellType* ct;
 		uint pid;
 		bool is_super_cell_property;
@@ -73,13 +73,13 @@ CellPropertyAccessor<T>::CellPropertyAccessor(const CellType* celltype, uint pro
 
 template <class T>
 typename TypeInfo<T>::Return CellPropertyAccessor<T>::getDefault() const {
-	if (ct==NULL)  { return shit_value = T(); }
+	if (ct==NULL)  { return fake_value = T(); }
 	return static_pointer_cast< Property<T> >(ct->default_properties[pid])->getRef(); 
 }
 
 template <class T>
 typename TypeInfo<T>::Return CellPropertyAccessor<T>::get(CPM::CELL_ID cell_id) const {
-	if (ct==NULL) { return shit_value = T(); }
+	if (ct==NULL) { return fake_value = T(); }
 	if (is_super_cell_property) {
 		// upcast to the supercell
 // 		cout <<  "CellPropertyAccessor: Property " << ct->default_properties[pid]->getSymbol() << " is a property of a SuperCellType !!" << endl;
@@ -100,7 +100,7 @@ typename TypeInfo<T>::Return CellPropertyAccessor<T>::get(CPM::CELL_ID cell_id) 
 
 template <class T>
 typename TypeInfo<T>::Return CellPropertyAccessor<T>::get(VINT pos) const {
-	if (ct==NULL) { return shit_value = T(); }
+	if (ct==NULL) { return fake_value = T(); }
 	const CPM::STATE s = CPM::getNode(pos);
 	if (is_super_cell_property) {
 		const Cell & sc = CPM::getCell(s.super_cell_id);
@@ -116,7 +116,7 @@ typename TypeInfo<T>::Return CellPropertyAccessor<T>::get(VINT pos) const {
 
 template <class T>
 typename TypeInfo<T>::Return CellPropertyAccessor<T>::get(const SymbolFocus& focus) const {
-	if (ct==NULL) { return shit_value =T(); }
+	if (ct==NULL) { return fake_value =T(); }
 	if (is_super_cell_property && focus.cell_index().status != CPM::SUPER_CELL) {
 // 		cout << "Wrapping SC property " << ct->default_properties[pid]->getSymbol() << "; routing from subcell " << cell_id << " to supercell " << index.super_cell_id <<  endl;
 		const Cell & sc = CPM::getCell(focus.cell_index().super_cell_id);
@@ -200,7 +200,7 @@ bool CellPropertyAccessor<T>::swapBuffer() const {
 
 template <class T>
 typename TypeInfo<T>::Reference CellPropertyAccessor<T>::operator()(CPM::CELL_ID cell_id) const {
-	if (ct==NULL) { return shit_value=T(); }
+	if (ct==NULL) { return fake_value=T(); }
 
 	if (is_super_cell_property) {
 		const CPM::INDEX& index = CellType::storage.index(cell_id);

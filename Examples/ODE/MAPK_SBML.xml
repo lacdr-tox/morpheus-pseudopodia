@@ -1,24 +1,18 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="1">
+<MorpheusModel version="3">
     <Description>
         <Title>BIOMD0000000010</Title>
         <Details>Imported SBML model: http://www.ebi.ac.uk/biomodels-main/BIOMD0000000010
         
 Kholodenko BN, Negative feedback and ultrasensitivity can bring about oscillations in the mitogen-activated protein kinase cascades.</Details>
     </Description>
-    <Global>
-        <Constant symbol="MAPK" value="0.0"/>
-        <Constant symbol="MAPK_P" value="0.0"/>
-        <Constant symbol="MAPK_PP" value="0.0"/>
-        <Constant symbol="MKK" value="0.0"/>
-        <Constant symbol="MKK_P" value="0.0"/>
-        <Constant symbol="MKK_PP" value="0.0"/>
-        <Constant symbol="MKKK" value="0.0"/>
-        <Constant symbol="MKKK_P" value="0.0"/>
-    </Global>
+    <Global/>
     <Space>
         <Lattice class="linear">
             <Size symbol="size" value="1 0 0"/>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="space"/>
     </Space>
@@ -93,6 +87,9 @@ Kholodenko BN, Negative feedback and ultrasensitivity can bring about oscillatio
     </CellPopulations>
     <Analysis>
         <Logger time-step="0.001">
+            <Restriction>
+                <Celltype celltype="sbml_ct"/>
+            </Restriction>
             <Input>
                 <Symbol symbol-ref="MAPK"/>
                 <Symbol symbol-ref="MAPK_P"/>

@@ -43,6 +43,7 @@ public:
 	void setCell(CPM::CELL_ID cell_id);
 	void setCell(CPM::CELL_ID cell_id, const VINT& pos);
 	void setPosition(const VINT& pos);
+	bool hasPosition() const { return has_pos; }
 	void setMembrane( CPM::CELL_ID cell_id, const VINT& pos );
 	void unset();
 	bool valid() const { return has_pos || has_cell; }

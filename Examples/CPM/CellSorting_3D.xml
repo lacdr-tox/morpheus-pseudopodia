@@ -117,7 +117,7 @@ Graner and Glazier, Simulation of biological cell sorting using a two-dimensiona
                         <Color value="0" color="white"/>
                     </ColorMap>
                 </Cells>
-                <CellLabels symbol-ref="b" precision="0" fontsize="10"/>
+                <CellLabels precision="0" fontsize="10" value="b"/>
             </Plot>
             <Plot>
                 <Cells per-frame-range="true" value="b2" slice="50">
@@ -127,7 +127,7 @@ Graner and Glazier, Simulation of biological cell sorting using a two-dimensiona
                         <Color value="0" color="white"/>
                     </ColorMap>
                 </Cells>
-                <CellLabels symbol-ref="b2" precision="0" fontsize="10"/>
+                <CellLabels precision="0" fontsize="10" value="b2"/>
             </Plot>
         </Gnuplotter>
         <Logger time-step="10.0">

@@ -1,4 +1,4 @@
-<MorpheusModel version="1">
+<MorpheusModel version="3">
     <Description>
         <Title>Example-PredatorPrey</Title>
         <Details>Example showing Predator-prey model by Rosenzweig.
@@ -47,6 +47,9 @@ Illustrates how to
     <Space>
         <Lattice class="linear">
             <Size symbol="size" value="1, 0, 0"/>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="space"/>
     </Space>

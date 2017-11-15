@@ -30,7 +30,7 @@ Shows the following features of Morpheus:
                 <Condition boundary="y" type="periodic"/>
             </BoundaryConditions>
             <Neighborhood>
-                <Distance>2.5</Distance>
+                <Order>2</Order>
             </Neighborhood>
             <Domain boundary-type="noflux">
                 <Image path="crypt.tif"/>
@@ -49,7 +49,7 @@ Shows the following features of Morpheus:
             <Property symbol="t_d" value="0.0" name="time of division"/>
             <Property symbol="s" value="1" name="stemness"/>
             <VolumeConstraint target="800" strength="1"/>
-            <SurfaceConstraint target="1" strength="1"/>
+            <SurfaceConstraint target="1" mode="aspherity" strength="1"/>
             <ChangeCellType newCellType="TA_cells">
                 <Condition>s==0</Condition>
                 <Triggers/>
@@ -72,7 +72,7 @@ Shows the following features of Morpheus:
             <Property symbol="t_d" value="0" name="time of division"/>
             <Property symbol="d" value="0" name="divisions"/>
             <VolumeConstraint target="600 " strength="1"/>
-            <SurfaceConstraint target="0.9" strength="1"/>
+            <SurfaceConstraint target="0.9" mode="aspherity" strength="1"/>
             <CellDivision daughterID="daughter" division-plane="random">
                 <Condition>time > t_d</Condition>
                 <Triggers>
@@ -87,26 +87,26 @@ Shows the following features of Morpheus:
             <CellDeath>
                 <Condition>if( cell.center.y > size.y - 20, 1, 0)</Condition>
             </CellDeath>
-            <CellReporter name="Count Clone A">
+            <Mapper name="Count Clone A">
                 <Input value="clone==1"/>
                 <Output symbol-ref="num_A" mapping="sum"/>
-            </CellReporter>
-            <CellReporter name="Count Clone B">
+            </Mapper>
+            <Mapper name="Count Clone B">
                 <Input value=" clone==2"/>
                 <Output symbol-ref="num_B" mapping="sum"/>
-            </CellReporter>
-            <CellReporter name="Count Clone C">
+            </Mapper>
+            <Mapper name="Count Clone C">
                 <Input value="clone==3"/>
                 <Output symbol-ref="num_C" mapping="sum"/>
-            </CellReporter>
-            <CellReporter name="Count Clone D">
+            </Mapper>
+            <Mapper name="Count Clone D">
                 <Input value="clone==4"/>
                 <Output symbol-ref="num_D" mapping="sum"/>
-            </CellReporter>
-            <CellReporter name="Count Clone E">
+            </Mapper>
+            <Mapper name="Count Clone E">
                 <Input value="clone==5"/>
                 <Output symbol-ref="num_E" mapping="sum"/>
-            </CellReporter>
+            </Mapper>
         </CellType>
     </CellTypes>
     <CPM>
@@ -150,7 +150,7 @@ Shows the following features of Morpheus:
     </CellPopulations>
     <Analysis>
         <Gnuplotter time-step="250" decorate="false">
-            <Terminal name="png"/>
+            <Terminal size="0, 0, 0" name="png"/>
             <Plot>
                 <Cells value="clone">
                     <ColorMap>
@@ -189,8 +189,8 @@ Shows the following features of Morpheus:
                 <TextOutput/>
             </Output>
             <Plots>
-                <Plot time-step="5000">
-                    <Style point-size="3.0" grid="true" style="linespoints" line-width="3.0"/>
+                <Plot title="Clone numbers" time-step="5000">
+                    <Style point-size="1" grid="true" style="linespoints" line-width="3.0"/>
                     <Terminal terminal="png"/>
                     <X-axis>
                         <Symbol symbol-ref="time"/>

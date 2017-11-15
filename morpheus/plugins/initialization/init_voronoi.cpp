@@ -5,7 +5,7 @@ REGISTER_PLUGIN(InitVoronoi);
 const float InitVoronoi::no_distance = 999999;
 const float InitVoronoi::no_label    = 999999;
 
-bool InitVoronoi::run(CellType* celltype)
+vector<CPM::CELL_ID> InitVoronoi::run(CellType* celltype)
 {
 	shared_ptr<const Lattice> lattice = SIM::getLattice();
 	shared_ptr<const CPM::LAYER> cpm = CPM::getLayer();
@@ -77,7 +77,8 @@ bool InitVoronoi::run(CellType* celltype)
 			} // end of x-loop
 		}// end of y-loop
 	}// end of z-loop
-	return true;
+	// does not create cells
+	return vector<CPM::CELL_ID>();
 }
 
 int InitVoronoi::voronoiLabelling( shared_ptr<Lattice_Data_Layer<double> >& distanceMap, shared_ptr<Lattice_Data_Layer<double> >&maskMap,shared_ptr<Lattice_Data_Layer<double> >& labelMap){

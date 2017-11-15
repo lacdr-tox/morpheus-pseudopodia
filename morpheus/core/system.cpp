@@ -331,9 +331,12 @@ void System<system_type>::init() {
 	context = SymbolData::UnLinked;
 	granularity = Granularity::Undef;
 	uint num_assignments = 0;
-	for (int i=0; i<functionals.size(); i++) {
+	for (uint i=0; i<functionals.size(); i++) {
 			// Check uniform output containers for non-contexted application
 		if (functionals[i]->type == SystemFunc::ODE || functionals[i]->type == SystemFunc::EQU) {
+			if (functionals[i]->global_symbol.isComposite()) {
+				throw string("System: Fatal Error! No methods for composite symbols ...");
+			}
 			num_assignments++;
 			if (context == SymbolData::UnLinked) {
 				context = functionals[i]->global_symbol.getLinkType();
@@ -350,6 +353,9 @@ void System<system_type>::init() {
 			}
 		}
 		else if (functionals[i]->type == SystemFunc::VEQU) {
+			if (functionals[i]->v_global_symbol.isComposite()) {
+				throw string("System: Fatal Error! No methods for composite symbols ...");
+			}
 			num_assignments++;
 			if (context == SymbolData::UnLinked) {
 				context = functionals[i]->v_global_symbol.getLinkType();

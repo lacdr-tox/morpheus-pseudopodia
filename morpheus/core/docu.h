@@ -125,7 +125,29 @@ and may not start with a number.
 The \b name attribute is used for descriptive purpose only. In particular, graph labels will carry this information. You may use latex style super- and subscripts
   * (c_{1})^{2} will become \f$ (c_1)^{2} \f$
 
-\defgroup MathExpressions
+**/
+
+/**
+  \defgroup MathExpressions
+  
+Mathematical expressions to be evaluated during run-time. The vector version uses the 'x,y,z' notation, or -- if available -- the spherical notation 'phi,theta,radius'.
+
+\section Available Operators:
++, -, *, /, ^, =, >=, !=, ==, <, >
+
+\section Functions
+  - Logical:  if([condition], [then], [else]), and, or, xor
+  - Trigonometric: sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh
+  - Exponential: log2, log10, ln, exp, pow, sqrt,
+  - others: sign, rint, abs, min, max, sum, avg, mod
+
+\section Random Random number generators
+  - rand_uni([min], [max])
+  - rand_norm([mean], [stdev])
+  - rand_gamma([shape], [scale])
+  - rand_int([min], [max])
+  - rand_bool()
+
 **/
 
 /**

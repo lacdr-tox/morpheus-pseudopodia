@@ -53,6 +53,7 @@ void Property<double>::init(const Scope* scope, const SymbolFocus& f) {
 	value = 0;
 	initialized = true;
 	
+	
 	auto overrides = scope->valueOverrides();
 	auto it = overrides.find(this->symbolic_name);
 	if ( it != overrides.end()) {
@@ -132,7 +133,7 @@ void DelayProperty::init(const Scope* scope) {
 
 void DelayProperty::init(const Scope* scope, const SymbolFocus& f)
 {
-	cout << "Initializing DelayProperty " << symbolic_name << endl;;
+// 	cout << "Initializing DelayProperty " << symbolic_name << endl;;
 	Property::init(scope, f);
 	setTimeStep(delay);
 	
@@ -142,6 +143,7 @@ void DelayProperty::init(const Scope* scope, const SymbolFocus& f)
 		registerOutputSymbol(this->getSymbol(), scope);
 		tsl_initialized = true;
 	}
+	initialized = true;
 }
 
 
@@ -154,11 +156,15 @@ void DelayProperty::setTimeStep(double t)
 	}
 	else {
 		assert(t<=delay);
-		if ( abs(delay/t - rint(delay/t)) > 0.01 ) {
-			throw string("Time Stepping override (") + to_str(t) + ") for DelayProperty " +  symbolic_name + " is not an integer fraction of the time delay ("  + to_str(delay)  + ").";
-			exit(-1);
-		}
-		queue_length = max(int(rint(delay/t)),1);
+		queue_length = floor(delay/t);
+		t = delay / queue_length;
+		queue_length += 1; // need one more storage locations than intervals;
+		
+// 		if ( abs(delay/t - rint(delay/t)) > 0.01 ) {
+// 			throw string("Time Stepping override (") + to_str(t) + ") for DelayProperty " +  symbolic_name + " is not an integer fraction of the time delay ("  + to_str(delay)  + ").";
+// 			exit(-1);
+// 		}
+// 		queue_length = max(int(rint(delay/t)),1);
 		queue_length += 1; // need one more storage locations than intervals;
 	}
 	queue.resize(queue_length,value);
@@ -208,12 +214,3 @@ void DelayProperty::restoreData(XMLNode parent_node)
 		}
 	}
 }
-
-
-
-
-
-// template <> const string Property<double_queue>::property_xml_name() { return "PropertyQueue";};
-// template <> const string Property<double_queue>::global_xml_name() { return "GlobalQueue";};
-// template <> const string Property<double_queue>::global_constant_xml_name() { return "ConstantQueue";};
-//

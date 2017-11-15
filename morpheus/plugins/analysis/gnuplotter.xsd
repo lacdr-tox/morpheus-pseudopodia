@@ -256,11 +256,11 @@ Plot to screen: x11 (default), wxt (unix), aqua (MacOS).
 Plot to file  : png, jpeg, gif, postscript, pdf.</xs:documentation>
 		</xs:annotation>	
 		<xs:attribute name="name" type="cpmGnuplotTerminalEnum" use="required" default="png"/>		
-		<xs:attribute name="pointsize" use="optional" type="cpmUnsignedDouble" default="1">
+<!--		<xs:attribute name="pointsize" use="optional" type="cpmUnsignedDouble" default="1">
 			<xs:annotation>
 				<xs:documentation>Size of pixel in plot. Varies for various terminals.</xs:documentation>
 			</xs:annotation>
-		</xs:attribute>
+		</xs:attribute>-->
 		<xs:attribute name="persist" use="optional" type="cpmBoolean">
 			<xs:annotation>
 				<xs:documentation>If true, plot will persist (i.e. not closed) after simulation has finished.

@@ -531,7 +531,7 @@ private:
 class Population_Initializer : virtual public Plugin
 {
 	public:
-		virtual bool run(CellType* ct) =0;
+		virtual vector<CPM::CELL_ID> run(CellType* ct) =0;
 };
 
 class Field_Initializer : virtual public Plugin

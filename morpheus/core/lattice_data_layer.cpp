@@ -10,7 +10,7 @@ template <class T> uint Lattice_Data_Layer<T>::get_data_index(const VINT& a) con
 
 template <class T>
 Lattice_Data_Layer<T>::Lattice_Data_Layer(shared_ptr<const Lattice> lattice,int shadow_width, T def_val, string layer_name) :
-_lattice(lattice), boundary_types(lattice->get_boundary_types()), shadow_base_width(shadow_width)
+ shadow_base_width(shadow_width), _lattice(lattice), boundary_types(lattice->get_boundary_types())
 {
 // 	data = NULL;
 	name = layer_name;

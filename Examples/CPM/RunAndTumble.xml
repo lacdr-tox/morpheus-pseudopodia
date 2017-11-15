@@ -2,12 +2,12 @@
 <MorpheusModel version="3">
     <Description>
         <Title>Example-RunAndTumble</Title>
-        <Details>Models a Levy walk - a random search strategy.
+        <Details>Models a Levy walk - a random walk strategy that is superior for searching due to it's high spatial coverage.
 
 Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An expression for each of the three coordinates must be given, separated by a comma ",".</Details>
     </Description>
     <Global>
-        <ConstantVector symbol="move_dir" value="0.0, 0.0, 0.0"/>
+        <Constant symbol="tumble.run_duration" value="0"/>
     </Global>
     <Space>
         <Lattice class="hexagonal">
@@ -32,12 +32,19 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
             <VolumeConstraint target="200" strength="1"/>
             <ConnectivityConstraint/>
             <PropertyVector symbol="move_dir" value="0.0, 0.0, 0.0"/>
-            <Property symbol="change_time" value="0.0"/>
+            <Property symbol="tumble.run_duration" value="0.0" name="run duration"/>
+            <Property symbol="tumble.last" value="0" name="last tumble event"/>
+            <Function symbol="tumble.time_left" name="time left">
+                <Expression>tumble.last + tumble.run_duration - time</Expression>
+            </Function>
             <DirectedMotion direction="move_dir" strength="0.2"/>
             <Event trigger="when true" time-step="5">
-                <Condition>time > change_time</Condition>
-                <Rule symbol-ref="change_time" name="new update time">
-                    <Expression>time + 20 * rand_gamma(0.5, 5)</Expression>
+                <Condition>time >= tumble.last + tumble.run_duration</Condition>
+                <Rule symbol-ref="tumble.last">
+                    <Expression>time</Expression>
+                </Rule>
+                <Rule symbol-ref="tumble.run_duration" name="new update time">
+                    <Expression>20 * rand_gamma(0.5, 5)</Expression>
                 </Rule>
                 <Function symbol="angle">
                     <Expression>rand_uni(0, 2*pi)</Expression>
@@ -74,29 +81,19 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
         </Population>
     </CellPopulations>
     <Analysis>
-        <Gnuplotter time-step="200">
+        <Gnuplotter time-step="200" decorate="false">
             <Terminal name="png"/>
             <Plot>
                 <Cells min="0.0">
-                    <!--    <Disabled>
-        <ColorMap>
-            <Color value="6.28" color="red"/>
-            <Color value="3.14" color="blue"/>
-            <Color value="0.0" color="red"/>
-        </ColorMap>
-    </Disabled>
--->
+                    <ColorMap>
+                        <Color value="0" color="red"/>
+                        <Color value="2" color="blue"/>
+                    </ColorMap>
                 </Cells>
                 <CellArrows orientation="5 * move_dir"/>
             </Plot>
         </Gnuplotter>
-        <!--    <Disabled>
-        <Function symbol="time_left">
-            <Expression>change_time - time</Expression>
-        </Function>
-    </Disabled>
--->
-        <Logger time-step="50">
+        <Logger time-step="20">
             <Input>
                 <Symbol symbol-ref="cell.center.x"/>
                 <Symbol symbol-ref="cell.center.y"/>
@@ -106,7 +103,7 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
             </Output>
             <Plots>
                 <Plot time-step="5000">
-                    <Style style="lines" line-width="3.0"/>
+                    <Style style="lines" line-width="2.0"/>
                     <Terminal terminal="png"/>
                     <X-axis>
                         <Symbol symbol-ref="cell.center.x"/>
@@ -115,7 +112,7 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
                         <Symbol symbol-ref="cell.center.y"/>
                     </Y-axis>
                     <Color-bar>
-                        <Symbol symbol-ref="time"/>
+                        <Symbol symbol-ref="tumble.run_duration"/>
                     </Color-bar>
                 </Plot>
             </Plots>
