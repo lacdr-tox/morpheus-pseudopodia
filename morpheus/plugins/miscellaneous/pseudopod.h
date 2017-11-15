@@ -42,7 +42,7 @@ private:
     RetractionMethod paramRetractionMethod_;
     RetractionMethod currRetractionMethod_;
     VDOUBLE polarisationDirection_;
-    static constexpr auto kappa_ = 8.0;
+    double kappa_;
     static constexpr auto retractprob_ = .3;
     static constexpr auto extendprob_ = .3;
     State state_;
@@ -54,10 +54,11 @@ private:
 public:
     Pseudopod(unsigned int maxGrowthTime, const CPM::LAYER *cpm_layer, CPM::CELL_ID cellId,
               PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> *movingDirection,
-              PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field, RetractionMethod retractionMethod) :
+              PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field, RetractionMethod retractionMethod,
+              double kappa) :
             maxGrowthTime_(maxGrowthTime), _cpm_layer(cpm_layer), cellId(cellId),
             movingDirection_(movingDirection), state_(State::INIT), field_(field),
-            timeLeftForGrowth_(0), timeNoExtension_(0), paramRetractionMethod_(retractionMethod) {
+            timeLeftForGrowth_(0), timeNoExtension_(0), paramRetractionMethod_(retractionMethod), kappa_(kappa) {
         bundlePositions_.reserve(maxGrowthTime);
     }
 

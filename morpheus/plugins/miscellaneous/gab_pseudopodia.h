@@ -31,6 +31,7 @@ private:
     // parameters that are specified in XML (as values, strings or symbolic expressions)
     PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> field;
     PluginParameter2<double, XMLValueReader, DefaultValPolicy> maxGrowthTime;
+    PluginParameter2<double, XMLValueReader, DefaultValPolicy> directionalStrength;
     PluginParameter2<unsigned int, XMLValueReader, DefaultValPolicy> maxPseudopods;
     PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> movingDirection;
     PluginParameter2<Pseudopod::RetractionMethod, XMLNamedValueReader, DefaultValPolicy> retractionMethod;
