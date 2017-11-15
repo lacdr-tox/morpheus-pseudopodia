@@ -16,7 +16,7 @@ set(plugin_src
 #	svgPlotter.cpp
 #	vtkPlotter.cpp
 #	spatial_correlation.cpp
-#    nematicTensorLogger.cpp
+#	nematicTensorLogger.cpp
 )
 
 IF (GRAPHVIZ_FOUND) 
