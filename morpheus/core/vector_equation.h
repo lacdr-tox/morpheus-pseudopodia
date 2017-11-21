@@ -75,8 +75,6 @@ Assign a value by comma separated list of 3 expressions.
 #define VECTOR_EQUATION_H
 
 #include "core/interfaces.h"
-#include "core/symbol_accessor.h"
-#include "core/plugin_parameter.h"
 #include "core/focusrange.h"
 
 

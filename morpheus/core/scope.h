@@ -13,54 +13,96 @@
 #define SCOPE_H
 
 #include "symbol.h"
-// #include "symbolfocus.h"
 #include <assert.h>
 
-// #include "interfaces.h"
+
+/// \brief Exception class thrown in case of errors related to symbol evaluation
+class SymbolError : public logic_error {
+public:
+	enum class Type { Undefined, WrongType, InvalidPartialSpec, InvalidDefinition};
+	SymbolError(Type type, const string& what) : logic_error(what) , _type(type) {};
+	SymbolError::Type type() const { return _type; };
+
+private:
+	Type _type;
+};
+
 class Plugin;
 class TimeStepListener;
 
+/// Additional type agnostic interface for composite symbols
+class CompositeSymbol_I {
+public:
+	virtual const std::string& name() const =0;  ///  Symbol identifier
+	virtual void init(int n_celltypes) =0;
+	virtual void setDefaultValue(Symbol) =0;
+	virtual void addCellTypeAccessor(int celltype_id,  Symbol symbol) =0;
+	virtual vector<const Scope*> getSubScopes() const =0;
+	virtual ~CompositeSymbol_I() {};
+};
 
 class Scope {
 public:
 	Scope();
 	~Scope()  { cout << "Deleting scope " << name << endl;} 
-	// TODO Shall we use weak_ptr here ?? --> There is no Ownership concept for scopes present !!
-	Scope* getParent() const {return parent;}; /// Pointer to parental scope. Null if this is the global scope.
-	const vector< shared_ptr<Scope> >& getSubScopes() const { return sub_scopes; }
-	Scope* createSubScope(string name, CellType *ct = nullptr);
-		
-	CellType* getCellType() const;
-	string getName() const { return name; };
 	
-	void registerSymbol(SymbolData data); /// Adds the symbol to the scope. Propagates the presence if this scope is a component of the parental scope.
+	string getName() const { return name; };
+	/// Pointer to parental scope. Null if this is the global scope.
+	Scope* getParent() const { return parent; }; 
+	/// List of all sub-scopes
+	const vector< const Scope* > getSubScopes() const { 
+		vector<const Scope*> scopes;
+		for (auto& c : sub_scopes) scopes.push_back(c.get());
+		return scopes;
+	}
+	const vector< const Scope* > getComponentSubScopes() const { 
+		vector<const Scope*> scopes;
+		for (auto& c : component_scopes) scopes.push_back(c.get());
+		return scopes;
+	}
+	/// Create a new sub-scope named @p name. 
+	/// If @p ct is a celltype, this sub-scope is assumed to be a spatial scope within the domain of CellType @p ct.
+	Scope* createSubScope(string name, CellType *ct = nullptr);
+	
+	/// Access the CellType associated with the scope. Returns null_ptr if no CellType is associated, i.e. no spatial scope.
+	CellType* getCellType() const;
 	
 	void init();
 	
-	void setValueOverride(string symbol, string value) { value_overrides[symbol] = value;};
-	const map<string, string>& valueOverrides() const { return value_overrides; };
-	void removeValueOverride(string symbol) const { value_overrides.erase(symbol); };
-	const map<string, string>& unusedValueOverrides() const { return value_overrides; };
+	/// public store for value overrides from the command line --> Maybe they should be placed in Constants ??
+	map<string,string>& value_overrides() const { return _value_overrides; };
+// 	void setValueOverride(string symbol, string value) { value_overrides[symbol] = value;};
+// 	const map<string, string>& valueOverrides() const { return value_overrides; };
+// 	void removeValueOverride(string symbol) const { value_overrides.erase(symbol); };
+// 	const map<string, string>& unusedValueOverrides() const { return value_overrides; };
 	
-	/// Find a read-writable symbol with @p name. Throws an error if symbol cannot be found.
-	template<class T>
-	SymbolRWAccessor<T> findRWSymbol(string name) const;
+	/// Register a Symbol @p sym to the local scope.
+	/// Propagates the presence if this scope is a component of the parental scope.
+	/// For vector-symbols also derived component symbols are created.
+	void registerSymbol(Symbol sym); 
 	
-	/// Find a readable symbol with @p name. Throws an error if symbol cannot be found.
+	/// Find an abstract symbol, without any data access
+	Symbol findSymbol(string name) const;
+	
+	/// Find a readable symbol @p name of type \<T\>. Throws an error if symbol cannot be found.
 	template<class T>
 	SymbolAccessor<T> findSymbol(string name, bool allow_partial = false) const;
 	
-	/// Find a symbol with @p name. Return a constant symbol of @p default_val, if the symbol cannot be found.
+	/// Find a symbol @p name of type \<T\>. Return a constant symbol of @p default_val, if the symbol cannot be found.
 	template<class T>
 	SymbolAccessor<T> findSymbol(string name, const T& default_val) const;
+	
+	/// Find a read-writable symbol @p name of type \<T\>. Throws an \ref SymbolError if symbol cannot be found.
+	template<class T>
+	SymbolRWAccessor<T> findRWSymbol(string name) const;
+	
 	
 	/// Find all symbol names of type T
 	template <class T>
 	set<string> getAllSymbolNames() const;
 	
-	string getSymbolType(string name) const;
-	string getSymbolBaseName(string name) const;
-	bool isSymbolDelayed(string name) const;
+// 	string getSymbolType(string name) const;
+// 	string getSymbolBaseName(string name) const;
 	
 	struct DepGraphConf { set<string> exclude_symbols; set<string> exclude_plugins; };
 	void write_graph(ostream& out, const DepGraphConf& config) const;
@@ -69,26 +111,34 @@ public:
 	map<string, string> graphstyle;
 	
 private:
+	/// private constructor for creating subscopes -- \ref createSubScope makes use  of it
 	Scope(Scope* parent, string name, map<string, string> colorscheme, CellType* celltype = nullptr);
-	CellType* ct_component;
+	
 	string name;
 	int scope_id;
-	
-	/** All subscopes that represent spatial components of the paraental scope (e.g. CellTypes) can register in their parental scope to override
-	 *  a parental symbol within their spatial extends.
-	 * 
-	 *  Currently, this is only available for CellType scopes, that override the global scope within the lattice part that they occupy
-	 */
-	void registerSubScopeSymbol(Scope *sub_scope, string symbol_name);
-	// a symbol is registered in a ct_subscope. create a new virt. symbol, if it does not exist, and move an existing global symbol as a default there. then override the ct association for 
 	Scope* parent;
+	CellType* ct_component;
+	mutable map<string, shared_ptr<SymbolBase> > symbols;
+	map<string, shared_ptr<CompositeSymbol_I> > composite_symbols;
+	
+	mutable map<string, string> _value_overrides;
+	
+	/** Sub-scopes that represent spatial components of the parental scope (i.e. CellTypes) can register symbols
+	 *  at their parental scope to override a parental symbol within the sub-scope's range.
+	 * 
+	 *  Currently, this is only available for CellType scopes, that override the global scope within the lattice part that they occupy.
+	 */
+	void registerSubScopeSymbol(Scope *sub_scope, Symbol symbol);
+	
+
+	
 	vector< shared_ptr<Scope> > sub_scopes;
 	vector< shared_ptr<Scope> > component_scopes;
-	mutable map<string, SymbolData> local_symbols;
-	mutable map<string, string> value_overrides;
 	
-	void init_symbol(SymbolData* data) const;
-	mutable set<SymbolData*> initializing_symbols;
+
+	
+// 	void init_symbol(SymbolData* data) const;
+// 	mutable set<SymbolData*> initializing_symbols;
 	
 	// INTERFACE FOR SCHEDULING THROUGH THE TimeScheduler
 	friend class TimeScheduler;
@@ -126,142 +176,220 @@ private:
 	
 };
 
-template<class T>
-SymbolAccessor<T> Scope::findSymbol(string name, bool allow_partial) const {
-// 	cout << "Symbol name: " << name << endl;
-	if(name.empty())
-		throw (string("Symbol without a name \"") + name + ("\""));
 
-	// try to find it locally
-// 	try {
-		auto it = local_symbols.find(name);
-		if ( it != local_symbols.end()) {
-			if (TypeInfo<T>::name() != it->second.type_name) {
-				throw (string("Symbol type mismatch. Cannot create an Accessor of type ")
-					+ TypeInfo<T>::name() 
-					+ " for Symbol " + name
-					+ " of type " + it->second.type_name );
-			}
-			cout << "Scope: Creating Accessor for symbol " << name << " from Scope " << this->name << endl;
-			
-			SymbolData& data = it->second;
-			// Assert dynamic symbols (i.e. functions) to be initialized
-			if (data.granularity == Granularity::Undef) {
-				init_symbol(&data);
-			}
-			
-			return SymbolAccessor<T>(data, this, allow_partial);
+template <class T>
+class CompositeSymbol : public SymbolAccessorBase<T>, public CompositeSymbol_I {
+public:
+	CompositeSymbol(string name, SymbolAccessor<T> default_val = nullptr) : 
+		SymbolAccessorBase<T>(name)
+	{ 
+		if (default_val) {
+			setDefaultValue(default_val);
 		}
-		else if (parent) {
-			return parent->findSymbol<T>(name, allow_partial);
+	};
+	~CompositeSymbol() {};
+	const std::string& name() const override { return SymbolAccessorBase<T>::name(); };
+	std::string linkType() const override { return "CompositeLink"; }; 
+	const string& description() const override { return _description;}
+	std::set<SymbolDependency> dependencies() const override {
+		std::set<SymbolDependency> dep;
+		for (auto & ac : celltype_accessors) {
+			if (!ac) continue;
+			auto d = ac->dependencies();
+			dep.insert(d.begin(), d.end());
 		}
-		else {
- 			throw (string("Symbol \"")+name+"\" is not defined. ");
-		}
-// 	}
-// 	catch (string e) {
-// // 		throw ("Global default for symbol \""+name+"\" is missing. ");
-// 		stringstream sstr;
-// 		sstr << "Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
-// 		sstr << e << endl; 
-// // 		sstr << "Available symbols: ";
-// // 		for (auto it : local_symbols) {
-// // 			if (it.second.type_name == TypeInfo<T>::name())
-// // 				sstr << "\""<< it.first << "\", ";
-// // 		}
-// 		throw (sstr.str());
-// 	}
-};
+		return dep;
+	};
 
-template<class T>
-SymbolRWAccessor<T> Scope::findRWSymbol(string name) const {
-// 	cout << "Symbol name: " << name << endl;
-	if(name.empty())
-		throw (string("Symbol without a name \"") + name + ("\""));
+	void addCellTypeAccessor(int celltype_id,  Symbol symbol) override {
+		if (celltype_id>=celltype_accessors.size())
+			celltype_accessors.resize(celltype_id+1,default_val);
+		
+		celltype_accessors[celltype_id] = dynamic_pointer_cast<const SymbolAccessorBase< T > >(symbol);
+		
+		if (_description.empty())
+			_description = symbol->description();
+		combineFlags(symbol->flags());
+	};
 	
-	// try to find it locally
-// 	try {
-		auto it = local_symbols.find(name);
-		if ( it != local_symbols.end()) {
-			if (TypeInfo<T>::name() != it->second.type_name) {
-				throw (string("Symbol type mismatch. Cannot create an Accessor of type ")
-					+ TypeInfo<T>::name() 
-					+ " for Symbol " + name
-					+ " of type " + it->second.type_name );
-			}
-			
-			SymbolData& data = it->second;
-			// Assert dynamic symbols (i.e. functions) to be initialized
-			if (data.granularity == Granularity::Undef) {
-				init_symbol(&data);
-			}
-			
-			return SymbolRWAccessor<T>(data, this);
-		}
-		else if (parent) {
-			return parent->findRWSymbol<T>(name);
+	void setDefaultValue(Symbol d) override {
+		if (default_val)
+			throw SymbolError(SymbolError::Type::InvalidDefinition, "Duplicate definition of symbol " + this->name());
+		
+		if ( ! dynamic_pointer_cast<const SymbolAccessorBase<T> >(d) )
+			throw SymbolError(SymbolError::Type::InvalidDefinition, "Incompatible types in definition of composite symbol " + this->name());
+		
+		default_val = dynamic_pointer_cast<const SymbolAccessorBase<T> >(d);
+		for (auto& s : celltype_accessors) if (!s) s = default_val;
+		
+		
+		if (_description.empty())
+			_description = d->description();
+		combineFlags(default_val->flags());
+	}
+	
+	void init(int n_cts) override {
+		celltype_accessors.resize(n_cts, default_val);
+		this->flags().partially_defined = false;
+		for (auto& ct : celltype_accessors) { if ( !ct ) this->flags().partially_defined=true; }
+		if (this->flags().partially_defined)
+			cout << "Symbol " << this->name()  << " is only partially defined " << endl;
+	}
+	
+	typename TypeInfo<T>::SReturn get(const SymbolFocus & f) const override {
+		return celltype_accessors[f.celltype()]->get(f);
+	}
+	typename TypeInfo<T>::SReturn safe_get(const SymbolFocus & f) const override{
+		return celltype_accessors[f.celltype()]->safe_get(f);
+	}
+
+	vector<const Scope*> getSubScopes() const override {
+		return this->scope()->getComponentSubScopes();
+	}
+	
+private:
+	
+	void combineFlags(const SymbolBase::Flags& of) {
+		if (!initialized) {
+			auto& f = this->flags();
+			f = of;
+			f.space_const = false;
+			initialized=true;
 		}
 		else {
-			throw (string("Requested symbol \"") + name + "\" is not defined.");
+			auto& f = this->flags();
+			f.granularity += of.granularity;
+			f.time_const = f.time_const && of.time_const;
+			f.stochastic = f.stochastic || of.stochastic;
+			f.integer = f.integer && of.integer;
+			f.delayed = f.delayed && of.delayed;
 		}
-// 	}
-// 	catch (string e) {
-// // 		throw ("Cannot find (r+w) symbol \""+name+"\". ");
-// 		stringstream sstr;
-// 		sstr << "Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
-// 		sstr << e << endl; 
-// // 		sstr << "Available symbols: ";
-// // 		for (auto it : local_symbols) {
-// // 			if (it.second.type_name == TypeInfo<T>::name())
-// // 				sstr << "\""<< it.first << "\", ";
-// // 		}
-// 		throw (sstr.str());
-// 	}
+	}
+	bool initialized=false;
+	
+	vector<SymbolAccessor<T> > celltype_accessors;
+	string _description;
+	SymbolAccessor<T> default_val;
 };
 
-template<class T>
-SymbolAccessor<T> Scope::findSymbol(string name, const T& default_val) const {
-// 	cout << "Symbol name: " << name << endl;
+class VectorComponentAccessor : public SymbolAccessorBase<double> {
+public:
+	enum class Component { X, Y, Z, PHI, THETA, R};
+	string subSymbol(Component comp) { 
+		switch(comp) {
+			case Component::X: return "x";
+			case Component::Y: return "y";
+			case Component::Z: return "z";
+			case Component::PHI: return "phi";
+			case Component::THETA: return "theta";
+			case Component::R: return "abs";
+		}
+		return "";
+	};
+	VectorComponentAccessor(SymbolAccessor<VDOUBLE> v_sym, Component comp) : SymbolAccessorBase<double>(v_sym->name()+"."+subSymbol(comp)), comp(comp), v_sym(v_sym) {}
+	const SymbolBase::Flags & flags() const override {
+		return v_sym->flags();
+	};
+	const string& description() const override { return v_sym->description(); }
+	string linkType() const override { return "VectorComponentLink"; }
+	std::set<SymbolDependency> dependencies() const override { return v_sym->dependencies(); }
+	typename TypeInfo<double>::SReturn get(const SymbolFocus & f) const override {
+		switch(comp) {
+			case Component::X: return v_sym->get(f).x;
+			case Component::Y: return v_sym->get(f).y;
+			case Component::Z: return v_sym->get(f).z;
+			case Component::PHI: return v_sym->get(f).angle_xy();
+			case Component::THETA: return v_sym->get(f).to_radial().y;
+			case Component::R: return v_sym->get(f).abs();
+		}
+		return 0;
+	};
+	typename TypeInfo<double>::SReturn safe_get(const SymbolFocus & f) const override {
+		switch(comp) {
+			case Component::X: return v_sym->safe_get(f).x;
+			case Component::Y: return v_sym->safe_get(f).y;
+			case Component::Z: return v_sym->safe_get(f).z;
+			case Component::PHI: return v_sym->safe_get(f).angle_xy();
+			case Component::THETA: return v_sym->safe_get(f).to_radial().y;
+			case Component::R: return v_sym->safe_get(f).abs();
+		}
+		return 0;
+	};
+private: 
+	Component comp;
+	SymbolAccessor<VDOUBLE> v_sym;
+};
+
+
+/////////////////////////////////////////////////
+/// \b Scope template method implementation   ///
+/////////////////////////////////////////////////
+
+// #include "property.h"
+
+template <class T>
+SymbolAccessor<T> Scope::findSymbol(string name, bool allow_partial) const
+{
 	if(name.empty())
-		throw (string("Symbol without a name \"") + name + ("\""));
-	// try to find it locally
-// 	try {
-		auto it = local_symbols.find(name);
-		if ( it != local_symbols.end()) {
-			if (TypeInfo<T>::name() != it->second.type_name) {
-				throw (string("Symbol type mismatch. Cannot create an Accessor of type ")
-					+ TypeInfo<T>::name() 
-					+ " for Symbol " + name
-					+ " of type " + it->second.type_name );
-			}
+		throw SymbolError(SymbolError::Type::Undefined, string("Requesting symbol without a name \"") + name + ("\""));
+
+	auto it = symbols.find(name);
+	if ( it != symbols.end()) {
+		if (TypeInfo<T>::name() != it->second->type()) {
+			throw SymbolError(SymbolError::Type::WrongType, string("Cannot create an accessor of type ")
+				+ TypeInfo<T>::name() 
+				+ " for Symbol " + name
+				+ " of type " + it->second->type() );
+		}
+		if (it->second->flags().partially_defined && ! allow_partial)
+			throw SymbolError(SymbolError::Type::InvalidPartialSpec, string("Composite symbol ") + name + " is not defined in all subscopes and has no global default.");
 			
-			SymbolData& data = it->second;
-			// Assert dynamic symbols (i.e. functions) to be initialized
-			if (data.granularity == Granularity::Undef) {
-				init_symbol(&data);
-			}
-			
-			return SymbolAccessor<T>(data, this, default_val);
+		cout << "Scope: Creating Accessor for symbol " << name << " from Scope " << this->name << endl;
+		
+		auto s = dynamic_pointer_cast<const SymbolAccessorBase<T> >(it->second);
+		if (!s)
+			throw SymbolError(SymbolError::Type::Undefined, string("Unknown error while creating symbol accessor for symbol ") + name +".");
+		return s;
+	}
+	else if (parent) {
+		return parent->findSymbol<T>(name, allow_partial);
+	}
+	else {
+		throw (string("Symbol \"")+name+"\" is not defined in Scope " + this->getName() );
+	}
+};
+
+
+template <class T>
+SymbolRWAccessor<T> Scope::findRWSymbol(string name) const
+{
+	auto sym = findSymbol<T>(name,false);;
+	if ( ! sym->flags().writable )
+		SymbolError(SymbolError::Type::WrongType, string("Symbol ") + name + " is not writable.");
+	auto r = dynamic_pointer_cast<const SymbolRWAccessorBase<T> >(sym);
+	if (!r)
+		throw SymbolError(SymbolError::Type::Undefined, string("Unknown error while creating writable symbol accessor for symbol ") + name +".");
+	return r;
+};
+
+template <class T>
+SymbolAccessor<T> Scope::findSymbol(string name, const T& default_val) const
+{
+	try {
+		auto s = findSymbol<T>(name, true);
+		if (dynamic_pointer_cast<const CompositeSymbol<T> >(s) && s->flags().partially_defined) {
+			auto new_s = make_shared<CompositeSymbol<T> >(*dynamic_pointer_cast<const CompositeSymbol<T> >(s));
+			new_s->setDefaultValue( SymbolAccessorBase<T>::createConstant(name, name, default_val) );
+			return new_s;
 		}
-		else if (parent) {
-			return parent->findSymbol<T>(name, default_val);
-		}
-		else {
-			throw (string("Requested symbol \"") + name + "\" is not defined.");
-		}
-// 	}
-// 	catch (string e) {
-// // 		throw ("Cannot find symbol \""+name+"\". ");
-// 		stringstream sstr;
-// 		sstr << "Unable to create a Symbol Accessor for Symbol " <<  name << "." << endl;
-// 		sstr << e << endl; 
-// // 		sstr << "Available symbols: ";
-// // 		for (auto it : local_symbols) {
-// // 			if (it.second.type_name == TypeInfo<T>::name())
-// // 				sstr << "\""<< it.first << "\", ";
-// // 		}
-// 		throw (sstr.str());
-// 	}
+		return s;
+		
+	}
+	catch (...) {
+		// create a default accessor
+		auto c = SymbolAccessorBase<T>::createConstant(name, name, default_val);
+		return c;
+	}
 };
 
 template <class T>
@@ -269,20 +397,11 @@ set<string> Scope::getAllSymbolNames() const {
 	set<string> names;
 	if (parent)
 		names = parent->getAllSymbolNames<T>();
-	for ( auto sym : local_symbols ) {
-		if (TypeInfo<T>::name() == sym.second.type_name) {
-			if (sym.second.link == SymbolData::PureCompositeLink) {
-				bool all_subscopes_valid = true;
-				for (auto sub : sym.second.component_subscopes){
-					if (sub == NULL)
-						all_subscopes_valid = false;
-				}
-				if (all_subscopes_valid)
-					names.insert(sym.first);
-			}
-			else {
-				names.insert(sym.first);
-			}
+	for ( auto sym : symbols ) {
+		if (TypeInfo<T>::name() == sym.second->type()) {
+			if (sym.second->flags().partially_defined)
+				continue;
+			names.insert(sym.first);
 		}
 	}
 	return names;

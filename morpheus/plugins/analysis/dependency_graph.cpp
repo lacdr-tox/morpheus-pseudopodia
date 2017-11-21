@@ -22,7 +22,8 @@ DependencyGraph::DependencyGraph() : AnalysisPlugin()
 
 void DependencyGraph::init(const Scope* scope)
 {
-	setTimeStep(0); // This means call at the end !!
+	setTimeStep(SIM::getStopTime()); // This means call at the end !!
+// 	this->valid_time = -1;
 	AnalysisPlugin::init(scope);
 }
 

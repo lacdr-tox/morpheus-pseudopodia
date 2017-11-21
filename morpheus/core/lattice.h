@@ -18,25 +18,11 @@
  * The common interface is the Lattice class.
  */
 
+#include "config.h"
 
-#ifdef WIN32
-#include <windows.h>
-typedef unsigned int uint;
-#endif
-
-
-#include <memory>
-#include <vector>
-#include <string>
-#include <map>
-#include <set>
-#include <cctype>
 #include <algorithm>
-#include <assert.h>
-
 #include "vec.h"
 #include "xml_functions.h"
-#include "string_functions.h"
 #include "domain.h"
 // All lattice characteristics are kept in a class derived from the Lattice class. They provide metrics (including topological boundaries), the neighborhood and the lattice extends. All data is stored in Lattice_Data_Layer class, which thus is a template.
 

@@ -75,7 +75,7 @@ public:
 	CPMSampler();
 	~CPMSampler() { cout << "Deleting the CPM sampler" << endl; };
 	
-    virtual void loadFromXML(const XMLNode node) override;
+    virtual void loadFromXML(const XMLNode node, Scope* scope) override;
 	double MCSDuration() { return mcs_duration(); }
 	virtual void prepareTimeStep() override {};
 	virtual void executeTimeStep() override ;

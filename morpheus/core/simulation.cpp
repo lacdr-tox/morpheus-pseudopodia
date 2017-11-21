@@ -12,8 +12,8 @@ int main(int argc, char *argv[]) {
     return SIM::main(argc,argv);
 }
 
-typedef TR1_NAMESPACE::normal_distribution<double> RNG_GaussDist;
-typedef TR1_NAMESPACE::gamma_distribution<double> RNG_GammaDist;
+typedef std::normal_distribution<double> RNG_GaussDist;
+typedef std::gamma_distribution<double> RNG_GammaDist;
 
 bool getRandomBool() {
 // #ifdef USING_CXX0X_TR1
@@ -28,16 +28,16 @@ bool getRandomBool() {
 
 double getRandom01() {
 
-#if defined USING_CXX0X_TR1
+// #if defined USING_CXX0X_TR1
 	static uniform_real_distribution <double> rnd(0.0,1.0);
-#else
-	static uniform_real<double> rnd(0.0,1.0);
-#endif	
-#if defined USING_STD_TR1
-	return rnd(random_engines[omp_get_thread_num()])/(random_engines[omp_get_thread_num()].max() - random_engines[omp_get_thread_num()].min());
-#else
+// #else
+// 	static uniform_real<double> rnd(0.0,1.0);
+// #endif	
+// #if defined USING_STD_TR1
+// 	return rnd(random_engines[omp_get_thread_num()])/(random_engines[omp_get_thread_num()].max() - random_engines[omp_get_thread_num()].min());
+// #else
 	return rnd(random_engines[omp_get_thread_num()]);
-#endif
+// #endif
 }
 
 // random gaussian distribution of stddev s
@@ -45,13 +45,13 @@ double getRandomGauss(double s) {
 
     RNG_GaussDist rnd( 0.0, s);
 
-    {
-#if defined USING_STD_TR1
-        return rnd(random_engines_alt[omp_get_thread_num()] )/(random_engines_alt[omp_get_thread_num()].max() - random_engines_alt[omp_get_thread_num()].min());
-#else
+//     {
+// #if defined USING_STD_TR1
+//         return rnd(random_engines_alt[omp_get_thread_num()] )/(random_engines_alt[omp_get_thread_num()].max() - random_engines_alt[omp_get_thread_num()].min());
+// #else
         return rnd(random_engines_alt[omp_get_thread_num()]);
-#endif
-    }
+// #endif
+//     }
     //      assert(random_engine);
 //      return  gsl_ran_gaussian_ziggurat(random_engine, s);
 }
@@ -65,11 +65,12 @@ double getRandomGamma(double shape, double scale) {
 
 uint getRandomUint(uint max_val) {
 
-#ifdef USING_CXX0X_TR1
-	uniform_int_distribution<> rnd(0,max_val);
-#else
-	uniform_int<> rnd(0,max_val);
-#endif
+// #ifdef USING_CXX0X_TR1
+	uniform_int_distribution<uint> rnd(0,max_val);
+// 	cout << max_val;
+// #else
+// 	uniform_int<> rnd(0,max_val);
+// #endif
     return rnd(random_engines[omp_get_thread_num()]);
 }
 
@@ -110,6 +111,16 @@ weak_ptr<const CellType> findCellType(string name) {
 vector< weak_ptr<const CellType> > getCellTypes() {
 	return vector< weak_ptr<const CellType> > (celltypes.begin(),celltypes.end());
 }
+
+map<string, weak_ptr<const CellType> > getCellTypesMap() {
+	
+	map<string, weak_ptr<const CellType> > m;
+	for (auto ct : celltypes ) {
+		m[ct->getName()] = weak_ptr<const CellType>(ct);
+	}
+	return m;
+}
+
 
 
 double getMCSDuration() {
@@ -191,6 +202,30 @@ void loadFromXML(XMLNode xMorph) {
 		throw string("Default neighborhood is too large for estimation of cell surface nodes");
 	}
 	
+	// look for a medium type in predefined celltypes, or create one ...
+	if ( ! celltypes.empty()) {
+		for (uint i=0;; i++) {
+			if (i == celltypes.size()) {
+				// create a default medium celltype, in case no medium was defined
+				shared_ptr<CellType> ct =  shared_ptr<CellType>( new MediumCellType( i ) );
+				XMLNode medium_node = XMLNode::createXMLTopNode("CellType");
+				medium_node.addAttribute("name","Medium");
+				medium_node.addAttribute("class","medium");
+				ct->loadFromXML(medium_node, SIM::global_scope.get());
+				celltype_names[ct->getName()] = i;
+				EmptyCellType = i;
+				celltypes.push_back(ct);
+				break;
+			}
+			if (celltypes[i]->isMedium()) {
+				EmptyCellType = i;
+				break;
+			}
+		}
+
+		EmptyState.cell_id = celltypes[EmptyCellType]->createCell(); // make sure the the medium contains the cell representing the medium
+	}
+	
 	if ( ! xMorph.getChildNode("CPM").isEmpty() ) {
 		xCPM = xMorph.getChildNode("CPM");
 		try {
@@ -223,7 +258,7 @@ void loadFromXML(XMLNode xMorph) {
 		// CPM time evolution is defined by a MonteCarlo simulation based on the a Hamiltionian and the metropolis kintics
 		if ( ! xCPM.getChildNode("MonteCarloSampler").isEmpty() ) {
 			cpm_sampler =  shared_ptr<CPMSampler>(new CPMSampler());
-			cpm_sampler->loadFromXML(xCPM);
+			cpm_sampler->loadFromXML(xCPM, SIM::global_scope.get());
 			time_per_mcs.set( cpm_sampler->timeStep() );
 			update_neighborhood = cpm_sampler->getUpdateNeighborhood();
 		}
@@ -235,28 +270,7 @@ void loadFromXML(XMLNode xMorph) {
 	
 	if ( ! celltypes.empty()) {
 		cout << "Creating cell layer ";
-		// look for predefined cell names in the medium poulations ...
-		
-		for (uint i=0;; i++) {
-			if (i == celltypes.size()) {
-				// create a default medium celltype, in case no medium was defined
-				shared_ptr<CellType> ct =  shared_ptr<CellType>( new MediumCellType( i ) );
-				XMLNode medium_node = XMLNode::createXMLTopNode("CellType");
-				medium_node.addAttribute("name","Medium");
-				medium_node.addAttribute("class","medium");
-				ct->loadFromXML(medium_node);
-				celltype_names[ct->getName()] = i;
-				EmptyCellType = i;
-				celltypes.push_back(ct);
-				break;
-			}
-			if (celltypes[i]->isMedium()) {
-				EmptyCellType = i;
-				break;
-			}
-		}
-
-		EmptyState.cell_id = celltypes[EmptyCellType]->createCell(); // make sure the the medium contains the cell representing the medium      
+   
 		InitialState = EmptyState;
 		cout << "with initial state set to CellType \'" << celltypes[EmptyCellType]->getName() << "\'" << endl;
 
@@ -332,7 +346,7 @@ void loadCellTypes(XMLNode xCellTypesNode) {
 			shared_ptr<CellType> ct = CellTypeFactory::CreateInstance( classname, celltypes.size() );
 			if (ct.get() == NULL)
 				throw string("No celltype class ")+classname+" available";
-			ct->loadFromXML( xCTNode );
+			ct->loadFromXML( xCTNode, SIM::global_scope.get() );
 			string name=ct->getName();
 			if (name.empty())
 				throw string("No name for provided for celltype ")+to_str(i);
@@ -344,111 +358,15 @@ void loadCellTypes(XMLNode xCellTypesNode) {
 			celltype_names[name] = celltypes.size();
 			celltypes.push_back(ct);
 			
-			auto celltype_constant = Property<double>::createConstantInstance(string("celltype.") + name+ ".id", "ID of CellType " + name);
-			celltype_constant->set(celltype_names[name]);
-			SIM::defineSymbol(celltype_constant);
-			
-			SymbolData symbol;
-			symbol.link = SymbolData::PopulationSizeLink;
-			symbol.granularity = Granularity::Global;
-			symbol.name = string("celltype.") + name + ".size";
-			symbol.celltype = celltypes.back();
-			
-			symbol.type_name = TypeInfo<double>::name();
-			symbol.integer = false;
-			symbol.writable = false;
-			symbol.fullname = "Population size of CellType" + name;
-			SIM::defineSymbol(symbol);
+			auto celltype_name = SymbolAccessorBase<double>::createConstant(string("celltype.") + name+ ".id", "CellType ID", double(celltype_names[name]));
+			SIM::global_scope->registerSymbol(celltype_name);
+ 			auto celltype_size = make_shared<CellPopulationSizeSymbol>(string("celltype.") + name + ".size", celltypes.back().get());
+			SIM::global_scope->registerSymbol(celltype_size);
 		}
 		catch (string e) {
 			throw MorpheusException(string("Unable to create CellType\n") + e, xCTNode);
 		}
 	}
-	
-	
-	SymbolData symbol;
-	symbol.link = SymbolData::CellIDLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::CellID_symbol;
-// 	symbol.base_name = SymbolData::CellID_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.integer = true;
-	symbol.writable = false;
-	symbol.fullname = "Unique Cell ID";
-	SIM::defineSymbol(symbol);
-	
-	symbol.link = SymbolData::CellTypeLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::CellType_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.integer = true;
-	symbol.writable = false;
-	symbol.fullname = "CellType ID";
-	SIM::defineSymbol(symbol);
-	
-	symbol.link = SymbolData::SuperCellIDLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::SuperCellID_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.integer = true;
-	symbol.writable = false;
-	symbol.fullname = SymbolData::getLinkTypeName(symbol.link);
-	SIM::defineSymbol(symbol);
-	
-	symbol.link = SymbolData::SubCellIDLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::SubCellID_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.integer = true;
-	symbol.writable = false;
-	symbol.fullname = SymbolData::getLinkTypeName(symbol.link);
-	SIM::defineSymbol(symbol);
-    
-	symbol.link = SymbolData::CellVolumeLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::CellVolume_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.integer = false;
-	symbol.writable = false;
-	symbol.fullname = "Cell Volume";
-	SIM::defineSymbol(symbol);
-	
-	symbol.link = SymbolData::CellLengthLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::CellLength_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.integer = false;
-	symbol.writable = false;
-	symbol.fullname = "Cell Length";
-	SIM::defineSymbol(symbol);
-	
-	symbol.link = SymbolData::CellSurfaceLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::CellSurface_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.integer = false;
-	symbol.writable = false;
-	symbol.fullname = "Cell Surface";
-	SIM::defineSymbol(symbol);
-	
-	symbol.link = SymbolData::CellCenterLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::CellCenter_symbol;
-	symbol.type_name = TypeInfo<VDOUBLE>::name();
-	symbol.integer = false;
-	symbol.writable = false;
-	symbol.fullname = "Cell Center";
-	SIM::defineSymbol(symbol);
-	
-	symbol.link = SymbolData::CellOrientationLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::CellOrientation_symbol;
-	symbol.type_name = TypeInfo<VDOUBLE>::name();
-	symbol.integer = false;
-	symbol.writable = false;
-	symbol.fullname = "Cell Orientation";
-	SIM::defineSymbol(symbol);
-
 	
 	for (uint i=0; i<celltypes.size(); i++) {
 		celltypes[i]->loadPlugins();
@@ -1062,7 +980,7 @@ void init(int argc, char *argv[]) {
 	// Attach global overrides to the global scope
 	for (map<string,string>::const_iterator it = cmd_line.begin(); it != cmd_line.end(); it++ ) {
 		if (it->first == "file") continue;
-		global_scope->setValueOverride(it->first, it->second);
+		global_scope->value_overrides()[it->first] = it->second;
 	}
 	current_scope = global_scope.get();
 	CPM::EmptyState.cell_id = 0;
@@ -1087,9 +1005,7 @@ void init(int argc, char *argv[]) {
 	// try to match cmd line options with symbol names and adjust values accordingly
 	// check that global overrides have been used
 	
-	map<string,string> unused_overrides = global_scope->unusedValueOverrides();
-	
-	for ( const auto& override: unused_overrides ) {
+	for ( const auto& override: global_scope->value_overrides() ) {
 		cout << "Unknown cmd line override " << override.first << "=" << override.second << endl;
 	}
 
@@ -1176,11 +1092,11 @@ void setRandomSeeds( const XMLNode xNode ){
 		// 3. generate random seeds for other engines using the first engine.
 		vector<uint> random_seeds(numthreads,0);
 		for(uint i=1; i<numthreads; i++){
-#ifdef USING_CXX0X_TR1
+// #ifdef USING_CXX0X_TR1
 			uniform_int_distribution<> rnd(0,9999999);
-#else
-			uniform_int<> rnd(0,9999999);
-#endif
+// #else
+// 			uniform_int<> rnd(0,9999999);
+// #endif
 			random_seeds[i] = rnd(random_engines[0]);
 		}
 
@@ -1232,36 +1148,17 @@ void loadFromXML(const XMLNode xNode) {
 	getXMLAttribute(xNode,"version",morpheus_file_version);
 	getXMLAttribute(xNode,"Description/Title/text",fileTitle);
 	XMLNode xTime = xNode.getChildNode("Time");
-	TimeScheduler::loadFromXML(xTime);
+	TimeScheduler::loadFromXML(xTime, global_scope.get());
 	
-	SymbolData symbol;
-	if (xTime.nChildNode("TimeSymbol")){
-		getXMLAttribute(xTime.getChildNode("TimeSymbol"),"symbol",SymbolData::Time_symbol);
-	}
-	symbol.link=SymbolData::Time;
-	symbol.granularity = Granularity::Global;
-	symbol.name=SymbolData::Time_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.fullname = "simulation time";
-	symbol.integer = false;
-	symbol.invariant = false;
-	symbol.time_invariant = false;
-	defineSymbol(symbol);
-
-	setRandomSeeds(xTime.getChildNode("RandomSeed"));
+	
+	getXMLAttribute(xTime,"TimeSymbol/symbol",SymbolBase::Time_symbol);
+	global_scope->registerSymbol(make_shared<TimeSymbol>(SymbolBase::Time_symbol));
 	
 	xSpace = xNode.getChildNode("Space");
+	getXMLAttribute(xSpace,"SpaceSymbol/symbol",SymbolBase::Space_symbol);
+	global_scope->registerSymbol(make_shared<SpaceSymbol>(SymbolBase::Space_symbol));
 	
-	getXMLAttribute(xSpace,"SpaceSymbol/symbol",SymbolData::Space_symbol);
-	symbol.link = SymbolData::Space;
-	symbol.granularity = Granularity::Node;
-	symbol.name = SymbolData::Space_symbol;
-	symbol.type_name = TypeInfo<VDOUBLE>::name();
-	symbol.fullname = "spatial coordinates";
-	symbol.integer = true;
-	symbol.invariant = false;
-	symbol.time_invariant = true;
-	defineSymbol(symbol);
+	setRandomSeeds(xTime.getChildNode("RandomSeed"));
 	
 	// Loading and creating the underlying lattice
 	cout << "Creating lattice"<< endl;
@@ -1269,7 +1166,7 @@ void loadFromXML(const XMLNode xNode) {
 	if (xLattice.isEmpty()) throw string("unable to read XML Lattice node");
 	
 	if (xLattice.nChildNode("NodeLength"))
-		node_length.loadFromXML(xLattice.getChildNode("NodeLength"));
+		node_length.loadFromXML(xLattice.getChildNode("NodeLength"), global_scope.get());
 	try {
 		string lattice_code="cubic";
 		getXMLAttribute(xLattice, "class", lattice_code);
@@ -1292,13 +1189,11 @@ void loadFromXML(const XMLNode xNode) {
 	
 	lattice_size_symbol="";
 	if (getXMLAttribute(xLattice,"Size/symbol",lattice_size_symbol)) {
-		symbol.name = lattice_size_symbol;
-		shared_ptr<Property<VDOUBLE> > p = Property<VDOUBLE>::createConstantInstance(symbol.name,"Lattice Size");
-		p->set(global_lattice->size());
-		defineSymbol(p);
+		auto lattice_size = SymbolAccessorBase<VDOUBLE>::createConstant(lattice_size_symbol,"Lattice Size", global_lattice->size());
+		global_scope->registerSymbol( lattice_size );
 	}
 	
-	MembraneProperty::loadMembraneLattice(xSpace);
+	MembranePropertyPlugin::loadMembraneLattice(xSpace, global_scope.get());
 	
 	// Loading global definitions
 	if (xNode.nChildNode("Global")) {
@@ -1307,78 +1202,78 @@ void loadFromXML(const XMLNode xNode) {
 		for (int i=0; i<xGlobals.nChildNode(); i++) {
 			XMLNode xGlobalChild = xGlobals.getChildNode(i);
 			string xml_tag_name(xGlobalChild.getName());
-			if (xml_tag_name == "Field") {
-				shared_ptr<PDE_Layer> layer(new PDE_Layer( global_lattice, SIM::getNodeLength() ));
-				layer->loadFromXML(xGlobalChild);
-				
-				if (pde_layers.find(layer->getSymbol()) !=  pde_layers.end()) {
-					throw MorpheusException(string("Redefinition of pde layer \"") + layer->getSymbol()  + "\"!",xGlobalChild);
-				}
-
-				pde_layers[layer->getSymbol()] = layer;
-
-				// Create the diffusion wrapper
-				if (layer->getDiffusionRate() > 0.0)
-					global_section_plugins.push_back(shared_ptr<Plugin>(new Diffusion(layer)));
-					
-				
-				// registering global symbol for the pde layer;
-				SymbolData symbol; 
-				symbol.name=layer->getSymbol();
-				symbol.fullname = layer->getName();
-				symbol.link = SymbolData::PDELink;
-				symbol.granularity = Granularity::Node;
-				symbol.type_name = TypeInfo<double>::name();
-				symbol.writable = true;
-				SIM::defineSymbol(symbol);
-			}
-			else if (xml_tag_name == "VectorField") {
-				auto layer = make_shared<VectorField_Layer>(global_lattice, SIM::getNodeLength());
-				layer->loadFromXML(xGlobalChild);
-				
-				if (vector_field_layers.find(layer->getSymbol()) !=  vector_field_layers.end()) {
-					throw MorpheusException(string("Redefinition of Vector Field \"") + layer->getSymbol()  + "\"!",xGlobalChild);
-				}
-				vector_field_layers[layer->getSymbol()] = layer;
-				
-				
-				SymbolData symbol;
-				symbol.name = layer->getSymbol();
-				symbol.base_name = layer->getSymbol();
-				symbol.fullname = layer->getName();
-				symbol.link = SymbolData::VectorFieldLink;
-				symbol.granularity = Granularity::Node;
-				symbol.type_name = TypeInfo<VDOUBLE>::name();
-				symbol.writable = true;
-				SIM::defineSymbol(symbol);
-	
-			}
-			else {
+// 			if (xml_tag_name == "Field") {
+// 				shared_ptr<PDE_Layer> layer(new PDE_Layer( global_lattice, SIM::getNodeLength() ));
+// 				layer->loadFromXML(xGlobalChild, global);
+// 				
+// 				if (pde_layers.find(layer->getSymbol()) !=  pde_layers.end()) {
+// 					throw MorpheusException(string("Redefinition of pde layer \"") + layer->getSymbol()  + "\"!",xGlobalChild);
+// 				}
+// 
+// 				pde_layers[layer->getSymbol()] = layer;
+// 
+// 				// Create the diffusion wrapper
+// 				if (layer->getDiffusionRate() > 0.0)
+// 					global_section_plugins.push_back(shared_ptr<Plugin>(new Diffusion(layer)));
+// 					
+// 				
+// 				// registering global symbol for the pde layer;
+// 				SymbolData symbol; 
+// 				symbol.name=layer->getSymbol();
+// 				symbol.fullname = layer->getName();
+// 				symbol.link = SymbolData::PDELink;
+// 				symbol.granularity = Granularity::Node;
+// 				symbol.type_name = TypeInfo<double>::name();
+// 				symbol.writable = true;
+// 				SIM::defineSymbol(symbol);
+// 			}
+// 			else if (xml_tag_name == "VectorField") {
+// 				auto layer = make_shared<VectorField_Layer>(global_lattice, SIM::getNodeLength());
+// 				layer->loadFromXML(xGlobalChild);
+// 				
+// 				if (vector_field_layers.find(layer->getSymbol()) !=  vector_field_layers.end()) {
+// 					throw MorpheusException(string("Redefinition of Vector Field \"") + layer->getSymbol()  + "\"!",xGlobalChild);
+// 				}
+// 				vector_field_layers[layer->getSymbol()] = layer;
+// 				
+// 				
+// 				SymbolData symbol;
+// 				symbol.name = layer->getSymbol();
+// 				symbol.base_name = layer->getSymbol();
+// 				symbol.fullname = layer->getName();
+// 				symbol.link = SymbolData::VectorFieldLink;
+// 				symbol.granularity = Granularity::Node;
+// 				symbol.type_name = TypeInfo<VDOUBLE>::name();
+// 				symbol.writable = true;
+// 				SIM::defineSymbol(symbol);
+// 	
+// 			}
+// 			else {
 				shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
 				
 				if (! p.get())
 					throw MorpheusException(string("Unknown Global plugin ") + xml_tag_name, xGlobalChild);
 				
-				p->loadFromXML(xGlobalChild);
+				p->loadFromXML(xGlobalChild, global_scope.get());
 				
-				if ( dynamic_pointer_cast< AbstractProperty >(p) ) {
-					// note that the AbstractProperty is still maintained by the Plugin
-					shared_ptr<AbstractProperty> property( dynamic_pointer_cast< AbstractProperty >(p) ); 
-// 						if (!property->isGlobal())
-// 							throw( MorpheusException("Local Properties are not allowed in Global section ...", xNode));
-					defineSymbol(property);
-					global_section_plugins.push_back(p);
-				}
-				else if (dynamic_pointer_cast< Function >(p)) {
-					defineSymbol(dynamic_pointer_cast< Function >(p));
-					global_section_plugins.push_back(p);
-				}
-				else if (dynamic_pointer_cast< TimeStepListener >(p)) {
-					global_section_plugins.push_back(p);
-				}
-				else 
-					throw MorpheusException(string("Unknown interface of Global plugin ")+ xml_tag_name, xGlobalChild);
-			}
+// 				if ( dynamic_pointer_cast< AbstractProperty >(p) ) {
+// 					// note that the AbstractProperty is still maintained by the Plugin
+// 					shared_ptr<AbstractProperty> property( dynamic_pointer_cast< AbstractProperty >(p) ); 
+// // 						if (!property->isGlobal())
+// // 							throw( MorpheusException("Local Properties are not allowed in Global section ...", xNode));
+// 					defineSymbol(property);
+// 					global_section_plugins.push_back(p);
+// 				}
+// 				else if (dynamic_pointer_cast< Function >(p)) {
+// 					defineSymbol(dynamic_pointer_cast< Function >(p));
+// 					global_section_plugins.push_back(p);
+// 				}
+// 				if (dynamic_pointer_cast< TimeStepListener >(p)) {
+				global_section_plugins.push_back(p);
+// 				}
+// 				else 
+// 					throw MorpheusException(string("Unknown interface of Global plugin ")+ xml_tag_name, xGlobalChild);
+// 			}
 		}
 	}
 	
@@ -1406,13 +1301,13 @@ void loadFromXML(const XMLNode xNode) {
 #endif
 	}
 	// Creation of Fields
-	for (auto field : pde_layers) {
-		field.second->init(SIM::getGlobalScope());
-	}
-	for (auto field : vector_field_layers) {
-		field.second->init(SIM::getGlobalScope());
-	}
-	
+// 	for (auto field : pde_layers) {
+// 		field.second->init(SIM::getGlobalScope());
+// 	}
+// 	for (auto field : vector_field_layers) {
+// 		field.second->init(SIM::getGlobalScope());
+// 	}
+// 	
 	// Initialising cell populations
 	CPM::init();
 
@@ -1428,25 +1323,25 @@ void loadFromXML(const XMLNode xNode) {
 				if (! p.get()) 
 					throw(string("Unknown analysis plugin " + xml_tag_name));
 				
-				p->loadFromXML(xNode);
+				p->loadFromXML(xNode, SIM::global_scope.get());
 				
-				if ( dynamic_pointer_cast< AbstractProperty >(p) ) {
-					// note that the AbstractProperty is still maintained by the Plugin
-					shared_ptr<AbstractProperty> property( dynamic_pointer_cast< AbstractProperty >(p) ); 
-// 						if (!property->isGlobal())
-// 							throw( MorpheusException("Local Properties are not allowed in Analysis ...", xNode));
-					defineSymbol(property);
-					analysis_section_plugins.push_back(p);
-				}
-				else if (dynamic_pointer_cast< Function >(p)) {
-					defineSymbol(dynamic_pointer_cast< Function >(p));
-					analysis_section_plugins.push_back(p);
-				}
-				else if (dynamic_pointer_cast<AnalysisPlugin>(p) ) {
+// 				if ( dynamic_pointer_cast< AbstractProperty >(p) ) {
+// 					// note that the AbstractProperty is still maintained by the Plugin
+// 					shared_ptr<AbstractProperty> property( dynamic_pointer_cast< AbstractProperty >(p) ); 
+// // 						if (!property->isGlobal())
+// // 							throw( MorpheusException("Local Properties are not allowed in Analysis ...", xNode));
+// // 					defineSymbol(property);
+// 					analysis_section_plugins.push_back(p);
+// 				}
+// 				else if (dynamic_pointer_cast< Function >(p)) {
+// 					defineSymbol(dynamic_pointer_cast< Function >(p));
+// 					analysis_section_plugins.push_back(p);
+// 				}
+				if (dynamic_pointer_cast<AnalysisPlugin>(p) ) {
 					analysers.push_back( dynamic_pointer_cast<AnalysisPlugin>(p) );
 				}
-				else 
-					throw(string("unknown analysis plugin ")+ xml_tag_name + " - skipping");	
+// 				else 
+// 					throw(string("unknown analysis plugin ")+ xml_tag_name + " - skipping");	
 			}
 			catch (string er) {
 				cout << er << endl;
@@ -1484,13 +1379,11 @@ void saveToXML() {
 	xMorpheusNode.addChild(xSpace);
 	
 	// saving Field data
-	for (auto pde : pde_layers) {
-		pde.second->saveToXML();
+	// TODO:: global_scope::saveToXML -> Field / VectorField
+	for (auto plugin : global_section_plugins) {
+		xGlobals.addChild(plugin->saveToXML());
 	}
 	
-	for (auto vfield : vector_field_layers){
-		vfield.second->saveToXML();
-	}
 	// saving global_scope
 	xMorpheusNode.addChild(xGlobals);
 
@@ -1551,26 +1444,26 @@ const Lattice& lattice()
 }
 
 
-shared_ptr<PDE_Layer> findPDELayer(string symbol) {
-	if (pde_layers.find(symbol) != pde_layers.end()) {
-		return pde_layers[symbol];
-	}
-	else {
-		throw string("Unable to locate Field \"") + symbol +"\"";
-		return shared_ptr<PDE_Layer>();
-	}
-}
+// shared_ptr<PDE_Layer> findPDELayer(string symbol) {
+// 	if (pde_layers.find(symbol) != pde_layers.end()) {
+// 		return pde_layers[symbol];
+// 	}
+// 	else {
+// 		throw string("Unable to locate Field \"") + symbol +"\"";
+// 		return shared_ptr<PDE_Layer>();
+// 	}
+// }
 
-shared_ptr<VectorField_Layer> findVectorFieldLayer(string symbol)
-{
-	if (vector_field_layers.find(symbol) != vector_field_layers.end()) {
-		return vector_field_layers[symbol];
-	}
-	else {
-		throw string("Unable to locate VectorField \"") + symbol +"\"";
-		return shared_ptr<VectorField_Layer>();
-	}
-}
+// shared_ptr<VectorField_Layer> findVectorFieldLayer(string symbol)
+// {
+// 	if (vector_field_layers.find(symbol) != vector_field_layers.end()) {
+// 		return vector_field_layers[symbol];
+// 	}
+// 	else {
+// 		throw string("Unable to locate VectorField \"") + symbol +"\"";
+// 		return shared_ptr<VectorField_Layer>();
+// 	}
+// }
 
 const Scope* getScope() { return current_scope; }
 
@@ -1583,7 +1476,6 @@ void enterScope(const Scope* scope) { if (!scope) throw(string("Invalid scope in
 
 void leaveScope() { if (scope_stash.empty()) throw (string("Invalid scope in leaveScope on empty Stack")); cout << "Leaving scope " << current_scope->getName(); current_scope = scope_stash.back(); scope_stash.pop_back();  cout << ", back to scope " << current_scope->getName() << endl;  }
 
-void defineSymbol(SymbolData symbol) { current_scope->registerSymbol(symbol); }
 
 
 /*

@@ -12,18 +12,17 @@
 #ifndef INTERFACES_H
 #define INTERFACES_H
 
-#include "simulation.h"
+// #include "simulation.h"
 #include "ClassFactory.h"
 #include <chrono>
 #include <set>
+#include "plugin_parameter.h"
 
-class AbstractPluginParameter;
-class PluginParameterBase;
-template <class T, template <class S, class R> class XMLValueInterpreter, class RequirementPolicy> class PluginParameter_Shared;
-template <class T> class ExpressionEvaluator;
-template <class T> class ThreadedExpressionEvaluator;
-class CellType;
-class Cell;
+// class AbstractPluginParameter;
+// class PluginParameterBase;
+// template <class T, template <class S, class R> class XMLValueInterpreter, class RequirementPolicy> class PluginParameter_Shared;
+// template <class T> class ExpressionEvaluator;
+// template <class T> class ThreadedExpressionEvaluator;
 class InteractionEnergy;
 class PDE_Layer;
 
@@ -66,7 +65,7 @@ class MyPlugin : public Check_Update_Listener, public Update_Listener
 		XMLNode saveToXML() const;
 
 		// attach to a specific celltype
-		virtual void init(CellType *);
+		virtual void init(Scope *);
 
 		// prevent certain updates
 		bool update_check(const Cell* cell, const & update, _TODO todo);
@@ -112,18 +111,22 @@ void init() {
  * \section Development Plugin Development
  * \subsection PluginInterfaces Plugin Interfaces 
  * 
- * Several inteface classes to derive from allow a Plugin to interfere with the simulation
- * system.
+ * Several predefined base classes allow a Plugin to interfere with the simulation
+ * system. Pick a single one for your plugin.
  * 
- *  - \ref CPM_Check_Update
- *  - \ref CPM_Energy
- *  - \ref CPM_Update_Listener
+ *  - \ref Plugin
  *  - \ref ContinuousProcessPlugin
  *  - \ref InstantaneousProcessPlugin
  *  - \ref ReporterPlugin
  *  - \ref AnalysisPlugin
+ *
+ * In addition, several abstract interfaces allow to extend the interface  with the simulation
+ * system.
+ *  - \ref CPM_Energy
+ *  - \ref Cell_Update_Checker
+ *  - \ref Cell_Update_Listener
  * 
- * Derive from this class, add plugin interfaces and develop your own plugins
+ * Derive from a base class, maybe add additional interfaces and develop your own plugins.
  * 
  * 
  * \subsection Integration Plugin Integration
@@ -134,25 +137,6 @@ void init() {
  */
 
 
-
-
-
-
-/// Information about a SymbolDependency
-struct SymbolDependency {string name; const Scope* scope;};
-
-inline bool operator<(const SymbolDependency& lhs, const SymbolDependency& rhs) {
-	if (lhs.name < rhs.name) return true;
-	else if (lhs.name == rhs.name) {
-		return lhs.scope<rhs.scope;
-	}
-	else
-		return false;
-}
-
-inline bool operator==(const SymbolDependency& lhs, const SymbolDependency& rhs) {
-	return (lhs.name == rhs.name && lhs.scope == rhs.scope);
-}
 
 /** \defgroup Plugins Plugins */
 
@@ -179,11 +163,11 @@ class Plugin {
 		
 	protected:
 		string plugin_name;
-		XMLNode stored_node;
+		mutable XMLNode stored_node;
 		const Scope* local_scope;
 		
 	public:
-		Plugin() {  Plugin::plugins_alive++;}
+		Plugin() : plugin_name(""), local_scope(nullptr) {  Plugin::plugins_alive++; }
 		virtual  ~Plugin() { Plugin::plugins_alive--; };  // any plugin will have a virtual destructor though
 
 // 		static multiset<string> plugins_alive;
@@ -191,14 +175,15 @@ class Plugin {
 		/// Get an XMLNode containing the XML specification the plugin has loaded
 		virtual XMLNode saveToXML() const;
 		
-		/** \brief Load a plugin confuguration from XML
-		 *  You just have to take care for the XML Tags not treated by the plugin interface or PluginParmeters
+		/** \brief Load a plugin configuration from XML
+		 *  
+		 *  Load all information provided through the XML either directly or using PluginParameters.
 		 */
-		virtual void loadFromXML(const XMLNode);
+		virtual void loadFromXML(const XMLNode, Scope * scope);
+		
 		const XMLNode getXMLNode() const { return stored_node;}
 		
 		/// XML Tag the Plugin corresponds to. Gets overridden by the DECLARE_PLUGIN macro.
-
 		virtual string XMLName() const =0;
 		
 		/// \brief Register a PluginParameter for automatic treatment
@@ -208,15 +193,13 @@ class Plugin {
 		
 		template <class T, template <class S, class R> class XMLValueInterpreter, class RequirementPolicy >
 		void registerPluginParameter( PluginParameter_Shared<T, XMLValueInterpreter, RequirementPolicy>& parameter ) { registerPluginParameter(*parameter); }
-/*		// Can be used to 
-		template <class T>
-		void registerUsedSymbol( const SymbolAccessor<T>& parameter );
-		template <class T>
-		void registerUsedSymbol( const SymbolRWAccessor<T>& parameter );
-	*/	
-		void registerInputSymbol(string name, const Scope* scope);
+// 		void registerPluginParameter( shared_ptr<PluginParameterBase> parameter ) { registerPluginParameter(*parameter); }
+
+		void registerInputSymbol(Symbol sym);
+		void registerInputSymbol(const SymbolDependency& sym);
 		void registerInputSymbols(const set<SymbolDependency>& in);
-		void registerOutputSymbol(string name, const Scope* scope);
+		
+		void registerOutputSymbol(Symbol sym);
 		void registerOutputSymbols(const set<SymbolDependency>& out);
 		
 		void registerCellPositionDependency();
@@ -224,10 +207,13 @@ class Plugin {
 		
 		
 		/// Fully qualified name of the plugin
-		string getFullName() const { return plugin_name; };
+		const string& getDescription() const { return plugin_name; };
+		const string& getFullName() const { return plugin_name; };
 		virtual const Scope* scope() { return local_scope; };
 		bool setParameter(string xml_path, string value);
-		/// init method is called by the framework as soon as all model all containers and symbols have been set up
+		
+		/// init method is called by the framework as soon as all model containers and symbols have been set up
+		/// but before cell populations get created.
 		virtual void init(const Scope* scope);
 		/// The set of symbols the Plugin depends on
 		set<SymbolDependency> getDependSymbols() const;
@@ -285,16 +271,17 @@ class CPM_Energy : virtual public Plugin {
 // };
 
 
-/** \defgroup CPM_Check_UpdatePlugins CPM Check Update Plugins
+/** \defgroup Cell_Update_CheckerPlugins Cell Update Checker Plugins
  *  \ingroup Plugins
- *  Plugin interface for defining a rule to check for the CPM before updates take place.
+ *  Plugin interface for defining a rule to check a cell update before it take place.
+ *  E.g. CPM's connectivity constraint is based on the refusing cell updates disrupting a cell. 
  */
 
 /** \brief Plugin interface for defining an update check rule for the CPM.
  * The update_check is called for any cell_id involved in an update. This way certain updates can be prevented, e.g
  * for creating a connectivity constraint or freezing certain cells.
  */
-class CPM_Check_Update : virtual public Plugin
+class Cell_Update_Checker : virtual public Plugin
 {
 	public:
 		
@@ -306,7 +293,7 @@ class CPM_Check_Update : virtual public Plugin
 		virtual bool update_check(CPM::CELL_ID  cell_id, const CPM::Update& update) =0;
 };
 
-/** \defgroup CPM_UpdateListenerPlugins CPM Update Listener Plugins
+/** \defgroup Cell_Update_ListenerPlugins CPM Update Listener Plugins
  *  \ingroup Plugins
  *  Plugin interface for getting notifications of cell updates check rule for the CPM.
  */
@@ -316,7 +303,7 @@ class CPM_Check_Update : virtual public Plugin
  * In addition, when a cell is selected for update, the set_update_notify method is called.
  */
 
-class CPM_Update_Listener : virtual public Plugin
+class Cell_Update_Listener : virtual public Plugin
 {
 	public:
 		virtual void set_update_notify(CPM::CELL_ID cell_id, const CPM::Update& update) {};
@@ -348,7 +335,7 @@ class TimeStepListener : virtual public Plugin
 		
 		TimeStepListener( XMLSpec spec);
 		// Load data from XML (time-step, if defined )
-		void loadFromXML(const XMLNode ) override;
+		void loadFromXML(const XMLNode, Scope* scope) override;
 		// Init the Plugin for the scoe is was defined in
 		void init(const Scope* scope) override;
 		
@@ -557,5 +544,18 @@ class Interaction_Addon : virtual public Plugin {
 		virtual double interaction(CPM::STATE s1, CPM::STATE s2) =0;
 };
 
+
+class AbstractProperty {
+public:
+	virtual const string& symbol() const =0;
+	virtual const string& type() const =0;
+	virtual void assign(shared_ptr<AbstractProperty> other) =0;
+	virtual shared_ptr<AbstractProperty> clone() const =0;
+	virtual void init(const SymbolFocus& f) =0;
+	virtual string XMLDataName() const =0;
+	virtual void restoreData(XMLNode node) =0;
+	virtual XMLNode storeData() const =0;
+	virtual ~AbstractProperty() {};
+};
 
 #endif // INTERFACES_H

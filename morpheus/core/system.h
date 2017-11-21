@@ -13,9 +13,9 @@
 #ifndef ODE_SYSTEM_H
 #define ODE_SYSTEM_H
 
-#include "symbol_accessor.h"
-#include "focusrange.h"
+// #include "symbol_accessor.h"
 #include "interfaces.h"
+#include "focusrange.h"
 #include "function.h"
 #include "equation.h"
 #include "vector_equation.h"
@@ -129,7 +129,7 @@ template <SystemType type>
 class System
 {
 public:
-	void loadFromXML(const XMLNode node);
+	void loadFromXML(const XMLNode node, Scope* scope);
 	void init();
 
 	// Set a symbol to be a local variable, that will not show up in the list of dependencies.
@@ -148,9 +148,10 @@ protected:
 
 	void computeToBuffer(const SymbolFocus& f);
 	void applyBuffer(const SymbolFocus& f);
-
-	SymbolData::LinkType context;
-	Granularity granularity;
+	
+	bool target_defined;
+	const Scope *target_scope;
+	Granularity target_granularity;
 	VINT lattice_size;
 	
 	Scope *local_scope;
@@ -167,7 +168,7 @@ protected:
 	vector< shared_ptr<Plugin> > plugins;
 	vector< shared_ptr<VectorEquation> > vec_equations;
 	vector< shared_ptr<SystemFunc> > functionals, equations, functions;
-	vector<SymbolAccessor<double> > external_symbols;
+	vector< SymbolAccessor<double> > external_symbols;
 	map<string, int> cache_layout;
 	vector< shared_ptr<SystemSolver> > solvers;
 	
@@ -184,7 +185,7 @@ public:
 
     ContinuousSystem() : ContinuousProcessPlugin(ContinuousProcessPlugin::CONTI,TimeStepListener::XMLSpec::XML_REQUIRED) {};
 	/// Compute and Apply the state after time step @p step_size.
-	void loadFromXML(const XMLNode node) override;
+	void loadFromXML(const XMLNode node, Scope* scope) override;
 	void init(const Scope* scope) override;
 	void prepareTimeStep() override { System<CONTINUOUS_SYS>::computeContextToBuffer(); };
 	void executeTimeStep() override { System<CONTINUOUS_SYS>::applyContextBuffer(); };
@@ -200,7 +201,7 @@ public:
     DiscreteSystem() : InstantaneousProcessPlugin(TimeStepListener::XMLSpec::XML_REQUIRED) {};
 
 	/// Compute and Apply the state after time step @p step_size.
-	void loadFromXML(const XMLNode node) override {  InstantaneousProcessPlugin::loadFromXML(node); System<DISCRETE_SYS>::loadFromXML(node); };
+	void loadFromXML(const XMLNode node, Scope* scope) override {  InstantaneousProcessPlugin::loadFromXML(node, scope); System<DISCRETE_SYS>::loadFromXML(node, scope); };
 	void init(const Scope* scope) override;
 	void executeTimeStep() override { System<DISCRETE_SYS>::computeContextToBuffer(); System<DISCRETE_SYS>::applyContextBuffer();  };
 	const Scope* scope() override { return System<DISCRETE_SYS>::getLocalScope(); };
@@ -248,21 +249,20 @@ class EventSystem: public System<DISCRETE_SYS>, public InstantaneousProcessPlugi
 public:
 	DECLARE_PLUGIN("Event");
     EventSystem() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_OPTIONAL ) {};
-    void loadFromXML ( const XMLNode node ) override;
+    void loadFromXML ( const XMLNode node, Scope* scope) override;
     void init (const Scope* scope) override;
 	/// Compute and Apply the state after time step @p step_size.
 	void executeTimeStep() override;
+	CellType* celltype;
 	const Scope* scope() override { return System<DISCRETE_SYS>::getLocalScope(); };
 
 protected:
 	// TODO We have to store the state of the event with respect to the context !! map<SymbolFocus, bool> old_value ?? that is a map lookup per context !!!
-	// Alternatively, we can also create a hidden cell-property --> maybe a whise way to store the state
+	// Alternatively, we can also create a hidden cell-property --> maybe a wse way to store the state
 	shared_ptr<ExpressionEvaluator<double> > condition;
-	CellPropertyAccessor<double > condition_history_prop;
-	double condition_history_val;
+	map<SymbolFocus,double> condition_history;
 	bool trigger_on_change;
 	Granularity condition_granularity;
-	CellType* celltype;
 	vector<SymbolFocus> contexts_with_buffered_data;
 };
 

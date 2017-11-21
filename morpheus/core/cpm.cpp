@@ -26,14 +26,13 @@ CPMSampler::CPMSampler() :
 };
 
 
-void CPMSampler::loadFromXML(const XMLNode node)
+void CPMSampler::loadFromXML(const XMLNode node, Scope* scope)
 {
-    ContinuousProcessPlugin::loadFromXML(node);
+    ContinuousProcessPlugin::loadFromXML(node, scope);
 	
 	if (mcs_duration_symbol.isDefined()) {
-		auto symbol = Property<double>::createConstantInstance(mcs_duration_symbol.stringVal(),"Monte Carlo Step Duration");
-		symbol->set(mcs_duration.get());
-		SIM::defineSymbol(symbol);
+		auto symbol = SymbolAccessorBase<double>::createConstant(mcs_duration_symbol.stringVal(),"Monte Carlo Step Duration", mcs_duration());
+		scope->registerSymbol(symbol);
 	}
 	// In fact, the update neighborhood should include all neighbors up to sqrt(2), aka Moore for square, 1st order for hex and 2nd order in cubic.
 	update_neighborhood = SIM::lattice().getNeighborhoodByDistance(1.5); 
@@ -44,7 +43,7 @@ void CPMSampler::loadFromXML(const XMLNode node)
 	else throw string("Missing required element MonteCarloSampler/Neighborhood.");
 	
 	interaction_energy = shared_ptr<InteractionEnergy>(new InteractionEnergy());
-	interaction_energy->loadFromXML(node.getChildNode("Interaction"));
+	interaction_energy->loadFromXML(node.getChildNode("Interaction"), scope);
 	
 	if (update_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && update_neighborhood.order()>5) ) {
 		throw string("Update neighborhood is too large");
@@ -85,7 +84,7 @@ void CPMSampler::init(const Scope* scope)
 		celltypes.push_back(ct);
 		auto dependencies =  ct->cpmDependSymbols();
 		for (auto& dep : dependencies) {
-			registerInputSymbol( dep.second.name, dep.second.scope );
+			registerInputSymbol( dep.second );
 		}
 		registerCellPositionOutput();
 	}

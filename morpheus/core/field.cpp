@@ -10,10 +10,58 @@
 //
 //
 #include "field.h"
+
 #include "lattice_data_layer.cpp"
-#include "expression_evaluator.h"
+// #include "expression_evaluator.h"
 #include "focusrange.h"
+#include "diffusion.h"
 #include <valarray>
+
+REGISTER_PLUGIN(Field);
+
+void Field::loadFromXML(const XMLNode node, Scope * scope) {
+	Plugin::loadFromXML(node, scope);
+	auto field = make_shared<PDE_Layer>(SIM::getLattice(), SIM::getNodeLength(), false);
+	field->loadFromXML(node, scope);
+	accessor = make_shared<Symbol>(symbol_name(), this->getDescription(), field);
+	scope->registerSymbol(accessor);
+	// Create the diffusion wrapper
+	if (field->getDiffusionRate() > 0.0) {
+		diffusion_plugin = make_shared<Diffusion>(accessor);
+	}
+}
+
+void Field::init(const Scope * scope) { 
+	if (accessor) accessor->field->init();
+	if (diffusion_plugin) diffusion_plugin->init(scope);
+}
+
+XMLNode Field::saveToXML() const {
+	XMLNode node = accessor->field->saveToXML();
+	node.updateAttribute("symbol", symbol_name().c_str());
+	return node;
+}
+
+REGISTER_PLUGIN(VectorField);
+
+VectorField::VectorField() : Plugin() {
+	registerPluginParameter(symbol_name);
+	symbol_name.setXMLPath("symbol");
+}
+
+void VectorField::loadFromXML(const XMLNode node, Scope * scope) {
+	Plugin::loadFromXML(node, scope);
+	auto field = make_shared<VectorField_Layer>(SIM::getLattice(), SIM::getNodeLength());
+	field->loadFromXML(node);
+	accessor = make_shared<Symbol>(symbol_name(), getDescription(), field);
+	scope->registerSymbol(accessor);
+}
+
+XMLNode VectorField::saveToXML() const {
+	XMLNode node = accessor->field->saveToXML();
+	node.updateAttribute("symbol", symbol_name().c_str());
+	return node;
+}
 
 // Explicit template instantiation
 template class Lattice_Data_Layer<double>;
@@ -30,6 +78,7 @@ PDE_Layer::PDE_Layer(shared_ptr<const Lattice> l, double p_node_length, bool sur
 	store_data 			= false;
 	is_surface = surface;
 	init_by_restore = false;
+	initialized = false;
 	
 	useBuffer(true);
 }
@@ -38,7 +87,7 @@ PDE_Layer::PDE_Layer(shared_ptr<const Lattice> l, double p_node_length, bool sur
 PDE_Layer::~PDE_Layer()
 {/* if (write_buffer) delete[] write_buffer;*/ }
 
-void PDE_Layer::loadFromXML(const XMLNode xNode)
+void PDE_Layer::loadFromXML(const XMLNode xNode, Scope* scope)
 {
 	Lattice_Data_Layer<double>::loadFromXML(xNode,
 		[] (const string& input ) -> double {
@@ -47,11 +96,8 @@ void PDE_Layer::loadFromXML(const XMLNode xNode)
 			s >> v;
 			return v;
 		});
-	if ( ! getXMLAttribute(xNode,"symbol",symbol_name) ) {
-		cerr << "PDE_Layer needs a symbol defined.";
-	}
 	max_time_step = -1;
-
+	local_scope = scope;
 	getXMLAttribute(xNode,"Diffusion/rate", diffusion_rate);
 	
 	diffusion_units = "";
@@ -78,27 +124,14 @@ void PDE_Layer::loadFromXML(const XMLNode xNode)
 	getXMLAttribute(xNode, "time-step", max_time_step);
 
 	getXMLAttribute(xNode,"value", initial_expression);
-	
-// 	XMLNode xInit = xNode.getChildNode("Initial");
-// 	if ( ! xInit.isEmpty() ) {
-// 		// parse for all PDE Initializers and run them
-// 		for (int i=0; i < xInit.nChildNode(); i++) {
-// 			XMLNode xInitPDENode = xInit.getChildNode(i);
-// 			// assume its an initilizer
-// 			shared_ptr<Plugin> p = PluginFactory::CreateInstance(string(xInitPDENode.getName()));
-// 			if (!p) 
-// 				throw MorpheusException("Unknown Initialization Plugin.", xInitPDENode);
-// 			p->loadFromXML(xInitPDENode);
-// 			plugins.push_back(p);
-// 		}
-// 	}
 
+ 	// TODO :: Integrate the tiff format into the data reading / writing infrastructure
 	XMLNode xTiffreader = xNode.getChildNode("TIFFReader");
 	if ( ! xTiffreader.isEmpty() ) {
 		shared_ptr<Plugin> p = PluginFactory::CreateInstance(string(xTiffreader.getName()));
 		if(!p)
 			throw MorpheusException("Unknown Initialization Plugin.", xTiffreader);
-		p->loadFromXML(xTiffreader);
+		p->loadFromXML(xTiffreader, scope);
 		plugins.push_back(p);
  	}
 // 		// parse for all PDE Initializers and run them
@@ -125,8 +158,9 @@ void PDE_Layer::loadFromXML(const XMLNode xNode)
 	}
 }
 
-void PDE_Layer::init(const Scope* scope, const SymbolFocus& focus)
+void PDE_Layer::init(const SymbolFocus& focus)
 {
+	if (initialized) return;
  	theta_y.resize(l_size.y);
 	phi_coarsening.resize(l_size.y);
 	for (uint i=0; i<l_size.y; i++) { theta_y[i] = (double(i)+0.5)  * (M_PI/l_size.y); }
@@ -139,12 +173,12 @@ void PDE_Layer::init(const Scope* scope, const SymbolFocus& focus)
 
 	if (!initial_expression.empty() && !init_by_restore) {
 		ExpressionEvaluator<double> init_val(initial_expression);
-		init_val.init(scope);
+		init_val.init(local_scope);
 		if (is_surface) {
 			CPM::CELL_ID cell_id = focus.cellID();
 			FocusRange range(Granularity::MembraneNode, cell_id);
 			for (auto focus : range) {
-				this->set(focus.membrane_pos(),init_val.get(focus));
+				this->set(focus.membrane_pos(),init_val.safe_get(focus));
 			}
 		}
 		else {
@@ -159,7 +193,7 @@ void PDE_Layer::init(const Scope* scope, const SymbolFocus& focus)
 			}
 			FocusRange range(Granularity::Node, r);
 			for (auto focus : range) {
-				this->set(focus.pos(),init_val.get(focus));
+				this->set(focus.pos(),init_val.safe_get(focus));
 			}
 		}
 	}
@@ -168,6 +202,7 @@ void PDE_Layer::init(const Scope* scope, const SymbolFocus& focus)
 			dynamic_pointer_cast<Field_Initializer>( plugins[i] )->run(this);
 		}
 	}
+	initialized = true;
 }
 
 XMLNode PDE_Layer::saveToXML() const
@@ -212,17 +247,6 @@ XMLNode PDE_Layer::storeData(string filename) const
 bool PDE_Layer::restoreData(const XMLNode node)
 {
 // 	try {
-		string symbol;
-		getXMLAttribute(node,"symbol-ref",symbol);
-		
-		// in case of restoring PDE data, get symbol from parent node
-		if(symbol.empty())
-			symbol = node.getParentNode().getAttribute("symbol");
-		
-		// in case of restoring MembranePropertyData, get symbol-ref from node itself
-		if (symbol != symbol_name)
-			throw(string("Wrong symbol name in PDE_Layer::restoreData ") + symbol + " != " + symbol_name);
-		
 		string filename;
 		if (getXMLAttribute(node, "filename",filename)) {
 			ifstream in(filename.c_str());
@@ -1081,9 +1105,9 @@ double PDE_Layer::max_val() const {
 }
 
 
-VectorField_Layer::VectorField_Layer(shared_ptr<const Lattice> lattice, double node_length) : Lattice_Data_Layer<VDOUBLE>(lattice,1,VDOUBLE(0,0,0),""), node_length(node_length)
+VectorField_Layer::VectorField_Layer(shared_ptr<const Lattice> lattice, double node_length) :
+	Lattice_Data_Layer<VDOUBLE>(lattice,1,VDOUBLE(0,0,0),""), node_length(node_length)
 {
-	symbol_name = "";
 	initial_expression = "";
 	init_by_restore = false;
 }
@@ -1096,8 +1120,6 @@ void VectorField_Layer::loadFromXML(XMLNode node)
 			s >> v;
 			return v;
 		});
-	getXMLAttribute(node,"symbol",symbol_name);
-	getXMLAttribute(node,"name",name);
 	getXMLAttribute(node,"value", initial_expression);
 	
 	XMLNode xData = node.getChildNode("Data");

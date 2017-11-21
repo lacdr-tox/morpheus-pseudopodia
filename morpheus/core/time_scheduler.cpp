@@ -7,13 +7,14 @@ TimeScheduler& TimeScheduler::getInstance() {
 	return sched;
 }
 
-void TimeScheduler::loadFromXML(XMLNode xTime)
+void TimeScheduler::loadFromXML(XMLNode xTime, Scope* scope)
 {
 	TimeScheduler& ts = getInstance();
-	ts.xmlTime = xTime;
+	ts.global_scope = scope;
 	
-	ts.start_time.loadFromXML(xTime.getChildNode("StartTime"));
-	ts.stop_time.loadFromXML(xTime.getChildNode("StopTime"));
+	ts.xmlTime = xTime;
+	ts.start_time.loadFromXML(xTime.getChildNode("StartTime"), scope);
+	ts.stop_time.loadFromXML(xTime.getChildNode("StopTime"), scope);
 		
 	string expression;
 	 if (getXMLAttribute(xTime,"StopCondition/Condition/text",expression)) {
@@ -21,7 +22,7 @@ void TimeScheduler::loadFromXML(XMLNode xTime)
 	}
 		
 	if (xTime.nChildNode("SaveInterval")) { 
-		ts.save_interval.loadFromXML(xTime.getChildNode("SaveInterval")); 
+		ts.save_interval.loadFromXML(xTime.getChildNode("SaveInterval"), scope); 
 	}
 	ts.current_time = ts.start_time();
 	
@@ -83,8 +84,8 @@ void TimeScheduler::init()
 			}
 		}
 	}
-	
-	const_cast<Scope*>(SIM::getGlobalScope())->propagateSourceTimeStep( SymbolData::Time_symbol, ts.minimal_time_step);
+// 	
+	ts.global_scope->propagateSourceTimeStep(SymbolBase::Time_symbol,ts.minimal_time_step);
 	
 	// Splitting up the listeners in the various subclasses
 	for (uint i=0; i<ts.all_listeners.size(); i++) {
@@ -119,7 +120,7 @@ void TimeScheduler::init()
 	for (uint i=0; i<ts.all_phase2.size(); i++) {
 		set<SymbolDependency> out_sym = ts.all_phase2[i]->getOutputSymbols();
 		for (const auto& sym : out_sym) {
-			if (!sym.scope->isSymbolDelayed(sym.name) && sym.name != SymbolData::CellCenter_symbol) {
+			if (! sym.scope->findSymbol(sym.name)->flags().delayed && sym.name != SymbolBase::CellCenter_symbol) {
 				const_cast<Scope*>(sym.scope)->addUnresolvedSymbol(sym.name);
 			}
 		}

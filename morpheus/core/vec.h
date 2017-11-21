@@ -263,6 +263,7 @@ struct less_VINT {  // we use a struct to prevent constructors
 	bool operator() (const VINT& a, const VINT& b) const {
 		return ( a.z < b.z || (a.z==b.z  &&  (a.y<b.y || (a.y==b.y && a.x<b.x))));
 	}
+	
 };
 
 struct CompareAngle {

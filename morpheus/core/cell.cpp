@@ -30,47 +30,40 @@ double Cell::getEccentricity() const {
 
 
 Cell::Cell(CPM::CELL_ID cell_name, CellType* ct)
-		: properties(p_properties), membranes(p_membranes), id(cell_name), celltype(ct), nodes(), shape_tracker(cell_name,nodes)
+		: properties(p_properties), id(cell_name), celltype(ct), nodes(), shape_tracker(cell_name,nodes)
 {
 	for (uint i=0;i< celltype->default_properties.size(); i++) {
 		p_properties.push_back(celltype->default_properties[i]->clone());
 	}
-	for (uint i=0;i< celltype->default_membranes.size(); i++) {
-		p_membranes.push_back(celltype->default_membranes[i]->clone());
-	}
+// 	for (uint i=0;i< celltype->default_membranes.size(); i++) {
+// 		p_membranes.push_back(celltype->default_membranes[i]->clone());
+// 	}
 	track_nodes = true;
 	track_shape = true;
 	node_sum = VINT(0,0,0);
+	centerL = VINT(0,0,0);
+	center = VINT(0,0,0);
 };
 
 void Cell::init()
 {
 // 	cout << "initializing cell " << id << endl;
 	for (auto prop : p_properties) {
-		try {
-			prop->init(celltype->getScope(), SymbolFocus(id));
-		}
-		catch (string e) { throw MorpheusException(e, prop->saveToXML()); }
-	}
-
-	for (auto mem : p_membranes) {
-		try {
-			mem->init(celltype->getScope(), SymbolFocus(id));
-		}
-		catch (string e) { throw MorpheusException(e, mem->saveToXML()); }
+// 		try {
+			prop->init(SymbolFocus(id));
+// 		}
+// 		catch (string e) { throw MorpheusException(e); }
 	}
 }
 
 
 Cell::Cell( Cell& other_cell, CellType* ct  )
-		: properties(p_properties), membranes(p_membranes), id(other_cell.getID()), celltype (ct),nodes(other_cell.nodes), node_sum(other_cell.node_sum), shape_tracker(id, nodes)
+		: properties(p_properties), id(other_cell.getID()), celltype (ct),nodes(other_cell.nodes), node_sum(other_cell.node_sum),
+		centerL(other_cell.centerL), center(other_cell.center), shape_tracker(id, nodes) 
 {
 	
 	for (uint i=0;i< celltype->default_properties.size(); i++) {
 		p_properties.push_back(celltype->default_properties[i]->clone());
-	}
-	for (uint i=0;i< celltype->default_membranes.size(); i++) {
-		p_membranes.push_back(celltype->default_membranes[i]->clone());
 	}
 	
 	track_nodes = other_cell.track_nodes;
@@ -99,22 +92,10 @@ void Cell::setShapeTracking(bool state)
 void Cell::assignMatchingProperties(const vector< shared_ptr<AbstractProperty> > other_properties){
 	// copy all cell properties with matching names & types
 	for (uint o_prop=0; o_prop< other_properties.size(); o_prop++) {
-		if (other_properties[o_prop]->getSymbol()[0]=='_') continue; // skip intermediates ...
+		if (other_properties[o_prop]->symbol()[0]=='_') continue; // skip intermediates ...
 		for (uint prop=0; prop < p_properties.size(); prop++) {
-			if (p_properties[prop]->getSymbol() == other_properties[o_prop]->getSymbol() && p_properties[prop]->getTypeName() == other_properties[o_prop]->getTypeName()) {
-				p_properties[prop]->set(other_properties[o_prop].get());
-				break;
-			}
-		}
-	}
-}
-
-void Cell::assignMatchingMembranes(const vector< shared_ptr<PDE_Layer> > other_membranes) {
-	for (uint i=0;i< p_membranes.size(); i++) {
-		uint j=0;
-		for (; j<other_membranes.size(); j++) {
-			if (other_membranes[j]->getSymbol() == p_membranes[i]->getSymbol() ) {
-				p_membranes[i]->set(*other_membranes[j]);
+			if (p_properties[prop]->symbol() == other_properties[o_prop]->symbol() && p_properties[prop]->type() == other_properties[o_prop]->type()) {
+				p_properties[prop]->assign(other_properties[o_prop]);
 				break;
 			}
 		}
@@ -148,32 +129,40 @@ void Cell::loadFromXML(const XMLNode xNode) {
 
 	
 	// load matching properties from XMLNode
-	vector<XMLNode> property_nodes;
-	for (uint p=0; p<properties.size(); p++) {
-		properties[p]->restoreData(xNode);
+	for (int i=0; i<xNode.nChildNode("CellProperty"); i++) {
+		auto xCP= xNode.getChildNode("CellProperty",i);
+		string symbol = xNode.getAttribute("symbol-ref");
+		for (uint p=0; p<properties.size(); p++) {
+			if (properties[p]->symbol() == symbol)
+				properties[p]->restoreData(xCP);
+		}
 	}
+// 	vector<XMLNode> property_nodes;
+// 	for (uint p=0; p<properties.size(); p++) {
+// 		properties[p]->restoreData(xNode);
+// 	}
 	
 //	TODO: load membraneProperties from XML
-	for (int mem=0; mem<xNode.nChildNode("MembranePropertyData"); mem++) {
-		XMLNode xMembraneProperty = xNode.getChildNode("MembranePropertyData",mem);
-		string symbol; getXMLAttribute(xMembraneProperty, "symbol-ref", symbol);
-
-		uint p=0;
-		for (; p<membranes.size(); p++) {
-			if (membranes[p]->getSymbol() == symbol) {
-				//string filename = membranes[mem]->getName() + "_" + to_string(id)  + "_" + SIM::getTimeName() + ".dat";
-				membranes[p]->restoreData(xMembraneProperty);
-// 				string filename; getXMLAttribute(xMembraneProperty, "filename", filename);
-// 				cout << "Loading MembranePropertyData '" << symbol << "' from file '" << filename << "'. Sum = " << membranes[p]->sum() << endl;
-				break;
-			}
-		}
-		if (p==membranes.size()) {
-			cerr << "Cell::loadFromXML: Unable to load data for MembranePropertyData " << symbol 
-			     << " cause it's not defined for this celltype (" << celltype->getName() << ")"<<endl;
-			exit(-1);
-		}
-	}
+// 	for (int mem=0; mem<xNode.nChildNode("MembranePropertyData"); mem++) {
+// 		XMLNode xMembraneProperty = xNode.getChildNode("MembranePropertyData",mem);
+// 		string symbol; getXMLAttribute(xMembraneProperty, "symbol-ref", symbol);
+// 
+// 		uint p=0;
+// 		for (; p<membranes.size(); p++) {
+// 			if (membranes[p]->getSymbol() == symbol) {
+// 				//string filename = membranes[mem]->getName() + "_" + to_string(id)  + "_" + SIM::getTimeName() + ".dat";
+// 				membranes[p]->restoreData(xMembraneProperty);
+// // 				string filename; getXMLAttribute(xMembraneProperty, "filename", filename);
+// // 				cout << "Loading MembranePropertyData '" << symbol << "' from file '" << filename << "'. Sum = " << membranes[p]->sum() << endl;
+// 				break;
+// 			}
+// 		}
+// 		if (p==membranes.size()) {
+// 			cerr << "Cell::loadFromXML: Unable to load data for MembranePropertyData " << symbol 
+// 			     << " cause it's not defined for this celltype (" << celltype->getName() << ")"<<endl;
+// 			exit(-1);
+// 		}
+// 	}
 }
 
 XMLNode Cell::saveToXML() const {
@@ -185,16 +174,18 @@ XMLNode Cell::saveToXML() const {
 		xCNode.addChild(properties[prop]->storeData());
 	}
 
-	for (uint mem=0; mem < membranes.size(); mem++) {
-		
-		bool save_to_file = false;
-		string filename = membranes[mem]->getName() + "_" + to_str(id)  + "_" + SIM::getTimeName() + ".dat";
 
-		XMLNode node = membranes[mem]->storeData(save_to_file ? filename : "");
-		node.updateName("MembranePropertyData");
-		node.addAttribute("symbol-ref",membranes[mem]->getSymbol().c_str());
-		xCNode.addChild(node);
-	}
+// 	for (uint mem=0; mem < membranes.size(); mem++) {
+// 		
+// 		bool save_to_file = false;
+// 		string filename = membranes[mem]->getName() + "_" + to_str(id)  + "_" + SIM::getTimeName() + ".dat";
+// 
+// 		XMLNode node = membranes[mem]->storeData(save_to_file ? filename : "");
+// 		node.updateName("MembranePropertyData");
+// 		node.addAttribute("symbol-ref",membranes[mem]->getSymbol().c_str());
+// 		xCNode.addChild(node);
+// 	}
+
  	if (track_nodes) {
  		xCNode.addChild("Center").addText( to_cstr(getCenter(),6) );
  		ostringstream node_data;
@@ -237,6 +228,8 @@ void Cell::applyUpdate(const CPM::Update& update)
 		if (update.opAdd()) {
 			nodes.insert( update.focusStateAfter().pos );
 			node_sum += update.focusStateAfter().pos;
+			centerL = node_sum / nodes.size();
+			center = SIM::lattice().to_orth(centerL);
 		}
 		if (update.opRemove()) {
 			if ( ! nodes.erase(update.focusStateBefore().pos) ) {
@@ -247,6 +240,8 @@ void Cell::applyUpdate(const CPM::Update& update)
 				exit(-1);
 			}
 			node_sum -= update.focusStateBefore().pos;
+			centerL = node_sum / nodes.size();
+			center = SIM::lattice().to_orth(centerL);
 		}
 		if (track_shape) shape_tracker.applyUpdate(update);
 	}

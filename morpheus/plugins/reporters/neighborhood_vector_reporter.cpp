@@ -32,9 +32,9 @@ NeighborhoodVectorReporter::NeighborhoodVectorReporter() : ReporterPlugin() {
 	registerPluginParameter(output_mode);
 }
 
-void NeighborhoodVectorReporter::loadFromXML(const XMLNode xNode)
+void NeighborhoodVectorReporter::loadFromXML(const XMLNode xNode, Scope* scope)
 {    
-	ReporterPlugin::loadFromXML(xNode);
+	ReporterPlugin::loadFromXML(xNode, scope);
 }
 
 void NeighborhoodVectorReporter::init(const Scope* scope)

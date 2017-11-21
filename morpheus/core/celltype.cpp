@@ -1,8 +1,8 @@
 #include "celltype.h"
-#include "expression_evaluator.h"
-#include "function.h"
-#include "diffusion.h"
-#include "symbol_accessor.h"
+// #include "expression_evaluator.h"
+// #include "function.h"
+// #include "diffusion.h"
+// #include "symbol_accessor.h"
 #include "focusrange.h"
 
 
@@ -77,7 +77,9 @@ registerCellType(CellType);
 
 CellIndexStorage CellType::storage;
 
-CellType::CellType(uint ct_id) :  default_properties(_default_properties), default_membranes(_default_membranePDEs)
+double CellPopulationSizeSymbol::get(const SymbolFocus&) const { return celltype->getCellIDs().size();}
+
+CellType::CellType(uint ct_id) :  default_properties(_default_properties)
 {
 	id= ct_id;
 	name ="";
@@ -98,7 +100,7 @@ XMLNode CellType::saveToXML() const {
 	return xNode;
 }
 
-void CellType::loadFromXML(const XMLNode xCTNode) {
+void CellType::loadFromXML(const XMLNode xCTNode, Scope* scope) {
 	stored_node = xCTNode;
 	getXMLAttribute(xCTNode,"name",name);
 	string classname;
@@ -107,7 +109,16 @@ void CellType::loadFromXML(const XMLNode xCTNode) {
 		throw string("wrong celltype classname ")+classname+", expected "+ XMLClassName();
 	}
 	
-	local_scope = SIM::createSubScope(string("CellType[")+name + "]",this);
+	local_scope = scope->createSubScope(string("CellType[")+name + "]",this);
+	local_scope->registerSymbol(  SymbolAccessorBase<double>::createConstant("cell.type", "CellType ID", id) );
+	local_scope->registerSymbol(                   make_shared<CellIDSymbol>("cell.id") );
+	local_scope->registerSymbol(               make_shared<CellCenterSymbol>("cell.center") );
+	if (!isMedium()) {
+		local_scope->registerSymbol(            make_shared<CellVolumeSymbol>("cell.volume") );
+		local_scope->registerSymbol(            make_shared<CellLengthSymbol>("cell.length") );
+		local_scope->registerSymbol(   make_shared<CellInterfaceLengthSymbol>("cell.surface"));
+		local_scope->registerSymbol(       make_shared<CellOrientationSymbol>("cell.orientation"));
+	}
 }
 
 
@@ -125,64 +136,15 @@ void CellType::loadPlugins()
 			if (! p.get()) 
 				throw(string("Unknown plugin " + xml_tag_name));
 			
-			p->loadFromXML(xNode);
-			uint n_interfaces=0;
+			p->loadFromXML(xNode,local_scope);
 			
-			if ( dynamic_pointer_cast< AbstractProperty >(p) ) {
-				// note that the AbstractProperty is still maintained by the Plugin
-				shared_ptr<AbstractProperty> property( dynamic_pointer_cast< AbstractProperty >(p) ); 
-				
-				if (!property->isConstant()) {
-					if (property_by_symbol.find( property->getName() ) != property_by_symbol.end()) {
-						throw MorpheusException("Redefinition of Property \""+property->getSymbol()+"\". ", stored_node);
-						//cerr << "Redefinition of Property " << property->getSymbol() << endl;
-						//exit(-1);
-					}
-					_default_properties.push_back(property);
-					property_by_name[property->getName()]=_default_properties.size()-1;
-					property_by_symbol[property->getSymbol()] = _default_properties.size()-1;
-				}
-				defineSymbol(property);
-				n_interfaces++; 
-			}
-			 
-			if ( dynamic_pointer_cast< MembraneProperty >(p) ) {
-				shared_ptr< MembraneProperty > membrane(dynamic_pointer_cast< MembraneProperty >(p));
-// 				if (membrane_by_name.find( membrane->getName() ) != membrane_by_name.end()) {
-// 					cerr << "Redefinition of Membrane " << membrane->getName() << endl;
-// 					exit(-1);
-// 				}
-				_default_membranePDEs.push_back( membrane->getPDE() );
-// 				membrane_by_name[membrane->getName()] = _default_membranePDEs.size()-1;
-				if (membrane->getPDE()->getDiffusionRate() > 0.0)
-					plugins.push_back(shared_ptr<Plugin>(new Diffusion(CellMembraneAccessor(this,_default_membranePDEs.size()-1))));
-				
-				// registering global symbol
-				SymbolData symbol;
-				symbol.name = membrane->getSymbolName();
-				symbol.fullname = membrane->getName();
-				symbol.link = SymbolData::CellMembraneLink;
-				symbol.granularity = Granularity::MembraneNode;
-				symbol.type_name = TypeInfo<double>::name();
-				symbol.writable = true;
-				SIM::defineSymbol(symbol);
-				membrane_by_symbol[symbol.name] = _default_membranePDEs.size()-1;
-				n_interfaces++;
-				cout << "Registered Membrane " << _default_membranePDEs.size() << " " << membrane->getName() << " with diffusion rate " << membrane->getPDE()->getDiffusionRate() << endl;
-			}
-			if ( dynamic_pointer_cast< Function >(p) ) { defineSymbol(dynamic_pointer_cast< Function >(p)); n_interfaces++; }
-			if ( dynamic_pointer_cast< VectorFunction >(p) ) { defineSymbol(dynamic_pointer_cast< VectorFunction >(p)); n_interfaces++; }
-			if ( dynamic_pointer_cast< CPM_Energy >(p) ) { energies.push_back(dynamic_pointer_cast< CPM_Energy >(p) ); n_interfaces++; }
-			if ( dynamic_pointer_cast< CPM_Check_Update >(p) ) { check_update_listener.push_back(dynamic_pointer_cast< CPM_Check_Update >(p) ); n_interfaces++; }
-			if ( dynamic_pointer_cast< CPM_Update_Listener >(p) ) { update_listener.push_back(dynamic_pointer_cast< CPM_Update_Listener >(p) ); n_interfaces++; }
-			if ( dynamic_pointer_cast< TimeStepListener >(p) ) { /*timestep_listener.push_back(dynamic_pointer_cast< TimeStepListener >(p) );*/ n_interfaces++; }
-			if ( ! n_interfaces ) 
-				throw(xml_tag_name + " is not a valid celltype plugin");
+			if ( dynamic_pointer_cast< CPM_Energy >(p) ) { energies.push_back(dynamic_pointer_cast< CPM_Energy >(p) );}
+			if ( dynamic_pointer_cast< Cell_Update_Checker >(p) ) { check_update_listener.push_back(dynamic_pointer_cast< Cell_Update_Checker >(p) );}
+			if ( dynamic_pointer_cast< Cell_Update_Listener >(p) ) { update_listener.push_back(dynamic_pointer_cast< Cell_Update_Listener >(p) );}
 			plugins.push_back( p );
 		}
 		catch(string er) {
 			throw MorpheusException(er, stored_node);
-			//cerr << er << " - leaving you alone ..." << endl; exit(-1);
 		}
 	}
 	SIM::leaveScope();
@@ -191,7 +153,7 @@ void CellType::loadPlugins()
 
 void CellType::init() {
 	if (!local_scope)
-		local_scope = SIM::createSubScope(string("CellType[")+name + "]",this);
+		throw string ("Celltype ")+ name + "has no scope in init()";
 	SIM::enterScope(local_scope);
 	
 	// Property initializer may fail gracefully when expressions require an explicite cell
@@ -200,10 +162,6 @@ void CellType::init() {
 			try { 
 				plug->init(local_scope); } catch (...) {/* There might be errors due to the fact that there is no real cell present !!!*/ }
 		}
-	}
-
-	for (auto mem: default_membranes) {
-		try { mem->init(local_scope); } catch (...) {/* There might be errors due to the fact that there is no real cell present !!!*/ }
 	}
 
 	for (uint i=0;i<plugins.size();i++) {
@@ -286,9 +244,9 @@ void CellType::init() {
 			
 			// Apply InitProperty expressions for all cells
 			for (auto cell : cp.cells) {
-				FocusRange range(symbol.getGranularity(),cell);
+				FocusRange range(symbol->flags().granularity,cell);
 				for ( const auto& focus : range) {
-					symbol.set(focus, init_expression.get(focus));
+					symbol->set(focus, init_expression.get(focus));
 				}
 			}
 		}
@@ -375,7 +333,7 @@ void CellType::loadPopulationFromXML(const XMLNode xNode) {
 			shared_ptr<Plugin> p = PluginFactory::CreateInstance(string(xcpNode.getName()));
 			if ( dynamic_pointer_cast<Population_Initializer>( p ) ) {
 				cp.pop_initializers.push_back(dynamic_pointer_cast<Population_Initializer>( p ));
-				cp.pop_initializers.back()->loadFromXML(xcpNode);
+				cp.pop_initializers.back()->loadFromXML(xcpNode,local_scope);
 			}
 		}
 	}
@@ -507,10 +465,8 @@ pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID mother_id, V
 	
 	daughter1.init();
 	daughter1.assignMatchingProperties(mother.properties);
-	daughter1.assignMatchingMembranes(mother.membranes);
 	daughter2.init();
 	daughter2.assignMatchingProperties(mother.properties);
-	daughter2.assignMatchingMembranes(mother.membranes);
 	
 	return pair<CPM::CELL_ID, CPM::CELL_ID>(daughter1_id, daughter2_id);
 }
@@ -534,7 +490,6 @@ CPM::CELL_ID CellType::addCell(CPM::CELL_ID cell_id)
 	
 	new_cell->init();
 	new_cell->assignMatchingProperties(old_cell_ptr->properties);
-	new_cell->assignMatchingMembranes(old_cell_ptr->membranes);
 	
 	old_cell_ptr->celltype->removeCell(cell_id);
 	
@@ -695,20 +650,20 @@ void MediumCellType::removeCell(CPM::CELL_ID cell_id) {
 	// We use just one cell and never remove it ...
 }
 
-CellMembraneAccessor CellType::findMembrane(string symbol, bool required) const
-{
-	map<string,uint>::const_iterator membrane_idx = membrane_by_symbol.find(symbol);
-	
-	if ( membrane_idx != membrane_by_symbol.end() ) {
-		return CellMembraneAccessor(this,membrane_idx->second );
-	}
-	if (required){
-		cerr << (string("CellType[\"") + name + string("\"].findMembrane: requested membrane [")+symbol+string("] not found")) << endl;
-		exit(-1);
-		//throw (string("CellType[\"") + name + string("\"].findMembrane: requested membrane [")+symbol+string("] not found"));
-	}
-	return CellMembraneAccessor();
-}
+// CellMembraneAccessor CellType::findMembrane(string symbol, bool required) const
+// {
+// 	map<string,uint>::const_iterator membrane_idx = membrane_by_symbol.find(symbol);
+// 	
+// 	if ( membrane_idx != membrane_by_symbol.end() ) {
+// 		return CellMembraneAccessor(this,membrane_idx->second );
+// 	}
+// 	if (required){
+// 		cerr << (string("CellType[\"") + name + string("\"].findMembrane: requested membrane [")+symbol+string("] not found")) << endl;
+// 		exit(-1);
+// 		//throw (string("CellType[\"") + name + string("\"].findMembrane: requested membrane [")+symbol+string("] not found"));
+// 	}
+// 	return CellMembraneAccessor();
+// }
 
 // CellMembraneAccessor CellType::findMembraneByName(string name) const
 // {

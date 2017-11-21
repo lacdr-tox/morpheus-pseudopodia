@@ -12,25 +12,13 @@
 #ifndef CELL_H
 #define CELL_H
 
-// #include <iterator>
-// #include <numeric>
-// #include <limits>
 #include <vector>
-// #include <map>
-// #include <list>
-// #include <set>
-// #include <algorithm>
 #include <iostream>
 #include <sstream>
-// #include <complex>
-// #include "Eigen/Eigenvalues"
-
-// #include "simulation.h"
 #include "interfaces.h"
-// #include "cpm_layer.h"
 #include "cpm_shape.h"
 #include "cpm_shape_tracker.h"
-#include "property.h"
+
 /// Interface for all cells, implements basic platform integration
 class Cell
 {
@@ -51,20 +39,20 @@ public:
  * @param update provides the whole udate story
  */
 	virtual void setUpdate(const CPM::Update& update);
-	virtual void applyUpdate(const CPM::Update& update);  ///< apply the requested changes to the cell (either add_state or remove_state are NULL)
-// 	void applyNeighborhoodUpadate(const CPM::Update& update, uint count); 
+	virtual void applyUpdate(const CPM::Update& update);  ///< apply the requested changes to the cell (either add or remove a node or a neighboring node has changed.
 
 	CPM::CELL_ID getID() const { return id; };                                 ///< ID that represents the cell in the cpm lattice
 	uint getName() const { return id; };                               ///< a unique name that remains constant, no matter of proliferation or cell death or differentiation. It is unique for the whole cpm.
 	CellType* getCellType() const { return celltype; };
 	const AdaptiveCPMShapeTracker& currentShape() const { return shape_tracker.current(); }
 	const AdaptiveCPMShapeTracker& updatedShape() const { return shape_tracker.updated(); }
-	VDOUBLE getCenter() const { return SIM::lattice().to_orth(VDOUBLE(node_sum) / nodes.size() ); };                         ///< Center of the cell, i.e. nodes average. Values are always in orthoganal coordinates.
-	VDOUBLE getCenterL() const { return VDOUBLE(node_sum) / nodes.size(); };                        ///< Center of the cell, i.e. nodes average, in lattice coordinates. The value is always within the lattice size range, in particular under periodic boundary conditions.
+	const VDOUBLE& getCenter() const { return center; };                         ///< Center of the cell, i.e. nodes average. Values are always in orthoganal coordinates.
+	const VDOUBLE& getCenterL() const { return centerL; };                        ///< Center of the cell, i.e. nodes average, in lattice coordinates. The value is always within the lattice size range, in particular under periodic boundary conditions.
 	VDOUBLE getUpdatedCenter() const  { return shape_tracker.updated().center(); }; ///< Projects the position of the cell center after executing the update operation given by the parameters.
 	VDOUBLE getOrientation(void) const;					///< Gives orientation in radials (taking y-axis as reference), using elliptic approximation
-// 	virtual projectCenter(update, todo);
+
 	uint nNodes() const { return nodes.size(); };                                  ///< Number of nodes aka volume, area or whatsoever
+	double getSize() const { return nodes.size(); };   
 	const Nodes& getNodes() const { return nodes; };                    ///< All nodes occupied by the cell. Note, this are lattice coordinates, which are not necessarily orthogonal ... 
 // 	const Nodes& getUpdatedNodes() const { return updated_nodes; };
 	const Nodes& getSurface() const { return shape_tracker.current().surfaceNodes();}
@@ -76,9 +64,9 @@ public:
 	const map<CPM::CELL_ID,double>& getUpdatedInterfaceLengths() const { return shape_tracker.updated().interfaces(); };
 	
 	const vector< shared_ptr<AbstractProperty> >& properties;
-	const vector< shared_ptr<PDE_Layer> >& membranes;
+// 	const vector< shared_ptr<PDE_Layer> >& membranes;
 	void assignMatchingProperties(const vector< shared_ptr<AbstractProperty> > other_properties);
-	void assignMatchingMembranes(const vector< shared_ptr<PDE_Layer> > other_membranes);
+// 	void assignMatchingMembranes(const vector< shared_ptr<PDE_Layer> > other_membranes);
 	
 	bool isNodeTracking() const {return track_nodes;};
 	void disableNodeTracking();
@@ -96,26 +84,19 @@ protected:
 	const CPM::CELL_ID id;
 	CellType* celltype;
 	bool track_nodes, track_shape;
-	Nodes nodes;                /// Container storing all occupied nodes
+	/** container that stores the nodes occupied by a cell.
+	 *  list<> allows constant time insertion and deletion at any position.
+	 *  however, set<> allows log(N) insert and find methods, which is effectively faster than 
+	 *  list version of find and insert.
+	 */
+	Nodes nodes;
 	VINT node_sum;
+	VDOUBLE centerL, center;
 	CPMShapeTracker shape_tracker;
-
-/** container that stores the nodes occupied by a cell.
- *  list<> allows constant time insertion and deletion at any position.
- *  however, set<> allows log(N) insert and find methods, which is effectively faster than 
- *  list version of find and insert.
- */
 	vector< shared_ptr<AbstractProperty> > p_properties;
-	vector< shared_ptr<PDE_Layer> > p_membranes;
-	
-// 	void resetUpdatedInterfaces();
 	
 	friend class CellType;
 };
-/*
-VDOUBLE long_cell_axis(const Cell::Nodes& points)   __attribute__ ((deprecated));            ///< calculates the long axis of a cloud of points based on the tensor of gyration.
-double long_cell_axis2(const Cell::Nodes& nodes)	__attribute__ ((deprecated));			///< calculates the length of the long axis*/
-
 
 #endif
 

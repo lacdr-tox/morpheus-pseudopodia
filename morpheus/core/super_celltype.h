@@ -27,27 +27,27 @@ public:
 
 	SuperCT(uint id);
 	~SuperCT();
-	virtual XMLNode saveToXML() const;
-	virtual void loadFromXML( const XMLNode Node );
+	XMLNode saveToXML() const override;
+	void loadFromXML( const XMLNode Node, Scope* scope ) override;
 // 	virtual XMLNode savePopulationToXML() const;
 // 	virtual void loadPopulationFromXML(const XMLNode Node);
 // 	
-	virtual void init();
+	void init() override;
 	void bindSubCelltype();
 	shared_ptr<const CellType> getSubCelltype() const { return sub_celltype;};
 // 	template <class S>
 // 	CellPropertyAccessor<S> findCellProperty(string prop_symbol, bool required = true) const;
 		
 // 	The interface methods should propagate all calls to the subcelltype
-	virtual bool check_update(const CPM::Update& update) const;
-	virtual void set_update(const CPM::Update& update); 
-	virtual void apply_update(const CPM::Update& update); 
-	virtual double delta(const CPM::Update& update) const;
-	virtual double hamiltonian() const ;  
+	bool check_update(const CPM::Update& update) const override;
+	void set_update(const CPM::Update& update) override; 
+	void apply_update(const CPM::Update& update) override; 
+	double delta(const CPM::Update& update) const override;
+	double hamiltonian() const override;  
 
 protected:
 
-	virtual CPM::CELL_ID createCell(CPM::CELL_ID name = storage.getFreeID());
+	CPM::CELL_ID createCell(CPM::CELL_ID name = storage.getFreeID()) override;
 	
 // 	struct Segment_Filter {
 // 		enum Filter_Type  { all, single, min, max};
@@ -63,7 +63,7 @@ protected:
 // /////////////////////////////////////////////////////////////////////
 // // Implementation of template functions
 
-#include "cell_property_accessor.h"
+// #include "cell_property_accessor.h"
 
 // template <class S>
 // CellPropertyAccessor<S> SuperCT::findCellProperty(string prop_symbol, bool required) const {

@@ -28,10 +28,22 @@ void ContactLogger::init(const Scope* scope){
 	// open file
 	stringstream ss;
 	ss << "contact_logger";
-	if( celltype_from.isDefined() )
+	if( celltype_from.isDefined() ) {
 		ss << "_" << celltype_from()->getName();
-	if( celltype_to.isDefined() )
+		registerInputSymbol(celltype_from()->getScope()->findSymbol(SymbolBase::CellPosition_symbol));
+	} 
+	else {
+		registerCellPositionDependency();
+	}
+
+	if( celltype_to.isDefined() ) {
 		ss << "_" << celltype_to()->getName();
+		registerInputSymbol(celltype_to()->getScope()->findSymbol(SymbolBase::CellPosition_symbol));
+	}
+	else {
+		registerCellPositionDependency();
+	}
+		
 	ss << ".txt";
 	fout.open(ss.str().c_str(), fstream::out );
 	if( !fout.is_open() ){
@@ -48,9 +60,9 @@ void ContactLogger::init(const Scope* scope){
 	fout << "\n";
 }
 
-void ContactLogger::loadFromXML(const XMLNode node){
-	AnalysisPlugin::loadFromXML(node);
-	InstantaneousProcessPlugin::loadFromXML(node);
+void ContactLogger::loadFromXML(const XMLNode node, Scope* scope){
+	AnalysisPlugin::loadFromXML(node, scope);
+	InstantaneousProcessPlugin::loadFromXML(node, scope);
 }
 
 void ContactLogger::executeTimeStep(){

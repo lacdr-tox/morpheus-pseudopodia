@@ -20,9 +20,9 @@ External::External() {
 External::~External() { }
 
 
-void External::loadFromXML(const XMLNode xNode)
+void External::loadFromXML(const XMLNode xNode, Scope* scope)
 {
-	AnalysisPlugin::loadFromXML(xNode);
+	AnalysisPlugin::loadFromXML(xNode, scope);
 
 	if( command_orig().empty() )
 		throw MorpheusException("External analysis plugin requires a (non-empty) command.", stored_node);
@@ -158,7 +158,7 @@ string External::update_command(string command){
 			symbol_name = token.substr(1,token.size());
 			SymbolAccessor<double> symbol = SIM::findGlobalSymbol<double>( symbol_name );
 			string old_token = token;
-			token = to_str( symbol(SymbolFocus()) );
+			token = to_str( symbol->get(SymbolFocus()) );
 			//cout << "Replacing symbol "<< old_token << " with " << token << endl;
 		}
 	}

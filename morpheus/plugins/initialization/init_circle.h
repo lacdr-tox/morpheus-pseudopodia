@@ -13,7 +13,7 @@
 #define INITCIRCLE_H
 
 #include "core/interfaces.h"
-#include "core/plugin_parameter.h"
+#include "core/celltype.h"
 
 /** \defgroup InitCircle
 \ingroup ML_Population

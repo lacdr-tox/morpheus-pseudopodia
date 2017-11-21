@@ -14,7 +14,6 @@
 
 #include "simulation.h"
 #include "membrane_property.h"
-#include "cell_membrane_accessor.h"
 #include "Eigen/Eigenvalues"
 
 

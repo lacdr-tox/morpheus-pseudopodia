@@ -10,13 +10,14 @@ double getRandomNormValueSDE(double mean, double stdev, double scaling) {
 const string SystemSolver::noise_scaling_symbol = "_noise_scaling";
 
 template <SystemType system_type>
-void System<system_type>::loadFromXML(const XMLNode node)
+void System<system_type>::loadFromXML(const XMLNode node, Scope* scope)
 {
-	local_scope = SIM::createSubScope("System");
+	target_scope = scope;
+	local_scope = scope->createSubScope("System");
 	SIM::enterScope(local_scope);
 	
 	for (auto sym : local_symbols) {
-		SIM::defineSymbol( Property<double>::createVariableInstance(sym.first, sym.first) );
+		local_scope->registerSymbol( SymbolRWAccessorBase<double>::createVariable(sym.first, sym.first, sym.second) );
 	}
 
 	addLocalSymbol(SystemSolver::noise_scaling_symbol, 1 );
@@ -57,24 +58,20 @@ void System<system_type>::loadFromXML(const XMLNode node)
 			if (! p.get()) 
 				throw(string("Unknown plugin " + xml_tag_name));
 			
-			p->loadFromXML(xNode);
+			p->loadFromXML(xNode, scope);
 			uint n_interfaces=0;
-			// Wrapper that also loads constants ...
-			if ( dynamic_pointer_cast<AbstractProperty>(p) ) {
-				SIM::defineSymbol(dynamic_pointer_cast<AbstractProperty>(p));
-				n_interfaces++;
-			}
-			if ( dynamic_pointer_cast<Function>(p) ) {
+
+			if ( dynamic_pointer_cast<FunctionPlugin>(p) ) {
 				shared_ptr<SystemFunc> eqn(new SystemFunc);
 				eqn->type = SystemFunc::FUN;
-				eqn->expression = dynamic_pointer_cast<Function>(p)->getExpr();
-				eqn->symbol_name = dynamic_pointer_cast<Function>(p)->getSymbol();
+				eqn->expression = dynamic_pointer_cast<FunctionPlugin>(p)->getExpr();
+				eqn->symbol_name = dynamic_pointer_cast<FunctionPlugin>(p)->getSymbol();
 				functionals.push_back(eqn);
 				functions.push_back(eqn);
 // 				SIM::defineSymbol(eqn);
 				n_interfaces++;
 			}
-			if ( dynamic_pointer_cast<DifferentialEqn>(p)) {
+			else if ( dynamic_pointer_cast<DifferentialEqn>(p)) {
 				shared_ptr<SystemFunc> eqn(new SystemFunc);
 				eqn->type = SystemFunc::ODE;
 				eqn->expression = dynamic_pointer_cast<DifferentialEqn>(p)->getExpr();
@@ -83,7 +80,7 @@ void System<system_type>::loadFromXML(const XMLNode node)
 				equations.push_back(eqn);
 				n_interfaces++;
 			}
-			if ( dynamic_pointer_cast<Equation>(p)) {
+			else if ( dynamic_pointer_cast<Equation>(p)) {
 				shared_ptr<SystemFunc> eqn(new SystemFunc);
 				eqn->type = SystemFunc::EQU;
 				eqn->expression = dynamic_pointer_cast<Equation>(p)->getExpr();
@@ -92,7 +89,7 @@ void System<system_type>::loadFromXML(const XMLNode node)
 				equations.push_back(eqn);
 				n_interfaces++;
 			}
-			if ( dynamic_pointer_cast<VectorEquation>(p)) {
+			else if ( dynamic_pointer_cast<VectorEquation>(p)) {
 				shared_ptr<SystemFunc> eqn(new SystemFunc);
 				eqn->type = SystemFunc::VEQU;
 				eqn->expression = dynamic_pointer_cast<VectorEquation>(p)->getExpr();
@@ -102,9 +99,7 @@ void System<system_type>::loadFromXML(const XMLNode node)
 				equations.push_back(eqn);
 				n_interfaces++;
 			}
-			if (n_interfaces) {
-				plugins.push_back(p);
-			}
+			else plugins.push_back(p);
 		} catch(...) {
 			cerr << "Exception in ODESystem::loadFromXML "<< endl; exit(-1);
 		}
@@ -118,10 +113,8 @@ void System<system_type>::addLocalSymbol(string symbol, double value) {
 	local_symbols[symbol] = value;
 	
 	if (local_scope) {
-		shared_ptr<Property<double> > symbol_property = Property<double>::createVariableInstance(symbol,symbol);
-		SIM::enterScope(local_scope);
-		SIM::defineSymbol(symbol_property);
-		SIM::leaveScope();
+		auto sym = SymbolRWAccessorBase<double>::createVariable(symbol,symbol,value);
+		local_scope->registerSymbol(sym);
 	}
 }
 
@@ -152,9 +145,7 @@ void System<system_type>::init() {
 	
 // 	cout << "System init with " <<  omp_get_max_threads() << " threads for CellType " << (ct ? ct->getName() : " NULL " ) << endl;
 	for (auto plugin : plugins) {
-		if ( dynamic_pointer_cast<AbstractProperty>(plugin) ) {
-			plugin->init(local_scope);
-		}
+		plugin->init(local_scope);
 	}
 	///////////////////////////////////////// input 
 	set<string> internal_symbols;  // collect internal symbols (anything but just referenced external symbols)
@@ -283,7 +274,7 @@ void System<system_type>::init() {
 	}
 
 	// Assert the time and noise scaling symbols to be included in the cache (local time scaling depends on both).  Avoids code branching.
-	all_symbols_used.insert(SymbolData::Time_symbol);
+	all_symbols_used.insert(SymbolBase::Time_symbol);
 	all_symbols_used.insert(SystemSolver::noise_scaling_symbol);
 	
 	//////////////////////////////////////////
@@ -327,88 +318,36 @@ void System<system_type>::init() {
 
 	//////////////////////////////////////////
 	//          Checking accessibility of the contexts
-
-	context = SymbolData::UnLinked;
-	granularity = Granularity::Undef;
+	target_defined = false;
 	uint num_assignments = 0;
 	for (uint i=0; i<functionals.size(); i++) {
 			// Check uniform output containers for non-contexted application
 		if (functionals[i]->type == SystemFunc::ODE || functionals[i]->type == SystemFunc::EQU) {
-			if (functionals[i]->global_symbol.isComposite()) {
-				throw string("System: Fatal Error! No methods for composite symbols ...");
+			if ( ! functionals[i]->global_symbol->flags().writable) {
+				throw string("System: Fatal Error on Symbol! No methods for non-writable symbols .") +  functionals[i]->global_symbol->name() + " of scope " + functionals[i]->global_symbol->scope()->getName();
 			}
 			num_assignments++;
-			if (context == SymbolData::UnLinked) {
-				context = functionals[i]->global_symbol.getLinkType();
+			if ( ! target_defined) {
+				target_granularity = functionals[i]->global_symbol->granularity();
+				target_defined = true;
 			}
-			else if (functionals[i]->global_symbol.getLinkType() != context) {
-				throw string("System: Fatal Error! Output symbols in System of Equations represent non-uniform container types!");
-			}
-			
-			if (granularity == Granularity::Undef) {
-				granularity = functionals[i]->global_symbol.getGranularity();
-			}
-			else if (functionals[i]->global_symbol.getGranularity() != granularity ) {
+			else if (functionals[i]->global_symbol->granularity() != target_granularity) {
 				throw string("System: Fatal Error! Output symbols in System of Equations have non-uniform granularity!");
 			}
 		}
 		else if (functionals[i]->type == SystemFunc::VEQU) {
-			if (functionals[i]->v_global_symbol.isComposite()) {
-				throw string("System: Fatal Error! No methods for composite symbols ...");
+			if ( ! functionals[i]->v_global_symbol->flags().writable) {
+				throw string("System: Fatal Error! No methods for non-writable symbol ") +  functionals[i]->v_global_symbol->name() + " of scope " + functionals[i]->v_global_symbol->scope()->getName();
 			}
 			num_assignments++;
-			if (context == SymbolData::UnLinked) {
-				context = functionals[i]->v_global_symbol.getLinkType();
+			if ( ! target_defined) {
+				target_granularity = functionals[i]->global_symbol->granularity();
+				target_defined = true;
 			}
-			else if (functionals[i]->v_global_symbol.getLinkType() != context) {
-				throw string("System: Fatal Error! Output symbols in System of Equations represent non-uniform container types!");
-			}
-			
-			if (granularity == Granularity::Undef) {
-				granularity = functionals[i]->v_global_symbol.getGranularity();
-			}
-			else if (functionals[i]->v_global_symbol.getGranularity() != granularity ) {
+			else if (functionals[i]->v_global_symbol->granularity() != target_granularity) {
 				throw string("System: Fatal Error! Output symbols in System of Equations have non-uniform granularity!");
 			}
 		}
-	}
-	
-	switch (context) {
-		case SymbolData::PureCompositeLink:
-			throw string("No System methods for mixed containers ...");
-			exit(-1);
-		case SymbolData::PDELink:
-			lattice_size = VINT(0,0,0);
-			if (!equations.empty())
-				lattice_size = equations[0]->global_symbol.pde_layer->getWritableSize();
-			break;
-		case SymbolData::CellPropertyLink: {
-			auto functional = functionals.begin();
-			while ((*functional)->type == SystemFunc::FUN) functional++;
-			
-			if ((*functional)->type == SystemFunc::VEQU) {
-				celltype = (*functional)->v_global_symbol.getScope()->getCellType();
-			}
-			else {
-				celltype = (*functional)->global_symbol.getScope()->getCellType();
-			}
-// 			if (! celltype) { cerr << "No Celltype for CellProperty symbol in Equation System" << endl; exit(-1); }
-			break;
-		}
-		case SymbolData::CellMembraneLink:
-// 			if (! celltype) { cerr << "No Celltype for CellMembrane symbol in Equation System" << endl; exit(-1); }
-			break;
-		case SymbolData::GlobalLink:
-			break;
-		case SymbolData::UnLinked:
-			if (num_assignments == 0) {
-				cout << "Ooops: No context in System" << endl;
-				cout << "Ooops: Appearently you defined a System without any DiffEqn, Rule or Equation " << endl;
-				break;
-			}
-		default:
-			throw string("System: Wrong symbol type '") + SymbolData::getLinkTypeName(context) + "' in System";
-			break;
 	}
 
 	/////////////////////////////////////////
@@ -419,7 +358,7 @@ void System<system_type>::init() {
 	// Adding external symbols first -- everything that is not another category ???
 	for (set<string>::const_iterator i=all_symbols_used.begin(); i!=all_symbols_used.end(); i++ ) {
 		if ( internal_symbols.count(*i) == 0 ) {
-			external_symbols.push_back(SIM::findSymbol<double>(*i));
+			external_symbols.push_back(local_scope->findSymbol<double>(*i));
 			cache_layout[*i]=p;
 			p++;
 // 			cout << "adding ext sym " << *i << " to the cache." << endl;
@@ -483,22 +422,22 @@ void System<system_type>::computeToBuffer(const SymbolFocus& f)
 	SystemSolver* solver = solvers[omp_get_thread_num()].get();
 	// external symbols are first in cache layout
 	for (int i =0; i< external_symbols.size(); i++) {
-		solver->cache[i] = external_symbols[i].get(f);
-		if (external_symbols[i].getLinkType() == SymbolData::Time)
+		solver->cache[i] = external_symbols[i]->get(f);
+		if ( external_symbols[i]->linkType() == "TimeLink")
 			solver->cache[i]*= time_scaling;
 	}
 
 	// initialize local copies of the equation symbols;
 	for (int i =0; i<equations.size(); i++) {
 		if (equations[i]->type == SystemFunc::VEQU){
-			VDOUBLE val = equations[i]->v_global_symbol.get(f);
+			VDOUBLE val = equations[i]->v_global_symbol->get(f);
 			double *v = &solver->cache[equations[i]->cache_pos];
 			v[0] = val.x;
 			v[1] = val.y;
 			v[2] = val.z;
 		}
 		else 
-			solver->cache[equations[i]->cache_pos] = equations[i]->global_symbol.get(f);
+			solver->cache[equations[i]->cache_pos] = equations[i]->global_symbol->get(f);
 	}
 	
 	solver->solve();
@@ -509,12 +448,12 @@ void System<system_type>::computeToBuffer(const SymbolFocus& f)
 			double *v = &solver->cache[equations[i]->cache_pos];
 			VDOUBLE value(v[0],v[1],v[2]);
 			if (equations[i]->vec_spherical)
-				equations[i]->v_global_symbol.setBuffer(f,VDOUBLE::from_radial(value));
+				equations[i]->v_global_symbol->setBuffer(f,VDOUBLE::from_radial(value));
 			else
-				equations[i]->v_global_symbol.setBuffer(f,value);
+				equations[i]->v_global_symbol->setBuffer(f,value);
 		}
 		else
-			equations[i]->global_symbol.setBuffer(f,solver->cache[equations[i]->cache_pos]);
+			equations[i]->global_symbol->setBuffer(f,solver->cache[equations[i]->cache_pos]);
 	}
 }
 
@@ -522,7 +461,7 @@ template <SystemType system_type>
 void System<system_type>::applyBuffer(const SymbolFocus& f)
 {
 	for (int i =0; i<equations.size(); i++) {
-		equations[i]->global_symbol.swapBuffer(f);
+		equations[i]->global_symbol->applyBuffer(f);
 	}
 }
 
@@ -531,22 +470,23 @@ void System<system_type>::compute(const SymbolFocus& f)
 {
 	SystemSolver* solver = solvers[omp_get_thread_num()].get();
 	for (int i =0; i< external_symbols.size(); i++) {
-		solver->cache[i] = external_symbols[i].get(f);
-		if (external_symbols[i].getLinkType() == SymbolData::Time)
+		solver->cache[i] = external_symbols[i]->get(f);
+		// TODO String comparison is nuts here
+		if (external_symbols[i]->linkType() == "TimeLink")
 			solver->cache[i]*= time_scaling;
 	}
 
 	// initialize local copies of the equation symbols;
 	for (int i =0; i<equations.size(); i++) {
 		if (equations[i]->type == SystemFunc::VEQU){
-			VDOUBLE val = equations[i]->v_global_symbol.get(f);
+			VDOUBLE val = equations[i]->v_global_symbol->get(f);
 			double *v = &solver->cache[equations[i]->cache_pos];
 			*v = val.x;
 			*(v+1) = val.y;
 			*(v+2) = val.z;
 		}
 		else 
-			solver->cache[equations[i]->cache_pos] = equations[i]->global_symbol.get(f);
+			solver->cache[equations[i]->cache_pos] = equations[i]->global_symbol->get(f);
 	}
 	
 	solver->solve();
@@ -555,27 +495,25 @@ void System<system_type>::compute(const SymbolFocus& f)
 	for (int i =0; i<equations.size(); i++) {
 		if (equations[i]->type == SystemFunc::VEQU){
 			double *v = &solver->cache[equations[i]->cache_pos];
-			if ( ! equations[i]->v_global_symbol.set(f,VDOUBLE(*v,*(v+1),*(v+2))) )
-				throw string("ODESystem error");
+			equations[i]->v_global_symbol->set( f, VDOUBLE(*v,*(v+1),*(v+2)) );
 		}
 		else
-			if ( ! equations[i]->global_symbol.set(f,solver->cache[equations[i]->cache_pos]))
-				throw string("ODESystem error");
+			equations[i]->global_symbol->set(f,solver->cache[equations[i]->cache_pos]);
 	}
 }
 
 template <SystemType system_type>
 void System<system_type>::computeContextToBuffer()
 {
-	if (context == SymbolData::UnLinked)
-		return;
+
 	// TODO This might be dispensible if the pde_layer initializes the buffer accordingly
-	if (context ==  SymbolData::PDELink && SIM::lattice().getDomain().domainType()!= Domain::none) {
-		for (int i =0; i<equations.size(); i++) {
-			equations[i]->global_symbol.pde_layer->copyDataToBuffer();
-		}
-	}
-	FocusRange range(granularity, local_scope);
+// 	if (context ==  SymbolData::PDELink && SIM::lattice().getDomain().domainType()!= Domain::none) {
+// 		for (int i =0; i<equations.size(); i++) {
+// 			equations[i]->global_symbol.pde_layer->copyDataToBuffer();
+// 		}
+// 	}
+	
+	FocusRange range(target_granularity, target_scope);
 	if (range.size() > 50) {
 		int size = range.size();
 #pragma omp parallel for schedule(static)
@@ -595,10 +533,10 @@ void System<system_type>::applyContextBuffer()
 {
 	for (uint i =0; i<equations.size(); i++) {
 		if (equations[i]->type == SystemFunc::VEQU){
-			equations[i]->v_global_symbol.swapBuffer();
+			equations[i]->v_global_symbol->applyBuffer();
 		}
 		else {
-			equations[i]->global_symbol.swapBuffer();
+			equations[i]->global_symbol->applyBuffer();
 		}
 	}
 }
@@ -614,8 +552,8 @@ set< SymbolDependency > System<system_type>::getDependSymbols()
 {
 	set<SymbolDependency> s;
 	for (const auto & sym : external_symbols ) {
-		SymbolDependency sd = { sym.getName(), sym.getScope() };
-		s.insert(sd);
+		auto d = sym->dependencies();
+		s.insert(d.begin(),d.end());
 	}
 
 	// Now remove all locally defined symbols(not registered as global symbols)
@@ -624,13 +562,13 @@ set< SymbolDependency > System<system_type>::getDependSymbols()
 // 		s.erase(sd);
 // 	}
 	// Remove time && space dependencies
-	SymbolDependency sd = {SymbolData::Time_symbol, SIM::getGlobalScope() };
+	SymbolDependency sd = {SymbolBase::Time_symbol, SIM::getGlobalScope() };
 	s.erase(sd);
 	
 	sd = {SystemSolver::noise_scaling_symbol, local_scope };
 	s.erase(sd);
 	
-	sd = {SymbolData::Space_symbol, SIM::getGlobalScope() };
+	sd = {SymbolBase::Space_symbol, SIM::getGlobalScope() };
 	s.erase(sd);
 
     return s;
@@ -642,12 +580,10 @@ set< SymbolDependency > System<system_type>::getOutputSymbols()
 	set<SymbolDependency> s;
 	for (uint i=0; i<equations.size(); i++) {
 		if (equations[i]->type == SystemFunc::VEQU) {
-			SymbolDependency sd = { equations[i]->v_global_symbol.getName(), equations[i]->v_global_symbol.getScope() };
-			s.insert(sd);
+			s.insert(*equations[i]->v_global_symbol->dependencies().begin());
 		}
 		else {
-			SymbolDependency sd = { equations[i]->global_symbol.getName(), equations[i]->global_symbol.getScope() };
-			s.insert(sd);
+			s.insert(*equations[i]->global_symbol->dependencies().begin());
 		}
 	}
 
@@ -720,8 +656,8 @@ SystemSolver::SystemSolver(vector< shared_ptr< SystemFunc > > f, map< string, in
 	}
 	
 	// override the global time with the local scaled time
-	assert(cache_layout.count(SymbolData::Time_symbol));
-	local_time = &cache[cache_layout[SymbolData::Time_symbol]];
+	assert(cache_layout.count(SymbolBase::Time_symbol));
+	local_time = &cache[cache_layout[SymbolBase::Time_symbol]];
 	// allow for noise scalling
 	assert(cache_layout.count(SystemSolver::noise_scaling_symbol));
 	noise_scaling = &cache[cache_layout[SystemSolver::noise_scaling_symbol]];
@@ -991,9 +927,9 @@ void DiscreteSystem::init(const Scope* scope)
 }
 
 
-void EventSystem::loadFromXML ( const XMLNode node )
+void EventSystem::loadFromXML ( const XMLNode node, Scope* scope )
 {
-    TimeStepListener::loadFromXML ( node );
+    TimeStepListener::loadFromXML ( node, scope );
 
 	// Allow manual adjustment that cannot be overridden
 	if (timeStep()>0)
@@ -1024,10 +960,10 @@ void EventSystem::loadFromXML ( const XMLNode node )
 		while (xSystem.nChildNode("Condition")) {
 			xCondition.addChild(xSystem.getChildNode("Condition"));
 		}
-		System<DISCRETE_SYS>::loadFromXML(xSystem);
+		System<DISCRETE_SYS>::loadFromXML(xSystem, scope);
 	}
 	else {
-		System<DISCRETE_SYS>::loadFromXML(node);
+		System<DISCRETE_SYS>::loadFromXML(node, scope);
 	}
 }
 
@@ -1038,33 +974,28 @@ void EventSystem::init ( const Scope* scope)
 	
 	if (condition)
 		condition->init(scope);
-
 	
-	;
-	condition->getGranularity();
-	
-	
-	celltype = scope->getCellType();
-	
-	if (trigger_on_change) {
-		switch (condition->getGranularity()) {
-			case Granularity::Global: {
-				condition_granularity = Granularity::Global;
-				condition_history_val = 0;
-				break;
-			}
-			case Granularity::Cell : {
-				condition_granularity = Granularity::Cell;
-				condition_history_prop = celltype->addProperty<double>("_event_history","Event History",0);
-				break;
-			}
-			case Granularity::MembraneNode: 
-			case Granularity::Node :
-			default:
-				throw string("Events with on-change trigger can only be used with condition depending on globals variables or cell properties.\nMissing implementation.");
-				break;
-		}
-	}
+// 	celltype = scope->getCellType();
+// 	
+// 	if (trigger_on_change) {
+// 		switch (condition->getGranularity()) {
+// 			case Granularity::Global: {
+// 				condition_granularity = Granularity::Global;
+// 				condition_history_val = 0;
+// 				break;
+// 			}
+// 			case Granularity::Cell : {
+// 				condition_granularity = Granularity::Cell;
+// 				condition_history_prop = celltype->addProperty<double>("_event_history","Event History",0);
+// 				break;
+// 			}
+// 			case Granularity::MembraneNode: 
+// 			case Granularity::Node :
+// 			default:
+// 				throw string("Events with on-change trigger can only be used with condition depending on globals variables or cell properties.\nMissing implementation.");
+// 				break;
+// 		}
+// 	}
 	
 	if (condition) {
 		registerInputSymbols(condition->getDependSymbols());
@@ -1076,59 +1007,24 @@ void EventSystem::init ( const Scope* scope)
 
 void EventSystem::executeTimeStep()
 {
+	FocusRange range(target_granularity, target_scope);
 	if (trigger_on_change) {
-		if (condition_granularity == Granularity::Global) {
-			double cond = condition->get(SymbolFocus::global);
-			double trigger = (condition_history_val <= 0.0) && cond;
-			FocusRange range(granularity, scope());
-			for (auto focus : range) {
+		for (auto focus : range) {
+			double cond = condition->get(focus);
+			auto history_val = condition_history.find(SymbolFocus::global);
+			double trigger = ( history_val != condition_history.end()? history_val->second <= 0.0 : true) && cond;
+			if (trigger)
 				compute(focus);
-			}
-			condition_history_val = cond;
-		}
-		else if (condition_granularity == Granularity::Cell) {
-			if (celltype) {
-				vector<CPM::CELL_ID> cells = celltype->getCellIDs();
-				for (uint c=0; c<cells.size(); c++) {
-					SymbolFocus cell_focus(cells[c]);
-					double cond = condition->get(cell_focus);
-					bool trigger = (condition_history_prop.get(cell_focus) <= 0.0) && (cond>0.0);
-
-					if (trigger) {
-						FocusRange range(granularity, cells[c]);
-						for (auto focus : range) {
-							compute(focus);
-						}
-					}
-					
-					condition_history_prop.set(cell_focus,cond);
-				}
-			}
+			if (history_val != condition_history.end())
+				history_val->second = cond;
+			else 
+				condition_history[focus] = cond;
 		}
 	}
 	else {
-		if (condition_granularity == Granularity::Cell){
-			if (celltype) {
-				vector<CPM::CELL_ID> cells = celltype->getCellIDs();
-				for (uint c=0; c<cells.size(); c++) {
-					SymbolFocus cell_focus(cells[c]);
-					double cond = condition->get(cell_focus);
-					if (cond) {
-						FocusRange range(granularity, cells[c]);
-						for (auto focus : range) {
-							compute(focus);
-						}
-					}
-				}
-			}
-		}
-		else {
-			FocusRange range(granularity, scope());
-			for (auto focus : range) {
-				if ( condition->get(focus)) {
-					compute(focus);
-				}
-			}
+		for (auto focus : range) {
+			if (condition->get(focus))
+				compute(focus);
 		}
 	}
 };
@@ -1143,9 +1039,9 @@ void ContinuousSystem::init(const Scope* scope) {
 };
 
 
-void ContinuousSystem::loadFromXML(const XMLNode node) {
-	ContinuousProcessPlugin::loadFromXML(node);
-	System<CONTINUOUS_SYS>::loadFromXML(node);
+void ContinuousSystem::loadFromXML(const XMLNode node, Scope* scope) {
+	ContinuousProcessPlugin::loadFromXML(node, scope);
+	System<CONTINUOUS_SYS>::loadFromXML(node, scope);
 	// The TimeStepListener was reading the internal timeStep, thus has to be readjusted to the global time !!
 	ContinuousProcessPlugin::setTimeStep(ContinuousProcessPlugin::timeStep() / time_scaling);
 };

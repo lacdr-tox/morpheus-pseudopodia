@@ -12,18 +12,14 @@
 #ifndef string_functions_h
 #define string_functions_h
 
-#include <cstdio>
-#include <iostream>
-#include <vector>
-#include <set>
-#include <deque>
-#include <map>
+
+
+#include "config.h"
+#include <sstream>
+#include <cstring>
 #include <iomanip>
 #include <iterator>
 #include <algorithm>
-#include <sstream>
-#include <cstring>
-#include "config.h"
 
 
 #define c_array_size( a )  (sizeof(a)/sizeof(a[0]))

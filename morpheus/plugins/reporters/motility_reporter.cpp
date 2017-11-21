@@ -11,11 +11,6 @@ MotilityReporter::MotilityReporter() : ReporterPlugin() {
 	registerPluginParameter(interval);
 };
 
-void MotilityReporter::loadFromXML ( const XMLNode xNode)
-{
-    TimeStepListener::loadFromXML(xNode);
-}
-
 void MotilityReporter::init (const Scope* scope)
 {
 	ReporterPlugin::init (scope);

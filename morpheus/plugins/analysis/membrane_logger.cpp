@@ -21,14 +21,13 @@ MembraneLogger::~MembraneLogger() {
 	MembraneLogger::instances--; 
 };
 
-void MembraneLogger::loadFromXML(const XMLNode xNode)
+void MembraneLogger::loadFromXML(const XMLNode xNode, Scope* scope)
 {
 	// Define PluginParameters for all defined Output tags
 	symbols.resize( xNode.nChildNode("MembraneProperty") );
 	for (uint i=0; i<xNode.nChildNode("MembraneProperty"); i++) {
-		
 		symbols[i]->setXMLPath("MembraneProperty["+to_str(i)+"]/symbol-ref");
-		registerPluginParameter(symbols[i]);
+		registerPluginParameter(*symbols[i]);
 	}
 	
 	if( xNode.nChildNode("Plot") > 0) {
@@ -70,7 +69,7 @@ void MembraneLogger::loadFromXML(const XMLNode xNode)
 		registerPluginParameter(plot.logcommandSphere);
 	}
 	
-	AnalysisPlugin::loadFromXML( xNode );
+	AnalysisPlugin::loadFromXML( xNode, scope );
 
 	mapping = ALL;
 	if(cell_ids_str.isDefined()){
@@ -88,7 +87,7 @@ void MembraneLogger::loadFromXML(const XMLNode xNode)
 
 void MembraneLogger::init(const Scope* scope)
 {
-	celltype.init();
+	celltype.init(scope);
 	const Scope* ct_scope = celltype()->getScope();
 	for(uint i=0; i<symbols.size(); i++){
 		symbols[i]->setScope( ct_scope );

@@ -16,12 +16,12 @@ AddCell::AddCell() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_
 
 }
 
-void AddCell::loadFromXML(const XMLNode xNode)
+void AddCell::loadFromXML(const XMLNode xNode, Scope* scope)
 {
-	InstantaneousProcessPlugin::loadFromXML(xNode);
+	InstantaneousProcessPlugin::loadFromXML(xNode, scope);
 	triggers = shared_ptr<TriggeredSystem>(new TriggeredSystem);
 	if (xNode.nChildNode("Triggers")) {
-		triggers->loadFromXML(xNode.getChildNode("Triggers"));
+		triggers->loadFromXML(xNode.getChildNode("Triggers"), scope);
 	}
 }
 

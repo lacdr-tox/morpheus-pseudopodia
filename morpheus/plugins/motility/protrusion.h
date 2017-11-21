@@ -55,7 +55,7 @@ Assuming a Field 'act' exist to store the activity values:
 \endverbatim
 */
 
-class Protrusion : public CPM_Energy, CPM_Update_Listener, InstantaneousProcessPlugin
+class Protrusion : public CPM_Energy, Cell_Update_Listener, InstantaneousProcessPlugin
 {
 private:
 	// required

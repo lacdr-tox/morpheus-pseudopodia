@@ -2,7 +2,7 @@
 
 REGISTER_PLUGIN(InitHexLattice);
 
-void InitHexLattice::loadFromXML(const XMLNode node)
+void InitHexLattice::loadFromXML(const XMLNode node, Scope* scope)
 {
 	stored_node = node;
 	mode.setXMLPath("mode");

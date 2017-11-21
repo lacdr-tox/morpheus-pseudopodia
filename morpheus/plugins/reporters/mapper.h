@@ -123,7 +123,7 @@ public:
     Mapper();
 
     void init(const Scope* scope) override;
-    void loadFromXML(const XMLNode ) override;
+    void loadFromXML(const XMLNode, Scope* scope ) override;
     void report() override;
 };
 

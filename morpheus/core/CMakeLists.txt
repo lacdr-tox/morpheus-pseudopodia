@@ -31,10 +31,10 @@ SET(morpheus_src
 	scope.cpp
 	focusrange.cpp
 	symbolfocus.cpp
-	symbol_accessor.cpp
+# 	symbol_accessor.cpp
 	diff_eqn.cpp
 	system.cpp
-	cell_membrane_accessor.cpp
+# 	cell_membrane_accessor.cpp
 	membrane_property.cpp
 	membranemapper.cpp
 	data_mapper.cpp

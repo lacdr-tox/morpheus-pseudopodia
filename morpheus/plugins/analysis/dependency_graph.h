@@ -38,7 +38,7 @@ class DependencyGraph: public AnalysisPlugin {
 public:
 	DECLARE_PLUGIN("DependencyGraph");
 	
-    DependencyGraph();
+	DependencyGraph();
 	void init(const Scope* scope) override;
-    void analyse(double time) override;
+	void analyse(double time) override;
 };

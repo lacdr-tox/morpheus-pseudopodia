@@ -4,7 +4,7 @@ using namespace SIM;
 
 REGISTER_PLUGIN(VtkPlotter);
 
-void VtkPlotter::loadFromXML(const XMLNode node)	//einlesen der Daten aus der XML
+void VtkPlotter::loadFromXML(const XMLNode node, Scope* scope)	//einlesen der Daten aus der XML
 {
 	
 	map<string, Mode> mode_map;
@@ -53,22 +53,27 @@ void VtkPlotter::loadFromXML(const XMLNode node)	//einlesen der Daten aus der XM
 		plot.channels.push_back(c);
 	}
 
-	AnalysisPlugin::loadFromXML(node);
+	AnalysisPlugin::loadFromXML(node, scope);
 
 };
 
 void VtkPlotter::init(const Scope* scope)
 {
 	for(uint c=0; c<plot.channels.size(); c++){
-		plot.channels[c]->celltype.init();
+		plot.channels[c]->celltype.init(scope);
 		if( plot.channels[c]->celltype.isDefined() ){
 			plot.channels[c]->symbol.setScope(plot.channels[c]->celltype()->getScope());
 		}
 		
-		cout << "VtkPlotter: Channel " << (c+1) << " = \'" << plot.channels[c]->symbol.accessor().getName() << "\'" << endl;
+		cout << "VtkPlotter: Channel " << (c+1) << " = \'" << plot.channels[c]->symbol.accessor()->name() << "\'" << endl;
 	}
 	
 	AnalysisPlugin::init( scope );
+	
+	for (auto& ch : plot.channels) {
+		ch->field = dynamic_pointer_cast<const Field::Symbol>(ch->symbol.accessor());
+		ch->membrane = dynamic_pointer_cast<const MembranePropertySymbol>(ch->symbol.accessor());
+	}
 
 	latticeDim = SIM::getLattice()->size();
 	
@@ -126,11 +131,12 @@ void VtkPlotter::writeVTK(double time){
 		
 		//cout << "VtkPlotter: Channel " << (c+1) << " = \'" << plot.channels[c]->symbol.accessor().getName() << "\'" << endl;
 
-		vtkstream << "SCALARS " << plot.channels[c]->symbol.accessor().getName() << " FLOAT 1" << "\n";
+		vtkstream << "SCALARS " << plot.channels[c]->symbol.accessor()->name() << " FLOAT 1" << "\n";
 		vtkstream << "LOOKUP_TABLE default" << "\n";
+		
 
 		// Field
-		if(plot.channels[c]->symbol.accessor().getLinkType() == SymbolData::PDELink){
+		if(plot.channels[c]->field){
 			VINT pos(0,0,0);
 			for (pos.z=0; pos.z<latticeDim.z; pos.z++){
 				for (pos.y=0; pos.y<latticeDim.y; pos.y++){
@@ -160,23 +166,23 @@ void VtkPlotter::writeVTK(double time){
 							// if cell type is specified, only plot property of that cell type, and assume 0 for other cell types
 							if( plot.channels[c]->celltype.isDefined() ){
 							
-								if( plot.channels[c]->exclude_medium.get() 
+								if( plot.channels[c]->exclude_medium() 
 									&& celltype_at_pos == EmptyCellTypeID ){
 									value = 0;
 								}
 								// if pos is part of cell of chosen cell type, plot the value
-								else if( celltype_at_pos == plot.channels[c]->celltype.get()->getID() ){
+								else if( celltype_at_pos == plot.channels[c]->celltype()->getID() ){
 
-									if( plot.channels[c]->outline.get() ){
+									if( plot.channels[c]->outline() ){
 										if ( CPM::isSurface( pos ) ){
-											value = plot.channels[c]->symbol.get( pos );
+											value = plot.channels[c]->symbol( pos );
 										}
 									}
 									else{ // if not outline, plot property over whole cell
-										value = plot.channels[c]->symbol.get( pos );
+										value = plot.channels[c]->symbol( pos );
 
 										// if no-outline, set value to zero on cell boundary
-										if( plot.channels[c]->no_outline.get() && CPM::isSurface( pos ) ){
+										if( plot.channels[c]->no_outline() && CPM::isSurface( pos ) ){
 											value = 0;
 										}
 									}

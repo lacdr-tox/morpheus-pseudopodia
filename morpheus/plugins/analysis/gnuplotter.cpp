@@ -55,9 +55,9 @@ void ArrowPainter::loadFromXML(const XMLNode node)
 
 int ArrowPainter::getStyle() { return style; }
 
-void ArrowPainter::init()
+void ArrowPainter::init(const Scope* scope)
 {
-	arrow.init();
+	arrow.init(scope);
 }
 
 set< SymbolDependency > ArrowPainter::getInputSymbols() const
@@ -148,13 +148,13 @@ void FieldPainter::loadFromXML(const XMLNode node)
 	}
 }
 
-void FieldPainter::init()
+void FieldPainter::init(const Scope* scope)
 {
-	field_value.init();
+	field_value.init(scope);
 	if( min_value.isDefined() )
-		min_value.init();
+		min_value.init(scope);
 	if( max_value.isDefined() )
-		max_value.init();
+		max_value.init(scope);
 }
 
 const string& FieldPainter::getDescription() const
@@ -319,9 +319,9 @@ void VectorFieldPainter::loadFromXML(const XMLNode node)
     getXMLAttribute(node,"slice",slice);
 }
 
-void VectorFieldPainter::init()
+void VectorFieldPainter::init(const Scope* scope)
 {
-	value.init();
+	value.init(scope);
 }
 
 set< SymbolDependency > VectorFieldPainter::getInputSymbols() const
@@ -397,9 +397,9 @@ void LabelPainter::loadFromXML(const XMLNode node)
 
 
 
-void LabelPainter::init()
+void LabelPainter::init(const Scope* scope)
 {
-	value.init();
+	value.init(scope);
 }
 
 
@@ -455,6 +455,7 @@ CellPainter::CellPainter()
 	z_level = 0;
 	symbol.setXMLPath("value");
 	symbol.setDefault("cell.type");
+	symbol.setPartialSpecDefault(transparency_value);
 }
 
 CellPainter::~CellPainter() { }
@@ -475,8 +476,7 @@ void CellPainter::loadFromXML(const XMLNode node)
 		external_range_min = true;
 	if (getXMLAttribute(node,"max",range_max) )
 		external_range_max = true;
-	if (getXMLAttribute(node,"min",range_min) && getXMLAttribute(node,"max",range_max))
-		external_range = true;
+	external_range = external_range_min && external_range_max;
 
 	if (string(node.getName()) == "Cells") {
 		
@@ -521,8 +521,8 @@ void CellPainter::loadPalette(const XMLNode node)
 	}
 }
 
-void CellPainter::init() {
-	symbol.init();
+void CellPainter::init(const Scope* scope) {
+	symbol.init(scope);
 	
 	cpm_layer = CPM::getLayer();
 	
@@ -1015,9 +1015,9 @@ Gnuplotter::Gnuplotter(): AnalysisPlugin(), gnuplot(NULL) {
 };
 Gnuplotter::~Gnuplotter() { if (gnuplot) delete gnuplot; Gnuplotter::instances--;};
 
-void Gnuplotter::loadFromXML(const XMLNode xNode)
+void Gnuplotter::loadFromXML(const XMLNode xNode, Scope* scope)
 {
-	AnalysisPlugin::loadFromXML(xNode);
+	AnalysisPlugin::loadFromXML(xNode, scope);
 
 	decorate = true;
 	getXMLAttribute(xNode,"decorate",decorate);
@@ -1089,23 +1089,23 @@ void Gnuplotter::init(const Scope* scope) {
     
 		for (uint i=0;i<plots.size();i++) {
 			if (plots[i].cells) {
-				plots[i].cell_painter->init();
+				plots[i].cell_painter->init(scope);
 				registerInputSymbols( plots[i].cell_painter->getInputSymbols() );
 			}
 			if (plots[i].label_painter) {
-				plots[i].label_painter->init();
+				plots[i].label_painter->init(scope);
 				registerInputSymbols( plots[i].label_painter->getInputSymbols() );
 			}
 			if (plots[i].arrow_painter) {
-				plots[i].arrow_painter->init();
+				plots[i].arrow_painter->init(scope);
 				registerInputSymbols( plots[i].arrow_painter->getInputSymbols() );
 			}
 			if (plots[i].vector_field_painter) {
-				plots[i].vector_field_painter->init();
+				plots[i].vector_field_painter->init(scope);
 				registerInputSymbols( plots[i].vector_field_painter->getInputSymbols() );
 			}
 			if (plots[i].field) {
-				plots[i].field_painter->init();
+				plots[i].field_painter->init(scope);
 				registerInputSymbols( plots[i].field_painter->getInputSymbols() );
 			}
 		}

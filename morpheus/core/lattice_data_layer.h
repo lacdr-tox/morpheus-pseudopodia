@@ -13,8 +13,7 @@
 #define Lattice_Data_Layer_H
 
 #include "lattice.h"
-#include "config.h"
-#include <set>
+#include "traits.h"
 #include <valarray>
 
 struct span {
@@ -114,6 +113,7 @@ protected:
 	friend class InteractionEnergy;  // Neighborhood per node -- not using the stencil implementation
 	friend class MembraneMapper;
 	friend class MembraneRules3D;
+	friend class MembraneProperty;
 	friend class InitVoronoi;
 };
 

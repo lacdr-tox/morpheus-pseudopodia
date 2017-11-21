@@ -13,7 +13,7 @@
 #include "core/interfaces.h"
 #include "core/plugin_parameter.h"
 #include "core/celltype.h"
-#include "core/symbol_accessor.h"
+#include "core/super_celltype.h"
 #include "gnuplot_i/gnuplot_i.h"
 #include <fstream>
 #include <sstream>
@@ -129,7 +129,7 @@ class LabelPainter  {
 public:
 	LabelPainter();
 	void loadFromXML(const XMLNode node);
-	void init();
+	void init(const Scope* scope);
 	set<SymbolDependency> getInputSymbols() const;
 	const string& getDescription() const;
 	void plotData(ostream& );
@@ -147,7 +147,7 @@ class ArrowPainter  {
 public:
 	ArrowPainter();
     void loadFromXML(const XMLNode );
-	void init();
+	void init(const Scope* scope);
 	set<SymbolDependency> getInputSymbols() const;
 	void plotData(ostream& );
 	int getStyle();
@@ -164,7 +164,7 @@ private:
 class FieldPainter {
 public:
     void loadFromXML(const XMLNode node );
-	void init();
+	void init(const Scope* scope);
 	set<SymbolDependency> getInputSymbols() const;
 	void plotData(ostream& out );
 	bool getSurface() { if( surface.isDefined() ) return surface.get(); else return true;}
@@ -198,7 +198,7 @@ private:
 class VectorFieldPainter  {
 public:
     void loadFromXML(const XMLNode node_ );
-	void init();
+	void init(const Scope* scope);
 	set<SymbolDependency> getInputSymbols() const;
 	void plotData(ostream& out_ );
 	int getStyle();
@@ -258,7 +258,7 @@ class CellPainter  {
 		CellPainter();
 		~CellPainter();
 		virtual void loadFromXML(const XMLNode );
-		void init();
+		void init(const Scope* scope);
 		set<SymbolDependency> getInputSymbols() const;
 		float getMaxVal() { return max_val;}
 		float getMinVal() { return min_val;}
@@ -357,7 +357,7 @@ class Gnuplotter : public AnalysisPlugin
 
 		DECLARE_PLUGIN("Gnuplotter");
 
-		virtual void loadFromXML (const XMLNode xNode) override;
+		virtual void loadFromXML (const XMLNode xNode, Scope* scope) override;
 
 		virtual void init(const Scope* scope) override;
 		virtual void analyse(double time) override;

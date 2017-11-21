@@ -69,7 +69,7 @@ public:
 	virtual void finish() override;
 	virtual void analyse(double time) override;
 	virtual void init(const Scope* scope) override;
-	virtual void loadFromXML(const XMLNode ) override;
+	virtual void loadFromXML(const XMLNode, Scope* scope ) override;
 	
 private:
 	fstream storage;

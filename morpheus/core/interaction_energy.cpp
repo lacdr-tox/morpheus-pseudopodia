@@ -5,8 +5,10 @@ InteractionEnergy::InteractionEnergy() : interaction_details(IA_PLAIN), n_cellty
 }
 
 
-void InteractionEnergy::loadFromXML( const XMLNode xNode) {
+void InteractionEnergy::loadFromXML( const XMLNode xNode, Scope* scope) {
+	Plugin::loadFromXML(xNode,scope);
 	ia_XMLNode = xNode;
+	
 	
 	//assert( ! ia_neighborhood_node.isEmpty() );
 // 	ia_neighborhood = CPM::getBoundaryNeighborhood();
@@ -37,20 +39,6 @@ void InteractionEnergy::loadFromXML( const XMLNode xNode) {
 	// - shit, but the it's too late for symbol registration
 	// - ohh, so let's just init the as the very first in the sequence ...
 
-
-}
-
-XMLNode InteractionEnergy::saveToXML() const {
-	return ia_XMLNode;
-}
-
-void InteractionEnergy::init(const Scope* scope)
-{
-	layer = CPM::getLayer();
-	boundaryLenghScaling = CPMShape::BoundaryLengthScaling(CPM::getBoundaryNeighborhood());
-// 	ia_neighborhood = 
-// 	layer->optimizeNeighborhood(ia_neighborhood);
-	
 	auto celltypes = CPM::getCellTypes();
 	// map celltype names to internal state id
 	std::map<std::string,uint> ct_names;
@@ -58,8 +46,8 @@ void InteractionEnergy::init(const Scope* scope)
 	for (uint ict=0; ict<celltypes.size(); ict++) {
 		auto ct = celltypes[ict].lock();
 		ct_names[ct->getName()]=ict;
-		if (dynamic_pointer_cast<const SuperCT>(ct) )
-			has_supercells = true;
+// 		if (dynamic_pointer_cast<const SuperCT>(ct) )
+// 			has_supercells = true;
 	}
 	
 	n_celltypes=celltypes.size();
@@ -103,31 +91,22 @@ void InteractionEnergy::init(const Scope* scope)
 		ia_energies[v_id2] = value;
 		
 		for ( int i_plug =0; i_plug <xContact.nChildNode(); i_plug++) {
-			// try to create a suitible plugin
+			// try to create a suitable plugin
 			XMLNode xNode = xContact.getChildNode(i_plug);
 			try {
 				string xml_tag_name(xNode.getName());
 				shared_ptr<Plugin>p = PluginFactory::CreateInstance(xml_tag_name);
 				if (! p.get()) 
 					throw(string("Unknown plugin " + xml_tag_name));
-				p->loadFromXML(xNode);
+				p->loadFromXML(xNode, scope);
 				uint n_interfaces=0;
 				// TODO: check symbol creation
-				if ( dynamic_pointer_cast<AbstractProperty>(p) ) {
-					SIM::defineSymbol(dynamic_pointer_cast<AbstractProperty>(p));
-					n_interfaces++;
-				}
-				if ( dynamic_pointer_cast<Function>(p) ) {
-					SIM::defineSymbol(dynamic_pointer_cast<Function>(p));
-					n_interfaces++;
-				}
 				if ( dynamic_pointer_cast<Interaction_Overrider>(p) ) {
 					if ( ia_overrider[v_id1])
 						throw(string("Multiple interaction overriders for " + ct_name1 + " , " + ct_name2 + " defined!"));
 					ia_overrider[ v_id1 ] = dynamic_pointer_cast<Interaction_Overrider>(p);
 					ia_overrider[ v_id2 ] = dynamic_pointer_cast<Interaction_Overrider>(p);
 					cout << "Registering Interaction overrider " << p->XMLName() << endl;
-					n_interfaces++; 
 					has_overriders = true;
 				}
 				if (dynamic_pointer_cast<Interaction_Addon>(p) ) {
@@ -135,18 +114,16 @@ void InteractionEnergy::init(const Scope* scope)
 					// IF NOT HOMOTYPIC INTERACTION
 					if (v_id1 != v_id2)  ia_addon[ v_id2 ].push_back( dynamic_pointer_cast<Interaction_Addon>(p) );
 					cout << "Registering Interaction plugin " << p->XMLName() << endl;
-					n_interfaces++; 
 					has_addons = true;
 				}
-				if ( ! n_interfaces ) 
-					throw(xml_tag_name + " is not a valid Interaction plugin");
+
 				plugins[ v_id1 ].push_back( p );
 				// IF NOT HOMOTYPIC INTERACTION
 				if (v_id1 != v_id2)  
 					plugins[ v_id2 ].push_back(p);
 			}
 			catch(string er) { 
-				throw MorpheusException(er, stored_node);
+				throw MorpheusException(er, ia_XMLNode);
 				//cerr << er << " - leaving you alone ..." << endl; exit(-1);
 			}
 			
@@ -160,6 +137,21 @@ void InteractionEnergy::init(const Scope* scope)
 		interaction_details |= IA_PLUGINS;
 	if (has_supercells)
 		interaction_details |= IA_SUPERCELLS;
+
+}
+
+XMLNode InteractionEnergy::saveToXML() const {
+	return ia_XMLNode;
+}
+
+void InteractionEnergy::init(const Scope* scope)
+{
+	layer = CPM::getLayer();
+	boundaryLenghScaling = CPMShape::BoundaryLengthScaling(CPM::getBoundaryNeighborhood());
+// 	ia_neighborhood = 
+// 	layer->optimizeNeighborhood(ia_neighborhood);
+	
+	auto celltypes = CPM::getCellTypes();
 	
 	for (uint i=0;i<n_celltypes; i++) {
 		if (ia_overrider[i]) {

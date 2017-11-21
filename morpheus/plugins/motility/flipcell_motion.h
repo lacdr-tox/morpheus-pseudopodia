@@ -13,7 +13,8 @@
 #define FLIPCELLMOTION_H
 
 #include "core/interfaces.h"
-#include "core/plugin_parameter.h"
+#include "core/celltype.h"
+#include "core/focusrange.h"
 
 /** \defgroup FlipCellMotion
 \ingroup ML_CellType
@@ -44,9 +45,9 @@ private:
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> condition;
 	PluginParameter2<int, XMLValueReader, DefaultValPolicy> neighborhood;
 	
-	const Scope* scope;
 	shared_ptr <const Lattice > lattice;
-	shared_ptr <const CPM::LAYER > cpm_lattice;
+// 	shared_ptr <const CPM::LAYER > cpm_lattice;
+	const CellType* celltype;
 	uint nbh_order;
 	vector<VINT> nbh;
 	

@@ -45,15 +45,14 @@
 #include "cpm.h"
 #include "gnuplot_i/gnuplot_i.h"
 
-using namespace TR1_NAMESPACE;
 
 // make a unique source of randomness available to everyone
 vector<mt19937> random_engines;
-#if defined USING_CXX0X_TR1
+// #if defined USING_CXX0X_TR1
 	vector<mt19937> random_engines_alt;
-#else
-	vector<ranlux_base_01> random_engines_alt;
-#endif	
+// #else
+// 	vector<ranlux_base_01> random_engines_alt;
+// #endif	
 
 namespace CPM {
 	double time=0;
@@ -89,6 +88,29 @@ namespace CPM {
 
 
 namespace SIM {
+	
+	class TimeSymbol : public SymbolAccessorBase<double> {
+	public:
+		TimeSymbol(string symbol) : SymbolAccessorBase<double>(symbol) {}
+		double get(const SymbolFocus&) const override {
+			return TimeScheduler::getTime();
+		}
+		const string& description() const override { static const string descr = "Time" ; return descr; }
+		string linkType() const override { return "TimeLink"; }
+	};
+	
+	class SpaceSymbol : public SymbolAccessorBase<VDOUBLE> {
+	public:
+		SpaceSymbol(string symbol) : SymbolAccessorBase<VDOUBLE>(symbol) {
+			flags().granularity = Granularity::Node;
+		}
+		VDOUBLE get(const SymbolFocus& f) const override {
+			return f.pos();
+		}
+		const string&  description() const override { static const string descr = "Space" ; return descr; }
+		string linkType() const override { return "SpaceLink"; }
+	};
+	
 	const string dep_graph_format = "svg";
 	bool generate_symbol_graph_and_exit = false;
 	
@@ -99,8 +121,8 @@ namespace SIM {
 	XMLNode xGlobals,xSpace;
 	
 // 	PDE_Sim* pde_sim=NULL;
-	std::map<string, shared_ptr<PDE_Layer> > pde_layers;
-	std::map<string, shared_ptr<VectorField_Layer> > vector_field_layers;
+// 	std::map<string, shared_ptr<PDE_Layer> > pde_layers;
+// 	std::map<string, shared_ptr<VectorField_Layer> > vector_field_layers;
 	vector< shared_ptr<AnalysisPlugin> > analysers;
 	vector< shared_ptr<Plugin> > analysis_section_plugins;
 	vector< shared_ptr<Plugin> > global_section_plugins;
@@ -118,8 +140,8 @@ namespace SIM {
 	string fileTitle="SnapShot";
 
 	/// Get the base name 
-	inline string getSymbolBaseName(string name) { return getGlobalScope()->getSymbolBaseName(name); };
-	inline set<string> getSymbolBaseNames(const set<string>& symbols){ set<string> s; for (auto &i : symbols) { s.insert( getGlobalScope()->getSymbolBaseName(i));} return s; };
+// 	inline string getSymbolBaseName(string name) { return getGlobalScope()->getSymbolBaseName(name); };
+// 	inline set<string> getSymbolBaseNames(const set<string>& symbols){ set<string> s; for (auto &i : symbols) { s.insert( getGlobalScope()->getSymbolBaseName(i));} return s; };
 	
 	int main(int argc, char *argv[]);
 	void init(int argc, char *argv[]);
@@ -127,6 +149,7 @@ namespace SIM {
 	void createDepGraph();
 	void loadFromXML(XMLNode xNode);
 	void setRandomSeeds( const XMLNode xNode );
+	
 }
 
 #endif

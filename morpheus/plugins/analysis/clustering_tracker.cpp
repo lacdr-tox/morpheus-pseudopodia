@@ -19,20 +19,20 @@ Clustering_Tracker::Clustering_Tracker() {
 	registerPluginParameter(cluster_id);
 }
 
-void Clustering_Tracker::loadFromXML(const XMLNode xNode)
+void Clustering_Tracker::loadFromXML(const XMLNode xNode, Scope* scope)
 {
-	AnalysisPlugin::loadFromXML(xNode);
+	AnalysisPlugin::loadFromXML(xNode, scope);
 }
 
 void Clustering_Tracker::init(const Scope* scope)
 {
-	celltype.init();
-	shared_ptr<const SuperCT> sct = dynamic_pointer_cast<const SuperCT>(celltype());
+	celltype.init(scope);
 	cluster_id.setScope(celltype()->getScope());
 	
 	
 	AnalysisPlugin::init(scope);
 	
+	shared_ptr<const SuperCT> sct = dynamic_pointer_cast<const SuperCT>(celltype());
 	if ( ! sct)
 		is_supercelltype = false;
 	else

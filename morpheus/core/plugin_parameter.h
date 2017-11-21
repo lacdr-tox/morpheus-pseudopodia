@@ -16,7 +16,6 @@
 #include "string_functions.h"
 #include "simulation.h"
 #include "expression_evaluator.h"
-#include "symbol_accessor.h"
 
 /**
  * 
@@ -101,7 +100,7 @@ class PluginParameter2 ;*/
 class PluginParameterBase {
 public:
 	virtual void loadFromXML(XMLNode node) =0; // read from value, optionally from symbol
-	virtual void init() =0;
+	virtual void init(const Scope* scope) =0;
 	virtual void read(string value) =0;
 	virtual string XMLPath() const =0;
 	virtual set<SymbolDependency> getDependSymbols() const =0;
@@ -183,11 +182,11 @@ template <class ValType, class RequirementPolicy>
 class XMLValueReader : public RequirementPolicy
 {
 public:
-	typename TypeInfo<ValType>::SReturn operator()()  const {
+	typename TypeInfo<ValType>::Return operator()()  const {
 		RequirementPolicy::assertDefined();
 		return const_val;
 	};
-	typename TypeInfo<ValType>::SReturn get()  const {
+	typename TypeInfo<ValType>::Return get()  const {
 		RequirementPolicy::assertDefined();
 		return const_val;
 	};
@@ -201,7 +200,7 @@ protected:
 		const_val = TypeInfo<ValType>::fromString(string_val);
 	};
 	
-	void init() {};
+	void init(const Scope*) {};
 	
 	set<SymbolDependency> getDependSymbols() const { return set<SymbolDependency>(); };
 	set<SymbolDependency> getOutputSymbols() const { return set<SymbolDependency>(); };
@@ -221,34 +220,42 @@ public:
 	{ 
 		RequirementPolicy::assertDefined();
 		
-		if (!is_initialized) {
-			cout << "Warning: Evaluator initialisation during get() for expression '" << evaluator->getExpression() << "'" << endl; const_cast<XMLEvaluatorBase<ValType,RequirementPolicy,Evaluator>* >(this)->init(); // may throw ...
-		}
+		
 		if (is_const)
 			return const_expr;
 		else 
 			return evaluator->get(f);
 	};
+	typename TypeInfo<ValType>::SReturn safe_get(SymbolFocus f) const {
+		if (!is_initialized) {
+// 			cout << "Warning: Evaluator initialisation during get() for expression '" << evaluator->getExpression() << "'" << endl;
+			const_cast<XMLEvaluatorBase<ValType,RequirementPolicy,Evaluator>* >(this)->init(SIM::getScope());
+		}
+		if (is_const)
+			return const_expr;
+		else
+			return evaluator->safe_get(f);
+	}
 	
 	typename TypeInfo<ValType>::SReturn operator()(SymbolFocus f) const { return get(f);}
 	
-	void setScope(const Scope * scope) { assert(scope); this->scope = scope; }
-	void setGlobalScope() { require_global_scope=true;};
+	void setScope(const Scope * scope) { assert(scope); local_scope = scope; require_global_scope=false;}
+	void setGlobalScope() { require_global_scope=true; };
 	void allowPartialSpec(bool allow=true) { allow_partial_spec=allow; }
 	
-	void init()
+	void init(const Scope* scope)
 	{
 		if (! RequirementPolicy::isMissing()) {
-			if (scope)
-				evaluator->init(scope);
-			else if (require_global_scope)
-				evaluator->init(SIM::getGlobalScope());
+			if (require_global_scope)
+				local_scope = SIM::getGlobalScope();
+			if (local_scope)
+				evaluator->init(local_scope);
 			else
-				evaluator->init(SIM::getScope());
+				evaluator->init(scope);
 			
 			if (evaluator->isConst()) { 
 				is_const =  true;
-				const_expr = evaluator->get(SymbolFocus::global);
+				const_expr = evaluator->safe_get(SymbolFocus::global);
 			}
 			is_initialized = true;
 		}
@@ -272,7 +279,7 @@ public:
 	set<SymbolDependency> getOutputSymbols() const { return set<SymbolDependency>(); };
 	
 protected:
-	XMLEvaluatorBase() : is_const(false), is_initialized(false), scope(NULL), require_global_scope(false), allow_partial_spec(false) {};
+	XMLEvaluatorBase() : is_const(false), is_initialized(false), local_scope(NULL), require_global_scope(false), allow_partial_spec(false) {};
 	// TODO Clearify  whether a Copy constructor is required to deal with the unique_ptr evaluator
 	// An assignment will leave the rhs object uninitialized !!!
 	
@@ -288,7 +295,7 @@ protected:
 private:
 	bool is_const;
 	bool is_initialized;
-	const Scope* scope;
+	const Scope* local_scope;
 	bool require_global_scope;
 	bool allow_partial_spec;
 	ValType const_expr;
@@ -327,7 +334,7 @@ protected:
 		}
 		value = value_map[string_val];
 	}
-	void init() {};
+	void init(const Scope* scope) {};
 	set<SymbolDependency> getDependSymbols() const { return set<SymbolDependency>(); };
 	set<SymbolDependency> getOutputSymbols() const { return set<SymbolDependency>(); };
 	
@@ -343,12 +350,11 @@ private:
  * This is the explicit specialisation for selecting a CellType via XML
  */
 
-
 template <class RequirementPolicy> 
 class XMLNamedValueReader< shared_ptr<const CellType>,  RequirementPolicy> : public RequirementPolicy {
 public:
 	typedef shared_ptr<const CellType> value_type;
-	typename TypeInfo<value_type>::SReturn operator()() const { RequirementPolicy::assertDefined();  return get(); };
+	typename TypeInfo<value_type>::SReturn operator()() const { return get(); };
 	typename TypeInfo<value_type>::SReturn get() const { RequirementPolicy::assertDefined();  return value.lock(); };
 
 protected:
@@ -360,17 +366,9 @@ protected:
 		this->string_val = val;
 	}
 	
-	void init() {
+	void init(const Scope* scope) {
 		if (! RequirementPolicy::isMissing()) {
-			auto ct_vec = CPM::getCellTypes();
-			value_map_type value_map;
-			for (auto ct : ct_vec) {
-				value_map[ct.lock()->getName()] = ct;
-			}
-			
-			if (value_map.empty()) {
-				throw string("XMLNamedValueReader::read() : Empty value map");
-			}
+			value_map_type value_map = CPM::getCellTypesMap();
 			if (!value_map.count(string_val)) {
 				throw string("Invalid value '") + string_val + "' in XMLNamedValueReader";
 			}
@@ -394,46 +392,61 @@ private:
 template <class ValType, class RequirementPolicy> 
 class XMLReadableSymbol : public RequirementPolicy {
 public:
+	/// read the XML-specified value
 	void read(const string& string_val) { symbol_name = string_val; if (symbol_name.empty()) throw string("Missing Symbol name in XMLReadableSymbol::read()");};
-	void init() {
+	/// Initialize the symbol
+	void init(const Scope* scope) {
 		if (! RequirementPolicy::isMissing()) {
-			if (scope)
-				_accessor = scope->findSymbol<ValType>(symbol_name);
-			else if (require_global_scope) 
-				_accessor = SIM::getGlobalScope()->findSymbol<ValType>(symbol_name);
+			if (require_global_scope)
+				local_scope = SIM::getGlobalScope();
+			else if (!local_scope)
+				local_scope = scope;
+			
+			if (partial_spec_val_set)
+				_accessor = local_scope->findSymbol<ValType>(symbol_name, partial_spec_val);
 			else
-				_accessor = SIM::findSymbol<ValType>(symbol_name);
+				_accessor = local_scope->findSymbol<ValType>(symbol_name);
 		}
 	}
 	
-	void requireGlobalScope() { require_global_scope=true;};
-	void setScope(const Scope * scope) { this->scope = scope; }
+	/// Require a Symbol from another scope (i.e. not the lexical scope)
+	void setScope(const Scope * scope) { local_scope = scope; require_global_scope=false; }
+	/// Require a globally valid Symbol
+	void setGlobalScope() { require_global_scope =true; }
+	
+	/** Set a default value for partially defined symbols.
+	 * 
+	 *  Sets a value to be assumed in spatial regions where the symbol is not specified.
+	 *  This value does work as a default for unspecified symbols.
+	 */
+	void setPartialSpecDefault(const ValType& val) {
+		partial_spec_val_set = true;
+		partial_spec_val = val;
+	} 
 	
 	string name() const { RequirementPolicy::assertDefined(); return symbol_name; }
-	const string& description() const  { RequirementPolicy::assertDefined(); return _accessor.getFullName(); }
-	Granularity granularity() const { RequirementPolicy::assertDefined(); return _accessor.getGranularity(); }
-	bool isInteger() const { RequirementPolicy::assertDefined(); return _accessor.isInteger(); }
+	const string& description() const  { RequirementPolicy::assertDefined(); return _accessor->description(); }
+	Granularity granularity() const { RequirementPolicy::assertDefined(); return _accessor->granularity(); }
+	bool isInteger() const { RequirementPolicy::assertDefined(); return _accessor->flags().integer; }
 	
 	const SymbolAccessor<ValType>& accessor() const { RequirementPolicy::assertDefined(); return _accessor; }
 	
 	typename TypeInfo<ValType>::SReturn operator()(SymbolFocus f) const {
 		RequirementPolicy::assertDefined(); 
-		return this->_accessor.get(f);
+		return this->_accessor->get(f);
 	};
 	
 	typename TypeInfo<ValType>::SReturn get(SymbolFocus f) const {
 		RequirementPolicy::assertDefined(); 
-		return this->_accessor.get(f);
+		return this->_accessor->get(f);
 	};
 	
 	std::set<SymbolDependency> getDependSymbols() const {
-		std::set<SymbolDependency> s;
-		if (this->_accessor.valid()) {
-			SymbolDependency dep = {this->_accessor.getBaseName(), this->_accessor.getScope()};
-			cout << "Plugin Param dep " << dep.name << " scope " << dep.scope << endl; 
-			s.insert(dep);
+		if (this->_accessor) {
+			return this->_accessor->dependencies();
 		}
-		return s;
+		else
+			return std::set<SymbolDependency>();
 	}
 	
 	std::set<SymbolDependency> getOutputSymbols() const { 
@@ -442,20 +455,18 @@ public:
 	}
 
 protected:
-	XMLReadableSymbol() : require_global_scope(false) , scope(NULL) {};
+	XMLReadableSymbol() {};
 	~XMLReadableSymbol() {}
 	
 	SymbolAccessor<ValType> _accessor;
 private:
 	string symbol_name;
-	bool require_global_scope;
-	const Scope* scope;
+	const Scope* local_scope = NULL;
+	bool require_global_scope = false;
+	bool partial_spec_val_set = false;
+	ValType partial_spec_val;
 };
 
-
-// Allow to move the default value as into the symbol to be queried
-template <> void XMLReadableSymbol<double,DefaultValPolicy>::init();
-template <> void XMLReadableSymbol<VDOUBLE,DefaultValPolicy>::init();
 
 
 /** 
@@ -466,36 +477,30 @@ template <class ValType, class RequirementPolicy>
 class XMLWritableSymbol : public RequirementPolicy {
 public:
 	void read(const string& string_val) { symbol_name = string_val; if (symbol_name.empty()) throw string("Missing Symbol name in XMLWritableSymbol::read()");};
-	void init() {
+	void init(const Scope * scope) {
 		if (! RequirementPolicy::isMissing()) {
-			if (scope)
-				_accessor = scope->findRWSymbol<ValType>(symbol_name);
-			else if (require_global_scope) 
-				_accessor = SIM::getGlobalScope()->findRWSymbol<ValType>(symbol_name);
+			if (require_global_scope)
+				local_scope = SIM::getGlobalScope();
+			if (local_scope)
+				_accessor = local_scope->findRWSymbol<ValType>(symbol_name);
 			else
-				_accessor = SIM::findRWSymbol<ValType>(symbol_name);
+				_accessor = scope->findRWSymbol<ValType>(symbol_name);
 		}
 	}
-	void setScope(const Scope* scope) { this->scope = scope; }
-	void setGlobalScope() { scope=NULL; require_global_scope=true;};
+	void setScope(const Scope* scope) { local_scope = scope; require_global_scope=false; }
+	void setGlobalScope() { require_global_scope = true; }
 	
 	string name() { RequirementPolicy::assertDefined(); return symbol_name; }
-	const string& description() const { RequirementPolicy::assertDefined(); return _accessor.getFullName(); }
-	Granularity granularity() const { RequirementPolicy::assertDefined(); return _accessor.getGranularity(); }
+	const string& description() const { RequirementPolicy::assertDefined(); return _accessor->description(); }
+	Granularity granularity() const { RequirementPolicy::assertDefined(); return _accessor->flags().granularity; }
 	
 	const SymbolRWAccessor<ValType>& accessor() const { RequirementPolicy::assertDefined(); return _accessor; }
 	
-	bool set(SymbolFocus f, typename TypeInfo<ValType>::Parameter value) const {  RequirementPolicy::assertDefined(); return _accessor.set(f,value); };
-	bool set(CPM::CELL_ID cell_id, typename TypeInfo<ValType>::Parameter value) const {  RequirementPolicy::assertDefined(); return _accessor.set(cell_id,value); };
+	void set(SymbolFocus f, typename TypeInfo<ValType>::Parameter value) const {  RequirementPolicy::assertDefined(); _accessor->set(f,value); };
 	
 	std::set<SymbolDependency> getOutputSymbols() const { 
-		std::set<SymbolDependency> s;  
-		if (_accessor.valid()) {
-			SymbolDependency dep = {_accessor.getBaseName(), _accessor.getScope()};
-			cout << "Plugin Param out " << dep.name << " scope " << dep.scope << endl; 
-			s.insert(dep);
-		}
-		return s; 
+		if ( ! RequirementPolicy::isMissing()) return _accessor->dependencies();
+		else return std::set<SymbolDependency>();
 	}
 
 	std::set<SymbolDependency> getDependSymbols() const {
@@ -504,13 +509,13 @@ public:
 	}
 	
 protected:
-	XMLWritableSymbol() : scope(NULL), require_global_scope(false) {};
+	XMLWritableSymbol() : local_scope(NULL), require_global_scope(false) {};
 	~XMLWritableSymbol() {}
 	
 	SymbolRWAccessor<ValType> _accessor;
 private:
 	string symbol_name;
-	const Scope* scope;
+	const Scope* local_scope;
 	bool require_global_scope;
 };
 
@@ -525,22 +530,17 @@ public:
 	
 	typename TypeInfo<ValType>::SReturn operator()(SymbolFocus f) const {
 		RequirementPolicy::assertDefined(); 
-		return this->_accessor.get(f);
+		return this->_accessor->get(f);
 	};
 	
 	typename TypeInfo<ValType>::SReturn get(SymbolFocus f) const {
 		RequirementPolicy::assertDefined(); 
-		return this->_accessor.get(f);
+		return this->_accessor->get(f);
 	};
 	
 	std::set<SymbolDependency> getDependSymbols() const {
-		std::set<SymbolDependency> s;
-		if (this->_accessor.valid()) {
-			SymbolDependency dep = {this->_accessor.getBaseName(), this->_accessor.getScope()};
-// 			cout << "Plugin Param dep " << dep.name << " scope " << dep.scope << endl; 
-			s.insert(dep);
-		}
-		return s;
+		if ( ! RequirementPolicy::isMissing()) return this->_accessor->dependencies();
+		else return std::set<SymbolDependency>();
 	}
 };
 
@@ -597,8 +597,8 @@ public:
 	
 	void read(string value) override { XMLValueInterpreter<T, RequirementPolicy>::read(value); }
 	// void name() { RequirementPolicy::stringVal(); }
-	void init() override {
-		try { XMLValueInterpreter<T, RequirementPolicy>::init();}
+	void init(const Scope* scope) override {
+		try { XMLValueInterpreter<T, RequirementPolicy>::init(scope);}
 		catch (string e) {
 			auto tokens = tokenize(xml_path,"/");
 			if (!tokens.empty()) tokens.pop_back();
@@ -629,20 +629,17 @@ class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPoli
 	// Just try to forward to either XMLEvaluator for double or VDOUBLE, as required
 	public:
 		void read(const string& string_val) { this->string_val = string_val; };
-		void init() {
+		void init(const Scope *scope) {
 			type = Type::Undef;
 			if (! RequirementPolicy::isMissing()) {
 				const Scope* local_scope = SIM::getScope();
-				if (scope)
+				if (!local_scope)
 					local_scope = scope;
-				else if (require_global_scope) 
-					local_scope = SIM::getGlobalScope();
 
 				try {
 					double_expr.allowPartialSpec();
 					double_expr.read(string_val);
-					double_expr.setScope(local_scope);
-					double_expr.init();
+					double_expr.init(local_scope);
 					type = Type::D;
 				}
 				catch (...) {
@@ -651,8 +648,7 @@ class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPoli
 					try {
 						vdouble_expr.allowPartialSpec();
 						vdouble_expr.read(string_val);
-						vdouble_expr.setScope(local_scope);
-						vdouble_expr.init();
+						vdouble_expr.init(local_scope);
 						type = Type::VD;
 					}
 					catch (...) {
@@ -664,13 +660,12 @@ class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPoli
 			}
 		}
 	
-		void requireGlobalScope() { require_global_scope=true;};
-		void setScope(const Scope * scope) { this->scope = scope; }
+		void setScope(const Scope * scope) { local_scope = scope; }
 	
 // 		string name() { RequirementPolicy::assertDefined(); return symbol_name; }
 		const string& description() const  { if (type == Type::D) return double_expr.description(); if (type == Type::VD)  return vdouble_expr.description(); return string_val; }
 
-		Granularity granularity() const { if (type == Type::D) return double_expr.granularity(); if (type == Type::VD)  return vdouble_expr.granularity(); return Granularity::Undef; }
+		Granularity granularity() const { if (type == Type::D) return double_expr.granularity(); if (type == Type::VD)  return vdouble_expr.granularity(); return Granularity::Global; }
 		
 		/// set the precision of numerical value output
 		void setPrecision(int prec) { out.precision(prec); };
@@ -724,14 +719,13 @@ class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPoli
 		}
 
 	protected:
-		XMLStringifyExpression() : require_global_scope(false) , scope(NULL), type(Type::Undef), undef_val("") {};
-		~XMLStringifyExpression() {}
+		XMLStringifyExpression() : local_scope(nullptr), type(Type::Undef), undef_val("") {};
+		~XMLStringifyExpression() {};
 	
 	private:
 		string string_val;
 		string undef_val;
-		const Scope* scope;
-		bool require_global_scope;
+		const Scope* local_scope;
 		
 		mutable stringstream out;
 		Type type;
@@ -740,7 +734,10 @@ class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPoli
 };
 
 /** PluginParameter -- parses a parameter from the XML and provides values
- * 
+ * 	FocusRange r(Granularity::Cell, parent->scope());
+	for (auto& f:r) {
+		
+	}
  *  Using template meta programming, PluginParameter assembles an accessor class based on policy classes.
  *  @tparam T the value type
  *  @tparam XMLValueInterpreter one of the following Reader Policies:

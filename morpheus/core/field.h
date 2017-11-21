@@ -24,12 +24,13 @@
 #define PDE_LAYER_H
 
 #include "lattice_data_layer.h"
-class PDE_Layer;
 #include "config.h"
 #include "interfaces.h"
 #include <iostream>
 #include <fstream>
 #include <iterator>
+
+class Diffusion;
 
 /**
 \defgroup ML_Field Field
@@ -90,13 +91,13 @@ public:
 	~PDE_Layer();
 
 
-	void loadFromXML(const XMLNode xnode);
+	void loadFromXML(const XMLNode xnode, Scope* scope);
 	XMLNode saveToXML() const;
 	
 	bool restoreData(const XMLNode xnode);
 	XMLNode storeData(string filename="") const;
 
-	void init(const Scope* scope, const SymbolFocus& focus = SymbolFocus::global);
+	void init(const SymbolFocus& focus = SymbolFocus::global);
 
 // 	void execute_once_each_mcs(uint mcs);
 	/// Calculate the values of time + delta_t  without changing the current values of the layer.
@@ -107,8 +108,6 @@ public:
 	void setDiffusionRate(double diff_rate);
 	void updateNodeLength(double nl); /// Update the physical length the lattice discretization. Used in MembraneProperties of CPM cells that can vary in cell size.
 
-	/// Returns a reference to the plain array of the underlying data
-	string getSymbol() { return symbol_name; }
 	double sum() const;
 	double mean() const;
 	double variance() const;
@@ -144,8 +143,9 @@ public:
 	void write_binary(ostream& out, int max_resolution = -1);
 
 private:
-	string symbol_name;
 	string initial_expression;
+	bool initialized;
+	const Scope* local_scope;
 	bool init_by_restore;
 	bool store_data;
 	bool wellmixed;
@@ -193,6 +193,45 @@ private:
 	void tridiag_solver(const valarray<value_type>& a, const valarray<value_type>& b,  valarray<value_type> c, valarray<value_type> d,  valarray<value_type>& x);
 };
 
+class Field : public Plugin {
+public:
+	DECLARE_PLUGIN("Field");
+	Field(): Plugin() { symbol_name.setXMLPath("symbol"); registerPluginParameter(symbol_name); }
+	void loadFromXML(const XMLNode node, Scope * scope) override;
+	XMLNode saveToXML() const override;
+	void init(const Scope * scope) override;
+	
+	class Symbol : public SymbolRWAccessorBase<double> {
+	public:
+		Symbol(string name, string descr, shared_ptr<PDE_Layer> field): SymbolRWAccessorBase<double>(name), descr(descr), field(field) {
+			this->flags().granularity = Granularity::Node;
+		};
+		const string&  description() const override { return descr; }
+		std::string linkType() const override { return "FieldLink"; }
+		
+		TypeInfo<double>::SReturn get(const SymbolFocus & f) const override { return field->get(f.pos()); }
+		TypeInfo<double>::SReturn safe_get(const SymbolFocus & f) const override { 
+			field->init();
+			return field->get(f.pos());
+			
+		};
+		shared_ptr<PDE_Layer> getField() const { return field; };
+		void set(const SymbolFocus & f, typename TypeInfo<double>::Parameter value) const override { field->set(f.pos(), value); };
+		void setBuffer(const SymbolFocus & f, TypeInfo<double>::Parameter value) const override { field->setBuffer(f.pos(), value); }
+		void applyBuffer() const override { field->swapBuffer(); };
+		void applyBuffer(const SymbolFocus & f) const override { field->applyBuffer(f.pos()); }
+		
+	private: 
+		string descr;
+		shared_ptr<PDE_Layer> field;
+		friend Field;
+	};
+private:
+	shared_ptr<Symbol> accessor;
+	PluginParameter2<string, XMLValueReader, RequiredPolicy> symbol_name;
+	shared_ptr<Diffusion> diffusion_plugin;
+};
+
 
 class VectorField_Layer : public Lattice_Data_Layer<VDOUBLE> {
 public: 
@@ -204,15 +243,46 @@ public:
 	XMLNode storeData(string filename="") const;
 	
 	void init(const Scope* scope);
-	
-	string getSymbol() const { return symbol_name; }
-	string getName() const { return name; }
 
 private:
-	string symbol_name;
 	double node_length;
 	string initial_expression;
 	bool init_by_restore;
+};
+
+class VectorField : public Plugin {
+public:
+	DECLARE_PLUGIN("VectorField");
+	VectorField();
+	void loadFromXML(const XMLNode node, Scope * scope) override;
+	XMLNode saveToXML() const override;
+	void init(const Scope * scope) override {  if (accessor) accessor->field->init(scope);}
+	
+	class Symbol : public SymbolRWAccessorBase<VDOUBLE> {
+	public:
+		Symbol(string name, string descr, shared_ptr<VectorField_Layer> field): SymbolRWAccessorBase<VDOUBLE>(name), descr(descr), field(field) {
+			this->flags().granularity = Granularity::Node;
+		};
+		const string&  description() const override { return descr; }
+		std::string linkType() const override { return "VectorFieldLink"; }
+		
+		TypeInfo<VDOUBLE>::SReturn get(const SymbolFocus & f) const override { return field->get(f.pos()); }
+		TypeInfo<VDOUBLE>::SReturn safe_get(const SymbolFocus & f) const override{  return field->get(f.pos()); };
+		shared_ptr<VectorField_Layer> getField() const { return field; };
+		void set(const SymbolFocus & f, typename TypeInfo<VDOUBLE>::Parameter value) const override { field->set(f.pos(), value); }
+		void setBuffer(const SymbolFocus & f, TypeInfo<VDOUBLE>::Parameter value) const override { field->setBuffer(f.pos(), value); }
+		void applyBuffer() const override { field->swapBuffer(); };
+		void applyBuffer(const SymbolFocus & f) const override { field->applyBuffer(f.pos()); }
+		
+	private: 
+		string descr;
+		shared_ptr<VectorField_Layer> field;
+		friend VectorField;
+	};
+	
+private: 
+	shared_ptr<Symbol> accessor;
+	PluginParameter2<string, XMLValueReader, RequiredPolicy> symbol_name;
 };
 
 #endif

@@ -13,7 +13,7 @@
 #define CELLDIVISION_H
 
 #include "core/interfaces.h"
-#include "core/plugin_parameter.h"
+#include "core/celltype.h"
 #include "core/system.h" // TriggeredSystem
 
 /** \defgroup CellDivision
@@ -110,7 +110,7 @@ public:
 	CellDivision();
 	~CellDivision();
 	DECLARE_PLUGIN("CellDivision");
-	void loadFromXML (const XMLNode) override;
+	void loadFromXML (const XMLNode, Scope* scop) override;
 	void init(const Scope* scope) override;
 	void executeTimeStep() override;
 };

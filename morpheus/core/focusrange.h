@@ -15,11 +15,10 @@
 
 #include <iterator>
 #include <stdexcept>
-#include <vector>
-#include <map>
+
 #include "symbolfocus.h"
 #include "symbol.h"
-#include "celltype.h"
+#include "cell.h"
 // #include "membrane_pde.h"
 // #include "simulation.h"
 
@@ -144,22 +143,12 @@ public:
 	FocusRange(Granularity granularity, CPM::CELL_ID cell_id );
 	/// Create a FocusRange with the given element granularity, restricted by the provided restrictions map. 
 	/// writable_only discards the range out side of a domain, if the lattice is restricted by a domain.
-	FocusRange(Granularity granularity = Granularity::Undef, multimap<FocusRangeAxis,int> restrictions = {}, bool writable_only = true );
+	FocusRange(Granularity granularity = Granularity::Global, multimap<FocusRangeAxis,int> restrictions = {}, bool writable_only = true );
 	
 	/// Create a FocusRange through all valid elements, restricted to the range of scope provided
-	template <class T, template <class> class AccessPolicy>
-	FocusRange(const SymbolAccessorBase<T,AccessPolicy>& sym, const Scope* scope = nullptr) { 
-		auto restrictions = sym.getRestrictions();
-		if (scope && scope->getCellType()) {
-			restrictions.erase(FocusRangeAxis::CellType);
-			restrictions.insert( make_pair(FocusRangeAxis::CellType,scope->getCellType()->getID()) );
-		}
-		init_range(sym.getGranularity(), restrictions, true);
-	};
-	
+	FocusRange(Symbol sym, const Scope* scope = nullptr) : FocusRange(sym->flags().granularity, scope) {};
 	/// Create a FocusRange constrained to the spatial domain of a cell
-	template <class T, template <class> class AccessPolicy>
-	FocusRange(const SymbolAccessorBase<T,AccessPolicy>& sym, CPM::CELL_ID cell_id) :  FocusRange(sym.getGranularity(), sym.getScope(), cell_id) {};
+	FocusRange(Symbol sym, CPM::CELL_ID cell_id) :  FocusRange(sym->flags().granularity, cell_id) {};
 
 	size_t size() { if (!data) return 0; else return data->size; };
 	SymbolFocus operator[] (size_t index) {

@@ -1,18 +1,10 @@
 #include "diffusion.h"
 
 
-Diffusion::Diffusion(shared_ptr<PDE_Layer> pde): ContinuousProcessPlugin(ContinuousProcessPlugin::INDEPEND, XMLSpec::XML_NONE)
+Diffusion::Diffusion(Symbol field): ContinuousProcessPlugin(ContinuousProcessPlugin::INDEPEND, XMLSpec::XML_NONE)
 {
-	container_type = SymbolData::PDELink;
-	pde_layer = pde;
-	membrane_length = NULL;
-}
-
-Diffusion::Diffusion(CellMembraneAccessor mem_acc): ContinuousProcessPlugin(ContinuousProcessPlugin::INDEPEND, XMLSpec::XML_NONE)
-{
-	container_type = SymbolData::CellMembraneLink;
-	membrane_accessor = mem_acc;
-	membrane_length = NULL;
+	pde_field = dynamic_pointer_cast<const Field::Symbol>(field);
+	mem_field = dynamic_pointer_cast<const MembranePropertySymbol>(field);
 }
 
 void Diffusion::init(const Scope* scope)
@@ -27,17 +19,15 @@ void Diffusion::init(const Scope* scope)
 		membrane_length = NULL;
 	
 	
-	switch (container_type) {
-		case SymbolData::PDELink:
-			registerInputSymbol(pde_layer->getSymbol(),SIM::getGlobalScope());
-			registerOutputSymbol(pde_layer->getSymbol(),SIM::getGlobalScope());
-			setTimeStep(pde_layer->getMaxTimeStep());
-			cout << "Max diffusion step is " << pde_layer->getMaxTimeStep() << endl;
-			break;
-		case SymbolData::CellMembraneLink:
-			registerInputSymbol(membrane_accessor.getSymbol(), membrane_accessor.getCellType()->getScope());
-			registerOutputSymbol(membrane_accessor.getSymbol(), membrane_accessor.getCellType()->getScope());
-			break;
+	if (pde_field) {
+			registerInputSymbol(pde_field);
+			registerOutputSymbol(pde_field);
+			setTimeStep(pde_field->getField()->getMaxTimeStep());
+			cout << "Max diffusion step is " << pde_field->getField()->getMaxTimeStep() << endl;
+	}
+	else if (mem_field) {
+			registerInputSymbol(mem_field);
+			registerOutputSymbol(mem_field);
 	}
 	is_adjustable = true;
 }
@@ -57,31 +47,24 @@ double Diffusion::membrane_length_3d(double volume)
 
 void Diffusion::executeTimeStep()
 {
-	switch (container_type) {
-		case SymbolData::PDELink:
-			pde_layer->doDiffusion(timeStep());
-			break;
-		case SymbolData::CellMembraneLink: 
-		{
-			const CellType* ct = membrane_accessor.getCellType();
-			vector <CPM::CELL_ID> cells = ct->getCellIDs();
-
-			static double physical_node_length = SIM::getNodeLength();
+	if (pde_field) {
+		pde_field->getField()->doDiffusion(timeStep());
+	}
+	else if (mem_field) {
+		
+		double physical_node_length = SIM::getNodeLength();
+		FocusRange range(Granularity::Cell, mem_field->scope());
 #pragma omp parallel for schedule(dynamic)
-			for ( int ic=0; ic<cells.size(); ic++) {
-					uint cell_volume = CPM::getCell( cells[ic] ).nNodes();
-					double spherical_circumference = membrane_length(cell_volume);
-					double node_length_along_equator = (spherical_circumference * physical_node_length) / MembraneProperty::getResolution();
-					if (node_length_along_equator == 0)
-						continue;
-					membrane_accessor.getMembrane(cells[ic])->updateNodeLength( node_length_along_equator );
-					// membrane_accessor.getMembrane(cells[ic])->setNodeLength( some funciton( cell_volume_accessor(cells[ic])));
-					membrane_accessor.getMembrane(cells[ic])->doDiffusion(timeStep());
-			}
-			break;
+		for ( auto f=range.begin(); f < range.end(); ++f) {
+				uint cell_volume = f->cell().nNodes();
+				double spherical_circumference = membrane_length(cell_volume);
+				double node_length_along_equator = (spherical_circumference * physical_node_length) / MembraneProperty::getResolution();
+				if (node_length_along_equator == 0)
+					continue;
+				auto field = mem_field->getField(*f);
+				field->updateNodeLength( node_length_along_equator );
+				field->doDiffusion(timeStep());
 		}
-		default:
-			cerr << "Invalid symbol type in Diffusion::computeTimeStep!" << endl; assert(0); exit(-1);
 	}
 }
 
