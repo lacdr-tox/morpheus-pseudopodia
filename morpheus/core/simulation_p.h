@@ -79,7 +79,8 @@ namespace CPM {
 	
 	void loadFromXML(XMLNode node);
 	void loadCellTypes(XMLNode node);
-	void loadCellPopulations(XMLNode populations);
+	void loadCellPopulations();
+	void init();
 	XMLNode saveCPM() { return xCPM; };
 	XMLNode saveCellTypes() { return xCellTypes; }
 	XMLNode saveCellPopulations();

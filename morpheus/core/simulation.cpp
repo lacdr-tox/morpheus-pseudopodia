@@ -271,22 +271,17 @@ void loadFromXML(XMLNode xMorph) {
 					CPM::STATE n;
 					n.pos = VINT(0,0,0);
 					auto ct = celltype_names.find(input);
-					if ( ct!= celltype_names.end()) {
-						if ( dynamic_pointer_cast<MediumCellType>( celltypes[ct->second] ) ) {
-							n.cell_id = celltypes[ct->second]->createCell();
-						}
-						else {
-							cerr << "unable to set celltype '" << input << "' to the boundary" << endl;
-							cerr << "need a medium-like celltype! " << endl;
-							exit(-1);
-							n.cell_id = EmptyState.cell_id;
-						}
+					if ( ct== celltype_names.end()) {
+						throw MorpheusException(string("Unknown celltype '") + input + "' at the boundary", xCellPop);
+// 						n.cell_id = EmptyState.cell_id;
 					}
-					else {
-						cerr <<  "unknown celltype '" << input << "' at the boundary" << endl;
-						exit(-1);
-						n.cell_id = EmptyState.cell_id;
+					if ( ! dynamic_pointer_cast<MediumCellType>( celltypes[ct->second] ) ) {
+						throw MorpheusException(string("Unable to set celltype '")+input+"' at the boundary. " +
+								+ "Medium-like celltype required! ", xCellPop);
+// 						n.cell_id = EmptyState.cell_id;
 					}
+					n.cell_id = celltypes[ct->second]->createCell();
+
 				return n;
 				});
 		}
@@ -333,17 +328,19 @@ void loadCellTypes(XMLNode xCellTypesNode) {
 		XMLNode xCTNode = xCellTypesNode.getChildNode("CellType",i);
 		try {
 			if ( ! getXMLAttribute(xCTNode,"class", classname))
-				throw string("CellType: no classname provided for celltype ")+to_str(i);
+				throw string("No classname provided for celltype ")+to_str(i);
 			shared_ptr<CellType> ct = CellTypeFactory::CreateInstance( classname, celltypes.size() );
 			if (ct.get() == NULL)
-				throw string("CellType: no class ")+classname+" available";
+				throw string("No celltype class ")+classname+" available";
 			ct->loadFromXML( xCTNode );
 			string name=ct->getName();
-			if (name.find_first_of(" \t\n\r") != string::npos)
-				throw string("CellType: Celltype names may not contain whitespace characters. Invalid name \"")+name+" \"";
 			if (name.empty())
-				throw string("CellType: no name for provided for celltype ")+to_str(i);
-
+				throw string("No name for provided for celltype ")+to_str(i);
+			if (name.find_first_of(" \t\n\r") != string::npos)
+				throw string("Celltype names may not contain whitespace characters. Invalid name \"")+name+" \"";
+			if (celltype_names.find(name) != celltype_names.end()) 
+				throw string("Redefinition of celltype ")+name;
+			
 			celltype_names[name] = celltypes.size();
 			celltypes.push_back(ct);
 			
@@ -364,7 +361,7 @@ void loadCellTypes(XMLNode xCellTypesNode) {
 			SIM::defineSymbol(symbol);
 		}
 		catch (string e) {
-			cerr << "unable to create celltype: " << endl << "\t" << e << endl;
+			throw MorpheusException(string("Unable to create CellType\n") + e, xCTNode);
 		}
 	}
 	
@@ -467,9 +464,9 @@ void loadCellTypes(XMLNode xCellTypesNode) {
 	}
 }
 
-void init(XMLNode population) {
+void init() {
 
-	loadCellPopulations(xCellPop);
+	loadCellPopulations();
 
 	// Init the CellTypes and their (CPM) Plugins
 	for (uint i=0; i<celltypes.size(); i++) {
@@ -482,38 +479,29 @@ void init(XMLNode population) {
 	}
 }
 
-void loadCellPopulations(XMLNode populations)
+void loadCellPopulations()
 {
 	// Don't load the CellPopulations when we just want to create the symbol graph.
 	if (SIM::generate_symbol_graph_and_exit)
 		return;
 	
-	if ( ! layer &&  ! populations.isEmpty()) {
+	if ( ! layer &&  ! xCellPop.isEmpty()) {
 		// We need at least a cpm Layer and have to specify the neighborhood ...
-		
-		cerr << "CellPopulations specified and no CPM layer available." << endl;
-		exit(-1);
+		throw MorpheusException(string("Unable to create cell populations with no CPM layer available."), xCellPop);
 	}
-	if ( celltypes.size() > 1 && populations.isEmpty()) {
-		cerr << "No CellPopulations specified." << endl;
-		exit(-1);
-	}
+// 	if ( celltypes.size() > 1 && populations.isEmpty()) {
+// 		cerr << "No CellPopulations specified." << endl;
+// 	}
 	
 	
 	vector<XMLNode> defered_poulations;
-	for (int i=0; i<populations.nChildNode("Population"); i++) {
-		XMLNode population = populations.getChildNode("Population",i);
+	for (int i=0; i<xCellPop.nChildNode("Population"); i++) {
+		XMLNode population = xCellPop.getChildNode("Population",i);
 		string type;
-		if (!getXMLAttribute( population,"type",type)) {
-			cerr << "Simulation::init(): Population Population [" << i << "] has no cell type specified" << endl;
-			exit(-1);
-			continue;
-		}
-		map<string,uint>::iterator ct;
-		if ((ct = celltype_names.find(type)) == celltype_names.end()) {
-			cerr << "Ignoring CellPopulation[" << i << "," << type << "]: no valid type" << endl;
-			exit(-1);
-			continue;
+		getXMLAttribute( population,"type",type);
+		auto ct= celltype_names.find(type);
+		if (ct == celltype_names.end()) {
+			throw MorpheusException(string("Unable to create cell populations for celltype \"")+type+"\"", xCellPop);
 		}
 		
 		if (dynamic_pointer_cast< SuperCT >(celltypes[ct->second]) ) {
@@ -607,10 +595,11 @@ bool executeCPMUpdate(const CPM::Update& update) {
 			
 		}
 	} catch ( string e ) {
-		cerr << "error while applying executeCPMUpdate()" << endl;
-		cerr << update.focusStateBefore() << endl << update.focusStateAfter() << endl;
-		cerr << e << endl;
-		exit (0);
+		stringstream s;
+		s << "error while applying executeCPMUpdate()" << endl;
+		s << "[" << update.focusStateBefore() << "] -> [" << update.focusStateAfter() << "]" << endl;
+		s << e << endl;
+		throw s.str();
 	}
 	return true;
 }
@@ -739,6 +728,7 @@ void setUpdate(CPM::Update& update) {
 namespace SIM {
 // #define NO_CORE_CATCH
 int main(int argc, char *argv[]) {
+	bool exception = false;
 #ifndef NO_CORE_CATCH
 	try {
 #endif
@@ -786,26 +776,33 @@ int main(int argc, char *argv[]) {
 #ifndef NO_CORE_CATCH
 	}
 	catch (MorpheusException e) {
-		if (SIM::generate_symbol_graph_and_exit) {
-			createDepGraph();
-		}
-		//cerr << "Error while reading model description.\n";
+		exception = true;
 		cerr << "\n" << e.what()<< "\n";
 		cerr << "\nXMLPath: " << e.where() << endl;
-		cerr.flush();
-		exit(-1);
 	}
 	catch (string e) {
+		exception = true;
+		cerr << e << endl;
+	}
+	catch (SymbolError& e) {
+// 		switch(e.type()) {
+// 			case SymbolError::Type::InvalidDefinition
+// 		}
+		exception = true;
+		cerr << "\n" << e.what()<< "\n";
+	}
+	catch (...) {
+		cerr << "Unknown error while creating the simulation";
+		exception = true;
+	}
+#endif
+	if (exception) {
+		cerr.flush();
 		if (SIM::generate_symbol_graph_and_exit) {
 			createDepGraph();
 		}
-//		cerr << "Error while reading model description\n";
-		cerr << e << endl;
-		cerr.flush();
 		exit(-1);
 	}
-#endif
-
 	return 0;
 }
 
@@ -1417,7 +1414,7 @@ void loadFromXML(const XMLNode xNode) {
 	}
 	
 	// Initialising cell populations
-	CPM::init(xNode.getChildNode("CellPopulations"));
+	CPM::init();
 
 	XMLNode xAnalysis = xNode.getChildNode("Analysis");
 	if ( ! xAnalysis.isEmpty() ) {
