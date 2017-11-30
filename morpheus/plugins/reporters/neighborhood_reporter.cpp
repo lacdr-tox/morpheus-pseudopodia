@@ -48,7 +48,7 @@ void NeighborhoodReporter::init(const Scope* scope)
 {
     ReporterPlugin::init(scope);
     celltype = scope->getCellType();
-		if (celltype) {
+	if (celltype) {
 		
 		cpm_layer = CPM::getLayer();
 
@@ -103,7 +103,7 @@ void NeighborhoodReporter::init(const Scope* scope)
 	}
 	else {
 		// global scope case
-		
+		if (!CPM::getCellTypes().empty()) registerCellPositionDependency();
 		for ( auto & out : output) {
 			switch (out->symbol.granularity()) {
 				case Granularity::Node: 

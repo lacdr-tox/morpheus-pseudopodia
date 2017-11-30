@@ -45,7 +45,7 @@ Cell::Cell(CPM::CELL_ID cell_name, CellType* ct)
 
 void Cell::init()
 {
-	cout << "initializing cell " << id << endl;
+// 	cout << "initializing cell " << id << endl;
 	for (auto prop : p_properties) {
 		try {
 			prop->init(celltype->getScope(), SymbolFocus(id));

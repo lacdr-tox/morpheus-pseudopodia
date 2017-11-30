@@ -25,7 +25,7 @@ class CellMembraneAccessor {
 		bool valid() const {return ct!=NULL;}
 		const CellType * getCellType() {return ct; };
 // 		double& getDefault() const;
-		TypeInfo<double>::Return get(CPM::CELL_ID c, VINT pos) const;
+		TypeInfo<double>::Return get(CPM::CELL_ID c, VINT pos) const { return get(SymbolFocus(c, pos)); };
 		TypeInfo<double>::Return get(CPM::CELL_ID c, uint theta, uint phi=0) const;
 		TypeInfo<double>::Return get(const SymbolFocus& focus) const;
 		PDE_Layer* getMembrane(CPM::CELL_ID cell_id) const;

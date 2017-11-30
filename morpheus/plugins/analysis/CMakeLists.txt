@@ -3,8 +3,8 @@ set(plugin_src
 	cell_tracker.cpp
 	clustering_tracker.cpp
 	contact_logger.cpp
-    displacement_tracker.cpp
 	external.cpp
+	displacement_tracker.cpp
 	gnuplotter.cpp
 	histogram_logger.cpp
 	logger2.cpp
@@ -16,7 +16,7 @@ set(plugin_src
 #	svgPlotter.cpp
 #	vtkPlotter.cpp
 #	spatial_correlation.cpp
-#    nematicTensorLogger.cpp
+#	nematicTensorLogger.cpp
 )
 
 IF (GRAPHVIZ_FOUND) 

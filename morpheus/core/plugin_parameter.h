@@ -691,6 +691,8 @@ class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPoli
 					case Type::VD :
 						out << this->vdouble_expr.get(f);
 						return out.str();
+					default:
+						throw string("Can't evaluate ") + string_val + " and convert to string";
 				}
 			}
 			catch (const SymbolError& e) {

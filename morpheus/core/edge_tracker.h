@@ -55,6 +55,7 @@ public:
 	virtual uint n_surfaces(const VINT& pos) const =0;
 	/// The update neighborhood used
 	const vector<VINT>& getNeighborhood() const { return opx_neighbors; }
+	virtual string getStatInfo() const {return "no stats"; }
 };
 
 class NoEdgeTracker : public EdgeTrackerBase {
@@ -145,6 +146,7 @@ private:
 	Boundary::Type lattice_boundary_type[Boundary::nCodes];	
 
 	void init_edge_list();
+	void defragment();
 
 public:
 	EdgeListTracker(shared_ptr< const CPM::LAYER > p, const vector<VINT> &opx_nei, const vector<VINT>& surface_nei);
@@ -159,6 +161,7 @@ public:
 	
 	virtual bool has_surface(const VINT& pos) const;
 	virtual uint n_surfaces(const VINT& pos) const;
+	virtual string getStatInfo() const;
 
 };
 

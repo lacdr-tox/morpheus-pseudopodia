@@ -2,7 +2,7 @@
 
 REGISTER_PLUGIN(HistogramLogger);
 	
-HistogramLogger::~HistogramLogger() { if (gnuplot) delete gnuplot; };
+HistogramLogger::~HistogramLogger() { if (gnuplot) { delete gnuplot; gnuplot = nullptr;} };
 
 HistogramLogger::HistogramLogger(): gnuplot(NULL){
 
@@ -366,6 +366,4 @@ void HistogramLogger::finish()
 		fout << endl;
 		fout.close();
 	}
-	if (gnuplot)
-		delete gnuplot;
 }

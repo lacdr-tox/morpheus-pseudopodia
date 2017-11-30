@@ -45,6 +45,10 @@ void CPMSampler::loadFromXML(const XMLNode node)
 	
 	interaction_energy = shared_ptr<InteractionEnergy>(new InteractionEnergy());
 	interaction_energy->loadFromXML(node.getChildNode("Interaction"));
+	
+	if (update_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && update_neighborhood.order()>5) ) {
+		throw string("Update neighborhood is too large");
+	}
 
 	setTimeStep(mcs_duration.get());
 	is_adjustable = false;

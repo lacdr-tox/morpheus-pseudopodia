@@ -505,6 +505,7 @@ protected:
 	PluginParameter2<Terminal, XMLNamedValueReader, DefaultValPolicy> terminal;
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> logcommands;
 	PluginParameter2<double, XMLValueReader, OptionalPolicy> time_step;
+	PluginParameter2<string, XMLValueReader, OptionalPolicy> title;
 	double last_plot_time;
 	uint plot_num;
 	

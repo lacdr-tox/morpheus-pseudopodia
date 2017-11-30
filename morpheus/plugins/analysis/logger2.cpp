@@ -892,6 +892,9 @@ LoggerPlotBase::LoggerPlotBase(Logger& logger, string xml_base_path)
 	time_step.setXMLPath(xml_base_path+"/time-step");
 	logger.registerPluginParameter(time_step);
 	
+	title.setXMLPath(xml_base_path+"/title");
+	logger.registerPluginParameter(title);
+
 	logcommands.setXMLPath(xml_base_path+"/log-commands");
 	logcommands.setDefault( "false" );
 	logger.registerPluginParameter(logcommands);
@@ -1235,6 +1238,7 @@ void LoggerLinePlot::plot()
 		ss << "unset cblabel;\n";
 		ss << "unset key;\n";
 		ss << "unset colorbox;\n";
+		ss << "unset title\n";
 	}
 	else{
 		string xlabel = axes.x.label;
@@ -1275,6 +1279,10 @@ void LoggerLinePlot::plot()
 		// only show legend (key) when plotting multiple data columns
 		if( axes.y.column_nums.size() == 1 )
 			ss << "unset key;\n";
+		
+		if ( title.isDefined()) {
+			ss << "set title \"" << title() << "\"\n";
+		}
 	}
 	if(axes.x.logarithmic())
 		ss << "set log x;\n";

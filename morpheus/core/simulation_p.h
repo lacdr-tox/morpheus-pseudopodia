@@ -69,6 +69,7 @@ namespace CPM {
 	Neighborhood boundary_neighborhood;
 	Neighborhood update_neighborhood;
 	Neighborhood surface_neighborhood;
+	bool surface_everywhere=false;
 // // 	vector<VINT> interaction_neighborhood;
 	shared_ptr<EdgeTrackerBase> edgeTracker;
 	
@@ -94,7 +95,7 @@ namespace SIM {
 	shared_ptr<Lattice> global_lattice;
 	Length_Scale node_length("NodeLength",1);
 	string lattice_size_symbol;
-	XMLNode xGlobals;
+	XMLNode xGlobals,xSpace;
 	
 // 	PDE_Sim* pde_sim=NULL;
 	std::map<string, shared_ptr<PDE_Layer> > pde_layers;

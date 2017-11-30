@@ -30,7 +30,7 @@ Shows the following features of Morpheus:
                 <Condition boundary="y" type="periodic"/>
             </BoundaryConditions>
             <Neighborhood>
-                <Distance>2.5</Distance>
+                <Order>2</Order>
             </Neighborhood>
             <Domain boundary-type="noflux">
                 <Image path="crypt.tif"/>
@@ -150,7 +150,7 @@ Shows the following features of Morpheus:
     </CellPopulations>
     <Analysis>
         <Gnuplotter time-step="250" decorate="false">
-            <Terminal name="png"/>
+            <Terminal size="0, 0, 0" name="png"/>
             <Plot>
                 <Cells value="clone">
                     <ColorMap>
@@ -189,8 +189,8 @@ Shows the following features of Morpheus:
                 <TextOutput/>
             </Output>
             <Plots>
-                <Plot time-step="5000">
-                    <Style point-size="3.0" grid="true" style="linespoints" line-width="3.0"/>
+                <Plot title="Clone numbers" time-step="5000">
+                    <Style point-size="1" grid="true" style="linespoints" line-width="3.0"/>
                     <Terminal terminal="png"/>
                     <X-axis>
                         <Symbol symbol-ref="time"/>

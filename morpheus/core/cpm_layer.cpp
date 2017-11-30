@@ -80,11 +80,18 @@ LatticeStencil::LatticeStencil(shared_ptr< const CPM::LAYER >  data_layer, const
 
 void LatticeStencil::setPosition(const VINT& pos)
 {
+	this->pos = pos;
+// 	applyPos();
+	valid_data = false;
+}
+
+void LatticeStencil::applyPos() const {
 	int center_index = data_layer->get_data_index(pos);
 
 	for (uint i=0; i< stencil_neighbors.size(); i++) {
 		stencil_states[i] = data_layer->data[center_index + stencil_offsets[i] ].cell_id;
 	}
+	valid_data = true;
 }
 
 

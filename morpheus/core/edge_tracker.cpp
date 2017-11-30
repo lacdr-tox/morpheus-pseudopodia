@@ -234,7 +234,18 @@ void EdgeListTracker::update_notifier(const VINT& pos, const LatticeStencil& nei
 					(*redge.eid_list_a)[ redge.direction_a2b ] = no_edge;
 					(*redge.eid_list_b)[ inverse_neighbor[redge.direction_a2b] ] = no_edge;
 					redge.valid = false;
-					invalid_edge_ids.push_back(remove_edge_id);
+					if (remove_edge_id == edges.size()-1) {
+						edges.pop_back();
+						while (!edges.back().valid)  {
+							auto i = std::find(invalid_edge_ids.begin(), invalid_edge_ids.end(), edges.size()-1);
+							if (i == invalid_edge_ids.end())
+								throw string("EdgeListTracker:: Unable to remove invalid edge ID");
+							invalid_edge_ids.erase(i);
+							edges.pop_back();
+						}
+					}
+					else
+						invalid_edge_ids.push_back(remove_edge_id);
 				} 
 				else {
 					cerr << "EdgeListTracker:: Error while removing a boundary at " << edge.pos_a << " which is already 'no_edge'."<< endl; assert(0); exit(0);
@@ -278,7 +289,18 @@ void EdgeListTracker::update_notifier(const VINT& pos, const LatticeStencil& nei
 					(*redge.eid_list_a)[ redge.direction_a2b ] = no_edge;
 					// redge.eid_list_b->at( inverse_neighbor[redge.direction_a2b] ) = no_edge;
 					redge.valid = false;
-					invalid_edge_ids.push_back(remove_edge_id);
+					if (remove_edge_id == edges.size()-1) {
+						edges.pop_back();
+						while (!edges.back().valid)  {
+							auto i = std::find(invalid_edge_ids.begin(), invalid_edge_ids.end(), edges.size()-1);
+							if (i == invalid_edge_ids.end())
+								throw string("EdgeListTracker:: Unable to remove invalid edge ID");
+							invalid_edge_ids.erase(i);
+							edges.pop_back();
+						}
+					}
+					else
+						invalid_edge_ids.push_back(remove_edge_id);
 				} 
 				else { 
 					cerr << "EdgeListTracker:: Error while removing a boundary at " << edge.pos_a << " which is already 'no_edge'."<< endl; assert(0); exit(0);
@@ -291,7 +313,35 @@ void EdgeListTracker::update_notifier(const VINT& pos, const LatticeStencil& nei
 			edge.eid_list_a->at(neighbor) = no_flux_edge; 
 		}
 	}
+	if (double (invalid_edge_ids.size()) / edges.size() > 0.08) {
+// 		cout << "EdgeListTracker: Running defragmentation " << endl;
+		defragment();
+	}
 };
+
+void EdgeListTracker::defragment() {
+	while ( ! invalid_edge_ids.empty()) {
+		if (edges.back().valid) {
+			auto new_id = invalid_edge_ids.back();
+			
+			auto& edge = edges[new_id] = edges.back();
+			(*edge.eid_list_a)[edge.direction_a2b] = new_id;
+			if (edge.eid_list_b)
+				(*edge.eid_list_b)[inverse_neighbor[edge.direction_a2b]] = new_id;
+			
+			edges.pop_back();
+			invalid_edge_ids.pop_back();
+		}
+		else {
+			auto invalid_id = edges.size()-1;
+			edges.pop_back();
+			auto i = std::find(invalid_edge_ids.begin(), invalid_edge_ids.end(), invalid_id);
+			if (i == invalid_edge_ids.end())
+				throw string("EdgeListTracker:: Unable to remove invalid edge ID");
+			invalid_edge_ids.erase(i);
+		}
+	}
+}
 
 
 bool EdgeListTracker::has_surface(const VINT& pos) const{
@@ -313,4 +363,13 @@ uint EdgeListTracker::n_surfaces(const VINT& pos) const{
 		n_edges += (opx_is_surface[i] &&  edge_list[i] != no_edge );
 	}
 	return n_edges;
+}
+
+
+string EdgeListTracker::getStatInfo() const {
+	stringstream info;
+	info << "EdgeListTracker: EdgeList size " << edges.size() << ", invalid " << invalid_edge_ids.size() << endl;
+	info << "                 Select ratio is " <<  double (edges.size() -  invalid_edge_ids.size()) / edges.size() << endl;
+	return info.str(); 
+	
 }

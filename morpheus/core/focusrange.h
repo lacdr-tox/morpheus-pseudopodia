@@ -50,7 +50,7 @@ public:
 	enum SpatialRestriction { RESTR_GLOBAL, RESTR_DOMAIN, RESTR_CELLPOP , RESTR_CELL};
 	SpatialRestriction spatial_restriction;
 	Granularity granularity;
-	enum IterationMode { IT_Cell, IT_CellNodes, IT_CellSurfaceNodes, IT_CellNodes_int, IT_Space, IT_CellMembrane, IT_Domain, IT_Domain_int };
+	enum IterationMode { IT_Cell, IT_CellNodes, /*IT_CellSurfaceNodes,*/ IT_CellNodes_int, IT_Space, IT_CellMembrane, IT_Domain, IT_Domain_int };
 	IterationMode iter_mode;
 	vector<CPM::CELL_ID> cell_range;
 	vector<uint> cell_sizes;
