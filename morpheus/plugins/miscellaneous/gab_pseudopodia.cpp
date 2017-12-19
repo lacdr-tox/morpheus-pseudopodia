@@ -32,6 +32,10 @@ Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpe
     retractionMethodMap["in-moving-direction"] = Pseudopod::RetractionMethod::IN_MOVING_DIR;
     retractionMethod.setConversionMap(retractionMethodMap);
     registerPluginParameter(retractionMethod);
+
+    retractOnTouch.setXMLPath("retract-on-touch");
+    retractOnTouch.setDefault("false");
+    registerPluginParameter(retractOnTouch);
 }
 
 
@@ -66,7 +70,8 @@ void Pseudopodia::executeTimeStep() {
     call_once(initPseudopods, [&]() {
         for (auto &cellId : cells) {
             auto pseudopod = Pseudopod((unsigned int) maxGrowthTime(), cpmLayer.get(),
-                                       cellId, &movingDirection, &field, retractionMethod(), directionalStrength());
+                                       cellId, &movingDirection, &field, retractionMethod(), directionalStrength(),
+                                       retractOnTouch());
             pseudopods.insert(make_pair(cellId, vector<Pseudopod>((size_t) maxPseudopods(), pseudopod)));
         }
     });

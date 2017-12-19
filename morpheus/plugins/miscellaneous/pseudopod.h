@@ -50,15 +50,17 @@ private:
     const CPM::LAYER *_cpm_layer;
     PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field_;
     PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> *movingDirection_;
+    bool retractOnTouch_;
 
 public:
     Pseudopod(unsigned int maxGrowthTime, const CPM::LAYER *cpm_layer, CPM::CELL_ID cellId,
               PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> *movingDirection,
               PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field, RetractionMethod retractionMethod,
-              double kappa) :
+              double kappa, bool retractOnTouch) :
             maxGrowthTime_(maxGrowthTime), _cpm_layer(cpm_layer), cellId(cellId),
             movingDirection_(movingDirection), state_(State::INIT), field_(field),
-            timeLeftForGrowth_(0), timeNoExtension_(0), paramRetractionMethod_(retractionMethod), kappa_(kappa) {
+            timeLeftForGrowth_(0), timeNoExtension_(0), paramRetractionMethod_(retractionMethod), kappa_(kappa),
+            retractOnTouch_(retractOnTouch) {
         bundlePositions_.reserve(maxGrowthTime);
     }
 
@@ -118,8 +120,14 @@ public:
         auto orthoOffset = VDOUBLE::from_radial(extendDirection);
         auto newBundlePosition = bundlePositions_.back() + orthoOffset;
 
-        if (_cpm_layer->get(VINT(newBundlePosition)).cell_id != cellId) {
-            //newBundlePosition is not in the cell, return
+        // get cell id of (possible) new bundle position
+        auto newPosCellId = _cpm_layer->get(VINT(newBundlePosition)).cell_id;
+        if (newPosCellId != cellId) {
+            //newBundlePosition is not in this cell
+            if(retractOnTouch_ && newPosCellId != CPM::getEmptyCelltypeID()) {
+                // cell is touching 'something' else -> retract
+                setRetracting();
+            }
             return;
         }
 
