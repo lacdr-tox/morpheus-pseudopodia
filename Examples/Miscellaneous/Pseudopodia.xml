@@ -16,7 +16,7 @@
     </Global>
     <Space>
         <Lattice class="square">
-            <Size symbol="size" value="400, 400, 0"/>
+            <Size symbol="size" value="200,200, 0"/>
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>
@@ -29,7 +29,7 @@
     </Space>
     <Time>
         <StartTime value="0"/>
-        <StopTime value="1000"/>
+        <StopTime value="5000"/>
         <TimeSymbol symbol="time"/>
     </Time>
     <CellTypes>
@@ -65,13 +65,9 @@
     </CPM>
     <CellPopulations>
         <Population size="0" type="amoeba">
-            <InitCellObjects mode="distance">
-                <Arrangement repetitions="2, 1, 1" displacements="50, 1, 1">
-                    <Object>
-                        <Sphere radius="10" center="200,200,0"/>
-                    </Object>
-                </Arrangement>
-            </InitCellObjects>
+            <InitRectangle mode="regular" number-of-cells="20">
+                <Dimensions size="200.0, 200.0, 1.0" origin="0.0, 0.0, 0.0"/>
+            </InitRectangle>
         </Population>
     </CellPopulations>
     <Analysis>
