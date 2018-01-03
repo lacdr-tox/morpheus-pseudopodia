@@ -127,42 +127,14 @@ void Cell::loadNodesFromXML(const XMLNode xNode) {
 
 void Cell::loadFromXML(const XMLNode xNode) {
 
-	
-	// load matching properties from XMLNode
-	for (int i=0; i<xNode.nChildNode("CellProperty"); i++) {
-		auto xCP= xNode.getChildNode("CellProperty",i);
-		string symbol = xNode.getAttribute("symbol-ref");
-		for (uint p=0; p<properties.size(); p++) {
-			if (properties[p]->symbol() == symbol)
-				properties[p]->restoreData(xCP);
+	// Try loading properties from XMLNode
+	for (auto prop : properties) {
+		XMLNode xData = xNode.getChildNodeWithAttribute(prop->XMLDataName().c_str(),"symbol-ref",prop->symbol().c_str());
+		if (!xData.isEmpty()){
+			prop->restoreData(xData);
 		}
 	}
-// 	vector<XMLNode> property_nodes;
-// 	for (uint p=0; p<properties.size(); p++) {
-// 		properties[p]->restoreData(xNode);
-// 	}
-	
-//	TODO: load membraneProperties from XML
-// 	for (int mem=0; mem<xNode.nChildNode("MembranePropertyData"); mem++) {
-// 		XMLNode xMembraneProperty = xNode.getChildNode("MembranePropertyData",mem);
-// 		string symbol; getXMLAttribute(xMembraneProperty, "symbol-ref", symbol);
-// 
-// 		uint p=0;
-// 		for (; p<membranes.size(); p++) {
-// 			if (membranes[p]->getSymbol() == symbol) {
-// 				//string filename = membranes[mem]->getName() + "_" + to_string(id)  + "_" + SIM::getTimeName() + ".dat";
-// 				membranes[p]->restoreData(xMembraneProperty);
-// // 				string filename; getXMLAttribute(xMembraneProperty, "filename", filename);
-// // 				cout << "Loading MembranePropertyData '" << symbol << "' from file '" << filename << "'. Sum = " << membranes[p]->sum() << endl;
-// 				break;
-// 			}
-// 		}
-// 		if (p==membranes.size()) {
-// 			cerr << "Cell::loadFromXML: Unable to load data for MembranePropertyData " << symbol 
-// 			     << " cause it's not defined for this celltype (" << celltype->getName() << ")"<<endl;
-// 			exit(-1);
-// 		}
-// 	}
+
 }
 
 XMLNode Cell::saveToXML() const {
@@ -173,18 +145,6 @@ XMLNode Cell::saveToXML() const {
 	for (uint prop=0; prop < properties.size(); prop++) {
 		xCNode.addChild(properties[prop]->storeData());
 	}
-
-
-// 	for (uint mem=0; mem < membranes.size(); mem++) {
-// 		
-// 		bool save_to_file = false;
-// 		string filename = membranes[mem]->getName() + "_" + to_str(id)  + "_" + SIM::getTimeName() + ".dat";
-// 
-// 		XMLNode node = membranes[mem]->storeData(save_to_file ? filename : "");
-// 		node.updateName("MembranePropertyData");
-// 		node.addAttribute("symbol-ref",membranes[mem]->getSymbol().c_str());
-// 		xCNode.addChild(node);
-// 	}
 
  	if (track_nodes) {
  		xCNode.addChild("Center").addText( to_cstr(getCenter(),6) );

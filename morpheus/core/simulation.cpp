@@ -1146,7 +1146,8 @@ void loadFromXML(const XMLNode xNode) {
 	
 	
 	getXMLAttribute(xNode,"version",morpheus_file_version);
-	getXMLAttribute(xNode,"Description/Title/text",fileTitle);
+	xDescription = xNode.getChildNode("Description");
+	getXMLAttribute(xDescription,"Title/text",fileTitle);
 	XMLNode xTime = xNode.getChildNode("Time");
 	TimeScheduler::loadFromXML(xTime, global_scope.get());
 	
@@ -1202,78 +1203,13 @@ void loadFromXML(const XMLNode xNode) {
 		for (int i=0; i<xGlobals.nChildNode(); i++) {
 			XMLNode xGlobalChild = xGlobals.getChildNode(i);
 			string xml_tag_name(xGlobalChild.getName());
-// 			if (xml_tag_name == "Field") {
-// 				shared_ptr<PDE_Layer> layer(new PDE_Layer( global_lattice, SIM::getNodeLength() ));
-// 				layer->loadFromXML(xGlobalChild, global);
-// 				
-// 				if (pde_layers.find(layer->getSymbol()) !=  pde_layers.end()) {
-// 					throw MorpheusException(string("Redefinition of pde layer \"") + layer->getSymbol()  + "\"!",xGlobalChild);
-// 				}
-// 
-// 				pde_layers[layer->getSymbol()] = layer;
-// 
-// 				// Create the diffusion wrapper
-// 				if (layer->getDiffusionRate() > 0.0)
-// 					global_section_plugins.push_back(shared_ptr<Plugin>(new Diffusion(layer)));
-// 					
-// 				
-// 				// registering global symbol for the pde layer;
-// 				SymbolData symbol; 
-// 				symbol.name=layer->getSymbol();
-// 				symbol.fullname = layer->getName();
-// 				symbol.link = SymbolData::PDELink;
-// 				symbol.granularity = Granularity::Node;
-// 				symbol.type_name = TypeInfo<double>::name();
-// 				symbol.writable = true;
-// 				SIM::defineSymbol(symbol);
-// 			}
-// 			else if (xml_tag_name == "VectorField") {
-// 				auto layer = make_shared<VectorField_Layer>(global_lattice, SIM::getNodeLength());
-// 				layer->loadFromXML(xGlobalChild);
-// 				
-// 				if (vector_field_layers.find(layer->getSymbol()) !=  vector_field_layers.end()) {
-// 					throw MorpheusException(string("Redefinition of Vector Field \"") + layer->getSymbol()  + "\"!",xGlobalChild);
-// 				}
-// 				vector_field_layers[layer->getSymbol()] = layer;
-// 				
-// 				
-// 				SymbolData symbol;
-// 				symbol.name = layer->getSymbol();
-// 				symbol.base_name = layer->getSymbol();
-// 				symbol.fullname = layer->getName();
-// 				symbol.link = SymbolData::VectorFieldLink;
-// 				symbol.granularity = Granularity::Node;
-// 				symbol.type_name = TypeInfo<VDOUBLE>::name();
-// 				symbol.writable = true;
-// 				SIM::defineSymbol(symbol);
-// 	
-// 			}
-// 			else {
-				shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
-				
-				if (! p.get())
-					throw MorpheusException(string("Unknown Global plugin ") + xml_tag_name, xGlobalChild);
-				
-				p->loadFromXML(xGlobalChild, global_scope.get());
-				
-// 				if ( dynamic_pointer_cast< AbstractProperty >(p) ) {
-// 					// note that the AbstractProperty is still maintained by the Plugin
-// 					shared_ptr<AbstractProperty> property( dynamic_pointer_cast< AbstractProperty >(p) ); 
-// // 						if (!property->isGlobal())
-// // 							throw( MorpheusException("Local Properties are not allowed in Global section ...", xNode));
-// 					defineSymbol(property);
-// 					global_section_plugins.push_back(p);
-// 				}
-// 				else if (dynamic_pointer_cast< Function >(p)) {
-// 					defineSymbol(dynamic_pointer_cast< Function >(p));
-// 					global_section_plugins.push_back(p);
-// 				}
-// 				if (dynamic_pointer_cast< TimeStepListener >(p)) {
-				global_section_plugins.push_back(p);
-// 				}
-// 				else 
-// 					throw MorpheusException(string("Unknown interface of Global plugin ")+ xml_tag_name, xGlobalChild);
-// 			}
+			shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
+			
+			if (! p.get())
+				throw MorpheusException(string("Unknown Global plugin ") + xml_tag_name, xGlobalChild);
+			
+			p->loadFromXML(xGlobalChild, global_scope.get());
+			global_section_plugins.push_back(p);
 		}
 	}
 	
@@ -1300,15 +1236,7 @@ void loadFromXML(const XMLNode xNode) {
 		}
 #endif
 	}
-	// Creation of Fields
-// 	for (auto field : pde_layers) {
-// 		field.second->init(SIM::getGlobalScope());
-// 	}
-// 	for (auto field : vector_field_layers) {
-// 		field.second->init(SIM::getGlobalScope());
-// 	}
-// 	
-	// Initialising cell populations
+
 	CPM::init();
 
 	XMLNode xAnalysis = xNode.getChildNode("Analysis");
@@ -1325,23 +1253,9 @@ void loadFromXML(const XMLNode xNode) {
 				
 				p->loadFromXML(xNode, SIM::global_scope.get());
 				
-// 				if ( dynamic_pointer_cast< AbstractProperty >(p) ) {
-// 					// note that the AbstractProperty is still maintained by the Plugin
-// 					shared_ptr<AbstractProperty> property( dynamic_pointer_cast< AbstractProperty >(p) ); 
-// // 						if (!property->isGlobal())
-// // 							throw( MorpheusException("Local Properties are not allowed in Analysis ...", xNode));
-// // 					defineSymbol(property);
-// 					analysis_section_plugins.push_back(p);
-// 				}
-// 				else if (dynamic_pointer_cast< Function >(p)) {
-// 					defineSymbol(dynamic_pointer_cast< Function >(p));
-// 					analysis_section_plugins.push_back(p);
-// 				}
 				if (dynamic_pointer_cast<AnalysisPlugin>(p) ) {
 					analysers.push_back( dynamic_pointer_cast<AnalysisPlugin>(p) );
 				}
-// 				else 
-// 					throw(string("unknown analysis plugin ")+ xml_tag_name + " - skipping");	
 			}
 			catch (string er) {
 				cout << er << endl;
@@ -1374,7 +1288,7 @@ void saveToXML() {
 
 	XMLNode xTimeNode = xMorpheusNode.addChild( TimeScheduler::saveToXML() );
 
-	xMorpheusNode.addChild("Description").addChild("Title").addText(fileTitle.c_str());
+	xMorpheusNode.addChild(xDescription);
 
 	xMorpheusNode.addChild(xSpace);
 	

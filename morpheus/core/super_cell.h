@@ -35,8 +35,8 @@ class SuperCell : public Cell // public CellPopulation
 		SuperCell ( CPM::CELL_ID cell_name, SuperCT* celltype);
 		~SuperCell();
 
-		virtual XMLNode saveToXML () const;
-		virtual void loadFromXML ( const XMLNode Node );
+		XMLNode saveToXML () const override;
+		void loadFromXML ( const XMLNode Node) override;
                                       
 
 // 		virtual Nodes getNodes() const;
@@ -65,13 +65,13 @@ class SuperCell : public Cell // public CellPopulation
 		*   Here, the platform assures that the subcell already received the notifier for setUpdate (SuperCT::setUpdate).
 		*   Thus, all subcell information is already up to date !
 		*/
-		virtual void setUpdate(const CPM::Update & update);
+		void setUpdate(const CPM::Update & update) override;
 		/**  @brief Apply the update on the cell
 		* 
 		*   Here, the platform assures that the subcell already received the notifier for applyUpdate (SuperCT::applyUpdate).
 		*   Thus, all subcell information is already up to date !
 		*/
-		virtual void applyUpdate ( const CPM::Update& update);
+		void applyUpdate ( const CPM::Update& update) override;
 // 		void splitLastSegment(VDOUBLE split_plane_normal);
 };
 

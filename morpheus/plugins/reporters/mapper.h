@@ -88,11 +88,9 @@ Determine the binding rate of a soluble substance to a membrane bound molecule
 #ifndef MAPPER_H
 #define MAPPER_H
 
-#include "core/simulation.h"
-#include "core/plugin_parameter.h"
-#include "core/focusrange.h"
+#include "core/interfaces.h"
 #include "core/celltype.h"
-#include "core/cell_membrane_accessor.h"
+#include "core/focusrange.h"
 #include "core/data_mapper.h"
 #include "core/membranemapper.h"
 

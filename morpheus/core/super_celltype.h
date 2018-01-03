@@ -23,7 +23,7 @@ public:
 	// platform reqs
 	static CellType* createInstance(uint ct_id);
 	static bool factory_registration;
-	virtual string XMLClassName() const { return string("supercell"); };
+	string XMLClassName() const override { return string("supercell"); };
 
 	SuperCT(uint id);
 	~SuperCT();

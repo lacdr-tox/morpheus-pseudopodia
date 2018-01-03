@@ -12,6 +12,7 @@
 #include "core/interfaces.h"
 #include "core/plugin_parameter.h"
 #include <graphviz/gvc.h>
+#include <regex>
 
 /** 
  *  \defgroup ML_DependencyGraph DependencyGraph
@@ -32,9 +33,37 @@ numerical schemes and represents them in a graphical manner.
 class DependencyGraph: public AnalysisPlugin {
 	enum class OutFormat {SVG, PNG, PDF, DOT};
 	PluginParameter2<OutFormat,XMLNamedValueReader, DefaultValPolicy > format;
-	PluginParameter2<string,XMLValueReader,OptionalPolicy> exclude_symbols;
-	PluginParameter2<string,XMLValueReader,OptionalPolicy> exclude_plugins;
+	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> reduced;
+	PluginParameter2<string,XMLValueReader,OptionalPolicy> exclude_symbols_string;
+	PluginParameter2<string,XMLValueReader,OptionalPolicy> exclude_plugins_string;
+	set<string> exclude_symbols;
+	set<string> exclude_plugins;
+	vector<string> skip_symbols = {".*\\.x", ".*\\.y",".*\\.z","_.*"};
+	regex skip_symbols_regex;
 	
+	struct ScopeInfo {
+		map<string,Symbol> symbols;
+		stringstream definitions;
+		vector<int> tsl;
+	};
+	vector<ScopeInfo> scope_info;
+	set<string> links;
+	
+	const map<string, string> graphstyle = {
+		{string("type_")+ TypeInfo<double>::name(),"fillcolor=\"#d3d247\""},
+		{string("type_")+ TypeInfo<VDOUBLE>::name(),"fillcolor=\"#b5b426\""},
+		{"type_all","fillcolor=\"#8f8eod\""},
+		{"node","style=filled,fillcolor=\"#fffea3\""},
+		{"background","bgcolor=\"#2341782f\""},  // blue-ish (with alpha value 47 (0-255))
+		{"arrow_connect","dir=none, style=\"dashed\", penwidth=1, color=\"#38568c\""},
+		{"arrow_write","penwidth=3, color=\"#8f100d\""},
+		{"arrow_read","penwidth=2, color=\"#112c5f\""}
+	};
+	
+	void parse_scope(const Scope* scope);
+	vector<Symbol> parse_symbol(Symbol symbol);
+	void write_scope(const Scope* scope, ostream& out);
+
 public:
 	DECLARE_PLUGIN("DependencyGraph");
 	

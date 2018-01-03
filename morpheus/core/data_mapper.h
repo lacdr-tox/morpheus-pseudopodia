@@ -14,7 +14,11 @@
 
 #include "vec.h"
 #include "map"
-
+/**
+ * @brief Generic online Data statistics collector
+ * 
+ * use the creator method to generate a statistics collector of your choice.
+ */
 class DataMapper {
 public:
 	enum Mode { AVERAGE, SUM, VARIANCE, MAXIMUM, MINIMUM };
@@ -25,6 +29,7 @@ public:
 	static shared_ptr<DataMapper> create(Mode mode);
 	static std::map<std::string, DataMapper::Mode> getModeNames();
 	DataMapper::Mode getMode() const { return mode; }
+	/// Weights-are-buckets means that weight mean how often a value was observed. This has implications on the computation of min/max. 
 	void setWeightsAreBuckets(bool enabled) { weightsAreBuckets = enabled; };
 protected:
 	DataMapper() :weightsAreBuckets(false) {};

@@ -71,9 +71,9 @@ class FunctionPlugin : public Plugin {
 		const string& getSymbol()  const { return symbol(); }
 // 		Granularity getGranularity() const { if (evaluator) return evaluator->getGranularity(); else return Granularity::Global; };
 	
-		class Accessor: public SymbolAccessorBase<double> {
+		class Symbol: public SymbolAccessorBase<double> {
 			public:
-				Accessor(FunctionPlugin* parent) : SymbolAccessorBase<double>(parent->getSymbol()), parent(parent) {};
+				Symbol(FunctionPlugin* parent) : SymbolAccessorBase<double>(parent->getSymbol()), parent(parent) {};
 				double safe_get(const SymbolFocus& focus) const override { if (!evaluator) parent-> init(); return evaluator->get(focus); }
 				double get(const SymbolFocus& focus) const override { return evaluator->get(focus); }
 				std::set<SymbolDependency> dependencies() const override { if (!evaluator) parent-> init(); return evaluator->getDependSymbols();};
@@ -86,7 +86,7 @@ class FunctionPlugin : public Plugin {
 				friend class FunctionPlugin;
 		};
 	private:
-		shared_ptr<Accessor> accessor;
+		shared_ptr<Symbol> accessor;
 		shared_ptr<ThreadedExpressionEvaluator<double> > evaluator;
 		PluginParameter2<string, XMLValueReader, RequiredPolicy> raw_expression;
 		PluginParameter2<string, XMLValueReader, RequiredPolicy> symbol;
@@ -106,9 +106,9 @@ class VectorFunction : public Plugin
 		const string& getSymbol()  const { return symbol(); }
 // 		Granularity getGranularity() const { if (evaluator) return evaluator->getGranularity(); else return Granularity::Global; };
 
-		class Accessor: public SymbolAccessorBase<VDOUBLE> {
+		class Symbol: public SymbolAccessorBase<VDOUBLE> {
 			public:
-				Accessor(VectorFunction* parent) : SymbolAccessorBase<VDOUBLE>(parent->getSymbol()), parent(parent) {};
+				Symbol(VectorFunction* parent) : SymbolAccessorBase<VDOUBLE>(parent->getSymbol()), parent(parent) {};
 				TypeInfo<VDOUBLE>::SReturn safe_get(const SymbolFocus& focus) const override { if (!evaluator) parent-> init(); return evaluator->get(focus); }
 				TypeInfo<VDOUBLE>::SReturn get(const SymbolFocus& focus) const override { return is_spherical ? VDOUBLE::from_radial(evaluator->get(focus)) : evaluator->get(focus); }
 				std::set<SymbolDependency> dependencies() const override { if (!evaluator) parent-> init(); return evaluator->getDependSymbols();};
@@ -128,7 +128,7 @@ class VectorFunction : public Plugin
 		PluginParameter2<string, XMLValueReader, RequiredPolicy> raw_expression;
 		PluginParameter2<string, XMLValueReader, RequiredPolicy> symbol;
 		string description;
-		shared_ptr<Accessor> accessor;
+		shared_ptr<Symbol> accessor;
 };
 
 #endif

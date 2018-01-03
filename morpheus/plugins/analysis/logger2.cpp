@@ -20,7 +20,7 @@ void Logger::loadFromXML(const XMLNode xNode, Scope* scope){
 	inputs.resize(xInput.nChildNode("Symbol"));
 	for (uint i=0; i<xInput.nChildNode("Symbol"); i++) {
 		inputs[i]->setXMLPath("Input/Symbol["+to_str(i)+"]/symbol-ref");
-		registerPluginParameter(*inputs[i]);
+		registerPluginParameter(inputs[i]);
 	}
 	
 	// Restriction
@@ -130,13 +130,13 @@ void Logger::init(const Scope* scope){
 			cellids = parseCellIDs( cellids_str() );
 			for(auto &i : cellids){
 				if( CPM::cellExists(i) ){
-					restrictions.insert( pair<FocusRangeAxis, int>( FocusRangeAxis::CELL, i ) );
+					restrictions.insert( {FocusRangeAxis::CELL, i} );
 				}
 			}
 		}
 		else if( celltype.isDefined() ){
 			if(celltype()) {
-				restrictions.insert( pair<FocusRangeAxis, int>( FocusRangeAxis::CellType, celltype()->getID()) );
+				restrictions.insert( {FocusRangeAxis::CellType, celltype()->getID()} );
 			}
 			else
 				throw MorpheusException(string("Cannot restrict Logger to celltype "+celltype()->getName()+" because it is not defined."), stored_node);
@@ -347,7 +347,9 @@ void LoggerTextWriter::init() {
 	
 	Granularity granularity = logger.getGranularity();
 	FocusRange range(granularity, logger.getRestrictions(), logger.getDomainOnly());
-	const Scope* output_scope=SIM::getGlobalScope();
+	
+	// Pick the right scope from logger restrictions definition
+	output_scope=SIM::getGlobalScope();
 	if (logger.getRestrictions().count(FocusRangeAxis::CellType)==1)
 		output_scope = CPM::getCellTypes()[logger.getRestrictions().find(FocusRangeAxis::CellType)->second].lock()->getScope();
 	
@@ -449,8 +451,8 @@ void LoggerTextWriter::init() {
 }
 
 int LoggerTextWriter::addSymbol(string name) {
-	if (!output_scope)
-		output_scope = SIM::getGlobalScope();
+	 assert(output_scope);
+// 		output_scope = SIM::getGlobalScope();
 
 	SymbolAccessor<double> d = output_scope->findSymbol<double>(name);
 	output_symbols.push_back(d);

@@ -38,7 +38,7 @@ void Field::init(const Scope * scope) {
 
 XMLNode Field::saveToXML() const {
 	XMLNode node = accessor->field->saveToXML();
-	node.updateAttribute("symbol", symbol_name().c_str());
+	node.updateAttribute( symbol_name().c_str(),"symbol");
 	return node;
 }
 
@@ -59,7 +59,7 @@ void VectorField::loadFromXML(const XMLNode node, Scope * scope) {
 
 XMLNode VectorField::saveToXML() const {
 	XMLNode node = accessor->field->saveToXML();
-	node.updateAttribute("symbol", symbol_name().c_str());
+	node.updateAttribute(symbol_name().c_str(),"symbol");
 	return node;
 }
 

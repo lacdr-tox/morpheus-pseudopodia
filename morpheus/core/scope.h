@@ -33,10 +33,15 @@ class TimeStepListener;
 /// Additional type agnostic interface for composite symbols
 class CompositeSymbol_I {
 public:
-	virtual const std::string& name() const =0;  ///  Symbol identifier
+	///  Symbol identifier
+	virtual const std::string& name() const =0;  
+	/// Init composite symbol to @p n_celltypes CellTypes
 	virtual void init(int n_celltypes) =0;
+	/// Add a default symbol. The default is the overridden by the subscope symbols.
 	virtual void setDefaultValue(Symbol) =0;
+	/// Add a celltype specific symbol, that may override a default value in it's celltype scope.
 	virtual void addCellTypeAccessor(int celltype_id,  Symbol symbol) =0;
+	/// Get a list of component sub-scopes.
 	virtual vector<const Scope*> getSubScopes() const =0;
 	virtual ~CompositeSymbol_I() {};
 };
@@ -45,8 +50,10 @@ class Scope {
 public:
 	Scope();
 	~Scope()  { cout << "Deleting scope " << name << endl;} 
-	
+	/// Scope name
 	string getName() const { return name; };
+	/// Unique scope ID
+	int getID() const { return scope_id; }
 	/// Pointer to parental scope. Null if this is the global scope.
 	Scope* getParent() const { return parent; }; 
 	/// List of all sub-scopes
@@ -55,6 +62,7 @@ public:
 		for (auto& c : sub_scopes) scopes.push_back(c.get());
 		return scopes;
 	}
+	/// List of all component sub-scopes, i.e. sub-scopes spatially tiling the global scope.
 	const vector< const Scope* > getComponentSubScopes() const { 
 		vector<const Scope*> scopes;
 		for (auto& c : component_scopes) scopes.push_back(c.get());
@@ -64,24 +72,26 @@ public:
 	/// If @p ct is a celltype, this sub-scope is assumed to be a spatial scope within the domain of CellType @p ct.
 	Scope* createSubScope(string name, CellType *ct = nullptr);
 	
-	/// Access the CellType associated with the scope. Returns null_ptr if no CellType is associated, i.e. no spatial scope.
+	/**
+	 * Access the CellType associated with the scope.
+	 * Returns null_ptr if no CellType is associated, i.e. no spatial scope.
+	 * Also sub-scopes of a CellType scope are associated with the CellType.
+	 */ 
 	CellType* getCellType() const;
 	
 	void init();
 	
-	/// public store for value overrides from the command line --> Maybe they should be placed in Constants ??
+	/// Public store for value overrides from the command-line. Only available to the global scope.
 	map<string,string>& value_overrides() const { return _value_overrides; };
-// 	void setValueOverride(string symbol, string value) { value_overrides[symbol] = value;};
-// 	const map<string, string>& valueOverrides() const { return value_overrides; };
-// 	void removeValueOverride(string symbol) const { value_overrides.erase(symbol); };
-// 	const map<string, string>& unusedValueOverrides() const { return value_overrides; };
 	
-	/// Register a Symbol @p sym to the local scope.
-	/// Propagates the presence if this scope is a component of the parental scope.
-	/// For vector-symbols also derived component symbols are created.
+	/** 
+	 * Register a Symbol @p sym to the local scope.
+	 * Spatial scopes (CellTypes) also propagate the symbol to the parental scope.
+	 * Vector symbols trigger the automatic creation of derived component symbols (.x,.y,.z).
+	 */
 	void registerSymbol(Symbol sym); 
 	
-	/// Find an abstract symbol, without any data access
+	/// Find a symbol @p name, without any data access
 	Symbol findSymbol(string name) const;
 	
 	/// Find a readable symbol @p name of type \<T\>. Throws an error if symbol cannot be found.
@@ -97,22 +107,16 @@ public:
 	SymbolRWAccessor<T> findRWSymbol(string name) const;
 	
 	
-	/// Find all symbol names of type T
+	/// Find all symbols of type \<T\>
 	template <class T>
 	set<string> getAllSymbolNames() const;
 	
-// 	string getSymbolType(string name) const;
-// 	string getSymbolBaseName(string name) const;
-	
-	struct DepGraphConf { set<string> exclude_symbols; set<string> exclude_plugins; };
-	void write_graph(ostream& out, const DepGraphConf& config) const;
-
-
-	map<string, string> graphstyle;
+	/// Get all TimeStepListeners registered within the scope
+	const set<TimeStepListener *>& getTSLs() const { return local_tsl;};
 	
 private:
-	/// private constructor for creating subscopes -- \ref createSubScope makes use  of it
-	Scope(Scope* parent, string name, map<string, string> colorscheme, CellType* celltype = nullptr);
+	/// private constructor for creating sub-scopes -- \ref createSubScope makes use  of it
+	Scope(Scope* parent, string name, CellType* celltype = nullptr);
 	
 	string name;
 	int scope_id;
@@ -164,15 +168,11 @@ private:
 	static int max_scope_id;
 	
 	/// Generation of DotGraph of Dependencies
-	// Filtered Copy of the scheduling elements
-// 	mutable map<string, SymbolData> filtered_local_symbols;
-// 	mutable multimap<string, TimeStepListener *> filtered_local_tls;
-	mutable multimap<string, TimeStepListener *> filtered_symbol_readers;
-	mutable multimap<string, TimeStepListener *> filtered_symbol_writers;
-	void write_graph_local_variables(ostream& definitions, ostream& links, const DepGraphConf& config) const;
-	string tslDotName(TimeStepListener* tsl) const;
-	string pluginDotName(Plugin* p) const;
-	string dotStyleForType(const string& type) const;
+	friend class DependencyGraph;
+// 	// Filtered Copy of the scheduling elements
+// 	mutable multimap<string, TimeStepListener *> filtered_symbol_readers;
+// 	mutable multimap<string, TimeStepListener *> filtered_symbol_writers;
+
 	
 };
 
@@ -194,9 +194,8 @@ public:
 	std::set<SymbolDependency> dependencies() const override {
 		std::set<SymbolDependency> dep;
 		for (auto & ac : celltype_accessors) {
-			if (!ac) continue;
-			auto d = ac->dependencies();
-			dep.insert(d.begin(), d.end());
+			if (ac && ac->scope())
+				dep.insert(ac);
 		}
 		return dep;
 	};
@@ -292,7 +291,7 @@ public:
 	};
 	const string& description() const override { return v_sym->description(); }
 	string linkType() const override { return "VectorComponentLink"; }
-	std::set<SymbolDependency> dependencies() const override { return v_sym->dependencies(); }
+	std::set<SymbolDependency> dependencies() const override { return { v_sym }; }
 	typename TypeInfo<double>::SReturn get(const SymbolFocus & f) const override {
 		switch(comp) {
 			case Component::X: return v_sym->get(f).x;

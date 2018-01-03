@@ -45,16 +45,16 @@ void TimeScheduler::init()
 		cout << tsl->XMLName() << endl;
 		const_cast<Scope*>(tsl->scope())->registerTimeStepListener(tsl);
 		
-		set<SymbolDependency> dep_sym = tsl->getDependSymbols();
-		for (const auto& dep : dep_sym) {
-			assert(dep.scope);
-			const_cast<Scope*>(dep.scope)->registerSymbolReader(tsl,dep.name);
+		set<SymbolDependency> dep_sym = tsl->getLeafDependSymbols();
+		for (const auto& sym : dep_sym) {
+// 			assert(dep.scope());
+			const_cast<Scope*>(sym->scope())->registerSymbolReader(tsl,sym->name());
 		}
 		
-		set<SymbolDependency> out_sym = tsl->getOutputSymbols();
-		for (const auto& out : out_sym) {
-			assert(out.scope);
-			const_cast<Scope*>(out.scope)->registerSymbolWriter(tsl,out.name);
+		set<SymbolDependency> out_sym = tsl->getLeafOutputSymbols();
+		for (const auto& sym : out_sym) {
+// 			assert(out.scope);
+			const_cast<Scope*>(sym->scope())->registerSymbolWriter(tsl,sym->name());
 		}
 	}
 	
@@ -71,17 +71,20 @@ void TimeScheduler::init()
 			
 			cout << "\n TimeStepListener \"" << tsl->XMLName() << "\" propagates its time step " << time_step << endl;
 			cout << " Upstream: " << endl;
-			set<SymbolDependency> dep_sym = tsl->getDependSymbols();
-			for (const auto& dep : dep_sym) {
-				cout << " -> " << dep.name  << endl;
-				const_cast<Scope*>(dep.scope)->propagateSinkTimeStep(dep.name, time_step);
-			}
+			
+			tsl->propagateSinkTS(time_step);
+// 			set<SymbolDependency> dep_sym = tsl->getLeafDependSymbols();
+// 			for (const auto& sym : dep_sym) {
+// 				cout << " -> " << sym->name()  << endl;
+// 				const_cast<Scope*>(sym->scope())->propagateSinkTimeStep(sym->name(), time_step);
+// 			}
 			cout << " Downstream: " << endl;
-			set<SymbolDependency> out_sym = tsl->getOutputSymbols();
-			for (const auto& out : out_sym) {
-				cout << "-> "<< out.name << endl;
-				const_cast<Scope*>(out.scope)->propagateSourceTimeStep(out.name, time_step);
-			}
+			tsl->propagateSourceTS(time_step);
+// 			set<SymbolDependency> out_sym = tsl->getLeafOutputSymbols();
+// 			for (const auto& sym : out_sym) {
+// 				cout << "-> "<< sym->name() << endl;
+// 				const_cast<Scope*>(sym->scope())->propagateSourceTimeStep(sym->name(), time_step);
+// 			}
 		}
 	}
 // 	
@@ -120,8 +123,8 @@ void TimeScheduler::init()
 	for (uint i=0; i<ts.all_phase2.size(); i++) {
 		set<SymbolDependency> out_sym = ts.all_phase2[i]->getOutputSymbols();
 		for (const auto& sym : out_sym) {
-			if (! sym.scope->findSymbol(sym.name)->flags().delayed && sym.name != SymbolBase::CellCenter_symbol) {
-				const_cast<Scope*>(sym.scope)->addUnresolvedSymbol(sym.name);
+			if (! sym->flags().delayed && sym->name() != SymbolBase::CellCenter_symbol) {
+				const_cast<Scope*>(sym->scope())->addUnresolvedSymbol(sym->name());
 			}
 		}
 	}
@@ -143,18 +146,18 @@ void TimeScheduler::init()
 			
 			set<SymbolDependency> dep_syms = ts.all_phase2[j]->getDependSymbols();
 			set<string> unresolved_symbols;
-			for (const auto& dep: dep_syms ){
-				if (const_cast<Scope*>(dep.scope)->isUnresolved(dep.name)) {
-					unresolved_symbols.insert(dep.name);
+			for (const auto& sym: dep_syms ){
+				if (const_cast<Scope*>(sym->scope())->isUnresolved(sym->name())) {
+					unresolved_symbols.insert(sym->name());
 				}
 			}
 			
 			// Try to remove the ouput symbols of the Listener, in case they were wrongly registered also as input symbols
 			if ( ! unresolved_symbols.empty()) {
 				set<SymbolDependency> out_syms = ts.all_phase2[j]->getOutputSymbols();
-				for (const auto& out: out_syms ){
-					if (unresolved_symbols.count(out.name)) {
-						unresolved_symbols.erase(out.name);
+				for (const auto& sym: out_syms ){
+					if (unresolved_symbols.count(sym->name())) {
+						unresolved_symbols.erase(sym->name());
 					}
 				}
 			}
@@ -163,8 +166,8 @@ void TimeScheduler::init()
 			if (unresolved_symbols.empty()) {
 				// Remove the output symbols from beeing unresolved
 				set<SymbolDependency> out_syms = ts.all_phase2[j]->getOutputSymbols();
-				for (const auto& out: out_syms ){
-					const_cast<Scope*>(out.scope)->removeUnresolvedSymbol(out.name);
+				for (const auto& sym: out_syms ){
+					const_cast<Scope*>(sym->scope())->removeUnresolvedSymbol(sym->name());
 				}
 				// Add the Listener to the ordered container
 				ordered_phase2.push_back(ts.all_phase2[j]);
@@ -226,9 +229,9 @@ void TimeScheduler::init()
 		if ( ! ts.continuous[i]->getFullName().empty() )
 		     cout << " [" << ts.continuous[i]->getFullName() << "]";
 		set<string> dep;
-		for (auto it : ts.continuous[i]->getDependSymbols() ) dep.insert(it.name);
+		for (auto it : ts.continuous[i]->getDependSymbols() ) dep.insert(it->name());
 		set<string> out;
-		for (auto it : ts.continuous[i]->getOutputSymbols() ) out.insert(it.name);
+		for (auto it : ts.continuous[i]->getOutputSymbols() ) out.insert(it->name());
 		cout << " [" << join(dep,",") << "] -> [" << join(out,",") << "]\n";
 	}
 
@@ -240,9 +243,9 @@ void TimeScheduler::init()
 		if ( ! ts.all_phase2[i]->getFullName().empty() )
 		     cout << " [" << ts.all_phase2[i]->getFullName() << "]";
 		set<string> dep;
-		for (auto it : ts.all_phase2[i]->getDependSymbols() ) dep.insert(it.name);
+		for (auto it : ts.all_phase2[i]->getDependSymbols() ) dep.insert(it->name());
 		set<string> out;
-		for (auto it : ts.all_phase2[i]->getOutputSymbols() ) out.insert(it.name);
+		for (auto it : ts.all_phase2[i]->getOutputSymbols() ) out.insert(it->name());
 		cout << " [" << join(dep,",") << "] -> [" << join(out,",") << "]\n";
 	}
 
@@ -252,7 +255,7 @@ void TimeScheduler::init()
 	for (uint i=0; i<ts.analysers.size(); i++) {
 		cout << "  + " << ts.analysers[i]-> timeStep() << " => " << ts.analysers[i]->XMLName();
 		set<string> dep;
-		for (auto it : ts.analysers[i]->getDependSymbols() ) dep.insert(it.name);
+		for (auto it : ts.analysers[i]->getDependSymbols() ) dep.insert(it->name());
 		cout << " [" << join(dep,",") << "] \n";
 	}
 	cout << "------------------------------------------------------\n";
@@ -444,9 +447,9 @@ void TimeScheduler::finish()
 		if ( ! ts.all_listeners[i]->getFullName().empty() )
 		     cout << " [" << ts.all_listeners[i]->getFullName() << "]";
 		set<string> dep;
-		for (auto it : ts.all_listeners[i]->getDependSymbols() ) dep.insert(it.name);
+		for (auto it : ts.all_listeners[i]->getDependSymbols() ) dep.insert(it->name());
 		set<string> out;
-		for (auto it : ts.all_listeners[i]->getOutputSymbols() ) out.insert(it.name);
+		for (auto it : ts.all_listeners[i]->getOutputSymbols() ) out.insert(it->name());
 		cout << " [" << join(dep,",") << "] -> [" << join(out,",") << "]"; 
 		cout << endl;
 	}	

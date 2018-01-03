@@ -57,6 +57,7 @@ void CPMSampler::init(const Scope* scope)
 {
     ContinuousProcessPlugin::init(scope);
 	cell_layer = CPM::getLayer();
+	registerCellPositionOutput();
 	
 	if (stepper_type() == StepperType::EDGELIST) {
 		CPM::enableEgdeTracking();
@@ -86,7 +87,6 @@ void CPMSampler::init(const Scope* scope)
 		for (auto& dep : dependencies) {
 			registerInputSymbol( dep.second );
 		}
-		registerCellPositionOutput();
 	}
 }
 

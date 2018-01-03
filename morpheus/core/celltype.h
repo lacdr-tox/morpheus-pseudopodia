@@ -79,7 +79,6 @@ public:
 class CellCenterSymbol : public SymbolAccessorBase<VDOUBLE> {
 public:
 	CellCenterSymbol(string name) : SymbolAccessorBase<VDOUBLE>(name) { this->flags().granularity=Granularity::Cell; }
-	set<SymbolDependency> dependencies() const override { return set<SymbolDependency>({{name(), scope()}});};
 	TypeInfo<VDOUBLE>::SReturn get(const SymbolFocus& f) const override { return f.cell().getCenter();}
 	const string& description() const override { static const string descr =  "Cell Center";  return descr;}
 	string linkType() const override { return "CellCenterLink"; }
@@ -135,12 +134,14 @@ public:
 		if (XMLDataName() != string(node.getName())) {
 			cout << "Warning: Property Data tagname mismatch: " << XMLDataName() << " != " << node.getName() << endl;
 		}
-		value = TypeInfo<T>::fromString(node.getText());
+		value = TypeInfo<T>::fromString(node.getAttribute("value"));
+// 		value = TypeInfo<T>::fromString(node.getText());
 	};
 	XMLNode storeData() const override { 
 		auto node = XMLNode::createXMLTopNode(XMLDataName().c_str());
-		node.addText(to_cstr(value));
-		node.addAttribute("symbol-ref", symbol().c_str()); 
+		node.addAttribute("symbol-ref", symbol().c_str());
+		node.addAttribute("value",to_cstr(value));
+// 		node.addText(to_cstr(value));
 		return node;
 	};
 	

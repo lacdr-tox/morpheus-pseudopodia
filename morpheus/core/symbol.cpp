@@ -1,4 +1,5 @@
 #include "symbol.h"
+#include "scope.h"
 
 bool operator<(Granularity a, Granularity b) {
 	switch(b) {
@@ -81,6 +82,25 @@ ostream& operator<<(ostream& out, Granularity g) {
 	return out;
 }
 
+std::set<SymbolDependency> SymbolBase::leafDependencies() const
+ { 
+	auto d = dependencies();
+	if (d.empty()) {
+		// some default value symbols aren't part of the scope
+		if (!scope())
+			return {};
+
+		d.insert(shared_from_this());
+// 		d.insert(scope()->findSymbol(name()));
+		return d;
+	}
+	set<SymbolDependency> leafs;
+	for ( const auto& dep : d) { 
+		auto dep_leafs = dep->leafDependencies();
+		leafs.insert(dep_leafs.begin(), dep_leafs.end());
+	}
+	return leafs;
+}
 
 string SymbolBase::Space_symbol = "SPACE";
 string SymbolBase::MembraneSpace_symbol = "MEM_SPACE";

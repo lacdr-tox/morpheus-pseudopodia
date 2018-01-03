@@ -30,9 +30,9 @@ typedef std::deque<double> double_queue;
  */
 
 
-/** Granularity describes the spatial resolution of a symbol within it's scope
+/** Granularity describes the spatial resolution of a symbol within it's spatial scope
   * 
-  * \li \c Global -- Symbol defines a unique value within it's spatial Scope.
+  * \li \c Global -- Symbol defines a unique value within it's spatial scope.
   * \li \c Cell -- Symbol defines a unique value per cell.
   * \li \c Node -- Symbol defines one value per lattice node.
   * \li \c MembraneNode -- Symbol defines one value per element of the MembranePDE.
@@ -47,19 +47,12 @@ Granularity& operator+=(Granularity& g, Granularity b);
 ostream& operator<<(ostream& out, Granularity g);
 
 class Scope;
-/// Information about a SymbolDependency
-struct SymbolDependency {string name; const Scope* scope;};
-inline bool operator<(const SymbolDependency& lhs, const SymbolDependency& rhs) {
-	return (lhs.name < rhs.name) || (lhs.name == rhs.name && lhs.scope<rhs.scope);
-}
-
-inline bool operator==(const SymbolDependency& lhs, const SymbolDependency& rhs) {
-	return (lhs.name == rhs.name && lhs.scope == rhs.scope);
-}
-
+class SymbolBase;
+using Symbol = std::shared_ptr<const SymbolBase> ;
+using SymbolDependency = Symbol;
 
 /// The type agnostic <b> symbol interface </b> to be stored in the factory ...
-class SymbolBase {
+class SymbolBase : public std::enable_shared_from_this<SymbolBase> {
 public:
 	struct Flags;
 	virtual const std::string& name() const =0;  ///  Symbol identifier
@@ -68,7 +61,13 @@ public:
 	virtual Granularity granularity() const =0;
 	virtual void setScope(const Scope* scope) =0;
 // 	virtual std::string baseName() const =0; ///  Identifier of the base symbol. Usually identical to name, but differs for derived symbols.
+	/** Dependencies of the symbol
+	 *  In case the symbols has implicite dependencies,
+	 *  i.e. the function dependencies or the referring symbol of component symbols ...
+	 *  Container symbols have no dependencies.
+	 */
 	virtual std::set<SymbolDependency> dependencies() const =0;
+	virtual std::set<SymbolDependency> leafDependencies() const;
 	virtual const std::string& type() const =0;  ///  Type name derived from TypeInfo<T>::name
 	virtual std::string linkType() const =0;  /// Descriptive name identifying the container type providing the symbol
 	virtual const Flags& flags() const =0;  /// Meta information on the symbol
@@ -93,12 +92,6 @@ public:
 		  integer(false) {};
 	};
 	
-// 	virtual bool is_const_in_time() const =0;
-// 	virtual bool is_const_in_space() const =0;
-// 	virtual bool is_stochastic() const =0;  
-// 	virtual bool is_delayed() const =0;
-// 	virtual bool is_writable() const =0;
-	
 	virtual ~SymbolBase() {};
 	
 	static string
@@ -120,19 +113,7 @@ public:
 };
 
 
-// No abstract interfaces to avoid virtual class inheritance for performance reasons
-
-// template <class T>
-// class SymbolReadAccessor_I : public Symbol_I {
-// public:
-// 	virtual T get(const Focus<T>& f) const =0;
-// };
-// 
-// template <class T>
-// class SymbolRWAccessor_I : virtual public SymbolReadAccessor_I<T> {
-// public:
-// 	virtual void set(const Focus<T>& f, const T& val) const =0;
-// };
+// No purely abstract interfaces to avoid virtual class inheritance
 
 
 /** \b SymbolAccessor base implementation with \b read-only access
@@ -144,26 +125,31 @@ public:
 template <class T>
 class SymbolAccessorBase : public SymbolBase {
 public:
-	SymbolAccessorBase(std::string name) : symbol_name(name), _scope(nullptr) {}
+	SymbolAccessorBase(std::string name) : SymbolBase(), symbol_name(name), _scope(nullptr) {}
 	const std::string& type() const final { return TypeInfo<T>::name(); }
 	const std::string& name() const override { return symbol_name; }
 	Granularity granularity() const final { return flags().granularity; }
 	const Scope* scope() const final { return _scope; };
 	void setScope(const Scope* scope) override { _scope = scope; }
 
-	std::set<SymbolDependency> dependencies() const override {
-		if (_scope) return std::set<SymbolDependency>({{symbol_name, _scope}});
-		else return std::set<SymbolDependency>();
-	};
+	std::set<SymbolDependency> dependencies() const override { return std::set<SymbolDependency>(); };
+	
 	
 	const Flags& flags() const override { return _flags; }
 	Flags& flags() { return _flags; }   /// Writable access to symbol's meta information
 	
+	/// Access data at SymbolFoxus @p f 
 	virtual typename TypeInfo<T>::SReturn get(const SymbolFocus& f) const =0;
+	/**
+	 * Access data at SymbolFoxus @p f
+	 * Also take care that any dependend symbols are initialized. 
+	 * Use this method during the initialization phase.
+	 */
 	virtual typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const { return get(f); };
 	
-// 	static shared_ptr<SymbolAccessorBase<T> > createConstant(string name, const T& value);
+	/// Static creator method for a constant symbol not associated with the XML, that may be registered in a scope.
 	static shared_ptr<SymbolAccessorBase<T> > createConstant(string name, string description, const T& value);
+	/// Static creator method for a variable symbol not associated with the XML, that may be registered in a scope.
 	static shared_ptr<SymbolAccessorBase<T> > createVariable(string name, string description, const T& value);
 
 protected:
@@ -260,100 +246,5 @@ extern string sym_RandomBool;
 extern string sym_RandomGamma;
 extern string sym_Modulo;
 
-/**
- * \brief SymbolData is a Symbol Descriptor, with the ability to spawn a fully fledged Accessor.
- * 
- * Also contains the storage for globally predefined symbols like time and space
- */
-
-
-
-/*
-class SymbolData {
-public:
-	SymbolData() : integer(false), writable(false), invariant(false), time_invariant(false), is_composite(false), is_delayed(false), granularity(Granularity::Undef), link(UnLinked) {};
-	string name;
-	string base_name;  /// holds the name of the symbol this symbol is derived from, or the symbol name in any other case.
-	string fullname;   /// More descriptive name od the symbol, allows space chars.
-	string type_name;  /// type name of the symbol according to TypeInfo<your_type>::name()
-	bool integer;      /// numbers are integer
-	bool writable;     /// Symbol allows writable access
-	bool invariant;     /// Symbol is invariant in time and space
-	bool time_invariant;  /// Symbols is constant in time
-	bool is_composite; /// Symbol is composed of subscope symbols, but may also have a default
-	bool is_delayed;
-	
-// 	enum Granularity { UndefGran, GlobalGran, NodeGran, CellGran, MembraneNodeGran };
-	
-	enum LinkType {	GlobalLink,
-					CellPropertyLink,
-					CellMembraneLink,
-					SingleCellPropertyLink,
-					SingleCellMembraneLink,
-					FunctionLink,
-					VectorFunctionLink,
-					PDELink,
-					VectorFieldLink,
-					Space,
-					MembraneSpace,
-					Time,
-					CellTypeLink,
-					PopulationSizeLink,
-					CellIDLink,
-					SuperCellIDLink,
-					SubCellIDLink,
-					CellCenterLink,
-					CellOrientationLink,
-					CellVolumeLink,
-					CellLengthLink,
-					CellSurfaceLink,
-					VecXLink,
-					VecYLink,
-					VecZLink,
-					VecAbsLink,
-					VecPhiLink,
-					VecThetaLink,
-					PureCompositeLink,
-					UnLinked};
-
-	Granularity granularity;
-	LinkType link;
-
-	// the type agnostic interface for a constant value
-	shared_ptr<AbstractProperty> const_prop;
-	// the link to a Funktion object
-	shared_ptr<Function> func;
-	shared_ptr<VectorFunction> vec_func;
-	weak_ptr<CellType> celltype;
-	// the link to the subscopes overriding this symbol
-	vector<Scope*> component_subscopes;
-	
-
-	template <class S>
-// 	SymbolAccessor<S> spawn_accessor(const CellType* ct) const;
-	bool operator ==(const SymbolData& b) { return (link == b.link && name == b.name && type_name == b.type_name); }
-    static string
-        Space_symbol,
-		MembraneSpace_symbol,
-        Time_symbol,
-        NodeLength_symbol,
-        CellType_symbol,
-        CellID_symbol,
-		SuperCellID_symbol,
-		SubCellID_symbol,
-        CellVolume_symbol,
-        CellLength_symbol,
-        CellSurface_symbol,
-        CellCenter_symbol,
-        CellOrientation_symbol,
-        Temperature_symbol,
-        CellPosition_symbol;
-		
-	
-	static string getLinkTypeName(LinkType linktype);
-    string getLinkTypeName() const;
-	
-}; 
-*/
 #endif // SYMBOL_H
 

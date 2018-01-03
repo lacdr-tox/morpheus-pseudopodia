@@ -22,6 +22,7 @@
 
 ### Simulator
   * Many fixes to cell pattern initializers
+  * Rewrite of the **Symbolic Linking** infrastructure, allows extensibility
   * Scheduling fixes for **Functions** and **DelayProperties**
   * **Gnuplotter** and **Logger** now deal better with sub and superscript in symbol names or descriptions
   * Parellize diffusion for **Fields** in domains

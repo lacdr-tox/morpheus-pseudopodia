@@ -160,6 +160,7 @@ class Plugin {
 		set<SymbolDependency> input_symbols;
 		// All writable symbols are solely registered as output Symbols
 		set<SymbolDependency> output_symbols;
+		set<Symbol> direct_input_symbols;
 		
 	protected:
 		string plugin_name;
@@ -196,11 +197,10 @@ class Plugin {
 // 		void registerPluginParameter( shared_ptr<PluginParameterBase> parameter ) { registerPluginParameter(*parameter); }
 
 		void registerInputSymbol(Symbol sym);
-		void registerInputSymbol(const SymbolDependency& sym);
-		void registerInputSymbols(const set<SymbolDependency>& in);
+		void registerInputSymbols(set<SymbolDependency> in);
 		
 		void registerOutputSymbol(Symbol sym);
-		void registerOutputSymbols(const set<SymbolDependency>& out);
+		void registerOutputSymbols(set<SymbolDependency> out);
 		
 		void registerCellPositionDependency();
 		void registerCellPositionOutput();
@@ -349,6 +349,9 @@ class TimeStepListener : virtual public Plugin
 		/// Time step adjustable time step
 		bool isAdjustable() { return is_adjustable; }
 		
+		set<SymbolDependency> getLeafDependSymbols();
+		set<SymbolDependency> getLeafOutputSymbols();
+		
 		/// Update time stepping of the symbols the Listener depends on
 		/// Returns whether the actual time step of the Listener changed
 		virtual void updateSourceTS(double t);
@@ -394,6 +397,7 @@ private:
 		double time_step;
 		/// time needed for execution (measured in milliseconds)
 		double execute_systemtime;
+		set<SymbolDependency> leaf_input_symbols;
 		std::chrono::high_resolution_clock highc;
 };
 

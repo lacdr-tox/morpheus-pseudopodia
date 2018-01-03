@@ -411,18 +411,16 @@ template <class T>
 set< SymbolDependency > ExpressionEvaluator<T>::getDependSymbols() const
 {
 	set<SymbolDependency> sym_dep;
-	for (auto& s : symbols ) {
-// 		cout << "d: " << s.getName() << "["<< s.getScope()->getName() << "]";
-// 		SymbolDependency sd = { s.getBaseName(), s.getScope()};
-		auto d = s->dependencies();
-		sym_dep.insert(d.begin(), d.end());
-	}
-	for (auto& s : v_symbols ) {
-// 		cout << "v: " << s.getName() << "["<< s.getScope()->getName() << "]";
-// 		SymbolDependency sd = { s.getBaseName(), s.getScope()};
-		auto d = s->dependencies();
-		sym_dep.insert(d.begin(), d.end());
-	}
+	sym_dep.insert(symbols.begin(),symbols.end());
+	sym_dep.insert(v_symbols.begin(),v_symbols.end());
+// 	for (auto& s : symbols ) {
+// // 		cout << "d: " << s.getName() << "["<< s.getScope()->getName() << "]";
+// 		sym_dep.insert(s);
+// 	}
+// 	for (auto& s : v_symbols ) {
+// // 		cout << "v: " << s.getName() << "["<< s.getScope()->getName() << "]";
+// 		sym_dep.insert(s);
+// 	}
 	return sym_dep;
 }
 

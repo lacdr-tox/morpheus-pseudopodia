@@ -24,33 +24,23 @@ void Plugin::registerPluginParameter(PluginParameterBase& parameter ) {
 	plugin_parameters2.push_back(&parameter);
 }
 
-void Plugin::registerInputSymbol(Symbol sym)
-{
-	registerInputSymbols( sym->dependencies() );
-}
-
-void Plugin::registerInputSymbol(const SymbolDependency& sym)
+void Plugin::registerInputSymbol(SymbolDependency sym)
 {
 	input_symbols.insert(sym);
 }
 
-
-void Plugin::registerInputSymbols(const set< SymbolDependency >& in)
-{
-	input_symbols.insert(in.begin(), in.end());
+void Plugin::registerInputSymbols(set<SymbolDependency> in) {
+	input_symbols.insert(in.begin(),in.end());
 }
 
-void Plugin::registerOutputSymbol(Symbol sym)
+void Plugin::registerOutputSymbol(SymbolDependency sym)
 {
-	auto sd = sym->dependencies();
-	output_symbols.insert(sd.begin(),sd.end());
+	output_symbols.insert(sym);
 }
 
-void Plugin::registerOutputSymbols(const set< SymbolDependency >& out)
+void Plugin::registerOutputSymbols(set< SymbolDependency > out)
 {
-	for (auto sym : out) {
-		output_symbols.insert(sym);
-	}
+	output_symbols.insert(out.begin(),out.end());
 }
 
 
@@ -97,15 +87,15 @@ void Plugin::init(const Scope* scope)
 	
 	if (! input_symbols.empty()) {
 		cout << "Plugin " << XMLName() << ": Registered input symbol dependencies ";
-		for (auto dep : input_symbols) {
-			cout << dep.name << " [" << dep.scope->getName() << "] ,";
+		for (auto const& dep : input_symbols) {
+			cout << dep->name() << " [" << dep->scope()->getName() << "] ,";
 		}
 		cout << endl;
 	}
 	if (! output_symbols.empty()) {
 		cout << "Plugin" << XMLName() << ": Registered output symbol dependencies ";
 		for (auto dep : output_symbols) {
-			cout << dep.name <<  " [" << dep.scope->getName() << "] ,";
+			cout << dep->name() <<  " [" << dep->scope()->getName() << "] ,";
 		}
 		cout << endl;
 	}
@@ -123,6 +113,32 @@ TimeStepListener::TimeStepListener(TimeStepListener::XMLSpec spec) : xml_spec(sp
 	time_step = -1;
 	latest_time_step = -1;
 	execute_systemtime = 0;
+}
+
+set<SymbolDependency> TimeStepListener::getLeafDependSymbols() {
+	if (leaf_input_symbols.empty()) {
+		auto inputs = getDependSymbols();
+		for (const auto& input : inputs) {
+			auto leafs = input->leafDependencies();
+			leaf_input_symbols.insert(leafs.begin(), leafs.end());
+		}
+	}
+	return leaf_input_symbols;
+}
+
+set<SymbolDependency> TimeStepListener::getLeafOutputSymbols() {
+	set<SymbolDependency> outputs;
+	for (auto sym : getOutputSymbols()) {
+		if ( !sym->dependencies().empty()) {
+			auto leafs = sym->leafDependencies();
+			outputs.insert(leafs.begin(), leafs.end());
+		}
+		else {
+			outputs.insert(sym);
+		}
+		
+	}
+	return outputs;
 }
 
 void TimeStepListener::setTimeStep(double t)
@@ -158,15 +174,15 @@ void TimeStepListener::updateSinkTS(double ts) {};
 
 void TimeStepListener::propagateSinkTS(double ts)
 {
-	for (auto it: getDependSymbols()) {
-		const_cast<Scope*>(it.scope)->propagateSinkTimeStep(it.name,ts);
+	for (auto it: getLeafDependSymbols()) {
+		const_cast<Scope*>(it->scope())->propagateSinkTimeStep(it->name(),ts);
 	}
 }
 
 void TimeStepListener::propagateSourceTS(double ts)
 {
-	for (auto it: getOutputSymbols()) {
-		const_cast<Scope*>(it.scope)->propagateSourceTimeStep(it.name,ts);
+	for (auto it: getLeafOutputSymbols()) {
+		const_cast<Scope*>(it->scope())->propagateSourceTimeStep(it->name(),ts);
 	}
 }
 

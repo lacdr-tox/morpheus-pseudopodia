@@ -24,18 +24,13 @@ namespace CPM {
 	}; 
 	
 	/** @brief Enumerator type used to traverse update tasks through the cell population interfaces.
-	 *
-	 *  Use (todo & CPM::ADD) or (todo & CPM::REMOVE) to find out if a method shall take care of add or remove operation respectively. 
-	 *  Use (todo == CPM::ADD_AND_REVERSE) to find out if a method are responsible for both.
 	 */
-	
-	
-	
-	
 	class Update {
 	public:
 		Update(UpdateData* data, shared_ptr<CPM::LAYER> layer);
+		/** @brief Enumerator type for update operations. */
 		enum class Operation { Extend, Move };
+		/** @brief Enumerator type for atomic update tasks to traverse through the cell population interfaces. */
 		enum AtomicOperation { NONE=0x0, ADD=0x1, REMOVE=0x2,  ADD_AND_REMOVE=0x3, MOVE=0x4, NEIGHBORHOOD_UPDATE=0x8 };
 		bool valid() const { return operation!=NONE; };
 		class SymbolFocus source() const { return d->source; };

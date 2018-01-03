@@ -552,24 +552,24 @@ set< SymbolDependency > System<system_type>::getDependSymbols()
 {
 	set<SymbolDependency> s;
 	for (const auto & sym : external_symbols ) {
-		auto d = sym->dependencies();
-		s.insert(d.begin(),d.end());
+		// Skip locally defined symbols
+// 		if (sym->scope() == local_scope)
+// 			continue;
+		// Time is registered by default, but we don't forward it as a dependency
+		if ( sym->name() == SymbolBase::Time_symbol )
+			continue;
+		s.insert(sym);
 	}
 
-	// Now remove all locally defined symbols(not registered as global symbols)
-// 	for (uint i=0; i<functions.size(); i++) {
-// 		SymbolDependency sd = {functions[i]->symbol_name, local_scope};
-// 		s.erase(sd);
-// 	}
 	// Remove time && space dependencies
-	SymbolDependency sd = {SymbolBase::Time_symbol, SIM::getGlobalScope() };
-	s.erase(sd);
-	
-	sd = {SystemSolver::noise_scaling_symbol, local_scope };
-	s.erase(sd);
-	
-	sd = {SymbolBase::Space_symbol, SIM::getGlobalScope() };
-	s.erase(sd);
+// 	SymbolDependency sd = {SymbolBase::Time_symbol, SIM::getGlobalScope() };
+// 	s.erase(sd);
+// 	
+// 	sd = {SystemSolver::noise_scaling_symbol, local_scope };
+// 	s.erase(sd);
+// 	
+// 	sd = {SymbolBase::Space_symbol, SIM::getGlobalScope() };
+// 	s.erase(sd);
 
     return s;
 }
@@ -580,10 +580,10 @@ set< SymbolDependency > System<system_type>::getOutputSymbols()
 	set<SymbolDependency> s;
 	for (uint i=0; i<equations.size(); i++) {
 		if (equations[i]->type == SystemFunc::VEQU) {
-			s.insert(*equations[i]->v_global_symbol->dependencies().begin());
+			s.insert(equations[i]->v_global_symbol);
 		}
 		else {
-			s.insert(*equations[i]->global_symbol->dependencies().begin());
+			s.insert(equations[i]->global_symbol);
 		}
 	}
 

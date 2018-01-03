@@ -22,7 +22,7 @@ void FunctionPlugin::loadFromXML ( const XMLNode Node, Scope* scope)
 	
 	Plugin::loadFromXML(Node,scope);
 	
-	accessor = make_shared<Accessor>(this);
+	accessor = make_shared<Symbol>(this);
 	scope->registerSymbol(accessor);
 	
 	evaluator = make_shared<ThreadedExpressionEvaluator<double> >(raw_expression(), false);
@@ -62,7 +62,7 @@ void VectorFunction::loadFromXML ( const XMLNode Node, Scope* scope)
 
 	description = this->plugin_name;
 	
-	accessor = make_shared<Accessor>(this);
+	accessor = make_shared<Symbol>(this);
 	scope->registerSymbol(accessor);
 	
 	Plugin::loadFromXML( Node, scope );

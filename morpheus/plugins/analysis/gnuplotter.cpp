@@ -683,7 +683,7 @@ const string& CellPainter::getDescription() const {
 
 set<SymbolDependency> CellPainter::getInputSymbols() const
 {
-	return this->symbol.getDependSymbols();
+	return { symbol.accessor() };
 }
 
 void CellPainter::writeCellLayer(ostream& out)

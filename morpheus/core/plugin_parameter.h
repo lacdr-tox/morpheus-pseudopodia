@@ -39,8 +39,10 @@
  * Reader policies: 
  *   - XMLValueReader
  *   - XMLEvaluator
+ *   - XMLThreadsaveEvaluator
  *   - XMLNamedValueReader
- *   - XMLWriteSymbol
+ *   - XMLReadableSymbol
+ *   - XMLWritableSymbol
  *   - XMLReadWriteSymbol
  * 
  * Requirement policies:
@@ -443,10 +445,10 @@ public:
 	
 	std::set<SymbolDependency> getDependSymbols() const {
 		if (this->_accessor) {
-			return this->_accessor->dependencies();
+			return { this->_accessor };
 		}
 		else
-			return std::set<SymbolDependency>();
+			return { };
 	}
 	
 	std::set<SymbolDependency> getOutputSymbols() const { 
@@ -499,13 +501,12 @@ public:
 	void set(SymbolFocus f, typename TypeInfo<ValType>::Parameter value) const {  RequirementPolicy::assertDefined(); _accessor->set(f,value); };
 	
 	std::set<SymbolDependency> getOutputSymbols() const { 
-		if ( ! RequirementPolicy::isMissing()) return _accessor->dependencies();
-		else return std::set<SymbolDependency>();
+		if ( ! RequirementPolicy::isMissing()) return { _accessor };
+		else return {};
 	}
 
 	std::set<SymbolDependency> getDependSymbols() const {
-		std::set<SymbolDependency> s;
-		return s;
+		return {};
 	}
 	
 protected:
@@ -539,8 +540,8 @@ public:
 	};
 	
 	std::set<SymbolDependency> getDependSymbols() const {
-		if ( ! RequirementPolicy::isMissing()) return this->_accessor->dependencies();
-		else return std::set<SymbolDependency>();
+		if ( ! RequirementPolicy::isMissing()) return { this->_accessor };
+		else return { };
 	}
 };
 
