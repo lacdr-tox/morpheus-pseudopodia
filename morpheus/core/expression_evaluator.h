@@ -325,7 +325,7 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 	
 	if (expr_is_const) {
 		expr_is_const = false;
-		const_val = get(SymbolFocus::global);
+		const_val = safe_get(SymbolFocus::global);
 		expr_is_const = true;
 // 		cout << "Expression " << this->getExpression() << " is const" << endl;
 	}
