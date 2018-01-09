@@ -38,7 +38,8 @@ class DependencyGraph: public AnalysisPlugin {
 	PluginParameter2<string,XMLValueReader,OptionalPolicy> exclude_plugins_string;
 	set<string> exclude_symbols;
 	set<string> exclude_plugins;
-	vector<string> skip_symbols = {".*\\.x", ".*\\.y",".*\\.z","_.*"};
+	vector<string> skip_symbols = {"_.*"};
+	vector<string> skip_symbols_reduced = {".*\\.x", ".*\\.y",".*\\.z",".*\\.phi",".*\\.theta",".*\\.abs"};
 	regex skip_symbols_regex;
 	
 	struct ScopeInfo {
@@ -63,6 +64,10 @@ class DependencyGraph: public AnalysisPlugin {
 	void parse_scope(const Scope* scope);
 	vector<Symbol> parse_symbol(Symbol symbol);
 	void write_scope(const Scope* scope, ostream& out);
+	
+	string pluginDotName(Plugin* p);
+	string tslDotName(TimeStepListener* tsl);
+	string dotName(const string& a );
 
 public:
 	DECLARE_PLUGIN("DependencyGraph");

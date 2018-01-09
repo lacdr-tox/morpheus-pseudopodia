@@ -54,7 +54,11 @@ void DependencyGraph::analyse(double time)
 			exclude_symbols.insert(e);
 		}
 	}
-	skip_symbols_regex = join(skip_symbols,"|");
+	if (reduced())
+		skip_symbols_regex = join(skip_symbols,"|") + "|" + join(skip_symbols_reduced,"|");
+	else 
+		skip_symbols_regex = join(skip_symbols,"|");
+		
 	
 	stringstream dot;
 	
@@ -123,7 +127,7 @@ void DependencyGraph::analyse(double time)
 	gvFreeContext(gvc);
 }
 
-string tslDotName(TimeStepListener* tsl)
+string DependencyGraph::tslDotName(TimeStepListener* tsl)
 {
 	string ts;
 	if (tsl->timeStep()>0)
@@ -134,19 +138,19 @@ string tslDotName(TimeStepListener* tsl)
 	std::replace( ts.begin(), ts.end(), '.', '_');
 	std::replace( ts.begin(), ts.end(), '-', '_');
 	
-	return tsl->XMLName() + "_" + to_str(tsl->scope()->getID()) + "_" + ts;
+	return tsl->XMLName() + "_" +  (reduced() || tsl->getFullName().empty() ? to_str(tsl->scope()->getID()) + "_" + ts :  to_str(hash<string>()(tsl->getFullName())) );
 }
 
-string pluginDotName(Plugin* p) {
+string DependencyGraph::pluginDotName(Plugin* p) {
 	if (dynamic_cast<TimeStepListener*>(p)) {
 		return tslDotName(dynamic_cast<TimeStepListener*>(p));
 	}
 	else {
-		return p->XMLName() + "_" + to_str(p->scope()->getID());
+		return p->XMLName() + "_" + (reduced() || p->getFullName().empty() ? to_str(p->scope()->getID()) : to_str(hash<string>()(p->getFullName())));
 	}
 }
 
-string dotName(const string& a ) {
+string DependencyGraph::dotName(const string& a ) {
 	string b(a);
 	static const map<string,string> replacements =
 		{ {".","_"}, {"α","alpha"}, {"β","beta"}, {"γ","gamma"}, {"δ","delta"}, {"ε","epsilon"}, {"ζ","zeta"}, {"η","eta"}, {"θ","theta"}, {"ι","iota"}, {"κ","kappa"}, {"λ","lambda"}, {"μ","mu"}, {"ν","nu"}, {"ξ","xi"}, {"ο","omicron"}, {"π","pi"}, {"ρ","rho"}, {"σ","sigma"}, {"ς","sigma"}, {"τ","tau"}, {"υ","upsilon"}, {"φ","phi"}, {"χ","chi"}, {"ψ","psi"}, {"ω","omega"}, {"Α","Alpha"}, {"Β","Beta"}, {"Γ","Gamma"}, {"Δ","Delta"}, {"Ε","Epsilon"}, {"Ζ","Zeta"}, {"Η","Eta"}, {"Θ","Theta"}, {"Ι","Iota"}, {"Κ","Kappa"}, {"Λ","Lambda"}, {"Μ","Mu"}, {"Ν","Nu"}, {"Ξ","Xi"}, {"Ο","Omicron"}, {"Π","Pi"}, {"Ρ","Rho"}, {"Σ","Sigma"}, {"Τ","Tau"}, {"Υ","upsilon"}, {"Φ","Phi"}, {"Χ","Chi"}, {"Ψ","Psi"}, {"Ω","Omega"} };
@@ -177,7 +181,7 @@ void DependencyGraph::parse_scope(const Scope* scope)
 			set<SymbolDependency> inter_dep = dynamic_cast<CPMSampler*>(tsl)->getInteractionDependencies();
 			
 			// Global CPM TSL Box
-			info.definitions << cpm_name << " [shape=record, label=\"{ "<< tsl->XMLName() << (tsl->getFullName().empty() ? string("") : string("\\n\\\"") + tsl->getFullName() + "\\\"")<< " | " <<  tsl->timeStep() <<" } \" ]\n" ;
+			info.definitions << cpm_name << " [shape=record, label=\"{ "<< tsl->XMLName() << (tsl->getFullName().empty()  || reduced() ? string("") : string("\\n\\\"") + tsl->getFullName() + "\\\"")<< " | " <<  tsl->timeStep() <<" } \" ]\n" ;
 			
 			for (auto ct_scope : scope->getComponentSubScopes()) {
 				assert(ct_scope->getCellType());
@@ -219,7 +223,7 @@ void DependencyGraph::parse_scope(const Scope* scope)
 				for (auto symbol : link_symbols) {
 					// create a link
 					stringstream link;
-					link << tslDotName(tsl)  << " -> " << dotName(symbol->name()) << "_" << symbol->scope()->getID() << "[" << graphstyle.at("arrow_write") << "] \n";
+					link << tslDotName(tsl)  << " -> " << dotName(symbol->name()) << "_" << symbol->scope()->getID() << " [" << graphstyle.at("arrow_write") << "] \n";
 					links.emplace(link.str());
 				}
 			}
@@ -228,7 +232,7 @@ void DependencyGraph::parse_scope(const Scope* scope)
 			// TSL Box
 			if (reduced() && dynamic_cast<AnalysisPlugin*>(tsl))
 				continue;
-			info.definitions << tslDotName(tsl) << " [shape=record, label=\"{ "<< tsl->XMLName() << (tsl->getFullName().empty() ? string("") : string("\\n\\\"") + tsl->getFullName() + "\\\"")<< " | " <<  tsl->timeStep() <<" } \" ]\n" ;
+			info.definitions << tslDotName(tsl) << " [shape=record, label=\"{ "<< tsl->XMLName() << (tsl->getFullName().empty() || reduced()  ? string("") : string("\\n\\\"") + tsl->getFullName() + "\\\"")<< " | " <<  tsl->timeStep() <<" } \" ]\n" ;
 			
 			// Readers
 			auto dependencies = reduced() ? tsl->getLeafDependSymbols() : tsl->getDependSymbols();
@@ -249,7 +253,7 @@ void DependencyGraph::parse_scope(const Scope* scope)
 				for (auto symbol : link_symbols) {
 					// create a link
 					stringstream link;
-					link << tslDotName(tsl)  << " -> " << dotName(symbol->name()) << "_" << symbol->scope()->getID() << "[" << graphstyle.at("arrow_write") << "] \n";
+					link << tslDotName(tsl)  << " -> " << dotName(symbol->name()) << "_" << symbol->scope()->getID() << " [" << graphstyle.at("arrow_write") << "] \n";
 					links.emplace(link.str());
 				}
 			}
@@ -275,25 +279,17 @@ void DependencyGraph::parse_scope(const Scope* scope)
 				if ( exclude_plugins.count( dep.first->XMLName() ))
 					continue;
 				
-				if (dep.first->XMLName() != current_plugin) {
-					current_plugin = dep.first->XMLName();
-					TimeStepListener* tsl = dynamic_cast<TimeStepListener*>(dep.first);
-					if (tsl) {
-						plugin_node_name = tslDotName(tsl);
-						info.definitions << plugin_node_name << "[shape=record, label=\"{" << current_plugin  << "|" << tsl->timeStep() << "}\"];\n";
-						
-					}
-					else {
-						plugin_node_name = dotName(current_plugin) + "_" + to_str(scope->getID());
-						info.definitions << plugin_node_name << "[shape=record, label=\"" << current_plugin  << "\"];\n";
-					}
+				plugin_node_name = pluginDotName(dep.first);
+				if (plugin_node_name != current_plugin) {
+					current_plugin = plugin_node_name;
+					info.definitions << plugin_node_name << "[shape=record, label=\"" << dep.first->XMLName() << (dep.first->getFullName().empty() || reduced() ? string("") : string("\\n\\\"") + dep.first->getFullName() + "\\\"") << "\"];\n";
 					
 				}
 				auto symbols = parse_symbol(dep.second);
 				for (auto symbol : symbols) {
 					// create a link
 					stringstream link;
-					link << dotName(symbol->name()) << "_" << symbol->scope()->getID() << " -> " << plugin_node_name << "[" << graphstyle.at("arrow_read") << "] \n";
+					link << dotName(symbol->name()) << "_" << symbol->scope()->getID() << " -> " << plugin_node_name << " [" << graphstyle.at("arrow_read") << "] \n";
 					links.emplace(link.str());
 				}
 			}
@@ -315,8 +311,11 @@ void DependencyGraph::parse_scope(const Scope* scope)
 		string link_style = graphstyle.at("arrow_read");
 		
 		// Change style for composite symbols
-		if (dynamic_pointer_cast<const CompositeSymbol_I>(sym.second) || dynamic_pointer_cast<const VectorComponentAccessor>(sym.second)) {
+		if (dynamic_pointer_cast<const CompositeSymbol_I>(sym.second) ) {
 			label_style += ",peripheries=2";
+			link_style = graphstyle.at("arrow_connect");
+		}
+		if ( dynamic_pointer_cast<const VectorComponentAccessor>(sym.second)) {
 			link_style = graphstyle.at("arrow_connect");
 		}
 		
@@ -324,11 +323,13 @@ void DependencyGraph::parse_scope(const Scope* scope)
 
 		auto dependencies = sym.second->dependencies();
 		for (auto dep : dependencies ) {
-			if (!dep->scope()) continue;
-// 		if (dep.scope->getID() == scope->getID() && dep.name == sym.first) continue;
-			stringstream link;
-			link << dotName(dep->name()) << "_" << dep->scope()->getID() << " -> " << dotName(sym.first) << "_" << scope->getID() << " ["<< link_style <<"]\n";
-			links.emplace(link.str());
+			auto symbols = parse_symbol(dep);
+			for (auto symbol : symbols) {
+				// create a link
+				stringstream link;
+				link << dotName(symbol->name()) << "_" << symbol->scope()->getID() << " -> " << dotName(sym.first) << "_" << scope->getID() << " [" << link_style << "] \n";
+				links.emplace(link.str());
+			}
 		}
 	}
 }
@@ -338,6 +339,9 @@ vector<Symbol> DependencyGraph::parse_symbol(Symbol symbol) {
 		return {};
 	if (!symbol->scope())
 		return {};
+	if (symbol->scope()->ct_component && symbol->scope()->ct_component->isMedium() && (symbol->name() == SymbolBase::CellPosition_symbol || symbol->name() == SymbolBase::CellID_symbol)) {
+		return {};
+	}
 	
 	if (regex_match(symbol->name(), skip_symbols_regex)) {
 		auto dependencies = symbol->dependencies();
@@ -363,6 +367,10 @@ vector<Symbol> DependencyGraph::parse_symbol(Symbol symbol) {
 
 
 void DependencyGraph::write_scope(const Scope* scope, ostream& dot) {
+	if (scope->ct_component && scope->ct_component->isMedium()) {
+		if (scope_info[scope->getID()].definitions.str().empty())
+			return;
+	}
 	dot << scope_info[scope->getID()].definitions.str();
 	
 	for (auto sub_scope : scope->getSubScopes()) {
