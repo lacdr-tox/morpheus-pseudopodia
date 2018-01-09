@@ -103,7 +103,7 @@ public:
 	string getExpression() const { return evaluators[0]->getExpression(); };
 	bool isInteger() const { return evaluators[0]->isInteger(); };
 	typename TypeInfo<T>::SReturn get(const SymbolFocus& focus) const {
-		int t = omp_get_thread_num();
+		uint t = omp_get_thread_num();
 		if (evaluators.size()<=t || ! evaluators[t] ) {
 			mutex.lock();
 			if (evaluators.size()<=t) {

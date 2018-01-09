@@ -29,6 +29,7 @@ PDE_Layer::PDE_Layer(shared_ptr<const Lattice> l, double p_node_length, bool sur
 	wellmixed 			= false;
 	store_data 			= false;
 	is_surface = surface;
+	init_by_restore = false;
 	
 	useBuffer(true);
 }
@@ -136,7 +137,7 @@ void PDE_Layer::init(const Scope* scope, const SymbolFocus& focus)
 	phi_coarsening[0]=l_size.x;
 	phi_coarsening[l_size.y-1]=l_size.x;
 
-	if (!initial_expression.empty()) {
+	if (!initial_expression.empty() && !init_by_restore) {
 		ExpressionEvaluator<double> init_val(initial_expression);
 		init_val.init(scope);
 		if (is_surface) {
@@ -171,54 +172,42 @@ void PDE_Layer::init(const Scope* scope, const SymbolFocus& focus)
 
 XMLNode PDE_Layer::saveToXML() const
 {
-	XMLNode xNode =  Lattice_Data_Layer<double>::saveToXML();
-	xNode.updateName("Layer");
-	xNode.addAttribute("symbol", to_cstr(symbol_name));
-
-	int node_pos=0;
-	XMLNode xDiffusion = xNode.addChild("Diffusion",FALSE,node_pos++);
-	xDiffusion.addAttribute("rate", to_cstr(diffusion_rate));
-
-	if( wellmixed )
-		xDiffusion.addAttribute("well-mixed", to_cstr(true));
-
-	if (!diffusion_units.empty())
-		xDiffusion.addAttribute("unit", diffusion_units.c_str());
-
-	xNode.addChild(storeData());
-	
-	return xNode;
+	XMLNode saved = Lattice_Data_Layer<double>::saveToXML();
+	while (saved.nChildNode("Data")) {
+		saved.getChildNode("Data").deleteNodeContent();
+	}
+	saved.addChild(storeData(""));
+	return saved;
 }
 
-XMLNode PDE_Layer::storeData(string fn) const
+XMLNode PDE_Layer::storeData(string filename) const
 {
-	const bool to_file = true;
+	const bool to_file = ! filename.empty();
 	XMLNode xNode =  XMLNode::createXMLTopNode("Data");
 
 	if (to_file) {
-		string filename;
-		if (fn.empty())
-			filename = symbol_name + "_" + SIM::getTimeName() + ".dat";
-		else 
-			filename = fn;
-		
 		ofstream out(filename.c_str(),ios_base::trunc);
 		out.setf(ios_base::scientific);
 		out.precision(3);
 		xNode.addAttribute("filename",filename.c_str());
+		xNode.addAttribute("encoding","ascii");
 		Lattice_Data_Layer< double >::storeData(out);
 		out.close();
 	}
 	else {
-		stringstream out;
-		out.setf(ios_base::scientific);
-		out.precision(3);
-		Lattice_Data_Layer< double >::storeData(out);
-		xNode.addText(out.str().c_str());
+		XMLParserBase64Tool encoder;
+		valarray<double> data = getData();
+// 		cout << "Field size " << getData().size() << " " << l_size.x <<  " " << data.size() ;
+		auto encoded_data = encoder.encode((unsigned char *)&(data[0]), data.size() * sizeof(double),true);
+		xNode.addText(encoded_data);
+		xNode.addAttribute("encoding","base64");
+		xNode.addAttribute("word-size",to_cstr(sizeof(double)));
 	}
 	
 	return xNode;
 }
+
+
 
 bool PDE_Layer::restoreData(const XMLNode node)
 {
@@ -241,11 +230,32 @@ bool PDE_Layer::restoreData(const XMLNode node)
 				throw string("Unable to open file: ") + filename;
 			Lattice_Data_Layer< double >::restoreData(in, [] (istream& in) -> double { double t; in >> t; return t; });
 			in.close();
+			init_by_restore = true;
 		} else {
-			string s;
-			getXMLAttribute(node,"#text",s);
-			stringstream in(s);
-			Lattice_Data_Layer< double >::restoreData(in, [] (istream& in) -> double { double t; in >> t; return t; });
+			XMLParserBase64Tool decoder;
+			int len;
+			XMLError* error = nullptr;
+			auto decoded = decoder.decode(node.getText(),&len,error);
+			
+			if (error){
+				throw MorpheusException(string("Unable to load Field data:\n")+XMLNode::getError(*error),node);
+			}
+			if ( len != l_size.x * l_size.y * l_size.z * sizeof(double)) {
+				throw MorpheusException(string("Unable to load Field data:\n")+"Wrong data size " + to_str(l_size.x * l_size.y * l_size.z * sizeof(double)) + " != " + to_str(len),node);
+			}
+			
+			double *decoded_data = (double*) decoded;
+			VINT pos;
+			int i=0;
+			for (pos.z=0; pos.z<l_size.z; pos.z++) {
+				for (pos.y=0; pos.y<l_size.y; pos.y++) {
+					for (pos.x=0; pos.x<l_size.x; pos.x++) {
+						data[get_data_index(pos)] = decoded_data[i++];
+					}
+				}
+			}
+			reset_boundaries();
+			init_by_restore = true;
 		}
 // 	}
 // 	catch (string s) {
@@ -1073,20 +1083,33 @@ double PDE_Layer::max_val() const {
 
 VectorField_Layer::VectorField_Layer(shared_ptr<const Lattice> lattice, double node_length) : Lattice_Data_Layer<VDOUBLE>(lattice,1,VDOUBLE(0,0,0),""), node_length(node_length)
 {
-	
+	symbol_name = "";
+	initial_expression = "";
+	init_by_restore = false;
 }
 
 void VectorField_Layer::loadFromXML(XMLNode node)
 {
+	Lattice_Data_Layer<VDOUBLE>::loadFromXML(node, [] (const string& input ) -> VDOUBLE {
+			stringstream s(input);
+			value_type v;
+			s >> v;
+			return v;
+		});
 	getXMLAttribute(node,"symbol",symbol_name);
 	getXMLAttribute(node,"name",name);
 	getXMLAttribute(node,"value", initial_expression);
+	
+	XMLNode xData = node.getChildNode("Data");
+	if ( ! xData.isEmpty()) {
+		restoreData(xData);
+	}
 }
 
 
 void VectorField_Layer::init(const Scope* scope) {
 	
-	if (!initial_expression.empty()) {
+	if (!initial_expression.empty() && !init_by_restore) {
 		ExpressionEvaluator<VDOUBLE> init_val(initial_expression);
 		init_val.init(scope);
 		FocusRange range(Granularity::Node, scope);
@@ -1095,3 +1118,84 @@ void VectorField_Layer::init(const Scope* scope) {
 		}
 	}
 }
+
+
+XMLNode VectorField_Layer::saveToXML() const
+{
+	XMLNode saved = Lattice_Data_Layer<VDOUBLE>::saveToXML();
+	while (saved.nChildNode("Data")) {
+		saved.getChildNode("Data").deleteNodeContent();
+	}
+	saved.addChild(storeData(""));
+	return saved;
+}
+
+
+XMLNode VectorField_Layer::storeData(string filename) const
+{
+	const bool to_file = ! filename.empty();
+	XMLNode xNode =  XMLNode::createXMLTopNode("Data");
+
+	if (to_file) {
+		ofstream out(filename.c_str(),ios_base::trunc);
+		out.setf(ios_base::scientific);
+		out.precision(3);
+		xNode.addAttribute("filename",filename.c_str());
+		xNode.addAttribute("encoding","ascii");
+		Lattice_Data_Layer< VDOUBLE >::storeData(out);
+		out.close();
+	}
+	else {
+		XMLParserBase64Tool encoder;
+		valarray<VDOUBLE> data = getData();
+// 		cout << "Field size " << getData().size() << " " << l_size.x <<  " " << data.size() ;
+		auto encoded_data = encoder.encode((unsigned char *)&(data[0]), data.size() * sizeof(VDOUBLE),true);
+		xNode.addText(encoded_data);
+		xNode.addAttribute("encoding","base64");
+		xNode.addAttribute("word-size",to_cstr(sizeof(VDOUBLE)));
+	}
+	
+	return xNode;
+}
+
+
+
+bool VectorField_Layer::restoreData(const XMLNode node)
+{
+	string filename;
+	if (getXMLAttribute(node, "filename",filename)) {
+		ifstream in(filename.c_str());
+		if (!in.is_open())
+			throw string("Unable to open file: ") + filename;
+		Lattice_Data_Layer< VDOUBLE >::restoreData(in, [] (istream& in) -> VDOUBLE { VDOUBLE t; in >> t; return t; });
+		in.close();
+		init_by_restore = true;
+	} else {
+		XMLParserBase64Tool decoder;
+		int len;
+		XMLError* error = nullptr;
+		auto decoded = decoder.decode(node.getText(),&len,error);
+		
+		if (error){
+			throw MorpheusException(string("Unable to load VectorField data:\n")+XMLNode::getError(*error),node);
+		}
+		if ( len != l_size.x * l_size.y * l_size.z * sizeof(VDOUBLE)) {
+			throw MorpheusException(string("Unable to load VectorField data:\n")+"Wrong data size " + to_str(l_size.x * l_size.y * l_size.z * sizeof(VDOUBLE)) + " != " + to_str(len),node);
+		}
+		
+		VDOUBLE *decoded_data = (VDOUBLE*) decoded;
+		VINT pos;
+		int i=0;
+		for (pos.z=0; pos.z<l_size.z; pos.z++) {
+			for (pos.y=0; pos.y<l_size.y; pos.y++) {
+				for (pos.x=0; pos.x<l_size.x; pos.x++) {
+					data[get_data_index(pos)] = decoded_data[i++];
+				}
+			}
+		}
+		reset_boundaries();
+		init_by_restore = true;
+	}
+	return true;
+}
+

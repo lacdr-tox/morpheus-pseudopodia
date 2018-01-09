@@ -131,7 +131,8 @@ void Lattice_Data_Layer<T>::loadFromXML(const XMLNode xNode, T (* converter)(con
 	if (using_domain)
 		setDomain();
 	reset_boundaries();
-
+	
+	stored_node = xNode;
 }
 
 //save lattice to XML-file
@@ -170,23 +171,7 @@ template <class T> void Lattice_Data_Layer<T>::setDomain()
 //save lattice to XML-file
 template <class T> XMLNode Lattice_Data_Layer<T>::saveToXML() const
 {
-	XMLNode xNode = XMLNode::createXMLTopNode("DataLayer");
-	xNode.addAttribute("name",name.c_str());
-// 	xNode.addChild("DefaultValue").addText(to_cstr(default_value));
-	
-		
-	if (has_reduction) {
-		xNode.addChild("Reduction").addText(Boundary::code_to_name(reduction).c_str());
-	}
-	
-// 	if ( ! boundary_nodes.empty() ) {
-// 		XMLNode xBoundaryConditions = xNode.addChild("BoundaryConditions");
-// 		for (uint i=0; i< boundary_nodes.size(); i++) {
-// 			xBoundaryConditions.addChild(boundary_nodes[i]);
-// 		}			
-// 	}
-	
-	return xNode;
+	return stored_node;
 }
 
 template <class T>

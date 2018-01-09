@@ -28,12 +28,12 @@ bool operator <( const QSharedPointer<T> a, const QSharedPointer<T> b) {
 // typedef AbstractAttribute* qspAttribute;
 typedef QMap< AbstractAttribute*, AbstractAttribute* > AttributeMap;
 
-enum ModelEditType {AttribAdd, AttribRemove, AttribRename, AttribChange,  NodeAdd, NodeRemove, NodeRename, NodeMove, TextChange};
 struct MorphModelEdit {
-    QString info;
-    QString name, value;
-    ModelEditType edit_type;
-    QDomNode xml_parent;
+	enum ModelEditType {AttribAdd, AttribRemove, AttribRename, AttribChange,  NodeAdd, NodeRemove, NodeRename, NodeMove, TextChange};
+	QString info;
+	QString name, value;
+	ModelEditType edit_type;
+	QDomNode xml_parent;
 };
 
 struct ModelDescriptor {
@@ -70,16 +70,16 @@ class AbstractAttribute : public QObject
 Q_OBJECT
 
 protected:
-    QString name; /*!< Name of the xml-attribut.*/
-    QString value; /*!< Value of the attribut.*/
-    QString orig_value; /*!< Value of the xml-attribut, as it was initialized.*/
-    QString default_value; /*!< Value of the attribut.*/
+    QString name; /*!< Name of the attribute.*/
+    QString value; /*!< Value of the attribute.*/
+    QString orig_value; /*!< Value of the attribute, as it was initialized.*/
+    QString default_value; /*!< Value of the attribute.*/
     bool is_required; /*!< If variable is true then this attribute is required and have to be set.*/
     QSharedPointer< XSD::SimpleTypeInfo> type; /*!< Type of the attribute.*/
-    QString docu; /*!< Documentation of the attribut, written in the xml-schema. */
-    QDomNode parentNode; /*!< Xml-node, which contains the attribut. */
+    QString docu; /*!< Documentation of the attribute, written in the xml-schema. */
+    QDomNode parentNode; /*!< xml-node that contains the attribute. */
     QDomText textNode;
-    bool is_active; /*!< If variable is true, the attribut is active and set in xml-file otherwise it is inactive and can be set. */
+    bool is_active; /*!<  is false for disabled optional attributes. */
     bool is_disabled;
     bool orig_active; /*!< Indicates whether the attribut was set in xml-file originally. */
     bool is_changed;
@@ -87,11 +87,11 @@ protected:
     QSharedPointer<ModelDescriptor> model_descr;
 
 public:
-    AbstractAttribute( QObject* parent, QDomNode xsdDescrNode, QDomNode xmlParentNode, QSharedPointer<ModelDescriptor> m_descr);
-    /*!<
-      To create a new attribut use a constructor of the inheriting child-classes!
-      \param xsdDescrNode xml-schema-node, which describes the structure and content of the attribut
-      \param xmlParentNode xml-node, which contains the attribut
+	AbstractAttribute(QObject* parent, QDomNode xsdAttrNode, QDomNode xmlParentNode, QSharedPointer<ModelDescriptor> m_descr);
+	/*!< Constructor for creating an attribute controller defined in @p xsdAttrNode and attached to XML node @p xmlParentNode */
+	AbstractAttribute( QObject* parent, QSharedPointer<XSD::SimpleTypeInfo> type, QString default_val, QDomNode xmlParentNode, QSharedPointer<ModelDescriptor> m_descr);
+	/*!<
+	 * Constructor for creating an attribute controller for the text node of @p xmlParentNode, defined by @p type
       */
     ~AbstractAttribute();
 

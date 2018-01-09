@@ -94,7 +94,7 @@ public:
 	XMLNode saveToXML() const;
 	
 	bool restoreData(const XMLNode xnode);
-	XMLNode storeData(string fn="") const;
+	XMLNode storeData(string filename="") const;
 
 	void init(const Scope* scope, const SymbolFocus& focus = SymbolFocus::global);
 
@@ -146,6 +146,7 @@ public:
 private:
 	string symbol_name;
 	string initial_expression;
+	bool init_by_restore;
 	bool store_data;
 	bool wellmixed;
 // 	PDE_Layer(const PDE_Layer& a);
@@ -197,7 +198,13 @@ class VectorField_Layer : public Lattice_Data_Layer<VDOUBLE> {
 public: 
 	VectorField_Layer(shared_ptr< const Lattice > lattice, double node_length);
 	void loadFromXML(XMLNode node);
+	XMLNode saveToXML() const;
+	
+	bool restoreData(const XMLNode xnode);
+	XMLNode storeData(string filename="") const;
+	
 	void init(const Scope* scope);
+	
 	string getSymbol() const { return symbol_name; }
 	string getName() const { return name; }
 
@@ -205,6 +212,7 @@ private:
 	string symbol_name;
 	double node_length;
 	string initial_expression;
+	bool init_by_restore;
 };
 
 #endif

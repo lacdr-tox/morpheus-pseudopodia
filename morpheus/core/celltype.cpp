@@ -256,12 +256,12 @@ void CellType::init() {
 		
 		// Create all yet undefined cells at random positions
 		if (cell_ids.size() < cp.pop_size) {
-			cout << "CellType \'" << name << "\': " << cp.pop_size - cell_ids.size() << " uninitialized cells. Creating them at random positions." << endl ;
-			for (int i=cell_ids.size(); i < cp.pop_size; i++) {
-				//cout << " - Creating cell "<< i <<" at random position" << endl ;
-				auto new_cell = createRandomCell();
-				cp.cells.push_back(new_cell);
-			}
+			cout << "CellType \'" << name << "\': " << cp.pop_size - cell_ids.size() << " uninitialized cells." << endl ;
+// 			for (int i=cell_ids.size(); i < cp.pop_size; i++) {
+// 				//cout << " - Creating cell "<< i <<" at random position" << endl ;
+// 				auto new_cell = createRandomCell();
+// 				cp.cells.push_back(new_cell);
+// 			}
 		}
 	}
 	
