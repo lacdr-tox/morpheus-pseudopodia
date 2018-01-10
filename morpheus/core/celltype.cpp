@@ -194,8 +194,8 @@ void CellType::init() {
 				cell_id =  createCell();
 			
 			storage.cell(cell_id).loadNodesFromXML(xCellNode);
-			if( storage.cell(cell_id).getNodes().size() == 0){
-				cout << "Created empty cell, removing it again" << endl;
+			if ( CPM::isEnabled() && storage.cell(cell_id).getNodes().size() == 0){
+				cout << "!!Warning!! Created empty cell,i.e. without occupied node, in spatial simualtion  removing it again" << endl;
 				removeCell( cell_id );
 			}
 			else {
@@ -214,12 +214,18 @@ void CellType::init() {
 		
 		// Create all yet undefined cells at random positions
 		if (cell_ids.size() < cp.pop_size) {
-			cout << "CellType \'" << name << "\': " << cp.pop_size - cell_ids.size() << " uninitialized cells." << endl ;
+			if (!CPM::isEnabled()) {
+				auto new_cell = createCell();
+				cp.cells.push_back(new_cell);
+			}
+			else {
+				cout << "!!Warning!! CellType \'" << name << "\': " << cp.pop_size - cell_ids.size() << " uninitialized cells." << endl ;
 // 			for (int i=cell_ids.size(); i < cp.pop_size; i++) {
 // 				//cout << " - Creating cell "<< i <<" at random position" << endl ;
 // 				auto new_cell = createRandomCell();
 // 				cp.cells.push_back(new_cell);
 // 			}
+			}
 		}
 	}
 	
