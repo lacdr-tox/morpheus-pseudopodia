@@ -110,7 +110,9 @@ void CellType::loadFromXML(const XMLNode xCTNode, Scope* scope) {
 	}
 	
 	local_scope = scope->createSubScope(string("CellType[")+name + "]",this);
-	local_scope->registerSymbol(  SymbolAccessorBase<double>::createConstant("cell.type", "CellType ID", id) );
+	auto cell_type_symbol =       SymbolAccessorBase<double>::createConstant("cell.type", "CellType ID", id);
+	cell_type_symbol->flags().integer = true;
+	local_scope->registerSymbol(  cell_type_symbol );
 	local_scope->registerSymbol(                   make_shared<CellIDSymbol>("cell.id") );
 	local_scope->registerSymbol(               make_shared<CellCenterSymbol>("cell.center") );
 	if (!isMedium()) {

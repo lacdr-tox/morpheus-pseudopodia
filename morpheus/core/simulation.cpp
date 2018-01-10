@@ -16,44 +16,18 @@ typedef std::normal_distribution<double> RNG_GaussDist;
 typedef std::gamma_distribution<double> RNG_GammaDist;
 
 bool getRandomBool() {
-// #ifdef USING_CXX0X_TR1
-// 	static uniform_int_distribution<> rnd(0,1);
-// #else
-// 	static uniform_int<> rnd(0,1);
-// #endif
-	
-// 	return rnd(random_engines[ omp_get_thread_num() ] )!=0;
 	return random_engines[ omp_get_thread_num() ]()<random_engines[ omp_get_thread_num() ].max()/2;
 }
 
 double getRandom01() {
-
-// #if defined USING_CXX0X_TR1
 	static uniform_real_distribution <double> rnd(0.0,1.0);
-// #else
-// 	static uniform_real<double> rnd(0.0,1.0);
-// #endif	
-// #if defined USING_STD_TR1
-// 	return rnd(random_engines[omp_get_thread_num()])/(random_engines[omp_get_thread_num()].max() - random_engines[omp_get_thread_num()].min());
-// #else
 	return rnd(random_engines[omp_get_thread_num()]);
-// #endif
 }
 
 // random gaussian distribution of stddev s
 double getRandomGauss(double s) {
-
-    RNG_GaussDist rnd( 0.0, s);
-
-//     {
-// #if defined USING_STD_TR1
-//         return rnd(random_engines_alt[omp_get_thread_num()] )/(random_engines_alt[omp_get_thread_num()].max() - random_engines_alt[omp_get_thread_num()].min());
-// #else
-        return rnd(random_engines_alt[omp_get_thread_num()]);
-// #endif
-//     }
-    //      assert(random_engine);
-//      return  gsl_ran_gaussian_ziggurat(random_engine, s);
+	RNG_GaussDist rnd( 0.0, s);
+	return rnd(random_engines_alt[omp_get_thread_num()]);
 }
 
 double getRandomGamma(double shape, double scale) {
@@ -64,13 +38,7 @@ double getRandomGamma(double shape, double scale) {
 }
 
 uint getRandomUint(uint max_val) {
-
-// #ifdef USING_CXX0X_TR1
 	uniform_int_distribution<uint> rnd(0,max_val);
-// 	cout << max_val;
-// #else
-// 	uniform_int<> rnd(0,max_val);
-// #endif
     return rnd(random_engines[omp_get_thread_num()]);
 }
 
@@ -121,16 +89,9 @@ map<string, weak_ptr<const CellType> > getCellTypesMap() {
 	return m;
 }
 
-
-
 double getMCSDuration() {
 	return time_per_mcs();
 };
-
-// double getTemperature() {
-// 	return metropolis_temperature;
-// };
-
 
 ostream& operator <<(ostream& os, const CPM::STATE& n) {
 	os << n.cell_id << " ["<< n.pos << "]";
