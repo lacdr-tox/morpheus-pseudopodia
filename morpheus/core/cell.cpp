@@ -188,7 +188,7 @@ void Cell::applyUpdate(const CPM::Update& update)
 		if (update.opAdd()) {
 			nodes.insert( update.focusStateAfter().pos );
 			node_sum += update.focusStateAfter().pos;
-			centerL = node_sum / nodes.size();
+			centerL = VDOUBLE(node_sum) / nodes.size();
 			center = SIM::lattice().to_orth(centerL);
 		}
 		if (update.opRemove()) {
@@ -200,7 +200,7 @@ void Cell::applyUpdate(const CPM::Update& update)
 				exit(-1);
 			}
 			node_sum -= update.focusStateBefore().pos;
-			centerL = node_sum / nodes.size();
+			centerL = VDOUBLE(node_sum) / nodes.size();
 			center = SIM::lattice().to_orth(centerL);
 		}
 		if (track_shape) shape_tracker.applyUpdate(update);

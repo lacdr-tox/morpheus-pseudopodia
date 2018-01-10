@@ -339,8 +339,10 @@ vector<Symbol> DependencyGraph::parse_symbol(Symbol symbol) {
 		return {};
 	if (!symbol->scope())
 		return {};
-	if (symbol->scope()->ct_component && symbol->scope()->ct_component->isMedium() && (symbol->name() == SymbolBase::CellPosition_symbol || symbol->name() == SymbolBase::CellID_symbol)) {
-		return {};
+	if (symbol->scope()->ct_component && symbol->scope()->ct_component->isMedium()) {
+		if (symbol->name() == SymbolBase::CellPosition_symbol || symbol->name() == SymbolBase::CellID_symbol ||  symbol->name() == SymbolBase::CellType_symbol) {
+			return {};
+		}
 	}
 	
 	if (regex_match(symbol->name(), skip_symbols_regex)) {
