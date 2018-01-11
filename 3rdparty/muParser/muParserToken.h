@@ -70,6 +70,7 @@ namespace mu
       TString m_strVal;   ///< Value for string variables
       value_type m_fVal;  ///< the value 
       std::unique_ptr<ParserCallback> m_pCallback;
+	  std::map<int,std::unique_ptr<ParserCallback> > m_Arg_pCallback;
 
   public:
 
@@ -87,6 +88,7 @@ namespace mu
         ,m_iIdx(-1)
         ,m_strTok()
         ,m_pCallback()
+		,m_Arg_pCallback()
       {}
 
       //------------------------------------------------------------------------------
@@ -131,6 +133,11 @@ namespace mu
         m_fVal = a_Tok.m_fVal;
         // create new callback object if a_Tok has one 
         m_pCallback.reset(a_Tok.m_pCallback.get() ? a_Tok.m_pCallback->Clone() : 0);
+		m_Arg_pCallback.clear();
+		for (const auto& cb : a_Tok.m_Arg_pCallback ) {
+			assert(cb.second);
+			m_Arg_pCallback[cb.first] = std::unique_ptr<ParserCallback>(cb.second->Clone());
+		}
       }
 
       //------------------------------------------------------------------------------
@@ -170,6 +177,7 @@ namespace mu
         m_iType = tpVOID;
         m_strTok = a_sTok;
         m_pCallback.reset(new ParserCallback(a_pCallback));
+		m_Arg_pCallback[a_pCallback.GetArgc()] = std::unique_ptr<ParserCallback>(new ParserCallback(a_pCallback));
 
         m_pTok = 0;
         m_iIdx = -1;
@@ -330,9 +338,13 @@ namespace mu
                  </ul>
           \sa ECmdCode
       */
-      generic_fun_type GetFuncAddr() const
+      generic_fun_type GetFuncAddr(int argc = -1) const
       {
-        return (m_pCallback.get()) ? (generic_fun_type)m_pCallback->GetAddr() : 0;
+		if (argc == -1)
+			return (m_pCallback.get()) ? (generic_fun_type)m_pCallback->GetAddr() : 0;
+		
+		auto it = m_Arg_pCallback.find(argc);
+		return (it == m_Arg_pCallback.end()) ? 0 : (generic_fun_type) it->second->GetAddr();
       }
 
       //------------------------------------------------------------------------------
@@ -370,14 +382,20 @@ namespace mu
 
         Valid only if m_iType==CmdFUNC.
       */
-      int GetArgCount() const
+      int GetArgCount(int expect = -1) const
       {
         assert(m_pCallback.get());
 
         if (!m_pCallback->GetAddr())
-	        throw ParserError(ecINTERNAL_ERROR);
-
-        return m_pCallback->GetArgc();
+            throw ParserError(ecINTERNAL_ERROR);
+        if (expect == -1)
+            return m_pCallback->GetArgc();
+        // Try to find an overload with the number of arguments expected
+        auto cb = m_Arg_pCallback.find(expect);
+        if (cb == m_Arg_pCallback.end())
+            return  m_pCallback->GetArgc();
+        else
+            return cb->second->GetArgc();
       }
 
       //------------------------------------------------------------------------------
