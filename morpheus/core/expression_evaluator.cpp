@@ -146,6 +146,14 @@ double getOR(double left, double right) {
 	return left || right;
 }
 
+double piecewise_3_function(double v0, double c0, double velse) {
+	return c0 ? v0 : velse;
+}
+
+double piecewise_5_function(double v0, double c0, double v1, double c1,double velse) {
+	return c0 ? v0 : (c1 ? v1 :velse);
+}
+
 unique_ptr< mu::Parser > createMuParserInstance()
 {
 	unique_ptr<mu::Parser> parser(new mu::Parser());
@@ -160,8 +168,12 @@ unique_ptr< mu::Parser > createMuParserInstance()
 	parser->DefineFun( sym_Modulo, 		&getModulo, true);
 	parser->DefineFun( "pow",			&getPow, true);
 	parser->DefineFun( "if",			&getIf, true);
-	parser->DefineOprt("and",			&getAND, 1);
-	parser->DefineOprt("or",			&getOR, 2);
+	parser->DefineOprt("and",			&getAND, 1, mu::oaLEFT, true);
+	parser->DefineOprt("or",			&getOR, 2, mu::oaLEFT, true);
+	// SBML Import compatibility (from MathML <piecewise> construct)
+	parser->DefineFun("piecewise", &piecewise_3_function, true);
+	parser->DefineFun("piecewise", &piecewise_5_function, true);
 	
 	return parser;
+	
 }

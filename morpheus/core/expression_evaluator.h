@@ -239,9 +239,7 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 		}
 		catch(mu::Parser::exception_type &e){
 			string scopename = ( scope->getName() );
-			throw  (string("Error in expression \"")+ e.GetExpr() +("\" in ")+ scopename + ("."));
-			//cerr << "Error in Expression: " << e.GetMsg() << ":\n\n" << e.GetExpr() << endl;   
-
+			throw  (string("Error \'") + e.GetMsg() + "\' in expression \""+ e.GetExpr() +("\" in ")+ scopename + ("."));
 		}
 		
 		parser->ClearVar();
@@ -281,8 +279,8 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 			parser->SetExpr(clean_expression);
 		}
 		catch (mu::Parser::exception_type &e){
-			cerr << "Error in Expression: " << e.GetMsg() << ":\n\n" << e.GetExpr() << endl;
-			exit(-1);
+			string scopename = ( scope->getName() );
+			throw  (string("Error \'") + e.GetMsg() + "\' in expression \""+ e.GetExpr() +("\" in ")+ scopename + ("."));
 		}
 		mu::varmap_type used_symbols;
 		used_symbols = parser->GetUsedVar();
