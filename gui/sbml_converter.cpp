@@ -194,7 +194,7 @@ void SBMLImporter::readSBML(QString sbml_file)
 
 	Model* sbml_model = sbml_doc->getModel();
 
-	if (sbml_model->getNumCompartments() != 1 ) {
+	if (sbml_model->getNumCompartments() > 1 ) {
 		std::string message = "Defined compartments: ";
 		message.append(sbml_model->getCompartment(0)->getId());
 		for (uint i=1; i<sbml_model->getNumCompartments();i++) {
@@ -274,9 +274,15 @@ void SBMLImporter::readSBML(QString sbml_file)
 
 	std::string details = sbml_doc->getNotesString();
 	description->firstActiveChild("Details")->setText(s2q(details));
-
-	compartment_symbol = s2q(sbml_model->getCompartment(0)->getId());
-	compartment_size   = sbml_model->getCompartment(0)->getSize();
+	
+	if (sbml_model->getNumCompartments()) {
+		compartment_symbol = s2q(sbml_model->getCompartment(0)->getId());
+		compartment_size   = sbml_model->getCompartment(0)->getSize();
+	}
+	else {
+		compartment_symbol = "";
+		compartment_size = 1;
+	}
 
 	readSBMLFunctions(sbml_model);
 
@@ -358,7 +364,7 @@ void SBMLImporter::readSBML(QString sbml_file)
 
 void SBMLImporter::addSBMLSpecies(nodeController* celltype, Model* sbml_model)
 {
-	double compartment_size = sbml_model->getCompartment(0)->getSize();
+// 	double compartment_size = sbml_model->getCompartment(0)->getSize();
 	QStringList all_species;
 	for (uint spec=0; spec<sbml_model->getNumSpecies(); spec++) {
 		Species* species = sbml_model->getSpecies(spec);
@@ -441,7 +447,8 @@ void SBMLImporter::readSBMLFunctions(Model* sbml_model)
 
 void SBMLImporter::sanitizeAST(ASTNode* math)
 {
-	ASTTool::replaceSymbolByValue(math, compartment_symbol.toStdString(), compartment_size);
+	if (!compartment_symbol.isEmpty())
+		ASTTool::replaceSymbolByValue(math, compartment_symbol.toStdString(), compartment_size);
 
 	QMap<QString, FunctionDefinition* >::const_iterator it;
 	for (it=functions.begin() ; it!=functions.end(); it++) {
