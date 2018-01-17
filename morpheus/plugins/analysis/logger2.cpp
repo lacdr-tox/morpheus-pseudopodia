@@ -340,7 +340,7 @@ void LoggerTextWriter::init() {
 	else 
 		file_basename = filename();
 	
-	file_extension = ".txt";
+	file_extension = ".csv";
 	
 	file_write_count = 0;
 	
@@ -789,7 +789,9 @@ void LoggerTextWriter::writeMatrixColHeader(FocusRange range, ofstream& fs)
 			x_min = x_value;
 		if( x_value > x_max )
 			x_max = x_value;
-		fs << x_value << sep;
+		
+		if (colnum>1) fs << sep;
+		fs << x_value;
 		colnum++;
 		if( colnum > numcolumns )
 			break;
@@ -1222,9 +1224,7 @@ void LoggerLinePlot::plot()
 	}
 
 	// Separator
-	if( writer->getSeparator() != "\t" ){
-		ss << "set datafile separator \""<< writer->getSeparator() <<"\";\n";
-	}
+	ss << "set datafile separator \""<< writer->getSeparator() <<"\";\n";
 	
 	if( grid() ){
 		ss << "set grid;\n";
@@ -1242,7 +1242,7 @@ void LoggerLinePlot::plot()
 	}
 	else{
 		string xlabel = axes.x.label;
-        string ylabel = axes.y.label;
+		string ylabel = axes.y.label;
 		string cblabel = axes.cb.label;
 		ss << "set xlabel "<< xlabel <<";\n" ;
 		ss << "set ylabel "<< ylabel <<";\n" ;
@@ -1581,10 +1581,8 @@ void LoggerMatrixPlot::plot()
 	if (terminal() != Terminal::SCREEN)
 		ss << "set output '" << plotfilename << "';\n";
 
-    // Separator
-    if( writer->getSeparator() != "\t" ){
-        ss << "set datafile separator \""<< writer->getSeparator() <<"\";\n";
-    }
+	// Separator
+	ss << "set datafile separator \""<< writer->getSeparator() <<"\";\n";
 
 ////////////////////////////////////////////////////////////////////////////////////
 
