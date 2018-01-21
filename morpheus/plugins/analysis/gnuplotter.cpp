@@ -627,7 +627,11 @@ vector<CellPainter::CellBoundarySpec> CellPainter::getCellBoundaries() {
 		if (ct->isMedium())
 			continue;
 		vector<CPM::CELL_ID> cells = ct->getCellIDs();
+#ifdef HAVE_SUPERCELLS
 		bool is_super_cell = ( dynamic_pointer_cast<const SuperCT>(ct) != nullptr );
+#else
+		bool is_super_cell = false;
+#endif
 		for (uint c=0; c< cells.size(); c++) {
 			const Cell& cell = CPM::getCell(cells[c]);
 			if (! cell.nNodes()) continue;

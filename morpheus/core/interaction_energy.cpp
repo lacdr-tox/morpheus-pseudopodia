@@ -193,6 +193,7 @@ double InteractionEnergy::delta(const CPM::Update& update) const {
 		const vector<StatisticalLatticeStencil::STATS>& nei_cells = update.boundaryStencil()->getStatistics();
 		int focus_offset = layer->get_data_index(update.focus().pos());
 		
+#ifdef HAVE_SUPERCELLS
 		if (interaction_details & IA_SUPERCELLS) {
 			if (interaction_details & IA_PLUGINS) {
 				CPM::STATE neighbor_state;
@@ -252,6 +253,7 @@ double InteractionEnergy::delta(const CPM::Update& update) const {
 			}
 		}
 		else {
+#endif // HAVE_SUPERCELLS
 			if (interaction_details & IA_PLUGINS) {
 				CPM::STATE neighbor_state;
 				neighbor_state.pos = update.focus().pos();
@@ -298,7 +300,9 @@ double InteractionEnergy::delta(const CPM::Update& update) const {
 					}
 				}
 			}
+#ifdef HAVE_SUPERCELLS
 		}
+#endif
 	} else {
 		// no collapsed neigbors ...
 		int focus_offset = layer->get_data_index(update.focus().pos());
@@ -307,6 +311,7 @@ double InteractionEnergy::delta(const CPM::Update& update) const {
 			__builtin_prefetch(&layer->data[ focus_offset + ia_neighborhood_row_offsets[k]],0,1);
 		}
 #endif
+#ifdef HAVE_SUPERCELLS
 		if (interaction_details & IA_SUPERCELLS) {
 			if (interaction_details & IA_PLUGINS) {
 				for (uint i=0; i<ia_neighborhood_offsets.size(); i++) {
@@ -353,6 +358,7 @@ double InteractionEnergy::delta(const CPM::Update& update) const {
 			}
 		}
 		else {
+#endif // HAVE_SUPERCELLS
 			// no supercells
 			
 			if (interaction_details & IA_PLUGINS) {
@@ -394,7 +400,9 @@ double InteractionEnergy::delta(const CPM::Update& update) const {
 					}
 				}
 			}
+#ifdef HAVE_SUPERCELLS
 		}
+#endif
 	}
 
 	if (negate_interactions) 

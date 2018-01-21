@@ -38,8 +38,8 @@ SET(morpheus_src
 	membrane_property.cpp
 	membranemapper.cpp
 	data_mapper.cpp
-	super_cell.cpp
-	super_celltype.cpp
+# 	super_cell.cpp
+# 	super_celltype.cpp
 )
 
 # Also link all the plugins from the plugin folder

@@ -329,11 +329,13 @@ void loadCellTypes(XMLNode xCellTypesNode) {
 		}
 	}
 	
+#ifdef HAVE_SUPERCELLS
 	for (uint i=0; i<celltypes.size(); i++) {
 		celltypes[i]->loadPlugins();
 		if (dynamic_pointer_cast<SuperCT>(celltypes[i]) )
 			dynamic_pointer_cast<SuperCT>(celltypes[i])->bindSubCelltype();
 	}
+#endif
 	
 	if (!celltype_names.empty()) {
 		cout << "CellTypes defined: ";
@@ -382,11 +384,13 @@ void loadCellPopulations()
 		if (ct == celltype_names.end()) {
 			throw MorpheusException(string("Unable to create cell populations for celltype \"")+type+"\"", xCellPop);
 		}
-		
+
+#ifdef HAVE_SUPERCELLS
 		if (dynamic_pointer_cast< SuperCT >(celltypes[ct->second]) ) {
 			defered_poulations.push_back(population);
 			continue;
 		}
+#endif
 
 		celltypes[ct->second] -> loadPopulationFromXML(population);
 	}
