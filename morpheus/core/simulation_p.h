@@ -60,6 +60,8 @@ namespace CPM {
 	
 	STATE InitialState,EmptyState; // get overridden during load process;
 	uint EmptyCellType;
+	
+	
 	Time_Scale time_per_mcs("MCSDuration",1);
 	UpdateData global_update_data;
 	
@@ -84,6 +86,28 @@ namespace CPM {
 	XMLNode saveCellTypes() { return xCellTypes; }
 	XMLNode saveCellPopulations();
 	void createLayer();
+
+	class BoundaryReader : public CPM::LAYER::ValueReader {
+		public:
+			void set(string input) override {
+					state.pos = VINT(0,0,0);
+					auto ct = celltype_names.find(input);
+					if ( ct== celltype_names.end()) {
+						throw MorpheusException(string("Unknown celltype '") + input + "' at the boundary", xCellPop);
+					}
+					if ( ! dynamic_pointer_cast<MediumCellType>( celltypes[ct->second] ) ) {
+						throw MorpheusException(string("Unable to set celltype '")+input+"' at the boundary. " +
+								+ "Medium-like celltype required! ", xCellPop);
+					}
+					state.cell_id = celltypes[ct->second]->createCell();
+				}
+				bool isSpaceConst() const override { return false; }
+				bool isTimeConst() const override { return true; }
+				CPM::STATE get(const VINT& pos) const override { CPM::STATE s(state); s.pos=pos; return s; }
+				shared_ptr<CPM::LAYER::ValueReader> clone() const override { return make_shared<BoundaryReader>(*this); }
+			private:
+				CPM::STATE state;
+	};
 }
 
 
@@ -91,7 +115,9 @@ namespace SIM {
 	
 	class TimeSymbol : public SymbolAccessorBase<double> {
 	public:
-		TimeSymbol(string symbol) : SymbolAccessorBase<double>(symbol) {}
+		TimeSymbol(string symbol) : SymbolAccessorBase<double>(symbol) {
+			flags().space_const = true;
+		}
 		double get(const SymbolFocus&) const override {
 			return TimeScheduler::getTime();
 		}
@@ -103,6 +129,7 @@ namespace SIM {
 	public:
 		SpaceSymbol(string symbol) : SymbolAccessorBase<VDOUBLE>(symbol) {
 			flags().granularity = Granularity::Node;
+			flags().time_const = true;
 		}
 		VDOUBLE get(const SymbolFocus& f) const override {
 			return f.pos();

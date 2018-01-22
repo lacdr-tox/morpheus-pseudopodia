@@ -36,14 +36,11 @@ public:
 	void setSymbolFactory(mu::facfun_type factory, void* internal);
 	void init(const Scope* scope);
 	
-	///  Expression is constant in time, not necessarily in space ...
-	bool isConst() const;
-	bool isInteger() const;
+	const SymbolBase::Flags& flags() const { return expr_flags; };
+	Granularity getGranularity() const { return flags().granularity; }
 
 	const string& getDescription() const;
-	Granularity getGranularity() const;
 	string getExpression() const { return expression; }
-	
 	
 	typename TypeInfo<T>::SReturn get(const SymbolFocus& focus, bool safe=false) const;
 	typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& focus) const { return get(focus, true);}
@@ -64,6 +61,7 @@ private:
 	bool expand_scalar_expr;
 	const Scope *scope;
 	unique_ptr<mu::Parser> parser;
+	SymbolBase::Flags expr_flags;
 	vector< SymbolAccessor<double> > symbols;
 	vector< SymbolAccessor<VDOUBLE> > v_symbols;
 	mutable vector<double> symbol_values;
@@ -99,11 +97,11 @@ class ThreadedExpressionEvaluator {
 public:
 	ThreadedExpressionEvaluator(string expression, bool partial_spec = false) { evaluators.push_back( unique_ptr<ExpressionEvaluator<T> >(new ExpressionEvaluator<T>(expression,partial_spec)) );};
 	void init(const Scope* scope) { for (auto& evaluator : evaluators) evaluator->init(scope); }
-	bool isConst() const { return evaluators[0]->isConst(); };
 	const string& getDescription() const { return evaluators[0]->getDescription(); };
+	const SymbolBase::Flags& flags() const { return evaluators[0]->flags(); }
 	Granularity getGranularity() const { return evaluators[0]->getGranularity(); };
 	string getExpression() const { return evaluators[0]->getExpression(); };
-	bool isInteger() const { return evaluators[0]->isInteger(); };
+
 	typename TypeInfo<T>::SReturn get(const SymbolFocus& focus) const {
 		uint t = omp_get_thread_num();
 		if (evaluators.size()<=t || ! evaluators[t] ) {
@@ -303,14 +301,34 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 		}
 	}
 	
-	// Check for constness
-	expr_is_const = true;
+	// Initialize expression flags, i.e. for constness
+	expr_flags.space_const = true;
+	expr_flags.time_const = true;
+	expr_flags.stochastic = false;
+	expr_flags.integer = false;
+	expr_flags.delayed = false;
+	expr_flags.partially_defined = false;
+	expr_flags.writable = false;
+	expr_flags.granularity = Granularity::Global;
+	
 	for ( const auto& symb : symbols) {
-		expr_is_const = expr_is_const && symb->flags().time_const &&  symb->flags().space_const;
+		const auto& of = symb->flags();
+		expr_flags.space_const &= of.space_const;
+		expr_flags.time_const &= of.time_const;
+		expr_flags.stochastic |= of.stochastic;
+		expr_flags.partially_defined |= of.partially_defined;
+		expr_flags.granularity += of.granularity;
 	}
 	for ( const auto& symb : v_symbols) {
-		expr_is_const = expr_is_const && symb->flags().time_const &&  symb->flags().space_const;
+		const auto& of = symb->flags();
+		expr_flags.space_const &= of.space_const;
+		expr_flags.time_const &= of.time_const;
+		expr_flags.stochastic |= of.stochastic;
+		expr_flags.partially_defined |= of.partially_defined;
+		expr_flags.granularity += of.granularity;
 	}
+	expr_is_const = expr_flags.time_const && expr_flags.space_const;
+	
 	// random functions prevent an expression from beeing const
 	set<string> volatile_functions;
 	volatile_functions.insert(sym_RandomUni);
@@ -343,6 +361,7 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 	else {
 		if (symbols.size() == 1 && clean_expression == symbols[0]->name()){
 			expr_is_symbol = true;
+			expr_flags.integer = symbols[0]->flags().integer;
 // 			cout << "Expression " << this->getExpression() << " is a symbol" << endl;
 		}
 		else {
@@ -359,31 +378,6 @@ const string& ExpressionEvaluator<T>::getDescription() const
 		return symbols[0]->description();
 	else 
 		return expression;
-}
-
-template <class T>
-bool ExpressionEvaluator<T>::isConst() const
-{
-	return expr_is_const;
-}
-
-template <class T>
-bool ExpressionEvaluator<T>::isInteger() const
-{
-	if (expr_is_symbol)
-		return symbols.front()->flags().integer;
-	else
-		return false;
-}
-
-template <class T>
-Granularity ExpressionEvaluator<T>::getGranularity() const
-{
-	Granularity granularity = Granularity::Global;
-	for (auto&& sym : symbols) {
-		granularity+= sym->flags().granularity;
-	}
-	return granularity;
 }
 
 

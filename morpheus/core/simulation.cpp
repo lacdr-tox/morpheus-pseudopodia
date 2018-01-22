@@ -240,25 +240,7 @@ void loadFromXML(XMLNode xMorph) {
 		
 		// Setting up lattice boundaries
 		if (! xCellPop.isEmpty()) {
-			layer->loadFromXML( xCellPop,
-				[] (const string& input) -> CPM::STATE 
-				{
-					CPM::STATE n;
-					n.pos = VINT(0,0,0);
-					auto ct = celltype_names.find(input);
-					if ( ct== celltype_names.end()) {
-						throw MorpheusException(string("Unknown celltype '") + input + "' at the boundary", xCellPop);
-// 						n.cell_id = EmptyState.cell_id;
-					}
-					if ( ! dynamic_pointer_cast<MediumCellType>( celltypes[ct->second] ) ) {
-						throw MorpheusException(string("Unable to set celltype '")+input+"' at the boundary. " +
-								+ "Medium-like celltype required! ", xCellPop);
-// 						n.cell_id = EmptyState.cell_id;
-					}
-					n.cell_id = celltypes[ct->second]->createCell();
-
-				return n;
-				});
+			layer->loadFromXML( xCellPop, make_shared<BoundaryReader>());
 		}
 		
 		// Setting the initial state

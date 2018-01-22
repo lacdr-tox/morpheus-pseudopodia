@@ -255,7 +255,7 @@ public:
 			else
 				evaluator->init(scope);
 			
-			if (evaluator->isConst()) { 
+			if (evaluator->flags().space_const && evaluator->flags().time_const) { 
 				is_const =  true;
 				const_expr = evaluator->safe_get(SymbolFocus::global);
 			}

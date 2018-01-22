@@ -52,7 +52,7 @@ VectorField::VectorField() : Plugin() {
 void VectorField::loadFromXML(const XMLNode node, Scope * scope) {
 	Plugin::loadFromXML(node, scope);
 	auto field = make_shared<VectorField_Layer>(SIM::getLattice(), SIM::getNodeLength());
-	field->loadFromXML(node);
+	field->loadFromXML(node, scope);
 	accessor = make_shared<Symbol>(symbol_name(), getDescription(), field);
 	scope->registerSymbol(accessor);
 }
@@ -89,13 +89,7 @@ PDE_Layer::~PDE_Layer()
 
 void PDE_Layer::loadFromXML(const XMLNode xNode, Scope* scope)
 {
-	Lattice_Data_Layer<double>::loadFromXML(xNode,
-		[] (const string& input ) -> double {
-			stringstream s(input);
-			value_type v;
-			s >> v;
-			return v;
-		});
+	Lattice_Data_Layer<double>::loadFromXML(xNode, make_shared<ExpressionReader>(scope) );
 	max_time_step = -1;
 	local_scope = scope;
 	getXMLAttribute(xNode,"Diffusion/rate", diffusion_rate);
@@ -202,6 +196,8 @@ void PDE_Layer::init(const SymbolFocus& focus)
 			dynamic_pointer_cast<Field_Initializer>( plugins[i] )->run(this);
 		}
 	}
+	reset_boundaries();
+	write_buffer = data;
 	initialized = true;
 }
 
@@ -486,78 +482,26 @@ bool PDE_Layer::solve_adi_diffusion(double time_interval)
 // The boundaries have to be reset after computing the diffusion kernel
 // not used by the domain constraint code ...
 void PDE_Layer::set_fwd_euler_diffusion_boundaries() {
-		// set no-flux boundaries to the neighboring site values
-	switch ( boundary_types[Boundary::mx]) {
-		case Boundary::periodic:
-			data[s_xmb] = data[s_xp];
-			break;
-		case Boundary::noflux:
-			data[s_xmb] = data[s_xm];
-			break;
-		case Boundary::constant: 
-			data[s_xmb] = this->boundary_values[Boundary::mx];
-			break;
-	}
-	switch (boundary_types[Boundary::px]) {
-		case Boundary::periodic:
-			data[s_xpb] = data[s_xm];
-			break;
-		case Boundary::noflux:
+	// set no-flux boundaries to the neighboring site values
+	reset_boundaries();
+	
+	if (boundary_types[Boundary::mx] == Boundary::noflux)
+		data[s_xmb] = data[s_xm];
+	if (boundary_types[Boundary::px] == Boundary::noflux)
 			data[s_xpb] = data[s_xp];
-			break;
-		case Boundary::constant: 
-			data[s_xpb] = this->boundary_values[Boundary::px];
-			break;
-	}
 	
 	if (dimensions>=2) {
-		switch (boundary_types[Boundary::my]) {
-			case Boundary::periodic:
-				data[s_ymb] = data[s_yp];
-				break;
-			case Boundary::noflux:
-				data[s_ymb] = data[s_ym];
-				break;
-			case Boundary::constant:
-				data[s_ymb] = this->boundary_values[Boundary::my];
-				break;
-		}
-		switch (boundary_types[Boundary::py]) {
-			case Boundary::periodic:
-				data[s_ypb] = data[s_ym];
-				break;
-			case Boundary::noflux:
-				data[s_ypb] = data[s_yp];
-				break;
-			case Boundary::constant: 
-				data[s_ypb] = this->boundary_values[Boundary::py];
-				break;
-		}
+		if (boundary_types[Boundary::my] == Boundary::noflux)
+			data[s_ymb] = data[s_ym];
+		if (boundary_types[Boundary::py] == Boundary::noflux)
+			data[s_ypb] = data[s_yp];
 	}
 	
 	if (dimensions==3) {
-		switch (boundary_types[Boundary::mz]) {
-			case Boundary::periodic:
-				data[s_zmb] = data[s_zp];
-				break;
-			case Boundary::noflux:
-				data[s_zmb] = data[s_zm];
-				break;
-			case Boundary::constant: 
-				data[s_zmb] = this->boundary_values[Boundary::mz];
-				break;
-		}
-		switch (boundary_types[Boundary::pz]) {
-			case Boundary::periodic:
-				data[s_zpb] = data[s_zm];
-				break;
-			case Boundary::noflux:
-				data[s_zpb] = data[s_zp];
-				break;
-			case Boundary::constant: 
-				data[s_zpb] =  this->boundary_values[Boundary::pz];
-				break;
-		}
+		if (boundary_types[Boundary::mz] == Boundary::noflux) 
+			data[s_zmb] = data[s_zm];
+		if (boundary_types[Boundary::pz] == Boundary::noflux)
+			data[s_zpb] = data[s_zp];
 	}
 }
 
@@ -1112,14 +1056,9 @@ VectorField_Layer::VectorField_Layer(shared_ptr<const Lattice> lattice, double n
 	init_by_restore = false;
 }
 
-void VectorField_Layer::loadFromXML(XMLNode node)
+void VectorField_Layer::loadFromXML(XMLNode node, Scope* scope)
 {
-	Lattice_Data_Layer<VDOUBLE>::loadFromXML(node, [] (const string& input ) -> VDOUBLE {
-			stringstream s(input);
-			value_type v;
-			s >> v;
-			return v;
-		});
+	Lattice_Data_Layer<VDOUBLE>::loadFromXML(node, make_shared<ExpressionReader>(scope));
 	getXMLAttribute(node,"value", initial_expression);
 	
 	XMLNode xData = node.getChildNode("Data");

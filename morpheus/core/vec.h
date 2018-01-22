@@ -69,6 +69,7 @@ class _V {
 
 		const _V<T>& operator +=(const _V<T> &a);
 		const _V<T>& operator -=(const _V<T> &a);
+		_V<T> operator -() { return _V<T>(-x,-y,-z); }
 
 		// value properties
 		double abs() const;

@@ -90,6 +90,18 @@ public:
 	PDE_Layer(shared_ptr<const Lattice> l, double p_node_length, bool surface=false);
 	~PDE_Layer();
 
+	class ExpressionReader : public ValueReader {
+		public:
+			ExpressionReader(const Scope* scope) : scope(scope) {};
+			void set(string string_val) override { value = make_unique<ExpressionEvaluator<double> >(string_val); value->init(scope); };
+			bool isSpaceConst() const override { return value->flags().space_const; }
+			bool isTimeConst() const override { return value->flags().time_const; };
+			double get(const VINT& pos) const override { return value->get(SymbolFocus(pos)); }
+			shared_ptr<ValueReader> clone() const override { return make_shared<ExpressionReader>(scope); }
+		private:
+			unique_ptr<ExpressionEvaluator<double> > value;
+			const Scope* scope;
+	};
 
 	void loadFromXML(const XMLNode xnode, Scope* scope);
 	XMLNode saveToXML() const;
@@ -236,7 +248,7 @@ private:
 class VectorField_Layer : public Lattice_Data_Layer<VDOUBLE> {
 public: 
 	VectorField_Layer(shared_ptr< const Lattice > lattice, double node_length);
-	void loadFromXML(XMLNode node);
+	void loadFromXML(XMLNode node, Scope* scope);
 	XMLNode saveToXML() const;
 	
 	bool restoreData(const XMLNode xnode);
@@ -245,6 +257,20 @@ public:
 	void init(const Scope* scope);
 
 private:
+	
+	class ExpressionReader : public ValueReader {
+		public:
+			ExpressionReader(const Scope* scope) : scope(scope) {};
+			void set(string string_val) override { value = make_unique<ExpressionEvaluator<VDOUBLE> >(string_val); value->init(scope); };
+			bool isSpaceConst() const override { return value->flags().space_const; }
+			bool isTimeConst() const override { return value->flags().time_const; }
+			VDOUBLE get(const VINT& pos) const override { return value->get(SymbolFocus(pos)); }
+			shared_ptr<ValueReader> clone() const override { return make_shared<ExpressionReader>(scope); }
+		private:
+			unique_ptr<ExpressionEvaluator<VDOUBLE> > value;
+			const Scope* scope;
+	};
+	
 	double node_length;
 	string initial_expression;
 	bool init_by_restore;
