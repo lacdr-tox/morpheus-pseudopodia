@@ -46,8 +46,10 @@ void InteractionEnergy::loadFromXML( const XMLNode xNode, Scope* scope) {
 	for (uint ict=0; ict<celltypes.size(); ict++) {
 		auto ct = celltypes[ict].lock();
 		ct_names[ct->getName()]=ict;
-// 		if (dynamic_pointer_cast<const SuperCT>(ct) )
-// 			has_supercells = true;
+#ifdef HAVE_SUPERCELLS
+		if (dynamic_pointer_cast<const SuperCT>(ct) )
+			has_supercells = true;
+#endif
 	}
 	
 	n_celltypes=celltypes.size();

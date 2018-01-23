@@ -311,13 +311,13 @@ void loadCellTypes(XMLNode xCellTypesNode) {
 		}
 	}
 	
-#ifdef HAVE_SUPERCELLS
 	for (uint i=0; i<celltypes.size(); i++) {
 		celltypes[i]->loadPlugins();
+#ifdef HAVE_SUPERCELLS
 		if (dynamic_pointer_cast<SuperCT>(celltypes[i]) )
 			dynamic_pointer_cast<SuperCT>(celltypes[i])->bindSubCelltype();
-	}
 #endif
+	}
 	
 	if (!celltype_names.empty()) {
 		cout << "CellTypes defined: ";

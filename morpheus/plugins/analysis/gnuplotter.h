@@ -238,7 +238,7 @@ class CellPainter  {
 		int z_level; // denotes the z level to slice a 3d simulation
 		float min_val, max_val;
 		static const float transparency_value;
-		static bool same_cell ( const CPM::STATE& a, const CPM::STATE& b) { return a==b; };
+		static bool same_cell ( const CPM::STATE& a, const CPM::STATE& b) { return a.cell_id==b.cell_id; };
 		static bool same_super_cell (const CPM::STATE& a, const CPM::STATE& b) { return (true); };
 		
 		bool flooding;
