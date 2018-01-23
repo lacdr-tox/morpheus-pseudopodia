@@ -169,6 +169,7 @@ protected:
 	vector< shared_ptr<VectorEquation> > vec_equations;
 	vector< shared_ptr<SystemFunc> > functionals, equations, functions;
 	vector< SymbolAccessor<double> > external_symbols;
+	uint external_symbols_time__pos;
 	map<string, int> cache_layout;
 	vector< shared_ptr<SystemSolver> > solvers;
 	

@@ -113,31 +113,6 @@ namespace CPM {
 
 namespace SIM {
 	
-	class TimeSymbol : public SymbolAccessorBase<double> {
-	public:
-		TimeSymbol(string symbol) : SymbolAccessorBase<double>(symbol) {
-			flags().space_const = true;
-		}
-		double get(const SymbolFocus&) const override {
-			return TimeScheduler::getTime();
-		}
-		const string& description() const override { static const string descr = "Time" ; return descr; }
-		string linkType() const override { return "TimeLink"; }
-	};
-	
-	class SpaceSymbol : public SymbolAccessorBase<VDOUBLE> {
-	public:
-		SpaceSymbol(string symbol) : SymbolAccessorBase<VDOUBLE>(symbol) {
-			flags().granularity = Granularity::Node;
-			flags().time_const = true;
-		}
-		VDOUBLE get(const SymbolFocus& f) const override {
-			return f.pos();
-		}
-		const string&  description() const override { static const string descr = "Space" ; return descr; }
-		string linkType() const override { return "SpaceLink"; }
-	};
-	
 	const string dep_graph_format = "svg";
 	bool generate_symbol_graph_and_exit = false;
 	

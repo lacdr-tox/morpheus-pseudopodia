@@ -355,11 +355,14 @@ void System<system_type>::init() {
 
 	// function symbols are internal to the solver.
 	int p=0;
+	external_symbols_time__pos = -1;
 	// Adding external symbols first -- everything that is not another category ???
 	for (set<string>::const_iterator i=all_symbols_used.begin(); i!=all_symbols_used.end(); i++ ) {
 		if ( internal_symbols.count(*i) == 0 ) {
 			external_symbols.push_back(local_scope->findSymbol<double>(*i));
 			cache_layout[*i]=p;
+			if (dynamic_pointer_cast<const SIM::TimeSymbol>(external_symbols.back()))
+				external_symbols_time__pos = p;
 			p++;
 // 			cout << "adding ext sym " << *i << " to the cache." << endl;
 		}
@@ -421,14 +424,16 @@ void System<system_type>::computeToBuffer(const SymbolFocus& f)
 	int cache_pos=0;
 	SystemSolver* solver = solvers[omp_get_thread_num()].get();
 	// external symbols are first in cache layout
-	for (int i =0; i< external_symbols.size(); i++) {
+	for (uint i =0; i< external_symbols.size(); i++) {
 		solver->cache[i] = external_symbols[i]->get(f);
-		if ( external_symbols[i]->linkType() == "TimeLink")
+		// TODO dynamic cast is nuts here, should be done once during initialization
+		
+		if ( i==external_symbols_time__pos )
 			solver->cache[i]*= time_scaling;
 	}
 
 	// initialize local copies of the equation symbols;
-	for (int i =0; i<equations.size(); i++) {
+	for (uint i =0; i<equations.size(); i++) {
 		if (equations[i]->type == SystemFunc::VEQU){
 			VDOUBLE val = equations[i]->v_global_symbol->get(f);
 			double *v = &solver->cache[equations[i]->cache_pos];
@@ -443,7 +448,7 @@ void System<system_type>::computeToBuffer(const SymbolFocus& f)
 	solver->solve();
 
 	// update global symbols to new calculated ODE values
-	for (int i =0; i<equations.size(); i++) {
+	for (uint i =0; i<equations.size(); i++) {
 		if (equations[i]->type == SystemFunc::VEQU) {
 			double *v = &solver->cache[equations[i]->cache_pos];
 			VDOUBLE value(v[0],v[1],v[2]);
@@ -460,7 +465,7 @@ void System<system_type>::computeToBuffer(const SymbolFocus& f)
 template <SystemType system_type>
 void System<system_type>::applyBuffer(const SymbolFocus& f)
 {
-	for (int i =0; i<equations.size(); i++) {
+	for (uint i =0; i<equations.size(); i++) {
 		equations[i]->global_symbol->applyBuffer(f);
 	}
 }
@@ -469,15 +474,15 @@ template <SystemType system_type>
 void System<system_type>::compute(const SymbolFocus& f)
 {
 	SystemSolver* solver = solvers[omp_get_thread_num()].get();
-	for (int i =0; i< external_symbols.size(); i++) {
+	for (uint i =0; i< external_symbols.size(); i++) {
 		solver->cache[i] = external_symbols[i]->get(f);
-		// TODO String comparison is nuts here
-		if (external_symbols[i]->linkType() == "TimeLink")
+		// TODO dynamic cast is nuts here, should be done once during initialization
+		if ( i==external_symbols_time__pos )
 			solver->cache[i]*= time_scaling;
 	}
 
 	// initialize local copies of the equation symbols;
-	for (int i =0; i<equations.size(); i++) {
+	for (uint i =0; i<equations.size(); i++) {
 		if (equations[i]->type == SystemFunc::VEQU){
 			VDOUBLE val = equations[i]->v_global_symbol->get(f);
 			double *v = &solver->cache[equations[i]->cache_pos];
@@ -492,7 +497,7 @@ void System<system_type>::compute(const SymbolFocus& f)
 	solver->solve();
 
 	// update global symbols to new calculated ODE values
-	for (int i =0; i<equations.size(); i++) {
+	for (uint i =0; i<equations.size(); i++) {
 		if (equations[i]->type == SystemFunc::VEQU){
 			double *v = &solver->cache[equations[i]->cache_pos];
 			equations[i]->v_global_symbol->set( f, VDOUBLE(*v,*(v+1),*(v+2)) );
@@ -505,17 +510,8 @@ void System<system_type>::compute(const SymbolFocus& f)
 template <SystemType system_type>
 void System<system_type>::computeContextToBuffer()
 {
-
-	// TODO This might be dispensible if the pde_layer initializes the buffer accordingly
-// 	if (context ==  SymbolData::PDELink && SIM::lattice().getDomain().domainType()!= Domain::none) {
-// 		for (int i =0; i<equations.size(); i++) {
-// 			equations[i]->global_symbol.pde_layer->copyDataToBuffer();
-// 		}
-// 	}
-	
 	FocusRange range(target_granularity, target_scope);
 	if (range.size() > 50) {
-		int size = range.size();
 #pragma omp parallel for schedule(static)
 		for (auto focus = range.begin(); focus<range.end(); ++focus) {
 			computeToBuffer(*focus);

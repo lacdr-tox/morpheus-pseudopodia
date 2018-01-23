@@ -172,11 +172,30 @@ namespace SIM {
 	string getTimeName(double time);
 	string getTimeScaleUnit();
 	void saveToXML();
-	
-	/// Simulation time in terms of seconds as defined by Metropolis kinetics time scale
-
-    /// Return user-defined total number of MCS steps to execute
-
+    
+	/// Global symbol providing the simulation time
+	class TimeSymbol : public SymbolAccessorBase<double> {
+	public:
+		TimeSymbol(string symbol) : SymbolAccessorBase<double>(symbol) {
+			flags().space_const = true;
+		}
+		double get(const SymbolFocus&) const override ;
+		const string& description() const override { static const string descr = "Time" ; return descr; }
+		string linkType() const override { return "TimeLink"; }
+	};
+	/// Global symbol providing the position
+	class SpaceSymbol : public SymbolAccessorBase<VDOUBLE> {
+	public:
+		SpaceSymbol(string symbol) : SymbolAccessorBase<VDOUBLE>(symbol) {
+			flags().granularity = Granularity::Node;
+			flags().time_const = true;
+		}
+		VDOUBLE get(const SymbolFocus& f) const override {
+			return f.pos();
+		}
+		const string&  description() const override { static const string descr = "Space" ; return descr; }
+		string linkType() const override { return "SpaceLink"; }
+	};
 	
 	const Scope* getScope();
 	const Scope* getGlobalScope();
@@ -208,9 +227,6 @@ namespace SIM {
 	 * The naming convention is accessible via TypeInfo<type>::name()
 	 */
 	inline string getSymbolType(string name) { return getGlobalScope()->findSymbol(name)->type(); };
-
-// 	shared_ptr<PDE_Layer> findPDELayer(string symbol);
-// 	shared_ptr<VectorField_Layer> findVectorFieldLayer(string symbol);
 
 }
 

@@ -772,7 +772,7 @@ string getTimeName(double time) {
 	return sstr.str();
 }
 
-
+double TimeSymbol::get(const SymbolFocus&) const {	return TimeScheduler::getTime(); }
 
 double getTime() {
 	return TimeScheduler::getTime();
@@ -905,15 +905,6 @@ void init(int argc, char *argv[]) {
 		cerr << "Error: file '" << filename << "' is empty." << endl;
 		exit(-1);
 	}
-	// Copy input XML model to output directory
-	// first, copy to buffer
-// 	ifstream infile(filename.c_str(), ifstream::in);
-// 	string buffer;
-// // 	buffer << infile;
-// 	infile >> buffer;
-// 	char ch;
-// 	while (infile && infile.get(ch) )
-// 		buffer.put(ch);
 
 	XMLNode xMorpheusRoot;
 	if (filename.size() > 3 and filename.substr(filename.size()-4,3) == ".gz") {
@@ -939,19 +930,9 @@ void init(int argc, char *argv[]) {
 		createDepGraph();
 		exit(0);
 	}
-	
-
-// 	// Copy input XML model to output directory
-// 	// second, copy buffer to outputfile with the same filename (Note meanwhile, the CWD has changed)
-// 	ofstream outfile(filename.c_str());
-// 	outfile << buffer;
-// 	while (buffer && buffer.get(ch) )
-// 		outfile.put(ch);
-
 
 	// try to match cmd line options with symbol names and adjust values accordingly
 	// check that global overrides have been used
-	
 	for ( const auto& override: global_scope->value_overrides() ) {
 		cout << "Unknown cmd line override " << override.first << "=" << override.second << endl;
 	}
@@ -961,55 +942,7 @@ void init(int argc, char *argv[]) {
 
 void finalize() {
 	TimeScheduler::finish();
-
-/* 	Release memory manually  */
-	
-// 	cout << "cpm_sampler references " << CPM::cpm_sampler.use_count() << endl;
-// 	CPM::cpm_sampler.reset();
-// 	global_section_plugins.clear();
-// 	analysers.clear();
-// 	analysis_section_plugins.clear();
-// 	
-// 	
-// 	global_scope.reset();
-// 	
-// 	cout << "CPM::edgeTracker "  << " -> " << CPM::edgeTracker.use_count() << endl;
-// 	CPM::edgeTracker.reset();
-// 	
-// 	for ( const auto& ct :CPM::celltypes) {
-// 		cout << "CellType["<<  ct->getName() << "] -> " << ct.use_count() << endl;
-// 	}
-// 	CPM::celltypes.clear();
-// 	
-// 	for (const auto& pde :pde_layers) {
-// 		cout << pde.second->getName()  << " -> " << pde.second.use_count() << endl;
-// 	}
-// 	
-// 	CPM::global_update.boundary.reset();
-// 	CPM::global_update.interaction.reset();
-// 	cout << "CPM::layer "  << " -> " <<CPM::layer.use_count() << endl;
-// 	CPM::layer.reset();
-// 	cout << "SIM::global_lattice "  << " -> " <<SIM::global_lattice.use_count() << endl;
-// 	SIM::global_lattice.reset();
 }
-
-// XMLNode storeRandomSeeds() {
-// 	XMLNode xNode = XMLNode::createXMLTopNode("RandomSeed");
-// 	int numthreads = 1;		
-// 	#pragma omp parallel
-// 	{
-// 		numthreads = omp_get_num_threads();
-// 	}
-// 	
-// 	for (int thread=0; thread< numthreads; thread++) {
-// 		XMLNode xState = xNode.addChild("State");
-// 		stringstream ss;
-// 		ss << random_engines[thread];
-// 		xState.addText(ss.str().c_str());
-// 	}
-// 	return xNode;
-// 	
-// }
 
 void setRandomSeeds( const XMLNode xNode ){
 	// initialize multiple random engines (one for each thread) and set seed
