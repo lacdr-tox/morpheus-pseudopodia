@@ -692,7 +692,7 @@ class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPoli
 				}
 			}
 			catch (const SymbolError& e) {
-				if (e.type() == SymbolError::Type::Undefined){
+				if (e.type() == SymbolError::Type::Undefined || e.type() == SymbolError::Type::InvalidPartialSpec) {
 					return undef_val;
 				}
 			}

@@ -236,9 +236,12 @@ public:
 	}
 	
 	typename TypeInfo<T>::SReturn get(const SymbolFocus & f) const override {
+		assert(celltype_accessors[f.celltype()]);
 		return celltype_accessors[f.celltype()]->get(f);
 	}
 	typename TypeInfo<T>::SReturn safe_get(const SymbolFocus & f) const override{
+		if (!celltype_accessors[f.celltype()])
+			throw SymbolError(SymbolError::Type::InvalidPartialSpec,"Symbol not defined in subscope");
 		return celltype_accessors[f.celltype()]->safe_get(f);
 	}
 

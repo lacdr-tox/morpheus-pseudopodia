@@ -10,12 +10,12 @@ double ExpressionEvaluator<double>::get(const SymbolFocus& focus, bool safe) con
 	if (expr_is_const)
 		return const_val;
 	if (expr_is_symbol)
-		return safe ? symbols.front()->safe_get(focus) : symbols.front()->get(focus);
+		return safe || allow_partial_spec ? symbols.front()->safe_get(focus) : symbols.front()->get(focus);
 	uint i=0;
 	try {
 		
 		for (i = 0; i<symbols.size(); i++) {
-			symbol_values[i] = safe ? symbols[i]->safe_get(focus) : symbols[i]->get(focus);
+			symbol_values[i] = safe || allow_partial_spec ? symbols[i]->safe_get(focus) : symbols[i]->get(focus);
 		}
 	} 
 	catch (string e) {
@@ -38,12 +38,12 @@ float ExpressionEvaluator<float>::get(const SymbolFocus& focus, bool safe) const
 		return const_val;;
 	
 	if (expr_is_symbol)
-		return safe ? symbols.front()->safe_get(focus) : symbols.front()->get(focus);
+		return safe || allow_partial_spec ? symbols.front()->safe_get(focus) : symbols.front()->get(focus);
 	
 	uint i = 0;
 	try {
 		for (i = 0; i<symbols.size(); i++) {
-			symbol_values[i] = safe ? symbols[i]->safe_get(focus) : symbols[i]->get(focus);
+			symbol_values[i] = safe || allow_partial_spec ? symbols[i]->safe_get(focus) : symbols[i]->get(focus);
 		}
 	} 
 	catch (string e) {

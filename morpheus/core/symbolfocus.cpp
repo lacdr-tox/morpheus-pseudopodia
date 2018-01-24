@@ -53,6 +53,7 @@ const Cell& SymbolFocus::cell() const {
 			throw string("SymbolFocus cannot deduce cell.\nNo position or cell associated with the Focus.");
 		}
 		d_cell = & CPM::getCell(CPM::getNode(d_pos).cell_id);
+		has_cell = true;
 	}
 	return *d_cell;
 }
