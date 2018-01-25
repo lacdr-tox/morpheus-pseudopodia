@@ -28,7 +28,7 @@ double HeterophilicAdhesion::interaction(CPM::STATE s1, CPM::STATE s2)
 	if (binding_ratio.isDefined()) {
 		double p1 = a1c1 + a2c2 + 1.0/binding_ratio();
 		double p2 = a2c1 + a1c2 + 1.0/binding_ratio();
-		double bonds = p1 + sqrt(p1*p1 - a1c1*a2c2) + p2 + sqrt(p2*p2 - a2c1*a1c2);
+		double bonds = p1 - sqrt(p1*p1 - a1c1*a2c2) + p2 - sqrt(p2*p2 - a2c1*a1c2);
 		dE = bonds * strength( focus1 );
 	}
 	else {
