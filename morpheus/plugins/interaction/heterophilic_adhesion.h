@@ -21,7 +21,12 @@
 
 Increases adhesion (i.e. decreases cell-contact energy) between neighboring CPM cells based on heterophilic binding, represented in cell or membrane properties.
 
-\f$ \Delta E = s \cdot \big( a_{\sigma1}^{1} \cdot a_{\sigma2}^{2} + a_{\sigma1}^{2} \cdot a_{\sigma2}^{1}  \big) \f$
+- \b adhesive1/2: Expression describing the amount of both adhesive molecules.
+- \b strength (default="1"): Expression describing strength of adhesive bonds.
+- \b equilibriumConstant (optional): Value describing ratio of binding/unbinding rates between adhesive molecules at cell membranes. If omitted, defaults to saturated binding.
+
+Saturated binding equation:
+\f$ \Delta E = s \cdot \big( min( a_{\sigma1}^{1}, a_{\sigma2}^{2} ) + min( a_{\sigma1}^{2}, a_{\sigma2}^{1} )  \big) \f$
 
 */
 
@@ -32,6 +37,7 @@ class HeterophilicAdhesion : public Interaction_Addon
 		PluginParameter2<double, XMLEvaluator, RequiredPolicy> adhesive1;
 		PluginParameter2<double, XMLEvaluator, RequiredPolicy> adhesive2;
 		PluginParameter2<double, XMLEvaluator, RequiredPolicy> strength;
+		PluginParameter2<double, XMLValueReader, OptionalPolicy> binding_ratio;
 	public:
 		DECLARE_PLUGIN("HeterophilicAdhesion");
 		HeterophilicAdhesion();
