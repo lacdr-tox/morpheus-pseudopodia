@@ -53,7 +53,7 @@ HistogramLogger::HistogramLogger(): gnuplot(NULL){
 
 };
 
-void HistogramLogger::loadFromXML(const XMLNode xNode)
+void HistogramLogger::loadFromXML(const XMLNode xNode, Scope* scope)
 {
 	cout << "HistogramLogger::loadFromXML " << endl;
 	
@@ -69,7 +69,7 @@ void HistogramLogger::loadFromXML(const XMLNode xNode)
 		columns.push_back(c);
 	}
 
-    AnalysisPlugin::loadFromXML( xNode );
+    AnalysisPlugin::loadFromXML( xNode, scope );
 	
 }
 
@@ -77,7 +77,7 @@ void HistogramLogger::init(const Scope* scope) {
 	// Preinitialize celltype parameters to transfer their celltype scopes to the symbol reference
 	for (auto c : columns) {
 		if (c->celltype.isDefined()) {
-			c->celltype.init();
+			c->celltype.init(scope);
 			cout << "celltype " << c->celltype()->getName() << "defined for symbol " << c->symbol.stringVal();
 			c->symbol.setScope(c->celltype()->getScope());
 		}

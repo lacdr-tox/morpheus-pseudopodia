@@ -12,8 +12,10 @@
 #ifndef MEMBRANELOGGER_H
 #define MEMBRANELOGGER_H
 
-#include <core/interfaces.h>
-#include <core/plugin_parameter.h>
+#include "core/interfaces.h"
+#include "core/plugin_parameter.h"
+#include "core/celltype.h"
+#include "core/membrane_property.h"
 #include "gnuplot_i/gnuplot_i.h"
 /**
 \defgroup MembraneLogger
@@ -114,7 +116,7 @@ public:
 	DECLARE_PLUGIN("MembraneLogger");
 	
 	void analyse(double time) override;
-	void loadFromXML(const XMLNode ) override;
+	void loadFromXML(const XMLNode, Scope* scope ) override;
 // 	virtual set< string > getDependSymbols();
 
 	void init(const Scope* scope) override;

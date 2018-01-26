@@ -51,7 +51,9 @@ Write cluster size distribution to file AND assign cluster ID to each cell (assu
 #define CLUSTERING_TRACKER_H
 
 #include <core/interfaces.h>
+#ifdef HAVE_SUPERCELLS
 #include <core/super_celltype.h>
+#endif
 #include <core/simulation.h>
 #include <core/plugin_parameter.h>
 #include <vector>
@@ -69,7 +71,7 @@ public:
 	virtual void finish() override;
 	virtual void analyse(double time) override;
 	virtual void init(const Scope* scope) override;
-	virtual void loadFromXML(const XMLNode ) override;
+	virtual void loadFromXML(const XMLNode, Scope* scope ) override;
 	
 private:
 	fstream storage;

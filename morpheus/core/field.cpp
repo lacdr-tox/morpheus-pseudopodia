@@ -10,10 +10,58 @@
 //
 //
 #include "field.h"
+
 #include "lattice_data_layer.cpp"
-#include "expression_evaluator.h"
+// #include "expression_evaluator.h"
 #include "focusrange.h"
+#include "diffusion.h"
 #include <valarray>
+
+REGISTER_PLUGIN(Field);
+
+void Field::loadFromXML(const XMLNode node, Scope * scope) {
+	Plugin::loadFromXML(node, scope);
+	auto field = make_shared<PDE_Layer>(SIM::getLattice(), SIM::getNodeLength(), false);
+	field->loadFromXML(node, scope);
+	accessor = make_shared<Symbol>(symbol_name(), this->getDescription(), field);
+	scope->registerSymbol(accessor);
+	// Create the diffusion wrapper
+	if (field->getDiffusionRate() > 0.0) {
+		diffusion_plugin = make_shared<Diffusion>(accessor);
+	}
+}
+
+void Field::init(const Scope * scope) { 
+	if (accessor) accessor->field->init();
+	if (diffusion_plugin) diffusion_plugin->init(scope);
+}
+
+XMLNode Field::saveToXML() const {
+	XMLNode node = accessor->field->saveToXML();
+	node.updateAttribute( symbol_name().c_str(),"symbol");
+	return node;
+}
+
+REGISTER_PLUGIN(VectorField);
+
+VectorField::VectorField() : Plugin() {
+	registerPluginParameter(symbol_name);
+	symbol_name.setXMLPath("symbol");
+}
+
+void VectorField::loadFromXML(const XMLNode node, Scope * scope) {
+	Plugin::loadFromXML(node, scope);
+	auto field = make_shared<VectorField_Layer>(SIM::getLattice(), SIM::getNodeLength());
+	field->loadFromXML(node, scope);
+	accessor = make_shared<Symbol>(symbol_name(), getDescription(), field);
+	scope->registerSymbol(accessor);
+}
+
+XMLNode VectorField::saveToXML() const {
+	XMLNode node = accessor->field->saveToXML();
+	node.updateAttribute(symbol_name().c_str(),"symbol");
+	return node;
+}
 
 // Explicit template instantiation
 template class Lattice_Data_Layer<double>;
@@ -30,6 +78,7 @@ PDE_Layer::PDE_Layer(shared_ptr<const Lattice> l, double p_node_length, bool sur
 	store_data 			= false;
 	is_surface = surface;
 	init_by_restore = false;
+	initialized = false;
 	
 	useBuffer(true);
 }
@@ -38,20 +87,11 @@ PDE_Layer::PDE_Layer(shared_ptr<const Lattice> l, double p_node_length, bool sur
 PDE_Layer::~PDE_Layer()
 {/* if (write_buffer) delete[] write_buffer;*/ }
 
-void PDE_Layer::loadFromXML(const XMLNode xNode)
+void PDE_Layer::loadFromXML(const XMLNode xNode, Scope* scope)
 {
-	Lattice_Data_Layer<double>::loadFromXML(xNode,
-		[] (const string& input ) -> double {
-			stringstream s(input);
-			value_type v;
-			s >> v;
-			return v;
-		});
-	if ( ! getXMLAttribute(xNode,"symbol",symbol_name) ) {
-		cerr << "PDE_Layer needs a symbol defined.";
-	}
+	Lattice_Data_Layer<double>::loadFromXML(xNode, make_shared<ExpressionReader>(scope) );
 	max_time_step = -1;
-
+	local_scope = scope;
 	getXMLAttribute(xNode,"Diffusion/rate", diffusion_rate);
 	
 	diffusion_units = "";
@@ -78,27 +118,14 @@ void PDE_Layer::loadFromXML(const XMLNode xNode)
 	getXMLAttribute(xNode, "time-step", max_time_step);
 
 	getXMLAttribute(xNode,"value", initial_expression);
-	
-// 	XMLNode xInit = xNode.getChildNode("Initial");
-// 	if ( ! xInit.isEmpty() ) {
-// 		// parse for all PDE Initializers and run them
-// 		for (int i=0; i < xInit.nChildNode(); i++) {
-// 			XMLNode xInitPDENode = xInit.getChildNode(i);
-// 			// assume its an initilizer
-// 			shared_ptr<Plugin> p = PluginFactory::CreateInstance(string(xInitPDENode.getName()));
-// 			if (!p) 
-// 				throw MorpheusException("Unknown Initialization Plugin.", xInitPDENode);
-// 			p->loadFromXML(xInitPDENode);
-// 			plugins.push_back(p);
-// 		}
-// 	}
 
+ 	// TODO :: Integrate the tiff format into the data reading / writing infrastructure
 	XMLNode xTiffreader = xNode.getChildNode("TIFFReader");
 	if ( ! xTiffreader.isEmpty() ) {
 		shared_ptr<Plugin> p = PluginFactory::CreateInstance(string(xTiffreader.getName()));
 		if(!p)
 			throw MorpheusException("Unknown Initialization Plugin.", xTiffreader);
-		p->loadFromXML(xTiffreader);
+		p->loadFromXML(xTiffreader, scope);
 		plugins.push_back(p);
  	}
 // 		// parse for all PDE Initializers and run them
@@ -125,8 +152,9 @@ void PDE_Layer::loadFromXML(const XMLNode xNode)
 	}
 }
 
-void PDE_Layer::init(const Scope* scope, const SymbolFocus& focus)
+void PDE_Layer::init(const SymbolFocus& focus)
 {
+	if (initialized) return;
  	theta_y.resize(l_size.y);
 	phi_coarsening.resize(l_size.y);
 	for (uint i=0; i<l_size.y; i++) { theta_y[i] = (double(i)+0.5)  * (M_PI/l_size.y); }
@@ -139,12 +167,12 @@ void PDE_Layer::init(const Scope* scope, const SymbolFocus& focus)
 
 	if (!initial_expression.empty() && !init_by_restore) {
 		ExpressionEvaluator<double> init_val(initial_expression);
-		init_val.init(scope);
+		init_val.init(local_scope);
 		if (is_surface) {
 			CPM::CELL_ID cell_id = focus.cellID();
 			FocusRange range(Granularity::MembraneNode, cell_id);
 			for (auto focus : range) {
-				this->set(focus.membrane_pos(),init_val.get(focus));
+				this->set(focus.membrane_pos(),init_val.safe_get(focus));
 			}
 		}
 		else {
@@ -159,7 +187,7 @@ void PDE_Layer::init(const Scope* scope, const SymbolFocus& focus)
 			}
 			FocusRange range(Granularity::Node, r);
 			for (auto focus : range) {
-				this->set(focus.pos(),init_val.get(focus));
+				this->set(focus.pos(),init_val.safe_get(focus));
 			}
 		}
 	}
@@ -168,6 +196,9 @@ void PDE_Layer::init(const Scope* scope, const SymbolFocus& focus)
 			dynamic_pointer_cast<Field_Initializer>( plugins[i] )->run(this);
 		}
 	}
+	reset_boundaries();
+	write_buffer = data;
+	initialized = true;
 }
 
 XMLNode PDE_Layer::saveToXML() const
@@ -212,17 +243,6 @@ XMLNode PDE_Layer::storeData(string filename) const
 bool PDE_Layer::restoreData(const XMLNode node)
 {
 // 	try {
-		string symbol;
-		getXMLAttribute(node,"symbol-ref",symbol);
-		
-		// in case of restoring PDE data, get symbol from parent node
-		if(symbol.empty())
-			symbol = node.getParentNode().getAttribute("symbol");
-		
-		// in case of restoring MembranePropertyData, get symbol-ref from node itself
-		if (symbol != symbol_name)
-			throw(string("Wrong symbol name in PDE_Layer::restoreData ") + symbol + " != " + symbol_name);
-		
 		string filename;
 		if (getXMLAttribute(node, "filename",filename)) {
 			ifstream in(filename.c_str());
@@ -462,78 +482,26 @@ bool PDE_Layer::solve_adi_diffusion(double time_interval)
 // The boundaries have to be reset after computing the diffusion kernel
 // not used by the domain constraint code ...
 void PDE_Layer::set_fwd_euler_diffusion_boundaries() {
-		// set no-flux boundaries to the neighboring site values
-	switch ( boundary_types[Boundary::mx]) {
-		case Boundary::periodic:
-			data[s_xmb] = data[s_xp];
-			break;
-		case Boundary::noflux:
-			data[s_xmb] = data[s_xm];
-			break;
-		case Boundary::constant: 
-			data[s_xmb] = this->boundary_values[Boundary::mx];
-			break;
-	}
-	switch (boundary_types[Boundary::px]) {
-		case Boundary::periodic:
-			data[s_xpb] = data[s_xm];
-			break;
-		case Boundary::noflux:
+	// set no-flux boundaries to the neighboring site values
+	reset_boundaries();
+	
+	if (boundary_types[Boundary::mx] == Boundary::noflux)
+		data[s_xmb] = data[s_xm];
+	if (boundary_types[Boundary::px] == Boundary::noflux)
 			data[s_xpb] = data[s_xp];
-			break;
-		case Boundary::constant: 
-			data[s_xpb] = this->boundary_values[Boundary::px];
-			break;
-	}
 	
 	if (dimensions>=2) {
-		switch (boundary_types[Boundary::my]) {
-			case Boundary::periodic:
-				data[s_ymb] = data[s_yp];
-				break;
-			case Boundary::noflux:
-				data[s_ymb] = data[s_ym];
-				break;
-			case Boundary::constant:
-				data[s_ymb] = this->boundary_values[Boundary::my];
-				break;
-		}
-		switch (boundary_types[Boundary::py]) {
-			case Boundary::periodic:
-				data[s_ypb] = data[s_ym];
-				break;
-			case Boundary::noflux:
-				data[s_ypb] = data[s_yp];
-				break;
-			case Boundary::constant: 
-				data[s_ypb] = this->boundary_values[Boundary::py];
-				break;
-		}
+		if (boundary_types[Boundary::my] == Boundary::noflux)
+			data[s_ymb] = data[s_ym];
+		if (boundary_types[Boundary::py] == Boundary::noflux)
+			data[s_ypb] = data[s_yp];
 	}
 	
 	if (dimensions==3) {
-		switch (boundary_types[Boundary::mz]) {
-			case Boundary::periodic:
-				data[s_zmb] = data[s_zp];
-				break;
-			case Boundary::noflux:
-				data[s_zmb] = data[s_zm];
-				break;
-			case Boundary::constant: 
-				data[s_zmb] = this->boundary_values[Boundary::mz];
-				break;
-		}
-		switch (boundary_types[Boundary::pz]) {
-			case Boundary::periodic:
-				data[s_zpb] = data[s_zm];
-				break;
-			case Boundary::noflux:
-				data[s_zpb] = data[s_zp];
-				break;
-			case Boundary::constant: 
-				data[s_zpb] =  this->boundary_values[Boundary::pz];
-				break;
-		}
+		if (boundary_types[Boundary::mz] == Boundary::noflux) 
+			data[s_zmb] = data[s_zm];
+		if (boundary_types[Boundary::pz] == Boundary::noflux)
+			data[s_zpb] = data[s_zp];
 	}
 }
 
@@ -1081,23 +1049,16 @@ double PDE_Layer::max_val() const {
 }
 
 
-VectorField_Layer::VectorField_Layer(shared_ptr<const Lattice> lattice, double node_length) : Lattice_Data_Layer<VDOUBLE>(lattice,1,VDOUBLE(0,0,0),""), node_length(node_length)
+VectorField_Layer::VectorField_Layer(shared_ptr<const Lattice> lattice, double node_length) :
+	Lattice_Data_Layer<VDOUBLE>(lattice,1,VDOUBLE(0,0,0),""), node_length(node_length)
 {
-	symbol_name = "";
 	initial_expression = "";
 	init_by_restore = false;
 }
 
-void VectorField_Layer::loadFromXML(XMLNode node)
+void VectorField_Layer::loadFromXML(XMLNode node, Scope* scope)
 {
-	Lattice_Data_Layer<VDOUBLE>::loadFromXML(node, [] (const string& input ) -> VDOUBLE {
-			stringstream s(input);
-			value_type v;
-			s >> v;
-			return v;
-		});
-	getXMLAttribute(node,"symbol",symbol_name);
-	getXMLAttribute(node,"name",name);
+	Lattice_Data_Layer<VDOUBLE>::loadFromXML(node, make_shared<ExpressionReader>(scope));
 	getXMLAttribute(node,"value", initial_expression);
 	
 	XMLNode xData = node.getChildNode("Data");

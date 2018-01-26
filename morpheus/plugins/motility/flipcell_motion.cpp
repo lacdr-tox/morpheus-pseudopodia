@@ -12,10 +12,11 @@ FlipCellMotion::FlipCellMotion() : InstantaneousProcessPlugin( TimeStepListener:
 
 void FlipCellMotion::init(const Scope* scope) {
 	InstantaneousProcessPlugin::init(scope);
-	this->scope = scope;
-	condition.init();
+	celltype = scope->getCellType();
+	if (!celltype)
+		throw string ("FlipCells only works on celltypes.");
     lattice = SIM::getLattice();
-	cpm_lattice = CPM::getLayer();
+// 	cpm_lattice = CPM::getLayer();
 	nbh = lattice->getNeighborhoodByDistance( neighborhood() ).neighbors();
 	// Add "cell.center" as output(!) symbol  (not depend symbol)
 	registerCellPositionOutput(); 
@@ -24,10 +25,9 @@ void FlipCellMotion::init(const Scope* scope) {
 
 void FlipCellMotion::executeTimeStep()
 {
-	if(!scope->getCellType())
-		return;
+
 		
-	vector<CPM::CELL_ID> cells = scope->getCellType()->getCellIDs();
+	vector<CPM::CELL_ID> cells = celltype->getCellIDs();
 	if( !cells.size() ){
 		cerr << "FlipCells: Error: No cells in population." <<  endl;
 		exit(-1);

@@ -12,9 +12,9 @@ InitCellObjects::InitCellObjects(){
 	registerPluginParameter(mode);
 };
 
-void InitCellObjects::loadFromXML(const XMLNode node)	//einlesen der daten aus der xml
+void InitCellObjects::loadFromXML(const XMLNode node, Scope* scope)	//einlesen der daten aus der xml
 {	
-	Population_Initializer::loadFromXML( node );
+	Population_Initializer::loadFromXML( node, scope );
 	
 	VDOUBLE arrange_displacement(0.,0.,0.);
 	VINT    arrange_repetitions(1,1,1);

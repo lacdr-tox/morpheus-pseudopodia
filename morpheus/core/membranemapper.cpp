@@ -12,9 +12,9 @@ MembraneMapper::MembraneMapper( MembraneMapper::MODE mode, bool use_cell_shape )
 	global_lattice = SIM::getLattice();
 
 	const bool spherical = true;
-	data_map = shared_ptr<PDE_Layer>(new PDE_Layer(membrane_lattice,true));
-	accum_map = shared_ptr<PDE_Layer>(new PDE_Layer(membrane_lattice,true));
-	distance_map  = shared_ptr<PDE_Layer>(new PDE_Layer(membrane_lattice,true));
+	data_map = shared_ptr<PDE_Layer>(new PDE_Layer(membrane_lattice,spherical));
+	accum_map = shared_ptr<PDE_Layer>(new PDE_Layer(membrane_lattice,spherical));
+	distance_map  = shared_ptr<PDE_Layer>(new PDE_Layer(membrane_lattice,spherical));
 	distance_map->set_boundary_value(Boundary::my,no_distance);
 	distance_map->set_boundary_value(Boundary::py,no_distance);
 // 	if (mode == MAP_DISTANCE_TRANSFORM)

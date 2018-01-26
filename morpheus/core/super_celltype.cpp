@@ -56,9 +56,9 @@ XMLNode SuperCT::saveToXML ( ) const
 	return node;
 }
 
-void SuperCT::loadFromXML ( const XMLNode node ) 
+void SuperCT::loadFromXML ( const XMLNode node, Scope* scope ) 
 {
-	CellType::loadFromXML( node );
+	CellType::loadFromXML( node, scope );
 	// somehow we have to provide an opportunity to grep supercell plugins
 	
 	if (! getXMLAttribute(node, "subtype", sub_celltype_name)) {

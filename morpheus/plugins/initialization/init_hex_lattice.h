@@ -2,7 +2,7 @@
 #define INITCELLLATICE_H
 
 #include "core/interfaces.h"
-#include "core/plugin_parameter.h"
+#include "core/celltype.h"
 
 /** \defgroup InitHexLattice
 \ingroup ML_Population
@@ -42,7 +42,7 @@ public:
 	InitHexLattice(){};
 	DECLARE_PLUGIN("InitHexLattice");
 	vector<CPM::CELL_ID> run(CellType* ct) override;
-	void loadFromXML(const XMLNode) override;
+	void loadFromXML(const XMLNode, Scope* scope) override;
 };
 
 #endif

@@ -13,8 +13,7 @@
 #define PERSISTENTMOTION_H
 
 #include "core/interfaces.h"
-#include "core/plugin_parameter.h"
-#include "core/cell_property_accessor.h" // to access data that is strored in Property and VectorProperty
+#include "core/celltype.h"
 
 /** \defgroup PersistentMotion
  \ingroup ML_CellType
@@ -82,8 +81,8 @@ private:
 	
 	// We store the direction and old position in 
 	// CellPropertyAccessor
-	CellPropertyAccessor<VDOUBLE> cell_direction; // stores direction of cell from cell property
-	CellPropertyAccessor<VDOUBLE> cell_position_memory; // stores cell.center from cell property
+	SymbolRWAccessor<VDOUBLE> cell_direction; // stores direction of cell from cell property
+	SymbolRWAccessor<VDOUBLE> cell_position_memory; // stores cell.center from cell property
 	
 public:
 	PersistentMotion();

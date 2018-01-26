@@ -8,8 +8,7 @@ FreezeMotion::FreezeMotion(){
 }
 
 void FreezeMotion::init(const Scope* scope){
-	CPM_Check_Update::init(scope);
-	condition.init();
+	Cell_Update_Checker::init(scope);
 }
 
 bool FreezeMotion::update_check(CPM::CELL_ID cell_id, const CPM::Update& update)

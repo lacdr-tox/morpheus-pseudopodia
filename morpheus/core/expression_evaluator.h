@@ -12,8 +12,9 @@
 #ifndef EXPRESSION_EVALUATOR_H
 #define EXPRESSION_EVALUATOR_H
 
-#include "interfaces.h"
+// #include "interfaces.h"
 #include "muParser/muParser.h"
+#include "scope.h"
 #include <mutex>
 
 /** Expression Evaluation Wrapper
@@ -35,16 +36,14 @@ public:
 	void setSymbolFactory(mu::facfun_type factory, void* internal);
 	void init(const Scope* scope);
 	
-	///  Expression is constant in time, not necessarily in space ...
-	bool isConst() const;
-	bool isInteger() const;
+	const SymbolBase::Flags& flags() const { return expr_flags; };
+	Granularity getGranularity() const { return flags().granularity; }
 
 	const string& getDescription() const;
-	Granularity getGranularity() const;
 	string getExpression() const { return expression; }
 	
-	
-	typename TypeInfo<T>::SReturn get(const SymbolFocus& focus) const;
+	typename TypeInfo<T>::SReturn get(const SymbolFocus& focus, bool safe=false) const;
+	typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& focus) const { return get(focus, true);}
 	
 	set<SymbolDependency> getDependSymbols() const;
 	
@@ -62,6 +61,7 @@ private:
 	bool expand_scalar_expr;
 	const Scope *scope;
 	unique_ptr<mu::Parser> parser;
+	SymbolBase::Flags expr_flags;
 	vector< SymbolAccessor<double> > symbols;
 	vector< SymbolAccessor<VDOUBLE> > v_symbols;
 	mutable vector<double> symbol_values;
@@ -97,11 +97,11 @@ class ThreadedExpressionEvaluator {
 public:
 	ThreadedExpressionEvaluator(string expression, bool partial_spec = false) { evaluators.push_back( unique_ptr<ExpressionEvaluator<T> >(new ExpressionEvaluator<T>(expression,partial_spec)) );};
 	void init(const Scope* scope) { for (auto& evaluator : evaluators) evaluator->init(scope); }
-	bool isConst() const { return evaluators[0]->isConst(); };
 	const string& getDescription() const { return evaluators[0]->getDescription(); };
+	const SymbolBase::Flags& flags() const { return evaluators[0]->flags(); }
 	Granularity getGranularity() const { return evaluators[0]->getGranularity(); };
 	string getExpression() const { return evaluators[0]->getExpression(); };
-	bool isInteger() const { return evaluators[0]->isInteger(); };
+
 	typename TypeInfo<T>::SReturn get(const SymbolFocus& focus) const {
 		uint t = omp_get_thread_num();
 		if (evaluators.size()<=t || ! evaluators[t] ) {
@@ -114,13 +114,25 @@ public:
 		}
 		return evaluators[t]->get(focus);
 	};
+	typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& focus) const {
+		uint t = omp_get_thread_num();
+		if (evaluators.size()<=t || ! evaluators[t] ) {
+			mutex.lock();
+			if (evaluators.size()<=t) {
+				evaluators.resize(t+1);
+			}
+			evaluators[t] = unique_ptr<ExpressionEvaluator<T> >( new ExpressionEvaluator<T>(*evaluators[0]) );
+			mutex.unlock();
+		}
+		return evaluators[t]->safe_get(focus);
+	};
 	set<SymbolDependency> getDependSymbols() const { return evaluators[0]->getDependSymbols(); };
 private:
 	mutable vector<unique_ptr<ExpressionEvaluator<T> > > evaluators;
 	mutable GlobalMutex mutex;
 };
 
-#include "symbol_accessor.h"
+// #include "symbol_accessor.h"
 
 template <class T>
 ExpressionEvaluator< T >::ExpressionEvaluator(string expression, bool partial_spec)
@@ -159,11 +171,11 @@ ExpressionEvaluator<T>::ExpressionEvaluator(const ExpressionEvaluator<T> & other
 	}
 	// create a local symbol value cache and relink to the local parser
 	symbol_values.resize(other.symbol_values.size());
-	for( int i_sym=0; i_sym<symbols.size(); i_sym++) {
-		parser->DefineVar(symbols[i_sym].getName(), &symbol_values[i_sym]);
+	for( uint i_sym=0; i_sym<symbols.size(); i_sym++) {
+		parser->DefineVar(symbols[i_sym]->name(), &symbol_values[i_sym]);
 	}
 	for (uint i=0; i<v_symbols.size(); i++) {
-		parser->DefineVar(v_symbols[i].getName(),&symbol_values[v_sym_cache_offset+i] );
+		parser->DefineVar(v_symbols[i]->name(),&symbol_values[v_sym_cache_offset+i] );
 	}
 }
 
@@ -267,7 +279,7 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 		}
 		v_sym_cache_offset = symbols.size();
 		for (uint i=0; i<v_symbols.size(); i++) {
-			parser->DefineVar(v_symbols[i].getName(),&symbol_values[v_sym_cache_offset+i] );
+			parser->DefineVar(v_symbols[i]->name(),&symbol_values[v_sym_cache_offset+i] );
 		}
 		
 		if (expand_scalar_expr && v_symbols.size() == 0) {
@@ -289,14 +301,34 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 		}
 	}
 	
-	// Check for constness
-	expr_is_const = true;
+	// Initialize expression flags, i.e. for constness
+	expr_flags.space_const = true;
+	expr_flags.time_const = true;
+	expr_flags.stochastic = false;
+	expr_flags.integer = false;
+	expr_flags.delayed = false;
+	expr_flags.partially_defined = false;
+	expr_flags.writable = false;
+	expr_flags.granularity = Granularity::Global;
+	
 	for ( const auto& symb : symbols) {
-		expr_is_const = expr_is_const && symb.isConst();
+		const auto& of = symb->flags();
+		expr_flags.space_const &= of.space_const;
+		expr_flags.time_const &= of.time_const;
+		expr_flags.stochastic |= of.stochastic;
+		expr_flags.partially_defined |= of.partially_defined;
+		expr_flags.granularity += of.granularity;
 	}
 	for ( const auto& symb : v_symbols) {
-		expr_is_const = expr_is_const && symb.isConst();
+		const auto& of = symb->flags();
+		expr_flags.space_const &= of.space_const;
+		expr_flags.time_const &= of.time_const;
+		expr_flags.stochastic |= of.stochastic;
+		expr_flags.partially_defined |= of.partially_defined;
+		expr_flags.granularity += of.granularity;
 	}
+	expr_is_const = expr_flags.time_const && expr_flags.space_const;
+	
 	// random functions prevent an expression from beeing const
 	set<string> volatile_functions;
 	volatile_functions.insert(sym_RandomUni);
@@ -311,14 +343,14 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 	
 	if (expr_is_const) {
 		expr_is_const = false;
-		const_val = get(SymbolFocus::global);
+		const_val = safe_get(SymbolFocus::global);
 		expr_is_const = true;
 // 		cout << "Expression " << this->getExpression() << " is const" << endl;
 	}
 	
 	// Check for direct symbol
-	if (TypeInfo< VDOUBLE >::name() == TypeInfo< T >::name()) {
-		if (v_symbols.size() == 1 && clean_expression == v_symbols[0].getName()){
+	if (TypeInfo< VDOUBLE >::name == TypeInfo< T >::name) {
+		if (v_symbols.size() == 1 && clean_expression == v_symbols[0]->name()){
 			expr_is_symbol = true;
 // 			cout << "Expression " << this->getExpression() << " is a symbol" << endl;
 		}
@@ -327,8 +359,9 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 		}
 	}
 	else {
-		if (symbols.size() == 1 && clean_expression == symbols[0].getName()){
+		if (symbols.size() == 1 && clean_expression == symbols[0]->name()){
 			expr_is_symbol = true;
+			expr_flags.integer = symbols[0]->flags().integer;
 // 			cout << "Expression " << this->getExpression() << " is a symbol" << endl;
 		}
 		else {
@@ -342,34 +375,9 @@ template <class T>
 const string& ExpressionEvaluator<T>::getDescription() const
 {
 	if (expr_is_symbol)
-		return symbols[0].getFullName();
+		return symbols[0]->description();
 	else 
 		return expression;
-}
-
-template <class T>
-bool ExpressionEvaluator<T>::isConst() const
-{
-	return expr_is_const;
-}
-
-template <class T>
-bool ExpressionEvaluator<T>::isInteger() const
-{
-	if (expr_is_symbol)
-		return symbols.front().isInteger();
-	else
-		return false;
-}
-
-template <class T>
-Granularity ExpressionEvaluator<T>::getGranularity() const
-{
-	Granularity granularity = Granularity::Global;
-	for (auto&& sym : symbols) {
-		granularity+= sym.getGranularity();
-	}
-	return granularity;
 }
 
 
@@ -381,13 +389,13 @@ Granularity ExpressionEvaluator<T>::getGranularity() const
 
 //Fully specified template methods
 template <>
-typename TypeInfo<double>::SReturn  ExpressionEvaluator<double>::get(const SymbolFocus& focus) const;
+typename TypeInfo<double>::SReturn  ExpressionEvaluator<double>::get(const SymbolFocus& focus, bool safe) const;
 
 template <>
-typename TypeInfo<float>::SReturn  ExpressionEvaluator<float>::get(const SymbolFocus& focus) const;
+typename TypeInfo<float>::SReturn  ExpressionEvaluator<float>::get(const SymbolFocus& focus, bool safe) const;
 
 template <>
-typename TypeInfo<VDOUBLE>::SReturn  ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus) const;
+typename TypeInfo<VDOUBLE>::SReturn  ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus, bool safe) const;
 
 template <>
 const string&  ExpressionEvaluator<VDOUBLE>::getDescription() const;
@@ -397,16 +405,16 @@ template <class T>
 set< SymbolDependency > ExpressionEvaluator<T>::getDependSymbols() const
 {
 	set<SymbolDependency> sym_dep;
-	for (auto& s : symbols ) {
-// 		cout << "d: " << s.getName() << "["<< s.getScope()->getName() << "]";
-		SymbolDependency sd = { s.getBaseName(), s.getScope()};
-		sym_dep.insert(sd);
-	}
-	for (auto& s : v_symbols ) {
-// 		cout << "v: " << s.getName() << "["<< s.getScope()->getName() << "]";
-		SymbolDependency sd = { s.getBaseName(), s.getScope()};
-		sym_dep.insert(sd);
-	}
+	sym_dep.insert(symbols.begin(),symbols.end());
+	sym_dep.insert(v_symbols.begin(),v_symbols.end());
+// 	for (auto& s : symbols ) {
+// // 		cout << "d: " << s.getName() << "["<< s.getScope()->getName() << "]";
+// 		sym_dep.insert(s);
+// 	}
+// 	for (auto& s : v_symbols ) {
+// // 		cout << "v: " << s.getName() << "["<< s.getScope()->getName() << "]";
+// 		sym_dep.insert(s);
+// 	}
 	return sym_dep;
 }
 

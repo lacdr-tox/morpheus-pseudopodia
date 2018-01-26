@@ -19,24 +19,23 @@ Clustering_Tracker::Clustering_Tracker() {
 	registerPluginParameter(cluster_id);
 }
 
-void Clustering_Tracker::loadFromXML(const XMLNode xNode)
+void Clustering_Tracker::loadFromXML(const XMLNode xNode, Scope* scope)
 {
-	AnalysisPlugin::loadFromXML(xNode);
+	AnalysisPlugin::loadFromXML(xNode, scope);
 }
 
 void Clustering_Tracker::init(const Scope* scope)
 {
-	celltype.init();
-	shared_ptr<const SuperCT> sct = dynamic_pointer_cast<const SuperCT>(celltype());
+	celltype.init(scope);
 	cluster_id.setScope(celltype()->getScope());
 	
 	
 	AnalysisPlugin::init(scope);
 	
-	if ( ! sct)
-		is_supercelltype = false;
-	else
-		is_supercelltype = true;
+	is_supercelltype = false;
+#ifdef HAVE_SUPERCELLS
+	is_supercelltype = dynamic_pointer_cast<const SuperCT>(celltype());
+#endif
 
 	filename = celltype()->getName() + "_clustering" + ".dat";
 	storage.open(filename.c_str(), fstream::out | fstream::trunc);
@@ -49,6 +48,7 @@ void Clustering_Tracker::init(const Scope* scope)
 
 bool Clustering_Tracker::touching(CPM::CELL_ID arg1,CPM::CELL_ID  arg2) {
 
+#ifdef HAVE_SUPERCELLS
 	if (is_supercelltype) {
 		const vector<CPM::CELL_ID>& segments1 = static_cast<const SuperCell &>(CPM::getCell(arg1)).getSubCells();
 	// 	const vector<>& segments2 = static_cast<const SuperCell &>(CPM::getCell(arg2)).getSubCells();
@@ -61,10 +61,13 @@ bool Clustering_Tracker::touching(CPM::CELL_ID arg1,CPM::CELL_ID  arg2) {
 		}
 	}
 	else {
+#endif
 		const auto& interfaces = CPM::getCell(arg1).getInterfaceLengths();
 		if ( interfaces.find(arg2) != interfaces.end())
 			return true;
+#ifdef HAVE_SUPERCELLS
 	}
+#endif
 	return false;
 };
 

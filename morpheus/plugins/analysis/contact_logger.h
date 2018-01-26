@@ -12,8 +12,9 @@
 #ifndef CONTACTLOGGER_H
 #define CONTACTLOGGER_H
 
-#include <core/interfaces.h>
+#include "core/interfaces.h"
 #include "core/plugin_parameter.h"
+#include "core/celltype.h"
 
 /** 
 \defgroup ContactLogger ContactLogger
@@ -69,7 +70,7 @@ class ContactLogger : public AnalysisPlugin, InstantaneousProcessPlugin
 		DECLARE_PLUGIN("ContactLogger");
 		ContactLogger();
 		void analyse(double time) override;
-		void loadFromXML(const XMLNode ) override;
+		void loadFromXML(const XMLNode, Scope* scope ) override;
 		void init(const Scope* scope) override;
  		void finish() override;
 		void executeTimeStep() override;

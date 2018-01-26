@@ -12,11 +12,11 @@
 #ifndef HISTOGRAMLOGGER_H
 #define HISTOGRAMLOGGER_H
 
-#include <core/interfaces.h>
+#include "core/interfaces.h"
 #include "core/simulation.h"
 #include "core/focusrange.h" // FocusRange
+#include "core/celltype.h"
 #include "gnuplot_i/gnuplot_i.h"
-#include "core/plugin_parameter.h"
 
 /** 
  *  \defgroup HistogramLogger HistogramLogger
@@ -121,7 +121,7 @@ public:
 
     
     virtual void analyse(double time) override;
-    virtual void loadFromXML(const XMLNode ) override;
+    virtual void loadFromXML(const XMLNode, Scope* scope ) override;
 
     virtual void init(const Scope* scope) override;
     virtual void finish() override;

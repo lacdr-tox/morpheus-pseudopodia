@@ -24,7 +24,7 @@ NeighborhoodReporter::NeighborhoodReporter() {
 	
 }
 
-void NeighborhoodReporter::loadFromXML(const XMLNode xNode)
+void NeighborhoodReporter::loadFromXML(const XMLNode xNode, Scope* scope)
 {    
 	map<string, DataMapper::Mode> output_mode_map = DataMapper::getModeNames();
 	
@@ -40,7 +40,7 @@ void NeighborhoodReporter::loadFromXML(const XMLNode xNode)
 	}
 	
 	// Load all the defined PluginParameters
-	ReporterPlugin::loadFromXML(xNode);
+	ReporterPlugin::loadFromXML(xNode, scope);
 }
 
 
@@ -64,7 +64,7 @@ void NeighborhoodReporter::init(const Scope* scope)
 			switch (out->symbol.granularity()) {
 				case Granularity::MembraneNode:
 					halo_output.push_back(out);
-					out->membrane_acc = celltype->findMembrane(out->symbol.name());
+					out->membrane_acc = dynamic_pointer_cast<const MembranePropertySymbol>(out->symbol.accessor());
 					break;
 				case Granularity::Global :
 				case Granularity::Cell :
@@ -223,8 +223,8 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 				valarray<double> raw_data;
 				for (auto & out : halo_output) {
 					// TODO There must be a lock on the out->mapper if using it in multithreading !
-					if (out->symbol.granularity() == Granularity::MembraneNode) {
-						mapper.copyData(out->membrane_acc.getMembrane(cell_id));
+					if (out->membrane_acc) {
+						mapper.copyData(out->membrane_acc->getField(cell_id));
 					}
 					else {
 						if (raw_data.size() == 0) {

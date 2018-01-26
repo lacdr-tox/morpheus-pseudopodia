@@ -1,158 +1,106 @@
 #include "property.h"
-#include "expression_evaluator.h"
+// #include "expression_evaluator.h"
 
-namespace SIM {
-	void defineSymbol(shared_ptr<AbstractProperty> property) {
-		// registering the property as a Symbol
-		SymbolData symbol;
-		symbol.type_name = property->getTypeName();
-		symbol.fullname = property->getName();
-		symbol.name = property->getSymbol();
-		symbol.integer = false;
-		symbol.is_delayed = property->isDelayed();
-		if (property->isCellProperty()) {
-			symbol.link = SymbolData::CellPropertyLink;
-			symbol.granularity = Granularity::Cell;
-			
-			symbol.writable = true;
-			symbol.time_invariant = false;
-			symbol.invariant = false;
-		}
-		else {
-			symbol.const_prop = property;
-			symbol.link = (SymbolData::GlobalLink);
-			// granularity is set to undef until it's initialized
-			symbol.granularity = Granularity::Undef;
-			
-			symbol.writable = ! property->isConstant();
-			symbol.invariant = property->isConstant();
-			symbol.time_invariant = property->isConstant();
-		}
-		SIM::defineSymbol(symbol);
-	}
-}
+template <> string Container<double>::ConstantXMLName()  { return "Constant";};
+template <> string Container<VDOUBLE>::ConstantXMLName() { return "ConstantVector";};
+template <> string Container<double>::VariableXMLName() { return "Variable";};
+template <> string Container<VDOUBLE>::VariableXMLName() { return "VariableVector";};
+template <> string Container<double>::CellPropertyXMLName() { return "Property";};
+template <> string Container<VDOUBLE>::CellPropertyXMLName() { return "PropertyVector";};
 
-template <> const string Property<double>::property_xml_name() { return "Property";};
-template <> const string Property<double>::global_xml_name() { return "Variable";};
-template <> const string Property<double>::constant_xml_name() { return "Constant";};
+template <> string Container<vector<double> >::ConstantXMLName() { return "ConstantArray";};
+template <> string Container<vector<double> >::VariableXMLName() { return "VariableArray";};
+template <> string Container<vector<double> >::CellPropertyXMLName() { return "PropertyArray";};
 
-template <> const string Property<vector<double> >::property_xml_name() { return "PropertyArray";};
-template <> const string Property<vector<double> >::global_xml_name() { return "VariableArray";};
-template <> const string Property<vector<double> >::constant_xml_name() { return "ConstantArray";};
+template <> 
+bool Container<double>::type_registration = PluginFactory::RegisterCreatorFunction( Container<double>::ConstantXMLName(),Container<double>::createConstantInstance) 
+								   && PluginFactory::RegisterCreatorFunction( Container<double>::VariableXMLName(), Container<double>::createVariableInstance)
+								   && PluginFactory::RegisterCreatorFunction( Container<double>::CellPropertyXMLName(), Container<double>::createCellPropertyInstance);
 
-template <> const string Property<VDOUBLE>::property_xml_name() { return "PropertyVector";};
-template <> const string Property<VDOUBLE>::global_xml_name() { return "VariableVector";};
-template <> const string Property<VDOUBLE>::constant_xml_name() { return "ConstantVector";};
+template <> 
+bool Container<VDOUBLE>::type_registration = PluginFactory::RegisterCreatorFunction( Container<VDOUBLE>::ConstantXMLName(),Container<VDOUBLE>::createConstantInstance) 
+								   && PluginFactory::RegisterCreatorFunction( Container<VDOUBLE>::VariableXMLName(), Container<VDOUBLE>::createVariableInstance)
+								   && PluginFactory::RegisterCreatorFunction( Container<VDOUBLE>::CellPropertyXMLName(), Container<VDOUBLE>::createCellPropertyInstance);
 
+DelayPropertyPlugin::DelayPropertyPlugin(Mode mode): Container<double>(mode), ContinuousProcessPlugin(ContinuousProcessPlugin::DELAY, XMLSpec::XML_NONE), tsl_initialized(false) {};
 
-template <>
-void Property<double>::init(const Scope* scope, const SymbolFocus& f) {
-	if (initialized) return;
-	AbstractProperty::init(scope, f);
-	
-	value = 0;
-	initialized = true;
-	
-	
-	auto overrides = scope->valueOverrides();
-	auto it = overrides.find(this->symbolic_name);
-	if ( it != overrides.end()) {
-		string_val = it->second;
-		scope->removeValueOverride(it->second);
-	}
-	
-	if (!string_val.empty()) {
-		ExpressionEvaluator<double> eval(string_val);
-		eval.init(scope);
-		value = eval.get(f);
-	}
-}
+Plugin* DelayPropertyPlugin::createVariableInstance(){ return new DelayPropertyPlugin(Mode::Variable) ; };
 
-template <>
-void Property<VDOUBLE>::init(const Scope* scope, const SymbolFocus& f) {
-	if (initialized) return;
-	AbstractProperty::init(scope, f); 
-	
-	auto overrides = scope->valueOverrides();
-	auto it = overrides.find(this->symbolic_name);
-	if ( it != overrides.end()) {
-		string_val = it->second;
-		scope->removeValueOverride(it->second);
-	}
-	
-	if (!string_val.empty()) {
-		ExpressionEvaluator<VDOUBLE> eval(string_val);
-		eval.init(scope);
-		value = eval.get(f);
-	}
-	initialized = true; 
-}
+Plugin* DelayPropertyPlugin::createCellPropertyInstance(){ return new DelayPropertyPlugin(Mode::CellProperty) ; };
 
-DelayProperty::DelayProperty(bool cellproperty):
-  Property<double>("","",false, cellproperty,true),
-  ContinuousProcessPlugin(ContinuousProcessPlugin::DELAY, XMLSpec::XML_NONE),
-  tsl_initialized(false)
-{ };
+bool DelayPropertyPlugin::type_registration =
+	PluginFactory::RegisterCreatorFunction( DelayPropertyPlugin::VariableXMLName(), DelayPropertyPlugin::createVariableInstance)
+	&& PluginFactory::RegisterCreatorFunction( DelayPropertyPlugin::CellPropertyXMLName(), DelayPropertyPlugin::createCellPropertyInstance);
 
-DelayProperty::DelayProperty(string name, string symbol, bool cellproperty) :
-  Property<double>(name, symbol, false, cellproperty,true),
-  ContinuousProcessPlugin(ContinuousProcessPlugin::DELAY, XMLSpec::XML_NONE),
-  tsl_initialized(false)
-{ };
-
-bool DelayProperty::type_registration = PluginFactory::RegisterCreatorFunction( DelayProperty::global_xml_name(), DelayProperty::createVariableInstance)
-                                   && PluginFactory::RegisterCreatorFunction( DelayProperty::property_xml_name(), DelayProperty::createPropertyInstance);
-
-shared_ptr< AbstractProperty > DelayProperty::clone() const
+void DelayPropertyPlugin::loadFromXML(XMLNode node, Scope* scope)
 {
-	 shared_ptr<DelayProperty> c(new  DelayProperty(*this));
-	 // We Remember all clones that are attached to cells, such that we can also propagate those during executeTimeStep()
-	 clones.insert(c);
-	 return dynamic_pointer_cast<AbstractProperty>(c);
-}
-
-Plugin* DelayProperty::createVariableInstance() { return new DelayProperty() ; }
-Plugin* DelayProperty::createPropertyInstance() { return new DelayProperty(true); }
-
-void DelayProperty::loadFromXML(XMLNode node)
-{
-    Property< double >::loadFromXML(node);
-	ContinuousProcessPlugin::loadFromXML(node);
+	ContinuousProcessPlugin::loadFromXML(node, scope);
 	
+// 	Container< double >::loadFromXML(node, scope);
+	Plugin::loadFromXML(node, scope);
+	
+	switch (mode) {
+		case Mode::Variable : 
+			_accessor = make_shared<DelayVariableSymbol>(this);
+			break;
+		case Mode::CellProperty : {
+			auto ct = scope->getCellType();
+			if (! ct)
+				throw MorpheusException(CellPropertyXMLName() + " requires to be defined within acelltype scope ", node);
+			auto property = make_shared<DelayProperty>(this,deque<double>(2,0));
+			property_id = ct->addProperty(property);
+			_accessor = make_shared<DelayPropertySymbol>(this,ct,property_id);
+			break;
+		}
+		case Mode::Constant :
+			throw string("No constant DelayProperty.");
+	}
+	
+	scope->registerSymbol(_accessor);
+	registerInputSymbol(_accessor);
+	registerOutputSymbol(_accessor);
+
 	if (!getXMLAttribute(node,"delay",delay) ) {
 		delay =0;
 	}
+	
 	
 	if (!type_registration)
 		cout << "Don't ever remove me! " << " I take care to register this Plugin !!" << endl;
 }
 
-void DelayProperty::init(const Scope* scope) {
-	init(scope, SymbolFocus::global); 
-};
-
-void DelayProperty::init(const Scope* scope, const SymbolFocus& f)
-{
-// 	cout << "Initializing DelayProperty " << symbolic_name << endl;;
-	Property::init(scope, f);
-	setTimeStep(delay);
+void DelayPropertyPlugin::init(const Scope* scope) {
 	
 	if ( ! tsl_initialized ) {
+		Plugin::init(scope);
+		this->initialized = true;
 		ContinuousProcessPlugin::init(scope);
-		registerInputSymbol(this->getSymbol(), scope);
-		registerOutputSymbol(this->getSymbol(), scope);
 		tsl_initialized = true;
 	}
+	setTimeStep(delay);
+	
+	DelayProperty* property;
+	if (mode == Mode::Variable) {
+		static_pointer_cast<DelayVariableSymbol>(_accessor)->init();
+	}
+	else if (mode == Mode::CellProperty) {
+		static_pointer_cast<DelayPropertySymbol>(_accessor)->init();
+	}
+};
+
+template <>
+void DelayProperty::init(const SymbolFocus& f) {
+	std::fill(this->value.begin(),this->value.end(),parent->getInitValue(f));
 	initialized = true;
-}
+};
 
 
-void DelayProperty::setTimeStep(double t)
+void DelayPropertyPlugin::setTimeStep(double t)
 {
 	ContinuousProcessPlugin::setTimeStep(t);
 	int queue_length;
 	if (t==0) {
-		queue_length = 1;
+		queue_length = 2;
 	}
 	else {
 		assert(t<=delay);
@@ -167,50 +115,35 @@ void DelayProperty::setTimeStep(double t)
 // 		queue_length = max(int(rint(delay/t)),1);
 		queue_length += 1; // need one more storage locations than intervals;
 	}
-	queue.resize(queue_length,value);
-	std::set< shared_ptr<DelayProperty> >::iterator i;
-	//  Propagate all cloned containers attached to cells
-	for (i=clones.begin(); i!=clones.end();i++) {
-		(*i)->queue.resize(queue.size(),value);
+	
+	if (mode==Mode::Variable) {
+		
 	}
-	cout << "Queue for DelayProperty " << name << " resized to length " << queue.size() << " with step size " << timeStep() << endl;
+	else if (mode == Mode::CellProperty) {
+		const CellType*  celltype = scope()->getCellType();
+		static_pointer_cast<DelayProperty>(celltype->default_properties[property_id])->value.resize(queue_length,value.safe_get(SymbolFocus::global));
+		// Assume there are no cells yet ...
+		for (auto cell_id : celltype->getCellIDs()) {
+			static_pointer_cast<DelayProperty>(CPM::getCell(cell_id).properties[property_id])->value.resize(queue_length,value.safe_get(SymbolFocus(cell_id)));
+		}
+	}
+	cout << "Queue for DelayProperty " << getSymbol() << " resized to length " << queue_length << " with step size " << timeStep() << endl;
 }
 
-void DelayProperty::executeTimeStep()
+void DelayPropertyPlugin::executeTimeStep()
 {
-	if (this->isCellProperty()) {
+	if (mode == Mode::CellProperty) {
+		const CellType*  celltype = scope()->getCellType();
 		//  Execute time step for all cloned containers attached to cells
-		for (const auto& clone : clones) {
-			clone->queue.push_back(clone->queue.back());
-			clone->queue.pop_front();
-			clone->value = clone->queue.front();
+		for (auto cell_id : celltype->getCellIDs()) {
+			auto property = static_pointer_cast<DelayProperty>(CPM::getCell(cell_id).properties[property_id]);
+			property->value.push_back(property->value.back());
+			property->value.pop_front();
 		}
 	}
 	else {
-		queue.push_back(queue.back());
-		queue.pop_front();
-		value = queue.front();
-	}
-}
-
-
-
-XMLNode DelayProperty::storeData() const
-{
-	XMLNode node = XMLNode::createXMLTopNode(XMLDataName().c_str());
-	node.addAttribute("symbol-ref",symbolic_name.c_str());
-	node.addAttribute("value",to_cstr(queue));
-	return node;
-}
-
-void DelayProperty::restoreData(XMLNode parent_node)
-{
-	XMLNode node = parent_node.getChildNodeWithAttribute(XMLDataName().c_str(),"symbol-ref",symbolic_name.c_str());
-	if (!node.isEmpty()) {
-		if ( getXMLAttribute(node,"value",queue,false)) {
-			cout << symbolic_name << "=" << queue << "; ";
-		} else {
-			cerr << XMLName() << "::restoreData: Cannot restore " << XMLDataName() << "of referenced symbol \"" << symbolic_name << endl;
-		}
+		auto property = &(static_pointer_cast<DelayVariableSymbol>(_accessor)->property);
+		property->value.push_back(property->value.back());
+		property->value.pop_front();
 	}
 }

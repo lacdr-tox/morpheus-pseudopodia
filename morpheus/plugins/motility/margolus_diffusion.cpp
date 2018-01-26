@@ -36,8 +36,8 @@ void MargolusDiffusion::init( const Scope* scope ) {
 	vector< VINT > partition;
 	partition.resize ( 4 ); // each partition contains 4 (= 2x2) cells
 
-	for ( uint x=0; x<lattice->size().x; x+=2 ) {
-		for ( uint y=0; y<lattice->size().y; y+=2 ) {
+	for ( int x=0; x<lattice->size().x; x+=2 ) {
+		for ( int y=0; y<lattice->size().y; y+=2 ) {
 			partition[0] = ( VINT ( x  , y  ,0 ) );		// origin (bottom left)
 			partition[1] = ( VINT ( x  , y+1,0 ) );		// top left
 			partition[2] = ( VINT ( x+1, y+1,0 ) );		// top right
@@ -46,11 +46,11 @@ void MargolusDiffusion::init( const Scope* scope ) {
 			cout << x << ", " << y << endl;
 		}
 	}
-	cout << "Number of coordinates = " << margolus_partitions_normal.size() << endl;
+// 	cout << "Number of coordinates = " << margolus_partitions_normal.size() << endl;
 
 	// create second partitioning that is shifted diagonally by one cell
-	for ( uint x=1; x<lattice->size().x; x+=2 ) {
-		for ( uint y=1; y<lattice->size().y; y+=2 ) {
+	for ( int x=1; x<lattice->size().x; x+=2 ) {
+		for ( int y=1; y<lattice->size().y; y+=2 ) {
 			partition[0] = ( VINT ( x  , y  ,0 ) );		// origin (bottom left)
 			partition[1] = ( VINT ( x  , y+1,0 ) );		// top left
 			partition[2] = ( VINT ( x+1, y+1,0 ) );		// top right

@@ -31,15 +31,15 @@ SET(morpheus_src
 	scope.cpp
 	focusrange.cpp
 	symbolfocus.cpp
-	symbol_accessor.cpp
+# 	symbol_accessor.cpp
 	diff_eqn.cpp
 	system.cpp
-	cell_membrane_accessor.cpp
+# 	cell_membrane_accessor.cpp
 	membrane_property.cpp
 	membranemapper.cpp
 	data_mapper.cpp
-	super_cell.cpp
-	super_celltype.cpp
+# 	super_cell.cpp
+# 	super_celltype.cpp
 )
 
 # Also link all the plugins from the plugin folder

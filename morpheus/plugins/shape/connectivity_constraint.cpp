@@ -7,7 +7,7 @@ ConnectivityConstraint::ConnectivityConstraint(){
 }
 
 void ConnectivityConstraint::init(const Scope* scope) {
-	CPM_Check_Update::init(scope);
+	Cell_Update_Checker::init(scope);
 	const Lattice& lattice = SIM::lattice();
 	neighbors = CPM::getSurfaceNeighborhood().neighbors();
 	max_first_order = 0;

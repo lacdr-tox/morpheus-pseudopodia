@@ -14,6 +14,7 @@
 
 #include "core/interfaces.h"
 #include "core/focusrange.h"
+#include "core/celltype.h"
 #include "core/data_mapper.h"
 #include "core/plugin_parameter.h"
 #include "gnuplot_i/gnuplot_i.h"
@@ -361,7 +362,7 @@ class Logger : public AnalysisPlugin
 	int instance_id;
 private:
 	XMLNode stored_node;
-	vector< shared_ptr< PluginParameter2<double, XMLReadableSymbol> > > inputs;
+	vector< PluginParameter_Shared<double, XMLReadableSymbol> > inputs;
 	vector<shared_ptr<LoggerWriterBase> > writers;
 	vector<shared_ptr<LoggerPlotBase> > plots;
 
@@ -390,12 +391,12 @@ public:
 	Logger(); // default values
 	DECLARE_PLUGIN("Logger");
 	~Logger(); // default destructor for cleanup
-	void loadFromXML(const XMLNode ) override;
+	void loadFromXML(const XMLNode, Scope* scope ) override;
 	void init(const Scope* scope) override;
 	void analyse(double time) override;
 	void finish() override;
 	
-	const vector< shared_ptr< PluginParameter2<double, XMLReadableSymbol> > >& getInputs() const { return inputs;};
+	const vector< PluginParameter_Shared<double, XMLReadableSymbol> >& getInputs() const { return inputs;};
 	string getInputsDescription(const string& s) const;
 	int addWriter(shared_ptr<LoggerWriterBase> writer);
 	const vector<shared_ptr<LoggerWriterBase> >& getWriters() const { return writers; };
@@ -443,6 +444,7 @@ public:
 	bool hasHeader(){ return header(); }; 
 	
 private:
+	const Scope* output_scope;
 	OutputFormat file_format;
 	bool forced_format;
 	

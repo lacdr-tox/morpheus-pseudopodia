@@ -40,7 +40,11 @@ const VINT&  SymbolFocus::membrane_pos() const {
 	return d_membrane_pos;
 };
 const VINT& SymbolFocus::pos() const {
-	if (has_pos) return d_pos; else { throw string("Requesting position from SymbolFocus, which is not available!"); return d_pos; }
+	if (has_pos) return d_pos;
+	else { 
+		throw string("Requesting position from SymbolFocus, which is not available!");
+		return d_pos;
+	}
 };
 
 const Cell& SymbolFocus::cell() const {
@@ -49,6 +53,7 @@ const Cell& SymbolFocus::cell() const {
 			throw string("SymbolFocus cannot deduce cell.\nNo position or cell associated with the Focus.");
 		}
 		d_cell = & CPM::getCell(CPM::getNode(d_pos).cell_id);
+		has_cell = true;
 	}
 	return *d_cell;
 }
@@ -117,6 +122,59 @@ void SymbolFocus::unset() {
 	has_cell_index=false;
 };
 
+bool SymbolFocus::operator<(const SymbolFocus& rhs) const {
+	if (has_pos && rhs.has_pos) {
+		const VINT& a=d_pos;const VINT& b=rhs.d_pos;
+		return ( a.z < b.z || (a.z==b.z  &&  (a.y<b.y || (a.y==b.y && a.x<b.x))));
+	}
+	else if (has_pos || rhs.has_pos)
+		return has_pos;
+	else if (has_cell && rhs.has_cell) {
+		if (d_cell->getID() == rhs.d_cell->getID()){
+			if (has_membrane && rhs.has_membrane) {
+				const VINT& a=d_membrane_pos;const VINT& b=rhs.d_membrane_pos;
+				return (a.y<b.y || (a.y==b.y && a.x<b.x));
+			}
+			else if (has_membrane || rhs.has_membrane) {
+				return has_membrane;
+			}
+			else {
+				return true;
+			}
+		}
+		else
+			return d_cell->getID() < rhs.d_cell->getID();
+	}
+	else if (has_cell || rhs.has_cell)
+		return has_cell;
+	else
+		return true;
+}
+
+bool SymbolFocus::operator==(const SymbolFocus& rhs) const {
+	if (has_pos && rhs.has_pos) {
+		return d_pos == rhs.d_pos;
+	}
+	else if (has_pos || rhs.has_pos)
+		return false;
+	else if (has_cell && rhs.has_cell) {
+		if (has_membrane && rhs.has_membrane) {
+			
+		}
+		else if (has_membrane || rhs.has_membrane) {
+			return false;
+		}
+		else 
+			return d_cell->getID() == rhs.d_cell->getID();
+	}
+	else {
+		return true; // Both are global
+	}
+}
+
 const SymbolFocus SymbolFocus::global = SymbolFocus();
+
+
+
 
 

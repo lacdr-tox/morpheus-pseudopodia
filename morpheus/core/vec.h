@@ -69,6 +69,7 @@ class _V {
 
 		const _V<T>& operator +=(const _V<T> &a);
 		const _V<T>& operator -=(const _V<T> &a);
+		_V<T> operator -() { return _V<T>(-x,-y,-z); }
 
 		// value properties
 		double abs() const;
@@ -263,6 +264,7 @@ struct less_VINT {  // we use a struct to prevent constructors
 	bool operator() (const VINT& a, const VINT& b) const {
 		return ( a.z < b.z || (a.z==b.z  &&  (a.y<b.y || (a.y==b.y && a.x<b.x))));
 	}
+	
 };
 
 struct CompareAngle {

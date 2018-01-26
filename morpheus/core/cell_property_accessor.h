@@ -60,7 +60,7 @@ CellPropertyAccessor<T>::CellPropertyAccessor(const CellType* celltype, uint pro
 		 if (! dynamic_pointer_cast< Property<T> >(ct->default_properties[pid]) )
 		 {
 			 cerr << "Trying to create CellPropertyAccessor with wrong type ! " << endl;
-			 cerr << "CT " << celltype->getName() << " property " << celltype->default_properties[pid]->getSymbol() << endl;
+			 cerr << "CT " << celltype->getName() << " property " << celltype->default_properties[pid]->symbol() << endl;
 			 exit(-1);
 		 }
 			 

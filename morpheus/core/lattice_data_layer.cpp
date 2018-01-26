@@ -21,8 +21,9 @@ Lattice_Data_Layer<T>::Lattice_Data_Layer(shared_ptr<const Lattice> lattice,int 
 
 	default_value = def_val;
 	default_boundary_value = def_val;
-	boundary_values.resize(Boundary::nCodes, default_boundary_value);
-	domain_value  = default_value;
+	boundary_values.resize(Boundary::nCodes);
+	for (auto & b_val : boundary_values) b_val = make_unique<DefaultValueReader>(default_value);
+	domain_value  =  make_unique<DefaultValueReader>(default_value);
 	
 	// assume that the pde layer covers the whole lattice
 	using_buffer = false;
@@ -92,7 +93,7 @@ template <class T> void  Lattice_Data_Layer<T>::allocate() {
 };
 
 template <class T>
-void Lattice_Data_Layer<T>::loadFromXML(const XMLNode xNode, T (* converter)(const string&) ) {
+void Lattice_Data_Layer<T>::loadFromXML(const XMLNode xNode, shared_ptr<ValueReader> converter ) {
 	// read the default value
 	getXMLAttribute(xNode,"name",name);
 // 	getXMLAttribute(xNode, "DefaultValue/text", default_value);
@@ -112,12 +113,14 @@ void Lattice_Data_Layer<T>::loadFromXML(const XMLNode xNode, T (* converter)(con
 			throw(string("Missing boundary definition in BoundaryValue"));
 		lower_case(code_name);
 			
-		value_type val = default_boundary_value;
+// 		value_type val = default_boundary_value;
 		
 		string str_val;
 		if ( ! getXMLAttribute(xbv, "value", str_val) )
 			throw(string("Missing or invalid value in BoundaryValue"));
-		val = converter(str_val);
+		
+		shared_ptr<ValueReader> val = converter->clone();
+		val->set(str_val);
 		
 		if (code_name == "domain") {
 			domain_value = val;
@@ -155,7 +158,7 @@ template <class T> void Lattice_Data_Layer<T>::setDomain()
 				}
 				else {
 					domain[get_data_index(pos)] = d.boundaryType();
-					data[get_data_index(pos)] = domain_value;
+					data[get_data_index(pos)] = domain_value->get(pos);
 				}
 			}
 		}
@@ -233,10 +236,14 @@ typename TypeInfo<T>::Return Lattice_Data_Layer<T>::get(VINT a) const {
 // 		return data[get_data_index(a)];
 // 	}
 // 	else {
-		Boundary::Codes b;
-		if ( _lattice->resolve(a,b))
+// 		Boundary::Codes b;
+		if ( accessible(a) )
 			return data[get_data_index(a)];
-		return boundary_values[b];
+		else if ( _lattice->resolve(a))
+			return data[get_data_index(a)];
+		else
+			throw string("Unable to access position ") + to_str(a);
+// 		return boundary_values[b]->get(a);
 // 	}
 };
 
@@ -476,14 +483,78 @@ gslice Lattice_Data_Layer<T>::zslice(span a) {
 template <class T>
 void Lattice_Data_Layer<T>::reset_boundaries() {
 	// set no-flux boundaries to the neighboring site values
-	if (using_domain) {
+	VINT pos;
+	if (using_domain && ! domain_value->isTimeConst()) {
+		if (domain_value->isSpaceConst()) {
+			T val = domain_value->get(VINT(0,0,0));
+			for (pos.z=0; pos.z<l_size.z; pos.z++) {
+				for (pos.y=0; pos.y<l_size.y; pos.y++) {
+					pos.x=0;
+					auto idx = get_data_index(pos);
+					for (; pos.x<l_size.x; pos.x++, idx++) {
+						if (domain[idx] != Boundary::none)
+							data[idx] = val;
+					}
+				}
+			}
+		}
+		else {
+			for (pos.z=0; pos.z<l_size.z; pos.z++) {
+				for (pos.y=0; pos.y<l_size.y; pos.y++) {
+					pos.x=0;
+					auto idx = get_data_index(pos);
+					for (; pos.x<l_size.x; pos.x++, idx++) {
+						if (domain[idx] != Boundary::none)
+							data[idx] = domain_value->get(pos);
+					}
+				}
+			}
+		}
+	}
 		if (boundary_types[Boundary::mx] == Boundary::periodic) {
 			data[s_xmb] = data[s_xp];
 			data[s_xpb] = data[s_xm];
 		}
 		else {
-			data[s_xmb] = boundary_values[Boundary::mx];
-			data[s_xpb] = boundary_values[Boundary::px];
+			if (boundary_values[Boundary::mx]->isSpaceConst())
+				data[s_xmb] = boundary_values[Boundary::mx]->get(VINT(0,0,0));
+			else {
+				if (cache_xmb.size() == 0) {
+					cache_xmb.resize(shadow_width.x*shadow_size.y*shadow_size.z);
+				}
+
+				VINT start = -shadow_width;
+				VINT stop = l_size+shadow_width;
+				stop.x = 0;
+				int idx=0; pos = start;
+				for (; pos.z<stop.z; pos.z++)
+					for (; pos.y<stop.y; pos.y++)
+						for (; pos.x<stop.x; pos.x++) {
+							cache_xmb[idx] = boundary_values[Boundary::mx]->get(pos);
+							idx++;
+						}
+				data[s_xmb] = cache_xmb;
+			}
+				
+			if (boundary_values[Boundary::px]->isSpaceConst())
+				data[s_xpb] = boundary_values[Boundary::px]->get(VINT(0,0,0));
+			else {
+				if (cache_xpb.size() == 0) {
+					cache_xpb.resize(shadow_width.x*shadow_size.y*shadow_size.z);
+				}
+
+				VINT start = -shadow_width;
+				VINT stop = l_size+shadow_width;
+				start.x = l_size.x;
+				int idx=0; pos = start;
+				for (; pos.z<stop.z; pos.z++)
+					for (; pos.y<stop.y; pos.y++)
+						for (; pos.x<stop.x; pos.x++) {
+							cache_xpb[idx] = boundary_values[Boundary::px]->get(pos);
+							idx++;
+						}
+				data[s_xpb] = cache_xpb;
+			}
 		}
 		if (dimensions>1) {
 			if (boundary_types[Boundary::my] == Boundary::periodic) {
@@ -491,8 +562,46 @@ void Lattice_Data_Layer<T>::reset_boundaries() {
 				data[s_ypb] = data[s_ym];
 			}
 			else {
-				data[s_ymb] = boundary_values[Boundary::my];
-				data[s_ypb] = boundary_values[Boundary::py];
+				
+				if (boundary_values[Boundary::my]->isSpaceConst())
+					data[s_ymb] = boundary_values[Boundary::my]->get(VINT(0,0,0));
+				else {
+					if (cache_ymb.size() == 0) {
+						cache_ymb.resize(shadow_size.x*shadow_width.y*shadow_size.z);
+					}
+
+					VINT start = -shadow_width;
+					VINT stop = l_size+shadow_width;
+					stop.y = 0;
+					int idx=0; pos = start;
+					for (; pos.z<stop.z; pos.z++)
+						for (; pos.y<stop.y; pos.y++)
+							for (; pos.x<stop.x; pos.x++) {
+								cache_ymb[idx] = boundary_values[Boundary::my]->get(pos);
+								idx++;
+							}
+					data[s_ymb] = cache_ymb;
+				}
+				
+				if (boundary_values[Boundary::py]->isSpaceConst())
+					data[s_ypb] = boundary_values[Boundary::py]->get(VINT(0,0,0));
+				else {
+					if (cache_ypb.size() == 0) {
+						cache_ypb.resize(shadow_size.x*shadow_width.y*shadow_size.z);
+					}
+
+					VINT start = -shadow_width;
+					VINT stop = l_size+shadow_width;
+					start.y = l_size.y;
+					int idx=0; pos = start;
+					for (; pos.z<stop.z; pos.z++)
+						for (; pos.y<stop.y; pos.y++)
+							for (; pos.x<stop.x; pos.x++) {
+								cache_ypb[idx] = boundary_values[Boundary::py]->get(pos);
+								idx++;
+							}
+					data[s_ypb] = cache_ypb;
+				}
 			}
 		}
 		if (dimensions>2) {
@@ -501,11 +610,49 @@ void Lattice_Data_Layer<T>::reset_boundaries() {
 				data[s_zpb] = data[s_zm];
 			}
 			else {
-				data[s_zmb] = boundary_values[Boundary::mz];
-				data[s_zpb] = boundary_values[Boundary::pz];
+				if (boundary_values[Boundary::mz]->isSpaceConst())
+					data[s_zpb] = boundary_values[Boundary::mz]->get(VINT(0,0,0));
+				else {
+					if (cache_zmb.size() == 0) {
+						cache_zmb.resize(shadow_size.x*shadow_size.y*shadow_width.z);
+					}
+
+					VINT start = -shadow_width;
+					VINT stop = l_size+shadow_width;
+					stop.z = 0;
+					int idx=0; pos = start;
+					for (; pos.z<stop.z; pos.z++)
+						for (; pos.y<stop.y; pos.y++)
+							for (; pos.x<stop.x; pos.x++) {
+								cache_zmb[idx] = boundary_values[Boundary::mz]->get(pos);
+								idx++;
+							}
+					data[s_zmb] = cache_zmb;
+				}
+				
+				if (boundary_values[Boundary::pz]->isSpaceConst())
+					data[s_zpb] = boundary_values[Boundary::pz]->get(VINT(0,0,0));
+				else {
+					
+					if (cache_zpb.size() == 0) {
+						cache_zpb.resize(shadow_size.x*shadow_size.y*shadow_width.z);
+					}
+
+					VINT start = -shadow_width;
+					VINT stop = l_size+shadow_width;
+					start.z = l_size.z;
+					int idx=0; pos = start;
+					for (; pos.z<stop.z; pos.z++)
+						for (; pos.y<stop.y; pos.y++)
+							for (; pos.x<stop.x; pos.x++) {
+								cache_zpb[idx] = boundary_values[Boundary::pz]->get(pos);
+								idx++;
+							}
+					data[s_zpb] = cache_zpb;
+				}
 			}
 		}
-		
+/*		
 	}
 	else {
 		switch (boundary_types[Boundary::mx]){
@@ -595,7 +742,7 @@ void Lattice_Data_Layer<T>::reset_boundaries() {
 					assert(0);
 			}
 		}
-	}
+	}*/
 }
 
 template <class T>

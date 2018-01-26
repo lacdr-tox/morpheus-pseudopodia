@@ -11,17 +11,16 @@ Logger::~Logger(){
 	Logger::instances--;
 };
 
-void Logger::loadFromXML(const XMLNode xNode){
+void Logger::loadFromXML(const XMLNode xNode, Scope* scope){
     stored_node = xNode;
     slice = false;
     
 	// Load symbols
 	XMLNode xInput = xNode.getChildNode("Input");
+	inputs.resize(xInput.nChildNode("Symbol"));
 	for (uint i=0; i<xInput.nChildNode("Symbol"); i++) {
-		auto input = make_shared<PluginParameter2 <double, XMLReadableSymbol> >();
-		input->setXMLPath("Input/Symbol["+to_str(i)+"]/symbol-ref");
-		inputs.push_back(input);
-		registerPluginParameter(*input.get());
+		inputs[i]->setXMLPath("Input/Symbol["+to_str(i)+"]/symbol-ref");
+		registerPluginParameter(inputs[i]);
 	}
 	
 	// Restriction
@@ -81,7 +80,7 @@ void Logger::loadFromXML(const XMLNode xNode){
 		plots.push_back(p);
 	}
 	
-	AnalysisPlugin::loadFromXML(xNode);
+	AnalysisPlugin::loadFromXML(xNode,scope);
 }
 
 
@@ -90,7 +89,7 @@ void Logger::init(const Scope* scope){
 	
 	// Set the PluginParameters of the symbols to be resolved in celltype scope, if it is defined as a restriction.
 	const Scope* logging_scope = scope;
-	celltype.init();
+	celltype.init(scope);
 	if ( celltype.isDefined() && celltype() &&  ! cellids_str.isDefined()) {
 		logging_scope = celltype()->getScope();
 		for (auto &c : inputs) {
@@ -131,13 +130,13 @@ void Logger::init(const Scope* scope){
 			cellids = parseCellIDs( cellids_str() );
 			for(auto &i : cellids){
 				if( CPM::cellExists(i) ){
-					restrictions.insert( pair<FocusRangeAxis, int>( FocusRangeAxis::CELL, i ) );
+					restrictions.insert( {FocusRangeAxis::CELL, i} );
 				}
 			}
 		}
 		else if( celltype.isDefined() ){
 			if(celltype()) {
-				restrictions.insert( pair<FocusRangeAxis, int>( FocusRangeAxis::CellType, celltype()->getID()) );
+				restrictions.insert( {FocusRangeAxis::CellType, celltype()->getID()} );
 			}
 			else
 				throw MorpheusException(string("Cannot restrict Logger to celltype "+celltype()->getName()+" because it is not defined."), stored_node);
@@ -181,8 +180,8 @@ string  Logger::getInputsDescription(const string& s) const {
 	if (! writers.empty() && dynamic_pointer_cast<LoggerTextWriter>(writers.front()) ) {
 		const auto& writer = dynamic_pointer_cast<LoggerTextWriter>(writers.front());
 		for (const auto &i : writer->getSymbols()) {
-			if (i.getName() == s) {
-				return Gnuplot::sanitize(i.getFullName());
+			if (i->name() == s) {
+				return Gnuplot::sanitize(i->description());
 			}
 		}
 	}
@@ -243,8 +242,9 @@ vector<CPM::CELL_ID> Logger::parseCellIDs(string cell_ids_string){
 	return ids;
 }
 
-LoggerTextWriter::LoggerTextWriter(Logger& logger, string xml_base_path) : LoggerWriterBase(logger) { 
-	
+LoggerTextWriter::LoggerTextWriter(Logger& logger, string xml_base_path) : LoggerWriterBase(logger)
+{ 
+	output_scope=nullptr;
 	header.setXMLPath(xml_base_path+"/header");
 	header.setDefault("true");
 	logger.registerPluginParameter(header);
@@ -293,6 +293,7 @@ LoggerTextWriter::LoggerTextWriter(Logger& logger, string xml_base_path) : Logge
 
 LoggerTextWriter::LoggerTextWriter(Logger& logger, LoggerTextWriter::OutputFormat format): LoggerWriterBase(logger)
 {
+	output_scope = nullptr;
 	header.read("true");
 	
 	map<string, string> separator_convmap;
@@ -347,6 +348,11 @@ void LoggerTextWriter::init() {
 	Granularity granularity = logger.getGranularity();
 	FocusRange range(granularity, logger.getRestrictions(), logger.getDomainOnly());
 	
+	// Pick the right scope from logger restrictions definition
+	output_scope=SIM::getGlobalScope();
+	if (logger.getRestrictions().count(FocusRangeAxis::CellType)==1)
+		output_scope = CPM::getCellTypes()[logger.getRestrictions().find(FocusRangeAxis::CellType)->second].lock()->getScope();
+	
 	if (forced_format) {
 		if (file_format == OutputFormat::MATRIX && !range.isRegular() ) {
 			throw string("Logger TextWriter: Cannot produce matrix data from given data (range is irregular).");
@@ -381,46 +387,46 @@ void LoggerTextWriter::init() {
 	
 	if (file_format == OutputFormat::CSV) {
 // 		if (file_separation != FileSeparation::TIME && file_separation != FileSeparation::TIME_CELL) {
-		output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::Time_symbol) );
-		csv_header.push_back(SymbolData::Time_symbol);
+		output_symbols.push_back( output_scope->findSymbol<double>(SymbolBase::Time_symbol) );
+		csv_header.push_back(SymbolBase::Time_symbol);
 // 		}
 		
 		for (auto& axis :range.dataAxis() ) {
 			switch(axis) {
 				case FocusRangeAxis::CELL :
-					output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::CellID_symbol) );
-					csv_header.push_back(SymbolData::CellID_symbol);
+					output_symbols.push_back( output_scope->findSymbol<double>(SymbolBase::CellID_symbol) );
+					csv_header.push_back(SymbolBase::CellID_symbol);
 					break;
 				case FocusRangeAxis::X :
-					csv_header.push_back(SymbolData::Space_symbol+".x");
-					output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::Space_symbol+".x") );
+					csv_header.push_back(SymbolBase::Space_symbol+".x");
+					output_symbols.push_back( output_scope->findSymbol<double>(SymbolBase::Space_symbol+".x") );
 					break;
 				case FocusRangeAxis::Y :
-					csv_header.push_back(SymbolData::Space_symbol+".y");
-					output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::Space_symbol+".y") );
+					csv_header.push_back(SymbolBase::Space_symbol+".y");
+					output_symbols.push_back( output_scope->findSymbol<double>(SymbolBase::Space_symbol+".y") );
 					break;
 				case FocusRangeAxis::Z :
-					csv_header.push_back(SymbolData::Space_symbol+".z");
-					output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::Space_symbol+".z") );
+					csv_header.push_back(SymbolBase::Space_symbol+".z");
+					output_symbols.push_back( output_scope->findSymbol<double>(SymbolBase::Space_symbol+".z") );
 					break;
 				case FocusRangeAxis::MEM_X :
-					csv_header.push_back(SymbolData::MembraneSpace_symbol+".phi");
-					output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::MembraneSpace_symbol+".phi") );
+					csv_header.push_back(SymbolBase::MembraneSpace_symbol+".phi");
+					output_symbols.push_back( output_scope->findSymbol<double>(SymbolBase::MembraneSpace_symbol+".phi") );
 					break;
 				case FocusRangeAxis::MEM_Y :
-					csv_header.push_back(SymbolData::MembraneSpace_symbol+".theta");
-					output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::MembraneSpace_symbol+".theta") );
+					csv_header.push_back(SymbolBase::MembraneSpace_symbol+".theta");
+					output_symbols.push_back( output_scope->findSymbol<double>(SymbolBase::MembraneSpace_symbol+".theta") );
 					break;
 				case FocusRangeAxis::NODE :
-					csv_header.push_back(SymbolData::Space_symbol+".x");
-					output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::Space_symbol+".x") );
+					csv_header.push_back(SymbolBase::Space_symbol+".x");
+					output_symbols.push_back( output_scope->findSymbol<double>(SymbolBase::Space_symbol+".x") );
 					if (SIM::lattice().getDimensions()>1) {
-						csv_header.push_back(SymbolData::Space_symbol+".y");
-						output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::Space_symbol+".y") );
+						csv_header.push_back(SymbolBase::Space_symbol+".y");
+						output_symbols.push_back( output_scope->findSymbol<double>(SymbolBase::Space_symbol+".y") );
 					}
 					if (SIM::lattice().getDimensions()>2) {
-						csv_header.push_back(SymbolData::Space_symbol+".z");
-						output_symbols.push_back( SIM::findGlobalSymbol<double>(SymbolData::Space_symbol+".z") );
+						csv_header.push_back(SymbolBase::Space_symbol+".z");
+						output_symbols.push_back( output_scope->findSymbol<double>(SymbolBase::Space_symbol+".z") );
 					}
 					break;
 				default:
@@ -445,15 +451,15 @@ void LoggerTextWriter::init() {
 }
 
 int LoggerTextWriter::addSymbol(string name) {
-	const Scope* s = SIM::getGlobalScope();
-	if (!output_symbols.empty())
-		s = output_symbols.back().getScope();
-	SymbolAccessor<double> d = s->findSymbol<double>(name);
+	 assert(output_scope);
+// 		output_scope = SIM::getGlobalScope();
+
+	SymbolAccessor<double> d = output_scope->findSymbol<double>(name);
 	output_symbols.push_back(d);
 	if (OutputFormat::CSV == file_format) {
-		csv_header.push_back(d.getName());
+		csv_header.push_back(d->name());
 	}
-	logger.registerInputSymbol(d.getName(), d.getScope());
+	logger.registerInputSymbol(d);
 	return output_symbols.size()-1;
 }
 
@@ -566,7 +572,7 @@ void LoggerTextWriter::writeCSV() {
 				// write point of data row
 				for (uint i=0; i<output_symbols.size(); i++ ) {
 					if (i!=0) *out << separator();
-					*out << output_symbols[i]( focus );
+					*out << output_symbols[i]->get( focus );
 				}
 				*out << "\n";
 			}
@@ -579,7 +585,7 @@ void LoggerTextWriter::writeCSV() {
 			// write point of data row header
 			for (uint i=0; i<output_symbols.size(); i++ ) {
 				if (i!=0) *out << separator();
-				*out << output_symbols[i]( focus );
+				*out << output_symbols[i]->get( focus );
 			}
 			*out << "\n";
 		}
@@ -627,7 +633,7 @@ void LoggerTextWriter::writeMatrix() {
 					restrictions.insert( make_pair(FocusRangeAxis::CELL,cells[c]) );
 					FocusRange range(granularity,restrictions);
 // 					ofstream out(getOutFile( *(range.begin()), symbol->name()), ofstream::out | ofstream::app);
-					auto out = getOutFile( *(range.begin()), symbol.getName());
+					auto out = getOutFile( *(range.begin()), symbol->name());
 					
 					if( header() ){
 						// not implemented yet
@@ -636,7 +642,7 @@ void LoggerTextWriter::writeMatrix() {
 					uint col=0;
 					uint row=0;
 					for (auto f : range) {
-						*out << symbol(f);
+						*out << symbol->get(f);
 						col++;
 						if (col==row_length) {
 							*out << "\n";
@@ -663,7 +669,7 @@ void LoggerTextWriter::writeMatrix() {
 		}
 		else {
 			if (range.size() == 0) return;
-			auto out = getOutFile( *(range.begin()), symbol.getName());
+			auto out = getOutFile( *(range.begin()), symbol->name());
 // 			FocusRange range(granularity,logger.getRestrictions());
 			bool write_header_block=header();
 			uint col=0;
@@ -686,7 +692,7 @@ void LoggerTextWriter::writeMatrix() {
 					// write header for row
 					writeMatrixRowHeader(f, range, *out);
 				
-				*out << symbol(f);
+				*out << symbol->get(f);
 				col++;
 				if (col==row_length) {
 					*out << "\n";
@@ -1034,7 +1040,7 @@ LoggerLinePlot::LoggerLinePlot(Logger& logger, string xml_base_path) : LoggerPlo
 	axes.y.symbols.resize(num_ycols);
 	for(uint i=0; i<num_ycols;i++){
 		axes.y.symbols[i]->setXMLPath(xml_base_path+"/"+tag+"/Symbol["+to_str(i)+"]/symbol-ref");
-		logger.registerPluginParameter(axes.y.symbols[i]);
+		logger.registerPluginParameter(*axes.y.symbols[i]);
 	}
 	axes.y.min.setXMLPath(xml_base_path+"/"+tag+"/"+"minimum");
 	axes.y.max.setXMLPath(xml_base_path+"/"+tag+"/"+"maximum");
@@ -1139,7 +1145,7 @@ void LoggerLinePlot::init() {
 		bool found = false;
 		for (int i=0; i<row_symbols.size(); i++) {
 			// TODO Be tolerant to white space error
-			if (row_symbols[i].getName() == sym.symbol) {
+			if (row_symbols[i]->name() == sym.symbol) {
 				found = true;
 				*sym.col = i+1;
 				break;
@@ -1517,7 +1523,7 @@ void LoggerMatrixPlot::init()
 		bool found = false;
 		for (auto& i : inputs) {
 			// TODO Be tolerant to white space error
-			if (i.getName() == sym) {
+			if (i->name() == sym) {
 				found = true;
 			}
 		}
@@ -1702,16 +1708,16 @@ vector<string> LoggerMatrixPlot::getLabels()
 			break;
 		}
 		case Granularity::Cell:{
-			xy_labels.push_back( SymbolData::CellID_symbol );
-			xy_labels.push_back( SymbolData::Time_symbol );
+			xy_labels.push_back( SymbolBase::CellID_symbol );
+			xy_labels.push_back( SymbolBase::Time_symbol );
 			break;
 		}
 		case Granularity::MembraneNode:{
-			xy_labels.push_back( SymbolData::MembraneSpace_symbol );
+			xy_labels.push_back( SymbolBase::MembraneSpace_symbol );
 			if(range.dimensions()>1)
-				xy_labels.push_back( SymbolData::MembraneSpace_symbol );
+				xy_labels.push_back( SymbolBase::MembraneSpace_symbol );
 			else
-				xy_labels.push_back( SymbolData::Time_symbol );
+				xy_labels.push_back( SymbolBase::Time_symbol );
 			break;
 		}
 		case Granularity::Node:{
@@ -1732,39 +1738,39 @@ vector<string> LoggerMatrixPlot::getLabels()
 				switch( slice ){
 					case FocusRangeAxis::X:{
 						// y is cols, z is rows
-						xy_labels.push_back( SymbolData::Space_symbol+".y" );
+						xy_labels.push_back( SymbolBase::Space_symbol+".y" );
 						if(range.dimensions()>1)
-							xy_labels.push_back( SymbolData::Space_symbol+".z" );
+							xy_labels.push_back( SymbolBase::Space_symbol+".z" );
 						else
-							xy_labels.push_back( SymbolData::Time_symbol );
+							xy_labels.push_back( SymbolBase::Time_symbol );
 						break;
 					}
 					case FocusRangeAxis::Y:{
 						// x is cols, z is rows
-						xy_labels.push_back( SymbolData::Space_symbol+".x" );
+						xy_labels.push_back( SymbolBase::Space_symbol+".x" );
 						if(range.dimensions()>1)
-							xy_labels.push_back( SymbolData::Space_symbol+".z" );
+							xy_labels.push_back( SymbolBase::Space_symbol+".z" );
 						else
-							xy_labels.push_back( SymbolData::Time_symbol );
+							xy_labels.push_back( SymbolBase::Time_symbol );
 						break;
 					}
 					case FocusRangeAxis::Z:{
 						// x is cols, y is rows
-						xy_labels.push_back( SymbolData::Space_symbol+".x" );
+						xy_labels.push_back( SymbolBase::Space_symbol+".x" );
 						if(range.dimensions()>1)
-							xy_labels.push_back( SymbolData::Space_symbol+".y" );
+							xy_labels.push_back( SymbolBase::Space_symbol+".y" );
 						else
-							xy_labels.push_back( SymbolData::Time_symbol );
+							xy_labels.push_back( SymbolBase::Time_symbol );
 						break;
 					}
 				}
 			}
 			else{
-				xy_labels.push_back( SymbolData::Space_symbol+".x" );
+				xy_labels.push_back( SymbolBase::Space_symbol+".x" );
 				if(range.dimensions()>1)
-					xy_labels.push_back( SymbolData::Space_symbol+".y" );
+					xy_labels.push_back( SymbolBase::Space_symbol+".y" );
 				else
-					xy_labels.push_back( SymbolData::Time_symbol );
+					xy_labels.push_back( SymbolBase::Time_symbol );
 			}
 			break;
 		}

@@ -1,32 +1,47 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+
+#define MORPHEUS_OS @MORPHEUS_OS@
+
 #cmakedefine HAVE_GNU_SYSLIB_H
-#cmakedefine USING_STD_TR1
-#cmakedefine USING_BOOST_TR1
-#cmakedefine USING_CXX0X_TR1
 #cmakedefine HAVE_OPENMP
-#cmakedefine MORPHEUS_OS
-// #cmakedefine MORPHEUS_REVISION @MORPHEUS_REVISION@
 
+#ifdef HAVE_OPENMP
+    #include <omp.h>
+#else
+    inline int omp_get_thread_num()  { return 0;} 
+    inline int omp_get_num_threads() { return 1;}
+    inline int omp_get_max_threads() { return 1;}
+    typedef int omp_lock_t;
+#endif
+
+
+#ifdef WIN32
+#include <windows.h>
+typedef unsigned int uint;
+#endif
+
+
+#include <assert.h>
 #include <cstdint>
+#include <cctype>
+#include <iostream>
 
+#include <string>
+#include <vector>
+#include <deque>
+#include <set>
+#include <unordered_set>
+#include <map>
 
-
+#include <cmath>
+#include <ctime>
 #include <memory>
 #include <random>
-#include <unordered_set>
 
-#define USING_CXX0X_TR1
-#define TR1_NAMESPACE std
 
-using TR1_NAMESPACE::unique_ptr;
-using TR1_NAMESPACE::shared_ptr;
-using TR1_NAMESPACE::weak_ptr;
-using TR1_NAMESPACE::dynamic_pointer_cast;
-using TR1_NAMESPACE::const_pointer_cast;
-using TR1_NAMESPACE::static_pointer_cast;
-using TR1_NAMESPACE::unordered_set;
+using namespace std;
 
 // fix missing make_unique in C++11
 #if __cplusplus == 201103L

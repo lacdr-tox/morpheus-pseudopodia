@@ -20,7 +20,7 @@ void InsertMedium::init(const Scope* scope)
 	medium			= CPM::getEmptyState().cell_id;
 	
 	if( condition.isDefined() )
-		condition.init();
+		condition.init(scope);
 }
 
 void InsertMedium::executeTimeStep()

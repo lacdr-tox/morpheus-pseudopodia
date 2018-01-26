@@ -1,12 +1,5 @@
 #include "symbol.h"
-#include "simulation.h"
-
-const string TypeInfo<double>::name() { return "Double"; };
-const string TypeInfo<float>::name() { return "Float"; };
-const string TypeInfo<bool>::name() { return "Boolean"; };
-template <> const string TypeInfo<VDOUBLE>::name() { return "Vector"; };
-template <> const string TypeInfo<vector<double> >::name() { return "Array";};
-template <> const string TypeInfo<double_queue >::name() { return "Queue"; };
+#include "scope.h"
 
 bool operator<(Granularity a, Granularity b) {
 	switch(b) {
@@ -46,10 +39,7 @@ Granularity operator+(Granularity a, Granularity b) {
 			else
 				return a;
 		case Granularity::Global:
-			if (b != Granularity::Undef)
 				return b;
-		case Granularity::Undef :
-			return b;
 	}
 }
 
@@ -68,11 +58,7 @@ Granularity& operator+=(Granularity& g, Granularity b) {
 				g = b;
 			break;
 		case Granularity::Global:
-			if (b != Granularity::Undef)
 				g = b;
-			break;
-		case Granularity::Undef :
-			g = b;
 			break;
 	}
 	return g;
@@ -92,28 +78,44 @@ ostream& operator<<(ostream& out, Granularity g) {
 		case Granularity::Global:
 			out << "Global";
 			break;
-		case Granularity::Undef :
-			out << "Undef";
-			break;
 	}
 	return out;
 }
 
+std::set<SymbolDependency> SymbolBase::leafDependencies() const
+ { 
+	auto d = dependencies();
+	if (d.empty()) {
+		// some default value symbols aren't part of the scope
+		if (!scope())
+			return {};
 
-string SymbolData::Space_symbol = "SPACE";
-string SymbolData::MembraneSpace_symbol = "MEM_SPACE";
-string SymbolData::Time_symbol = "TIME";
-string SymbolData::CellID_symbol = "cell.id";
-string SymbolData::SuperCellID_symbol = "cell.super_id";
-string SymbolData::SubCellID_symbol = "cell.sub_id";
-string SymbolData::CellType_symbol = "cell.type";
-string SymbolData::CellCenter_symbol = "cell.center";
-string SymbolData::CellPosition_symbol = SymbolData::CellCenter_symbol;
-string SymbolData::CellOrientation_symbol = "cell.orientation";
-string SymbolData::CellVolume_symbol = "cell.volume";
-string SymbolData::CellSurface_symbol = "cell.surface";
-string SymbolData::CellLength_symbol = "cell.length";
-string SymbolData::Temperature_symbol = "TEMPERATURE";
+		d.insert(shared_from_this());
+// 		d.insert(scope()->findSymbol(name()));
+		return d;
+	}
+	set<SymbolDependency> leafs;
+	for ( const auto& dep : d) { 
+		auto dep_leafs = dep->leafDependencies();
+		leafs.insert(dep_leafs.begin(), dep_leafs.end());
+	}
+	return leafs;
+}
+
+string SymbolBase::Space_symbol = "SPACE";
+string SymbolBase::MembraneSpace_symbol = "MEM_SPACE";
+string SymbolBase::Time_symbol = "TIME";
+string SymbolBase::CellID_symbol = "cell.id";
+string SymbolBase::SuperCellID_symbol = "cell.super_id";
+string SymbolBase::SubCellID_symbol = "cell.sub_id";
+string SymbolBase::CellType_symbol = "cell.type";
+string SymbolBase::CellCenter_symbol = "cell.center";
+string SymbolBase::CellPosition_symbol = SymbolBase::CellCenter_symbol;
+string SymbolBase::CellOrientation_symbol = "cell.orientation";
+string SymbolBase::CellVolume_symbol = "cell.volume";
+string SymbolBase::CellSurface_symbol = "cell.surface";
+string SymbolBase::CellLength_symbol = "cell.length";
+string SymbolBase::Temperature_symbol = "TEMPERATURE";
 
 string sym_RandomUni  = "rand_uni";
 string sym_RandomInt  = "rand_int";
@@ -121,74 +123,3 @@ string sym_RandomNorm = "rand_norm";
 string sym_RandomBool = "rand_bool";
 string sym_RandomGamma= "rand_gamma";
 string sym_Modulo     = "mod";
-
-
-string SymbolData::getLinkTypeName(LinkType linktype) {
-	switch (linktype) {
-		case GlobalLink:
-			return "GlobalLink";
-		case SymbolData::CellPropertyLink:
-			return "CellProperty";
-		case SymbolData::PDELink:
-			return "PDELink";
-		case SymbolData::VectorFieldLink:
-			return "VectorFieldLink";
-		case SymbolData::CellMembraneLink:
-			return "CellMembrane";
-		case SingleCellPropertyLink:
-			return "Single Celltype CellProperty";
-		case SingleCellMembraneLink:
-			return "Singel CellType CellMembrane";
-		case SymbolData::FunctionLink:
-			return "Function";
-		case SymbolData::VectorFunctionLink:
-			return "VectorFunction";
-		case SymbolData::Space:
-			return "Space";
-		case SymbolData::MembraneSpace:
-			return "MembraneSpace";
-		case SymbolData::VecXLink :
-			return "VecXLink";
-		case SymbolData::VecYLink :
-			return "VecYLink";
-		case SymbolData::VecZLink :
-			return "VecZLink";
-		case SymbolData::VecAbsLink:
-			return "VecAbsLink";
-		case SymbolData::VecPhiLink:
-			return "VecPhiLink";
-		case SymbolData::VecThetaLink:
-			return "VecThetaLink";
-		case SymbolData::Time:
-			return "Time";
-		case SymbolData::CellIDLink:
-			return "Cell.ID";
-		case SymbolData::SubCellIDLink:
-			return "Cell.Sub_ID";
-		case SymbolData::SuperCellIDLink:
-			return "Cell.Super_ID";
-		case SymbolData::CellTypeLink:
-			return "Cell.Type";
-        case SymbolData::CellCenterLink:
-            return "Cell.Center";
-        case SymbolData::CellOrientationLink:
-            return "Cell.Orientation";    
-        case SymbolData::CellVolumeLink:
-            return "Cell.Volume";
-        case SymbolData::CellSurfaceLink:
-            return "Cell.Surface";
-        case SymbolData::CellLengthLink:
-            return "Cell.Length";
-		case SymbolData::PopulationSizeLink:
-			return "PopulationSizeLink";
-		case SymbolData::PureCompositeLink:
-			return "Composite Symbol Link";
-		case SymbolData::UnLinked:
-			return "! Unlinked symbol !";
-	}
-	return "! Unknown symbol type !";
-}
-
-string SymbolData::getLinkTypeName() const {
-    return getLinkTypeName(link);
-}

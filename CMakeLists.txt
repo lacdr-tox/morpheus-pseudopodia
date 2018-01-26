@@ -51,13 +51,10 @@ ELSE()
 	SET(MORPHEUS_OS "UNKNOWN")
 ENDIF()
 
-IF( CMAKE_COMPILER_IS_GNUCXX )
-	SET(STDCxx11FLAG "-std=gnu++11")
-ELSE(CMAKE_COMPILER_IS_GNUCXX)
-	SET(STDCxx11FLAG "-std=c++11")
-ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+SET(STDCxx11FLAG "-std=c++11")
 
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${STDCxx11FLAG} -Wno-deprecated-declarations -Wno-ignored-attributes")
+
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${STDCxx11FLAG} -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-int-in-bool-context")
 
 
 ## Switch to Release Build Mode

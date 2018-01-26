@@ -13,22 +13,26 @@
 #define DIFFUSION_H
 
 #include "interfaces.h"
-#include "cell_membrane_accessor.h"
+#include "field.h"
+#include "membrane_property.h"
+#include "focusrange.h"
 
+class MembranePropertySymbol;
 
 class Diffusion : public ContinuousProcessPlugin
 {
 private:
-	SymbolData::LinkType container_type;
-	shared_ptr<PDE_Layer> pde_layer;
-	CellMembraneAccessor membrane_accessor;
+	shared_ptr<const Field::Symbol> pde_field;
+	shared_ptr<const MembranePropertySymbol> mem_field;
+	
+// 	shared_ptr<PDE_Layer> pde_layer;
+// 	CellMembraneAccessor membrane_accessor;
 	static double membrane_length_2d(double area);
 	static double membrane_length_3d(double volume);
 	double (*membrane_length)(double);
 	string symbol_name;
 public:
-	Diffusion(shared_ptr<PDE_Layer> pde);
-	Diffusion(CellMembraneAccessor mem_acc);
+	Diffusion(Symbol field);
 	void init(const Scope* scope) override;
 	void prepareTimeStep()  override {};
 	void executeTimeStep() override;

@@ -58,68 +58,77 @@ Symbol that defines a relation between vector \ref Symbols
 #include "expression_evaluator.h"
 
 
-class Function : public ReporterPlugin {
-	private:
-		string raw_expression;
-		shared_ptr<ThreadedExpressionEvaluator<double> > evaluator;
-		
-		string function_symbol;
-		string function_fullname;
-
+class FunctionPlugin : public Plugin {
 	public:
 		DECLARE_PLUGIN("Function");
-		Function();
 		
 		XMLNode saveToXML() const override;
-		void loadFromXML(const XMLNode) override;
-		
-// 		static shared_ptr<mu::Parser> createParserInstance(); 
-// 		void setExpr(string expression);
-		string getExpr() const;
-
+		void loadFromXML(const XMLNode, Scope* scope) override;
+		void init () { init(local_scope); }; // used for on-demand init by the accessor
 		void init (const Scope* scope) override;
-		void report() override {};
 
-		double get(const CPM::CELL_ID cell_id) const;
-		double get(const VINT& pos) const;
-		double get(const CPM::CELL_ID cell_id, const VINT& pos) const;
-		double get(const SymbolFocus& focus) const;
-		const string& getSymbol()  const { return function_symbol; }
-		Granularity getGranularity() const;
+		string getExpr() const {return raw_expression();};
+		const string& getSymbol()  const { return symbol(); }
+// 		Granularity getGranularity() const { if (evaluator) return evaluator->getGranularity(); else return Granularity::Global; };
+	
+		class Symbol: public SymbolAccessorBase<double> {
+			public:
+				Symbol(FunctionPlugin* parent) : SymbolAccessorBase<double>(parent->getSymbol()), parent(parent) {};
+				double safe_get(const SymbolFocus& focus) const override { if (!evaluator) parent-> init(); return evaluator->get(focus); }
+				double get(const SymbolFocus& focus) const override { return evaluator->get(focus); }
+				std::set<SymbolDependency> dependencies() const override { if (!evaluator) parent-> init(); return evaluator->getDependSymbols();};
+				const std::string & description() const override { return parent->getDescription(); }
+				std::string linkType() const override { return "FunctionLink"; }
+			private:
+				void setEvaluator(shared_ptr<ThreadedExpressionEvaluator<double> > e) { evaluator = e; flags().granularity = evaluator->getGranularity(); };
+				shared_ptr<ThreadedExpressionEvaluator<double> > evaluator;
+				FunctionPlugin* parent;
+				friend class FunctionPlugin;
+		};
+	private:
+		shared_ptr<Symbol> accessor;
+		shared_ptr<ThreadedExpressionEvaluator<double> > evaluator;
+		PluginParameter2<string, XMLValueReader, RequiredPolicy> raw_expression;
+		PluginParameter2<string, XMLValueReader, RequiredPolicy> symbol;
 };
 
-class VectorFunction : public ReporterPlugin
+class VectorFunction : public Plugin
 {
-	private:
-		string raw_expression;
-		bool is_spherical;
-		
-		shared_ptr<ExpressionEvaluator<VDOUBLE> > evaluator;
-		
-		string function_symbol;
-		string function_fullname;
-
 	public:
 		DECLARE_PLUGIN("VectorFunction");
-		VectorFunction();
 
-		void loadFromXML(const XMLNode) override;
-	
-		string getExpr() const;
-		
-		bool isSpherical() const { return is_spherical; }
-
+		void loadFromXML(const XMLNode, Scope* scope) override;
+		void init() { init(local_scope); }
 		void init (const Scope* scope) override;
-		void report() override {};
+	
+		string getExpr() const { return raw_expression(); };
+		bool isSpherical() const { return is_spherical(); }
+		const string& getSymbol()  const { return symbol(); }
+// 		Granularity getGranularity() const { if (evaluator) return evaluator->getGranularity(); else return Granularity::Global; };
 
-		VDOUBLE get(const SymbolFocus& focus) const;
-		const string& getSymbol()  const { return function_symbol; }
-		Granularity getGranularity() const;
+		class Symbol: public SymbolAccessorBase<VDOUBLE> {
+			public:
+				Symbol(VectorFunction* parent) : SymbolAccessorBase<VDOUBLE>(parent->getSymbol()), parent(parent) {};
+				TypeInfo<VDOUBLE>::SReturn safe_get(const SymbolFocus& focus) const override { if (!evaluator) parent-> init(); return evaluator->get(focus); }
+				TypeInfo<VDOUBLE>::SReturn get(const SymbolFocus& focus) const override { return is_spherical ? VDOUBLE::from_radial(evaluator->get(focus)) : evaluator->get(focus); }
+				std::set<SymbolDependency> dependencies() const override { if (!evaluator) parent-> init(); return evaluator->getDependSymbols();};
+				const std::string & description() const override { return parent->getDescription(); }
+				std::string linkType() const override { return "VectorFunctionLink"; }
+			private:
+				void setEvaluator(shared_ptr<ThreadedExpressionEvaluator<VDOUBLE> > e) { evaluator = e; flags().granularity = evaluator->getGranularity(); };
+				shared_ptr<ThreadedExpressionEvaluator<VDOUBLE> > evaluator;
+				bool is_spherical;
+				VectorFunction* parent;
+				friend class VectorFunction;
+		};
+		
+	private:
+		shared_ptr<ThreadedExpressionEvaluator<VDOUBLE> > evaluator;
+		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> is_spherical;
+		PluginParameter2<string, XMLValueReader, RequiredPolicy> raw_expression;
+		PluginParameter2<string, XMLValueReader, RequiredPolicy> symbol;
+		string description;
+		shared_ptr<Symbol> accessor;
 };
-
-namespace SIM {
-	void defineSymbol(shared_ptr<Function> f);
-	void defineSymbol(shared_ptr<VectorFunction> f);
-}
 
 #endif

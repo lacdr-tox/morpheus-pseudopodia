@@ -2,9 +2,9 @@
 
 REGISTER_PLUGIN(DifferentialEqn);
 
-void DifferentialEqn::loadFromXML(const XMLNode node )
+void DifferentialEqn::loadFromXML(const XMLNode node, Scope* scope )
 {
-    Plugin::loadFromXML(node);
+    Plugin::loadFromXML(node,scope);
 
 	if ( ! node.nChildNode("Expression")) {
 		cout << "Undefined DiffEqn/Expression/text. " << endl;

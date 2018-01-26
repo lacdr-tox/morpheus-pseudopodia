@@ -13,8 +13,7 @@
 #define LENGTHCONSTRAINT_H
 
 #include "core/interfaces.h"
-#include "core/plugin_parameter.h"
-#include "core/cell_property_accessor.h"
+#include "core/celltype.h"
 using namespace SIM;
 
 /** \defgroup LengthConstraint LengthConstraint
@@ -84,9 +83,6 @@ public:
 
 	double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const override;
 	double hamiltonian(CPM::CELL_ID cell_id) const override;
-// 	double long_cell_axis2(CPM::CELL_ID id) const ;
-// 	void set_update_notify( CPM::CELL_ID cell_id, const CPM::Update& update);
-// 	void update_notify(CPM::CELL_ID cell_id, const CPM::Update& update);
 };
 
 #endif

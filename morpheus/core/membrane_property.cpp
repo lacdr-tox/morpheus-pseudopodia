@@ -1,65 +1,63 @@
 #include "membrane_property.h"
-#include "celltype.h"
+#include "core/focusrange.h"
+// #include "celltype.h"
 
-REGISTER_PLUGIN(MembraneProperty);
-
+REGISTER_PLUGIN(MembranePropertyPlugin);
 
 /* Make the Membrane Lattice accessible from the world.
  *  Resolution is what has to be set globally, if not no lattice can be created.
- *  Resolution sysmbol is what can be used to expose the lattice size to the symbol accessor infrastructure.
+ *  Resolution symbol is what can be used to expose the lattice size to the symbol accessor infrastructure.
  */
 
+uint MembranePropertyPlugin::resolution = 0;
+string MembranePropertyPlugin::resolution_symbol("");
+string MembranePropertyPlugin::size_symbol = "MEMBRANE_SIZE";
+VINT MembranePropertyPlugin::size = VINT(0,0,0);
+vector<double> MembranePropertyPlugin::node_sizes;
+shared_ptr<const Lattice> MembranePropertyPlugin::membrane_lattice = shared_ptr<const Lattice>();
 
-uint MembraneProperty::resolution = 0;
-string MembraneProperty::resolution_symbol("");
-shared_ptr<const Lattice> MembraneProperty::membrane_lattice = shared_ptr<const Lattice>();
-VINT MembraneProperty::size = VINT(0,0,0);
 
-vector<double> MembraneProperty::node_sizes;
+void MembranePropertySymbol::applyBuffer() const {
+	// Iterate over all membranes of the referred CellType and run apply
+	FocusRange range(Granularity::Cell, scope());
+	for (auto focus: range) {
+		getProperty(focus)->membrane_pde->swapBuffer();
+	}
+}
 
-void MembraneProperty::loadMembraneLattice(const XMLNode& node)
+
+void MembranePropertyPlugin::loadMembraneLattice(const XMLNode& node, Scope* scope)
 {
-	if ( ! getXMLAttribute(node,"MembraneLattice/Resolution/value",MembraneProperty::resolution) )
+	if ( ! getXMLAttribute(node,"MembraneLattice/Resolution/value",resolution) )
 		return ;
-	
-	if (getXMLAttribute(node,"MembraneLattice/Resolution/symbol",MembraneProperty::resolution_symbol)) {
-			shared_ptr<Property<double> > p = Property<double>::createConstantInstance(MembraneProperty::resolution_symbol, "Membrane Lattice Size");
-			p->set(MembraneProperty::resolution);
-			SIM::defineSymbol(p);
-	}
-	
-	SymbolData symbol;
-	if (getXMLAttribute(node,"MembraneLattice/SpaceSymbol/symbol",SymbolData::MembraneSpace_symbol) ) {
-		symbol.link = SymbolData::MembraneSpace;
-		symbol.granularity = Granularity::MembraneNode;
-		symbol.name = SymbolData::MembraneSpace_symbol;
-		symbol.fullname = "membrane coordinates";
-		getXMLAttribute(node,"MembraneLattice/SpaceSymbol/name",symbol.fullname); 
-		symbol.type_name = TypeInfo<VDOUBLE>::name();
-		symbol.integer = false;
-		symbol.invariant = false;
-		symbol.time_invariant = true;
-		SIM::defineSymbol(symbol);
-	}
-	
-	if ( MembraneProperty::resolution < 2) {
+	if ( resolution < 2) {
 		throw string("Membrane resolution specified is too small!");
 	}
+	
+	if (getXMLAttribute(node,"MembraneLattice/Resolution/symbol",resolution_symbol)) {
+			scope->registerSymbol( SymbolAccessorBase<double>::createConstant(resolution_symbol, "Membrane Lattice Size",resolution) );
+	}
+	
+	if (getXMLAttribute(node,"MembraneLattice/SpaceSymbol/symbol",size_symbol) ) {
+		scope->registerSymbol(make_shared<MembraneSpaceSymbol>(size_symbol));
+	}
+	
+
 	if (SIM::getLattice()->getDimensions()==2) {
-		size = VINT(MembraneProperty::resolution,1,1);
+		size = VINT(resolution,1,1);
 		membrane_lattice = shared_ptr<Lattice>(Linear_Lattice::create(size,true));
 		node_sizes.push_back(1.0);
 	}
 	else if (SIM::getLattice()->getDimensions()==3) {
 
-		size.y = MembraneProperty::resolution/2;
+		size.y = resolution/2;
 		size.x = 2 * size.y;
 		size.z = 1;
 		membrane_lattice = shared_ptr<Lattice>(Square_Lattice::create(size,true));
 		node_sizes.resize(size.y);
 		VINT pos(0,0,0);
 		for (pos.y=0; pos.y<size.y; pos.y++) {
-			node_sizes[pos.y] = sin(MembraneProperty::memPosToOrientation(pos).to_radial().y);
+			node_sizes[pos.y] = sin(memPosToOrientation(pos).to_radial().y);
 		}
 		
 	}
@@ -68,14 +66,14 @@ void MembraneProperty::loadMembraneLattice(const XMLNode& node)
 	}
 }
 
-double MembraneProperty::nodeSize(const VINT& memPos)
+double MembranePropertyPlugin::nodeSize(const VINT& memPos)
 {
-	assert(MembraneProperty::node_sizes.size()>memPos.y);
-	return MembraneProperty::node_sizes[memPos.y];
+	assert(node_sizes.size()>memPos.y);
+	return node_sizes[memPos.y];
 }
 
 
-VINT MembraneProperty::orientationToMemPos(const VDOUBLE& direction) {
+VINT MembranePropertyPlugin::orientationToMemPos(const VDOUBLE& direction) {
 	if (size.x == 0) {
 		return VINT(0,0,0);
 	}
@@ -87,14 +85,18 @@ VINT MembraneProperty::orientationToMemPos(const VDOUBLE& direction) {
 	}
 	else {
 		VDOUBLE radial = direction.to_radial();
-		VINT mem_pos(round(radial.x/(2*M_PI)*size.x),round((radial.y/M_PI)*size.y-0.5),0);
-		if (mem_pos.x >= size.x) mem_pos.x-=size.x;
-		if (mem_pos.y<0) mem_pos.y = 0;
+		VINT mem_pos(round(radial.x/(2*M_PI)*size.x),floor((radial.y/M_PI)*size.y),0);
+		if (mem_pos.y==size.y) mem_pos.y=size.y-1;
+		if (mem_pos.x>=size.x) mem_pos.x-=size.x;
+// 		assert(mem_pos.y<size.y);
+// 		assert(mem_pos.y>=0);
+// 		assert(mem_pos.x<size.x);
+// 		assert(mem_pos.x>=0);
 		return mem_pos;
 	}
 }
 
-VDOUBLE MembraneProperty::memPosToOrientation(const VINT& memPos)
+VDOUBLE MembranePropertyPlugin::memPosToOrientation(const VINT& memPos)
 {
 	if (size.x == 0) {
 		return VDOUBLE(0,0,0);
@@ -109,7 +111,7 @@ VDOUBLE MembraneProperty::memPosToOrientation(const VINT& memPos)
 	
 }
 
-shared_ptr< const Lattice > MembraneProperty::lattice()
+shared_ptr< const Lattice > MembranePropertyPlugin::lattice()
 {
 	if ( ! membrane_lattice ) {
 		throw string("Membrane resolution is not specified!\nTo use membrane properties, you must set Space/MembraneSize/Resolution");
@@ -117,30 +119,33 @@ shared_ptr< const Lattice > MembraneProperty::lattice()
 	return membrane_lattice;
 }
 
-void MembraneProperty::loadFromXML(const XMLNode xNode )
+void MembranePropertyPlugin::loadFromXML(const XMLNode xNode, Scope* scope )
 {
-	Plugin::loadFromXML( xNode );
+	if (!scope->getCellType()) {
+		throw string("Membrane properties can only be used within CellTypes");
+	}
+	symbol_name.setXMLPath("symbol");
+	registerPluginParameter(symbol_name);
+	Plugin::loadFromXML( xNode, scope);
 	const bool surface = true;
-	pde_layer = shared_ptr<PDE_Layer>(new PDE_Layer( lattice() , node_length.getMeters(), surface));
+	auto membrane_pde = shared_ptr<PDE_Layer>(new PDE_Layer( MembraneProperty::lattice() , MembranePropertyPlugin::node_length.getMeters(), surface));
+ 	membrane_pde->loadFromXML(xNode, scope);
 	
- 	pde_layer->loadFromXML(xNode);
+	default_property = make_shared<MembraneProperty>(this, membrane_pde);
+	auto property_id = scope->getCellType()->addProperty(default_property);
+	symbol = make_shared <MembranePropertySymbol>( this, scope->getCellType() ,property_id );
+	scope->registerSymbol(symbol);
+	if (membrane_pde->getDiffusionRate() >0) {
+		diffusion_plugin =  make_shared<Diffusion>(symbol);
+	}
 }
 
-shared_ptr<PDE_Layer> MembraneProperty::getPDE(){
-	return pde_layer;
-}
 
-string MembraneProperty::getSymbolName(){
-	if (pde_layer)
-		return pde_layer->getSymbol();
-	else 
-		return "";
+void MembranePropertyPlugin::init(const Scope* scope ) {
+	Plugin::init(scope);
+	if (diffusion_plugin)
+		diffusion_plugin->init(scope);
+	try {
+		default_property->membrane_pde->init();
+	} catch (...) { cout << "Warning: Could not initialize default of membrane property " << symbol->name() << "." << endl; }
 }
-
-string MembraneProperty::getName(){
-	if (pde_layer)
-		return pde_layer->getName();
-	else 
-		return "";
-}
-

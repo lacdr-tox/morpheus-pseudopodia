@@ -72,7 +72,7 @@
 	
 	<xs:complexType name="cpmPDEBoundaryValue">
 		<xs:attribute name="boundary" use="required" type="cpmBoundaryRef"/>
-		<xs:attribute name="value" use="required" type="cpmDouble" />
+		<xs:attribute name="value" use="required" type="cpmMathExpression" />
 	</xs:complexType>
 
 	<xs:complexType name="cpmFieldData">
@@ -115,7 +115,7 @@
 	
 	<xs:complexType name="cpmVectorBoundaryValue">
 		<xs:attribute name="boundary" use="required" type="cpmBoundaryRef"/>
-		<xs:attribute name="value" use="required" type="cpmDoubleVector" />
+		<xs:attribute name="value" use="required" type="cpmVectorMathExpression" />
 	</xs:complexType>
 	
 </xs:schema>

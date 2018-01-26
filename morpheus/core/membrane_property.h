@@ -12,9 +12,12 @@
 #ifndef MEMBRANE_PDE_H
 #define MEMBRANE_PDE_H
 
-#include "core/interfaces.h"
+#include "core/property.h"
 #include "core/field.h"
+#include "core/diffusion.h"
+#include "core/interfaces.h"
 #include "core/scales.h"
+
 
 /**
 \defgroup ML_MembraneProperty MembraneProperty
@@ -35,40 +38,149 @@ Optionally, a \b Diffusion rate may be specified.
 
 **/
 
+class MembranePropertyPlugin;
+class MembraneProperty;
+class MembranePropertySymbol;
+
+
 /** Wrapper class that creates a membrane pde from XML data.
- *  The membrane pde is read by the celltype and then included as default membrane
+ *
+ *  The membrane pde is included into the celltype a template and default membrane
 */
-class MembraneProperty : public Plugin
+class MembranePropertyPlugin : public Plugin
 {
-private:
-	//XMLNode stored_node;
-	
-	static shared_ptr<const Lattice>  membrane_lattice;
-	Length_Scale node_length;
-	shared_ptr <PDE_Layer> pde_layer;
-	
-	static VINT size;
-	static uint resolution;
-	static string resolution_symbol;
-	static vector<double> node_sizes;
 public:
 	DECLARE_PLUGIN("MembraneProperty");
 	
-	void loadFromXML(const XMLNode ) override;
+	void loadFromXML(const XMLNode, Scope * scope ) override;
+	void init(const Scope* scope) override;
+	const string& getSymbol() { return symbol_name(); };
 	
-	string getSymbolName( void );
-	string getName( void );
-	shared_ptr<PDE_Layer> getPDE( void );
-
-	static void loadMembraneLattice(const XMLNode& node);
-	static string getResolutionSymbol() { return MembraneProperty::resolution_symbol; }
-	static uint getResolution() { return MembraneProperty::resolution; }
+	static void loadMembraneLattice(const XMLNode& node, Scope* scope);
+	static uint getResolution() { return resolution; }
 	static VINT getSize() { return size; }
 	static VINT orientationToMemPos(const VDOUBLE& direction);
 	static VDOUBLE memPosToOrientation(const VINT& memPos);
 	static double nodeSize(const VINT& memPos);
-
 	static shared_ptr<const Lattice> lattice();
+
+private:
+	PluginParameter2<string, XMLValueReader, RequiredPolicy> symbol_name;
+	shared_ptr<MembranePropertySymbol> symbol;
+	shared_ptr<Diffusion> diffusion_plugin;
+	shared_ptr<MembraneProperty> default_property;
+	
+	static shared_ptr<const Lattice>  membrane_lattice;
+	static VINT size;
+	static string size_symbol;
+	static uint resolution;
+	static string resolution_symbol;
+	static vector<double> node_sizes;
+	Length_Scale node_length;
+};
+
+/// Container class holding membrane property data
+class MembraneProperty : public AbstractProperty {
+public:
+	MembraneProperty(MembranePropertyPlugin* parent, shared_ptr<PDE_Layer> membrane) : AbstractProperty(), initialized(false), parent(parent), membrane_pde(membrane) {};
+	const MembraneProperty& operator=(const MembraneProperty& other) { membrane_pde->data = other.membrane_pde->data; return *this; }
+	shared_ptr<AbstractProperty> clone() const override {
+		return make_shared<MembraneProperty>(parent,membrane_pde->clone());
+	};
+	void init(const SymbolFocus& f) override { if (!initialized)  { initialized = true; membrane_pde->init(f); } }
+
+	const string& symbol() const override { return  parent->getSymbol(); };
+
+	const string& type() const override { return TypeInfo<double>::name();}
+	void assign(std::shared_ptr<AbstractProperty> other) override {
+		auto other_mem = dynamic_pointer_cast<MembraneProperty>(other);
+		if (other_mem) {
+			this->operator=(*other_mem);
+		}
+		else if (dynamic_pointer_cast<MembraneProperty >(other)) {
+			membrane_pde->data = static_pointer_cast<MembraneProperty>(other)->membrane_pde->data;
+		}
+		else if (dynamic_pointer_cast<Property<double,double>>(other)) {
+			membrane_pde->data = static_pointer_cast<Property<double,double>>(other)->value;
+		}
+		else 
+			throw string("Failed to assign non-matching Property to MembraneProperty ");
+	};
+	void assign(const MembraneProperty& other) { this->operator=(other); };
+	
+	
+	string XMLDataName() const override { return "MembranePropertyData"; }
+	void restoreData(XMLNode node) override { membrane_pde->restoreData(node); };
+	XMLNode storeData() const override { 
+		auto mem_node = membrane_pde->storeData();
+		mem_node.updateName(XMLDataName().c_str());
+		mem_node.addAttribute("symbol-ref", symbol().c_str());
+		return mem_node;
+	};
+
+	static uint getResolution() { return MembranePropertyPlugin::getResolution(); }
+	static VINT getSize() { return MembranePropertyPlugin::getSize(); }
+	static VINT orientationToMemPos(const VDOUBLE& direction) { return MembranePropertyPlugin::orientationToMemPos(direction); }
+	static VDOUBLE memPosToOrientation(const VINT& memPos) { return MembranePropertyPlugin::memPosToOrientation(memPos); }
+	static double nodeSize(const VINT& memPos) { return MembranePropertyPlugin::nodeSize(memPos); }
+	static shared_ptr<const Lattice> lattice() { return MembranePropertyPlugin::lattice(); }
+	
+	shared_ptr<PDE_Layer> membrane_pde;
+	
+private:
+	bool initialized;
+	MembranePropertyPlugin* parent;
+	friend class MembranePropertySymbol;
+};
+
+
+
+/** Writable Symbol Accessor for Membrane Properties 
+ * 
+ */
+class MembranePropertySymbol : public SymbolRWAccessorBase<double> {
+public:
+	MembranePropertySymbol(MembranePropertyPlugin* parent, CellType* celltype, uint pid) :  SymbolRWAccessorBase<double>(parent->getSymbol()), property_id(pid), celltype(celltype), parent(parent) {
+		this->flags().granularity = Granularity::MembraneNode;
+	}
+	const string&  description() const override { return parent->getDescription(); }
+	
+	typename TypeInfo<double>::SReturn get(const SymbolFocus & f) const override { return getProperty(f)->membrane_pde->get(f.membrane_pos()); };
+	
+	typename TypeInfo<double>::SReturn safe_get(const SymbolFocus & f) const override { 
+		auto p = getProperty(f);
+		if (!p->initialized) p->init(f);
+		return p->membrane_pde->get(f.membrane_pos());
+	};
+	
+	void set(const SymbolFocus & f, double val) const override { getProperty(f)->membrane_pde->set(f.membrane_pos(),val); };
+	
+	void setBuffer(const SymbolFocus & f, double val) const override { getProperty(f)->membrane_pde->setBuffer(f.membrane_pos(),val); }
+	
+	void applyBuffer() const override;
+	void applyBuffer(const SymbolFocus & f) const override { getProperty(f)->membrane_pde->applyBuffer(f.membrane_pos()); }
+	PDE_Layer* getField(const SymbolFocus& f) const { 
+		assert(f.cell().getCellType() == celltype);return static_pointer_cast<MembraneProperty>( f.cell().properties[property_id] )->membrane_pde.get(); }
+	string linkType() const override { return "MembranePropertyLink"; }
+private:
+	MembraneProperty* getProperty(const SymbolFocus& f) const { return static_cast<MembraneProperty*>(f.cell().properties[property_id].get()); };
+	uint property_id;
+	CellType* celltype;
+	MembranePropertyPlugin* parent;
+};
+
+
+/** Symbol for Membrane coordinates 
+ */
+class MembraneSpaceSymbol : public SymbolAccessorBase<VDOUBLE> {
+public:
+	MembraneSpaceSymbol(string symbol) : SymbolAccessorBase<VDOUBLE>(symbol) {
+		flags().granularity = Granularity::MembraneNode;
+	}
+	const string& description() const override { static const string descr = "Membrane Position"; return descr;}
+	typename TypeInfo<VDOUBLE>::SReturn get(const SymbolFocus & f) const override { return MembraneProperty::memPosToOrientation(f.membrane_pos()); }
+	string linkType() const override { return "MembraneSpaceLink"; }
+	
 };
 
 #endif 

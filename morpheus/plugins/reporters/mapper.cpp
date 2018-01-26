@@ -17,7 +17,7 @@ Mapper::Mapper() {
 	this->registerPluginParameter(polarity_output);
 } 
 
-void Mapper::loadFromXML(const XMLNode xNode)
+void Mapper::loadFromXML(const XMLNode xNode, Scope* scope)
 {
 	map<string, DataMapper::Mode> output_mode_map = DataMapper::getModeNames();
 	
@@ -31,7 +31,7 @@ void Mapper::loadFromXML(const XMLNode xNode)
 		outputs.push_back(out);
 	}
 	
-	ReporterPlugin::loadFromXML(xNode);
+	ReporterPlugin::loadFromXML(xNode, scope);
 }
 
 void Mapper::init(const Scope* scope)
@@ -119,6 +119,10 @@ void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 
 		// we need to iterate over the cells and use a membrane mapper to get data from nodes to the membrane
 		MembraneMapper membrane_mapper(MembraneMapper::MAP_CONTINUOUS);
+		auto membrane_symbol = dynamic_pointer_cast<const MembranePropertySymbol>(output.symbol->accessor());
+		if (!membrane_symbol) {
+			throw string("Ooops: Bad cast in Mapper::report_output");
+		}
 
 		FocusRange cell_range(Granularity::Cell, scope);
 		for (auto focus : cell_range) {
@@ -130,8 +134,7 @@ void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 				membrane_mapper.map(node, input(focus));
 			}
 			membrane_mapper.fillGaps();
-			membrane_mapper.copyData(output.symbol->accessor().cell_membrane.getMembrane(focus.cellID()));
-			
+			membrane_mapper.copyData(membrane_symbol->getField(focus));
 		}
 		
 	}
@@ -211,9 +214,11 @@ void Mapper::report_polarity(const Scope* scope) {
 void Mapper::report() {
 	
 	for ( auto& out : outputs) {
-		if (out.symbol->accessor().isComposite() ) {
-			for (auto subscope : scope->getSubScopes()) {
-				report_output(out, subscope.get());
+		auto composite = dynamic_pointer_cast<const CompositeSymbol_I>(out.symbol->accessor());
+		if ( composite ) {
+			auto subscopes = composite->getSubScopes();
+			for (auto subscope : subscopes) {
+				report_output(out, subscope);
 			}
 		}
 		else {
@@ -222,9 +227,11 @@ void Mapper::report() {
 	}
 	
 	if (polarity_output->isDefined()) {
-		if (polarity_output->accessor().isComposite() ) {
-			for (auto subscope : scope->getSubScopes())
-				report_polarity(subscope.get());
+		auto composite = dynamic_pointer_cast<const CompositeSymbol_I>(polarity_output->accessor());
+		if (composite) {
+			auto subscopes = composite->getSubScopes();
+			for (auto subscope : subscopes)
+				report_polarity(subscope);
 		}
 		else {
 			report_polarity(scope);
