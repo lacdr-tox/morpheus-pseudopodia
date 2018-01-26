@@ -59,6 +59,8 @@ void VtkPlotter::loadFromXML(const XMLNode node, Scope* scope)	//einlesen der Da
 
 void VtkPlotter::init(const Scope* scope)
 {
+	AnalysisPlugin::init( scope );
+	
 	for(uint c=0; c<plot.channels.size(); c++){
 		plot.channels[c]->celltype.init(scope);
 		if( plot.channels[c]->celltype.isDefined() ){
@@ -68,7 +70,6 @@ void VtkPlotter::init(const Scope* scope)
 		cout << "VtkPlotter: Channel " << (c+1) << " = \'" << plot.channels[c]->symbol.accessor()->name() << "\'" << endl;
 	}
 	
-	AnalysisPlugin::init( scope );
 	
 	for (auto& ch : plot.channels) {
 		ch->field = dynamic_pointer_cast<const Field::Symbol>(ch->symbol.accessor());
