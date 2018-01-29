@@ -94,7 +94,8 @@ private:
 		PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> symbol;
 		PluginParameter2<string, XMLValueReader, OptionalPolicy> label;
 		PluginParameterCellType< OptionalPolicy> celltype;
-        vector< Bin > bins;
+		vector< Bin > bins;
+		vector<double> values;
     };
 
 
