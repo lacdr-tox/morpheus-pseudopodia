@@ -327,9 +327,8 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 		expr_flags.partially_defined |= of.partially_defined;
 		expr_flags.granularity += of.granularity;
 	}
-	expr_is_const = expr_flags.time_const && expr_flags.space_const;
 	
-	// random functions prevent an expression from beeing const
+	// random functions prevent an expression to be constant
 	set<string> volatile_functions;
 	volatile_functions.insert(sym_RandomUni);
 	volatile_functions.insert(sym_RandomInt);
@@ -338,8 +337,10 @@ void ExpressionEvaluator<T>::init(const Scope* scope)
 	volatile_functions.insert(sym_RandomNorm);
 	for ( auto fun : parser->GetUsedFun()) {
 		if (volatile_functions.count(fun))
-			expr_is_const = false;
+			expr_flags.space_const = expr_flags.time_const = false;
 	}
+	
+	expr_is_const = expr_flags.time_const && expr_flags.space_const;
 	
 	if (expr_is_const) {
 		expr_is_const = false;
