@@ -314,7 +314,7 @@ void EdgeListTracker::update_notifier(const VINT& pos, const LatticeStencil& nei
 			edge.eid_list_a->at(neighbor) = no_flux_edge; 
 		}
 	}
-	if (double (invalid_edge_ids.size()) / edges.size() > 0.08) {
+	if (double (invalid_edge_ids.size()) / (edges.size()+100) > 0.08) {
 		cout << "EdgeListTracker: Running defragmentation " << endl;
 		cout << getStatInfo();
 		defragment();

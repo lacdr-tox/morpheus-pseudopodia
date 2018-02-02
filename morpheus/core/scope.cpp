@@ -47,13 +47,16 @@ void Scope::registerSymbol(Symbol const_symbol)
     cout << "Registering Symbol " << symbol->name() << " of linktype " << symbol->linkType() << " in Scope " << this->getName() << endl;
 	
 	auto it = symbols.find(symbol->name());
+	// if symbol exists, it could be the default of a composite symbol
 	if (it != symbols.end()) {
+		// assert same type
 		if (symbol->type() != it->second->type()) {
 			stringstream s;
 			s << "Redefinition of a symbol \"" << symbol->name() << "\" with different type." << endl;
 			s << " type " << symbol->type() << " != " << it->second->type() << endl;
 			throw SymbolError(SymbolError::Type::InvalidDefinition, s.str());
 		}
+		// assert composite symbol
 		auto comp = dynamic_pointer_cast<CompositeSymbol_I>(it->second);
 		if (! comp) {
 			throw SymbolError(SymbolError::Type::InvalidDefinition, string("Redefinition of a symbol \"") + symbol->name() + "\" in scope \""  + this->name + "\"");
@@ -63,18 +66,20 @@ void Scope::registerSymbol(Symbol const_symbol)
 		return;
 	}
 
+	// Register the symbol
 	symbol->setScope(this);
-	symbols[symbol->name()] = symbol;
+	symbols.insert( {symbol->name(), symbol} );
 	
+	// Forward symbols of spatial components to the parental scope
 	if ( ct_component ) {
 		assert(parent);
+		// if it's a real symbol, not derived like 'vec.x' 
 		if (! dynamic_pointer_cast<VectorComponentAccessor>(symbol) ) {
-// 			// is a real symbol, not derived like 'vec.x' 
 			parent->registerSubScopeSymbol(this, symbol);
 		}
 	}
 	
-	// creating read-only derived symbol definitions for vector properties, but not for subscope definitions
+	// Create read-only vector component symbols for vectors, i.e. VDOUBLE
 	if (dynamic_pointer_cast<SymbolAccessorBase<VDOUBLE> >( symbol)) {
         // register subelement accessors for sym.x ,sym .y , sym.z 
 		auto v_sym = dynamic_pointer_cast<SymbolAccessorBase<VDOUBLE> >( symbol);
@@ -101,8 +106,8 @@ void Scope::init()
 }
 
 // Currently, this implementation is only available for CellType scopes, that may override the global scope symbol within the lattice part that they occupy
-void Scope::registerSubScopeSymbol(Scope *sub_scope, Symbol const_symbol) {
-	auto symbol = const_pointer_cast<SymbolBase>(const_symbol);
+void Scope::registerSubScopeSymbol(Scope *sub_scope, Symbol symbol) {
+	
 	if (sub_scope->ct_component == NULL) {
 		throw SymbolError(SymbolError::Type::InvalidDefinition, string("Scope:: Invalid registration of subscope symbol ") + symbol->name() +(". Subscope is no spatial component."));
 	}
@@ -119,31 +124,36 @@ void Scope::registerSubScopeSymbol(Scope *sub_scope, Symbol const_symbol) {
 		}
 		else {
 			shared_ptr<CompositeSymbol_I> composite_sym_i;
-			if (! dynamic_pointer_cast<CompositeSymbol_I>(it->second))
-				if (dynamic_pointer_cast<SymbolAccessorBase<double> >(symbol)) {
-					auto composite_sym = make_shared<CompositeSymbol<double> >(symbol->name(), dynamic_pointer_cast< SymbolAccessorBase<double> >(it->second));
+			
+			// if existing symbol is not a Composite yet, remove the old Symbol registration and replace it by a Composite Symbol with a default value
+			if (! dynamic_pointer_cast<CompositeSymbol_I>(it->second)) {
+				if (dynamic_pointer_cast<const SymbolAccessorBase<double> >(symbol)) {
+					auto composite_sym = make_shared<CompositeSymbol<double> >(symbol->name(), dynamic_pointer_cast< const SymbolAccessorBase<double> >(it->second));
 					composite_sym_i = composite_sym;
 					composite_symbols[symbol->name()] = composite_sym;
+					
 					symbols.erase(it);
 					registerSymbol(composite_sym);
 				}
-				else if (dynamic_pointer_cast<SymbolAccessorBase<VDOUBLE> >(symbol)){
-					auto composite_sym = make_shared<CompositeSymbol<VDOUBLE> >(symbol->name(), dynamic_pointer_cast<SymbolAccessorBase<VDOUBLE> >(it->second) );
+				else if (dynamic_pointer_cast<const SymbolAccessorBase<VDOUBLE> >(symbol)){
+					auto composite_sym = make_shared<CompositeSymbol<VDOUBLE> >(symbol->name(), dynamic_pointer_cast<const SymbolAccessorBase<VDOUBLE> >(it->second) );
 					composite_sym_i = composite_sym;
 					composite_symbols[symbol->name()] = composite_sym;
-					symbols.erase(it);
-					// Also manually erase derived symbols !!!
+					
+					// Unregister derived symbols and the real one !!!
 					symbols.erase(it->first+".x");
 					symbols.erase(it->first+".y");
 					symbols.erase(it->first+".z");
 					symbols.erase(it->first+".phi");
 					symbols.erase(it->first+".theta");
 					symbols.erase(it->first+".abs");
+					symbols.erase(it);
 					registerSymbol(composite_sym);
 				}
 				else {
 					throw string("Composity symbol type not implemented in Scope ") + symbol->type();
 				}
+			}
 			else {
 				composite_sym_i = dynamic_pointer_cast<CompositeSymbol_I>(it->second);
 			}
@@ -152,6 +162,7 @@ void Scope::registerSubScopeSymbol(Scope *sub_scope, Symbol const_symbol) {
 		}
 	}
 	else {
+		// Create a composite symbol
 		shared_ptr<CompositeSymbol_I> composite_sym_i;
 		shared_ptr<SymbolBase> composite_sym_base;
 		if (symbol->type() == TypeInfo<double>::name()) {
