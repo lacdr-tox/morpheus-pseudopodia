@@ -215,13 +215,21 @@ void CellType::init() {
 		}
 		
 		// Create all yet undefined cells at random positions
+		cout << "Cells " << cell_ids.size() << " requested " << cp.pop_size << endl;
 		if (cell_ids.size() < cp.pop_size) {
 			if (!CPM::isEnabled()) {
-				auto new_cell = createCell();
-				cp.cells.push_back(new_cell);
+				for (int i=cell_ids.size(); i < cp.pop_size; i++) {
+					auto new_cell = createCell();
+					cp.cells.push_back(new_cell);
+				}
 			}
 			else {
-				cout << "!!Warning!! CellType \'" << name << "\': " << cp.pop_size - cell_ids.size() << " uninitialized cells." << endl ;
+				stringstream s;
+				s << "Cell population of \'" << name << "\': Spatial initializers created fewer cells than requested under CellPopulation/size (" << cp.pop_size << " < " << cell_ids.size() << "), i.e. " << cp.pop_size - cell_ids.size()<< " cells were left uninitialized." << endl ;
+				s << "This is considered a fatal error for spatial simulations since Morpheus v2.0. " << endl;
+// 				cerr << s.str();
+				throw(MorpheusException(s.str(),cp.xPopNode));
+				
 // 			for (int i=cell_ids.size(); i < cp.pop_size; i++) {
 // 				//cout << " - Creating cell "<< i <<" at random position" << endl ;
 // 				auto new_cell = createRandomCell();

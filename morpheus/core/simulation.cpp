@@ -224,6 +224,8 @@ void loadFromXML(XMLNode xMorph) {
 			update_neighborhood = cpm_sampler->getUpdateNeighborhood();
 		}
 		
+		enabled = true;
+		
 	}
 	if ( ! xMorph.getChildNode("CellPopulations").isEmpty()) {
 		xCellPop = xMorph.getChildNode("CellPopulations");
