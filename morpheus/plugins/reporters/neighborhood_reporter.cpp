@@ -284,7 +284,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 		
 		for (int c=0; c<cells.size(); c++) {
 			SymbolFocus cell_focus(cells[c]);
-			map <CPM::CELL_ID, double > interfaces = CPM::getCell(cells[c]).getInterfaceLengths();
+			const auto& interfaces = CPM::getCell(cells[c]).getInterfaceLengths();
 			
 			// Special case cell has no interfaces ...
 			if (interfaces.size() == 0) {
@@ -296,7 +296,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 			
 			uint i=0;
 
-			for (map<CPM::CELL_ID,double>::const_iterator nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
+			for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
 				CPM::CELL_ID cell_id = nb->first;
 				
 				double value = 0.0;

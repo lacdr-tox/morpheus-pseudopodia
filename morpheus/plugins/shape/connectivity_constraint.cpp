@@ -27,7 +27,7 @@ void ConnectivityConstraint::init(const Scope* scope) {
 		}
 		if ( lattice.getStructure() == Lattice::hexagonal ) {
 			if (neighbors.size() > 12) {
-				cerr << "ConnectivityConstraint only available for 1st order surface neighborhood in hexagonal lattices." << endl;
+				cerr << "ConnectivityConstraint only available for 1st and 2nd order surface neighborhood in hexagonal lattices." << endl;
 				exit(-1);
 			}
 		}
