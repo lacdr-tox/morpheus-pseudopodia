@@ -66,6 +66,7 @@ private:
 
 	vector<CPM::CELL_ID> setRandom();
 	vector<CPM::CELL_ID> setRegular();
+	vector<CPM::CELL_ID> setRegularAlternative();
 	vector<int> calculateUniformPos();
 	CPM::CELL_ID createCell(VINT newPos);
 
