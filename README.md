@@ -108,11 +108,9 @@ document.write("<sc"+"ript type='text/javascript' src='" +
 scJsHost+
 "statcounter.com/counter/counter.js'></"+"script>");
 </script>
-<noscript><div class="statcounter"><a title="shopify
-analytics ecommerce tracking"
+<noscript><div class="statcounter"><a title=""
 href="http://statcounter.com/shopify/" target="_blank"><img
 class="statcounter"
 src="http://c.statcounter.com/10858269/0/392b0df5/1/"
-alt="shopify analytics ecommerce
-tracking"></a></div></noscript>
+alt=""></a></div></noscript>
 <!-- End of StatCounter Code -->
