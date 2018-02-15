@@ -52,8 +52,6 @@ ELSE()
 ENDIF()
 
 SET(STDCxx11FLAG "-std=c++11")
-
-
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${STDCxx11FLAG} -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-int-in-bool-context")
 
 
@@ -82,6 +80,7 @@ IF(NOT CMAKE_BUILD_TYPE)
 		"Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 
+SET(MORPHEUS_EXEC_NAME ${PROJECT_NAME} CACHE STRING "Base name of the simulator executable and the GUI exexcutable")
 OPTION(MORPHEUS_GUI "Build the graphical user interface." ON)
 
 INCLUDE_DIRECTORIES( 3rdparty)

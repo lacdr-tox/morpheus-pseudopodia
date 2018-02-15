@@ -10,7 +10,7 @@ MARK_AS_ADVANCED(MORPHEUS_NO_QTWEBKIT)
 
 FIND_PACKAGE(ZLIB REQUIRED)
 
-SET(GUI_EXEC_NAME "morpheus-gui")
+SET(GUI_EXEC_NAME "${MORPHEUS_EXEC_NAME}-gui")
 #OPTION(MORPHEUS_REMOTE "Enable support for remote computing resources. Depends on libSSH." OFF)
 
 INCLUDE(${QT_USE_FILE})

@@ -63,7 +63,6 @@ ENDIF()
 add_subdirectory(plugins)  # provides plugin_src variable as a list of Plugins
 add_subdirectory(core)
 
-SET(SIMULATOR_EXEC_NAME ${SIMULATOR_EXEC_NAME} PARENT_SCOPE)
 SET (APP_DOC_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/core/interfaces.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/docu.h
