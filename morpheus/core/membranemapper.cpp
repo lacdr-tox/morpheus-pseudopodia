@@ -187,7 +187,7 @@ void MembraneMapper::fillGaps()
 		vector<int> neighbor_offsets(neighbors.size());
 		vector<double> neighbor_distance(neighbors.size());
 		for (uint i=0; i< neighbors.size(); i++ ) {
-			neighbor_offsets[i] = neighbors[i] * data_map->shadow_offset;
+			neighbor_offsets[i] = dot(neighbors[i], data_map->shadow_offset);
 		}
 		while (! done ) {
 			done = true;
@@ -337,7 +337,7 @@ void MembraneMapper::ComputeDistance()
 		vector<int> neighbor_offsets(neighbors.size());
 		vector<double> neighbor_distance(neighbors.size());
 		for (uint i=0; i< neighbors.size(); i++ ) {
-			neighbor_offsets[i] = neighbors[i] * distance_map->shadow_offset;
+			neighbor_offsets[i] = dot(neighbors[i], distance_map->shadow_offset);
 		}
 		while (! done ) {
 			done = true;

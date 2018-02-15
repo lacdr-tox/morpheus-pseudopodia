@@ -69,7 +69,7 @@ double PersistentMotion::delta ( const SymbolFocus& cell_focus, const CPM::Updat
 	double cell_size = cell.nNodes();
 
 	double s = (update.opAdd() && protrusion() ) || ( update.opRemove() && retraction() ) ? strength( cell_focus ) : 0.0 ; 
-	return -s * cell_size * ( update_direction * cell_direction->get( cell_focus.cellID() ) );
+	return -s * cell_size * dot( update_direction,cell_direction->get( cell_focus.cellID() ) );
 }
 
 double PersistentMotion::hamiltonian(CPM::CELL_ID cell_id) const {

@@ -28,7 +28,6 @@
 #endif
 
 
-
 inline int MOD(int a, int b) { a%=b; return (a<0) ? a+b : a; }
 inline double MOD(double a, double b) { double k=fmod(a,b); return (k<0) ? k+b : k;	}
 
@@ -47,10 +46,10 @@ class _V {
 		T x,y,z;
 		
 		// default constructor
-		_V() : x(0),y(0),z(0) {};
-		_V(T a, T b, T c):x(a),y(b),z(c) {};
-		_V(const _V<T> &a) = default;
-		_V(_V<T> &&) = default;
+		constexpr _V() : x(0),y(0),z(0) {};
+		constexpr _V(T a, T b, T c):x(a),y(b),z(c) {};
+		constexpr _V(const _V<T> &a) = default;
+		constexpr _V(_V<T> &&) = default;
 		
 		_V<T>& operator=(const _V<T> &) = default;
 		_V<T>& operator=(_V<T> &&) = default;
@@ -60,8 +59,8 @@ class _V {
 		template <class S> _V(const _V<S> &a); 
 
 		// comparison operator
-		bool operator ==(const _V<T> &a) const;
-		bool operator !=(const _V<T> &a) const;
+		constexpr bool operator ==(const _V<T> &a) const;
+		constexpr bool operator !=(const _V<T> &a) const;
 // 		T& operator [] (int a);
 // 		const T& operator [] (int a) const;
 		// Assignment operator
@@ -69,18 +68,17 @@ class _V {
 
 		const _V<T>& operator +=(const _V<T> &a);
 		const _V<T>& operator -=(const _V<T> &a);
-		_V<T> operator -() { return _V<T>(-x,-y,-z); }
+		constexpr _V<T> operator -() const { return _V<T>(-x,-y,-z); }
 
 		// value properties
-		double abs() const;
-		double abs_sqr() const;
-		double angle_xy() const;
+		constexpr double abs() const;
+		constexpr double abs_sqr() const;
+		constexpr double angle_xy() const;
 		/// Returns the radial representation of the vector by phi, theta, radius triplet
 		_V<double> to_radial() const;
 		static _V<T> from_radial(const _V<double>& a);
 		// might be defined in any
 		_V<T> norm() const;
-
 };
 
 // template <class T> void* _V<T>::member_offset[] = NULL;
@@ -111,31 +109,22 @@ class _V {
 // 	return x;
 // }
 
-template <class T> bool _V<T>::operator ==(const _V<T> &a) const { return (this->x==a.x && this->y==a.y && this->z==a.z); };
-template <class T> bool _V<T>::operator !=(const _V<T> &a) const { return (this->x!=a.x || this->y!=a.y || this->z!=a.z); };
+template <class T> constexpr bool _V<T>::operator ==(const _V<T> &a) const { return (this->x==a.x && this->y==a.y && this->z==a.z); };
+template <class T> constexpr bool _V<T>::operator !=(const _V<T> &a) const { return (this->x!=a.x || this->y!=a.y || this->z!=a.z); };
 // template <class T> const _V<T>& _V<T>::operator =(const _V<T> &a) { this->x=a.x; this->y=a.y; this->z=a.z; return *this; };
 template <class T> const _V<T>& _V<T>::operator +=(const _V<T> &a) { this->x+=a.x; this->y+=a.y; this->z+=a.z; return *this; };
 template <class T> const _V<T>& _V<T>::operator -=(const _V<T> &a) { this->x-=a.x; this->y-=a.y; this->z-=a.z; return *this; };
-template <class T> double _V<T>::abs() const { return sqrt((this->x*this->x)+(this->y*this->y)+(this->z*this->z)); };
-template <class T> double _V<T>::abs_sqr() const { return (this->x*this->x)+(this->y*this->y)+(this->z*this->z); };
-template <class T> double _V<T>::angle_xy() const {
-	
-// 	double S = sqrt(sqr(this->x) + sqr(this->y));
-// 	if (S==0)
-// 		return 0;
-// 	if (this->x >= 0)
-// 		if (this->y >= 0) 
-// 			return  asin( this->y / S);
-// 		else
-// 			return  asin( this->y / S) + 2*M_PI;
-// 	else
-// 		return M_PI - asin( this->y / S);
-	
-	if (x==0 and y==0) return 0;
-	return atan2(y, x)  + (y<0 ? 2*M_PI : 0);
+template <class T> constexpr double _V<T>::abs() const { return sqrt((this->x*this->x)+(this->y*this->y)+(this->z*this->z)); };
+template <class T> constexpr double _V<T>::abs_sqr() const { return (this->x*this->x)+(this->y*this->y)+(this->z*this->z); };
+
+template <class T>
+constexpr double _V<T>::angle_xy() const {
+	return (x==0 and y==0) ? 0 : atan2(y, x)  + (y<0 ? 2*M_PI : 0);
 }
 
-template <class T> _V<double> _V<T>::to_radial() const {
+/** Convert a Vector into radial coordinates phi, theta, radius */
+template <class T> 
+_V<double> _V<T>::to_radial() const {
 	double rho = this->abs();
 	if(rho == 0)
 		return _V<double>(0,0,0);
@@ -156,13 +145,32 @@ inline _V<double> _V<double>::from_radial(const _V< double >& a) {
 
 // Basic binary operations
 // to allow all possible type conversions one should make them non-member friends
-template <class T> _V<T> operator +(const _V<T> &a, const _V<T> &b)  {return _V<T>(a.x+b.x,a.y+b.y,a.z+b.z);};
-template <class T> _V<T> operator -(const _V<T> &a, const _V<T> &b) {return _V<T>(a.x-b.x,a.y-b.y,a.z-b.z);};
-template <class T> _V<T> operator *(const T a, const _V<T> &b) {return _V<T>(a*b.x,a*b.y,a*b.z);};
-template <class T> _V<T> operator *(const _V<T> &b, const T a) {return _V<T>(a*b.x,a*b.y,a*b.z);};
-template <class T> T operator *(const _V<T> &a, const _V<T> &b) {return (a.x*b.x+a.y*b.y+a.z*b.z);};
-template <class T> _V<T> operator %(const _V<T> &a, const _V<T> &b) {return _V<T>(b.x!=0 ? MOD(a.x,b.x) : 0, b.y!=0 ? MOD(a.y,b.y) : 0,b.z!=0 ? MOD(a.z,b.z) : 0);};
+template <class T> constexpr  _V<T> operator +(const _V<T> &a, const _V<T> &b)  {return _V<T>(a.x+b.x,a.y+b.y,a.z+b.z);};
+template <class T> constexpr  _V<T> operator -(const _V<T> &a, const _V<T> &b) {return _V<T>(a.x-b.x,a.y-b.y,a.z-b.z);};
+// Product operator is elementwise
+template <class T> constexpr  _V<T> operator *(const T a, const _V<T> &b) {return _V<T>(a*b.x,a*b.y,a*b.z);};
+template <class T> constexpr  _V<T> operator *(const _V<T> &b, const T a) {return _V<T>(a*b.x,a*b.y,a*b.z);};
+template <class T> constexpr  _V<T> operator *(const _V<T> &a, const _V<T> &b) {return _V<T>(a.x*b.x,a.y*b.y,a.z*b.z);};
+template <class T> constexpr _V<T> operator %(const _V<T> &a, const _V<T> &b) {return _V<T>(b.x!=0 ? MOD(a.x,b.x) : 0, b.y!=0 ? MOD(a.y,b.y) : 0,b.z!=0 ? MOD(a.z,b.z) : 0);};
 // template <class T> const _V<T> operator /(const _V<T> &a, const T b) {return _V<T>(a.x/b, a.y/b, a.z/b);};
+
+//cross product
+template <class T> 
+constexpr _V<T> cross(const _V<T> &a, const _V<T> &b) { // cross (vector) product
+	return _V<T> ( (a.y * b.z) - (a.z * b.y), (a.z * b.x) - (a.x * b.z), (a.x * b.y) - (a.y * b.x) ); 
+}
+
+// dot / scalar product
+template <class T> 
+constexpr T dot(const _V<T> &a, const _V<T> &b) { 
+	return (a.x*b.x+a.y*b.y+a.z*b.z);
+}
+
+// dot / scalar product
+template <class T> 
+constexpr _V<T> el_prod(const _V<T> &a, const _V<T> &b) { 
+	return _V<T>(a.x*b.x,a.y*b.y,a.z*b.z);
+}
 
 
 //template output operators
@@ -173,15 +181,15 @@ template <class T>
 std::istream& operator >> (std::istream& is, _V<T>& a) { char s; is >> a.x; is >> s; if (s!=',') is.putback(s);  is >> a.y; is >> s; if (s!=',') is.putback(s); is >> a.z; return (is); }
 
 template <class T>
-inline double dist(const _V<T> &a,const _V<T> &b) {return (b-a).abs();}
+constexpr double dist(const _V<T> &a,const _V<T> &b) {return (b-a).abs();}
 
 template <class T>
-inline _V<T> max(const _V<T> &a,const _V<T> &b) { return _V<T>(max(a.x,b.x),max(a.y,b.y),max(a.z,b.z));}
+constexpr _V<T> max(const _V<T> &a,const _V<T> &b) { return _V<T>(max(a.x,b.x),max(a.y,b.y),max(a.z,b.z));}
 
 // Integer specific operations
 
 
-inline _V<int> operator /(const _V<int> &a, const int b) {
+constexpr _V<int> operator /(const _V<int> &a, const int b) {
 	return _V<int>(int(double(a.x)/b + (a.x < 0 ? -0.5 : 0.5)),int(double(a.y)/b + (a.y < 0 ? -0.5 : 0.5)),int(double(a.z)/b + (a.z < 0 ? -0.5 : 0.5)));
 };
 
@@ -191,14 +199,14 @@ typedef _V<int> VINT;
 // Double specific operations
 // Type Cast
 template<> template<>
-inline _V<double>::_V(const _V<int> &a) :x(a.x),y(a.y),z(a.z) {};
+constexpr _V<double>::_V(const _V<int> &a) :x(a.x),y(a.y),z(a.z) {};
 
 template<> template<>
-inline _V<int>::_V(const _V<double> &a) :x(a.x),y(a.y),z(a.z) {};
+constexpr _V<int>::_V(const _V<double> &a) :x(a.x),y(a.y),z(a.z) {};
 
 
 // Division
-inline _V<double> operator /(const _V<double> &a, const double b) {return _V<double>(a.x/b,a.y/b,a.z/b);}
+constexpr _V<double> operator /(const _V<double> &a, const double b) {return _V<double>(a.x/b,a.y/b,a.z/b);}
 
 // inline const _V<double> operator /(const _V<double> &a, const int b) {return _V<double>(a.x/b,a.y/b,a.z/b);}
 
@@ -212,24 +220,13 @@ inline _V<double> _V<double>::norm() const {
 
 typedef _V<double> VDOUBLE;
 
-inline VDOUBLE operator -(const VDOUBLE &a, const VINT &b) { return VDOUBLE(a.x-b.x,a.y-b.y,a.z-b.z); }
-inline VDOUBLE operator -(const VINT &a, const VDOUBLE &b) { return VDOUBLE(a.x-b.x,a.y-b.y,a.z-b.z); }
-inline VDOUBLE operator +(const VDOUBLE &a, const VINT &b) { return VDOUBLE(a.x+b.x,a.y+b.y,a.z+b.z); }
-inline VDOUBLE operator +(const VINT &a, const VDOUBLE &b) { return VDOUBLE(a.x+b.x,a.y+b.y,a.z+b.z); }
-inline VDOUBLE operator *(const VDOUBLE &a, const VINT &b) { return VDOUBLE(a.x*b.x,a.y*b.y,a.z*b.z); }
-inline VDOUBLE operator *(const VINT &a, const VDOUBLE &b) { return VDOUBLE(a.x*b.x,a.y*b.y,a.z*b.z); }
-
-inline VDOUBLE cross(const VDOUBLE &a, const VDOUBLE &b) { // cross (vector) product
-	VDOUBLE cross;
-	cross.x = (a.y * b.z) - (a.z * b.y);
-	cross.y = (a.z * b.x) - (a.x * b.z);
-	cross.z = (a.x * b.y) - (a.y * b.x);
-	return cross;
-}
-
-inline double dot(const VDOUBLE &a, const VDOUBLE &b) { // dot product
-	return (a.x*b.x+a.y*b.y+a.z*b.z);
-}
+// define mixed type operators 
+constexpr VDOUBLE operator -(const VDOUBLE &a, const VINT &b) { return VDOUBLE(a.x-b.x,a.y-b.y,a.z-b.z); }
+constexpr VDOUBLE operator -(const VINT &a, const VDOUBLE &b) { return VDOUBLE(a.x-b.x,a.y-b.y,a.z-b.z); }
+constexpr VDOUBLE operator +(const VDOUBLE &a, const VINT &b) { return VDOUBLE(a.x+b.x,a.y+b.y,a.z+b.z); }
+constexpr VDOUBLE operator +(const VINT &a, const VDOUBLE &b) { return VDOUBLE(a.x+b.x,a.y+b.y,a.z+b.z); }
+constexpr VDOUBLE operator *(const VDOUBLE &a, const VINT &b) { return VDOUBLE(a.x*b.x,a.y*b.y,a.z*b.z); }
+constexpr VDOUBLE operator *(const VINT &a, const VDOUBLE &b) { return VDOUBLE(a.x*b.x,a.y*b.y,a.z*b.z); }
  
 ///  Computes the  angle between two vectors in2D [-PI,PI]
 inline double angle_signed_2D(const VDOUBLE &a, const VDOUBLE &b){ 
@@ -241,12 +238,12 @@ inline double angle_signed_2D(const VDOUBLE &a, const VDOUBLE &b){
 }
 
 ///  Computes the  angle between two vectors [-PI,PI]
-inline double angle_unsigned_3D(const VDOUBLE &v1, const VDOUBLE &v2){	// returns angle between two vectors [0, PI]
+constexpr double angle_unsigned_3D(const VDOUBLE &v1, const VDOUBLE &v2){	// returns angle between two vectors [0, PI]
 	return acos( dot(v1,v2) / (v1.abs() * v2.abs()));
 }
 
-inline double distance_plane_point(const VDOUBLE& plane_normal, const VDOUBLE& plane_point, const VDOUBLE& point) {
-	return (plane_normal * ( plane_point - point));
+constexpr double distance_plane_point(const VDOUBLE& plane_normal, const VDOUBLE& plane_point, const VDOUBLE& point) {
+	return dot(plane_normal, ( plane_point - point));
 }
 
 typedef int64_t VINT_HASHTYPE;

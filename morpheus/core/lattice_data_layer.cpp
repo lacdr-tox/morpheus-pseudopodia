@@ -3,7 +3,7 @@
 #define LATTICE_DATA_LAYER_CPP
 
 template <class T> uint Lattice_Data_Layer<T>::get_data_index(const VINT& a) const {
-	return (a + shadow_width) * shadow_offset;
+	return dot((a + shadow_width), shadow_offset);
 }
 // template <class T>
 // uint Lattice_Data_Layer<T>::get_shadow_index(const VINT& a) const  { return a*shadow_offset; }

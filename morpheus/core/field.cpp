@@ -610,7 +610,7 @@ bool PDE_Layer::solve_fwd_euler_diffusion_generalized(double time_interval)
 	valarray<int> neighbor_index_offst(neighbors.size());
 
 	for (uint i=0; i<neighbors.size(); i++) {
-		neighbor_index_offst[i] = neighbors[i] * shadow_offset;
+		neighbor_index_offst[i] = dot(neighbors[i], shadow_offset);
 		neighbor_distance[i] = _lattice->to_orth( neighbors[i]).abs();
 		neighbor_alpha[i] = alpha_normal / sqr(neighbor_distance[i]);
 		alpha_total += neighbor_alpha[i];
