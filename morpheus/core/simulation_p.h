@@ -147,7 +147,7 @@ namespace SIM {
 // 	inline set<string> getSymbolBaseNames(const set<string>& symbols){ set<string> s; for (auto &i : symbols) { s.insert( getGlobalScope()->getSymbolBaseName(i));} return s; };
 	
 	int main(int argc, char *argv[]);
-	void init(int argc, char *argv[]);
+	bool init(int argc, char *argv[]);
 	void finalize();
 	void createDepGraph();
 	void loadFromXML(XMLNode xNode);

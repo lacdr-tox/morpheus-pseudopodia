@@ -596,49 +596,46 @@ namespace SIM {
 // #define NO_CORE_CATCH
 int main(int argc, char *argv[]) {
 	bool exception = false;
+	
 #ifndef NO_CORE_CATCH
 	try {
 #endif
 		
     double init0 = get_wall_time();
-	init(argc, argv);
+	if (init(argc, argv)) {
 	
-	if (generate_symbol_graph_and_exit){
-		cout << "Generated symbol dependency graph. Exiting." << endl;
-		return 0;
+		double init1 = get_wall_time();
+		size_t initMem = getCurrentRSS();
+		
+		//  Start Timers
+		double wall0 = get_wall_time();
+		double cpu0  = get_cpu_time();
+
+		TimeScheduler::compute();
+		
+		//  Stop timers
+		double wall1 = get_wall_time();
+		double cpu1  = get_cpu_time();
+
+		finalize();
+
+
+		cout << "\n=== Simulation finished ===\n";
+		string init_time = prettyFormattingTime( init1 - init0 );
+		string cpu_time = prettyFormattingTime( cpu1 - cpu0 );
+		string wall_time = prettyFormattingTime( wall1 - wall0 );
+		size_t peakMem = getPeakRSS();
+		
+		cout << "Init Time   = " << init_time << "\n";
+		cout << "Wall Time   = " << wall_time << "\n";
+		cout << "CPU Time    = " << cpu_time  << " (" << numthreads << " threads)\n\n";
+		cout << "Memory peak = " << prettyFormattingBytes(peakMem) << "\n";
+		
+		ofstream fout("performance.txt", ios::out);
+		fout << "Threads\tInit(s)\tCPU(s)\tWall(s)\tMem(Mb)\n";
+		fout << numthreads << "\t" << (init1-init0) << "\t" << (cpu1-cpu0) << "\t" << (wall1-wall0) << "\t" << (double(peakMem)/(1024.0*1024.0)) << "\n";
+		fout.close();
 	}
-	
-    double init1 = get_wall_time();
-	size_t initMem = getCurrentRSS();
-	
-	//  Start Timers
-    double wall0 = get_wall_time();
-    double cpu0  = get_cpu_time();
-
-	TimeScheduler::compute();
-	
-    //  Stop timers
-    double wall1 = get_wall_time();
-    double cpu1  = get_cpu_time();
-
-	finalize();
-
-
-	cout << "\n=== Simulation finished ===\n";
-	string init_time = prettyFormattingTime( init1 - init0 );
-	string cpu_time = prettyFormattingTime( cpu1 - cpu0 );
-	string wall_time = prettyFormattingTime( wall1 - wall0 );
-	size_t peakMem = getPeakRSS();
-	
-	cout << "Init Time   = " << init_time << "\n";
-	cout << "Wall Time   = " << wall_time << "\n";
-	cout << "CPU Time    = " << cpu_time  << " (" << numthreads << " threads)\n\n";
-	cout << "Memory peak = " << prettyFormattingBytes(peakMem) << "\n";
-	
-	ofstream fout("performance.txt", ios::out);
-    fout << "Threads\tInit(s)\tCPU(s)\tWall(s)\tMem(Mb)\n";
-    fout << numthreads << "\t" << (init1-init0) << "\t" << (cpu1-cpu0) << "\t" << (wall1-wall0) << "\t" << (double(peakMem)/(1024.0*1024.0)) << "\n";
-	fout.close();
 
 #ifndef NO_CORE_CATCH
 	}
@@ -663,13 +660,16 @@ int main(int argc, char *argv[]) {
 		exception = true;
 	}
 #endif
+	
 	if (exception) {
 		cerr.flush();
 		if (SIM::generate_symbol_graph_and_exit) {
 			createDepGraph();
 		}
-		exit(-1);
+		
+		return -1;
 	}
+	
 	return 0;
 }
 
@@ -839,7 +839,7 @@ void splash(bool show_usage) {
 }
 
 
-void init(int argc, char *argv[]) {
+bool init(int argc, char *argv[]) {
 
 	std::map<std::string, std::string> cmd_line = ParseArgv(argc,argv);
 
@@ -847,13 +847,13 @@ void init(int argc, char *argv[]) {
 // 		cout << "option " << it->first << " -> " << it->second << endl;
 // 	}
 	if (cmd_line.find("revision") != cmd_line.end()) {
-		cout << "Revision: " << MORPHEUS_REVISION_STRING << endl;
-		exit(0);
+		cout << "Revision: " <<  MORPHEUS_REVISION_STRING  << endl;
+		return false;
 	}
 
 	if (cmd_line.find("version") != cmd_line.end()) {
 		cout << "Version: " << MORPHEUS_VERSION_STRING << endl;
-		exit(0);
+		return false;
 	}
 
 	if (cmd_line.find("gnuplot-path") != cmd_line.end()) {
@@ -864,14 +864,13 @@ void init(int argc, char *argv[]) {
 	if (cmd_line.find("gnuplot-version") != cmd_line.end()) {
 		string version;
 		try {
-			version = Gnuplot::version();
+		version = Gnuplot::version();
 		}
 		catch (GnuplotException &e) {
-			cout << e.what();
-			exit(0);
+			throw string(e.what());
 		}
 		cout << version << endl;
-		exit(0);
+		return false;
 	}
 
 	if (cmd_line.find("symbol-graph") != cmd_line.end()) {
@@ -882,14 +881,11 @@ void init(int argc, char *argv[]) {
 		generate_symbol_graph_and_exit = false;
 	}
 
-    bool show_usage = false;
 	if ( argc  == 1 ) {
-        show_usage = true;
-        splash( show_usage );
+        splash( true );
         cout << "No arguments specified." << endl;
-        exit(0);
+        return false;
     }
-    splash( show_usage );
 
 
 // TODO Handling missing file( a file parameter must be provided and the file must exist)
@@ -900,22 +896,17 @@ void init(int argc, char *argv[]) {
 	struct stat filestatus;
 	int filenotexists = stat( filename.c_str(), &filestatus );
 	if ( filenotexists > 0 || filename.empty() ) {
-		cerr << "Error: file '" << filename << "' does not exist." << endl;
-		exit(-1);
+		throw  string("Error: file '") + filename + "' does not exist.";
 	}
 	else if ( filestatus.st_size == 0 ) {
-		cerr << "Error: file '" << filename << "' is empty." << endl;
-		exit(-1);
+		throw  string("Error: file '") + filename + "' is empty.";
 	}
 
-	XMLNode xMorpheusRoot;
 	if (filename.size() > 3 and filename.substr(filename.size()-4,3) == ".gz") {
-		cerr << "You must unzip the model file before using it\n";
-		exit(-1);
-	} else {
-		xMorpheusRoot = parseXMLFile(filename);
-	}
-
+		throw  string("You must unzip the model file before using it");
+	} 
+	
+	XMLNode xMorpheusRoot = parseXMLFile(filename);
 	global_scope = unique_ptr<Scope>(new Scope());
 	// Attach global overrides to the global scope
 	for (map<string,string>::const_iterator it = cmd_line.begin(); it != cmd_line.end(); it++ ) {
@@ -930,7 +921,8 @@ void init(int argc, char *argv[]) {
 	
 	if (SIM::generate_symbol_graph_and_exit) {
 		createDepGraph();
-		exit(0);
+		cout << "Generated symbol dependency graph. Exiting." << endl;
+		return false;
 	}
 
 	// try to match cmd line options with symbol names and adjust values accordingly
@@ -940,6 +932,7 @@ void init(int argc, char *argv[]) {
 	}
 
 	cout.flush();
+	return true;
 };
 
 void finalize() {

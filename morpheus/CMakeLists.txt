@@ -94,7 +94,11 @@ foreach(source ${plugin_src})
 	STRING(REGEX REPLACE "\\.cpp" ".h" header ${source})
 	STRING(REGEX REPLACE "\\.cpp" ".xsd" xsd ${source})
 	list(APPEND APP_DOC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/plugins/${header})
-	list(APPEND XSD_SOURCES plugins/${xsd})
+	if ( EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/plugins/${xsd} )
+		list(APPEND XSD_SOURCES plugins/${xsd})
+	else()
+		message(WARNING "no file plugins/${xsd}" )
+	endif()
 endforeach(source)
 
 
