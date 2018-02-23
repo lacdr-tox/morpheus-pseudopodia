@@ -48,26 +48,31 @@ The \b Dimensions tag determines the origin of the left lower corner and the siz
 class InitRectangle : public Population_Initializer
 {
 private:
+
+	enum class Mode {
+		REGULAR, RANDOM
+	};
 	
-	enum Mode{ REGULAR, RANDOM };
-	
-	PluginParameter2<double, XMLEvaluator, RequiredPolicy> numcells;
-	PluginParameter2<Mode, XMLNamedValueReader, RequiredPolicy> mode;
-	PluginParameter2<double, XMLEvaluator, DefaultValPolicy> random_displacement;
-	
+	PluginParameter2<double, XMLEvaluator, RequiredPolicy> num_cells_eval;
+	PluginParameter2<Mode, XMLNamedValueReader, RequiredPolicy> mode_eval;
+	PluginParameter2<double, XMLEvaluator, DefaultValPolicy> random_displacement_eval;
 	PluginParameter2<VDOUBLE, XMLEvaluator, RequiredPolicy> origin_eval;
 	PluginParameter2<VDOUBLE, XMLEvaluator, RequiredPolicy> size_eval;
-	
-	
+
+	int num_cells;
+	Mode mode;
+	double random_displacement;
 	VINT origin;
 	VINT size;
-	int number_of_cells;
 	CellType* celltype;
 
 	vector<CPM::CELL_ID> setRandom();
 	vector<CPM::CELL_ID> setRegular();
-	vector<int> calculateUniformPos();
+
 	CPM::CELL_ID createCell(VINT newPos);
+
+	static VINT computeGridShape(uint latticeDims, VINT gridSize, int numberOfCells);
+	static VDOUBLE getRandomVDOUBLE();
 
 public:
 	InitRectangle();
