@@ -28,6 +28,7 @@
 		<xs:restriction base="cpmString">
 			<xs:enumeration value="regular"/>
 			<xs:enumeration value="random"/>
+			<xs:enumeration value="grid"/>
 		</xs:restriction>
 	</xs:simpleType>
 	
