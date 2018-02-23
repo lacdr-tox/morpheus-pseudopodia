@@ -16,6 +16,7 @@
 #include <cmath>
 #include <iostream>
 #include <functional>
+#include "cpp_future.h"
 
 #ifndef M_PI
   const double M_PI = 3.1415926535897932384626433832795028841971;
@@ -66,6 +67,7 @@ class _V {
 		// Assignment operator
 // 		const _V<T>& operator =(const _V<T> &a);
 
+		const _V<T>& operator *=(const _V<T> &a);
 		const _V<T>& operator +=(const _V<T> &a);
 		const _V<T>& operator -=(const _V<T> &a);
 		constexpr _V<T> operator -() const { return _V<T>(-x,-y,-z); }
@@ -77,6 +79,12 @@ class _V {
 		/// Returns the radial representation of the vector by phi, theta, radius triplet
 		_V<double> to_radial() const;
 		static _V<T> from_radial(const _V<double>& a);
+		// to/from std::array to allow working with iterators
+		constexpr array<T,3> to_array() const;
+		static constexpr _V<T> from_array(const array<T,3> &a);
+		// string functions
+		constexpr string to_string() const;
+		constexpr string to_stringp() const;
 		// might be defined in any
 		_V<T> norm() const;
 };
@@ -112,6 +120,7 @@ class _V {
 template <class T> constexpr bool _V<T>::operator ==(const _V<T> &a) const { return (this->x==a.x && this->y==a.y && this->z==a.z); };
 template <class T> constexpr bool _V<T>::operator !=(const _V<T> &a) const { return (this->x!=a.x || this->y!=a.y || this->z!=a.z); };
 // template <class T> const _V<T>& _V<T>::operator =(const _V<T> &a) { this->x=a.x; this->y=a.y; this->z=a.z; return *this; };
+template <class T> const _V<T>& _V<T>::operator *=(const _V<T> &a) { this->x*=a.x; this->y*=a.y; this->z*=a.z; return *this; };
 template <class T> const _V<T>& _V<T>::operator +=(const _V<T> &a) { this->x+=a.x; this->y+=a.y; this->z+=a.z; return *this; };
 template <class T> const _V<T>& _V<T>::operator -=(const _V<T> &a) { this->x-=a.x; this->y-=a.y; this->z-=a.z; return *this; };
 template <class T> constexpr double _V<T>::abs() const { return sqrt((this->x*this->x)+(this->y*this->y)+(this->z*this->z)); };
@@ -142,11 +151,38 @@ inline _V<double> _V<double>::from_radial(const _V< double >& a) {
 		return _V<double>(cos(a.x) * a.z, sin(a.x) * a.z, 0.0);
 }
 
+template <class T>
+constexpr array<T,3> _V<T>::to_array() const {
+	return {this->x, this->y, this->z};
+}
+template <class T>
+constexpr _V<T> _V<T>::from_array(const array<T,3> &a) {
+	return {a[0], a[1], a[2]};
+}
+
+template <class T>
+constexpr string _V<T>::to_string() const {
+	return std::to_string(this->x) + ","
+		   + std::to_string(this->y) + ","
+		   + std::to_string(this->z);
+}
+template <class T>
+constexpr string to_string(const _V<T> &a) {
+	return a.to_string();
+}
+template <class T>
+constexpr string _V<T>::to_stringp() const {
+	return "(" + this->to_string() + ")";
+}
 
 // Basic binary operations
 // to allow all possible type conversions one should make them non-member friends
-template <class T> constexpr  _V<T> operator +(const _V<T> &a, const _V<T> &b)  {return _V<T>(a.x+b.x,a.y+b.y,a.z+b.z);};
-template <class T> constexpr  _V<T> operator -(const _V<T> &a, const _V<T> &b) {return _V<T>(a.x-b.x,a.y-b.y,a.z-b.z);};
+template <class T> constexpr _V<T> operator +(const T a, const _V<T> &b) { return _V<T>(a + b.x, a + b.y, a + b.z); };
+template <class T> constexpr _V<T> operator +(const _V<T> &b, const T a) { return _V<T>(a + b.x, a + b.y, a + b.z); };
+template <class T> constexpr _V<T> operator +(const _V<T> &a, const _V<T> &b)  {return _V<T>(a.x+b.x,a.y+b.y,a.z+b.z);};
+template <class T> constexpr _V<T> operator -(const T a, const _V<T> &b) { return _V<T>(a - b.x, a - b.y, a - b.z); };
+template <class T> constexpr _V<T> operator -(const _V<T> &a, const T b) { return _V<T>(a.x - b, a.y - b, a.z - b); };
+template <class T> constexpr _V<T> operator -(const _V<T> &a, const _V<T> &b) {return _V<T>(a.x-b.x,a.y-b.y,a.z-b.z);};
 // Product operator is elementwise
 template <class T> constexpr  _V<T> operator *(const T a, const _V<T> &b) {return _V<T>(a*b.x,a*b.y,a*b.z);};
 template <class T> constexpr  _V<T> operator *(const _V<T> &b, const T a) {return _V<T>(a*b.x,a*b.y,a*b.z);};
@@ -172,10 +208,17 @@ constexpr _V<T> el_prod(const _V<T> &a, const _V<T> &b) {
 	return _V<T>(a.x*b.x,a.y*b.y,a.z*b.z);
 }
 
+// restrict point to within cube
+template <class T>
+constexpr _V<T> clamp(const _V<T> &v, const _V<T> &lo, const _V<T> &hi) {
+	return {cpp17::clamp(v.x, lo.x, hi.x),
+			cpp17::clamp(v.y, lo.y, hi.y),
+			cpp17::clamp(v.z, lo.z, hi.z)};
+}
 
 //template output operators
 template <class T>
-std::ostream& operator << (std::ostream& os, const _V<T>& a) { return (os << a.x << ',' << a.y << ',' << a.z); }
+std::ostream& operator << (std::ostream& os, const _V<T>& a) { return os << to_string(a); }
 
 template <class T>
 std::istream& operator >> (std::istream& is, _V<T>& a) { char s; is >> a.x; is >> s; if (s!=',') is.putback(s);  is >> a.y; is >> s; if (s!=',') is.putback(s); is >> a.z; return (is); }
@@ -227,7 +270,10 @@ constexpr VDOUBLE operator +(const VDOUBLE &a, const VINT &b) { return VDOUBLE(a
 constexpr VDOUBLE operator +(const VINT &a, const VDOUBLE &b) { return VDOUBLE(a.x+b.x,a.y+b.y,a.z+b.z); }
 constexpr VDOUBLE operator *(const VDOUBLE &a, const VINT &b) { return VDOUBLE(a.x*b.x,a.y*b.y,a.z*b.z); }
 constexpr VDOUBLE operator *(const VINT &a, const VDOUBLE &b) { return VDOUBLE(a.x*b.x,a.y*b.y,a.z*b.z); }
- 
+template <class S, class T> constexpr  VDOUBLE operator /(const _V<S> &a, const _V<T> &b) {
+	return VDOUBLE(a.x / b.x, a.y / b.y, a.z / b.z);
+};
+
 ///  Computes the  angle between two vectors in2D [-PI,PI]
 inline double angle_signed_2D(const VDOUBLE &a, const VDOUBLE &b){ 
 	VDOUBLE v1(a.norm());
