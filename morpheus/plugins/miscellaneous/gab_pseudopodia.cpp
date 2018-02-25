@@ -38,20 +38,15 @@ Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpe
     registerPluginParameter(retractOnTouch);
 }
 
-
-// called before initialization
-void Pseudopodia::loadFromXML(const XMLNode xNode) {
-    if (SIM::getLattice()->getStructure() != Lattice::Structure::square) {
-        throw MorpheusException("Pseudopodia: Only works for square lattices", xNode);
-    }
-    // plugin loads parameters according to the XML paths set in constructor
-    InstantaneousProcessPlugin::loadFromXML(xNode);
-}
-
 // called during initialization
 void Pseudopodia::init(const Scope *scope) {
     // initialize the plugin
     InstantaneousProcessPlugin::init(scope);
+
+    if (SIM::getLattice()->getStructure() != Lattice::Structure::square) {
+        throw MorpheusException("Only works for square lattices", "Pseudopodia");
+    }
+
     setTimeStep(CPM::getMCSDuration());
 
 

@@ -4,6 +4,8 @@
 // include the plugin interfaces (required) and plugin parameters (very useful)
 #include "core/interfaces.h"
 #include "core/plugin_parameter.h"
+#include "core/cell.h"
+#include "core/celltype.h"
 
 #include "pseudopod.h"
 
@@ -26,7 +28,7 @@ A detailed description of my example plugin that can contain mathematical formul
 */
 
 // class declaration, and inheritance of plugin interface
-class Pseudopodia : CPM_Energy, CPM_Check_Update, InstantaneousProcessPlugin {
+class Pseudopodia : CPM_Energy, Cell_Update_Checker, InstantaneousProcessPlugin {
 private:
     // parameters that are specified in XML (as values, strings or symbolic expressions)
     PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> field;
@@ -51,9 +53,6 @@ public:
     Pseudopodia();
     // macro required for plugin integration
     DECLARE_PLUGIN("Pseudopodia");
-
-    // - load parameters from XML, called before initialization
-    void loadFromXML(XMLNode xNode) override;
 
     // - initialize plugin, called during initialization
     void init(const Scope *scope) override;
