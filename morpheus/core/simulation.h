@@ -48,43 +48,22 @@
 // draws in the memory and random header
 #include "config.h"
 
-#ifdef WIN32
-typedef unsigned int uint;
-#endif
-
-
-#include <assert.h>
-#include <cctype>
-#include <iostream>
-#include <cmath>
-#include <ctime>
-
-#ifdef HAVE_OPENMP
-    #include <omp.h>
-#else
-    inline int omp_get_thread_num()  { return 0;} 
-    inline int omp_get_num_threads() { return 1;}
-    inline int omp_get_max_threads() { return 1;}
-    typedef int omp_lock_t;
-#endif
-
-// due to non-linearity of the dependencies, we need forward declarations for all the classes using the plugin system
+// due to non-linearity of the dependencies, we need forward declarations
 class PDE_Layer;
 class VectorField_Layer;
-class PDE_Sim;
 class CellType;
 class Cell;
 class EdgeTrackerBase;
 
-#include "lattice.h"
-#include "cpm_layer.h"
-#include "symbolfocus.h"
-#include "cell_update.h"
-#include "scales.h"
-#include "symbol.h"
+#include "xml_functions.h"
 #include "scope.h"
+#include "scales.h"
+#include "cpm_layer.h"
+#include "cell_update.h"
 
 
+
+// global random methods using a unique source of randomness to gain reproducability
 bool getRandomBool();
 double getRandom01();
 double getRandomGauss(double s);
@@ -119,8 +98,8 @@ private:
 namespace CPM {
 	
 	
-    /// Is a CPM model
-    bool isEnabled();
+	/// Is a CPM model
+	bool isEnabled();
 	/// Duration of a Monte Carlo Step
 	double getMCSDuration();
 	/// Temperature for Metropolis Kinetics
@@ -150,6 +129,8 @@ namespace CPM {
 	bool cellExists(CELL_ID cell_id);
 	
 	vector< weak_ptr<const CellType> > getCellTypes();
+	map<string, weak_ptr<const CellType> > getCellTypesMap();
+	
 	uint getEmptyCelltypeID();
 	weak_ptr<const CellType> getEmptyCelltype();
 	weak_ptr<const CellType> findCellType(string name);  /// Seek for celltype named @p name. Returns a pointer to the Celltype or an empty pointer if the celltype is unknown.
@@ -191,21 +172,37 @@ namespace SIM {
 	string getTimeName(double time);
 	string getTimeScaleUnit();
 	void saveToXML();
-	
-	/// Simulation time in terms of seconds as defined by Metropolis kinetics time scale
-
-    /// Return user-defined total number of MCS steps to execute
-
+    
+	/// Global symbol providing the simulation time
+	class TimeSymbol : public SymbolAccessorBase<double> {
+	public:
+		TimeSymbol(string symbol) : SymbolAccessorBase<double>(symbol) {
+			flags().space_const = true;
+		}
+		double get(const SymbolFocus&) const override ;
+		const string& description() const override { static const string descr = "Time" ; return descr; }
+		string linkType() const override { return "TimeLink"; }
+	};
+	/// Global symbol providing the position
+	class SpaceSymbol : public SymbolAccessorBase<VDOUBLE> {
+	public:
+		SpaceSymbol(string symbol) : SymbolAccessorBase<VDOUBLE>(symbol) {
+			flags().granularity = Granularity::Node;
+			flags().time_const = true;
+		}
+		VDOUBLE get(const SymbolFocus& f) const override {
+			return f.pos();
+		}
+		const string&  description() const override { static const string descr = "Space" ; return descr; }
+		string linkType() const override { return "SpaceLink"; }
+	};
 	
 	const Scope* getScope();
 	const Scope* getGlobalScope();
-	Scope* createSubScope(string name, CellType* ct = 0);
+// 	Scope* createSubScope(string name, CellType* ct = 0);
 	void enterScope(const Scope *scope);
 	void leaveScope();
 
-	
-	void defineSymbol(SymbolData symbol);
-	
 	/// Find a symbol in the current scope
 	template <class S>
 	SymbolAccessor<S> findSymbol(string name) { return getScope()->findSymbol<S>(name); }
@@ -229,10 +226,7 @@ namespace SIM {
 	 * 
 	 * The naming convention is accessible via TypeInfo<type>::name()
 	 */
-	inline string getSymbolType(string name) { return getGlobalScope()->getSymbolType(name); };
-
-	shared_ptr<PDE_Layer> findPDELayer(string symbol);
-	shared_ptr<VectorField_Layer> findVectorFieldLayer(string symbol);
+	inline string getSymbolType(string name) { return getGlobalScope()->findSymbol(name)->type(); };
 
 }
 

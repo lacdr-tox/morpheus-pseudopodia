@@ -29,8 +29,10 @@ void PersistentMotion::init(const Scope* scope) {
 	registerCellPositionDependency();
 	
 	celltype = scope->getCellType();
-	cell_position_memory= celltype->addProperty<VDOUBLE> ( "stored_center", "internally stored cell position" );
-	cell_direction 		= celltype->addProperty<VDOUBLE> ( "stored_direction", "internally stored cell direction" );
+	uint property_id = celltype->default_properties.size();
+	
+	cell_position_memory= celltype->addProperty<VDOUBLE> ( "stored_center", /*"internally stored cell position",*/  VINT(0,0,0) );
+	cell_direction 		= celltype->addProperty<VDOUBLE> ( "stored_direction", /*"internally stored cell direction",*/ VINT(0,0,0) );
 	
 	if( !protrusion() && !retraction() ) 
 	{
@@ -52,11 +54,11 @@ void PersistentMotion::report(){
 		decay_rate = min(decay_rate, 1.0);
 
 		VDOUBLE new_center		= CPM::getCell ( cell_id ).getCenter(); 
-		VDOUBLE shift			= new_center - cell_position_memory( cell_id );
-		VDOUBLE new_direction	= cell_direction( cell_id ) * (1 - decay_rate) + decay_rate * shift.norm();
+		VDOUBLE shift			= new_center - cell_position_memory->get( cell_id );
+		VDOUBLE new_direction	= cell_direction->get( cell_id ) * (1 - decay_rate) + decay_rate * shift.norm();
 
-		cell_direction.set( cell_id, new_direction );
-		cell_position_memory.set( cell_id, new_center );
+		cell_direction->set( cell_id, new_direction );
+		cell_position_memory->set( cell_id, new_center );
 	}
 }
 
@@ -67,7 +69,7 @@ double PersistentMotion::delta ( const SymbolFocus& cell_focus, const CPM::Updat
 	double cell_size = cell.nNodes();
 
 	double s = (update.opAdd() && protrusion() ) || ( update.opRemove() && retraction() ) ? strength( cell_focus ) : 0.0 ; 
-	return -s * cell_size * ( update_direction * cell_direction( cell_focus.cellID() ) );
+	return -s * cell_size * dot( update_direction,cell_direction->get( cell_focus.cellID() ) );
 }
 
 double PersistentMotion::hamiltonian(CPM::CELL_ID cell_id) const {

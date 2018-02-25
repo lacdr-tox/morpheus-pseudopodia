@@ -150,7 +150,7 @@ Shows the following features of Morpheus:
     </CellPopulations>
     <Analysis>
         <Gnuplotter time-step="250" decorate="false">
-            <Terminal size="0, 0, 0" name="png"/>
+            <Terminal name="png"/>
             <Plot>
                 <Cells value="clone">
                     <ColorMap>

@@ -14,6 +14,7 @@
 
 #include "xml_functions.h"
 #include "tiffio.h"
+#include "vec.h"
 #include <valarray>
 
 struct Boundary {

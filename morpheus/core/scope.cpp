@@ -3,21 +3,14 @@
 #include "celltype.h"
 #include "cpm.h"
 
-Scope::Scope() : parent(nullptr) , ct_component(nullptr), name("root") { 
+int Scope::max_scope_id = 0;
+
+Scope::Scope() : parent(nullptr) , name("root"), ct_component(nullptr) { 
 	scope_id = max_scope_id; 
 	max_scope_id++; 
-
-	// using a colorset according to color theory, generated with http://paletton.com
-	graphstyle["type_double"] 	= "fillcolor=\"#d3d247\""; // green-ish
-	graphstyle["type_vdouble"]	= "fillcolor=\"#b5b426\"";
-	graphstyle["type_other"] 	= "fillcolor=\"#8f8eod\"";
-	graphstyle["node"] 			= "style=filled,fillcolor=\"#fffea3\"";
-	graphstyle["background"] 	= "bgcolor=\"#2341782f\"";  // blue-ish (with alpha value 47 (0-255))
-	graphstyle["arrow_connect"]	= "dir=none, style=\"dashed\", penwidth=1, color=\"#38568c\"";
-	graphstyle["arrow_read"] 	= "penwidth=2, color=\"#112c5f\"";
-	graphstyle["arrow_write"] 	= "penwidth=3, color=\"#8f100d\"";
 }
-Scope::Scope(Scope* parent, string name, map<string, string> graphstyle, CellType * celltype) : parent(parent), ct_component(celltype), name(name), graphstyle(graphstyle) { 
+
+Scope::Scope(Scope* parent, string name, CellType * celltype) : parent(parent), ct_component(celltype), name(name) { 
 	scope_id = max_scope_id; 
 	max_scope_id++;
 };
@@ -27,7 +20,7 @@ Scope* Scope::createSubScope(string name, CellType* ct)
 {
 	cout << "Creating subscope " << name << " in scope " << this->name << endl;
 // 	Scope* scope = new Scope(this,name,ct);
-	auto scope = shared_ptr<Scope>( new Scope(this,name,graphstyle,ct) );
+	auto scope = shared_ptr<Scope>( new Scope(this,name,ct) );
 	sub_scopes.push_back(scope);
 	if(ct) {
 		component_scopes.push_back(scope);
@@ -48,259 +41,163 @@ CellType* Scope::getCellType() const {
 }
 
 
-void Scope::registerSymbol(SymbolData data)
+void Scope::registerSymbol(Symbol const_symbol)
 {
-//     cout << "Registering Symbol " << data.name << " with linktype " << SymbolData::getLinkTypeName(data.link) << " of type " << data.type_name << endl;
-	assert(! data.name.empty() );
-	assert(! data.type_name.empty() );
-	assert( data.link != SymbolData::UnLinked );
+	auto symbol = const_pointer_cast<SymbolBase>(const_symbol);
+    cout << "Registering Symbol " << symbol->name() << " of linktype " << symbol->linkType() << " in Scope " << this->getName() << endl;
 	
-	auto it = local_symbols.find(data.name);
-	if (it != local_symbols.end()) {
-		if (data.type_name == it->second.type_name) {
-			if (it->second.link == SymbolData::PureCompositeLink) {
-			// if existing definition is purely composite, just inherit the subscopes and override definition
-				data.component_subscopes = it->second.component_subscopes;
-				data.is_composite = true;
-				if (data.fullname.empty()) {
-					data.fullname = it->second.fullname;
-				}
-			}
-			else {
-				throw SymbolError(SymbolError::Type::InvalidDefinition, string("Redefinition of a symbol \"") + data.name + "\" in scope \""  + this->name + "\"");
-			}
-		}
-		else {
+	auto it = symbols.find(symbol->name());
+	// if symbol exists, it could be the default of a composite symbol
+	if (it != symbols.end()) {
+		// assert same type
+		if (symbol->type() != it->second->type()) {
 			stringstream s;
-			s << "Redefinition of a symbol \"" << data.name << "\" with different type." << endl;
-			s << " type " << data.getLinkTypeName() << " != " << local_symbols[data.name].getLinkTypeName() << endl;
-			throw SymbolError(SymbolError::Type::InvalidDefinition,s.str());
+			s << "Redefinition of a symbol \"" << symbol->name() << "\" with different type." << endl;
+			s << " type " << symbol->type() << " != " << it->second->type() << endl;
+			throw SymbolError(SymbolError::Type::InvalidDefinition, s.str());
 		}
+		// assert composite symbol
+		auto comp = dynamic_pointer_cast<CompositeSymbol_I>(it->second);
+		if (! comp) {
+			throw SymbolError(SymbolError::Type::InvalidDefinition, string("Redefinition of a symbol \"") + symbol->name() + "\" in scope \""  + this->name + "\"");
+		}
+		symbol->setScope(this);
+		comp->setDefaultValue(symbol);
+		return;
 	}
 
-	// Assert correct meta-data 
-	if (data.base_name.empty()) data.base_name = data.name;
-// 	if (data.fullname.empty()) data.fullname = data.name;
+	// Register the symbol
+	symbol->setScope(this);
+	symbols.insert( {symbol->name(), symbol} );
 	
-	local_symbols[data.name] = data;
-	
+	// Forward symbols of spatial components to the parental scope
 	if ( ct_component ) {
 		assert(parent);
-// 		if (data.name == data.base_name) {
-// 			// is a real symbol, not derived like 'vec.x' 
-			parent->registerSubScopeSymbol(this, data.name);
-// 		}
-	}
-	
-	// creating read-only derived symbol definitions for vector properties, but not for subscope definitions
-	if (data.type_name == TypeInfo<VDOUBLE>::name() && data.link != SymbolData::PureCompositeLink) {
-        // register subelement accessors for sym.x ,sym .y , sym.z 
-		
-		data.type_name = TypeInfo< double >::name();
-		data.writable = false;
-		data.component_subscopes.clear();
-		data.is_composite = false;
-		
-		string base_name = data.name;
-
-		data.link = SymbolData::VecXLink;
-		data.name = base_name + ".x";
-		this->registerSymbol(data);
-		
-		data.link = SymbolData::VecYLink;
-		data.name = base_name + ".y";
-		this->registerSymbol(data);
-		
-		data.link = SymbolData::VecZLink;
-		data.name = base_name + ".z";
-		this->registerSymbol(data);
-		
-		data.link = SymbolData::VecAbsLink;
-		data.name = base_name + ".abs";
-		this->registerSymbol(data);
-		
-		data.link = SymbolData::VecPhiLink;
-		data.name = base_name + ".phi";
-		this->registerSymbol(data);
-		
-		data.link = SymbolData::VecThetaLink;
-		data.name = base_name + ".theta";
-		this->registerSymbol(data);
-	}
-	
-	// look up the value overrides
-	if (value_overrides.count(data.name)) {
-		if (data.granularity == Granularity::Global) {
-			// Value overriding is dealt with during the initialisation of Constants
+		// if it's a real symbol, not derived like 'vec.x' 
+		if (! dynamic_pointer_cast<VectorComponentAccessor>(symbol) ) {
+			parent->registerSubScopeSymbol(this, symbol);
 		}
+	}
+	
+	// Create read-only vector component symbols for vectors, i.e. VDOUBLE
+	if (dynamic_pointer_cast<SymbolAccessorBase<VDOUBLE> >( symbol)) {
+        // register subelement accessors for sym.x ,sym .y , sym.z 
+		auto v_sym = dynamic_pointer_cast<SymbolAccessorBase<VDOUBLE> >( symbol);
+		auto derived = make_shared<VectorComponentAccessor>(v_sym,VectorComponentAccessor::Component::X);
+		registerSymbol(derived);
+		derived = make_shared<VectorComponentAccessor>(v_sym,VectorComponentAccessor::Component::Y);
+		registerSymbol(derived);
+		derived = make_shared<VectorComponentAccessor>(v_sym,VectorComponentAccessor::Component::Z);
+		registerSymbol(derived);
+		derived = make_shared<VectorComponentAccessor>(v_sym,VectorComponentAccessor::Component::PHI);
+		registerSymbol(derived);
+		derived = make_shared<VectorComponentAccessor>(v_sym,VectorComponentAccessor::Component::THETA);
+		registerSymbol(derived);
+		derived = make_shared<VectorComponentAccessor>(v_sym,VectorComponentAccessor::Component::R);
+		registerSymbol(derived);
 	}
 }
 
 void Scope::init()
 {
-	int n_subscopes = this->component_scopes.size();
-	if (n_subscopes>0) {
-		for (auto& sym :local_symbols) {
-			if ( sym.second.is_composite ) 
-				sym.second.component_subscopes.resize(n_subscopes,NULL);
-		}
+	for (auto symbol : composite_symbols) {
+		symbol.second->init(component_scopes.size());
 	}
-	/*
-	for (auto scope : component_scopes) {
-		scope->init();
-	}
-	*/
-
-}
-
-
-void Scope::init_symbol(SymbolData* data) const {
-	
-	if (initializing_symbols.count(data)) {
-		throw string("Circular dependencies in definition of Symbol ") + data->name;
-	}
-	initializing_symbols.insert(data);
-	cout << "Scope: '" << name << "' intitalizes symbol " << data->name << endl;
-	switch (data->link) {
-		case SymbolData::FunctionLink:
-			data->func->init(this);
-			data->granularity = data->func->getGranularity();
-		break;
-		case SymbolData::VectorFunctionLink:
-			data->vec_func->init(this);
-			data->granularity = data->vec_func->getGranularity();
-		break;
-		case SymbolData::GlobalLink:
-			data->const_prop->init(this);
-			data->granularity = Granularity::Global;
-		break;
-		case SymbolData::PureCompositeLink:
-		case SymbolData::VecAbsLink:
-		case SymbolData::VecPhiLink:
-		case SymbolData::VecThetaLink:
-		case SymbolData::VecXLink:
-		case SymbolData::VecYLink:
-		case SymbolData::VecZLink:
-		break;
-		default :
-			throw string("Scope: Unable to initialize symbol '") + data->name + "' of LinkType " + SymbolData::getLinkTypeName(data->link);
-	}
-	initializing_symbols.erase(data);
 }
 
 // Currently, this implementation is only available for CellType scopes, that may override the global scope symbol within the lattice part that they occupy
-void Scope::registerSubScopeSymbol(Scope *sub_scope, string symbol_name) {
+void Scope::registerSubScopeSymbol(Scope *sub_scope, Symbol symbol) {
+	
 	if (sub_scope->ct_component == NULL) {
-		throw SymbolError(SymbolError::Type::InvalidDefinition, string("Scope:: Invalid registration of subscope symbol ") + symbol_name +(". Subscope is no spatial component."));
+		throw SymbolError(SymbolError::Type::InvalidDefinition, string("Scope:: Invalid registration of subscope symbol ") + symbol->name() +(". Subscope is no spatial component."));
 	}
 	if (parent != NULL ) {
-		throw  SymbolError(SymbolError::Type::InvalidDefinition, string("Scope:: Invalid registration of subscope symbol ") + symbol_name +(" in non-root scope [")+ name +"].");
+		throw  SymbolError(SymbolError::Type::InvalidDefinition, string("Scope:: Invalid registration of subscope symbol ") + symbol->name() +(" in non-root scope [")+ name +"].");
 	}
 	
 	int sub_scope_id = sub_scope->ct_component->getID();
 	
-	auto it = local_symbols.find(symbol_name);
-	if (it != local_symbols.end()) {
-		SymbolData sym = sub_scope->local_symbols[symbol_name];
-		if (it->second.type_name != sym.type_name) {
-			throw SymbolError(SymbolError::Type::InvalidDefinition,string("Scope::registerSubScopeSymbol : Cannot register type incoherent sub-scope symbol \"")  + symbol_name + "\"!"); 
+	auto it = symbols.find(symbol->name());
+	if (it != symbols.end()) {
+		if (it->second->type() != symbol->type()) {
+			throw SymbolError(SymbolError::Type::InvalidDefinition,string("Scope::registerSubScopeSymbol : Cannot register type incoherent sub-scope symbol \"")  + symbol->name() + "\"!"); 
 		}
 		else {
-			if (it->second.component_subscopes.size()<=sub_scope_id)
-				it->second.component_subscopes.resize(sub_scope_id+1, NULL);
-			it->second.component_subscopes[sub_scope->ct_component->getID()]= sub_scope;
-			it->second.is_composite = true;
+			shared_ptr<CompositeSymbol_I> composite_sym_i;
+			
+			// if existing symbol is not a Composite yet, remove the old Symbol registration and replace it by a Composite Symbol with a default value
+			if (! dynamic_pointer_cast<CompositeSymbol_I>(it->second)) {
+				if (dynamic_pointer_cast<const SymbolAccessorBase<double> >(symbol)) {
+					auto composite_sym = make_shared<CompositeSymbol<double> >(symbol->name(), dynamic_pointer_cast< const SymbolAccessorBase<double> >(it->second));
+					composite_sym_i = composite_sym;
+					composite_symbols[symbol->name()] = composite_sym;
+					
+					symbols.erase(it);
+					registerSymbol(composite_sym);
+				}
+				else if (dynamic_pointer_cast<const SymbolAccessorBase<VDOUBLE> >(symbol)){
+					auto composite_sym = make_shared<CompositeSymbol<VDOUBLE> >(symbol->name(), dynamic_pointer_cast<const SymbolAccessorBase<VDOUBLE> >(it->second) );
+					composite_sym_i = composite_sym;
+					composite_symbols[symbol->name()] = composite_sym;
+					
+					// Unregister derived symbols and the real one !!!
+					symbols.erase(it->first+".x");
+					symbols.erase(it->first+".y");
+					symbols.erase(it->first+".z");
+					symbols.erase(it->first+".phi");
+					symbols.erase(it->first+".theta");
+					symbols.erase(it->first+".abs");
+					symbols.erase(it);
+					registerSymbol(composite_sym);
+				}
+				else {
+					throw string("Composity symbol type not implemented in Scope ") + symbol->type();
+				}
+			}
+			else {
+				composite_sym_i = dynamic_pointer_cast<CompositeSymbol_I>(it->second);
+			}
+			
+			composite_sym_i->addCellTypeAccessor(sub_scope_id, symbol);
 		}
 	}
 	else {
-		SymbolData v_sym = sub_scope->local_symbols[symbol_name];
-		
-		v_sym.link = SymbolData::PureCompositeLink;
-		v_sym.invariant = false;
-		v_sym.time_invariant = false;
-		v_sym.writable = false;
-		v_sym.is_composite = true;
-		v_sym.component_subscopes.resize(sub_scope_id+1, NULL);
-		v_sym.component_subscopes[sub_scope->ct_component->getID()] = sub_scope;
-		local_symbols[symbol_name] = v_sym;
-// 		cout << "!!! SubScope Symbol \"" << symbol_name << "\" registered!" << endl;
-		
-		// creating read-only derived symbol definitions for vector properties
-		// NO, composite symbols are not propagated, since they are made available through propagation of the individual components
-		if (v_sym.type_name == TypeInfo<VDOUBLE>::name() && false) {
-			// register subelement accessors for sym.x ,sym .y , sym.z 
-			v_sym.type_name = TypeInfo< double >::name();
-			v_sym.writable = false;
-			v_sym.component_subscopes.clear();
-			v_sym.is_composite = false;
-			
-			string base_name = v_sym.name;
-
-			v_sym.link = SymbolData::VecXLink;
-			v_sym.name = base_name + ".x";
-			this->registerSymbol(v_sym);
-			
-			v_sym.link = SymbolData::VecYLink;
-			v_sym.name = base_name + ".y";
-			this->registerSymbol(v_sym);
-			
-			v_sym.link = SymbolData::VecZLink;
-			v_sym.name = base_name + ".z";
-			this->registerSymbol(v_sym);
-			
-			v_sym.link = SymbolData::VecAbsLink;
-			v_sym.name = base_name + ".abs";
-			this->registerSymbol(v_sym);
-			
-			v_sym.link = SymbolData::VecPhiLink;
-			v_sym.name = base_name + ".phi";
-			this->registerSymbol(v_sym);
-			
-			v_sym.link = SymbolData::VecThetaLink;
-			v_sym.name = base_name + ".theta";
-			this->registerSymbol(v_sym);
+		// Create a composite symbol
+		shared_ptr<CompositeSymbol_I> composite_sym_i;
+		shared_ptr<SymbolBase> composite_sym_base;
+		if (symbol->type() == TypeInfo<double>::name()) {
+			auto composite_sym = make_shared<CompositeSymbol<double> >(symbol->name());
+			composite_sym_i = composite_sym;
+			composite_sym_base = composite_sym;
 		}
+		else if (symbol->type() == TypeInfo<VDOUBLE>::name()){
+			auto composite_sym = make_shared<CompositeSymbol<VDOUBLE> >(symbol->name());
+			composite_sym_i = composite_sym;
+			composite_sym_base = composite_sym;
+		}
+		else {
+			throw string("Composite symbol type not implemented in Scope ") + symbol->type();
+		}
+		composite_sym_base->setScope(this);
+		composite_sym_i->addCellTypeAccessor(sub_scope_id, symbol);
+		composite_symbols[composite_sym_i->name()] = composite_sym_i;
+		registerSymbol(composite_sym_base);
 	}
 }
 
-string Scope::getSymbolType(string name) const {
-	auto it = local_symbols.find(name);
-	if (it!=local_symbols.end()) {
-		return it->second.type_name;
+Symbol Scope::findSymbol(string name) const {
+	auto it = symbols.find(name);
+	if (it!=symbols.end()) {
+		return it->second;
 	}
 	else if (parent) {
-		return parent->getSymbolType(name);
+		return parent->findSymbol(name);
 	}
 	else {
-		throw string("Unknown symbol '") + name + string("' in getSymbolType.");
+		throw string("Unknown symbol '") + name + string("' in findSymbol.");
 	}
 }
 
-bool Scope::isSymbolDelayed(string name) const {
-	auto it = local_symbols.find(name);
-	if (it!=local_symbols.end()) {
-		return it->second.is_delayed;
-	}
-	else if (parent) {
-		return parent->isSymbolDelayed(name);
-	}
-	else {
-		throw string("Unknown symbol '") + name + string("' in isSymbolDelayed.");
-	}
-}
-
-
-
-string Scope::getSymbolBaseName(string name) const
-{
-	auto sym = local_symbols.find(name);
-	if (sym != local_symbols.end()) {
-		return sym->second.base_name;
-	}
-	else {
-		throw string("Unknown symbol '") + name + string("' in getSymbolBaseName.");
-	}
-}
 
 void Scope::registerTimeStepListener(TimeStepListener* tsl)
 {
@@ -310,12 +207,14 @@ void Scope::registerTimeStepListener(TimeStepListener* tsl)
 
 void Scope::registerSymbolReader(TimeStepListener* tsl, string symbol)
 {
+	cout << "registering reader " << tsl->XMLName() << " on symbol " << symbol << " in Scope " << name << endl;
 	symbol_readers.insert(pair<string, TimeStepListener*>(symbol, tsl));
 }
 
 
 void Scope::registerSymbolWriter(TimeStepListener* tsl, string symbol)
 {
+	cout << "registering writer " << tsl->XMLName() << " on symbol " << symbol << " in Scope " << name << endl;
 	symbol_writers.insert(pair<string,TimeStepListener*>(symbol,tsl));
 }
 
@@ -324,7 +223,7 @@ void Scope::propagateSinkTimeStep(string symbol, double time_step)
 {
 	auto range = symbol_writers.equal_range(symbol);
 	for (auto it = range.first; it != range.second; it++) {
-		cout << " Propagate up to " << it->second->XMLName() << endl;
+		cout << "Scope " << name << ": Propagate up to " << it->second->XMLName() << endl;
 		it->second->updateSinkTS(time_step);
 	}
 	if ( !component_scopes.empty()) {
@@ -338,7 +237,7 @@ void Scope::propagateSourceTimeStep(string symbol, double time_step)
 {
 	auto range = symbol_readers.equal_range(symbol);
 	for (auto it = range.first; it != range.second; it++) {
-		cout << " Propagate down to " << it->second->XMLName() << endl;
+		cout << "Scope " << name << ": Propagate down to " << it->second->XMLName() << endl;
 		it->second->updateSourceTS(time_step);
 	}
 	if (ct_component)
@@ -364,279 +263,3 @@ void Scope::removeUnresolvedSymbol(string symbol)
 	if (ct_component) 
 		parent->removeUnresolvedSymbol(symbol);
 }
-
-void Scope::write_graph(ostream& out, const DepGraphConf& config) const
-{
-	out << "digraph {\n";
-	out << "compound=true;\n";
-	
-	out << "subgraph cluster{\n";
-	out << "labelloc=\"t\";";
-	out << "label=\"Global\";";
-	out << ""<< graphstyle.at("background") << "\n";
-	out << "node["<< graphstyle.at("node") <<"]\n";
-	stringstream links;
-	this->write_graph_local_variables(out, links, config);
-	out << "}" << endl;
-	vector<string> link_lines = tokenize(links.str(),"\n");
-	set<string> filter;
-	for (const auto& line : link_lines )  {
-		if ( filter.count(line) == 0 ) {
-			filter.insert(line);
-			out << line << "\n";
-		}
-	}
-	out << "}" << endl;
-
-}
-
-int Scope::max_scope_id = 0;
-
-string clean(const string& a ) {
-	string b(a);
-	
-	for (auto& ch : b) {
-		if (ch=='.') ch = '_';
-	}
-	return b;
-}
-
-set<string> virtual_cell_propery_decl {"cell.type", "cell.center", "cell.id", "cell.volume", "cell.length", "cell.surface"};
-struct VCP_desc {string name; string type; };
-vector<VCP_desc> virtual_cell_properies;
-
-string Scope::pluginDotName(Plugin* p) const {
-	if (dynamic_cast<TimeStepListener*>(p)) {
-		return tslDotName(dynamic_cast<TimeStepListener*>(p));
-	}
-	else {
-		return p->XMLName() + "_" + to_str(p->scope()->scope_id);
-	}
-}
-
-string Scope::tslDotName(TimeStepListener* tsl) const
-{
-	string ts;
-	if (tsl->timeStep()>0)
-		ts =  to_str(tsl->timeStep(),4);
-	else 
-		ts = "0";
-	
-	std::replace( ts.begin(), ts.end(), '.', '_');
-	std::replace( ts.begin(), ts.end(), '-', '_');
-	
-	return tsl->XMLName() + "_" + to_str(tsl->scope()->scope_id) + "_" + ts;
-}
-
-string Scope::dotStyleForType(const string& type) const {
-	if (type == TypeInfo<double>::name())
-		return graphstyle.at("type_double");
-	else if (type == TypeInfo<VDOUBLE>::name())
-		return graphstyle.at("type_vdouble");
-	else 
-		return graphstyle.at("type_other");
-}
-
-void Scope::write_graph_local_variables(ostream& definitions, ostream& links, const DepGraphConf& config ) const
-{
-	filtered_symbol_readers.clear();
-	for (const auto& reader : symbol_readers) {
-		if (config.exclude_symbols.count(reader.first))
-			continue;
-		if (config.exclude_plugins.count(reader.second->XMLName()))
-			continue;
-		filtered_symbol_readers.insert(reader);
-	}
-	
-	filtered_symbol_writers.clear();
-	for (const auto& writer : symbol_writers) {
-		if (config.exclude_symbols.count(writer.first))
-			continue;
-		if (config.exclude_plugins.count(writer.second->XMLName()))
-			continue;
-		filtered_symbol_writers.insert(writer);
-	}
-	
-	// Write time step listeners
-	for (auto tsl : local_tsl) {
-		if ( config.exclude_plugins.count( tsl->XMLName() ) )
-			continue;
-		
-		if (tsl->XMLName() == "CPM") {
-			string cpm_name = tslDotName(tsl);
-			set<SymbolDependency> inter_dep = dynamic_cast<CPMSampler*>(tsl)->getInteractionDependencies();
-			
-			definitions << cpm_name << " [shape=record, label=\"{ "<< tsl->XMLName() << (tsl->getFullName().empty() ? string("") : string("\\n\\\"") + tsl->getFullName() + "\\\"")<< " | " <<  tsl->timeStep() <<" } \" ]\n" ;
-			
-			for (auto ct_scope : component_scopes) {
-				auto dep = ct_scope->ct_component->cpmDependSymbols();
-				if ( ! dep.empty() ) {
-					auto it = dep.begin();
-					while (config.exclude_plugins.count(it->first->XMLName()) && it != dep.end())
-						it++;
-
-					if (it != dep.end()) {
-						string first_plugin = pluginDotName( it->first );
-						links << cpm_name << " -> " << first_plugin << " [" << graphstyle.at("arrow_connect") << ",lhead=" << string("cluster_cpm") << ct_scope->scope_id << "] \n";
-					}
-				}
-			}
-			
-			for (auto dep : inter_dep) {
-				if ( config.exclude_symbols.count(dep.name) )
-					continue;
-				links << clean(dep.name) << "_" << dep.scope->scope_id <<" -> " << cpm_name  << " ["<< graphstyle.at("arrow_read") <<"]\n";
-			}
-		}
-		else if (tsl->XMLName() == "Function" || tsl->XMLName() == "VectorFunction") { }
-		else {
-			definitions << tslDotName(tsl) << " [shape=record, label=\"{ "<< tsl->XMLName() << (tsl->getFullName().empty() ? string("") : string("\\n\\\"") + tsl->getFullName() + "\\\"")<< " | " <<  tsl->timeStep() <<" } \" ]\n" ;
-		}
-	}
-	
-	// Write local symbols, if they are used
-	for (auto sym : local_symbols) {
-		// Skip excluded symbols 
-		if (config.exclude_symbols.count(sym.first))
-			continue;
-		
-		// Skip unused local symbols
-		if (filtered_symbol_readers.count(sym.first)==0 && filtered_symbol_writers.count(sym.first)==0  ) {
-			if (ct_component) {
-				
-				if (parent->filtered_symbol_readers.count(sym.first) == 0)
-					continue;
-			}
-			else
-				continue;
-		}
-		
-		bool virtual_composite  = !parent && virtual_cell_propery_decl.count(sym.first);
-		
-		if (virtual_composite) {
-			definitions <<  clean(sym.first) << "_" << scope_id << "[peripheries=2,label=" << "\""<< sym.first<<"\",";
-			definitions << dotStyleForType(sym.second.type_name);
-			definitions << "];\n";
-			virtual_cell_properies.push_back({sym.first, sym.second.type_name});
-
-			// Write composite links for virtual celltype symbols
-			for (uint i = 0; i< sub_scopes.size(); i++ ) {
-				if ( sub_scopes[i]->getCellType() && !sub_scopes[i]->getCellType()->isMedium()) {
-					links <<  clean(sym.first) << "_" << sub_scopes[i]->scope_id << " -> " << clean(sym.first) << "_" << this->scope_id << " ["<< graphstyle.at("arrow_connect") <<"]\n";
-				}
-			}
-		}
-		else if (sym.second.is_composite) {
-			definitions <<  clean(sym.first) << "_" << scope_id << "[peripheries=2,label=";
-			if (sym.second.link == SymbolData::PureCompositeLink) {
-				definitions << "\""<< sym.first<<"\"";
-			}
-			else {
-				definitions << "\""<< sym.first<<"\",";
-			}
-			definitions << dotStyleForType(sym.second.type_name);
-			definitions << "];\n";
-			// Write links to the subscope symbols
-			for (uint i = 0; i< sym.second.component_subscopes.size(); i++ ) {
-				if (sym.second.component_subscopes[i])
-					links <<  clean(sym.first) << "_" << sym.second.component_subscopes[i]->scope_id << " -> " << clean(sym.first) << "_" << this->scope_id << " ["<< graphstyle.at("arrow_connect") <<"]\n";
-			}
-		}
-		else if (sym.second.link == SymbolData::VecAbsLink || sym.second.link == SymbolData::SymbolData::VecPhiLink ||
-			sym.second.link == SymbolData::VecThetaLink || sym.second.link == SymbolData::SymbolData::VecXLink ||
-			sym.second.link == SymbolData::VecYLink || sym.second.link == SymbolData::SymbolData::VecZLink) {
-		}
-		else {
-			definitions <<  clean(sym.first) << "_" << scope_id << "[label=\""<< sym.first<<"\",";
-			definitions << dotStyleForType(sym.second.type_name);
-			definitions << "];\n";
-		}
-	}
-	
-	// Write all the declarations of the subscopes
-	for (auto sub_scope : sub_scopes) {
-		definitions << "subgraph cluster_" << sub_scope->scope_id <<" {\n";
-		definitions << "label=\"" << sub_scope->getName() << "\";\n";
-		sub_scope->write_graph_local_variables(definitions, links, config);
-		definitions << "}\n";
-	}
-	
-	// Write virtual symbols for celltype scopes
-	if (ct_component) {
-		if (!ct_component->isMedium())
-			for (const auto& sym : virtual_cell_properies) {
-				if (config.exclude_symbols.count(sym.name))
-					continue;
-				definitions <<  clean(sym.name) << "_" << scope_id << "[label=\"" << sym.name <<  "\"," << dotStyleForType(sym.type) <<"];\n";
-			}
-		
-		auto cpm_dep = ct_component->cpmDependSymbols();
-		bool found_valid_cpm_plugin = false;
-		for (auto dep : cpm_dep) {
-			if ( config.exclude_plugins.count( dep.first->XMLName() ) == 0) {
-				found_valid_cpm_plugin = true;
-				break;
-			}
-		}
-		if ( found_valid_cpm_plugin ) {
-			string cpm_blob_name = string("cluster_cpm") + to_str(scope_id);
-			definitions << "subgraph " << cpm_blob_name << " {\n";
-			definitions << "label=\"CPM plugins\";\n";
-			string current_plugin = "";
-			string plugin_node_name;
-			string last_dep = "";
-			for (auto dep : cpm_dep) {
-				if ( config.exclude_plugins.count( dep.first->XMLName() ))
-					continue;
-				
-				if (dep.first->XMLName() != current_plugin) {
-					current_plugin = dep.first->XMLName();
-					TimeStepListener* tsl = dynamic_cast<TimeStepListener*>(dep.first);
-					if (tsl) {
-						plugin_node_name = tslDotName(tsl);
-						definitions << plugin_node_name << "[shape=record, label=\"{" << current_plugin  << "|" << tsl->timeStep() << "}\"];\n";
-						
-					}
-					else {
-						plugin_node_name = clean(current_plugin) + "_" + to_str(this->scope_id);
-						definitions << plugin_node_name << "[shape=record, label=\"" << current_plugin  << "\"];\n";
-					}
-					last_dep = "";
-					
-				}
-				string dependency = clean(dep.second.name) + "_" + to_str(dep.second.scope->scope_id);
-				if (last_dep != dependency) {
-					if (! config.exclude_symbols.count(dep.second.name))
-						links << dependency << " -> " << plugin_node_name  << " ["<< graphstyle.at("arrow_read") <<"]\n";
-				}
-				last_dep = dependency;
-			}
-			definitions << "}\n";
-		}
-		
-		
-	}
-	
-	// Write dependencies of TSLs
-	for (auto reader : filtered_symbol_readers) {
-		if (reader.second->XMLName() == "CPM" )
-			continue;
-		else if (reader.second->XMLName() == "Function" || reader.second->XMLName() == "VectorFunction" ) {
-			set<SymbolDependency> fun_out = reader.second->getOutputSymbols();
-			links << clean(reader.first) << "_" << this->scope_id << " -> " << fun_out.begin()->name << "_" << fun_out.begin()-> scope -> scope_id << "\n";
-		}
-		else {
-			links << clean(reader.first) << "_" << this->scope_id << " -> " << tslDotName(reader.second) << " [" << graphstyle.at("arrow_read") << "] \n";
-		}
-	}
-	
-	// Write outputs of TSLs
-	for (auto writer : filtered_symbol_writers) {
-		if (writer.second->XMLName() == "Function"  || writer.second->XMLName() == "VectorFunction" )
-			continue;
-		links << tslDotName(writer.second) << " -> " << clean(writer.first) << "_" << this->scope_id << " [" << graphstyle.at("arrow_write") << "] \n";
-	}
-	
-}
-
-

@@ -14,10 +14,10 @@ CellTracker::CellTracker() {
     registerPluginParameter(format);
 }
 
-void CellTracker::loadFromXML(const XMLNode xNode)
+void CellTracker::loadFromXML(const XMLNode xNode, Scope* scope)
 {
     stored_node = xNode;
-	AnalysisPlugin::loadFromXML(xNode);
+	AnalysisPlugin::loadFromXML(xNode, scope);
 }
 
 void CellTracker::init(const Scope* scope)

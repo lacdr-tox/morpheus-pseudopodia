@@ -14,7 +14,7 @@ vector<CPM::CELL_ID> InitVoronoi::run(CellType* celltype)
 	assert( neighbors.size() < 1024 );
 	neighbor_distance.resize( neighbors.size() );
 	for (uint i=0; i<neighbors.size(); i++) {
-		neighbor_distance[i] = VDOUBLE(neighbors[i]).abs() * SIM::getNodeLength();
+		neighbor_distance[i] = lattice->to_orth(neighbors[i]).abs() * SIM::getNodeLength();
 		cout << "Node Length = " <<  SIM::getNodeLength() << ", neighbor_distance[" << i << "] = " << neighbor_distance[i] << "\n";
 	}
 	
@@ -176,8 +176,8 @@ int InitVoronoi::voronoiLabelling( shared_ptr<Lattice_Data_Layer<double> >& dist
 					double closest_label = labelMap->data[idx];
 					for (uint i=0; i<neighbors.size(); i++) {
 						//cout << "neighbors" << endl;
-						double dist = distanceMap->data[ distanceMap->get_data_index( pos + neighbors[i] )];
-						double label_nb = labelMap->data[ labelMap->get_data_index( pos + neighbors[i] )];
+						double dist = distanceMap->get(  pos + neighbors[i] );
+						double label_nb = labelMap->get( pos + neighbors[i] );
 						if( dist != no_distance ){
 							//cout << "not equal to no_distance" << endl;
 							dist += neighbor_distance[i];

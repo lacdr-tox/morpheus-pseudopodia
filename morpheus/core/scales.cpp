@@ -2,7 +2,7 @@
 #include "interfaces.h"
 #include "property.h"
 
-void Time_Scale::loadFromXML(const XMLNode xNode )
+void Time_Scale::loadFromXML(const XMLNode xNode, Scope* scope )
 {
 	if (xNode.isEmpty()) {
 		cerr << "Empty node in Time_Scale" << endl;
@@ -32,9 +32,8 @@ void Time_Scale::loadFromXML(const XMLNode xNode )
 	xml_tag_name = xNode.getName();
 	
 	if ( getXMLAttribute(xNode, "symbol", symbol_name) && ! symbol_name.empty() ) {
-		shared_ptr< Property<double> > p = Property<double>::createConstantInstance(symbol_name, xml_tag_name);
-		p->set(seconds_time);
-		SIM::defineSymbol(p);
+		auto symbol = SymbolAccessorBase<double>::createConstant(symbol_name,symbol_name, seconds_time);
+		scope->registerSymbol(symbol);
 	}
 	
 }
@@ -55,7 +54,7 @@ XMLNode Time_Scale::saveToXML() const
 	return xTime;
 }
 
-void Length_Scale::loadFromXML(const XMLNode xNode)
+void Length_Scale::loadFromXML(const XMLNode xNode, Scope* scope)
 {
 	if (xNode.isEmpty()) {
 		cerr << "Empty node in Length_Scale" << endl;
@@ -85,9 +84,8 @@ void Length_Scale::loadFromXML(const XMLNode xNode)
 	xml_tag_name = xNode.getName();
 
 	if ( getXMLAttribute(xNode, "symbol", symbol_name) && ! symbol_name.empty() ) {
-		shared_ptr< Property<double> > p = Property<double>::createConstantInstance(symbol_name, xml_tag_name);
-		p->set(meter_length);
-		SIM::defineSymbol( p );
+		auto sym = SymbolAccessorBase<double>::createConstant(symbol_name,symbol_name,meter_length);
+		scope->registerSymbol(sym);
 	}
 }
 

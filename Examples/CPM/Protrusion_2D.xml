@@ -84,7 +84,7 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
                 </Arrangement>
             </InitCellObjects>
         </Population>
-        <Population size="1" type="obstable">
+        <Population size="1" type="obstacle">
             <InitCellObjects mode="distance">
                 <Arrangement repetitions="2, 1, 1" displacements="100, 1, 1">
                     <Object>

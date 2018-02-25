@@ -20,7 +20,7 @@ void CellDeath::init(const Scope* scope)
 	if ( target_volume.isDefined() ) {
 		mode = SHRINKAGE;
 		// determine whether the target_volume symbol has a cellular (spatial) granularity
-		if ( target_volume.accessor().getGranularity() != Granularity::Cell ){
+		if ( target_volume.accessor()->granularity() != Granularity::Cell ){
 			throw MorpheusException("CellDeath expects the target-volume symbol to be a cell property!", stored_node);
 		}
 	}

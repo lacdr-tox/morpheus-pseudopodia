@@ -12,48 +12,22 @@ int main(int argc, char *argv[]) {
     return SIM::main(argc,argv);
 }
 
-typedef TR1_NAMESPACE::normal_distribution<double> RNG_GaussDist;
-typedef TR1_NAMESPACE::gamma_distribution<double> RNG_GammaDist;
+typedef std::normal_distribution<double> RNG_GaussDist;
+typedef std::gamma_distribution<double> RNG_GammaDist;
 
 bool getRandomBool() {
-// #ifdef USING_CXX0X_TR1
-// 	static uniform_int_distribution<> rnd(0,1);
-// #else
-// 	static uniform_int<> rnd(0,1);
-// #endif
-	
-// 	return rnd(random_engines[ omp_get_thread_num() ] )!=0;
 	return random_engines[ omp_get_thread_num() ]()<random_engines[ omp_get_thread_num() ].max()/2;
 }
 
 double getRandom01() {
-
-#if defined USING_CXX0X_TR1
 	static uniform_real_distribution <double> rnd(0.0,1.0);
-#else
-	static uniform_real<double> rnd(0.0,1.0);
-#endif	
-#if defined USING_STD_TR1
-	return rnd(random_engines[omp_get_thread_num()])/(random_engines[omp_get_thread_num()].max() - random_engines[omp_get_thread_num()].min());
-#else
 	return rnd(random_engines[omp_get_thread_num()]);
-#endif
 }
 
 // random gaussian distribution of stddev s
 double getRandomGauss(double s) {
-
-    RNG_GaussDist rnd( 0.0, s);
-
-    {
-#if defined USING_STD_TR1
-        return rnd(random_engines_alt[omp_get_thread_num()] )/(random_engines_alt[omp_get_thread_num()].max() - random_engines_alt[omp_get_thread_num()].min());
-#else
-        return rnd(random_engines_alt[omp_get_thread_num()]);
-#endif
-    }
-    //      assert(random_engine);
-//      return  gsl_ran_gaussian_ziggurat(random_engine, s);
+	RNG_GaussDist rnd( 0.0, s);
+	return rnd(random_engines_alt[omp_get_thread_num()]);
 }
 
 double getRandomGamma(double shape, double scale) {
@@ -64,12 +38,7 @@ double getRandomGamma(double shape, double scale) {
 }
 
 uint getRandomUint(uint max_val) {
-
-#ifdef USING_CXX0X_TR1
-	uniform_int_distribution<> rnd(0,max_val);
-#else
-	uniform_int<> rnd(0,max_val);
-#endif
+	uniform_int_distribution<uint> rnd(0,max_val);
     return rnd(random_engines[omp_get_thread_num()]);
 }
 
@@ -111,15 +80,18 @@ vector< weak_ptr<const CellType> > getCellTypes() {
 	return vector< weak_ptr<const CellType> > (celltypes.begin(),celltypes.end());
 }
 
+map<string, weak_ptr<const CellType> > getCellTypesMap() {
+	
+	map<string, weak_ptr<const CellType> > m;
+	for (auto ct : celltypes ) {
+		m[ct->getName()] = weak_ptr<const CellType>(ct);
+	}
+	return m;
+}
 
 double getMCSDuration() {
 	return time_per_mcs();
 };
-
-// double getTemperature() {
-// 	return metropolis_temperature;
-// };
-
 
 ostream& operator <<(ostream& os, const CPM::STATE& n) {
 	os << n.cell_id << " ["<< n.pos << "]";
@@ -176,17 +148,43 @@ void loadFromXML(XMLNode xMorph) {
 	boundary_neighborhood = SIM::lattice().getDefaultNeighborhood();
 	CPMShape::boundaryNeighborhood = boundary_neighborhood;
 	
-	if (SIM::lattice().getStructure() == Lattice::square)
-		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(2);
-	else if (SIM::lattice().getStructure() == Lattice::hexagonal)
-		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
-	else if (SIM::lattice().getStructure() == Lattice::cubic)
-		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(3);
-	else if (SIM::lattice().getStructure() == Lattice::linear)
-		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
+// 	if (SIM::lattice().getStructure() == Lattice::square)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(2);
+// 	else if (SIM::lattice().getStructure() == Lattice::hexagonal)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
+// 	else if (SIM::lattice().getStructure() == Lattice::cubic)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(3);
+// 	else if (SIM::lattice().getStructure() == Lattice::linear)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
+	
+	surface_neighborhood = SIM::lattice().getDefaultNeighborhood();
 	
 	if ( surface_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && surface_neighborhood.order()>5)) {
 		throw string("Default neighborhood is too large for estimation of cell surface nodes");
+	}
+	
+	// look for a medium type in predefined celltypes, or create one ...
+	if ( ! celltypes.empty()) {
+		for (uint i=0;; i++) {
+			if (i == celltypes.size()) {
+				// create a default medium celltype, in case no medium was defined
+				shared_ptr<CellType> ct =  shared_ptr<CellType>( new MediumCellType( i ) );
+				XMLNode medium_node = XMLNode::createXMLTopNode("CellType");
+				medium_node.addAttribute("name","Medium");
+				medium_node.addAttribute("class","medium");
+				ct->loadFromXML(medium_node, SIM::global_scope.get());
+				celltype_names[ct->getName()] = i;
+				EmptyCellType = i;
+				celltypes.push_back(ct);
+				break;
+			}
+			if (celltypes[i]->isMedium()) {
+				EmptyCellType = i;
+				break;
+			}
+		}
+
+		EmptyState.cell_id = celltypes[EmptyCellType]->createCell(); // make sure the the medium contains the cell representing the medium
 	}
 	
 	if ( ! xMorph.getChildNode("CPM").isEmpty() ) {
@@ -221,10 +219,12 @@ void loadFromXML(XMLNode xMorph) {
 		// CPM time evolution is defined by a MonteCarlo simulation based on the a Hamiltionian and the metropolis kintics
 		if ( ! xCPM.getChildNode("MonteCarloSampler").isEmpty() ) {
 			cpm_sampler =  shared_ptr<CPMSampler>(new CPMSampler());
-			cpm_sampler->loadFromXML(xCPM);
+			cpm_sampler->loadFromXML(xCPM, SIM::global_scope.get());
 			time_per_mcs.set( cpm_sampler->timeStep() );
 			update_neighborhood = cpm_sampler->getUpdateNeighborhood();
 		}
+		
+		enabled = true;
 		
 	}
 	if ( ! xMorph.getChildNode("CellPopulations").isEmpty()) {
@@ -233,28 +233,7 @@ void loadFromXML(XMLNode xMorph) {
 	
 	if ( ! celltypes.empty()) {
 		cout << "Creating cell layer ";
-		// look for predefined cell names in the medium poulations ...
-		
-		for (uint i=0;; i++) {
-			if (i == celltypes.size()) {
-				// create a default medium celltype, in case no medium was defined
-				shared_ptr<CellType> ct =  shared_ptr<CellType>( new MediumCellType( i ) );
-				XMLNode medium_node = XMLNode::createXMLTopNode("CellType");
-				medium_node.addAttribute("name","Medium");
-				medium_node.addAttribute("class","medium");
-				ct->loadFromXML(medium_node);
-				celltype_names[ct->getName()] = i;
-				EmptyCellType = i;
-				celltypes.push_back(ct);
-				break;
-			}
-			if (celltypes[i]->isMedium()) {
-				EmptyCellType = i;
-				break;
-			}
-		}
-
-		EmptyState.cell_id = celltypes[EmptyCellType]->createCell(); // make sure the the medium contains the cell representing the medium      
+   
 		InitialState = EmptyState;
 		cout << "with initial state set to CellType \'" << celltypes[EmptyCellType]->getName() << "\'" << endl;
 
@@ -263,30 +242,7 @@ void loadFromXML(XMLNode xMorph) {
 		
 		// Setting up lattice boundaries
 		if (! xCellPop.isEmpty()) {
-			layer->loadFromXML( xCellPop,
-				[] (const string& input) -> CPM::STATE 
-				{
-					CPM::STATE n;
-					n.pos = VINT(0,0,0);
-					auto ct = celltype_names.find(input);
-					if ( ct!= celltype_names.end()) {
-						if ( dynamic_pointer_cast<MediumCellType>( celltypes[ct->second] ) ) {
-							n.cell_id = celltypes[ct->second]->createCell();
-						}
-						else {
-							cerr << "unable to set celltype '" << input << "' to the boundary" << endl;
-							cerr << "need a medium-like celltype! " << endl;
-							exit(-1);
-							n.cell_id = EmptyState.cell_id;
-						}
-					}
-					else {
-						cerr <<  "unknown celltype '" << input << "' at the boundary" << endl;
-						exit(-1);
-						n.cell_id = EmptyState.cell_id;
-					}
-				return n;
-				});
+			layer->loadFromXML( xCellPop, make_shared<BoundaryReader>());
 		}
 		
 		// Setting the initial state
@@ -331,130 +287,38 @@ void loadCellTypes(XMLNode xCellTypesNode) {
 		XMLNode xCTNode = xCellTypesNode.getChildNode("CellType",i);
 		try {
 			if ( ! getXMLAttribute(xCTNode,"class", classname))
-				throw string("CellType: no classname provided for celltype ")+to_str(i);
+				throw string("No classname provided for celltype ")+to_str(i);
 			shared_ptr<CellType> ct = CellTypeFactory::CreateInstance( classname, celltypes.size() );
 			if (ct.get() == NULL)
-				throw string("CellType: no class ")+classname+" available";
-			ct->loadFromXML( xCTNode );
+				throw string("No celltype class ")+classname+" available";
+			ct->loadFromXML( xCTNode, SIM::global_scope.get() );
 			string name=ct->getName();
-			if (name.find_first_of(" \t\n\r") != string::npos)
-				throw string("CellType: Celltype names may not contain whitespace characters. Invalid name \"")+name+" \"";
 			if (name.empty())
-				throw string("CellType: no name for provided for celltype ")+to_str(i);
-
+				throw string("No name for provided for celltype ")+to_str(i);
+			if (name.find_first_of(" \t\n\r") != string::npos)
+				throw string("Celltype names may not contain whitespace characters. Invalid name \"")+name+" \"";
+			if (celltype_names.find(name) != celltype_names.end()) 
+				throw string("Redefinition of celltype ")+name;
+			
 			celltype_names[name] = celltypes.size();
 			celltypes.push_back(ct);
 			
-			auto celltype_constant = Property<double>::createConstantInstance(string("celltype.") + name+ ".id", "ID of CellType " + name);
-			celltype_constant->set(celltype_names[name]);
-			SIM::defineSymbol(celltype_constant);
-			
-			SymbolData symbol;
-			symbol.link = SymbolData::PopulationSizeLink;
-			symbol.granularity = Granularity::Global;
-			symbol.name = string("celltype.") + name + ".size";
-			symbol.celltype = celltypes.back();
-			
-			symbol.type_name = TypeInfo<double>::name();
-			symbol.integer = false;
-			symbol.writable = false;
-			symbol.fullname = "Population size of CellType" + name;
-			SIM::defineSymbol(symbol);
+			auto celltype_name = SymbolAccessorBase<double>::createConstant(string("celltype.") + name+ ".id", "CellType ID", double(celltype_names[name]));
+			SIM::global_scope->registerSymbol(celltype_name);
+ 			auto celltype_size = make_shared<CellPopulationSizeSymbol>(string("celltype.") + name + ".size", celltypes.back().get());
+			SIM::global_scope->registerSymbol(celltype_size);
 		}
 		catch (string e) {
-			cerr << "unable to create celltype: " << endl << "\t" << e << endl;
+			throw MorpheusException(string("Unable to create CellType\n") + e, xCTNode);
 		}
 	}
 	
-	
-	SymbolData symbol;
-	symbol.link = SymbolData::CellIDLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::CellID_symbol;
-// 	symbol.base_name = SymbolData::CellID_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.integer = true;
-	symbol.writable = false;
-	symbol.fullname = "Unique Cell ID";
-	SIM::defineSymbol(symbol);
-	
-	symbol.link = SymbolData::CellTypeLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::CellType_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.integer = true;
-	symbol.writable = false;
-	symbol.fullname = "CellType ID";
-	SIM::defineSymbol(symbol);
-	
-	symbol.link = SymbolData::SuperCellIDLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::SuperCellID_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.integer = true;
-	symbol.writable = false;
-	symbol.fullname = SymbolData::getLinkTypeName(symbol.link);
-	SIM::defineSymbol(symbol);
-	
-	symbol.link = SymbolData::SubCellIDLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::SubCellID_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.integer = true;
-	symbol.writable = false;
-	symbol.fullname = SymbolData::getLinkTypeName(symbol.link);
-	SIM::defineSymbol(symbol);
-    
-	symbol.link = SymbolData::CellVolumeLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::CellVolume_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.integer = false;
-	symbol.writable = false;
-	symbol.fullname = "Cell Volume";
-	SIM::defineSymbol(symbol);
-	
-	symbol.link = SymbolData::CellLengthLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::CellLength_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.integer = false;
-	symbol.writable = false;
-	symbol.fullname = "Cell Length";
-	SIM::defineSymbol(symbol);
-	
-	symbol.link = SymbolData::CellSurfaceLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::CellSurface_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.integer = false;
-	symbol.writable = false;
-	symbol.fullname = "Cell Surface";
-	SIM::defineSymbol(symbol);
-	
-	symbol.link = SymbolData::CellCenterLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::CellCenter_symbol;
-	symbol.type_name = TypeInfo<VDOUBLE>::name();
-	symbol.integer = false;
-	symbol.writable = false;
-	symbol.fullname = "Cell Center";
-	SIM::defineSymbol(symbol);
-	
-	symbol.link = SymbolData::CellOrientationLink;
-	symbol.granularity = Granularity::Cell;
-	symbol.name = SymbolData::CellOrientation_symbol;
-	symbol.type_name = TypeInfo<VDOUBLE>::name();
-	symbol.integer = false;
-	symbol.writable = false;
-	symbol.fullname = "Cell Orientation";
-	SIM::defineSymbol(symbol);
-
-	
 	for (uint i=0; i<celltypes.size(); i++) {
 		celltypes[i]->loadPlugins();
+#ifdef HAVE_SUPERCELLS
 		if (dynamic_pointer_cast<SuperCT>(celltypes[i]) )
 			dynamic_pointer_cast<SuperCT>(celltypes[i])->bindSubCelltype();
+#endif
 	}
 	
 	if (!celltype_names.empty()) {
@@ -465,9 +329,9 @@ void loadCellTypes(XMLNode xCellTypesNode) {
 	}
 }
 
-void init(XMLNode population) {
+void init() {
 
-	loadCellPopulations(xCellPop);
+	loadCellPopulations();
 
 	// Init the CellTypes and their (CPM) Plugins
 	for (uint i=0; i<celltypes.size(); i++) {
@@ -480,44 +344,37 @@ void init(XMLNode population) {
 	}
 }
 
-void loadCellPopulations(XMLNode populations)
+void loadCellPopulations()
 {
 	// Don't load the CellPopulations when we just want to create the symbol graph.
 	if (SIM::generate_symbol_graph_and_exit)
 		return;
 	
-	if ( ! layer &&  ! populations.isEmpty()) {
+	if ( ! layer &&  ! xCellPop.isEmpty()) {
 		// We need at least a cpm Layer and have to specify the neighborhood ...
-		
-		cerr << "CellPopulations specified and no CPM layer available." << endl;
-		exit(-1);
+		throw MorpheusException(string("Unable to create cell populations with no CPM layer available."), xCellPop);
 	}
-	if ( celltypes.size() > 1 && populations.isEmpty()) {
-		cerr << "No CellPopulations specified." << endl;
-		exit(-1);
-	}
+// 	if ( celltypes.size() > 1 && populations.isEmpty()) {
+// 		cerr << "No CellPopulations specified." << endl;
+// 	}
 	
 	
 	vector<XMLNode> defered_poulations;
-	for (int i=0; i<populations.nChildNode("Population"); i++) {
-		XMLNode population = populations.getChildNode("Population",i);
+	for (int i=0; i<xCellPop.nChildNode("Population"); i++) {
+		XMLNode population = xCellPop.getChildNode("Population",i);
 		string type;
-		if (!getXMLAttribute( population,"type",type)) {
-			cerr << "Simulation::init(): Population Population [" << i << "] has no cell type specified" << endl;
-			exit(-1);
-			continue;
+		getXMLAttribute( population,"type",type);
+		auto ct= celltype_names.find(type);
+		if (ct == celltype_names.end()) {
+			throw MorpheusException(string("Unable to create cell populations for celltype \"")+type+"\"", xCellPop);
 		}
-		map<string,uint>::iterator ct;
-		if ((ct = celltype_names.find(type)) == celltype_names.end()) {
-			cerr << "Ignoring CellPopulation[" << i << "," << type << "]: no valid type" << endl;
-			exit(-1);
-			continue;
-		}
-		
+
+#ifdef HAVE_SUPERCELLS
 		if (dynamic_pointer_cast< SuperCT >(celltypes[ct->second]) ) {
 			defered_poulations.push_back(population);
 			continue;
 		}
+#endif
 
 		celltypes[ct->second] -> loadPopulationFromXML(population);
 	}
@@ -605,10 +462,11 @@ bool executeCPMUpdate(const CPM::Update& update) {
 			
 		}
 	} catch ( string e ) {
-		cerr << "error while applying executeCPMUpdate()" << endl;
-		cerr << update.focusStateBefore() << endl << update.focusStateAfter() << endl;
-		cerr << e << endl;
-		exit (0);
+		stringstream s;
+		s << "error while applying executeCPMUpdate()" << endl;
+		s << "[" << update.focusStateBefore() << "] -> [" << update.focusStateAfter() << "]" << endl;
+		s << e << endl;
+		throw s.str();
 	}
 	return true;
 }
@@ -737,73 +595,81 @@ void setUpdate(CPM::Update& update) {
 namespace SIM {
 // #define NO_CORE_CATCH
 int main(int argc, char *argv[]) {
+	bool exception = false;
+	
 #ifndef NO_CORE_CATCH
 	try {
 #endif
 		
     double init0 = get_wall_time();
-	init(argc, argv);
+	if (init(argc, argv)) {
 	
-	if (generate_symbol_graph_and_exit){
-		cout << "Generated symbol dependency graph. Exiting." << endl;
-		return 0;
+		double init1 = get_wall_time();
+		size_t initMem = getCurrentRSS();
+		
+		//  Start Timers
+		double wall0 = get_wall_time();
+		double cpu0  = get_cpu_time();
+
+		TimeScheduler::compute();
+		
+		//  Stop timers
+		double wall1 = get_wall_time();
+		double cpu1  = get_cpu_time();
+
+		finalize();
+
+
+		cout << "\n=== Simulation finished ===\n";
+		string init_time = prettyFormattingTime( init1 - init0 );
+		string cpu_time = prettyFormattingTime( cpu1 - cpu0 );
+		string wall_time = prettyFormattingTime( wall1 - wall0 );
+		size_t peakMem = getPeakRSS();
+		
+		cout << "Init Time   = " << init_time << "\n";
+		cout << "Wall Time   = " << wall_time << "\n";
+		cout << "CPU Time    = " << cpu_time  << " (" << numthreads << " threads)\n\n";
+		cout << "Memory peak = " << prettyFormattingBytes(peakMem) << "\n";
+		
+		ofstream fout("performance.txt", ios::out);
+		fout << "Threads\tInit(s)\tCPU(s)\tWall(s)\tMem(Mb)\n";
+		fout << numthreads << "\t" << (init1-init0) << "\t" << (cpu1-cpu0) << "\t" << (wall1-wall0) << "\t" << (double(peakMem)/(1024.0*1024.0)) << "\n";
+		fout.close();
 	}
-	
-    double init1 = get_wall_time();
-	size_t initMem = getCurrentRSS();
-	
-	//  Start Timers
-    double wall0 = get_wall_time();
-    double cpu0  = get_cpu_time();
-
-	TimeScheduler::compute();
-	
-    //  Stop timers
-    double wall1 = get_wall_time();
-    double cpu1  = get_cpu_time();
-
-	finalize();
-
-
-	cout << "\n=== Simulation finished ===\n";
-	string init_time = prettyFormattingTime( init1 - init0 );
-	string cpu_time = prettyFormattingTime( cpu1 - cpu0 );
-	string wall_time = prettyFormattingTime( wall1 - wall0 );
-	size_t peakMem = getPeakRSS();
-	
-	cout << "Init Time   = " << init_time << "\n";
-	cout << "Wall Time   = " << wall_time << "\n";
-	cout << "CPU Time    = " << cpu_time  << " (" << numthreads << " threads)\n\n";
-	cout << "Memory peak = " << prettyFormattingBytes(peakMem) << "\n";
-	
-	ofstream fout("performance.txt", ios::out);
-    fout << "Threads\tInit(s)\tCPU(s)\tWall(s)\tMem(Mb)\n";
-    fout << numthreads << "\t" << (init1-init0) << "\t" << (cpu1-cpu0) << "\t" << (wall1-wall0) << "\t" << (double(peakMem)/(1024.0*1024.0)) << "\n";
-	fout.close();
 
 #ifndef NO_CORE_CATCH
 	}
 	catch (MorpheusException e) {
-		if (SIM::generate_symbol_graph_and_exit) {
-			createDepGraph();
-		}
-		//cerr << "Error while reading model description.\n";
+		exception = true;
 		cerr << "\n" << e.what()<< "\n";
 		cerr << "\nXMLPath: " << e.where() << endl;
-		cerr.flush();
-		exit(-1);
 	}
 	catch (string e) {
+		exception = true;
+		cerr << e << endl;
+	}
+	catch (SymbolError& e) {
+// 		switch(e.type()) {
+// 			case SymbolError::Type::InvalidDefinition
+// 		}
+		exception = true;
+		cerr << "\n" << e.what()<< "\n";
+	}
+	catch (...) {
+		cerr << "Unknown error while creating the simulation";
+		exception = true;
+	}
+#endif
+	
+	if (exception) {
+		cerr.flush();
 		if (SIM::generate_symbol_graph_and_exit) {
 			createDepGraph();
 		}
-//		cerr << "Error while reading model description\n";
-		cerr << e << endl;
-		cerr.flush();
-		exit(-1);
+		
+		return -1;
 	}
-#endif
-
+	
 	return 0;
 }
 
@@ -908,7 +774,7 @@ string getTimeName(double time) {
 	return sstr.str();
 }
 
-
+double TimeSymbol::get(const SymbolFocus&) const {	return TimeScheduler::getTime(); }
 
 double getTime() {
 	return TimeScheduler::getTime();
@@ -973,7 +839,7 @@ void splash(bool show_usage) {
 }
 
 
-void init(int argc, char *argv[]) {
+bool init(int argc, char *argv[]) {
 
 	std::map<std::string, std::string> cmd_line = ParseArgv(argc,argv);
 
@@ -981,13 +847,13 @@ void init(int argc, char *argv[]) {
 // 		cout << "option " << it->first << " -> " << it->second << endl;
 // 	}
 	if (cmd_line.find("revision") != cmd_line.end()) {
-		cout << "Revision: " << MORPHEUS_REVISION_STRING << endl;
-		exit(0);
+		cout << "Revision: " <<  MORPHEUS_REVISION_STRING  << endl;
+		return false;
 	}
 
 	if (cmd_line.find("version") != cmd_line.end()) {
 		cout << "Version: " << MORPHEUS_VERSION_STRING << endl;
-		exit(0);
+		return false;
 	}
 
 	if (cmd_line.find("gnuplot-path") != cmd_line.end()) {
@@ -998,14 +864,13 @@ void init(int argc, char *argv[]) {
 	if (cmd_line.find("gnuplot-version") != cmd_line.end()) {
 		string version;
 		try {
-			version = Gnuplot::version();
+		version = Gnuplot::version();
 		}
 		catch (GnuplotException &e) {
-			cout << e.what();
-			exit(0);
+			throw string(e.what());
 		}
 		cout << version << endl;
-		exit(0);
+		return false;
 	}
 
 	if (cmd_line.find("symbol-graph") != cmd_line.end()) {
@@ -1016,14 +881,11 @@ void init(int argc, char *argv[]) {
 		generate_symbol_graph_and_exit = false;
 	}
 
-    bool show_usage = false;
 	if ( argc  == 1 ) {
-        show_usage = true;
-        splash( show_usage );
+        splash( true );
         cout << "No arguments specified." << endl;
-        exit(0);
+        return false;
     }
-    splash( show_usage );
 
 
 // TODO Handling missing file( a file parameter must be provided and the file must exist)
@@ -1034,36 +896,22 @@ void init(int argc, char *argv[]) {
 	struct stat filestatus;
 	int filenotexists = stat( filename.c_str(), &filestatus );
 	if ( filenotexists > 0 || filename.empty() ) {
-		cerr << "Error: file '" << filename << "' does not exist." << endl;
-		exit(-1);
+		throw  string("Error: file '") + filename + "' does not exist.";
 	}
 	else if ( filestatus.st_size == 0 ) {
-		cerr << "Error: file '" << filename << "' is empty." << endl;
-		exit(-1);
+		throw  string("Error: file '") + filename + "' is empty.";
 	}
-	// Copy input XML model to output directory
-	// first, copy to buffer
-// 	ifstream infile(filename.c_str(), ifstream::in);
-// 	string buffer;
-// // 	buffer << infile;
-// 	infile >> buffer;
-// 	char ch;
-// 	while (infile && infile.get(ch) )
-// 		buffer.put(ch);
 
-	XMLNode xMorpheusRoot;
 	if (filename.size() > 3 and filename.substr(filename.size()-4,3) == ".gz") {
-		cerr << "You must unzip the model file before using it\n";
-		exit(-1);
-	} else {
-		xMorpheusRoot = parseXMLFile(filename);
-	}
-
+		throw  string("You must unzip the model file before using it");
+	} 
+	
+	XMLNode xMorpheusRoot = parseXMLFile(filename);
 	global_scope = unique_ptr<Scope>(new Scope());
 	// Attach global overrides to the global scope
 	for (map<string,string>::const_iterator it = cmd_line.begin(); it != cmd_line.end(); it++ ) {
 		if (it->first == "file") continue;
-		global_scope->setValueOverride(it->first, it->second);
+		global_scope->value_overrides()[it->first] = it->second;
 	}
 	current_scope = global_scope.get();
 	CPM::EmptyState.cell_id = 0;
@@ -1073,81 +921,23 @@ void init(int argc, char *argv[]) {
 	
 	if (SIM::generate_symbol_graph_and_exit) {
 		createDepGraph();
-		exit(0);
+		cout << "Generated symbol dependency graph. Exiting." << endl;
+		return false;
 	}
-	
-
-// 	// Copy input XML model to output directory
-// 	// second, copy buffer to outputfile with the same filename (Note meanwhile, the CWD has changed)
-// 	ofstream outfile(filename.c_str());
-// 	outfile << buffer;
-// 	while (buffer && buffer.get(ch) )
-// 		outfile.put(ch);
-
 
 	// try to match cmd line options with symbol names and adjust values accordingly
 	// check that global overrides have been used
-	
-	map<string,string> unused_overrides = global_scope->unusedValueOverrides();
-	
-	for ( const auto& override: unused_overrides ) {
+	for ( const auto& override: global_scope->value_overrides() ) {
 		cout << "Unknown cmd line override " << override.first << "=" << override.second << endl;
 	}
 
 	cout.flush();
+	return true;
 };
 
 void finalize() {
 	TimeScheduler::finish();
-
-/* 	Release memory manually  */
-	
-// 	cout << "cpm_sampler references " << CPM::cpm_sampler.use_count() << endl;
-// 	CPM::cpm_sampler.reset();
-// 	global_section_plugins.clear();
-// 	analysers.clear();
-// 	analysis_section_plugins.clear();
-// 	
-// 	
-// 	global_scope.reset();
-// 	
-// 	cout << "CPM::edgeTracker "  << " -> " << CPM::edgeTracker.use_count() << endl;
-// 	CPM::edgeTracker.reset();
-// 	
-// 	for ( const auto& ct :CPM::celltypes) {
-// 		cout << "CellType["<<  ct->getName() << "] -> " << ct.use_count() << endl;
-// 	}
-// 	CPM::celltypes.clear();
-// 	
-// 	for (const auto& pde :pde_layers) {
-// 		cout << pde.second->getName()  << " -> " << pde.second.use_count() << endl;
-// 	}
-// 	
-// 	CPM::global_update.boundary.reset();
-// 	CPM::global_update.interaction.reset();
-// 	cout << "CPM::layer "  << " -> " <<CPM::layer.use_count() << endl;
-// 	CPM::layer.reset();
-// 	cout << "SIM::global_lattice "  << " -> " <<SIM::global_lattice.use_count() << endl;
-// 	SIM::global_lattice.reset();
 }
-
-// XMLNode storeRandomSeeds() {
-// 	XMLNode xNode = XMLNode::createXMLTopNode("RandomSeed");
-// 	int numthreads = 1;		
-// 	#pragma omp parallel
-// 	{
-// 		numthreads = omp_get_num_threads();
-// 	}
-// 	
-// 	for (int thread=0; thread< numthreads; thread++) {
-// 		XMLNode xState = xNode.addChild("State");
-// 		stringstream ss;
-// 		ss << random_engines[thread];
-// 		xState.addText(ss.str().c_str());
-// 	}
-// 	return xNode;
-// 	
-// }
 
 void setRandomSeeds( const XMLNode xNode ){
 	// initialize multiple random engines (one for each thread) and set seed
@@ -1177,11 +967,11 @@ void setRandomSeeds( const XMLNode xNode ){
 		// 3. generate random seeds for other engines using the first engine.
 		vector<uint> random_seeds(numthreads,0);
 		for(uint i=1; i<numthreads; i++){
-#ifdef USING_CXX0X_TR1
+// #ifdef USING_CXX0X_TR1
 			uniform_int_distribution<> rnd(0,9999999);
-#else
-			uniform_int<> rnd(0,9999999);
-#endif
+// #else
+// 			uniform_int<> rnd(0,9999999);
+// #endif
 			random_seeds[i] = rnd(random_engines[0]);
 		}
 
@@ -1231,38 +1021,20 @@ void loadFromXML(const XMLNode xNode) {
 	
 	
 	getXMLAttribute(xNode,"version",morpheus_file_version);
-	getXMLAttribute(xNode,"Description/Title/text",fileTitle);
+	xDescription = xNode.getChildNode("Description");
+	getXMLAttribute(xDescription,"Title/text",fileTitle);
 	XMLNode xTime = xNode.getChildNode("Time");
-	TimeScheduler::loadFromXML(xTime);
+	TimeScheduler::loadFromXML(xTime, global_scope.get());
 	
-	SymbolData symbol;
-	if (xTime.nChildNode("TimeSymbol")){
-		getXMLAttribute(xTime.getChildNode("TimeSymbol"),"symbol",SymbolData::Time_symbol);
-	}
-	symbol.link=SymbolData::Time;
-	symbol.granularity = Granularity::Global;
-	symbol.name=SymbolData::Time_symbol;
-	symbol.type_name = TypeInfo<double>::name();
-	symbol.fullname = "simulation time";
-	symbol.integer = false;
-	symbol.invariant = false;
-	symbol.time_invariant = false;
-	defineSymbol(symbol);
-
-	setRandomSeeds(xTime.getChildNode("RandomSeed"));
+	
+	getXMLAttribute(xTime,"TimeSymbol/symbol",SymbolBase::Time_symbol);
+	global_scope->registerSymbol(make_shared<TimeSymbol>(SymbolBase::Time_symbol));
 	
 	xSpace = xNode.getChildNode("Space");
+	getXMLAttribute(xSpace,"SpaceSymbol/symbol",SymbolBase::Space_symbol);
+	global_scope->registerSymbol(make_shared<SpaceSymbol>(SymbolBase::Space_symbol));
 	
-	getXMLAttribute(xSpace,"SpaceSymbol/symbol",SymbolData::Space_symbol);
-	symbol.link = SymbolData::Space;
-	symbol.granularity = Granularity::Node;
-	symbol.name = SymbolData::Space_symbol;
-	symbol.type_name = TypeInfo<VDOUBLE>::name();
-	symbol.fullname = "spatial coordinates";
-	symbol.integer = true;
-	symbol.invariant = false;
-	symbol.time_invariant = true;
-	defineSymbol(symbol);
+	setRandomSeeds(xTime.getChildNode("RandomSeed"));
 	
 	// Loading and creating the underlying lattice
 	cout << "Creating lattice"<< endl;
@@ -1270,7 +1042,7 @@ void loadFromXML(const XMLNode xNode) {
 	if (xLattice.isEmpty()) throw string("unable to read XML Lattice node");
 	
 	if (xLattice.nChildNode("NodeLength"))
-		node_length.loadFromXML(xLattice.getChildNode("NodeLength"));
+		node_length.loadFromXML(xLattice.getChildNode("NodeLength"), global_scope.get());
 	try {
 		string lattice_code="cubic";
 		getXMLAttribute(xLattice, "class", lattice_code);
@@ -1293,13 +1065,11 @@ void loadFromXML(const XMLNode xNode) {
 	
 	lattice_size_symbol="";
 	if (getXMLAttribute(xLattice,"Size/symbol",lattice_size_symbol)) {
-		symbol.name = lattice_size_symbol;
-		shared_ptr<Property<VDOUBLE> > p = Property<VDOUBLE>::createConstantInstance(symbol.name,"Lattice Size");
-		p->set(global_lattice->size());
-		defineSymbol(p);
+		auto lattice_size = SymbolAccessorBase<VDOUBLE>::createConstant(lattice_size_symbol,"Lattice Size", global_lattice->size());
+		global_scope->registerSymbol( lattice_size );
 	}
 	
-	MembraneProperty::loadMembraneLattice(xSpace);
+	MembranePropertyPlugin::loadMembraneLattice(xSpace, global_scope.get());
 	
 	// Loading global definitions
 	if (xNode.nChildNode("Global")) {
@@ -1308,78 +1078,13 @@ void loadFromXML(const XMLNode xNode) {
 		for (int i=0; i<xGlobals.nChildNode(); i++) {
 			XMLNode xGlobalChild = xGlobals.getChildNode(i);
 			string xml_tag_name(xGlobalChild.getName());
-			if (xml_tag_name == "Field") {
-				shared_ptr<PDE_Layer> layer(new PDE_Layer( global_lattice, SIM::getNodeLength() ));
-				layer->loadFromXML(xGlobalChild);
-				
-				if (pde_layers.find(layer->getSymbol()) !=  pde_layers.end()) {
-					throw MorpheusException(string("Redefinition of pde layer \"") + layer->getSymbol()  + "\"!",xGlobalChild);
-				}
-
-				pde_layers[layer->getSymbol()] = layer;
-
-				// Create the diffusion wrapper
-				if (layer->getDiffusionRate() > 0.0)
-					global_section_plugins.push_back(shared_ptr<Plugin>(new Diffusion(layer)));
-					
-				
-				// registering global symbol for the pde layer;
-				SymbolData symbol; 
-				symbol.name=layer->getSymbol();
-				symbol.fullname = layer->getName();
-				symbol.link = SymbolData::PDELink;
-				symbol.granularity = Granularity::Node;
-				symbol.type_name = TypeInfo<double>::name();
-				symbol.writable = true;
-				SIM::defineSymbol(symbol);
-			}
-			else if (xml_tag_name == "VectorField") {
-				auto layer = make_shared<VectorField_Layer>(global_lattice, SIM::getNodeLength());
-				layer->loadFromXML(xGlobalChild);
-				
-				if (vector_field_layers.find(layer->getSymbol()) !=  vector_field_layers.end()) {
-					throw MorpheusException(string("Redefinition of Vector Field \"") + layer->getSymbol()  + "\"!",xGlobalChild);
-				}
-				vector_field_layers[layer->getSymbol()] = layer;
-				
-				
-				SymbolData symbol;
-				symbol.name = layer->getSymbol();
-				symbol.base_name = layer->getSymbol();
-				symbol.fullname = layer->getName();
-				symbol.link = SymbolData::VectorFieldLink;
-				symbol.granularity = Granularity::Node;
-				symbol.type_name = TypeInfo<VDOUBLE>::name();
-				symbol.writable = true;
-				SIM::defineSymbol(symbol);
-	
-			}
-			else {
-				shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
-				
-				if (! p.get())
-					throw MorpheusException(string("Unknown Global plugin ") + xml_tag_name, xGlobalChild);
-				
-				p->loadFromXML(xGlobalChild);
-				
-				if ( dynamic_pointer_cast< AbstractProperty >(p) ) {
-					// note that the AbstractProperty is still maintained by the Plugin
-					shared_ptr<AbstractProperty> property( dynamic_pointer_cast< AbstractProperty >(p) ); 
-// 						if (!property->isGlobal())
-// 							throw( MorpheusException("Local Properties are not allowed in Global section ...", xNode));
-					defineSymbol(property);
-					global_section_plugins.push_back(p);
-				}
-				else if (dynamic_pointer_cast< Function >(p)) {
-					defineSymbol(dynamic_pointer_cast< Function >(p));
-					global_section_plugins.push_back(p);
-				}
-				else if (dynamic_pointer_cast< TimeStepListener >(p)) {
-					global_section_plugins.push_back(p);
-				}
-				else 
-					throw MorpheusException(string("Unknown interface of Global plugin ")+ xml_tag_name, xGlobalChild);
-			}
+			shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
+			
+			if (! p.get())
+				throw MorpheusException(string("Unknown Global plugin ") + xml_tag_name, xGlobalChild);
+			
+			p->loadFromXML(xGlobalChild, global_scope.get());
+			global_section_plugins.push_back(p);
 		}
 	}
 	
@@ -1406,16 +1111,8 @@ void loadFromXML(const XMLNode xNode) {
 		}
 #endif
 	}
-	// Creation of Fields
-	for (auto field : pde_layers) {
-		field.second->init(SIM::getGlobalScope());
-	}
-	for (auto field : vector_field_layers) {
-		field.second->init(SIM::getGlobalScope());
-	}
-	
-	// Initialising cell populations
-	CPM::init(xNode.getChildNode("CellPopulations"));
+
+	CPM::init();
 
 	XMLNode xAnalysis = xNode.getChildNode("Analysis");
 	if ( ! xAnalysis.isEmpty() ) {
@@ -1429,25 +1126,11 @@ void loadFromXML(const XMLNode xNode) {
 				if (! p.get()) 
 					throw(string("Unknown analysis plugin " + xml_tag_name));
 				
-				p->loadFromXML(xNode);
+				p->loadFromXML(xNode, SIM::global_scope.get());
 				
-				if ( dynamic_pointer_cast< AbstractProperty >(p) ) {
-					// note that the AbstractProperty is still maintained by the Plugin
-					shared_ptr<AbstractProperty> property( dynamic_pointer_cast< AbstractProperty >(p) ); 
-// 						if (!property->isGlobal())
-// 							throw( MorpheusException("Local Properties are not allowed in Analysis ...", xNode));
-					defineSymbol(property);
-					analysis_section_plugins.push_back(p);
-				}
-				else if (dynamic_pointer_cast< Function >(p)) {
-					defineSymbol(dynamic_pointer_cast< Function >(p));
-					analysis_section_plugins.push_back(p);
-				}
-				else if (dynamic_pointer_cast<AnalysisPlugin>(p) ) {
+				if (dynamic_pointer_cast<AnalysisPlugin>(p) ) {
 					analysers.push_back( dynamic_pointer_cast<AnalysisPlugin>(p) );
 				}
-				else 
-					throw(string("unknown analysis plugin ")+ xml_tag_name + " - skipping");	
 			}
 			catch (string er) {
 				cout << er << endl;
@@ -1480,9 +1163,15 @@ void saveToXML() {
 
 	XMLNode xTimeNode = xMorpheusNode.addChild( TimeScheduler::saveToXML() );
 
-	xMorpheusNode.addChild("Description").addChild("Title").addText(fileTitle.c_str());
+	xMorpheusNode.addChild(xDescription);
 
 	xMorpheusNode.addChild(xSpace);
+	
+	// saving Field data
+	// TODO:: global_scope::saveToXML -> Field / VectorField
+	for (auto plugin : global_section_plugins) {
+		xGlobals.addChild(plugin->saveToXML());
+	}
 	
 	// saving global_scope
 	xMorpheusNode.addChild(xGlobals);
@@ -1544,26 +1233,26 @@ const Lattice& lattice()
 }
 
 
-shared_ptr<PDE_Layer> findPDELayer(string symbol) {
-	if (pde_layers.find(symbol) != pde_layers.end()) {
-		return pde_layers[symbol];
-	}
-	else {
-		throw string("Unable to locate Field \"") + symbol +"\"";
-		return shared_ptr<PDE_Layer>();
-	}
-}
+// shared_ptr<PDE_Layer> findPDELayer(string symbol) {
+// 	if (pde_layers.find(symbol) != pde_layers.end()) {
+// 		return pde_layers[symbol];
+// 	}
+// 	else {
+// 		throw string("Unable to locate Field \"") + symbol +"\"";
+// 		return shared_ptr<PDE_Layer>();
+// 	}
+// }
 
-shared_ptr<VectorField_Layer> findVectorFieldLayer(string symbol)
-{
-	if (vector_field_layers.find(symbol) != vector_field_layers.end()) {
-		return vector_field_layers[symbol];
-	}
-	else {
-		throw string("Unable to locate VectorField \"") + symbol +"\"";
-		return shared_ptr<VectorField_Layer>();
-	}
-}
+// shared_ptr<VectorField_Layer> findVectorFieldLayer(string symbol)
+// {
+// 	if (vector_field_layers.find(symbol) != vector_field_layers.end()) {
+// 		return vector_field_layers[symbol];
+// 	}
+// 	else {
+// 		throw string("Unable to locate VectorField \"") + symbol +"\"";
+// 		return shared_ptr<VectorField_Layer>();
+// 	}
+// }
 
 const Scope* getScope() { return current_scope; }
 
@@ -1576,7 +1265,6 @@ void enterScope(const Scope* scope) { if (!scope) throw(string("Invalid scope in
 
 void leaveScope() { if (scope_stash.empty()) throw (string("Invalid scope in leaveScope on empty Stack")); cout << "Leaving scope " << current_scope->getName(); current_scope = scope_stash.back(); scope_stash.pop_back();  cout << ", back to scope " << current_scope->getName() << endl;  }
 
-void defineSymbol(SymbolData symbol) { current_scope->registerSymbol(symbol); }
 
 
 /*

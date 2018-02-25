@@ -345,8 +345,14 @@ namespace mu
     const funmap_type *pFunMap = &a_Storage;
 
     // Check for conflicting operator or function names
-    if ( pFunMap!=&m_FunDef && m_FunDef.find(a_strName)!=m_FunDef.end() )
-      Error(ecNAME_CONFLICT, -1, a_strName);
+// 	fun_signature a_signature = {a_strName, a_Callback.GetArgc()};
+	auto fun_range = m_FunDef.equal_range(a_strName);
+    if ( pFunMap!=&m_FunDef && fun_range.first!=fun_range.second ) {
+        for (auto it = fun_range.first; it!=fun_range.second; it++) {
+			if (it->second.GetArgc() == a_Callback.GetArgc())
+				Error(ecNAME_CONFLICT, -1, a_strName);
+		}
+	}
 
     if ( pFunMap!=&m_PostOprtDef && m_PostOprtDef.find(a_strName)!=m_PostOprtDef.end() )
       Error(ecNAME_CONFLICT, -1, a_strName);
@@ -358,8 +364,8 @@ namespace mu
       Error(ecNAME_CONFLICT, -1, a_strName);
 
     CheckOprt(a_strName, a_Callback, a_szCharSet);
-    a_Storage[a_strName] = a_Callback;
-    ReInit();
+    a_Storage.insert({a_strName,a_Callback});
+	ReInit();
   }
 
   //---------------------------------------------------------------------------
@@ -832,7 +838,7 @@ namespace mu
 
     // determine how many parameters the function needs. To remember iArgCount includes the 
     // string parameter whilst GetArgCount() counts only numeric parameters.
-    int iArgRequired = funTok.GetArgCount() + ((funTok.GetType()==tpSTR) ? 1 : 0);
+    int iArgRequired = (funTok.GetCode()==cmFUNC)? funTok.GetArgCount(a_iArgCount) : funTok.GetArgCount() + ((funTok.GetType()==tpSTR) ? 1 : 0);
 
     // Thats the number of numerical parameters
     int iArgNumerical = iArgCount - ((funTok.GetType()==tpSTR) ? 1 : 0);
@@ -871,7 +877,7 @@ namespace mu
           break;
 
     case  cmFUNC_BULK: 
-          m_vRPN.AddBulkFun(funTok.GetFuncAddr(), (int)stArg.size()); 
+          m_vRPN.AddBulkFun(funTok.GetFuncAddr(iArgNumerical), (int)stArg.size()); 
           break;
 
     case  cmOPRT_BIN:
@@ -881,7 +887,7 @@ namespace mu
           if (funTok.GetArgCount()==-1 && iArgCount==0)
             Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos(), funTok.GetAsString());
 
-          m_vRPN.AddFun(funTok.GetFuncAddr(), (funTok.GetArgCount()==-1) ? -iArgNumerical : iArgNumerical);
+          m_vRPN.AddFun(funTok.GetFuncAddr(iArgNumerical), (funTok.GetArgCount()==-1) ? -iArgNumerical : iArgNumerical);
           break;
     }
 

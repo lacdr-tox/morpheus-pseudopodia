@@ -53,7 +53,7 @@ HistogramLogger::HistogramLogger(): gnuplot(NULL){
 
 };
 
-void HistogramLogger::loadFromXML(const XMLNode xNode)
+void HistogramLogger::loadFromXML(const XMLNode xNode, Scope* scope)
 {
 	cout << "HistogramLogger::loadFromXML " << endl;
 	
@@ -69,7 +69,7 @@ void HistogramLogger::loadFromXML(const XMLNode xNode)
 		columns.push_back(c);
 	}
 
-    AnalysisPlugin::loadFromXML( xNode );
+    AnalysisPlugin::loadFromXML( xNode, scope );
 	
 }
 
@@ -77,7 +77,7 @@ void HistogramLogger::init(const Scope* scope) {
 	// Preinitialize celltype parameters to transfer their celltype scopes to the symbol reference
 	for (auto c : columns) {
 		if (c->celltype.isDefined()) {
-			c->celltype.init();
+			c->celltype.init(scope);
 			cout << "celltype " << c->celltype()->getName() << "defined for symbol " << c->symbol.stringVal();
 			c->symbol.setScope(c->celltype()->getScope());
 		}
@@ -92,8 +92,8 @@ void HistogramLogger::init(const Scope* scope) {
 		throw MorpheusException("HistogramLogger: Cannot use Logarithmic/Plot with min=0 or max=0", stored_node);
 	}
 
-	if( plot.terminal.isDefined() ){
-		plot.enabled = true;
+	plot.enabled = plot.terminal.isDefined();
+	if ( plot.enabled ){
 		gnuplot = new Gnuplot();
 
 		plot.extension="";
@@ -164,61 +164,59 @@ void HistogramLogger::analyse(double time)
 }
 
 void HistogramLogger::writelog(double time) {
-	if (minimum_fixed.isDefined()) {
-		minimum=minimum_fixed();
-	}
-	else {
-		minimum = std::numeric_limits<double>::max();
-	}
-	if (maximum_fixed.isDefined()) {
-		maximum=maximum_fixed();
-	}
-	else {
-		maximum = std::numeric_limits<double>::min();
-	}
 
+	minimum = std::numeric_limits<double>::max();
+	maximum = std::numeric_limits<double>::min();
+	
 	for(uint i=0; i<columns.size(); i++){
 
 		Column& c = *columns[i];
 
 		// collect values
-		vector<double> values;
 		FocusRange range(c.symbol.granularity(), c.celltype.isDefined() ? c.celltype()->getScope() : this->scope());
-		values.reserve(range.size());
+		c.values.resize(range.size(),0);
+		unsigned j=0;
 		for (auto focus : range ){
-			values.push_back( c.symbol( focus ));
+			c.values[j] = c.symbol( focus );
+			if (c.values[j]<minimum) minimum = c.values[j];
+			if (c.values[j]>maximum) maximum = c.values[j];
+			j++;
 		}
+	}
 
-		// set minimum and maximum values
-		if ( ! minimum_fixed.isDefined() ){
-			minimum = min( minimum, *min_element(values.begin(), values.end()));
-		}
-		
-        if( ! maximum_fixed.isDefined() ){
-			maximum = max(maximum, *max_element(values.begin(), values.end()) );
-		}
+	// set minimum and maximum values
+	if (minimum_fixed.isDefined()) {
+		minimum=minimum_fixed();
+	}
+	if (maximum_fixed.isDefined()) {
+		maximum=maximum_fixed();
+	}
 
-		//cout << "HistogramLogger: min: " << minimum << " (computed? " << (compute_min?"true":"false") <<  "), max: " << maximum << "(computed? " << (compute_max?"true":"false") <<  ")\n";
+	Column& c0 = *columns[0];
 
-        //create bins
-        c.bins.clear();
-        double w = (maximum-minimum)/(double)numbins();
+	//create bins
+	c0.bins.clear();
+	double w = (maximum-minimum)/(double)numbins();
 
-		vector<double> ws(numbins()+1);
-		if( logarithmic_x() ){
-			double logMin = log10(minimum);	
-			double logMax = log10(maximum);
-			double delta = (logMax-logMin) / (double)numbins();
-			double accDelta=0;
-			for (int i = 0; i<ws.size(); i++)
-			{
-				ws[i] = pow(10.0, logMin + accDelta);
+	vector<double> ws(numbins()+1);
+	if( logarithmic_x() ){
+		double logMin = log10(minimum);	
+		double logMax = log10(maximum);
+		double delta = (logMax-logMin) / (double)numbins();
+		double accDelta=0;
+		for (int i = 0; i<ws.size(); i++)
+		{
+			ws[i] = pow(10.0, logMin + accDelta);
 // 				cout << "Bin: " << i << " min = " << ws[i] << " accDelta "<< accDelta << " delta " << delta << " numbins " << numbins << endl;
-				accDelta += delta;
-			}
+			accDelta += delta;
 		}
+	}
 		
+		
+	for(uint i=0; i<columns.size(); i++){
+		Column& c = *columns[i];
 		// do the first bin separately, in case all values are identical
+		c.bins.clear();
 		for (int j = 0; j < numbins(); j++)
 		{
 			Bin b;
@@ -237,17 +235,17 @@ void HistogramLogger::writelog(double time) {
 		//populate the probability density function
 		double weight = 1.0;
 		if( normalized() )
-			weight = 1./(double)values.size();
+			weight = 1./(double)c.values.size();
 
 		// for each bin
-		for( vector<Bin>::iterator it = c.bins.begin(); it < c.bins.end(); it++ ){
+		for( auto& bin : c.bins){
 			// get elements that fall in this bin
-			for (vector<double>::iterator jt = values.begin(); jt < values.end(); jt++){
-				if (*jt >= it->minimum && *jt < it->maximum){
-					it->frequency += weight;
+			for (vector<double>::iterator jt = c.values.begin(); jt < c.values.end(); jt++){
+				if (*jt >= bin.minimum && *jt < bin.maximum){
+					bin.frequency += weight;
 				}
-				else if (it->minimum == it->maximum){
-					it->frequency += weight;
+				else if (bin.minimum == bin.maximum){
+					bin.frequency += weight;
 				}
 			}
 		}
@@ -257,13 +255,13 @@ void HistogramLogger::writelog(double time) {
 
     // bin1_min bin1_max freq_p1 freq2_p2 ...
     // bin2_min bin1_max freq_p1 freq2_p2 ...
-    // bin3_min bin1_maxfreq_p1 freq2_p2 ...
+    // bin3_min bin1_max freq_p1 freq2_p2 ...
     // ...  ...     ...      ...
 
 	for(uint b=0; b<numbins(); b++){
 
 		// bins are determined by first property in the list!
-		fout << columns[0]->bins[b].minimum << "\t" << columns[0]->bins[b].maximum;
+		fout << c0.bins[b].minimum << "\t" << c0.bins[b].maximum;
 
 		for(uint i=0; i<columns.size(); i++){
 			if( logarithmic_y() ){

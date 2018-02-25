@@ -8,7 +8,7 @@ XMLNode Plugin::saveToXML() const {
 	return stored_node;
 };
 
-void Plugin::loadFromXML(const XMLNode xNode) {
+void Plugin::loadFromXML(const XMLNode xNode, Scope* scope) {
 // 	assert( string(xNode.getName()) == XMLName());
 	stored_node = xNode;
 	getXMLAttribute(xNode, "name",plugin_name,false);
@@ -17,58 +17,43 @@ void Plugin::loadFromXML(const XMLNode xNode) {
 		plugin_parameters2[i]->loadFromXML(xNode);
 	}
 	// Use the current scope as default scope;
-	local_scope = SIM::getScope();
-
+	local_scope = scope;
 };
 
 void Plugin::registerPluginParameter(PluginParameterBase& parameter ) {
 	plugin_parameters2.push_back(&parameter);
 }
 
-
-
-void Plugin::registerInputSymbol(string name, const Scope* scope)
+void Plugin::registerInputSymbol(SymbolDependency sym)
 {
-	if (! scope) 
-		throw string("Plugin ") + XMLName() + string(": Cannot register input symbol ") + name + " with empty scope";
-	SymbolDependency sd = {scope->getSymbolBaseName(name), scope};
-	input_symbols.insert(sd);
+	input_symbols.insert(sym);
 }
 
-void Plugin::registerInputSymbols(const set< SymbolDependency >& in)
-{
-	for (auto sym : in) {
-		sym.name = sym.scope->getSymbolBaseName(sym.name);
-		input_symbols.insert(sym);
-	}
+void Plugin::registerInputSymbols(set<SymbolDependency> in) {
+	input_symbols.insert(in.begin(),in.end());
 }
 
-void Plugin::registerOutputSymbol(string name, const Scope* scope)
+void Plugin::registerOutputSymbol(SymbolDependency sym)
 {
-	if (! scope) 
-		throw string("Plugin ") + XMLName() + string(": Cannot register input symbol ") + name + " with empty scope";
-	SymbolDependency sd = {scope->getSymbolBaseName(name), scope};
-// 	input_symbols.insert(sd);
-	output_symbols.insert(sd);
+	output_symbols.insert(sym);
 }
 
-void Plugin::registerOutputSymbols(const set< SymbolDependency >& out)
+void Plugin::registerOutputSymbols(set< SymbolDependency > out)
 {
-	for (auto sym : out) {
-		sym.name = sym.scope->getSymbolBaseName(sym.name);
-		output_symbols.insert(sym);
-	}
+	output_symbols.insert(out.begin(),out.end());
 }
 
 
 void Plugin::registerCellPositionDependency()
 {
-	registerInputSymbol(SymbolData::CellCenter_symbol,SIM::getGlobalScope());
+	assert(local_scope);
+	registerInputSymbol(local_scope->findSymbol<VDOUBLE>(SymbolBase::CellCenter_symbol));
 }
 
 void Plugin::registerCellPositionOutput()
 {
-	registerOutputSymbol(SymbolData::CellCenter_symbol,SIM::getGlobalScope());
+	assert(local_scope);
+	registerOutputSymbol(local_scope->findSymbol<VDOUBLE>(SymbolBase::CellCenter_symbol));
 }
 
 bool Plugin::setParameter(string xml_path, string value)
@@ -83,11 +68,15 @@ bool Plugin::setParameter(string xml_path, string value)
 }
 
 
-void Plugin::init(const Scope* scope) {
+void Plugin::init(const Scope* scope)
+{
+	// Use the current scope as default scope;
+	if (!local_scope)
+		local_scope = scope;
 	
-	local_scope = scope;
 	for (uint i=0; i<plugin_parameters2.size(); i++) {
-		plugin_parameters2[i]->init();
+		cout << this->XMLName() << ": Initializing parameter " << plugin_parameters2[i]->XMLPath()<< endl;
+		plugin_parameters2[i]->init(scope);
 		
 		auto in = plugin_parameters2[i]->getDependSymbols();
 		input_symbols.insert(in.begin(), in.end());
@@ -98,15 +87,15 @@ void Plugin::init(const Scope* scope) {
 	
 	if (! input_symbols.empty()) {
 		cout << "Plugin " << XMLName() << ": Registered input symbol dependencies ";
-		for (auto dep : input_symbols) {
-			cout << dep.name << " [" << dep.scope->getName() << "] ,";
+		for (auto const& dep : input_symbols) {
+			cout << dep->name() << " [" << dep->scope()->getName() << "] ,";
 		}
 		cout << endl;
 	}
 	if (! output_symbols.empty()) {
 		cout << "Plugin" << XMLName() << ": Registered output symbol dependencies ";
 		for (auto dep : output_symbols) {
-			cout << dep.name <<  " [" << dep.scope->getName() << "] ,";
+			cout << dep->name() <<  " [" << dep->scope()->getName() << "] ,";
 		}
 		cout << endl;
 	}
@@ -124,6 +113,32 @@ TimeStepListener::TimeStepListener(TimeStepListener::XMLSpec spec) : xml_spec(sp
 	time_step = -1;
 	latest_time_step = -1;
 	execute_systemtime = 0;
+}
+
+set<SymbolDependency> TimeStepListener::getLeafDependSymbols() {
+	if (leaf_input_symbols.empty()) {
+		auto inputs = getDependSymbols();
+		for (const auto& input : inputs) {
+			auto leafs = input->leafDependencies();
+			leaf_input_symbols.insert(leafs.begin(), leafs.end());
+		}
+	}
+	return leaf_input_symbols;
+}
+
+set<SymbolDependency> TimeStepListener::getLeafOutputSymbols() {
+	set<SymbolDependency> outputs;
+	for (auto sym : getOutputSymbols()) {
+		if ( !sym->dependencies().empty()) {
+			auto leafs = sym->leafDependencies();
+			outputs.insert(leafs.begin(), leafs.end());
+		}
+		else {
+			outputs.insert(sym);
+		}
+		
+	}
+	return outputs;
 }
 
 void TimeStepListener::setTimeStep(double t)
@@ -159,22 +174,22 @@ void TimeStepListener::updateSinkTS(double ts) {};
 
 void TimeStepListener::propagateSinkTS(double ts)
 {
-	for (auto it: getDependSymbols()) {
-		const_cast<Scope*>(it.scope)->propagateSinkTimeStep(it.name,ts);
+	for (auto it: getLeafDependSymbols()) {
+		const_cast<Scope*>(it->scope())->propagateSinkTimeStep(it->name(),ts);
 	}
 }
 
 void TimeStepListener::propagateSourceTS(double ts)
 {
-	for (auto it: getOutputSymbols()) {
-		const_cast<Scope*>(it.scope)->propagateSourceTimeStep(it.name,ts);
+	for (auto it: getLeafOutputSymbols()) {
+		const_cast<Scope*>(it->scope())->propagateSourceTimeStep(it->name(),ts);
 	}
 }
 
 
-void TimeStepListener::loadFromXML(const XMLNode node)
+void TimeStepListener::loadFromXML(const XMLNode node, Scope* scope)
 {
-	Plugin::loadFromXML(node);
+	Plugin::loadFromXML(node, scope);
 	
 	if (xml_spec == XMLSpec::XML_REQUIRED) {
 		is_adjustable = false;

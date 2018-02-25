@@ -12,10 +12,10 @@
 #ifndef LATTICE_STENCIL
 #define LATTICE_STENCIL
 
-#include "lattice.h"
 #include "lattice_data_layer.h"
-#include <assert.h>
-class Cell; class CellType;
+
+class Cell;
+class CellType;
 
 namespace CPM {
 

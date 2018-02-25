@@ -55,9 +55,9 @@ void ArrowPainter::loadFromXML(const XMLNode node)
 
 int ArrowPainter::getStyle() { return style; }
 
-void ArrowPainter::init()
+void ArrowPainter::init(const Scope* scope)
 {
-	arrow.init();
+	arrow.init(scope);
 }
 
 set< SymbolDependency > ArrowPainter::getInputSymbols() const
@@ -148,13 +148,13 @@ void FieldPainter::loadFromXML(const XMLNode node)
 	}
 }
 
-void FieldPainter::init()
+void FieldPainter::init(const Scope* scope)
 {
-	field_value.init();
+	field_value.init(scope);
 	if( min_value.isDefined() )
-		min_value.init();
+		min_value.init(scope);
 	if( max_value.isDefined() )
-		max_value.init();
+		max_value.init(scope);
 }
 
 const string& FieldPainter::getDescription() const
@@ -216,6 +216,9 @@ void FieldPainter::plotData(ostream& out)
 	VINT size = SIM::lattice().size();
 	VINT out_size = size / coarsening();
 	
+	VINT view_size = Gnuplotter::PlotSpec::size();
+	VDOUBLE view_out_size = VDOUBLE(view_size) / double(coarsening());
+	
 	string xsep(" "), ysep("\n");
 		
 	VINT out_pos;
@@ -258,17 +261,6 @@ void FieldPainter::plotData(ostream& out)
 
 		}
 		
-		// shifting the data to map hex coordinate system
-		if (is_hexagonal) {
-			out_data = out_data.cshift(-out_pos.y/2);
-			// add an interpolation step
-			if (out_pos.y%2==1) {
-				out_data2 = out_data.cshift(-1);
-				out_data+= out_data2;
-				out_data/=2;
-			}
-		}
-		
 		// Cropping data
 		if (min_value.isDefined()) {
 			float fmin_value = min_value.get(SymbolFocus::global);
@@ -286,10 +278,21 @@ void FieldPainter::plotData(ostream& out)
 				}
 			}
 		}
-			
-		out << out_data[0];
-		for (uint i=1; i<out_data.size() ;i++) {
-			out << xsep << out_data[i];
+		
+		if (is_hexagonal) {
+			for (int x = 0; x < view_out_size.x*2; ++x) {
+				int x_l = int(MOD((0.5*x - 0.5*out_pos.y)+0.01, view_out_size.x));
+				if (x_l<0 || x_l>= out_data.size())
+					out << "Nan" << "\t";
+				else
+					out << out_data[x_l] << "\t";
+			}
+		}
+		else {
+			out << out_data[0];
+			for (uint i=1; i<out_data.size() ;i++) {
+				out << xsep << out_data[i];
+			}
 		}
 		
 		out << ysep;
@@ -316,9 +319,9 @@ void VectorFieldPainter::loadFromXML(const XMLNode node)
     getXMLAttribute(node,"slice",slice);
 }
 
-void VectorFieldPainter::init()
+void VectorFieldPainter::init(const Scope* scope)
 {
-	value.init();
+	value.init(scope);
 }
 
 set< SymbolDependency > VectorFieldPainter::getInputSymbols() const
@@ -394,9 +397,9 @@ void LabelPainter::loadFromXML(const XMLNode node)
 
 
 
-void LabelPainter::init()
+void LabelPainter::init(const Scope* scope)
 {
-	value.init();
+	value.init(scope);
 }
 
 
@@ -452,6 +455,7 @@ CellPainter::CellPainter()
 	z_level = 0;
 	symbol.setXMLPath("value");
 	symbol.setDefault("cell.type");
+	symbol.setPartialSpecDefault(transparency_value);
 }
 
 CellPainter::~CellPainter() { }
@@ -472,8 +476,7 @@ void CellPainter::loadFromXML(const XMLNode node)
 		external_range_min = true;
 	if (getXMLAttribute(node,"max",range_max) )
 		external_range_max = true;
-	if (getXMLAttribute(node,"min",range_min) && getXMLAttribute(node,"max",range_max))
-		external_range = true;
+	external_range = external_range_min && external_range_max;
 
 	if (string(node.getName()) == "Cells") {
 		
@@ -518,8 +521,8 @@ void CellPainter::loadPalette(const XMLNode node)
 	}
 }
 
-void CellPainter::init() {
-	symbol.init();
+void CellPainter::init(const Scope* scope) {
+	symbol.init(scope);
 	
 	cpm_layer = CPM::getLayer();
 	
@@ -624,7 +627,11 @@ vector<CellPainter::CellBoundarySpec> CellPainter::getCellBoundaries() {
 		if (ct->isMedium())
 			continue;
 		vector<CPM::CELL_ID> cells = ct->getCellIDs();
+#ifdef HAVE_SUPERCELLS
 		bool is_super_cell = ( dynamic_pointer_cast<const SuperCT>(ct) != nullptr );
+#else
+		bool is_super_cell = false;
+#endif
 		for (uint c=0; c< cells.size(); c++) {
 			const Cell& cell = CPM::getCell(cells[c]);
 			if (! cell.nNodes()) continue;
@@ -680,7 +687,7 @@ const string& CellPainter::getDescription() const {
 
 set<SymbolDependency> CellPainter::getInputSymbols() const
 {
-	return this->symbol.getDependSymbols();
+	return { symbol.accessor() };
 }
 
 void CellPainter::writeCellLayer(ostream& out)
@@ -726,7 +733,6 @@ void CellPainter::writeCellLayer(ostream& out)
 			}
 		}
 	}
-
 	if (data_layout == point_wise ) {
 		for (int y = 0; y < size.y; ++y) {
 			for (int x = 0; x < size.x; ++x) {
@@ -743,19 +749,33 @@ void CellPainter::writeCellLayer(ostream& out)
 		}
 	}
 	else if (data_layout == ascii_matrix) {
+		auto view_size = Gnuplotter::PlotSpec::size();
 		for (int y = 0; y < max(2,size.y); ++y) {
 			int y_l = min(y,size.y-1);
 			if (is_hexagonal) {
-				for (int x = 0; x < size.x*2+1; ++x) {
-					if (y_l%2==0 && x==size.x*2) {
-						out << "Nan" << "\t";
+				if (SIM::lattice().get_boundary_type(Boundary::mx) == Boundary::periodic) {
+					for (int x = 0; x < view_size.x*2+1; ++x) {
+						if (y_l%2==0 && x==size.x*2) {
+							out << "Nan" << "\t";
+						}
+						else if (y_l%2==1 && x==0) {
+							out << "Nan" << "\t";
+						}
+						else {
+							int x_l = int(MOD(0.5*x - 0.5*y_l+0.01,double(size.x)));
+							if (isnan(view[y_l][x_l]) || view[y_l][x_l] == transparency_value)
+								out << "Nan" << "\t";
+							else
+								out << view[y_l][x_l] << "\t";
+						}
 					}
-					else if (y_l%2==1 && x==0) {
-						out << "Nan" << "\t";
-					}
-					else {
-						int x_l = int(MOD((0.5*x - 0.5*y_l)+0.01, double(size.x)));
-						if (isnan(view[y_l][x_l]) || view[y_l][x_l] == transparency_value)
+				}
+				else {
+					for (int x = 0; x < view_size.x*2+1; ++x) {
+						int x_l = 0.5*x - 0.5*y_l+0.01;
+						if (x_l<0 || x_l>=size.x)
+							out << "Nan" << "\t";
+						else if (isnan(view[y_l][x_l]) || view[y_l][x_l] == transparency_value)
 							out << "Nan" << "\t";
 						else
 							out << view[y_l][x_l] << "\t";
@@ -999,9 +1019,9 @@ Gnuplotter::Gnuplotter(): AnalysisPlugin(), gnuplot(NULL) {
 };
 Gnuplotter::~Gnuplotter() { if (gnuplot) delete gnuplot; Gnuplotter::instances--;};
 
-void Gnuplotter::loadFromXML(const XMLNode xNode)
+void Gnuplotter::loadFromXML(const XMLNode xNode, Scope* scope)
 {
-	AnalysisPlugin::loadFromXML(xNode);
+	AnalysisPlugin::loadFromXML(xNode, scope);
 
 	decorate = true;
 	getXMLAttribute(xNode,"decorate",decorate);
@@ -1073,23 +1093,23 @@ void Gnuplotter::init(const Scope* scope) {
     
 		for (uint i=0;i<plots.size();i++) {
 			if (plots[i].cells) {
-				plots[i].cell_painter->init();
+				plots[i].cell_painter->init(scope);
 				registerInputSymbols( plots[i].cell_painter->getInputSymbols() );
 			}
 			if (plots[i].label_painter) {
-				plots[i].label_painter->init();
+				plots[i].label_painter->init(scope);
 				registerInputSymbols( plots[i].label_painter->getInputSymbols() );
 			}
 			if (plots[i].arrow_painter) {
-				plots[i].arrow_painter->init();
+				plots[i].arrow_painter->init(scope);
 				registerInputSymbols( plots[i].arrow_painter->getInputSymbols() );
 			}
 			if (plots[i].vector_field_painter) {
-				plots[i].vector_field_painter->init();
+				plots[i].vector_field_painter->init(scope);
 				registerInputSymbols( plots[i].vector_field_painter->getInputSymbols() );
 			}
 			if (plots[i].field) {
-				plots[i].field_painter->init();
+				plots[i].field_painter->init(scope);
 				registerInputSymbols( plots[i].field_painter->getInputSymbols() );
 			}
 		}
@@ -1302,6 +1322,7 @@ void Gnuplotter::analyse(double time) {
 		s << "[" << - origin.x << ":" << view_size.x - origin.x << "]"
 		  <<  "[" << - origin.y << ":" << view_size.y - origin.y << "]";
 		string field_range = s.str();
+		bool is_hexagonal = (SIM::lattice().getStructure() == Lattice::hexagonal);
 		
 		if (plots[i].field) {
 // 			if (!interpolation_pm3d)
@@ -1343,10 +1364,11 @@ void Gnuplotter::analyse(double time) {
 				else
 					command << " \'"<< outputDir << "/" << plots[i].field_data_file.c_str() << "' ";
 				
-				if (plots[i].field_painter->getCoarsening() != 1) {
+				if (plots[i].field_painter->getCoarsening() != 1 || is_hexagonal) {
 					auto c = plots[i].field_painter->getCoarsening();
-					plot_layout.plots[i];
-					command <<  "u (" << c <<  "*$1):(" << c << "*$2):3 ";
+					auto cx = c * (is_hexagonal ? 0.5:1);
+					auto cy = c * (is_hexagonal ? 0.866025:1);
+					command <<  "u (" << cx <<  "*$1):(" << cy << "*$2):3 ";
 				}
 				command << " matrix " << points_pm3d << " pal not\n";
 				
@@ -1367,9 +1389,11 @@ void Gnuplotter::analyse(double time) {
 					command << " '-' ";
 				else
 					command << " '" << outputDir << "/" << plots[i].field_data_file.c_str() << "' ";
-				if (plots[i].field_painter->getCoarsening() != 1) {
+				if (plots[i].field_painter->getCoarsening() != 1 || is_hexagonal) {
 					auto c = plots[i].field_painter->getCoarsening();
-					command <<  "u (" << c <<  "*$1):(" << c << "*$2):3 ";
+					auto cx = c * (is_hexagonal ? 0.5:1);
+					auto cy = c * (is_hexagonal ? 0.866025:1);
+					command <<  "u (" << cx <<  "*$1):(" << cy << "*$2):3 ";
 				}
 				command << " matrix w l lw 1 lc rgb \"red\"  not;\n" << endl;
 				if (pipe_data) {
@@ -1506,7 +1530,7 @@ void Gnuplotter::analyse(double time) {
 				
 				if (plots[i].cell_painter->getDataLayout() == CellPainter::ascii_matrix) {
 					command << " matrix";
-					if ((SIM::lattice().getStructure() == Lattice::hexagonal)) {
+					if (is_hexagonal) {
 						// half size pixel approximation for in hexagonal lattice data
 						command << " u (0.5*$1-0.25):(0.866025*$2):3";
 					}

@@ -20,7 +20,7 @@ VectorEquation::VectorEquation(): ReporterPlugin() {
 
 void VectorEquation::report()
 {
-	FocusRange range(symbol.accessor().getGranularity(), scope());
+	FocusRange range(symbol.granularity(), scope());
 	
 	if (range.size()>500) {
 #pragma omp parallel for

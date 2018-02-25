@@ -15,7 +15,7 @@
                 <Condition boundary="-z" type="noflux"/>
             </BoundaryConditions>
             <Neighborhood>
-                <Distance>2.5</Distance>
+                <Order>2</Order>
             </Neighborhood>
         </Lattice>
         <MembraneLattice>

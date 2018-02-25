@@ -72,27 +72,28 @@
 	
 	<xs:complexType name="cpmPDEBoundaryValue">
 		<xs:attribute name="boundary" use="required" type="cpmBoundaryRef"/>
-		<xs:attribute name="value" use="required" type="cpmDouble" />
+		<xs:attribute name="value" use="required" type="cpmMathExpression" />
 	</xs:complexType>
 
-
-
-		<xs:complexType name="cpmFieldData">
-		<xs:annotation>
-				<xs:documentation>Initializes a PDE layer with ascii data read from file.</xs:documentation>
-		</xs:annotation>
-		<xs:attribute name="filename" use="required" type="cpmSystemFile" >
-			<xs:annotation>
-				<xs:documentation>Absolute path to file containing data.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="name" type="cpmString" use="optional" >
-			<xs:annotation>
-				<xs:documentation>Ignored by simulator. Only for use convenience.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-
+	<xs:complexType name="cpmFieldData">
+		<xs:simpleContent>
+			<xs:extension base="xs:normalizedString">
+				<xs:attribute name="filename" use="optional" type="cpmSystemFile" />
+				<xs:attribute name="encoding" use="required" type="morphDataEncoding" default="base64" />
+				<xs:attribute name="word-size" use="optional" type="xs:integer" default="4" />
+				<xs:attribute name="index" use="optional" type="xs:integer" default="0" />
+			</xs:extension>
+		</xs:simpleContent>
 	</xs:complexType>
+	
+	<xs:simpleType name="morphDataEncoding" >
+		<xs:restriction base="xs:token">
+			<xs:enumeration value="ascii"/>
+			<xs:enumeration value="base64"/>
+			<xs:enumeration value="binary"/>
+			<xs:enumeration value="tiff"/>
+		</xs:restriction>
+	</xs:simpleType>
 	
 	<xs:complexType name="cpmVectorField">
 		<xs:annotation>
@@ -104,7 +105,7 @@
 <!-- 			<xs:element name="Initial" minOccurs="0">
 				<xs:group  ref="FieldInitPlugins" />
 			</xs:element>-->
-<!-- 			<xs:element name="Data" type="cpmFieldData" minOccurs="0" /> -->
+			<xs:element name="Data" type="cpmFieldData" minOccurs="0" />
 			
 		</xs:all>
 		<xs:attribute name="name" 	type="cpmString" 	use="optional" />
@@ -114,7 +115,7 @@
 	
 	<xs:complexType name="cpmVectorBoundaryValue">
 		<xs:attribute name="boundary" use="required" type="cpmBoundaryRef"/>
-		<xs:attribute name="value" use="required" type="cpmDoubleVector" />
+		<xs:attribute name="value" use="required" type="cpmVectorMathExpression" />
 	</xs:complexType>
 	
 </xs:schema>

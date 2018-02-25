@@ -20,7 +20,7 @@ TiffPlotter::~TiffPlotter(){
 //-------------------------------------------------------------------
 
 
-void TiffPlotter::loadFromXML(const XMLNode xNode)	//einlesen der Daten aus der XML
+void TiffPlotter::loadFromXML(const XMLNode xNode, Scope* scope)	//einlesen der Daten aus der XML
 {
 	stored_node = xNode;
 	
@@ -50,7 +50,7 @@ void TiffPlotter::loadFromXML(const XMLNode xNode)	//einlesen der Daten aus der 
 	
 	// Define PluginParameters for all defined Output tags
 	for (uint i=0; i<xNode.nChildNode("Channel"); i++) {
-		shared_ptr<Channel> c( new Channel());
+		auto c = make_shared<Channel>();
 		c->symbol.setXMLPath("Channel["+to_str(i)+"]/symbol-ref");
 		registerPluginParameter(c->symbol);
 		
@@ -102,7 +102,7 @@ void TiffPlotter::loadFromXML(const XMLNode xNode)	//einlesen der Daten aus der 
 	else
 		multichannel = false;
 
-	AnalysisPlugin::loadFromXML(xNode);
+	AnalysisPlugin::loadFromXML(xNode, scope);
 
 };
 
@@ -134,7 +134,7 @@ vector<CPM::CELL_ID> TiffPlotter::parseCellIDs(string cell_ids_string){
 void TiffPlotter::init(const Scope* scope)
 {
 	for(uint c=0; c<plot.channels.size(); c++){
-		plot.channels[c]->celltype.init();
+		plot.channels[c]->celltype.init(scope);
 		if( plot.channels[c]->celltype.isDefined() ){
 			plot.channels[c]->symbol.setScope(plot.channels[c]->celltype()->getScope());
 		}
@@ -159,59 +159,42 @@ Therefore, cannot write OME header to first image.)", stored_node);
 // 	// find symbols for all channels
 // 	// 	cout << "TIFFPlotter: channels: \n";
  	for(uint c=0; c<plot.channels.size(); c++){
+		plot.channels[c]->field = dynamic_pointer_cast<const Field::Symbol>(plot.channels[c]->symbol.accessor());
+		plot.channels[c]->membrane = dynamic_pointer_cast<const MembranePropertySymbol>(plot.channels[c]->symbol.accessor());
 
 //		plot.channels[c]->symbol = SIM::findGlobalSymbol<double>( plot.channels[c]->symbolstr, 0.0 );
-	
-		if(plot.channels[c]->symbol.accessor().getLinkType() == SymbolData::PDELink )
-			plot.channels[c]->pde_layer = SIM::findPDELayer( plot.channels[c]->symbol.name() );
-		
-		if( plot.channels[c]->symbol.accessor().getLinkType() == SymbolData::CellMembraneLink ){
-			
-			// look for membrane property
-			if( plot.channels[c]->celltype.isDefined() ){
-				plot.channels[c]->membrane = plot.channels[c]->celltype.get()->findMembrane( plot.channels[c]->symbol.name() );
-				
-				if(!plot.channels[c]->membrane.valid()) {
-					cerr << "TiffPlotter: MembraneProperty \"" << plot.channels[c]->membrane.getFullName() << "\" not valid!" << endl;
-					exit(-1);
-				}
-			}
-			//plot.channels[c]->outline = true;
-		}
+		// TODO This was not refactored yet
+// 		if(plot.channels[c]->symbol.accessor().getLinkType() == SymbolData::PDELink )
+// 			plot.channels[c]->pde_layer = SIM::findPDELayer( plot.channels[c]->symbol.name() );
+// 		
+// 		if( plot.channels[c]->symbol.accessor().getLinkType() == SymbolData::CellMembraneLink ){
+// 			
+// 			// look for membrane property
+// 			if( plot.channels[c]->celltype.isDefined() ){
+// 				plot.channels[c]->membrane = plot.channels[c]->celltype.get()->findMembrane( plot.channels[c]->symbol.name() );
+// 				
+// 				if(!plot.channels[c]->membrane.valid()) {
+// 					cerr << "TiffPlotter: MembraneProperty \"" << plot.channels[c]->membrane.getFullName() << "\" not valid!" << endl;
+// 					exit(-1);
+// 				}
+// 			}
+// 			//plot.channels[c]->outline = true;
+// 		}
 		
 	}
 		
 	// if not specified, try to guess the Format (as small as possible, but uniform within multichannel stack)
-// bitformat is required
-// 	if( bitformat.isDefined()){
-// 		if (format == 8 || format == 16 || format == 32) {
 	format = bitformat.get();
-// 		}
-// 	}
+
  	if (format == 0) {
 		uint format_temp;
 		for(uint c=0; c<plot.channels.size();c++){
 			
-			switch(  plot.channels[c]->symbol.accessor().getLinkType() ){
-				
-				case SymbolData::CellTypeLink: // assuming no more than 255 celltypes
-					format_temp = 8;
-					break;
-				case SymbolData::CellIDLink: // assuming no more than 65526 cells
-				case SymbolData::CellVolumeLink: // assuming cells are not larger than 65526 nodes
-					format_temp = 16;
-					break;
-				case SymbolData::CellPropertyLink:
-				case SymbolData::CellMembraneLink:
-				case SymbolData::GlobalLink:
-				case SymbolData::SingleCellPropertyLink:
-				case SymbolData::SingleCellMembraneLink:
-				case SymbolData::CellLengthLink:
-					format_temp = 32;
-					break;
-				default:
-					format_temp = 32;
-			} 
+			if  (plot.channels[c]->symbol.accessor()->flags().integer )
+				format_temp = 16;
+			else
+				format_temp = 32;
+			
 			if(format_temp > format )
 				format = format_temp;
 		}
@@ -331,16 +314,17 @@ void TiffPlotter::writeTIFF(CPM::CELL_ID cellid)
 	}
 	
 	// Set min and max values and get them from PDE/CPM if necessary
-	for(uint c=0; c<plot.channels.size();c++){ 
+	for(uint c=0; c<plot.channels.size();c++) { 
 
 		if( plot.channels[c]->min_user.isDefined() ){
 			plot.channels[c]->min = plot.channels[c]->min_user.get();
 		}
 		else{ // if minimum not specified by user
-			if(plot.channels[c]->symbol.accessor().getLinkType() == SymbolData::PDELink){
-				plot.channels[c]->min = plot.channels[c]->pde_layer->min_val();
+			
+			if (plot.channels[c]->field) {
+				plot.channels[c]->min = plot.channels[c]->field->getField()->min_val();
 			}
-			else{
+			else {
 				vector< CPM::CELL_ID > cell_ids;
 				if(plot.channels[c]->celltype.isDefined()){
 					cell_ids = plot.channels[c]->celltype.get()->getCellIDs();
@@ -351,14 +335,12 @@ void TiffPlotter::writeTIFF(CPM::CELL_ID cellid)
 				
 				for(uint j=0; j < cell_ids.size(); j++){
 					
-					if( plot.channels[c]->symbol.accessor().getLinkType() == SymbolData::CellMembraneLink ){
-						if (plot.channels[c]->membrane.valid()) {
-							auto min_val = plot.channels[c]->membrane.getMembrane( cell_ids[j] )->min_val();
-							if (min_val < plot.channels[c]->min)
-							plot.channels[c]->min = plot.channels[c]->membrane.getMembrane( cell_ids[j] )->min_val();
-						}
+					if (plot.channels[c]->membrane) {
+						auto min_val = plot.channels[c]->membrane->getField( cell_ids[j] )->min_val();
+						if (min_val < plot.channels[c]->min)
+							plot.channels[c]->min = min_val;
 					}
-					else{
+					else {
 						double value = plot.channels[c]->symbol.get( cell_ids[j] );
 						if( value < plot.channels[c]->min ){
 							plot.channels[c]->min = value;
@@ -370,11 +352,11 @@ void TiffPlotter::writeTIFF(CPM::CELL_ID cellid)
 		if( plot.channels[c]->max_user.isDefined() ){
 			plot.channels[c]->max = plot.channels[c]->max_user.get();
 		}
-		else{ // if minimum not specified by user
-			if(plot.channels[c]->symbol.accessor().getLinkType() == SymbolData::PDELink){
-				plot.channels[c]->max = plot.channels[c]->pde_layer->max_val();
+		else { // if minimum not specified by user
+			if (plot.channels[c]->field) {
+				plot.channels[c]->max = plot.channels[c]->field->getField()->max_val();
 			}
-			else{
+			else {
 				vector< CPM::CELL_ID > cell_ids;
 				if(plot.channels[c]->celltype.isDefined()){
 					cell_ids = plot.channels[c]->celltype.get()->getCellIDs();
@@ -385,12 +367,12 @@ void TiffPlotter::writeTIFF(CPM::CELL_ID cellid)
 				
 				for(uint j=0; j < cell_ids.size(); j++){
 					
-					if( plot.channels[c]->symbol.accessor().getLinkType() == SymbolData::CellMembraneLink ){
-						if(plot.channels[c]->membrane.valid()) {
-							plot.channels[c]->max = plot.channels[c]->membrane.getMembrane( cell_ids[j] )->max_val();
-						}
+					if (plot.channels[c]->membrane) {
+						auto max_val = plot.channels[c]->membrane->getField( cell_ids[j] )->max_val();
+						if (max_val > plot.channels[c]->max)
+							plot.channels[c]->max = max_val;
 					}
-					else{
+					else {
 						double value = plot.channels[c]->symbol.get( cell_ids[j] );
 						if( value > plot.channels[c]->max ){
 							plot.channels[c]->max = value;
@@ -402,7 +384,7 @@ void TiffPlotter::writeTIFF(CPM::CELL_ID cellid)
 		// set default min/max to 0 and 1
 		//  and treat celltype IDs as special case
 		if( plot.channels[c]->min == plot.channels[c]->max 
-			|| plot.channels[c]->symbol.accessor().getLinkType() == SymbolData::CellTypeLink ){
+			|| plot.channels[c]->symbol.accessor()->name() == SymbolBase::CellType_symbol) {
 			plot.channels[c]->min = 0.0;
 			if( plot.channels[c]->max == 0.0)
 				plot.channels[c]->max = 1.0;
@@ -483,7 +465,7 @@ void TiffPlotter::writeTIFF(CPM::CELL_ID cellid)
 					// update position in buffer
 					double value = 0.0;
 					
-					if(plot.channels[c]->symbol.accessor().getLinkType() == SymbolData::PDELink){
+					if(plot.channels[c]->field){
 						value = plot.channels[c]->symbol.get(pos);
 					}
 					else if (cpm_layer) { // cell property or membrane
@@ -711,7 +693,7 @@ void TiffPlotter::writeTIFF(CPM::CELL_ID cellid)
 			// channel id number
 			omeChannelXML.addAttribute("ID", ss.str().c_str());
 			// channel name (symbol name)
-			string channel_name = plot.channels[c]->symbol.accessor().getName();
+			string channel_name = plot.channels[c]->symbol.accessor()->name();
 			omeChannelXML.addAttribute("Name", channel_name.c_str());
 		}
 

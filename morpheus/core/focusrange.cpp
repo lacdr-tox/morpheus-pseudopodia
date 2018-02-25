@@ -1,5 +1,6 @@
 #include "focusrange.h"
-
+#include "celltype.h"
+#include "membrane_property.h"
 
 FocusRangeIterator::FocusRangeIterator(shared_ptr<const FocusRangeDescriptor> data, uint index) : data(data) {
 	setIndex(index);
@@ -117,7 +118,7 @@ void FocusRangeIterator::setIndex(int index) {
 		case FocusRangeDescriptor::IT_Space :
 		{
 			int remainder = idx;
-			if (idx>=data->size) {
+			if (idx>=data->size || data->granularity == Granularity::Global) {
 				focus.unset();
 				break;
 			}
@@ -273,11 +274,8 @@ FocusRange::FocusRange(Granularity granularity, CPM::CELL_ID cell_id )
 	init_range(granularity, restrictions, true);
 };
 
-void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, int > restrictions, bool writable_only) {
-	if (granularity == Granularity::Undef) {
-		return;
-	}
-	
+void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, int > restrictions, bool writable_only)
+{
 	shared_ptr<FocusRangeDescriptor> range = make_shared<FocusRangeDescriptor>();
 	
 	shared_ptr<const CellType> ct;
@@ -289,7 +287,11 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 		if (restrictions.count(FocusRangeAxis::CELL)) {
 			
 			range->spatial_restriction = FocusRangeDescriptor::RESTR_CELL;
-// 			cout << "Read Restriction to cell " << restrictions[FocusRangeAxis::CELL] << endl;
+// 			cout << "Read Restriction to cell ";
+// 			for (auto i =restrictions.lower_bound(FocusRangeAxis::CELL); i!=restrictions.upper_bound(FocusRangeAxis::CELL); i++) {
+// 				cout << i->second << ", ";
+// 			}
+// 			cout << endl;
 		}
 		else if (restrictions.count(FocusRangeAxis::CellType) == 1) {
 			ct = CPM::getCellTypes()[restrictions.find(FocusRangeAxis::CellType)->second].lock();

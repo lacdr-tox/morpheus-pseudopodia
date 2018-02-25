@@ -64,7 +64,7 @@ Building on Debian based systems
 --------------------------------
 To install all dependencies on Ubuntu 16.04 run:
 ```  
-sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libtiff5-dev libgraphviz-dev libqt4-dev libqt4-sql-sqlite libqt4-network libqtwebkit-dev libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools
+sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libtiff5-dev libgraphviz-dev libqt4-dev libqt4-sql-sqlite libqt4-network libqtwebkit-dev libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools libsbml5-dev
 ``` 
 To install all dependencies on Ubuntu 14.04 and other Debian based systems run:
 ```  
@@ -108,11 +108,9 @@ document.write("<sc"+"ript type='text/javascript' src='" +
 scJsHost+
 "statcounter.com/counter/counter.js'></"+"script>");
 </script>
-<noscript><div class="statcounter"><a title="shopify
-analytics ecommerce tracking"
+<noscript><div class="statcounter"><a title=""
 href="http://statcounter.com/shopify/" target="_blank"><img
 class="statcounter"
 src="http://c.statcounter.com/10858269/0/392b0df5/1/"
-alt="shopify analytics ecommerce
-tracking"></a></div></noscript>
+alt=""></a></div></noscript>
 <!-- End of StatCounter Code -->

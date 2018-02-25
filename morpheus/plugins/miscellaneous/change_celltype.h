@@ -13,7 +13,7 @@
 #define CHANGECELLTYPE_H
 
 #include "core/interfaces.h"
-#include "core/plugin_parameter.h"
+#include "core/celltype.h"
 #include "core/system.h"
 
 /** \defgroup ChangeCellType
@@ -53,7 +53,7 @@ public:
 
 	void init(const Scope* scope) override;
 	void executeTimeStep() override;
-	void loadFromXML(const XMLNode) override;
+	void loadFromXML(const XMLNode, Scope* scope) override;
 
 };
 

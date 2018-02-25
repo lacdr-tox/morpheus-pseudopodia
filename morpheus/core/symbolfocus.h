@@ -13,8 +13,6 @@
 #define SYMBOLFOCUS_H
 #include "cpm_layer.h"
 
-class Symbol;
-
 /** @brief Represents a spatial cursor for the retrieval of dependent symbolic information
 // 	 *
 // 	 * Resolving symbols during a simulation often demands to determine the context -- a cell or a position or whatsoever
@@ -32,7 +30,7 @@ public:
 	SymbolFocus(CPM::CELL_ID cell_id, double phi, double theta);
 	/// Retrieve the cell at the current position
 	const Cell& cell() const;
-	int celltype() const { return cell_index().celltype; };
+	uint celltype() const { return cell_index().celltype; };
 	/// Retrieve id of the cell at the current position
 	const CPM::CELL_ID cellID() const;
 	/// Retrive a membrane position in spherical coordinates. Throws an error if membrane position is not set. 
@@ -47,6 +45,8 @@ public:
 	void setMembrane( CPM::CELL_ID cell_id, const VINT& pos );
 	void unset();
 	bool valid() const { return has_pos || has_cell; }
+	bool operator<(const SymbolFocus& rhs) const;
+	bool operator==(const SymbolFocus& rhs) const;
 	static const SymbolFocus global;
 	
 private:
@@ -55,4 +55,6 @@ private:
 	mutable const Cell* d_cell;
 	mutable CPM::INDEX d_cell_index;
 };
+
+
 #endif // SYMBOLFOCUS_H

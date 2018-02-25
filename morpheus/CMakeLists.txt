@@ -19,24 +19,35 @@ INCLUDE (CheckTypeSize)
 CHECK_TYPE_SIZE(uint UINT)
 # sets HAVE_UINT
 
-CHECK_INCLUDE_FILE_CXX("omp.h" HAVE_OPENMP)
+FIND_PACKAGE(OpenMP)
+
+
+# IF( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" )
+# 	SET(OpenMP_CXX_FLAGS "-fopenmp")
+# ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+# 	include_directories("/usr/include")
+# 	SET(OpenMP_CXX_FLAGS  "-fopenmp=libomp")
+# ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+# 	SET(OpenMP_CXX_FLAGS "-openmp")
+# ELSE()
+# 	MESSAGE(FATAL_ERROR "Unknown compiler id ${CMAKE_CXX_COMPILER_ID}, cannot set openmp flags")
+# ENDIF()
+# 
+# SET(CMAKE_REQUIRED_FLAGS ${OpenMP_CXX_FLAGS})
+# CHECK_INCLUDE_FILES("omp.h" OPENMP_FOUND)
+# UNSET(CMAKE_REQUIRED_FLAGS)
+
 option(MORPHEUS_OPENMP "Switch off the usage of OPENMP" ON)
 
-IF (HAVE_OPENMP AND MORPHEUS_OPENMP)
-	MESSAGE(STATUS "Enabling OpenMP support for ${CMAKE_CXX_COMPILER_ID}. ")
-	IF( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" )
-		SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fopenmp")
-	ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-		SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fopenmp")
-	ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-		SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -openmp")
-	ELSE()
-		MESSAGE(FATAL_ERROR "Unknown compiler id ${CMAKE_CXX_COMPILER_ID}, cannot set openmp flag")
-	ENDIF()
+IF (OPENMP_FOUND AND MORPHEUS_OPENMP)
+	MESSAGE(STATUS "Enabling OpenMP support for ${CMAKE_CXX_COMPILER_ID} using  '${OpenMP_CXX_FLAGS}'")
+	SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+	SET(HAVE_OPENMP ON)
 ELSEIF(NOT HAVE_OPENMP)
-	MESSAGE(STATUS "Unable to locate \"omp.h\". Disabling OpenMP support.")
+	MESSAGE(STATUS "Unable to detect OpenMP compiler support. Disabling OpenMP.")
+	SET(HAVE_OPENMP OFF)
 ELSE()
-	MESSAGE(STATUS "OpenMP support was manually switched off. Disabling OpenMP support. ")
+	MESSAGE(STATUS "OpenMP support was switched off manually. Disabling OpenMP. ")
 	SET(HAVE_OPENMP OFF)
 ENDIF()
 
@@ -52,7 +63,6 @@ ENDIF()
 add_subdirectory(plugins)  # provides plugin_src variable as a list of Plugins
 add_subdirectory(core)
 
-SET(SIMULATOR_EXEC_NAME ${SIMULATOR_EXEC_NAME} PARENT_SCOPE)
 SET (APP_DOC_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/core/interfaces.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/docu.h
@@ -84,7 +94,11 @@ foreach(source ${plugin_src})
 	STRING(REGEX REPLACE "\\.cpp" ".h" header ${source})
 	STRING(REGEX REPLACE "\\.cpp" ".xsd" xsd ${source})
 	list(APPEND APP_DOC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/plugins/${header})
-	list(APPEND XSD_SOURCES plugins/${xsd})
+	if ( EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/plugins/${xsd} )
+		list(APPEND XSD_SOURCES plugins/${xsd})
+	else()
+		message(WARNING "no file plugins/${xsd}" )
+	endif()
 endforeach(source)
 
 

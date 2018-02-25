@@ -471,8 +471,8 @@ void JobView::previewSelectedFile(const QModelIndex & selected, const QModelInde
  		QFile file(file_name);
 		QFileInfo file_info(file);
 		if( !( file_name.endsWith(".txt") || file_name.endsWith(".log") || file_name.endsWith(".dat") 
-            || file_name.endsWith(".plt") ||  file_name.endsWith(".xml") ||  file_name.endsWith(".out")
-            ||  file_name.endsWith(".err") || file_name.endsWith(".gp") )
+            || file_name.endsWith(".plt") || file_name.endsWith(".xml") ||  file_name.endsWith(".out")
+            || file_name.endsWith(".err") || file_name.endsWith(".gp")  ||  file_name.endsWith(".csv"))
 			|| file_info.size() == 0 ){
 //			file_name.endsWith(".gz") || file_name.endsWith(".zip") || file_info.isExecutable() ){
 			gr_preview->hide();

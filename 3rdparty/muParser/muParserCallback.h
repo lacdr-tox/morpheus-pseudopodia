@@ -109,8 +109,13 @@ private:
 };
 
 //------------------------------------------------------------------------------
+/** \brief Key type for Function Callback map holding the unique function function signature */
+// struct fun_signature { string_type name; int argc; };
+// bool operator==(const fun_signature& a, const fun_signature& b) { return a.name == b.name &&  a.argc == b.argc; }
+// bool operator<(const fun_signature& a, const fun_signature& b) { return a.name < b.name || (a.name == b.name &&  a.argc < b.argc); }
+
 /** \brief Container for Callback objects. */
-typedef std::map<string_type, ParserCallback> funmap_type; 
+typedef std::multimap<string_type, ParserCallback> funmap_type; 
 
 } // namespace mu
 

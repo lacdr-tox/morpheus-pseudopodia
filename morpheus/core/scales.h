@@ -13,8 +13,7 @@
 #define TIME_SCALE_H
 
 #include "xml_functions.h"
-#include "simulation.h"
-
+#include "scope.h"
 class Time_Scale
 {
 	private:
@@ -33,7 +32,7 @@ class Time_Scale
 		string getTimeScaleUnit(){ return unit; };
 		double getTimeScaleUnitFactor() { return unit_factor; };
 		double getTimeScaleValue(){ return xml_time; };
-		void loadFromXML(const XMLNode);
+		void loadFromXML(const XMLNode, Scope* scope);
 		XMLNode saveToXML() const;
 };
 
@@ -54,7 +53,7 @@ class Length_Scale
 		string getLengthScaleUnit(){ return unit; };
 		double getLengthScaleValue(){ return xml_length; };
 
-		void loadFromXML(const XMLNode);
+		void loadFromXML(const XMLNode, Scope* scope);
 		XMLNode saveToXML() const;
 };
 

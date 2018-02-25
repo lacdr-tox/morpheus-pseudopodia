@@ -35,8 +35,8 @@
 <!--  -->
 
 	<xs:complexType name="cpmLoggerOutput">
-		<xs:choice>
-			<xs:element name="TextOutput" 	type="cpmLoggerTextOutput"	minOccurs="1" maxOccurs="1" />
+		<xs:choice minOccurs="1" maxOccurs="1" >
+			<xs:element name="TextOutput" 	type="cpmLoggerTextOutput"/>
 <!-- 			<xs:element name="HDF5Output" 	type="cpmLoggerHDF5Output"	minOccurs="0" maxOccurs="1" /> -->
 		</xs:choice>
 	</xs:complexType>
@@ -55,7 +55,7 @@
 	<xs:complexType name="cpmLoggerTextOutput">
 		<xs:attribute name="file-format" type="cpmLoggerOutputFormats" use="optional" default="csv" />
 		<xs:attribute name="header" type="cpmBoolean" use="optional" default="true" />
-        <xs:attribute name="separator" type="cpmLoggerOutputSeparator" use="optional" default="\t" />
+        <xs:attribute name="separator" type="cpmLoggerOutputSeparator" use="optional" default="tab" />
 		<xs:attribute name="file-name" type="cpmString" use="optional" default="automatic" />
 		<xs:attribute name="file-numbering" type="cpmFileNumbering" use="optional" default="time" /> 
         <xs:attribute name="file-separation" type="cpmLoggerFileSeparation" use="optional" default="none" />

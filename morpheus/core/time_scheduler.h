@@ -48,6 +48,8 @@ private:
 	vector<InstantaneousProcessPlugin *> instantaneous;
 	vector<TimeStepListener *> all_phase2;
 	vector<AnalysisPlugin *> analysers;
+	
+	Scope* global_scope;
 	double current_time;
 	double last_save_time;
 	double minimal_time_step;
@@ -65,8 +67,9 @@ private:
 public:
 	/// Register a TimeStepListener based plugin
 	static void reg(TimeStepListener *tsl);
-	static void loadFromXML(XMLNode xTime);
-	static XMLNode saveToXML() { return getInstance().xmlTime; };
+	static void loadFromXML(XMLNode xTime, Scope* scope);
+	static XMLNode saveToXML();
+
 	static void init();
 	/// compute until time 
 	static void compute();

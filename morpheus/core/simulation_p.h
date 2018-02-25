@@ -45,15 +45,14 @@
 #include "cpm.h"
 #include "gnuplot_i/gnuplot_i.h"
 
-using namespace TR1_NAMESPACE;
 
 // make a unique source of randomness available to everyone
 vector<mt19937> random_engines;
-#if defined USING_CXX0X_TR1
+// #if defined USING_CXX0X_TR1
 	vector<mt19937> random_engines_alt;
-#else
-	vector<ranlux_base_01> random_engines_alt;
-#endif	
+// #else
+// 	vector<ranlux_base_01> random_engines_alt;
+// #endif	
 
 namespace CPM {
 	double time=0;
@@ -61,6 +60,8 @@ namespace CPM {
 	
 	STATE InitialState,EmptyState; // get overridden during load process;
 	uint EmptyCellType;
+	
+	
 	Time_Scale time_per_mcs("MCSDuration",1);
 	UpdateData global_update_data;
 	
@@ -79,15 +80,39 @@ namespace CPM {
 	
 	void loadFromXML(XMLNode node);
 	void loadCellTypes(XMLNode node);
-	void loadCellPopulations(XMLNode populations);
+	void loadCellPopulations();
+	void init();
 	XMLNode saveCPM() { return xCPM; };
 	XMLNode saveCellTypes() { return xCellTypes; }
 	XMLNode saveCellPopulations();
 	void createLayer();
+
+	class BoundaryReader : public CPM::LAYER::ValueReader {
+		public:
+			void set(string input) override {
+					state.pos = VINT(0,0,0);
+					auto ct = celltype_names.find(input);
+					if ( ct== celltype_names.end()) {
+						throw MorpheusException(string("Unknown celltype '") + input + "' at the boundary", xCellPop);
+					}
+					if ( ! dynamic_pointer_cast<MediumCellType>( celltypes[ct->second] ) ) {
+						throw MorpheusException(string("Unable to set celltype '")+input+"' at the boundary. " +
+								+ "Medium-like celltype required! ", xCellPop);
+					}
+					state.cell_id = celltypes[ct->second]->createCell();
+				}
+				bool isSpaceConst() const override { return false; }
+				bool isTimeConst() const override { return true; }
+				CPM::STATE get(const VINT& pos) const override { CPM::STATE s(state); s.pos=pos; return s; }
+				shared_ptr<CPM::LAYER::ValueReader> clone() const override { return make_shared<BoundaryReader>(*this); }
+			private:
+				CPM::STATE state;
+	};
 }
 
 
 namespace SIM {
+	
 	const string dep_graph_format = "svg";
 	bool generate_symbol_graph_and_exit = false;
 	
@@ -95,11 +120,12 @@ namespace SIM {
 	shared_ptr<Lattice> global_lattice;
 	Length_Scale node_length("NodeLength",1);
 	string lattice_size_symbol;
-	XMLNode xGlobals,xSpace;
+	XMLNode xDescription,xGlobals,xSpace;
+	
 	
 // 	PDE_Sim* pde_sim=NULL;
-	std::map<string, shared_ptr<PDE_Layer> > pde_layers;
-	std::map<string, shared_ptr<VectorField_Layer> > vector_field_layers;
+// 	std::map<string, shared_ptr<PDE_Layer> > pde_layers;
+// 	std::map<string, shared_ptr<VectorField_Layer> > vector_field_layers;
 	vector< shared_ptr<AnalysisPlugin> > analysers;
 	vector< shared_ptr<Plugin> > analysis_section_plugins;
 	vector< shared_ptr<Plugin> > global_section_plugins;
@@ -117,15 +143,16 @@ namespace SIM {
 	string fileTitle="SnapShot";
 
 	/// Get the base name 
-	inline string getSymbolBaseName(string name) { return getGlobalScope()->getSymbolBaseName(name); };
-	inline set<string> getSymbolBaseNames(const set<string>& symbols){ set<string> s; for (auto &i : symbols) { s.insert( getGlobalScope()->getSymbolBaseName(i));} return s; };
+// 	inline string getSymbolBaseName(string name) { return getGlobalScope()->getSymbolBaseName(name); };
+// 	inline set<string> getSymbolBaseNames(const set<string>& symbols){ set<string> s; for (auto &i : symbols) { s.insert( getGlobalScope()->getSymbolBaseName(i));} return s; };
 	
 	int main(int argc, char *argv[]);
-	void init(int argc, char *argv[]);
+	bool init(int argc, char *argv[]);
 	void finalize();
 	void createDepGraph();
 	void loadFromXML(XMLNode xNode);
 	void setRandomSeeds( const XMLNode xNode );
+	
 }
 
 #endif

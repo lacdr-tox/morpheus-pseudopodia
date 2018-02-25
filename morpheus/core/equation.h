@@ -62,11 +62,9 @@ Assign a new value to 'a' based on values of 'a' in previous time-step.
 #ifndef EQUATION_H
 #define EQUATION_H
 
-#include "expression_evaluator.h"
-#include "symbol_accessor.h"
 #include "interfaces.h"
+#include "expression_evaluator.h"
 #include "focusrange.h"
-#include "plugin_parameter.h"
 
 class Equation : public ReporterPlugin
 {

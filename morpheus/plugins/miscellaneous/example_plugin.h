@@ -12,7 +12,7 @@ using namespace SIM;
 \ingroup CellTypePlugins
 \brief Brief description of my example plugin
 
-A detailed description of my example plugin that can contain mathematical formulae in LaTex format: \f$ \DeltaA = \sum_{\sigma} a-b*c^2 \f$ and references to publications with <a href="http://dx.doi.org/">links</a>.
+A detailed description of my example plugin that can contain mathematical formulae in LaTex format: \f$ \Delta A = \sum_{\sigma} a-b*c^2 \f$ and references to publications with <a href="http://dx.doi.org/">links</a>.
 
 \section Example usage
 \verbatim

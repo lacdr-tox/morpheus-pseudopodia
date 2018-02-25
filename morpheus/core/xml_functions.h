@@ -13,20 +13,11 @@
 #define xml_functions_h
 
 
-#ifdef WIN32
-typedef unsigned int uint;
-#endif
 #include "config.h"
-#include "xmlParser/xmlParser.h"
 #include "string_functions.h"
-#include "symbol.h"
+#include "xmlParser/xmlParser.h"
 
-#include <vector>
-
-#include <map>
 #include <zlib.h>
-#include <iostream>
-#include <string>
 #include <fstream>
 #include <iomanip>
 #include <iterator>

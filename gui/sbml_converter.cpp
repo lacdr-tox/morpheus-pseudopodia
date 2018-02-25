@@ -20,7 +20,7 @@ void renameSymbol(ASTNode* node, const string& old_name, const string& new_name)
 	if (node->getType() == AST_NAME && node->getName() == old_name) {
 		node->setName(new_name.c_str());
 	}
-	for (int i=0; i<node->getNumChildren(); i++) {
+	for (uint i=0; i<node->getNumChildren(); i++) {
 		renameSymbol(node->getChild(i),old_name, new_name);
 	}
 }
@@ -32,7 +32,7 @@ void replaceSymbolByValue(ASTNode* node, const string& name, double value)
 		node->setValue(value);
 	}
 	
-	for (int i=0; i<node->getNumChildren(); i++) {
+	for (uint i=0; i<node->getNumChildren(); i++) {
 		replaceSymbolByValue(node->getChild(i), name, value);
 	}
 }
@@ -44,7 +44,7 @@ void replaceFunction(ASTNode* node, FunctionDefinition* function)
 			if (function->getNumArguments() != node->getNumChildren())
 				throw SBMLConverterException(SBMLConverterException::SBML_INVALID, std::string("Number function arguments does not match its definition."));
 			ASTNode* inline_function = function->getMath()->deepCopy();
-			for (int i=0; i<node->getNumChildren(); i++ ) {
+			for (uint i=0; i<node->getNumChildren(); i++ ) {
 				cout << "Child " << i << " " << function->getArgument(i)->getName() << "->" << node->getChild(i)->getName() << endl;
 				ASTTool::renameSymbol(inline_function, std::string(function->getArgument(i)->getName()), std::string(node->getChild(i)->getName()));
 			}
@@ -55,7 +55,7 @@ void replaceFunction(ASTNode* node, FunctionDefinition* function)
 			return;
 		}
 	}
-	for (int i=0; i<node->getNumChildren(); i++) {
+	for (uint i=0; i<node->getNumChildren(); i++) {
 		replaceFunction(node->getChild(i), function);
 	}
 }
@@ -194,10 +194,10 @@ void SBMLImporter::readSBML(QString sbml_file)
 
 	Model* sbml_model = sbml_doc->getModel();
 
-	if (sbml_model->getNumCompartments() != 1 ) {
+	if (sbml_model->getNumCompartments() > 1 ) {
 		std::string message = "Defined compartments: ";
 		message.append(sbml_model->getCompartment(0)->getId());
-		for (int i=1; i<sbml_model->getNumCompartments();i++) {
+		for (uint i=1; i<sbml_model->getNumCompartments();i++) {
 			message.append(", ").append(sbml_model->getCompartment(i)->getId());
 		}
 		throw SBMLConverterException(SBMLConverterException::SBML_MULTI_COMPARTMENT, message );
@@ -262,7 +262,7 @@ void SBMLImporter::readSBML(QString sbml_file)
 	morph_doc.setContent(plain_morpheus_model);
 	QSharedPointer<MorphModel> morph_model(new MorphModel(morph_doc));
 
-	nodeController* description = morph_model->rootNodeContr->firstChild("Description");
+	nodeController* description = morph_model->rootNodeContr->firstActiveChild("Description");
 	if (!description) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Description node not found." );
 
 	string title;
@@ -270,17 +270,23 @@ void SBMLImporter::readSBML(QString sbml_file)
 		title = sbml_model->getName();
 	else
 		title = sbml_model->getId();
-	description->firstChild("Title")->setText(s2q(title));
+	description->firstActiveChild("Title")->setText(s2q(title));
 
 	std::string details = sbml_doc->getNotesString();
-	description->firstChild("Details")->setText(s2q(details));
-
-	compartment_symbol = s2q(sbml_model->getCompartment(0)->getId());
-	compartment_size   = sbml_model->getCompartment(0)->getSize();
+	description->firstActiveChild("Details")->setText(s2q(details));
+	
+	if (sbml_model->getNumCompartments()) {
+		compartment_symbol = s2q(sbml_model->getCompartment(0)->getId());
+		compartment_size   = sbml_model->getCompartment(0)->getSize();
+	}
+	else {
+		compartment_symbol = "";
+		compartment_size = 1;
+	}
 
 	readSBMLFunctions(sbml_model);
 
-	nodeController* celltype = morph_model->rootNodeContr->firstChild("CellTypes")->firstChild("CellType");
+	nodeController* celltype = morph_model->rootNodeContr->firstActiveChild("CellTypes")->firstActiveChild("CellType");
 	if (!celltype) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Celltype node not found.");
 
 	this->addSBMLParameters(celltype,sbml_model);
@@ -293,19 +299,19 @@ void SBMLImporter::readSBML(QString sbml_file)
 
 	this->addSBMLEvents(celltype,sbml_model);
 
-	nodeController* cellpopulation = morph_model->rootNodeContr->firstChild("CellPopulations")->firstChild("Population");
+	nodeController* cellpopulation = morph_model->rootNodeContr->firstActiveChild("CellPopulations")->firstActiveChild("Population");
 	this->addSBMLInitialAssignments(cellpopulation, sbml_model);
 
 	this->parseMissingFeatures(sbml_model);
 
-	nodeController* logger = morph_model->rootNodeContr->firstChild("Analysis")->firstChild("Logger");
+	nodeController* logger = morph_model->rootNodeContr->firstActiveChild("Analysis")->firstActiveChild("Logger");
 	if (!logger) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Logger node not found.");
 
 	// add symbols to GLobal and Logger (both in Logger/Input and in Logger/Plots/Plot/Y-axis)
-	nodeController* global      = morph_model->rootNodeContr->firstChild("Global");
+	nodeController* global      = morph_model->rootNodeContr->firstActiveChild("Global");
 	if (!global) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Global node not found.");
-	nodeController* logger_log  = logger->firstChild("Input");
-	nodeController* logger_plot = logger->firstChild("Plots")->firstChild("Plot")->firstChild("Y-axis");
+	nodeController* logger_log  = logger->firstActiveChild("Input");
+	nodeController* logger_plot = logger->firstActiveChild("Plots")->firstActiveChild("Plot")->firstActiveChild("Y-axis");
 
 	bool first=true;
 	foreach (const QString& var, variables){
@@ -315,8 +321,8 @@ void SBMLImporter::readSBML(QString sbml_file)
 		global_const->attribute("value")->set("0.0");
 		
 		if( first ){
-			logger_log->firstChild("Symbol")->attribute("symbol-ref")->set(var);
-			logger_plot->firstChild("Symbol")->attribute("symbol-ref")->set(var);
+			logger_log->firstActiveChild("Symbol")->attribute("symbol-ref")->set(var);
+			logger_plot->firstActiveChild("Symbol")->attribute("symbol-ref")->set(var);
 			first = false;
 		}
 		else{
@@ -344,10 +350,10 @@ void SBMLImporter::readSBML(QString sbml_file)
 	morph_model->rootNodeContr->clearTrackedChanges();
 
 	morph_model->rootNodeContr->trackNextChange();
-	morph_model->rootNodeContr->firstChild("Time")->firstChild("StopTime")->attribute("value")->set("1.0");
+	morph_model->rootNodeContr->firstActiveChild("Time")->firstActiveChild("StopTime")->attribute("value")->set("1.0");
 
 	morph_model->rootNodeContr->trackNextChange();
-	celltype->firstChild("System")->attribute("time-step")->set("0.01");
+	celltype->firstActiveChild("System")->attribute("time-step")->set("0.01");
 
 	for (int i=0; i<conversion_messages.size(); i++) {
 		morph_model->rootNodeContr->trackInformation(conversion_messages[i]);
@@ -358,9 +364,9 @@ void SBMLImporter::readSBML(QString sbml_file)
 
 void SBMLImporter::addSBMLSpecies(nodeController* celltype, Model* sbml_model)
 {
-	double compartment_size = sbml_model->getCompartment(0)->getSize();
+// 	double compartment_size = sbml_model->getCompartment(0)->getSize();
 	QStringList all_species;
-	for (int spec=0; spec<sbml_model->getNumSpecies(); spec++) {
+	for (uint spec=0; spec<sbml_model->getNumSpecies(); spec++) {
 		Species* species = sbml_model->getSpecies(spec);
 		bool is_const = (species->isSetConstant() && species->getConstant());
 
@@ -395,7 +401,7 @@ void SBMLImporter::addSBMLParameters(nodeController* celltype, Model* sbml_model
 // 	compartment_size_constant->attribute("name")  -> setActive(true);
 // 	compartment_size_constant->attribute("value") -> set(sbml_model->getCompartment(0)->getSize());
 
-	for (int param=0; param<sbml_model->getNumParameters(); param++){
+	for (uint param=0; param<sbml_model->getNumParameters(); param++){
 		Parameter* parameter = sbml_model->getParameter(param);
 
 		if (parameter->isSetConstant() &&  ! parameter->getConstant()) { // this is a variable parameter
@@ -433,7 +439,7 @@ void SBMLImporter::addSBMLParameters(nodeController* celltype, Model* sbml_model
 
 void SBMLImporter::readSBMLFunctions(Model* sbml_model)
 {
-	for (int fun=0; fun<sbml_model->getNumFunctionDefinitions();fun++) {
+	for (uint fun=0; fun<sbml_model->getNumFunctionDefinitions();fun++) {
 		FunctionDefinition* function = sbml_model->getFunctionDefinition(fun);
 		functions.insert(s2q(function->getId()),function);
 	}
@@ -441,7 +447,8 @@ void SBMLImporter::readSBMLFunctions(Model* sbml_model)
 
 void SBMLImporter::sanitizeAST(ASTNode* math)
 {
-	ASTTool::replaceSymbolByValue(math, compartment_symbol.toStdString(), compartment_size);
+	if (!compartment_symbol.isEmpty())
+		ASTTool::replaceSymbolByValue(math, compartment_symbol.toStdString(), compartment_size);
 
 	QMap<QString, FunctionDefinition* >::const_iterator it;
 	for (it=functions.begin() ; it!=functions.end(); it++) {
@@ -452,8 +459,8 @@ void SBMLImporter::sanitizeAST(ASTNode* math)
 
 void SBMLImporter::addSBMLRules(nodeController* celltype, Model* sbml_model)
 {
-	nodeController*  system = celltype->firstChild("System");
-	for (int rul=0; rul<sbml_model->getNumRules();rul++) {
+	nodeController*  system = celltype->firstActiveChild("System");
+	for (uint rul=0; rul<sbml_model->getNumRules();rul++) {
 		const Rule* rule = sbml_model->getRule(rul);
 		nodeController* rule_node;
 		switch (rule->getTypeCode()) {
@@ -478,14 +485,14 @@ void SBMLImporter::addSBMLRules(nodeController* celltype, Model* sbml_model)
 
 		ASTNode* math = rule->getMath()->deepCopy();
 		sanitizeAST(math);
-		rule_node->firstChild("Expression")->setText(SBML_formulaToString(math));
+		rule_node->firstActiveChild("Expression")->setText(SBML_formulaToString(math));
 		delete math;
 
 		if (rule->getTypeCode() == SBML_ASSIGNMENT_RULE) {
 			vars_with_assignments.insert(s2q(rule->getVariable()));
 		}
 		else if (rule->getTypeCode() == SBML_RATE_RULE) {
-			diffeqn_map.insert(s2q(rule->getVariable()),rule_node->firstChild("Expression")->textAttribute());
+			diffeqn_map.insert(s2q(rule->getVariable()),rule_node->firstActiveChild("Expression")->textAttribute());
 		}
 	}
 };
@@ -512,20 +519,20 @@ void SBMLImporter::addSBMLEvents(nodeController* celltype, Model* sbml_model)
 		if (e->isSetTrigger()) {
 			ASTNode* math = e->getTrigger()->getMath()->deepCopy();
 			sanitizeAST(math);
-			nodeController* condition = event->firstChild("Condition");
+			nodeController* condition = event->firstActiveChild("Condition");
 			if (!condition)
 				condition = event->insertChild("Condition");
 			condition->setText(SBML_formulaToString(math));
 			delete math;
 		}
-		for (int j=0; j<e->getNumEventAssignments(); j++) {
+		for (uint j=0; j<e->getNumEventAssignments(); j++) {
 			const EventAssignment* ass = e->getEventAssignment(j);
 			nodeController* equation =  event->insertChild("Rule");
 			equation->attribute("symbol-ref")->set(ass->getVariable());
 
 			ASTNode* math = ass->getMath()->deepCopy();
 			sanitizeAST(math);
-			equation->firstChild("Expression")->setText(SBML_formulaToString(math));
+			equation->firstActiveChild("Expression")->setText(SBML_formulaToString(math));
 			delete math;
 		}
 	}
@@ -541,9 +548,9 @@ void SBMLImporter::translateSBMLReactions(nodeController* celltype, Model* sbml_
 	QSet<QString> all_symbols_defined = variables + constants + functions.keys().toSet();
 	bool have_renamed = false;
 
-	nodeController* system = celltype->firstChild("System");
+	nodeController* system = celltype->firstActiveChild("System");
 	// this was inspired by the soslib odeConstruct.c:Species_odeFromReactions();
-	for ( int r=0; r<sbml_model->getNumReactions(); r++ ) {
+	for ( uint r=0; r<sbml_model->getNumReactions(); r++ ) {
 		Reaction* reaction = sbml_model->getReaction(r);
 		KineticLaw* kinetics = reaction->getKineticLaw();
 		QMap<QString,QString> renamed_symbols;
@@ -551,7 +558,7 @@ void SBMLImporter::translateSBMLReactions(nodeController* celltype, Model* sbml_
 			throw SBMLConverterException(SBMLConverterException::SBML_INVALID);
 
 		ListOfParameters* local_params = kinetics->getListOfParameters();
-		for (int p=0; p<local_params->size(); p++) {
+		for (uint p=0; p<local_params->size(); p++) {
 			Parameter* param = local_params->get(p);
 			
 			QString param_symbol = s2q(param->getId());
@@ -594,7 +601,7 @@ void SBMLImporter::translateSBMLReactions(nodeController* celltype, Model* sbml_
 		sanitizeAST(kinetics_math);
 
 		// Solve the left hand side -- reactants of the equation
-		for (int j=0; j<reaction->getNumReactants(); j++) {
+		for (uint j=0; j<reaction->getNumReactants(); j++) {
 			SpeciesReference* reactant = reaction->getReactant(j);
 			QString reactant_name = s2q(reactant->getSpecies());
 			if (vars_with_assignments.contains(reactant_name))
@@ -606,7 +613,7 @@ void SBMLImporter::translateSBMLReactions(nodeController* celltype, Model* sbml_
 				deq_node->attribute("name")->set("gained from reactions");
 				deq_node->attribute("name")->setActive(true);
 
-				diffeqn_map.insert(reactant_name,deq_node->firstChild("Expression")->textAttribute());
+				diffeqn_map.insert(reactant_name,deq_node->firstActiveChild("Expression")->textAttribute());
 			}
 
 			QString term;
@@ -624,7 +631,7 @@ void SBMLImporter::translateSBMLReactions(nodeController* celltype, Model* sbml_
 		}
 
 		// Solve the right hand side -- products of the reaction
-		for (int j=0; j<reaction->getNumProducts(); j++) {
+		for (uint j=0; j<reaction->getNumProducts(); j++) {
 			SpeciesReference* product = reaction->getProduct(j);
 			QString product_name = s2q(product->getSpecies());
 			if (vars_with_assignments.contains(product_name))
@@ -636,7 +643,7 @@ void SBMLImporter::translateSBMLReactions(nodeController* celltype, Model* sbml_
 				deq_node->attribute("name")->set("gained from reactions");
 				deq_node->attribute("name")->setActive(true);
 
-				diffeqn_map.insert(product_name,deq_node->firstChild("Expression")->textAttribute());
+				diffeqn_map.insert(product_name,deq_node->firstActiveChild("Expression")->textAttribute());
 			}
 
 			QString term;
@@ -681,7 +688,7 @@ void SBMLImporter::addSBMLInitialAssignments(nodeController* cellPopulation, Mod
 		init_property->attribute("symbol-ref")->set(e->getSymbol());
 		ASTNode* math = e->getMath()->deepCopy();
 		sanitizeAST(math);
-		init_property->firstChild("Expression")->setText(SBML_formulaToString (math));
+		init_property->firstActiveChild("Expression")->setText(SBML_formulaToString (math));
 		delete math;
 	}
 }

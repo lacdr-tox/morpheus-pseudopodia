@@ -13,7 +13,7 @@
 #define SURFACECONSTRAINT_H
 
 #include "core/interfaces.h"
-#include "core/plugin_parameter.h"
+#include "core/celltype.h"
 
 /** \defgroup SurfaceConstraint
 \ingroup ML_CellType

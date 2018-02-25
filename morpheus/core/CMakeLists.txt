@@ -31,15 +31,15 @@ SET(morpheus_src
 	scope.cpp
 	focusrange.cpp
 	symbolfocus.cpp
-	symbol_accessor.cpp
+# 	symbol_accessor.cpp
 	diff_eqn.cpp
 	system.cpp
-	cell_membrane_accessor.cpp
+# 	cell_membrane_accessor.cpp
 	membrane_property.cpp
 	membranemapper.cpp
 	data_mapper.cpp
-	super_cell.cpp
-	super_celltype.cpp
+# 	super_cell.cpp
+# 	super_celltype.cpp
 )
 
 # Also link all the plugins from the plugin folder
@@ -64,7 +64,7 @@ if (NOT(MORPHEUS_CORE_CATCH))
 		)
 ENDIF()
 
-SET(SIMULATOR_EXEC_NAME ${PROJECT_NAME})
+SET(SIMULATOR_EXEC_NAME ${MORPHEUS_EXEC_NAME})
 
 IF (HAVE_OBJECT_LINKAGE)
 	ADD_EXECUTABLE(${SIMULATOR_EXEC_NAME} ${morpheus_src} $<TARGET_OBJECTS:muParser>)
@@ -174,5 +174,3 @@ IF  ( "${MORPHEUS_OS}" STREQUAL "WIN32")
 ELSE()
 	INSTALL(TARGETS ${SIMULATOR_EXEC_NAME} RUNTIME DESTINATION bin COMPONENT morpheus )
 ENDIF()
-
-SET(SIMULATOR_EXEC_NAME ${SIMULATOR_EXEC_NAME} PARENT_SCOPE)

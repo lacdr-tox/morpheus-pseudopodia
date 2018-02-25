@@ -36,7 +36,7 @@ Currently the algorithm exclusively works in 2D lattices.
 \endverbatim
 */
 
-class ConnectivityConstraint : public CPM_Check_Update
+class ConnectivityConstraint : public Cell_Update_Checker
 {
 private:
 	vector<VINT> neighbors;

@@ -13,7 +13,7 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
         <Lattice class="hexagonal">
             <Size symbol="size" value="300 300 0"/>
             <Neighborhood>
-                <Distance>2.5</Distance>
+                <Order>1</Order>
             </Neighborhood>
             <BoundaryConditions>
                 <Condition boundary="x" type="periodic"/>
@@ -63,7 +63,7 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
         <MonteCarloSampler stepper="edgelist">
             <MCSDuration value="1"/>
             <Neighborhood>
-                <Order>2</Order>
+                <Order>1</Order>
             </Neighborhood>
             <MetropolisKinetics temperature="0.6"/>
         </MonteCarloSampler>

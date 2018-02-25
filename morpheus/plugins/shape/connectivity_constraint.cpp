@@ -7,7 +7,7 @@ ConnectivityConstraint::ConnectivityConstraint(){
 }
 
 void ConnectivityConstraint::init(const Scope* scope) {
-	CPM_Check_Update::init(scope);
+	Cell_Update_Checker::init(scope);
 	const Lattice& lattice = SIM::lattice();
 	neighbors = CPM::getSurfaceNeighborhood().neighbors();
 	max_first_order = 0;
@@ -26,14 +26,14 @@ void ConnectivityConstraint::init(const Scope* scope) {
 			cout << "ConnectivityConstraint: " << neighbors[i] << " a " << angle << " d" << distance << endl;
 		}
 		if ( lattice.getStructure() == Lattice::hexagonal ) {
-			if (neighbors.size() != 6) {
-				cerr << "ConnectivityConstraint only available for 1st order surface neighborhood in hexagonal lattices." << endl;
+			if (neighbors.size() > 12) {
+				cerr << "ConnectivityConstraint only available for 1st and 2nd order surface neighborhood in hexagonal lattices." << endl;
 				exit(-1);
 			}
 		}
 		else if ( lattice.getStructure() == Lattice::square ){
-			if (neighbors.size() != 8) {
-				cerr << "ConnectivityConstraint only available for 2nd order surfce neighborhood in square lattices." << endl;
+			if (neighbors.size() > 8) {
+				cerr << "ConnectivityConstraint only available for 1st and 2nd order surfce neighborhood in square lattices." << endl;
 				exit(-1);
 			}
 		}

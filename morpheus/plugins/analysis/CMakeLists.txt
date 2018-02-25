@@ -8,7 +8,7 @@ set(plugin_src
 	gnuplotter.cpp
 	histogram_logger.cpp
 	logger2.cpp
-	membrane_logger.cpp
+	# membrane_logger.cpp
 	tiff_plotter.cpp
 	vtk_plotter.cpp
 	

@@ -15,7 +15,7 @@
                 <Condition boundary="y" type="periodic"/>
             </BoundaryConditions>
             <Neighborhood>
-                <Order>3</Order>
+                <Order>1</Order>
             </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="space"/>
@@ -57,7 +57,7 @@
         <MonteCarloSampler stepper="edgelist">
             <MCSDuration value="1.0"/>
             <Neighborhood>
-                <Order>2</Order>
+                <Order>1</Order>
             </Neighborhood>
             <MetropolisKinetics temperature="3" yield="0.1"/>
         </MonteCarloSampler>

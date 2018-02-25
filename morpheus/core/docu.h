@@ -514,6 +514,13 @@ CellType can contain any of the following plugin types:
 A CellType defines its own \ref Scope. This implies that symbols defined within a CellType are not accessible outside of the CellType.
 However, if the identical symbol is defined in all CellTypes, it is also accessible at the global scope.
 
+I addition, celltype scopes provide symbols to access cell properties
+- cell.id
+- cell.center
+- cell.volume
+- cell.type
+- cell.surface
+
 Initial configuration of cell population must be specified in \ref ML_CellPopulations section.
 
 **/
@@ -717,7 +724,7 @@ Initialization
 
   + Diffusion, ... CFL
   + System, including 
-  + CPM, incl. \ref CPM_EnergyPlugins, \ref CPM_Check_UpdatePlugins, \ref CPM_UpdateListenerPlugins, \ref CPM_InteractionPlugins
+  + CPM, incl. \ref CPM_EnergyPlugins, \ref Cell_Update_CheckerPlugins, \ref Cell_Update_ListenerPlugins, \ref CPM_InteractionPlugins
 
 - \b Phase 2: \ref InstantaneousProcessPlugins
 

@@ -151,6 +151,7 @@ void EdgeListTracker::init_edge_list() {
 			}
 		}
 	}
+	cout << "EdgeListTracker::init() : Created Tracker with Neighborhood size " << surface_neighbors.size() << endl;
 	cout << "EdgeListTracker::init() : Found " << initial_edges << " initial edges, wherof " << update_edges << " can be modified." << endl;
 }
 
@@ -313,10 +314,12 @@ void EdgeListTracker::update_notifier(const VINT& pos, const LatticeStencil& nei
 			edge.eid_list_a->at(neighbor) = no_flux_edge; 
 		}
 	}
-	if (double (invalid_edge_ids.size()) / edges.size() > 0.08) {
-// 		cout << "EdgeListTracker: Running defragmentation " << endl;
+	if (double (invalid_edge_ids.size()) / (edges.size()+100) > 0.08) {
+		cout << "EdgeListTracker: Running defragmentation " << endl;
+		cout << getStatInfo();
 		defragment();
 	}
+
 };
 
 void EdgeListTracker::defragment() {
@@ -338,7 +341,8 @@ void EdgeListTracker::defragment() {
 			auto i = std::find(invalid_edge_ids.begin(), invalid_edge_ids.end(), invalid_id);
 			if (i == invalid_edge_ids.end())
 				throw string("EdgeListTracker:: Unable to remove invalid edge ID");
-			invalid_edge_ids.erase(i);
+			*i = invalid_edge_ids.back();
+			invalid_edge_ids.pop_back();
 		}
 	}
 }
@@ -370,6 +374,7 @@ string EdgeListTracker::getStatInfo() const {
 	stringstream info;
 	info << "EdgeListTracker: EdgeList size " << edges.size() << ", invalid " << invalid_edge_ids.size() << endl;
 	info << "                 Select ratio is " <<  double (edges.size() -  invalid_edge_ids.size()) / edges.size() << endl;
+	info << "                 Opx Neighborhood is " << this->opx_neighbors.size() << endl;
 	return info.str(); 
 	
 }

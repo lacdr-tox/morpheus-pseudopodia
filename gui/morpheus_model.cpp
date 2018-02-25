@@ -30,21 +30,22 @@ MorphModel::MorphModel(QObject *parent) :
     //XML in datenstruktur einlesen (nodeController)+
 	// xml_file by default contains an empty model ...
 	try {
-		rootNodeContr = new nodeController(NULL, xml_file.xmlDocument.documentElement());
+		rootNodeContr = new nodeController(xml_file.xmlDocument.documentElement());
 		rootNodeContr->setParent(this);
+		
+		rootNodeContr->attribute("version")->set(QString::number(morpheus_ml_version));
+		// Now we clear the history of changes ...
+		rootNodeContr->saved();
+		rootNodeContr->clearTrackedChanges();
+		
+		initModel();
 	}
-	catch (...) {
+	catch (QString& error) {
 		qDebug() << "Error creating MorpheusModel from plain template ... ";
-		throw;
+		qDebug() << error;
+		rootNodeContr = nullptr;
+		throw error;
 	}
-	rootNodeContr->attribute("version")->set(QString::number(morpheus_ml_version));
-
-    // nodeControllers created all required elements
-    // Now we clear the history of changes ...
-    rootNodeContr->saved();
-    rootNodeContr->clearTrackedChanges();
-	
-    initModel();
 }
 
 //------------------------------------------------------------------------------
@@ -60,7 +61,7 @@ try : QAbstractItemModel(parent),  xml_file(xmlFile)
     QList<MorphModelEdit> edits = applyAutoFixes(xml_file.xmlDocument);
 
     //XML in datenstruktur einlesen (nodeController)
-    rootNodeContr = new nodeController(NULL, xml_file.xmlDocument.documentElement());
+    rootNodeContr = new nodeController(xml_file.xmlDocument.documentElement());
 	rootNodeContr->setParent(this);
 
     ModelDescriptor& desc = const_cast<ModelDescriptor&>(rootNodeContr->getModelDescr());
@@ -82,24 +83,22 @@ catch (QString e) {
 MorphModel::MorphModel(QDomDocument model, QObject *parent) :
 QAbstractItemModel(parent), xml_file(model)
 {
-    sweep_lock = false;
+	sweep_lock = false;
 
-    if (xml_file.xmlDocument.documentElement().nodeName() != "MorpheusModel")
-        throw ModelException(ModelException::UndefinedNode, QString("Imported Document has wrong wrong root node '%1'.\nExpected 'MorpheusModel'!").arg(xml_file.xmlDocument.nodeName()));
-	
-    QList<MorphModelEdit> edits = applyAutoFixes(xml_file.xmlDocument);
+	if (xml_file.xmlDocument.documentElement().nodeName() != "MorpheusModel")
+		throw ModelException(ModelException::UndefinedNode, QString("Imported Document has wrong wrong root node '%1'.\nExpected 'MorpheusModel'!").arg(xml_file.xmlDocument.documentElement().nodeName()));
 
-	
+	QList<MorphModelEdit> edits = applyAutoFixes(xml_file.xmlDocument);
 
-    //XML in datenstruktur einlesen (nodeController)
-    rootNodeContr = new nodeController(NULL, xml_file.xmlDocument.documentElement());
+	// Create XML node controller tree by creating a node for the xml document's root
+	rootNodeContr = new nodeController(xml_file.xmlDocument.documentElement());
 	rootNodeContr->setParent(this);
 
-    ModelDescriptor& desc = const_cast<ModelDescriptor&>(rootNodeContr->getModelDescr());
-    for (int i=0; i<edits.size();i++) {
-        desc.auto_fixes.append(edits[i]);
-        desc.change_count++;
-    }
+	ModelDescriptor& desc = const_cast<ModelDescriptor&>(rootNodeContr->getModelDescr());
+	for (int i=0; i<edits.size();i++) {
+		desc.auto_fixes.append(edits[i]);
+		desc.change_count++;
+	}
     
 	initModel();
 
@@ -464,7 +463,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 				MorphModelEdit ed;
 				ed.xml_parent = document.documentElement();
 				ed.name = new_name;
-				ed.edit_type = NodeRename;
+				ed.edit_type = MorphModelEdit::NodeRename;
 				ed.info = QString("Renamed Root Element into ") + new_name;
 				edits.append(ed);
 				qDebug() << "AutoFix: Renamed Root Element " << search_path << " into "  << move_path;
@@ -540,7 +539,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 					if (new_name == "@text") {
 						qDebug() << QString("Text ") + search_path + " was moved to " + move_path;
 						// Assign to an attribute ...
-						ed.edit_type = AttribRename;
+						ed.edit_type = MorphModelEdit::AttribRename;
 						ed.xml_parent = new_parent;
 						ed.info = QString("Text  ") + search_path + " was moved to " + move_path;
 						ed.name = new_name;
@@ -562,7 +561,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 						qDebug() << "New Attribute :" << new_name;
 						qDebug() << QString("Attribute  ") + search_path + " was moved to " + move_path;
 						// Assign to an attribute ...
-						ed.edit_type = AttribRename;
+						ed.edit_type = MorphModelEdit::AttribRename;
 						ed.xml_parent = new_parent;
 						ed.info = QString("Attribute  ") + search_path + " was moved to " + move_path;
 						ed.name = new_name;
@@ -582,14 +581,14 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 					if (!fixes[i].copy) {
 						matches[j].toElement().setTagName(new_name);
 						ed.xml_parent = new_parent.appendChild(matches[j]);
-						ed.edit_type = NodeMove;
+						ed.edit_type = MorphModelEdit::NodeMove;
 						ed.info = QString("Element  ") + search_path + " was moved to " + move_path;
 						ed.name =  matches[j].attributes().namedItem("name").nodeValue();
 					}
 					else {
 						ed.xml_parent = new_parent.appendChild(matches[j].cloneNode());
 						ed.xml_parent.toElement().setTagName(new_name);
-						ed.edit_type = NodeAdd;
+						ed.edit_type = MorphModelEdit::NodeAdd;
 						ed.info = QString("Element  ") + search_path + " was copied to " + move_path;
 						ed.name =  matches[j].attributes().namedItem("name").nodeValue();
 					}
@@ -732,13 +731,13 @@ QVariant MorphModel::data(const QModelIndex &index, int role) const {
 				AbstractAttribute* symbol_ref = node->attribute("symbol-ref"); if (symbol_ref && ! symbol_ref->isActive()) symbol_ref = NULL;
 
 				if ( node->name == "DiffEqn" ) {
-					val = QString("d%1 / dt = ").arg(symbol_ref->get());
+					if (symbol_ref) val = QString("d%1 / dt = ").arg(symbol_ref->get());
 				}
 				else if ( node->name== "Equation" || node->name== "Rule" ) {
-					val = symbol_ref->get() + " = ";
+					if (symbol_ref) val = symbol_ref->get() + " = ";
 				}
 				else if (node->name== "Function") {
-					val = symbol->get() + " = ";
+					if (symbol) val = symbol->get() + " = ";
 				}
 				else if (node->name == "Contact") {
 					AbstractAttribute* t1=node->attribute("type1");
@@ -782,23 +781,22 @@ QVariant MorphModel::data(const QModelIndex &index, int role) const {
 
 //                qDebug() << "node->name: " << node->name  << " | value: "<<  (value?value->get():"N.A.")  << " | symbol-ref: "<< (symbol_ref ? symbol_ref->get() : "N.A.") ;
 
-				QString text("");
 				if ( node->name == "Equation" || node->name== "Rule" || node->name == "Function" || node->name == "DiffEqn" || node->name == "InitPDEExpression") {
-					text_node = node->firstChild("Expression");
+					text_node = node->firstActiveChild("Expression");
 					if (text_node) {
+						
 						val = text_node->getText();
 						if (val.length() > 100 )
-							val = val.left(96) + " ...";
+							val = val.left(60) + " ...";
 					}
 				}
 				else if (node->name == "Expression" ){
 					val = "";
 				}
 				else if ( text_node->hasText() ) {
-					if (text.length() > 100 )
-						val = text_node->getText().left(96) + " ...";
-					else
-						val = text_node->getText();
+					val = text_node->getText();
+					if (val.length() > 100 )
+						val = val.left(60) + " ...";
 				}
 				else if (value) {
 					val = value->get();
@@ -896,6 +894,28 @@ QModelIndex MorphModel::itemToIndex(nodeController* node) const {
     }
 }
 
+
+void MorphModel::prepareActivationOrInsert(nodeController* node, QString name) {
+	
+	auto childInfo = node->childInformation();
+	
+	if (childInfo.is_choice) {
+		while (childInfo.max_occurs != "unbounded" && node->activeChilds() >= childInfo.max_occurs.toInt()) {
+			qDebug() << "Enabled node is exchanging";
+			auto other = node->firstActiveChild();
+			other->setDisabled(true);
+			qDebug() << "Disabling node " << other->getName() ;
+			emit dataChanged(itemToIndex(other), itemToIndex(other));
+		}
+	}
+	else if (childInfo.max_occurs != "unbounded" && childInfo.children[name].max_occurs != "unbounded") {
+		while (childInfo.max_occurs.toInt() * childInfo.children[name].max_occurs.toInt() <= node->activeChilds(name) ) {
+			nodeController* other =  node->firstActiveChild(name);
+			other->setDisabled(true);
+			emit dataChanged(itemToIndex(other),itemToIndex(other));
+		}
+	}
+}
 //------------------------------------------------------------------------------
 
 QModelIndex MorphModel::insertNode(const QModelIndex &parent, QDomNode child, int pos) {
@@ -903,25 +923,12 @@ QModelIndex MorphModel::insertNode(const QModelIndex &parent, QDomNode child, in
 	QModelIndex result;
 	try {
 		if ( ! contr )
-			throw ModelException(ModelException::InvalidNodeIndex,QString("MorphModel::insertNode: Request to insert into invalid index!"));
+			throw ModelException(ModelException::InvalidNodeIndex, QString("MorphModel::insertNode: Request to insert into invalid index!"));
 		
 		if (! child.isComment() ) {
-			nodeController::NodeInfo childInfo = contr->childInformation(child.nodeName());
-			if (childInfo.is_exchanging) {
-				nodeController* groupChild = contr->findGroupChild(childInfo.group);
-				if (groupChild) {
-					groupChild->setDisabled(true);
-					dataChanged(itemToIndex(groupChild),itemToIndex(groupChild));
-					
-				}
-			} 
-			else if (childInfo.maxOccure.toInt() == 1 && contr->firstChild(child.nodeName()) != NULL ) {
-					nodeController* uniqueChild = contr->firstChild(child.nodeName());
-					uniqueChild->setDisabled(true);
-					dataChanged(itemToIndex(uniqueChild),itemToIndex(uniqueChild));
-			}
+			prepareActivationOrInsert(contr, child.nodeName());
+			auto info = contr->childInformation();
 		}
-		
 		
 		if (pos<0 || pos>contr->getChilds().size()) {
 			pos = contr->getChilds().size();
@@ -953,19 +960,8 @@ QModelIndex MorphModel::insertNode(const QModelIndex &parent, QString child, int
 	
 		if ( ! contr )
 			throw ModelException(ModelException::InvalidNodeIndex,QString("MorphModel::insertNode: Request to insert into invalid index!"));
-		nodeController::NodeInfo childInfo = contr->childInformation(child);
-		if (childInfo.is_exchanging) {
-			nodeController* groupChild = contr->findGroupChild(childInfo.group);
-			if (groupChild) {
-				groupChild->setDisabled(true);
-				dataChanged(itemToIndex(groupChild),itemToIndex(groupChild));
-			}
-		}
-		else if (childInfo.maxOccure.toInt() == 1 && contr->firstChild(child) != NULL ) {
-			nodeController* uniqueChild = contr->firstChild(child);
-			uniqueChild->setDisabled(true);
-			dataChanged(itemToIndex(uniqueChild),itemToIndex(uniqueChild));
-		}
+		
+		prepareActivationOrInsert(contr, child);
 		
 		if (pos<0 || pos>contr->getChilds().size()) {
 			pos = contr->getChilds().size();
@@ -992,33 +988,22 @@ QModelIndex MorphModel::insertNode(const QModelIndex &parent, QString child, int
 
 
 void MorphModel::removeNode(const QModelIndex &parent, int row) {
-//    qDebug() << "MorphModel::removeNode removing " << indexToItem(parent)->childs[row]->name;
+	if (indexToItem(parent)->getChilds().size()<=row) {
+		qDebug() << "MorphModel::removeNode out of bounds " << indexToItem(parent)->childs[row]->name << "["<<row<<"]";
+		return;
+	}
     beginRemoveRows(parent, row, row);
 	// --> the row of the view might not be identical to the row in the model !
     indexToItem(parent)->removeChild( row );
     endRemoveRows();
 }
 
-void MorphModel::setDisabled(const QModelIndex &node_index, bool disabled) {
+void MorphModel::setDisabled(const QModelIndex &node_index, bool disable) {
 	nodeController* node = indexToItem(node_index);
 	if (node) {
-		const nodeController::NodeInfo& childInfo = node->parent->childInformation(node->getName());
-		
-		if (childInfo.is_exchanging) {
-			qDebug() << "Enabled node is exchanging";
-			nodeController* group_node = node->parent->findGroupChild(childInfo.group);
-			if (group_node) {
-				group_node->setDisabled( ! disabled );
-				qDebug() << "Disabling node " <<group_node->getName() ;
-				emit dataChanged(itemToIndex(group_node), itemToIndex(group_node));
-			}
-		}
-		else if (childInfo.maxOccure.toInt() == 1 && node->parent->firstChild(node->getName()) != NULL ) {
-			nodeController* uniqueChild =  node->parent->firstChild(node->getName());
-			uniqueChild->setDisabled(! disabled);
-			dataChanged(itemToIndex(uniqueChild),itemToIndex(uniqueChild));
-		}
-		node->setDisabled(disabled);
+		if (disable == node->isDisabled()) return;
+		if (!disable) prepareActivationOrInsert(node->parent, node->name);
+		node->setDisabled(disable);
 		emit dataChanged(node_index, node_index);
 	}
 }
@@ -1059,87 +1044,85 @@ QMimeData* MorphModel::mimeData(const QModelIndexList &indexes) const {
 //------------------------------------------------------------------------------
 
 bool MorphModel::dropMimeData( const QMimeData * data, Qt::DropAction action, int row, int column, const QModelIndex & new_parent ) {
-    if (action == Qt::MoveAction) {
-        if (data->formats().contains(IndexListMimeData::indexList)) {
-            const IndexListMimeData* tree_data = qobject_cast<const IndexListMimeData*>(data);
-            QModelIndex move_index = tree_data->getIndexList().front();
-            nodeController* move_contr = indexToItem(move_index);
+	if (action == Qt::MoveAction) {
+		if (data->formats().contains(IndexListMimeData::indexList)) {
+			const IndexListMimeData* tree_data = qobject_cast<const IndexListMimeData*>(data);
+			QModelIndex move_index = tree_data->getIndexList().front();
+			nodeController* move_contr = indexToItem(move_index);
 //            qDebug() << "unpacked node " << contr->name;
-            if (row==-1)
-                row = rowCount(new_parent);
+			if (row==-1)
+					row = rowCount(new_parent);
 
-            if (move_index.parent() == new_parent) {
-                // Remember, that moving the element changes indices of the subsequent elements ...
-                int final_row;
-                if (move_index.row()<row)
-                    final_row = row-1;
-                else {
-                    final_row = row;
-                }
-                if (final_row == move_index.row())
-                    return true;
-//                qDebug() << "Moving child within parent " << move_contr->name << " from " << move_index.row() << " to " << final_row << " of " << rowCount(move_index.parent()); 
-                // Obviously, notifiers for the view need the old indices ...
-                if ( ! beginMoveRows(move_index.parent(),move_index.row(),move_index.row(),new_parent,row) ) {
+			if (move_index.parent() == new_parent) {
+				// Remember, that moving the element changes indices of the subsequent elements ...
+				int final_row;
+				if (move_index.row()<row)
+					final_row = row-1;
+				else {
+					final_row = row;
+				}
+				if (final_row == move_index.row())
+					return true;
+//              qDebug() << "Moving child within parent " << move_contr->name << " from " << move_index.row() << " to " << final_row << " of " << rowCount(move_index.parent()); 
+					// Obviously, notifiers for the view need the old indices ...
+				if ( ! beginMoveRows(move_index.parent(),move_index.row(),move_index.row(),new_parent,row) ) {
 					qDebug() << "Dropped DnD move due to invalid beginMoveRows().";
 					return false;
-                }
-					
-                // Just reorder the nodes of the parent node controller.
-                indexToItem(new_parent)->moveChild(move_index.row(),final_row);
-                endMoveRows();
-                return true;
-            }
-            else{
-                // Reparent the node ...
-                if (indexToItem(new_parent)->canInsertChild(move_contr,row) && ! move_contr->parent->isChildRequired(move_contr) ) {
+				}
 
-					qDebug() << "Moving child " << move_contr->name << " from " << move_contr->parent->getName()<< "[" << move_index.row() << "] to " << indexToItem(new_parent)->getName()<< "[" << row << "] of " << rowCount(new_parent);
-					
-					// Determine wether to disable some other node in the new parent
-					if ( ! move_contr->isDisabled() ) {
-						nodeController::NodeInfo childInfo = indexToItem(new_parent)->childInformation(move_contr->getName());
-						if (childInfo.is_exchanging) {
-							nodeController* groupChild = indexToItem(new_parent)->findGroupChild(childInfo.group);
-							if (groupChild) {
-								groupChild->setDisabled(true);
-								dataChanged(itemToIndex(groupChild),itemToIndex(groupChild));
-							}
-						}
-						else if (childInfo.maxOccure.toInt() == 1 && indexToItem(new_parent)->firstChild(move_contr->getName()) != NULL ) {
-							nodeController* uniqueChild = indexToItem(new_parent)->firstChild(move_contr->getName());
-							uniqueChild->setDisabled(true);
-							dataChanged(itemToIndex(uniqueChild),itemToIndex(uniqueChild));
-						}
-					}
-					
-					if ( ! beginMoveRows(move_index.parent(),move_index.row(),move_index.row(),new_parent,row) ) {
-						qDebug() << "Dropped DnD move due to invalid beginMoveRows().";
-						return false;
-					}
-					
-					
+				// Just reorder the nodes of the parent node controller.
+				indexToItem(new_parent)->moveChild(move_index.row(),final_row);
+				endMoveRows();
+				return true;
+			}
+			else {
+				// Reparent the node ...
+				if (indexToItem(new_parent)->canInsertChild(move_contr,row) && ! move_contr->parent->isChildRequired(move_contr) ) {
 
-					if ( ! indexToItem(new_parent)->insertChild(move_contr,row)) {
-						qDebug() << "oops, someting went wrong in move";
-					}
-					endMoveRows();
-                    return true;
-                }
-                else qDebug() << "Dropped DnD move ...";
-            }
+				qDebug() << "Moving child " << move_contr->name << " from " << move_contr->parent->getName()<< "[" << move_index.row() << "] to " << indexToItem(new_parent)->getName()<< "[" << row << "] of " << rowCount(new_parent);
+				
+				// Determine wether to disable some other node in the new parent
+				if ( ! move_contr->isDisabled() ) {
+					prepareActivationOrInsert(indexToItem(new_parent), move_contr->getName());
+// 						nodeController::NodeInfo childInfo = indexToItem(new_parent)->childInformation(move_contr->getName());
+// 						if (childInfo.is_exchanging) {
+// 							nodeController* groupChild = indexToItem(new_parent)->findGroupChild(childInfo.group);
+// 							if (groupChild) {
+// 								groupChild->setDisabled(true);
+// 								dataChanged(itemToIndex(groupChild),itemToIndex(groupChild));
+// 							}
+// 						}
+// 						else if (childInfo.maxOccure.toInt() == 1 && indexToItem(new_parent)->firstChild(move_contr->getName()) != NULL ) {
+// 							nodeController* uniqueChild = indexToItem(new_parent)->firstChild(move_contr->getName());
+// 							uniqueChild->setDisabled(true);
+// 							dataChanged(itemToIndex(uniqueChild),itemToIndex(uniqueChild));
+// 						}
+				}
 
-        }
-        else {
-			// External data is always copied
-            action = Qt::CopyAction;
-        }
-    }
-    
-    if (action==Qt::CopyAction) {
-        if (data->hasText()) {
-            QDomDocument doc;
-            doc.setContent(data->text());
+				if ( ! beginMoveRows(move_index.parent(),move_index.row(),move_index.row(),new_parent,row) ) {
+					qDebug() << "Dropped DnD move due to invalid beginMoveRows().";
+					return false;
+				}
+
+				if ( ! indexToItem(new_parent)->insertChild(move_contr,row)) {
+					qDebug() << "oops, someting went wrong in move";
+				}
+				endMoveRows();
+				return true;
+			}
+				else qDebug() << "Dropped DnD move ...";
+			}
+		}
+		else {
+		// External data is always copied
+			action = Qt::CopyAction;
+		}
+	}
+
+	if (action==Qt::CopyAction) {
+		if (data->hasText()) {
+			QDomDocument doc;
+			doc.setContent(data->text());
 			if (indexToItem(new_parent)->canInsertChild(doc.documentElement().nodeName(),row)) {
 				return insertNode(new_parent,doc.documentElement(),row).isValid();
 			}
@@ -1151,10 +1134,10 @@ bool MorphModel::dropMimeData( const QMimeData * data, Qt::DropAction action, in
 				qDebug() << doc.firstChild().isComment();
 				qDebug() << "Not accepting d&d node " <<doc.documentElement().nodeName() << " for parent " <<indexToItem(new_parent)->getName();
 			}
-        }
-    }
+		}
+	}
 //    internalDragIndex = QModelIndex();
-    return false;
+	return false;
 }
 
 //------------------------------------------------------------------------------

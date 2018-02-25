@@ -13,7 +13,8 @@
 #define TIFFREADER_H
 
 #include "core/interfaces.h"
-#include "core/plugin_parameter.h"
+#include "core/celltype.h"
+#include "core/field.h"
 #include "tiffio.h"
 #include <sys/time.h>
 

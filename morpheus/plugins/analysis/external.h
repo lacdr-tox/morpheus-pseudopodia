@@ -101,7 +101,7 @@ public:
     External();
 	~External();
 
-    virtual void loadFromXML(const XMLNode xNode) override;
+    virtual void loadFromXML(const XMLNode xNode, Scope* scope) override;
     virtual void init(const Scope* scope) override;
     /// record cell positions
     virtual void analyse(double time) override;

@@ -12,8 +12,10 @@
 #ifndef VTKPLOTTER_H
 #define VTKPLOTTER_H
 
-#include <core/interfaces.h>
+#include "core/interfaces.h"
 #include "core/simulation.h"
+#include "core/field.h"
+#include "core/membrane_property.h"
 #include "gnuplot_i/gnuplot_i.h"
 #include "core/plugin_parameter.h"
 #include <limits>
@@ -91,8 +93,8 @@ private:
 		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> no_outline;
 		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> exclude_medium;
 		
-		shared_ptr<PDE_Layer> pde_layer; 
-		CellMembraneAccessor membrane;
+		shared_ptr<const Field::Symbol> field; 
+		shared_ptr<const MembranePropertySymbol> membrane;
 	};
 	
 		
@@ -118,7 +120,7 @@ private:
 public:
 	DECLARE_PLUGIN("VtkPlotter");
 	
-	virtual void loadFromXML(const XMLNode) override;
+	virtual void loadFromXML(const XMLNode, Scope* scope) override;
 	virtual void init(const Scope* scope) override;
 	virtual void analyse(double time) override;
 };

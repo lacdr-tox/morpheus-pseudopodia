@@ -42,7 +42,7 @@ Prevent motility after a certain time. Assumes SymbolTime is 'time'.
 \endverbatim
 */
 
-class FreezeMotion : public CPM_Check_Update
+class FreezeMotion : public Cell_Update_Checker
 {
 private:
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> condition;

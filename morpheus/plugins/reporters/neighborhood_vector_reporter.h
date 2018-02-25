@@ -49,11 +49,8 @@ Multiple \b Output elements can be specified:
 #ifndef NEIGHBORHOOD_VECTOR_REPORTER_H
 #define NEIGHBORHOOD_VECTOR_REPORTER_H
 
-#include "core/simulation.h"
 #include "core/interfaces.h"
 #include "core/celltype.h"
-#include "core/plugin_parameter.h"
-#include <core/symbol_accessor.h>
 
 class NeighborhoodVectorReporter : public ReporterPlugin
 {
@@ -77,7 +74,7 @@ class NeighborhoodVectorReporter : public ReporterPlugin
 		NeighborhoodVectorReporter();
 	
 		void init(const Scope* scope) override;
-		void loadFromXML(const XMLNode) override;
+		void loadFromXML(const XMLNode, Scope* scope) override;
 		void report() override;
 		
 		int getNeighborCells(const Cell& cell);

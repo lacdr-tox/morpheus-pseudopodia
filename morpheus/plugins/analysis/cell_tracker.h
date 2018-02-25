@@ -74,7 +74,7 @@ public:
     DECLARE_PLUGIN("CellTracker");
     CellTracker();
 
-    virtual void loadFromXML(const XMLNode ) override;
+    virtual void loadFromXML(const XMLNode, Scope* scope ) override;
     virtual void init(const Scope* scope) override;
     /// record cell positions
     virtual void analyse(double time) override;

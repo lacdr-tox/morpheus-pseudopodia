@@ -76,6 +76,7 @@ const map<CPM::CELL_ID,double>&  AdaptiveCPMShapeTracker::interfaces() const {
 		for (const auto& i : _interfaces) {
 			scaled_interfaces.insert( make_pair(i.first,double(i.second) / boundary_scaling) );
 		}
+		scaled_interfaces_valid=true;
 	}
 	
 	return scaled_interfaces;

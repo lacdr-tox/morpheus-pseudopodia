@@ -13,7 +13,7 @@
 #define CELLDIVISION_H
 
 #include "core/interfaces.h"
-#include "core/plugin_parameter.h"
+#include "core/celltype.h"
 #include "core/system.h" // TriggeredSystem
 
 /** \defgroup CellDivision
@@ -85,7 +85,7 @@ Using Triggers to specify properties after cell division (assymetric division). 
 class CellDivision : public InstantaneousProcessPlugin
 {
 private:
-	enum logmode{ NONE, DOT, CSV, NEWICK };
+	enum logmode{ NONE, DOT, CT_DOT, CSV, CT_CSV, NEWICK };
 
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> condition;
 	PluginParameter2<CellType::division, XMLNamedValueReader, RequiredPolicy> division_plane;
@@ -94,7 +94,7 @@ private:
 
 	CellType* celltype;
 	
-	ofstream fout; // output stream to log divisions
+	string log_file_name;
 	vector<string> newicks;
 	
 	// Local symbol (inside TriggeredSystem) giving either 1 or 2
@@ -103,11 +103,14 @@ private:
 	SymbolRWAccessor<double> daughterID;
 	shared_ptr<TriggeredSystem> trigger_system;
 	
+	static map<string,shared_ptr<ofstream>> log_files;
+	static int instances;
+	
 public:
 	CellDivision();
 	~CellDivision();
 	DECLARE_PLUGIN("CellDivision");
-	void loadFromXML (const XMLNode) override;
+	void loadFromXML (const XMLNode, Scope* scop) override;
 	void init(const Scope* scope) override;
 	void executeTimeStep() override;
 };

@@ -1117,7 +1117,7 @@ void MainWindow::fixBoardClicked(QModelIndex item) {
     const MorphModelEdit& e = current_model->rootNodeContr->getModelDescr().auto_fixes[row];
 
 	QDomNode node = e.xml_parent;
-	if (e.edit_type == NodeAdd &&  ! e.xml_parent.firstChildElement(e.name).isNull()) {
+	if (e.edit_type == MorphModelEdit::NodeAdd &&  ! e.xml_parent.firstChildElement(e.name).isNull()) {
 		 node = node.firstChildElement(e.name);
 	}
 	editorStack->setCurrentWidget(modelViewer[current_model]);

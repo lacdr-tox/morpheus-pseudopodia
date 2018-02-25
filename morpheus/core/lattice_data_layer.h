@@ -13,8 +13,7 @@
 #define Lattice_Data_Layer_H
 
 #include "lattice.h"
-#include "config.h"
-#include <set>
+#include "traits.h"
 #include <valarray>
 
 struct span {
@@ -30,11 +29,33 @@ class Lattice_Data_Layer {
 public:
 	typedef T value_type;
 	
+	class ValueReader {
+		public:
+			virtual void set(string string_val) =0;
+			virtual T get(const VINT& pos) const =0;
+			virtual bool isSpaceConst() const =0;
+			virtual bool isTimeConst() const =0;
+			virtual shared_ptr<ValueReader> clone() const =0;
+	};
+	
+	class DefaultValueReader : public ValueReader{
+		public:
+// 			DefaultValueReader() {};
+			DefaultValueReader(T val) : value(val) {};
+			void set(string string_val) override { assert(0); }
+			T get(const VINT& pos) const override { return value; }
+			bool isSpaceConst() const override { return true; }
+			bool isTimeConst() const override { return true; }
+			virtual shared_ptr<ValueReader> clone() const override { return make_shared<DefaultValueReader>(*this); }
+		private:
+			T value;
+	};
+	
 	Lattice_Data_Layer(shared_ptr<const Lattice> l, int shadow_width, T def_val, string layer_name  = "");
 	~Lattice_Data_Layer() { data.resize(0); }
 
 	XMLNode saveToXML() const;
-	void loadFromXML(const XMLNode xNode, T (* converter)(const string&));
+	void loadFromXML(const XMLNode xNode, shared_ptr<ValueReader> converter = make_shared<DefaultValueReader>() );
 	void storeData(ostream& out) const;
 	bool restoreData(istream & in,  T (* converter)(istream&));
 	shared_ptr<const Lattice> getLattice() const { cout << "LDL getLattice" << endl; return _lattice;};
@@ -53,8 +74,8 @@ public:
 	T& get_writable(VINT a) __attribute__ ((deprecated));
 	valarray<T> getData() const __attribute__ ((deprecated)) ;
 	Boundary::Type getBoundaryType(Boundary::Codes code) const;
-	void set_boundary_value(Boundary::Codes code, value_type a) { boundary_values[code] = a; };
-	void set_domain_value(value_type a) { domain_value = a; }
+	void set_boundary_value(Boundary::Codes code, value_type a) { boundary_values[code] = make_shared<DefaultValueReader>(a); };
+	void set_domain_value(value_type a) { domain_value = make_shared<DefaultValueReader>(a); }
 	const VINT& size() const  {return l_size;};
 // 	const VINT& size_shadow() const  {return shadow_size;};
 	vector<VINT> optimizeNeighborhood(const vector<VINT>& ) const;
@@ -68,6 +89,7 @@ public:
 
 protected:
 	string name;
+	XMLNode stored_node;
 	valarray<value_type> data;
 	value_type default_value, default_boundary_value, shit_value;
 	
@@ -88,6 +110,7 @@ protected:
 	gslice s_xmb, s_xm ,s_xp, s_xpb, s_xall;
 	gslice s_ymb, s_ym ,s_yp, s_ypb, s_yall;
 	gslice s_zmb, s_zm ,s_zp, s_zpb, s_zall;
+	valarray<T> cache_xmb, cache_xpb,  cache_ymb, cache_ypb, cache_zmb, cache_zpb;
 	
 	gslice xslice(span a);
 	gslice yslice(span a);
@@ -102,8 +125,8 @@ protected:
 	void allocate();
 	
 	const vector<Boundary::Type> boundary_types;
-	valarray<value_type> boundary_values;
-    value_type domain_value;
+	valarray< shared_ptr<ValueReader> > boundary_values;
+	shared_ptr<ValueReader> domain_value;
 	void setDomain();
 	void reset_boundaries();
 	
@@ -113,8 +136,10 @@ protected:
 	friend class InteractionEnergy;  // Neighborhood per node -- not using the stencil implementation
 	friend class MembraneMapper;
 	friend class MembraneRules3D;
+	friend class MembraneProperty;
 	friend class InitVoronoi;
 };
+
 
 #endif
 

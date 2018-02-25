@@ -88,15 +88,11 @@ Surface length of a whole cell population (ct1) with other cells / medium
 #ifndef NEIGHBORHOOD_REPORTER_H
 #define NEIGHBORHOOD_REPORTER_H
 
-#include "core/simulation.h"
 #include "core/interfaces.h"
 #include "core/celltype.h"
-#include "core/plugin_parameter.h"
-#include "core/symbol_accessor.h"
-#include "core/symbolfocus.h"
+#include "core/focusrange.h"
 #include "core/data_mapper.h"
 #include "core/membranemapper.h"
-#include "core/focusrange.h"
 
 class NeighborhoodReporter : public ReporterPlugin
 {
@@ -116,7 +112,7 @@ class NeighborhoodReporter : public ReporterPlugin
 			PluginParameter2<DataMapper::Mode, XMLNamedValueReader, OptionalPolicy> mapping;
 			shared_ptr<DataMapper> mapper;
 			PluginParameter2<double, XMLWritableSymbol> symbol;
-			CellMembraneAccessor membrane_acc;
+			shared_ptr<const MembranePropertySymbol> membrane_acc;
 		};
 		vector< shared_ptr<OutputSpec> > output;
 		vector< shared_ptr<OutputSpec> > halo_output;
@@ -131,7 +127,7 @@ class NeighborhoodReporter : public ReporterPlugin
 		NeighborhoodReporter();
 	
 		void init(const Scope* scope) override;
-		void loadFromXML(const XMLNode) override;
+		void loadFromXML(const XMLNode, Scope* scope) override;
 		virtual void report() override;
 };
 

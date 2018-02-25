@@ -169,13 +169,6 @@ XMLNode SuperCell::saveToXML ( ) const
 		xCNode.addChild(properties[prop]->storeData());
 	}
 
-	// save membraneProperties to XML
-	for (uint mem=0; mem < membranes.size(); mem++) {
-		XMLNode node = membranes[mem]->storeData();
-		node.updateName("MembranePropertyData");
-		xCNode.addChild(node);
-	}
-	
 	for ( vector<CPM::CELL_ID>::const_iterator subcell = sub_cells.begin(); subcell != sub_cells.end(); subcell++ )
 	{
 		xCNode.addChild("SubCell").addAttribute("cell-id", to_cstr(*subcell));

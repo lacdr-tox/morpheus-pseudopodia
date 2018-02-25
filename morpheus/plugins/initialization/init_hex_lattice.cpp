@@ -2,9 +2,9 @@
 
 REGISTER_PLUGIN(InitHexLattice);
 
-void InitHexLattice::loadFromXML(const XMLNode node)
+InitHexLattice::InitHexLattice()
 {
-	stored_node = node;
+// 	stored_node = node;
 	mode.setXMLPath("mode");
 	map<string, Direction> conv_map;
 	conv_map["left"] = Direction::LEFT;
@@ -17,6 +17,7 @@ void InitHexLattice::loadFromXML(const XMLNode node)
 	randomness.setDefault("0.0");
 	registerPluginParameter(randomness);
 
+	
 }
 
 vector<CPM::CELL_ID> InitHexLattice::run(CellType* ct)

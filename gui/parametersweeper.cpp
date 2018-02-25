@@ -208,8 +208,8 @@ void parameterSweeper::submitSweep()
 
 	if (preset_random_seed->isChecked())  {
 		 // pick the random seed attribute
-		 nodeController* seed = model->rootNodeContr->firstChild("Time")->firstChild("RandomSeed");
-		 if (!seed) { seed = model->rootNodeContr->firstChild("Time")->insertChild("RandomSeed"); }
+		 nodeController* seed = model->rootNodeContr->firstActiveChild("Time")->firstActiveChild("RandomSeed");
+		 if (!seed) { seed = model->rootNodeContr->firstActiveChild("Time")->insertChild("RandomSeed"); }
 		 auto seed_value = seed->attribute("value");
 		 if (seed_value) {
 			parameters.push_back(seed_value);

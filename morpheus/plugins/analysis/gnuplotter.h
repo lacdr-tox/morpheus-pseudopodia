@@ -13,7 +13,9 @@
 #include "core/interfaces.h"
 #include "core/plugin_parameter.h"
 #include "core/celltype.h"
-#include "core/symbol_accessor.h"
+#ifdef HAVE_SUPERCELLS
+#include "core/super_celltype.h"
+#endif
 #include "gnuplot_i/gnuplot_i.h"
 #include <fstream>
 #include <sstream>
@@ -129,7 +131,7 @@ class LabelPainter  {
 public:
 	LabelPainter();
 	void loadFromXML(const XMLNode node);
-	void init();
+	void init(const Scope* scope);
 	set<SymbolDependency> getInputSymbols() const;
 	const string& getDescription() const;
 	void plotData(ostream& );
@@ -147,7 +149,7 @@ class ArrowPainter  {
 public:
 	ArrowPainter();
     void loadFromXML(const XMLNode );
-	void init();
+	void init(const Scope* scope);
 	set<SymbolDependency> getInputSymbols() const;
 	void plotData(ostream& );
 	int getStyle();
@@ -164,7 +166,7 @@ private:
 class FieldPainter {
 public:
     void loadFromXML(const XMLNode node );
-	void init();
+	void init(const Scope* scope);
 	set<SymbolDependency> getInputSymbols() const;
 	void plotData(ostream& out );
 	bool getSurface() { if( surface.isDefined() ) return surface.get(); else return true;}
@@ -198,7 +200,7 @@ private:
 class VectorFieldPainter  {
 public:
     void loadFromXML(const XMLNode node_ );
-	void init();
+	void init(const Scope* scope);
 	set<SymbolDependency> getInputSymbols() const;
 	void plotData(ostream& out_ );
 	int getStyle();
@@ -236,8 +238,8 @@ class CellPainter  {
 		int z_level; // denotes the z level to slice a 3d simulation
 		float min_val, max_val;
 		static const float transparency_value;
-		static bool same_cell ( const CPM::STATE& a, const CPM::STATE& b) { return ( a.cell_id == b.cell_id && a.super_cell_id == b.super_cell_id); };
-		static bool same_super_cell (const CPM::STATE& a, const CPM::STATE& b) { return (a.super_cell_id == b.super_cell_id); };
+		static bool same_cell ( const CPM::STATE& a, const CPM::STATE& b) { return a.cell_id==b.cell_id; };
+		static bool same_super_cell (const CPM::STATE& a, const CPM::STATE& b) { return (true); };
 		
 		bool flooding;
 		bool reset_range_per_frame;
@@ -258,7 +260,7 @@ class CellPainter  {
 		CellPainter();
 		~CellPainter();
 		virtual void loadFromXML(const XMLNode );
-		void init();
+		void init(const Scope* scope);
 		set<SymbolDependency> getInputSymbols() const;
 		float getMaxVal() { return max_val;}
 		float getMinVal() { return min_val;}
@@ -357,7 +359,7 @@ class Gnuplotter : public AnalysisPlugin
 
 		DECLARE_PLUGIN("Gnuplotter");
 
-		virtual void loadFromXML (const XMLNode xNode) override;
+		virtual void loadFromXML (const XMLNode xNode, Scope* scope) override;
 
 		virtual void init(const Scope* scope) override;
 		virtual void analyse(double time) override;

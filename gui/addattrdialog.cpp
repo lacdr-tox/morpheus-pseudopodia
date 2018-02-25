@@ -34,7 +34,7 @@ addNodeDialog::addNodeDialog(nodeController *nodeContr)
 	QStringList addableChilds = contr->getAddableChilds(false);
     for(int i = 0; i < allChilds.size(); i++)
     {
-        QTreeWidgetItem* trWItem = new QTreeWidgetItem(trW, QStringList() << allChilds.at(i)  << contr->childInformation(allChilds.at(i)).pluginClass);
+        QTreeWidgetItem* trWItem = new QTreeWidgetItem(trW, QStringList() << allChilds.at(i)  << contr->childInformation(allChilds.at(i)).type->pluginClass);
 		if (! addableChilds.contains(allChilds.at(i))) {
 			trWItem->setIcon(0,style()->standardIcon(QStyle::SP_MessageBoxWarning));
 			trWItem->setToolTip(0,"This node will disable an existing node!");
@@ -84,7 +84,7 @@ void addNodeDialog::clickedTreeItem()
     QTreeWidgetItem *item = trW->selectedItems()[0];
     nodeName = item->text(0);
 
-    QString nodeText = contr->childInformation(item->text(0)).info;
+    QString nodeText = contr->childInformation(item->text(0)).type->documentation;
     if ( nodeText.isEmpty() )
         edit->setText("Not available!");
     else

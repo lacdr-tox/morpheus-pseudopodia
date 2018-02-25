@@ -18,11 +18,11 @@ Note: this plugin requires stand-alone installation of Gnuplot 4.4+. When not fo
 			</xs:documentation>
 		</xs:annotation>
 	
-		<xs:choice maxOccurs="unbounded">
-			<xs:element name="Terminal" 	type="cpmGnuplotTerminal" 	minOccurs="1" maxOccurs="1" />
-			<xs:element name="Plot"			type="morphGnuplotPlot"		minOccurs="1" maxOccurs="unbounded" />
+		<xs:all maxOccurs="unbounded">
+			<xs:element name="Terminal" 	type="cpmGnuplotTerminal" 	/>
+			<xs:element name="Plot"			type="morphGnuplotPlot"	 maxOccurs="unbounded" />
 <!-- 			<xs:element name="Membrane" 	type="cpmMembraneRef" 		minOccurs="0" /> -->
-		</xs:choice>
+		</xs:all>
 
 		<xs:attribute name="time-step" use="optional" type="cpmDouble" default="1">
 			<xs:annotation>
@@ -79,10 +79,9 @@ Note: this plugin requires stand-alone installation of Gnuplot 4.4+. When not fo
 		</xs:annotation>
 		
 		
-		<xs:choice maxOccurs="unbounded">
-			<xs:element name="ColorMap" type="cpmColorMap" minOccurs="0" maxOccurs="1"/>
-			<!--<xs:element name="Labels" 	type="cpmGnuplotCellLabels" 	minOccurs="0" maxOccurs="1" />		-->
-		</xs:choice>
+		<xs:all minOccurs="0" maxOccurs="1">
+			<xs:element name="ColorMap" type="cpmColorMap"/>
+		</xs:all>
 		<xs:attribute name="value" type="cpmDoubleSymbolRef" use="optional" >
 			<xs:annotation>
 				<xs:documentation>Value/Expression to be used to color the cell area</xs:documentation>
@@ -306,8 +305,8 @@ Note: This option is only applicable when plotting on-screen (using x11, wxt, or
 		<xs:annotation>
 			<xs:documentation>Defines a mapping from values to colors. Gnuplot will create a gradual colorscale between the colors defined here.</xs:documentation>
 		</xs:annotation>
-		<xs:choice maxOccurs="unbounded">
-			<xs:element name="Color" type="cpmColorMapColor" minOccurs="2"/>
+		<xs:choice minOccurs="2" maxOccurs="unbounded">
+			<xs:element name="Color" type="cpmColorMapColor"/>
 		</xs:choice>		
 	</xs:complexType>
 	

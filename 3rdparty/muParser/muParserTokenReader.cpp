@@ -600,8 +600,12 @@ namespace mu
     if (szFormula[iEnd]!='(')
       return false;
 
-    a_Tok.Set(item->second, strTok);
 	m_UsedFun.insert(item->first);
+	// register all function definitions with the same name (but different signature, i.e. number of parameters)
+	auto items = m_pFunDef->equal_range(strTok);
+	for (auto it = items.first; it!=items.second; it++) {
+		a_Tok.Set(it->second, strTok);
+	}
 
     m_iPos = (int)iEnd;
     if (m_iSynFlags & noFUN)

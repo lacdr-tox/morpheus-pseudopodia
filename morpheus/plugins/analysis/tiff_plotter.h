@@ -12,8 +12,11 @@
 #ifndef TIFFPLOTTER_H
 #define TIFFPLOTTER_H
 
-#include <core/interfaces.h>
+#include "core/interfaces.h"
 #include "core/simulation.h"
+#include "core/celltype.h"
+#include "core/field.h"
+#include "core/membrane_property.h"
 #include "gnuplot_i/gnuplot_i.h"
 #include "core/plugin_parameter.h"
 #include <limits>
@@ -119,8 +122,8 @@ private:
 		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> no_outline;
 		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> exclude_medium;
 		
-		shared_ptr<PDE_Layer> pde_layer; 
-		CellMembraneAccessor membrane;
+		shared_ptr<const Field::Symbol> field; 
+		shared_ptr<const MembranePropertySymbol>  membrane;
 	};
 	
 	struct Plot{
@@ -159,7 +162,7 @@ public:
 	virtual void analyse(double time) override;	
 	virtual void finish() override;
 	
-	void loadFromXML(const XMLNode) override;
+	void loadFromXML(const XMLNode, Scope* scope) override;
 	
 	TiffPlotter();
 	~TiffPlotter();
