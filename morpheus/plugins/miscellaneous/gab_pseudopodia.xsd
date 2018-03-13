@@ -22,7 +22,8 @@
         <xs:attribute name="moving-direction" type="cpmDoubleSymbolRef"/>
         <xs:attribute name="max-growth-time" type="cpmInteger" use="optional" default="20"/>
         <xs:attribute name="max-pseudopods" type="cpmInteger" use="optional" default="0"/>
-        <xs:attribute name="dir-strength" type="cpmDouble" use="optional" default="8.0"/>
+        <xs:attribute name="init-dir-strength" type="cpmDouble" use="optional" default="8.0"/>
+        <xs:attribute name="cont-dir-strength" type="cpmDouble" use="optional" default="1e4"/>
         <xs:attribute name="retraction-mode" type="cpmPPRetractMode" default="backward"/>
         <xs:attribute name="retract-on-touch" type="cpmBoolean" default="false"/>
     </xs:complexType>

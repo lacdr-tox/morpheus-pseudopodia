@@ -42,7 +42,8 @@ private:
     RetractionMethod paramRetractionMethod_;
     RetractionMethod currRetractionMethod_;
     VDOUBLE polarisationDirection_;
-    double kappa_;
+    double kappaInit_;
+    double kappaCont_;
     static constexpr auto retractprob_ = .3;
     static constexpr auto extendprob_ = .3;
     State state_;
@@ -56,11 +57,11 @@ public:
     Pseudopod(unsigned int maxGrowthTime, const CPM::LAYER *cpm_layer, CPM::CELL_ID cellId,
               PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> *movingDirection,
               PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field, RetractionMethod retractionMethod,
-              double kappa, bool retractOnTouch) :
+              double kappaInit, double kappaCont, bool retractOnTouch) :
             maxGrowthTime_(maxGrowthTime), _cpm_layer(cpm_layer), cellId(cellId),
             movingDirection_(movingDirection), state_(State::INIT), field_(field),
-            timeLeftForGrowth_(0), timeNoExtension_(0), paramRetractionMethod_(retractionMethod), kappa_(kappa),
-            retractOnTouch_(retractOnTouch) {
+            timeLeftForGrowth_(0), timeNoExtension_(0), paramRetractionMethod_(retractionMethod), kappaInit_(kappaInit),
+            kappaCont_(kappaInit), retractOnTouch_(retractOnTouch) {
         bundlePositions_.reserve(maxGrowthTime);
     }
 
@@ -83,7 +84,7 @@ public:
 
         //Set polarisation direction based on cell target direction
         auto preferredDirection = VDOUBLE(movingDirection_->get(SymbolFocus(cellId)), 0, 1);
-        polarisationDirection_ = RandomVonMisesPoint(preferredDirection, kappa_);
+        polarisationDirection_ = RandomVonMisesPoint(preferredDirection, kappaInit_);
     }
 
     void addPosToBundle(VDOUBLE const &pos) {
@@ -116,7 +117,7 @@ public:
             return;
         }
 
-        auto extendDirection = RandomVonMisesPoint(polarisationDirection_, kappa_);
+        auto extendDirection = RandomVonMisesPoint(polarisationDirection_, kappaCont_);
         auto orthoOffset = VDOUBLE::from_radial(extendDirection);
         auto newBundlePosition = bundlePositions_.back() + orthoOffset;
 

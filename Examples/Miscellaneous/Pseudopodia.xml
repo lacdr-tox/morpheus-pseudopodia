@@ -34,21 +34,21 @@
     </Time>
     <CellTypes>
         <CellType class="biological" name="amoeba">
-            <VolumeConstraint target="250" strength="50"/>
+            <VolumeConstraint target="300" strength="10"/>
             <ConnectivityConstraint/>
-            <Pseudopodia max-pseudopods="3" field="act" moving-direction="d.phi" retraction-mode="in-moving-direction" max-growth-time="20"/>
+            <Pseudopodia max-pseudopods="3" retract-on-touch="false" field="act" moving-direction="d.phi" retraction-mode="in-moving-direction" max-growth-time="30" cont-dir-strength="1e4"/>
             <PropertyVector symbol="d" value="0, 0, 0" name="moving direction"/>
-            <MotilityReporter time-step="50">
+            <MotilityReporter time-step="10">
                 <Velocity symbol-ref="d"/>
             </MotilityReporter>
-            <SurfaceConstraint target="0.9" mode="aspherity" strength="1"/>
+            <SurfaceConstraint target="0.8" mode="aspherity" strength="1"/>
         </CellType>
         <CellType class="medium" name="medium"/>
     </CellTypes>
     <CPM>
         <Interaction>
-            <Contact type1="amoeba" type2="medium" value="16"/>
-            <Contact type1="medium" type2="medium" value="1"/>
+            <Contact type1="amoeba" type2="medium" value="1"/>
+            <Contact type1="amoeba" type2="amoeba" value="1"/>
         </Interaction>
         <MonteCarloSampler stepper="edgelist">
             <MCSDuration value="1"/>
