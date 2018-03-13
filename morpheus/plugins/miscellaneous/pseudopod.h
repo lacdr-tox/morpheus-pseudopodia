@@ -191,6 +191,17 @@ public:
                 break;
         }
     }
+
+    VDOUBLE getBundleTip() {
+        switch (state_) {
+            case State::RETRACTING:
+            case State::GROWING:
+                return *bundlePositions_.end();
+            default:
+                cerr << "Pseudopod::getBundleTip: pseudo in INIT or INACTIVE state, no bundle tip" << endl;
+                return {-1, -1, -1};
+        }
+    }
 };
 
 #endif //MORPHEUS_PSEUDOPOD_H
