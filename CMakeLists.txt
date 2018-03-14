@@ -256,3 +256,5 @@ INCLUDE(CPack)
 
 # MESSAGE("Precompiler platform: __UNIX__ " ${__UNIX__} ", __APPLE__ " ${__APPLE__} ", __WIN32__ " ${__WIN32__})
 
+INCLUDE(CTest)
+add_subdirectory(test)
