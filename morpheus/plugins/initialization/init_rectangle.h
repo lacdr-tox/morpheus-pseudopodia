@@ -50,7 +50,7 @@ class InitRectangle : public Population_Initializer
 private:
 
 	enum class Mode {
-		REGULAR, RANDOM
+		REGULAR, RANDOM, GRID
 	};
 	
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> num_cells_eval;
@@ -68,6 +68,7 @@ private:
 
 	vector<CPM::CELL_ID> setRandom();
 	vector<CPM::CELL_ID> setRegular();
+	vector<CPM::CELL_ID> setGrid();
 
 	CPM::CELL_ID createCell(VINT newPos);
 

@@ -10,6 +10,7 @@ InitRectangle::InitRectangle() {
 	map<string, Mode> mode_map;
 	mode_map["regular"] = Mode::REGULAR;
 	mode_map["random"] = Mode::RANDOM;
+	mode_map["grid"] = Mode::GRID;
 	mode_eval.setConversionMap(mode_map);
 	registerPluginParameter(mode_eval);
 
@@ -43,7 +44,7 @@ vector<CPM::CELL_ID> InitRectangle::run(CellType *ct) {
 		cout << "InitRectangle: clamped size from " << size.to_stringp() << " to " << clamped_size.to_stringp() << endl;
 		size = clamped_size;
 	}
-	if (mode == Mode::REGULAR &&
+	if (mode != Mode::RANDOM &&
 		random_displacement > lattice->size().x &&
 		random_displacement > lattice->size().y) {
 		cerr << "InitRectangle:: Displacement is larger than lattice size, defaulting to uniform random distribution"
@@ -53,8 +54,8 @@ vector<CPM::CELL_ID> InitRectangle::run(CellType *ct) {
 	}
 	if (mode == Mode::RANDOM &&
 		random_displacement > 0) {
-		cout << "InitRectangle: random_displacement > 0 only applicable with 'regular'. "
-			 << "Makes no sense in combination with 'random' distribution."
+		cout << "InitRectangle: random_displacement > 0 only applicable with 'regular' or 'grid', "
+			 << "makes no sense in combination with 'random' distribution."
 			 << endl;
 	}
 	auto size_diff = (origin + size - lattice->size()).to_array();
@@ -71,6 +72,9 @@ vector<CPM::CELL_ID> InitRectangle::run(CellType *ct) {
 			break;
 		case Mode::REGULAR:
 			cells = setRegular();
+			break;
+		case Mode::GRID:
+			cells = setGrid();
 			break;
 	}
 
@@ -111,7 +115,7 @@ vector<CPM::CELL_ID> InitRectangle::setRandom() {
 
 //============================================================================
 
-vector<CPM::CELL_ID> InitRectangle::setRegular() {
+vector<CPM::CELL_ID> InitRectangle::setGrid() {
 	auto l = SIM::getLattice();
 	auto latticeDims = l->getDimensions();
 	auto gridSize = VDOUBLE(size);
@@ -145,6 +149,106 @@ vector<CPM::CELL_ID> InitRectangle::setRegular() {
 			}
 		}
 	}
+	return cells;
+}
+
+vector<CPM::CELL_ID> InitRectangle::setRegular()
+{
+	vector<CPM::CELL_ID> cells;
+	vector<double> vec_ids, vec_lines;	//koordinaten der knoten
+	int i_lines, i_hlines, i_dlines, zeile, spalte, reihe;	//anzahl der linien, nummer der zeile, reihe und spalte
+
+	shared_ptr<const Lattice> l = SIM::getLattice();
+
+	if (l->getDimensions() == 1) {
+		double cell_distance = double (size.x) / (num_cells);
+		for(int i = 0; i < num_cells; i++)
+		{
+			int line_position  =  ( double(i + 0.5) * cell_distance );
+			VDOUBLE newPos;						//neue knoten an position anlegen
+			newPos.x = origin.x + line_position;
+			newPos.y = 0;
+			newPos.z = 0;
+
+			if(random_displacement != 0.0){
+                newPos.x += getRandom01() * random_displacement - random_displacement / 2 ;
+			}
+			
+			auto new_cell = createCell(l->from_orth(newPos));
+			if ( new_cell != CPM::NO_CELL)
+				cells.push_back(new_cell);
+		}
+	}
+	if (l->getDimensions() == 2)	// wenn "2D", dann...
+	{
+		i_lines = int(sqrt((size.y * num_cells) / size.x) + 0.5);	//berechnung der linienanzahl
+		i_lines = max(1, i_lines);
+		double total_length  = i_lines * size.x;
+		double cell_distance = total_length / (num_cells);
+		double line_distance = (double)(size.y)/ (i_lines);
+		line_distance = l->to_orth(VDOUBLE(0,line_distance,0)).y;
+		
+		for(int i = 0; i < num_cells; i++)
+		{
+			int line_position  =  ( double(i) * cell_distance );
+			VDOUBLE newPos;						//neue knoten an position anlegen
+			newPos.x = origin.x + line_position % size.x + 0.25;
+			newPos.y = origin.y + (double (line_position /  size.x) ) * line_distance;
+			newPos.z = 0;
+			
+			if(random_displacement  != 0.0){
+                newPos.x += getRandom01() * random_displacement - random_displacement / 2 ;
+                newPos.y += getRandom01() * random_displacement - random_displacement / 2 ;
+                newPos.z += 0;
+			}
+			
+			auto new_cell = createCell(l->from_orth(newPos));
+			if ( new_cell != CPM::NO_CELL)
+				cells.push_back(new_cell);
+		}
+
+	}
+
+	if (l->getDimensions() == 3)		//wenn "3D", dann...
+	{
+		double cell_distance = pow((double(size.y * size.z * size.x) / num_cells), (1.0 / 3.0));		//abstand der linien
+
+		i_dlines = max ( 1, int((size.z / cell_distance) + 0.5));
+		
+		cell_distance = sqrt(double(size.y * size.x) / i_dlines / num_cells);
+		i_hlines = max ( 1, int((size.y / cell_distance) + 0.5));
+		
+		i_lines = i_hlines * i_dlines;	//anzahl der linien
+		cell_distance = double(i_lines * size.x) / num_cells;	//erneuter abstand der linien (geändert durch rundung der linienanzahl)
+
+		for(int i = 0; i < num_cells; i++)	//knotenpositionen festlegen
+		{vec_ids.push_back(i * cell_distance);}
+		
+		VINT offset = VINT( int(0.5*cell_distance),int(0.5 * cell_distance),0);
+		for(int i = 0; i < num_cells; i++)
+		{
+			zeile = int(vec_ids[i] / size.x);
+			spalte = int((int)vec_ids[i] % int(size.x));
+			reihe = int(zeile / i_hlines);
+			zeile = int((int)zeile % i_hlines);
+
+			VINT newPos;					//neue knoten an positionen anlegen
+			newPos.y = int(origin.y + (zeile * cell_distance));
+			newPos.x = int(origin.x + spalte);
+			newPos.z = int(origin.z + (reihe * cell_distance));
+
+            if(random_displacement != 0.0){
+                newPos.x += getRandom01() * random_displacement - random_displacement / 2 ;
+                newPos.y += getRandom01() * random_displacement - random_displacement / 2 ;
+                newPos.z += 0;
+            }
+
+			auto new_cell = createCell(l->from_orth(newPos + offset));
+			if ( new_cell != CPM::NO_CELL)
+				cells.push_back(new_cell);
+		}
+	}
+	
 	return cells;
 }
 
