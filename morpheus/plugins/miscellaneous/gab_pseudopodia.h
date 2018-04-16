@@ -9,7 +9,6 @@
 
 #include "pseudopod.h"
 
-
 #include <mutex>
 
 using namespace SIM;
@@ -44,10 +43,11 @@ private:
 
     // auxiliary plugin-internal variables and functions can be declared here.
     shared_ptr<const CPM::LAYER> cpmLayer;
-    CellType *celltype;
+    CellType *cellType;
     map<CPM::CELL_ID, vector<Pseudopod>> pseudopods;
 
     double neighboringActinBonus;
+    double pseudopodTipBonus;
 
 public:
     // constructor
@@ -68,6 +68,11 @@ private:
 
     double hamiltonian(CPM::CELL_ID cell_id) const override;
 
+    double calcNeighboringActinBonus(const CPM::Update &update) const;
+
+    double calcPseudopodTipBonus(const SymbolFocus &cell_focus, const CPM::Update &update) const;
+
+    vector<Pseudopod> getPseudopodsForCell(const CPM::CELL_ID cell_id) const;
 };
 
 #endif

@@ -49,6 +49,7 @@ private:
     void setRetracting();
     void addPosToBundle(const VDOUBLE &pos);
 
+
 public:
     Pseudopod(unsigned int maxGrowthTime, const CPM::LAYER *cpm_layer, CPM::CELL_ID cellId,
               PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> *movingDirection,

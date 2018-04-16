@@ -55,15 +55,16 @@ void Pseudopodia::init(const Scope *scope) {
 
 
     cpmLayer = CPM::getLayer();
-    celltype = scope->getCellType();
-    neighboringActinBonus = 10000.0;
+    cellType = scope->getCellType();
+    neighboringActinBonus = 1e4;
+    pseudopodTipBonus = 1e3;
 
     //TODO addProperty for the pseudopods instead of map?
 }
 
 // called periodically during simulation
 void Pseudopodia::executeTimeStep() {
-    auto cells = celltype->getCellIDs();
+    auto cells = cellType->getCellIDs();
 
     // This is only called the first time to allocate space for pseudopod storage
     call_once(initPseudopods, [&]() {
@@ -91,22 +92,57 @@ void Pseudopodia::executeTimeStep() {
 }
 
 double Pseudopodia::delta(const SymbolFocus &cell_focus, const CPM::Update &update) const {
+
+    double change{0};
+    change += calcNeighboringActinBonus(update);
+    //change += calcPseudopodTipBonus(update);
+
+    return change;
+
+}
+
+double Pseudopodia::calcNeighboringActinBonus(const CPM::Update &update) const {
     // We are only interested in adding stuff, the rest is unchanged
     if(!update.opAdd()) return 0.0;
 
     auto pos = update.focus().pos();
-    auto neighbors = SIM::getLattice()->getNeighborhoodByOrder(2).neighbors();
+    auto neighbors = getLattice()->getNeighborhoodByOrder(2).neighbors();
     for(auto const& neighbor : neighbors) {
         auto neighborPos = pos + neighbor;
         // if neighbor belongs to the same cell and has positive actin level -> give bonus
         if(cpmLayer->get(neighborPos).cell_id == update.source().cellID()
-            && field.get(neighborPos) > 0) {
+           && field.get(neighborPos) > 0) {
             return -neighboringActinBonus;
         }
 
     }
     // no change
     return 0.0;
+}
+
+double Pseudopodia::minDistanceToPseudopodTip(const VINT pos, const CPM::CELL_ID& cellId) const {
+    auto pseudopods = getPseudopodsForCell(cellId);
+
+}
+
+double Pseudopodia::calcPseudopodTipBonus(const SymbolFocus &cell_focus, const CPM::Update &update) const {
+    auto pos = update.focusStateAfter().pos;
+    //Check if pos is close to a pseudopod tip
+    auto currCellId = cell_focus.cellID();
+
+
+    auto neighbors = getLattice()->getNeighborhoodByOrder(2).neighbors();
+    for(auto const& neighbor : neighbors) {
+        auto neighborPos = pos + neighbor;
+        // if neighbor belongs to the same cell and has positive actin level -> give bonus
+        if(cpmLayer->get(neighborPos).cell_id == update.source().cellID()
+           && field.get(neighborPos) > 0) {
+            return -neighboringActinBonus;
+        }
+
+    }
+    // no change
+    return 0;
 }
 
 double Pseudopodia::hamiltonian(CPM::CELL_ID cell_id) const {
@@ -133,3 +169,8 @@ bool Pseudopodia::update_check(CPM::CELL_ID cell_id, const CPM::Update &update) 
 
     return true;
 }
+
+vector<Pseudopod> Pseudopodia::getPseudopodsForCell(const CPM::CELL_ID cell_id) const {
+    return pseudopods.at(cell_id);
+}
+
