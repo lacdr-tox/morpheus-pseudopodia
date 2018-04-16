@@ -655,8 +655,16 @@ int main(int argc, char *argv[]) {
 		exception = true;
 		cerr << "\n" << e.what()<< "\n";
 	}
+	catch (const std::runtime_error& e) {
+		exception = true;
+		std::cerr << e.what() << std::endl;
+	}
+	catch (const std::exception &e) {
+		exception = true;
+		std::cerr << e.what() << std::endl;
+	}
 	catch (...) {
-		cerr << "Unknown error while creating the simulation";
+		cerr << "Unknown error while creating the simulation" << endl;
 		exception = true;
 	}
 #endif
