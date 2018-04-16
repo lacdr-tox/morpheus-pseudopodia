@@ -144,7 +144,8 @@ double Pseudopodia::calcPseudopodTipBonus(const SymbolFocus &cell_focus, const C
         return 0;
     }
 
-    auto neighbors = getLattice()->getNeighborhoodByOrder(2).neighbors();
+    // TODO find better way of gettin closeby cells
+    auto neighbors = getLattice()->getNeighborhoodByOrder(5).neighbors();
     for(auto const& neighbor : neighbors) {
         auto neighborPos = pos + neighbor;
         auto neighborCellId = cpmLayer->get(neighborPos).cell_id;
