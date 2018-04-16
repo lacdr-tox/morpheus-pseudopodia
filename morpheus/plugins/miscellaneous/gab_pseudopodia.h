@@ -46,8 +46,9 @@ private:
     CellType *cellType;
     map<CPM::CELL_ID, vector<Pseudopod>> pseudopods;
 
-    double neighboringActinBonus;
-    double pseudopodTipBonus;
+    static constexpr double neighboringActinBonus = 1e4;
+    static constexpr double pseudopodTipBonus = 2e5;
+    static constexpr double pseudopodTipBonusMaxDistance = 10;
 
 public:
     // constructor
@@ -72,7 +73,9 @@ private:
 
     double calcPseudopodTipBonus(const SymbolFocus &cell_focus, const CPM::Update &update) const;
 
-    vector<Pseudopod> getPseudopodsForCell(const CPM::CELL_ID cell_id) const;
+    vector<Pseudopod> getPseudopodsForCell(const CPM::CELL_ID &cell_id) const;
+
+    double minDistanceToPseudopodTip(VINT pos, const CPM::CELL_ID &cellId) const;
 };
 
 #endif

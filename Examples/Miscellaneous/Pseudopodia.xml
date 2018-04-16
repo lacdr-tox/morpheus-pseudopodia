@@ -16,7 +16,7 @@
     </Global>
     <Space>
         <Lattice class="square">
-            <Size symbol="size" value="200,200, 0"/>
+            <Size symbol="size" value="300,300, 0"/>
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>
@@ -29,12 +29,12 @@
     </Space>
     <Time>
         <StartTime value="0"/>
-        <StopTime value="5000"/>
+        <StopTime value="10000"/>
         <TimeSymbol symbol="time"/>
     </Time>
     <CellTypes>
         <CellType class="biological" name="amoeba">
-            <VolumeConstraint target="300" strength="10"/>
+            <VolumeConstraint target="350" strength="10"/>
             <ConnectivityConstraint/>
             <Pseudopodia max-pseudopods="3" retract-on-touch="false" field="act" moving-direction="d.phi" retraction-mode="in-moving-direction" max-growth-time="30" cont-dir-strength="16"/>
             <PropertyVector symbol="d" value="0, 0, 0" name="moving direction"/>
@@ -48,7 +48,7 @@
     <CPM>
         <Interaction>
             <Contact type1="amoeba" type2="medium" value="1"/>
-            <Contact type1="amoeba" type2="amoeba" value="1"/>
+            <Contact type1="amoeba" type2="amoeba" value="5"/>
         </Interaction>
         <MonteCarloSampler stepper="edgelist">
             <MCSDuration value="1"/>
@@ -65,8 +65,8 @@
     </CPM>
     <CellPopulations>
         <Population size="0" type="amoeba">
-            <InitRectangle mode="regular" number-of-cells="20">
-                <Dimensions size="200.0, 200.0, 1.0" origin="0.0, 0.0, 0.0"/>
+            <InitRectangle mode="grid" number-of-cells="20">
+                <Dimensions size="size.x, size.y, size.z" origin="0.0, 0.0, 0.0"/>
             </InitRectangle>
         </Population>
     </CellPopulations>
@@ -83,6 +83,7 @@
                 </Field>
             </Plot>
         </Gnuplotter>
+        <!--    <Disabled>
         <Logger time-step="10">
             <Input>
                 <Symbol symbol-ref="cell.center.x"/>
@@ -91,32 +92,33 @@
             <Output>
                 <TextOutput/>
             </Output>
-            <!--    <Disabled>
-        <Plots>
-            <Plot time-step="-1">
-                <Style style="lines" line-width="2.0"/>
-                <Terminal terminal="png"/>
-                <X-axis>
-                    <Symbol symbol-ref="cell.center.x"/>
-                </X-axis>
-                <Y-axis>
-                    <Symbol symbol-ref="cell.center.y"/>
-                </Y-axis>
-                <Color-bar>
-                    <Symbol symbol-ref="time"/>
-                </Color-bar>
-                <Disabled>
-                    <Range>
-                        <Time mode="history"/>
-                    </Range>
-                </Disabled>
-            </Plot>
-        </Plots>
-    </Disabled>
--->
+            <Disabled>
+                <Plots>
+                    <Plot time-step="-1">
+                        <Style style="lines" line-width="2.0"/>
+                        <Terminal terminal="png"/>
+                        <X-axis>
+                            <Symbol symbol-ref="cell.center.x"/>
+                        </X-axis>
+                        <Y-axis>
+                            <Symbol symbol-ref="cell.center.y"/>
+                        </Y-axis>
+                        <Color-bar>
+                            <Symbol symbol-ref="time"/>
+                        </Color-bar>
+                        <Disabled>
+                            <Range>
+                                <Time mode="history"/>
+                            </Range>
+                        </Disabled>
+                    </Plot>
+                </Plots>
+            </Disabled>
             <Restriction>
                 <Celltype celltype="amoeba"/>
             </Restriction>
         </Logger>
+    </Disabled>
+-->
     </Analysis>
 </MorpheusModel>

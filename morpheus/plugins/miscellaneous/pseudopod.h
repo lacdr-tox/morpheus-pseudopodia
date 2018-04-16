@@ -36,7 +36,7 @@ private:
     static constexpr auto retractprob_ = .3;
     static constexpr auto extendprob_ = .3;
     State state_;
-    const CPM::CELL_ID cellId;
+    CPM::CELL_ID cellId;
     const CPM::LAYER *_cpm_layer;
     PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field_;
     PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> *movingDirection_;
@@ -59,6 +59,8 @@ public:
     State state() const;
     void timeStep();
     VDOUBLE getBundleTip() const;
+    bool hasBundleTip() const;
+
 
 };
 

@@ -56,8 +56,6 @@ void Pseudopodia::init(const Scope *scope) {
 
     cpmLayer = CPM::getLayer();
     cellType = scope->getCellType();
-    neighboringActinBonus = 1e4;
-    pseudopodTipBonus = 1e3;
 
     //TODO addProperty for the pseudopods instead of map?
 }
@@ -92,13 +90,10 @@ void Pseudopodia::executeTimeStep() {
 }
 
 double Pseudopodia::delta(const SymbolFocus &cell_focus, const CPM::Update &update) const {
-
     double change{0};
     change += calcNeighboringActinBonus(update);
-    //change += calcPseudopodTipBonus(update);
-
+    change += calcPseudopodTipBonus(cell_focus, update);
     return change;
-
 }
 
 double Pseudopodia::calcNeighboringActinBonus(const CPM::Update &update) const {
@@ -122,6 +117,22 @@ double Pseudopodia::calcNeighboringActinBonus(const CPM::Update &update) const {
 
 double Pseudopodia::minDistanceToPseudopodTip(const VINT pos, const CPM::CELL_ID& cellId) const {
     auto pseudopods = getPseudopodsForCell(cellId);
+    // Remove pseudopods that have no tips (yet)
+    pseudopods.erase(
+            std::remove_if(
+                    pseudopods.begin(),
+                    pseudopods.end(),
+                    [](const Pseudopod& pseudopod) { return !pseudopod.hasBundleTip(); }
+            ),
+            pseudopods.end()
+    );
+    if(pseudopods.empty()) return std::numeric_limits<double>::infinity();
+    std::vector<double> distancePosToTip;
+    std::transform(pseudopods.begin(), pseudopods.end(), std::back_inserter(distancePosToTip),
+                   [&](Pseudopod &pseudopod) -> double {
+        return dist(pos, VINT(pseudopod.getBundleTip()));
+    });
+    return *std::min_element(distancePosToTip.begin(), distancePosToTip.end());
 
 }
 
@@ -129,17 +140,25 @@ double Pseudopodia::calcPseudopodTipBonus(const SymbolFocus &cell_focus, const C
     auto pos = update.focusStateAfter().pos;
     //Check if pos is close to a pseudopod tip
     auto currCellId = cell_focus.cellID();
-
+    if(minDistanceToPseudopodTip(pos, currCellId) > pseudopodTipBonusMaxDistance) {
+        return 0;
+    }
 
     auto neighbors = getLattice()->getNeighborhoodByOrder(2).neighbors();
     for(auto const& neighbor : neighbors) {
         auto neighborPos = pos + neighbor;
-        // if neighbor belongs to the same cell and has positive actin level -> give bonus
-        if(cpmLayer->get(neighborPos).cell_id == update.source().cellID()
-           && field.get(neighborPos) > 0) {
-            return -neighboringActinBonus;
+        auto neighborCellId = cpmLayer->get(neighborPos).cell_id;
+        if(neighborCellId == currCellId || neighborCellId == CPM::getEmptyCelltypeID()) continue;
+        // if neighbor belongs to a different cell and is close to a pseudopod tip -> give bonus
+        if(minDistanceToPseudopodTip(pos, neighborCellId) < pseudopodTipBonusMaxDistance) {
+            if(update.opAdd()) {
+                // Make more likely
+                return -pseudopodTipBonus;
+            } else if(update.opRemove()){
+                // Make less likely
+                return pseudopodTipBonus;
+            }
         }
-
     }
     // no change
     return 0;
@@ -170,7 +189,8 @@ bool Pseudopodia::update_check(CPM::CELL_ID cell_id, const CPM::Update &update) 
     return true;
 }
 
-vector<Pseudopod> Pseudopodia::getPseudopodsForCell(const CPM::CELL_ID cell_id) const {
-    return pseudopods.at(cell_id);
+vector<Pseudopod> Pseudopodia::getPseudopodsForCell(const CPM::CELL_ID &cell_id) const {
+    auto it = pseudopods.find(cell_id);
+    return it != pseudopods.end() ? it->second : vector<Pseudopod>();
 }
 

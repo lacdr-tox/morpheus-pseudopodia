@@ -155,12 +155,13 @@ void Pseudopod::timeStep() {
 }
 
 VDOUBLE Pseudopod::getBundleTip() const {
-    switch (state_) {
-        case State::RETRACTING:
-        case State::GROWING:
-            return *bundlePositions_.end();
-        default:
-            cerr << "Pseudopod::getBundleTip: pseudo in INIT or INACTIVE state, no bundle tip" << endl;
-            return {-1, -1, -1};
+    if(!hasBundleTip()) {
+        cerr << "Pseudopod::getBundleTip: pseudo in INIT or INACTIVE state, no bundle tip" << endl;
+        throw MorpheusException("No bundle tip", "Pseudopod::getBundleTip");
     }
+    return *bundlePositions_.end();
+}
+
+bool Pseudopod::hasBundleTip() const {
+    return !bundlePositions_.empty();
 }
