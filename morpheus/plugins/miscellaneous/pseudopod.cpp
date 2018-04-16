@@ -6,7 +6,7 @@
 #include "core/cell.h"
 
 // returns a radial in phi, theta, radius. convert with from_radial()
-VDOUBLE RandomVonMisesPoint(VDOUBLE mu, double kappa) {
+static VDOUBLE RandomVonMisesPoint(VDOUBLE mu, double kappa) {
     double ar, theta;
     do {
         ar = getRandom01();
