@@ -10,9 +10,12 @@ namespace CPM {
 	 */
 		
 	struct UpdateData {
-		class SymbolFocus focus, source, focus_updated;
-		STATE add_state;
-		STATE remove_state;
+		class SymbolFocus
+				source, /// Where the data is copied from
+				focus, /// Where the data is copied to (current state)
+				focus_updated; /// Same as focus, but including this update
+		STATE add_state; /// State after update (so irregardless of operation)
+		STATE remove_state; /// State before update
 		/// Neighborhood stencil used for selecting Updates of the spatial configuration, in particular for the Monte Carlo Sampler of the CPM.
 		shared_ptr<LatticeStencil> update;
 		/// Neighborhood stencil used to select surface nodes. Any node having a different state in the surface neigborhood is a surface node.
