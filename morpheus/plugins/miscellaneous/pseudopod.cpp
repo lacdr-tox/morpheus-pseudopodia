@@ -159,7 +159,7 @@ VDOUBLE Pseudopod::getBundleTip() const {
         cerr << "Pseudopod::getBundleTip: pseudo in INIT or INACTIVE state, no bundle tip" << endl;
         throw MorpheusException("No bundle tip", "Pseudopod::getBundleTip");
     }
-    return *bundlePositions_.end();
+    return bundlePositions_.back();
 }
 
 bool Pseudopod::hasBundleTip() const {

@@ -148,7 +148,7 @@ double Pseudopodia::calcPseudopodTipBonus(const SymbolFocus &cell_focus, const C
     for(auto const& neighbor : neighbors) {
         auto neighborPos = pos + neighbor;
         auto neighborCellId = cpmLayer->get(neighborPos).cell_id;
-        if(neighborCellId == currCellId || neighborCellId == CPM::getEmptyCelltypeID()) continue;
+        if(neighborCellId == currCellId || neighborCellId == CPM::getEmptyState().cell_id) continue;
         // if neighbor belongs to a different cell and is close to a pseudopod tip -> give bonus
         if(minDistanceToPseudopodTip(pos, neighborCellId) < pseudopodTipBonusMaxDistance) {
             if(update.opAdd()) {
