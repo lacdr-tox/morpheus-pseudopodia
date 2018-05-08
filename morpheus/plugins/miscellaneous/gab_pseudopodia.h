@@ -48,7 +48,7 @@ private:
 
     static constexpr double neighboringActinBonus = 1e4;
     static constexpr double pseudopodTipBonus = 2e6;
-    static constexpr double pseudopodTipBonusMaxDistance = 20;
+    static constexpr double pseudopodTipBonusMaxDistance = 2;
 
 public:
     // constructor

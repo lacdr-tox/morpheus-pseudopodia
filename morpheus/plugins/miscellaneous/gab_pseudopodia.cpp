@@ -138,26 +138,27 @@ double Pseudopodia::minDistanceToPseudopodTip(const VINT pos, const CPM::CELL_ID
 
 double Pseudopodia::calcPseudopodTipBonus(const SymbolFocus &cell_focus, const CPM::Update &update) const {
     auto pos = update.focusStateAfter().pos;
+    auto closeToOwnPseudoPod = FALSE;
     //Check if pos is close to a pseudopod tip
     auto currCellId = cell_focus.cellID();
-    if(minDistanceToPseudopodTip(pos, currCellId) > pseudopodTipBonusMaxDistance) {
-        return 0;
+    if(minDistanceToPseudopodTip(pos, currCellId) <= pseudopodTipBonusMaxDistance) {
+        closeToOwnPseudoPod = TRUE;
     }
 
-    // TODO find better way of gettin closeby cells
-    auto neighbors = getLattice()->getNeighborhoodByOrder(5).neighbors();
+    // TODO find better way of getting nearby cells
+    auto neighbors = getLattice()->getNeighborhoodByOrder(2).neighbors();
     for(auto const& neighbor : neighbors) {
         auto neighborPos = pos + neighbor;
         auto neighborCellId = cpmLayer->get(neighborPos).cell_id;
         if(neighborCellId == currCellId || neighborCellId == CPM::getEmptyState().cell_id) continue;
         // if neighbor belongs to a different cell and is close to a pseudopod tip -> give bonus
-        if(minDistanceToPseudopodTip(pos, neighborCellId) < pseudopodTipBonusMaxDistance) {
+        if(minDistanceToPseudopodTip(pos, neighborCellId) <= pseudopodTipBonusMaxDistance) {
             if(update.opAdd()) {
                 // Make more likely
-                return -pseudopodTipBonus;
+                return (closeToOwnPseudoPod ? 2 : 1) * -pseudopodTipBonus;
             } else if(update.opRemove()){
                 // Make less likely
-                return pseudopodTipBonus;
+                return (closeToOwnPseudoPod ? 2 : 1) * pseudopodTipBonus;
             }
         }
     }
