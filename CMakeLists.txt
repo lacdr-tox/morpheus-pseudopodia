@@ -52,7 +52,7 @@ ELSE()
 ENDIF()
 
 SET(STDCxx11FLAG "-std=c++11")
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${STDCxx11FLAG} -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-int-in-bool-context")
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${STDCxx11FLAG} -Wno-ignored-attributes -Wno-int-in-bool-context")
 
 
 ## Switch to Release Build Mode
@@ -60,6 +60,8 @@ OPTION(MORPHEUS_RELEASE_BUNDLE "Build the release bundle of morpheus only." OFF)
 # IF (MORPHEUS_RELEASE_BUNDLE) 
 # 	SET( CMAKE_BUILD_TYPE "RELEASE" )
 # ENDIF()
+
+OPTION(MORPHEUS_TESTS "Enable testing" ON)
 
 OPTION(MORPHEUS_STATIC_BUILD "Create a statically linked binary." OFF)
 IF (MORPHEUS_STATIC_BUILD)
@@ -100,6 +102,11 @@ IF(MORPHEUS_GUI)
 	ADD_SUBDIRECTORY( gui )
 ENDIF()
 
+IF( MORPHEUS_TESTS )
+	enable_testing()
+	ADD_SUBDIRECTORY( tests )
+ENDIF()
+
 INCLUDE(InstallRequiredSystemLibraries)
 
 
@@ -132,8 +139,6 @@ SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md")
 
 SET(CPACK_STRIP_FILES "${M_EXECUTABLES}")
 #SET(CPACK_SOURCE_STRIP_FILES "")
-
-
 
 
 

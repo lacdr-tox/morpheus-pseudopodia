@@ -75,6 +75,7 @@ public:
 	bool inside(const VINT& a) const;
 	/// Solve periodic boundaries, i.e. map @param a into the lattice. Returns FALSE if this is not possible.
 	bool resolve(VINT& a) const;
+	bool resolve(VDOUBLE& a) const;
 	bool resolve(VINT& a, Boundary::Codes& b) const;
 	
 	/// Read the topological BCs defined within the lattice. Valid values are -x,x,+x for x, y, and z respectively.
@@ -131,7 +132,7 @@ protected:
 inline bool Lattice::resolve ( VINT& a) const {
 	if ( a.z<0 || a.z >= _size.z ) {
 		if ( boundaries[Boundary::pz] == Boundary::periodic  ) {
-			 a.z = MOD(a.z,_size.z);
+			 a.z = pmod(a.z,_size.z);
 		}
 		else {
 			return false;
@@ -139,7 +140,7 @@ inline bool Lattice::resolve ( VINT& a) const {
 	}
 	if ( a.y<0 or a.y >= _size.y ) {
 		if (boundaries[Boundary::py] == Boundary::periodic ) {
-			a.y = MOD(a.y,_size.y); 
+			a.y = pmod(a.y,_size.y); 
 		}
 		else {
 			return false;
@@ -147,7 +148,7 @@ inline bool Lattice::resolve ( VINT& a) const {
 	}
 	if ( a.x<0 or a.x >= _size.x ) {
 		if ( boundaries[Boundary::px] == Boundary::periodic ) {
-			a.x = MOD(a.x,_size.x);
+			a.x = pmod(a.x,_size.x);
 		}
 		else {
 			return false;
@@ -157,11 +158,39 @@ inline bool Lattice::resolve ( VINT& a) const {
 	return true;
 }
 
+inline bool Lattice::resolve ( VDOUBLE& a) const {
+	if ( a.z<0 || a.z >= _size.z ) {
+		if ( boundaries[Boundary::pz] == Boundary::periodic  ) {
+			 a.z = pmod(a.z, double(_size.z));
+		}
+		else {
+			return false;
+		}
+	}
+	if ( a.y<0 or a.y >= _size.y ) {
+		if (boundaries[Boundary::py] == Boundary::periodic ) {
+			a.y = pmod(a.y, double(_size.y)); 
+		}
+		else {
+			return false;
+		}
+	}
+	if ( a.x<0 or a.x >= _size.x ) {
+		if ( boundaries[Boundary::px] == Boundary::periodic ) {
+			a.x = pmod(a.x, double(_size.x));
+		}
+		else {
+			return false;
+		}
+	}
+	
+	return true;
+}
 
 inline bool Lattice::orth_resolve ( VDOUBLE& a) const {
 	if ( a.z<0 || a.z >= _size.z ) {
 		if ( boundaries[Boundary::pz] == Boundary::periodic  ) {
-			 a.z = MOD(a.z,double(_size.z));
+			 a.z = pmod(a.z,double(_size.z));
 		}
 		else {
 			return false;
@@ -171,8 +200,8 @@ inline bool Lattice::orth_resolve ( VDOUBLE& a) const {
 		double orth_y_size = sin_60 *_size.y;
 		if ( a.y<0 or a.y >= orth_y_size ) {
 			if (boundaries[Boundary::py] == Boundary::periodic) {
-				a.x -= double(_size.y) * 0.5 * DIV(a.y,orth_y_size);
-				a.y  = MOD(a.y,double(orth_y_size));
+				a.x -= double(_size.y) * 0.5 * pdiv(a.y,orth_y_size);
+				a.y  = pmod(a.y,double(orth_y_size));
 			}
 			else {
 				return false;
@@ -182,7 +211,7 @@ inline bool Lattice::orth_resolve ( VDOUBLE& a) const {
 	else {
 		if ( a.y<0 or a.y >= _size.y ) {
 			if (boundaries[Boundary::py] == Boundary::periodic) {
-				a.y = MOD(a.y,double(_size.y));
+				a.y = pmod(a.y,double(_size.y));
 			}
 			else {
 				return false;
@@ -191,7 +220,7 @@ inline bool Lattice::orth_resolve ( VDOUBLE& a) const {
 	}
 	if ( a.x<0 or a.x >= _size.x ) {
 		if ( boundaries[Boundary::px] == Boundary::periodic ) {
-			a.x = MOD(a.x,double(_size.x));
+			a.x = pmod(a.x,double(_size.x));
 		}
 		else {
 			return false;
@@ -206,7 +235,7 @@ inline bool Lattice::resolve ( VINT& a, Boundary::Codes& b) const {
 // try to solve potential topological boundaries
 	if ( a.z<0 || a.z >= _size.z ) {
 		if ( boundaries[Boundary::pz] == Boundary::periodic  ) {
-			 a.z = MOD(a.z,_size.z);
+			 a.z = pmod(a.z,_size.z);
 		}
 		else if (a.z<0) {
 			b = Boundary::mz;
@@ -219,7 +248,7 @@ inline bool Lattice::resolve ( VINT& a, Boundary::Codes& b) const {
 	}
 	if ( a.y<0 or a.y >= _size.y ) {
 		if (boundaries[Boundary::py] == Boundary::periodic ) {
-			a.y = MOD(a.y,_size.y); 
+			a.y = pmod(a.y,_size.y); 
 		}
 		else if (a.y<0) {
 			b = Boundary::my;
@@ -232,7 +261,7 @@ inline bool Lattice::resolve ( VINT& a, Boundary::Codes& b) const {
 	}
 	if ( a.x<0 or a.x >= _size.x ) {
 		if ( boundaries[Boundary::px] == Boundary::periodic ) {
-			a.x = MOD(a.x,_size.x);
+			a.x = pmod(a.x,_size.x);
 		}
 		else if (a.x<0) {
 			b = Boundary::mx;

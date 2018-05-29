@@ -43,7 +43,7 @@ vector<CPM::CELL_ID> InitHexLattice::run(CellType* ct)
 	
 	for(int x=0; x<num_cells_x; x++){
 		for(int y=0; y<num_cells_y; y++){
-			VDOUBLE center;
+			VINT center;
 			if( mode() == InitHexLattice::Direction::LEFT )
 				center = origin + VINT(16*x-6*y, (12-1)*y+x, 0);
 			else
@@ -78,7 +78,7 @@ vector<CPM::CELL_ID> InitHexLattice::run(CellType* ct)
 				center.y += getRandom01()*randomness();
 			}
 			cout << x << "\t" << y << " --> \t" << center << endl;
-			CPM::CELL_ID id1 = makeCell(center, nbh, ct);
+			CPM::CELL_ID id1 = makeCell(VINT(center), nbh, ct);
 			cells.push_back(id1);
 		}
 	}
