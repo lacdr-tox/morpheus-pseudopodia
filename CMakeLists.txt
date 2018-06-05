@@ -61,7 +61,7 @@ OPTION(MORPHEUS_RELEASE_BUNDLE "Build the release bundle of morpheus only." OFF)
 # 	SET( CMAKE_BUILD_TYPE "RELEASE" )
 # ENDIF()
 
-OPTION(MORPHEUS_TESTS "Enable testing" ON)
+OPTION(MORPHEUS_TESTS "Enable testing" OFF)
 
 OPTION(MORPHEUS_STATIC_BUILD "Create a statically linked binary." OFF)
 IF (MORPHEUS_STATIC_BUILD)

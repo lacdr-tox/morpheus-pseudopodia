@@ -105,28 +105,7 @@ string join(const std::multiset<string>& strings, string delim);
 string& lower_case(string& a);
 string lower_case(const char* a);
 
-template <class T> 
-string to_str(T value, int prec=-1) {
-	static stringstream s("");
-	static bool init=false;
-	if (!init)  { s.precision(2); init=true; }
-	else  { s.clear(); s.str("");}
-	if (prec >= 0 ) s.precision(prec);
-	s << value; 
-	return s.str();
-}
 
-
-string to_str(int value, int width);
-//string to_str(uint value, int width);
-string to_str(bool value, int prec=-1);
-
-template <class T>
-const char* to_cstr(T value, int prec=-1) {
-	static string tmp = "";
-	tmp = to_str(value,prec);
-	return tmp.c_str();
-}
 // template <class T>
 // bool from_cstr(T value, const char* cstr) {
 // 	stringstream s(cstr);

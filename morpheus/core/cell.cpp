@@ -147,7 +147,7 @@ XMLNode Cell::saveToXML() const {
 	}
 
  	if (track_nodes) {
- 		xCNode.addChild("Center").addText( to_cstr(getCenter(),6) );
+ 		xCNode.addChild("Center").addText( to_cstr(getCenter()) );
  		ostringstream node_data;
  		for (Nodes::const_iterator inode = nodes.begin(); inode != nodes.end(); inode++ )
  		{

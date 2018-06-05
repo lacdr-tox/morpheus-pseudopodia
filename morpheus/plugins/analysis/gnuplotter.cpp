@@ -1209,7 +1209,7 @@ void Gnuplotter::analyse(double time) {
 // 	Gnuplot& command = *gnuplot;
 	
 	if( log_plotfiles ) {
-		string time_id = (file_numbering() == FileNumbering::TIME) ? SIM::getTimeName() :  to_str(time/timeStep(),4);
+		string time_id = (file_numbering() == FileNumbering::TIME) ? SIM::getTimeName() :  to_str(int(time/timeStep()));
 		gnuplot->setLogfile(string("gnuplot_commands_") + (to_str(instance_id) + "_") + time_id + ".gp");
 	}
 

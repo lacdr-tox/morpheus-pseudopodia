@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "vec.h"
+#include "core/vec.h"
 
 TEST (VEC, CONVERSION) {
 	bool vint_to_vdouble = std::is_convertible<VINT, VDOUBLE>::value;
@@ -65,12 +65,9 @@ TEST (VDOUBLE, IDX_OPERATOR) {
 	EXPECT_EQ( VDOUBLE(1.5,2.5,3.5)[0] , 1.5 );
 	EXPECT_EQ( VDOUBLE(1.5,2.5,3.5)[1] , 2.5 );
 	EXPECT_EQ( VDOUBLE(1.5,2.5,3.5)[2] , 3.5 );
+	EXPECT_EQ( VINT(1,2,3)[0] , 1 );
+	EXPECT_EQ( VINT(1,2,3)[1] , 2 );
+	EXPECT_EQ( VINT(1,2,3)[2] , 3 );
 }
 #endif
 
-
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}

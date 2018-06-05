@@ -131,7 +131,7 @@ string DependencyGraph::tslDotName(TimeStepListener* tsl)
 {
 	string ts;
 	if (tsl->timeStep()>0)
-		ts =  to_str(tsl->timeStep(),4);
+		ts =  to_str(tsl->timeStep());
 	else 
 		ts = "0";
 	

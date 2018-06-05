@@ -98,66 +98,66 @@ bool setXMLAttribute(XMLNode XML_base, string path, const string& value) {
 	return true;
 }
 
-template<>
-bool getXMLAttribute<string>(const XMLNode XML_base, string path, string& value, bool verbose) {
+// template<>
+// bool getXMLAttribute<string>(const XMLNode XML_base, string path, string& value, bool verbose) {
+// 
+// 	string attribute;
+// 	attribute=strip_last_token(path,"/");
+// 	if (attribute.empty()) return false;
+// 	if (verbose) {
+// 		cout << "getXMLAttribute: seeking for ";
+// 		if (path.empty()) cout << XML_base.getName();
+// 		else cout << path;
+// 		cout << "->" << attribute;
+// 	}
+// 
+// 	XMLNode xNode;
+// 	if (path.length()>0) xNode = getXMLNode(XML_base, path);
+// 	else xNode = XML_base;
+// // 	if (xNode.isEmpty()) { if (verbose) cout << endl; return false; }
+// 
+// 	XMLCSTR str_val;
+// 	if (lower_case(attribute) == "text") {
+// 		if (xNode.nText()) str_val = xNode.getText(); 
+// 		else { if (verbose) cout << " .. not found" << endl; return false;}
+// 	}
+// 	else if (xNode.isAttributeSet(attribute.c_str()) ) str_val = xNode.getAttribute(attribute.c_str());
+// 	else { if (verbose) cout << " .. not found" << endl; return false; }
+// 	value = string(str_val);
+// 	if (path.length()==0) path=XML_base.getName();
+// 	if (verbose) cout << ": " << value << endl;
+// 	return true;
+// }
 
-	string attribute;
-	attribute=strip_last_token(path,"/");
-	if (attribute.empty()) return false;
-	if (verbose) {
-		cout << "getXMLAttribute: seeking for ";
-		if (path.empty()) cout << XML_base.getName();
-		else cout << path;
-		cout << "->" << attribute;
-	}
-
-	XMLNode xNode;
-	if (path.length()>0) xNode = getXMLNode(XML_base, path);
-	else xNode = XML_base;
-// 	if (xNode.isEmpty()) { if (verbose) cout << endl; return false; }
-
-	XMLCSTR str_val;
-	if (lower_case(attribute) == "text") {
-		if (xNode.nText()) str_val = xNode.getText(); 
-		else { if (verbose) cout << " .. not found" << endl; return false;}
-	}
-	else if (xNode.isAttributeSet(attribute.c_str()) ) str_val = xNode.getAttribute(attribute.c_str());
-	else { if (verbose) cout << " .. not found" << endl; return false; }
-	value = string(str_val);
-	if (path.length()==0) path=XML_base.getName();
-	if (verbose) cout << ": " << value << endl;
-	return true;
-}
-
-template <>
-bool getXMLAttribute<bool>(const XMLNode XML_base, string path, bool& value, bool verbose) {
-	
-	string attribute = strip_last_token(path,"/");
-	if (attribute.empty()) return false;
-	if (verbose) {
-		cout << "getXMLAttribute: seeking for ";
-		if (path.empty()) cout << XML_base.getName();
-		else cout << path;
-		cout << "->" << attribute;
-	}
-
-	XMLNode xNode;
-	if (path.length()>0) xNode = getXMLNode(XML_base, path);
-	else xNode = XML_base;
-	
-	XMLCSTR str_val;
-	if (lower_case(attribute) == "text") {
-		if (xNode.nText()) str_val = xNode.getText(); 
-		else { if (verbose) cout << " .. not found" << endl; return false;}
-	}
-	else if (xNode.isAttributeSet(attribute.c_str()) ) str_val = xNode.getAttribute(attribute.c_str());
-	else { if (verbose) cout << " .. not found" << endl; return false; }
-	// TODO does not allow any spaces in front or after the value
-	if ( ! strcmp(str_val,"1") || ! strcmp(str_val,"true") )  { value = true; if (verbose) { cout << ": true" << endl;}  return true;};
-	if ( ! strcmp(str_val,"0") || ! strcmp(str_val,"false") ) { value= false; if (verbose) { cout << ": false" << endl;} return true;};
-	cout << " error converting value" << endl;
-	return false;
-}
+// template <>
+// bool getXMLAttribute<bool>(const XMLNode XML_base, string path, bool& value, bool verbose) {
+// 	
+// 	string attribute = strip_last_token(path,"/");
+// 	if (attribute.empty()) return false;
+// 	if (verbose) {
+// 		cout << "getXMLAttribute: seeking for ";
+// 		if (path.empty()) cout << XML_base.getName();
+// 		else cout << path;
+// 		cout << "->" << attribute;
+// 	}
+// 
+// 	XMLNode xNode;
+// 	if (path.length()>0) xNode = getXMLNode(XML_base, path);
+// 	else xNode = XML_base;
+// 	
+// 	XMLCSTR str_val;
+// 	if (lower_case(attribute) == "text") {
+// 		if (xNode.nText()) str_val = xNode.getText(); 
+// 		else { if (verbose) cout << " .. not found" << endl; return false;}
+// 	}
+// 	else if (xNode.isAttributeSet(attribute.c_str()) ) str_val = xNode.getAttribute(attribute.c_str());
+// 	else { if (verbose) cout << " .. not found" << endl; return false; }
+// 	// TODO does not allow any spaces in front or after the value
+// 	if ( ! strcmp(str_val,"1") || ! strcmp(str_val,"true") )  { value = true; if (verbose) { cout << ": true" << endl;}  return true;};
+// 	if ( ! strcmp(str_val,"0") || ! strcmp(str_val,"false") ) { value= false; if (verbose) { cout << ": false" << endl;} return true;};
+// 	cout << " error converting value" << endl;
+// 	return false;
+// }
 
 bool setXMLAttribute(XMLNode XML_base, string path, const char* value) {
 	string attribute=strip_last_token(path,"/");

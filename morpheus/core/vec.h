@@ -15,6 +15,7 @@
 // #define HAVE_VEC_INDEX_OPRT
 
 #include "config.h"
+#include "traits.h"
 #include <cmath>
 #include <iostream>
 #include <functional>
@@ -278,6 +279,25 @@ struct CompareAngle {
 	}
 };
 
+
+template <class T>
+struct TypeInfo<_V<T> > {
+	typedef const _V<T>& Return;
+	typedef _V<T> SReturn;
+	typedef const _V<T>& Parameter; 
+	typedef _V<T>& Reference; 
+	static SReturn fromString(const string& val) {
+		stringstream s(val);
+		_V<T>  ret;
+		s >> ret;
+		if (s.fail()) { throw string("Unable to read value from string \'") + val + "'";} 
+		return ret; 
+	}
+	static string toString(Parameter val) {
+		return TypeInfo<T>::toString(val.x) + "," + TypeInfo<T>::toString(val.y) + "," + TypeInfo<T>::toString(val.z);
+	}
+	static const string& name() { static const string n("VDouble"); return n;};
+};
 
 
 #endif //VECTOR_Types

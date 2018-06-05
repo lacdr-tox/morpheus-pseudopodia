@@ -4,6 +4,10 @@
 
 // Global type dependent switches and helper functions
 #include "string_functions.h"
+#include <type_traits>
+#include <sstream>
+
+using std::to_string;
 
 template <class T>
 struct TypeInfo {
@@ -11,8 +15,20 @@ struct TypeInfo {
 	typedef T SReturn; 
 	typedef const T& Parameter; 
 	typedef T& Reference; 
-	static SReturn fromString(const string& val) { stringstream s(val); T ret; s >> ret; if (s.fail()) { throw string("Unable to read value from string \'") + val + "'";} return ret; }
-	static const string& name() { static const string n(""); return n; };
+	static SReturn fromString(const string& val) {
+		stringstream s(val);
+		T ret;
+		s >> ret;
+		if (s.fail()) { throw string("Unable to read ") + name() + " value from string \'" + val + "'"; }
+		return ret;
+	}
+	static string toString(Parameter val) {
+		stringstream s;
+		s.precision(6);
+		s << val;
+		return s.str();
+	}
+	static const string& name() { static const string n(typeid(T).name()); return n; };
 };
 
 
@@ -22,7 +38,18 @@ struct TypeInfo<double> {
 	typedef double SReturn;
 	typedef double Parameter; 
 	typedef double& Reference; 
-	static SReturn fromString(const string& val) { stringstream s(val); double ret; s >> ret; if (s.fail()) { throw string("Unable to read value from string \'") + val + "'";} return ret; }
+	static SReturn fromString(const string& val) {
+		stringstream s(val); 
+		double ret; 
+		s >> ret; 
+		if (s.fail()) { throw string("Unable to read ") + name() + " value from string \'" + val + "'";}
+		return ret; 
+	}
+	static string toString(Parameter val) {
+		string s(20,' ');
+		s.resize(snprintf(&s[0],20,"%.10g",val));
+		return s;
+	}
 	static const string& name() { static const string n("Double"); return n;};
 };
 
@@ -32,7 +59,19 @@ struct TypeInfo<float> {
 	typedef float SReturn;
 	typedef float Parameter; 
 	typedef float& Reference; 
-	static SReturn fromString(const string& val) { stringstream s(val); double ret; s >> ret; if (s.fail()) { throw string("Unable to read value from string \'") + val + "'";} return ret; }
+	static SReturn fromString(const string& val) { 
+		stringstream s(val); 
+		float ret; 
+		s >> ret; 
+		if (s.fail()) { throw string("Unable to read ") + name() + " value from string \'" + val + "'"; }
+		return ret; 
+	}
+	static string toString(Parameter val) {
+		string s(20,' ');
+		s.resize(snprintf(&s[0],20,"%.6g",val));
+		return s;
+		
+	}
 	static const string& name() { static const string n("Float"); return n;};
 };
 
@@ -42,7 +81,13 @@ struct TypeInfo<bool> {
 	typedef bool SReturn;
 	typedef bool Parameter; 
 	typedef bool& Reference; 
-	static bool fromString(string val) { lower_case(val); if ( val == "true" ) return true; else if ( val == "false" ) return false; else throw string("Unable to read value from string \'") + val + "'"; }
+	static bool fromString(string val) { 
+		lower_case(val); 
+		if ( val == "true"  || val == "1" ) return true;
+		if ( val == "false" || val == "0" ) return false;
+		throw string("Unable to read ") + name() + " value from string \'" + val + "'";
+	}
+	static string toString(Parameter val) { return val ? string("true"):string("false"); }
 	static const string& name() { static const string n("Boolean"); return n;};
 };
 
@@ -52,7 +97,8 @@ struct TypeInfo<string> {
 	typedef string SReturn;
 	typedef const string& Parameter; 
 	typedef string& Reference; 
-	static string fromString(string val) { return val; }
+	static string fromString(Parameter val) { return val; }
+	static string toString(Parameter val) { return val; }
 	static const string& name() { static const string n("String"); return n;};
 };
 
@@ -75,6 +121,33 @@ struct TypeInfo<deque<double>> {
 		}
 		return ret;
 	}
+	static string toString(Parameter val) {
+		string ret;
+		auto it=val.begin();
+		if (it==val.end())
+			return ret;
+		while(1) {
+			ret += TypeInfo<double>::toString(*it);
+			it++;
+			if (it==val.end()) break;
+			ret += ", ";
+		}
+		return ret;
+	}
 	static const string& name() { static const string n("Queue"); return n;};
 };
+
+template <class T>
+string to_str(const T& value) {
+	return TypeInfo<T>::toString(value);
+}
+
+template <class T>
+const char* to_cstr(const T& value) {
+	static string tmp = "";
+	tmp = to_str(value);
+	return tmp.c_str();
+}
 #endif // TRAITS_H
+
+

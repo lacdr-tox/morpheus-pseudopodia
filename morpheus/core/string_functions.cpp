@@ -41,18 +41,20 @@ istream& operator >> (istream& in, bool& b){
 }
 
 
-string to_str(int value, int width) {
-	static stringstream s("");
-	static bool init=false;
-	if (!init)  { s.fill('0'); init=true; }
-	else  { s.clear(); s.str("");}
-	if (width>=0)
-		s.width(width);
-	else 
-		s.width(0);
-	s << value; 
-	return s.str();
-}
+// string to_str(int value, int width) {
+// 	static string s;
+// 	s.resize()
+// 	snprintf()
+// 	static bool init=false;
+// 	if (!init)  { s.fill('0'); init=true; }
+// 	else  { s.clear(); s.str("");}
+// 	if (width>=0)
+// 		s.width(width);
+// 	else 
+// 		s.width(0);
+// 	s << value; 
+// 	return s.str();
+// }
 
 /*string to_str(uint value, int width) {
 	static stringstream s("");
@@ -66,11 +68,11 @@ string to_str(int value, int width) {
 	s << value; 
 	return s.str();
 }*/
-
+/*
 string to_str(bool value, int prec) {
 	if (value) return "true";
 	return "false";
-}
+}*/
 
 string strip_last_token(string& s, const string& del) {
 	string token;
