@@ -15,6 +15,7 @@
 
 #include "config.h"
 #include "string_functions.h"
+#include "traits.h"
 #include "xmlParser/xmlParser.h"
 
 #include <zlib.h>
@@ -72,25 +73,18 @@ bool getXMLAttribute(const XMLNode XML_base, string path, T& value, bool verbose
 	else if (xNode.isAttributeSet(attribute.c_str()) ) str_val = xNode.getAttribute(attribute.c_str());
 	else { if (verbose) cout << " .. not found" << endl; return false; }
 
-	stringstream k(str_val);
-	T tmp;
-	k >> tmp;
-	if (k.fail()) {
-		if (verbose) cout << "failure during value conversion" << k.str() << endl; 
-		return false; 
-		
-	}
-	if (path.length()==0) path=XML_base.getName();
-	if (verbose) cout << ": " << tmp << endl;
+	T tmp = TypeInfo<T>::fromString(str_val);
+
+	if (verbose) cout << ": " << TypeInfo<T>::toString(tmp) << endl;
 	value=tmp;
 	return true;
 }
 
-template <>
-bool getXMLAttribute<string>(const XMLNode XML_base, string path, string& value, bool verbose);
-
-template <>
-bool getXMLAttribute<bool>(const XMLNode XML_base, string path, bool& value, bool verbose);
+// template <>
+// bool getXMLAttribute<string>(const XMLNode XML_base, string path, string& value, bool verbose);
+// 
+// template <>
+// bool getXMLAttribute<bool>(const XMLNode XML_base, string path, bool& value, bool verbose);
 
 template <class T>
 bool setXMLAttribute(XMLNode XML_base, string path, const T& value) {

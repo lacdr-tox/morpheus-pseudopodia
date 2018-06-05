@@ -11,7 +11,7 @@
   * Multiple **Population** per CellType are now supported
   * **GnuPlotter** layout adjustments to efficiently support large lattices
   * Binary **VTK** export (performance)
-
+  * Full support for snapshoting simulation states
   * Removed any remains of time / space units
 
 ### GUI
@@ -27,7 +27,7 @@
   * **Gnuplotter** and **Logger** now deal better with sub and superscript in symbol names or descriptions
   * Parallelize diffusion for **Fields** in domains
   * **Field boundaries** can be expressions
-
+  * Add **GoogleTest** as testing framework
 
 ### others
   * Tons of compiler compatibility fixes

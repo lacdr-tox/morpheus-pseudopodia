@@ -48,7 +48,7 @@ void CellDeath::executeTimeStep()
 				remove_cell = true;
 		}
 		else {
-			bool about_to_die = condition(SymbolFocus(cell_id, CPM::getCell( cell_id ).getCenterL()) ) >= 1.0;
+			bool about_to_die = condition(SymbolFocus(cell_id, VINT(CPM::getCell( cell_id ).getCenterL())) ) >= 1.0;
 			if (about_to_die) {
 				//cout << "Triggered cell death for cell " << cell_id << " at " << currentTime() << " due to condition" << endl;
 				if (mode == LYSIS) {

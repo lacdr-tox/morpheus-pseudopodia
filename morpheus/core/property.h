@@ -340,7 +340,7 @@ void Container<T>::loadFromXML(XMLNode node, Scope* scope)
 template <class T>
 XMLNode Container<T>::saveToXML() const {
 	if (mode == Mode::Variable) {
-		stored_node.updateAttribute("value",to_cstr(static_pointer_cast<VariableSymbol<T>>(_accessor)->value));
+		stored_node.updateAttribute("value",TypeInfo<T>::toString(static_pointer_cast<VariableSymbol<T>>(_accessor)->value).c_str());
 	}
 	return stored_node;
 };

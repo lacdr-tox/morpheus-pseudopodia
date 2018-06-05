@@ -140,7 +140,7 @@ public:
 	XMLNode storeData() const override { 
 		auto node = XMLNode::createXMLTopNode(XMLDataName().c_str());
 		node.addAttribute("symbol-ref", symbol().c_str());
-		node.addAttribute("value",to_cstr(value));
+		node.addAttribute("value",TypeInfo<T>::toString(value).c_str());
 // 		node.addText(to_cstr(value));
 		return node;
 	};

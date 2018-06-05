@@ -216,7 +216,7 @@ void FieldPainter::plotData(ostream& out)
 	VINT size = SIM::lattice().size();
 	VINT out_size = size / coarsening();
 	
-	VINT view_size = Gnuplotter::PlotSpec::size();
+	VINT view_size(Gnuplotter::PlotSpec::size());
 	VDOUBLE view_out_size = VDOUBLE(view_size) / double(coarsening());
 	
 	string xsep(" "), ysep("\n");
@@ -281,7 +281,7 @@ void FieldPainter::plotData(ostream& out)
 		
 		if (is_hexagonal) {
 			for (int x = 0; x < view_out_size.x*2; ++x) {
-				int x_l = int(MOD((0.5*x - 0.5*out_pos.y)+0.01, view_out_size.x));
+				int x_l = int(pmod((0.5*x - 0.5*out_pos.y)+0.01, view_out_size.x));
 				if (x_l<0 || x_l>= out_data.size())
 					out << "Nan" << "\t";
 				else
@@ -435,7 +435,7 @@ void LabelPainter::plotData(ostream& out)
 			
 			string val = value.get(focus);
 			if ( ! val.empty() ) {
-				VINT centerl = focus.cell().getCenterL();
+				VDOUBLE centerl = focus.cell().getCenterL();
 				lattice.resolve (centerl);
 				VDOUBLE center = ( lattice.to_orth(centerl) + (CPM::isEnabled() ? VDOUBLE(1.0,1.0,0): VDOUBLE(0.1,0.0,0.0) ) ) % orth_lattice_size;
 				
@@ -737,7 +737,7 @@ void CellPainter::writeCellLayer(ostream& out)
 		for (int y = 0; y < size.y; ++y) {
 			for (int x = 0; x < size.x; ++x) {
 				if(is_hexagonal)
-					out << MOD(x+double(y)/2,double(size.x)) << "\t" << double(y)*sin(M_PI/3);
+					out << pmod(x+double(y)/2,double(size.x)) << "\t" << double(y)*sin(M_PI/3);
 				else
 					out << x << "\t" << y; 
 				if (isnan(view[y][x]) || view[y][x] == transparency_value)
@@ -762,7 +762,7 @@ void CellPainter::writeCellLayer(ostream& out)
 							out << "Nan" << "\t";
 						}
 						else {
-							int x_l = int(MOD(0.5*x - 0.5*y_l+0.01,double(size.x)));
+							int x_l = int(pmod(0.5*x - 0.5*y_l+0.01,double(size.x)));
 							if (isnan(view[y_l][x_l]) || view[y_l][x_l] == transparency_value)
 								out << "Nan" << "\t";
 							else
@@ -827,8 +827,8 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 	vector<VDOUBLE> snippet_end_offset;
 	for  ( uint i=0; i<orth_neighbors.size(); i++) {
 			// those offsets serve all lattice structures
-			snippet_begin_offset.push_back((orth_neighbors[i] + orth_neighbors[MOD(int(i)+1,orth_neighbors.size())]) / plane_neighbors.size() * 2.0);
-			snippet_end_offset.push_back((orth_neighbors[i] + orth_neighbors[MOD(int(i)-1,orth_neighbors.size())]) / plane_neighbors.size() * 2.0);
+			snippet_begin_offset.push_back((orth_neighbors[i] + orth_neighbors[pmod(int(i)+1,orth_neighbors.size())]) / plane_neighbors.size() * 2.0);
+			snippet_end_offset.push_back((orth_neighbors[i] + orth_neighbors[pmod(int(i)-1,orth_neighbors.size())]) / plane_neighbors.size() * 2.0);
 	}
 
 	vector<boundarySegment> snippets;
@@ -1209,7 +1209,7 @@ void Gnuplotter::analyse(double time) {
 // 	Gnuplot& command = *gnuplot;
 	
 	if( log_plotfiles ) {
-		string time_id = (file_numbering() == FileNumbering::TIME) ? SIM::getTimeName() :  to_str(time/timeStep(),4);
+		string time_id = (file_numbering() == FileNumbering::TIME) ? SIM::getTimeName() :  to_str(int(time/timeStep()));
 		gnuplot->setLogfile(string("gnuplot_commands_") + (to_str(instance_id) + "_") + time_id + ".gp");
 	}
 

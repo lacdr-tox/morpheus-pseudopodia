@@ -163,15 +163,15 @@ vector<Boundary::Type> Lattice::get_boundary_types() const {
 VINT Lattice::node_distance(const VINT& a, const VINT& b) const {
 	VINT c(a-b);
 	if (boundaries[Boundary::px] == Boundary::periodic && (abs(2*c.x) > _size.x)) {
-		c.x= MOD(c.x, _size.x);
+		c.x= pmod(c.x, _size.x);
 		if (c.x > _size.x - c.x) c.x -= _size.x;
 	}
 	if (boundaries[Boundary::py] == Boundary::periodic && (abs(2*c.y) > _size.y)) {
-		c.y= MOD(c.y, _size.y);
+		c.y= pmod(c.y, _size.y);
 		if (c.y > _size.y - c.y) c.y -= _size.y;
 	}
 	if (boundaries[Boundary::pz] == Boundary::periodic && (abs(2*c.z) > _size.z)) {
-		c.z= MOD(c.z, _size.z);
+		c.z= pmod(c.z, _size.z);
 		if (c.z > _size.z - c.z) c.z -= _size.z;
 	}
 	return c;
