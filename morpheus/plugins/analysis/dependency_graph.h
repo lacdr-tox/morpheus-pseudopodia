@@ -47,7 +47,7 @@ class DependencyGraph: public AnalysisPlugin {
 		stringstream definitions;
 		vector<int> tsl;
 	};
-	vector<ScopeInfo> scope_info;
+	vector< unique_ptr<ScopeInfo> > scope_info;
 	set<string> links;
 	
 	const map<string, string> graphstyle = {

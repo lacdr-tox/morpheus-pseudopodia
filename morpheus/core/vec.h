@@ -34,14 +34,14 @@
 
 inline int pmod(int a, int b) { a%=b; return (a<0) ? a+b : a; }
 inline double pmod(double a, double b) { double k=fmod(a,b); return (k<0) ? k+b : k; }
-[[deprecated]] inline int MOD(int a, int b) { a%=b; return (a<0) ? a+b : a; }
-[[deprecated]] inline double MOD(double a, double b) { double k=fmod(a,b); return (k<0) ? k+b : k;	}
+DEPRECATED inline int MOD(int a, int b) { a%=b; return (a<0) ? a+b : a; }
+DEPRECATED inline double MOD(double a, double b) { double k=fmod(a,b); return (k<0) ? k+b : k;	}
 
 
 constexpr int pdiv(const int a, const int b) { return   (a>=0) ? a/b : (a/b-(a%b<0)); } // should be the same as int(floor(double(a)/b))
 inline double pdiv(double a, double b){ return floor(a/b);}
-[[deprecated]] constexpr int DIV(const int a, const int b) { return   (a>=0) ? a/b : (a/b-(a%b<0)); } // should be the same as int(floor(double(a)/b))
-[[deprecated]] inline double DIV(double a, double b) { return floor(a/b);}
+DEPRECATED constexpr int DIV(const int a, const int b) { return   (a>=0) ? a/b : (a/b-(a%b<0)); } // should be the same as int(floor(double(a)/b))
+DEPRECATED inline double DIV(double a, double b) { return floor(a/b);}
 // inline double DIV(double a, int b){ return floor(a/b);}
 
 // 	int pow(int a, int b) { int r=1; for (; b>0; --b) r*=a; return r;}

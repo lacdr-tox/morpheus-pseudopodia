@@ -71,7 +71,7 @@ public:
 	bool writable(const VINT& a) const;
 	bool writable_resolve(VINT& a) const;
 	bool writable_resolve(VINT& a, Boundary::Type& b) const;
-	[[deprecated]] T& get_writable(VINT a);
+	DEPRECATED T& get_writable(VINT a);
 	valarray<T> getData() const;
 	Boundary::Type getBoundaryType(Boundary::Codes code) const;
 	void set_boundary_value(Boundary::Codes code, value_type a) { boundary_values[code] = make_shared<DefaultValueReader>(a); };

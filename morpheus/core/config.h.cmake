@@ -43,13 +43,29 @@ typedef unsigned int uint;
 
 using namespace std;
 
-// fix missing make_unique in C++11
 #if __cplusplus == 201103L
-template<typename T, typename ...Args>
-std::unique_ptr<T> make_unique( Args&& ...args )
-{
-    return std::unique_ptr<T>( new T( std::forward<Args>(args)... ) );
-}
+	
+	// fix missing make_unique in C++11
+	template<typename T, typename ...Args>
+	std::unique_ptr<T> make_unique( Args&& ...args )
+	{
+		return std::unique_ptr<T>( new T( std::forward<Args>(args)... ) );
+	}
+
+	#if defined(__GNUC__) || defined(__clang__)
+		#define DEPRECATED __attribute__ ((deprecated))
+	#elif defined(_MSC_VER)
+		#define DEPRECATED __declspec(deprecated)
+	#else
+		#pragma message("WARNING: You need to implement DEPRECATED for this compiler")
+		#define DEPRECATED
+	#endif
+
+#elif __cplusplus == 201402L
+	#define DEPRECATED [[deprecated]]
+#elif __cplusplus == 201704L
+	#define DEPRECATED [[deprecated]]
 #endif
+
 
 #endif // CONFIG_H
