@@ -42,7 +42,7 @@ public:
 	virtual void applyUpdate(const CPM::Update& update);  ///< apply the requested changes to the cell (either add or remove a node or a neighboring node has changed.
 
 	CPM::CELL_ID getID() const { return id; };                                 ///< ID that represents the cell in the cpm lattice
-	uint getName() const { return id; };                               ///< a unique name that remains constant, no matter of proliferation or cell death or differentiation. It is unique for the whole cpm.
+	const string& getName() const { return name; };                               ///< a unique name that remains constant, no matter of proliferation or cell death or differentiation. It is unique for the whole cpm.
 	CellType* getCellType() const { return celltype; };
 	const AdaptiveCPMShapeTracker& currentShape() const { return shape_tracker.current(); }
 	const AdaptiveCPMShapeTracker& updatedShape() const { return shape_tracker.updated(); }
@@ -82,6 +82,7 @@ public:
 	
 protected:
 	const CPM::CELL_ID id;
+	string name;
 	CellType* celltype;
 	bool track_nodes, track_shape;
 	/** container that stores the nodes occupied by a cell.

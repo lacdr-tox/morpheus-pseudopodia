@@ -268,12 +268,12 @@ protected:
 
 	// Cell populations
 	vector< CPM::CELL_ID > cell_ids;
-	struct IntitPropertyDesc {string symbol; string expression;  } ;
+	struct InitPropertyDesc {string symbol; string expression;  } ;
 	struct CellPopDesc {
 		int pop_size;
 		XMLNode xPopNode;
 		vector<CPM::CELL_ID> cells;
-		vector<IntitPropertyDesc> property_initializers;
+		vector<InitPropertyDesc> property_initializers;
 		vector< shared_ptr<Population_Initializer> > pop_initializers;
 	};
 	vector<CellPopDesc> cell_populations;
