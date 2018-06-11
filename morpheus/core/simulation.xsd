@@ -179,7 +179,8 @@ This allows the user to create populations a heterogeneous initial population. T
 		</xs:element>
 	  </xs:choice>	  
 	  <!--<xs:attribute name="volume" type="cpmUnsignedInteger"/>-->
-	  <xs:attribute name="name" type="cpmString"/>
+	  <xs:attribute name="id" type="cpmUnsignedInteger" />
+	  <xs:attribute name="name" type="cpmString" use="optional"/>
 	</xs:complexType>
 
 	<xs:simpleType name="cpmNodes">

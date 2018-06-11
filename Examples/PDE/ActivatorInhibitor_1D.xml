@@ -56,7 +56,7 @@
                 <TextOutput/>
             </Output>
             <Plots>
-                <Plot time-step="250" name="space plot">
+                <Plot time-step="250" title="space plot">
                     <Style style="lines" line-width="3.0"/>
                     <Terminal terminal="png"/>
                     <X-axis>
@@ -70,7 +70,7 @@
                         <Time mode="current"/>
                     </Range>
                 </Plot>
-                <Plot time-step="-1" name="time-space plot">
+                <Plot time-step="-1" title="time-space plot">
                     <Style style="points"/>
                     <Terminal terminal="png"/>
                     <X-axis>

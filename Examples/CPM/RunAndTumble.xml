@@ -75,7 +75,7 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
     </CPM>
     <CellPopulations>
         <Population size="1" type="amoeba">
-            <Cell name="">
+            <Cell name="1">
                 <Nodes>50,100,0</Nodes>
             </Cell>
         </Population>

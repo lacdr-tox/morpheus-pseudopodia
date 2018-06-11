@@ -90,6 +90,8 @@ void attrController::setValidator()
 		pattern = range_regex;
 	}
 	reg.setPattern(pattern);
+	if (!reg.isValid())
+		qDebug() << "Cannot compile validation pattern " << pattern;
 	val.setRegExp(reg);
 }
 

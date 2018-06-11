@@ -18,7 +18,7 @@ Graner and Glazier, Simulation of biological cell sorting using a two-dimensiona
                 <Condition boundary="y" type="periodic"/>
             </BoundaryConditions>
             <Neighborhood>
-                <Order>2.0</Order>
+                <Order>2</Order>
             </Neighborhood>
         </Lattice>
     </Space>

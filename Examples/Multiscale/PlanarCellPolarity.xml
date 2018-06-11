@@ -33,7 +33,6 @@
     <Time>
         <StartTime value="0"/>
         <StopTime value="2500"/>
-        <SaveInterval value="-1"/>
         <RandomSeed value="0"/>
         <TimeSymbol symbol="t"/>
     </Time>
