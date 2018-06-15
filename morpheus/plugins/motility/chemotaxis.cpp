@@ -42,12 +42,7 @@ double Chemotaxis::delta(const SymbolFocus& cell_focus, const CPM::Update& updat
 	
 	// get chemotactic strength of cell at position
 	// note that we need distinguish the cases of protrusion and retraction
-	double c_strength = 0.;
-	if (update.opAdd()) 
-		c_strength = strength( update.source() );
-	else if (update.opRemove())
-		c_strength = strength( update.focus()  );
-	
+	double c_strength = strength( cell_focus );
 	if ( c_strength == 0.0  ) 
 		return 0.0;
 
