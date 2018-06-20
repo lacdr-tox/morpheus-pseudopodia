@@ -280,23 +280,21 @@ struct CompareAngle {
 };
 
 
-template <class T>
-struct TypeInfo<_V<T> > {
-	typedef const _V<T>& Return;
-	typedef _V<T> SReturn;
-	typedef const _V<T>& Parameter; 
-	typedef _V<T>& Reference; 
-	static SReturn fromString(const string& val) {
-		stringstream s(val);
-		_V<T>  ret;
-		s >> ret;
-		if (s.fail()) { throw string("Unable to read value from string \'") + val + "'";} 
-		return ret; 
-	}
+template <>
+struct TypeInfo<VDOUBLE > : public TypeInfoDefault<VDOUBLE>{
 	static string toString(Parameter val) {
-		return TypeInfo<T>::toString(val.x) + "," + TypeInfo<T>::toString(val.y) + "," + TypeInfo<T>::toString(val.z);
+		return TypeInfo<double>::toString(val.x) + "," + TypeInfo<double>::toString(val.y) + "," + TypeInfo<double>::toString(val.z);
 	}
 	static const string& name() { static const string n("VDouble"); return n;};
+};
+
+
+template <>
+struct TypeInfo<VINT > : public TypeInfoDefault<VINT>{
+	static string toString(Parameter val) {
+		return TypeInfo<int>::toString(val.x) + "," + TypeInfo<int>::toString(val.y) + "," + TypeInfo<int>::toString(val.z);
+	}
+	static const string& name() { static const string n("VInt"); return n;};
 };
 
 

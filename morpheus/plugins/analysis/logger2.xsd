@@ -26,6 +26,7 @@
 			<xs:element name="Symbol" 	type="cpmLoggerSymbol"	minOccurs="1" maxOccurs="unbounded" />
 		</xs:all>
 		<xs:attribute name="force-node-granularity" type="cpmBoolean" use="optional" default="true" />
+		<xs:attribute name="exclude-medium" type="cpmBoolean" use="optional" default="true" />
 	</xs:complexType>
 	
 	<xs:complexType name="cpmLoggerSymbol">

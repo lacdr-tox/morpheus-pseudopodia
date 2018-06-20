@@ -91,7 +91,7 @@ void FocusRangeIterator::setIndex(int index) {
 		}
 		case FocusRangeDescriptor::IT_Cell :
 		{
-            cell = idx /*/ data->c_div*/;
+			cell = idx /*/ data->c_div*/;
 			focus.setCell(data->cell_range[cell]);
 			break;
 		}
@@ -251,6 +251,20 @@ FocusRangeIterator operator-(int n, const FocusRangeIterator& iter){
 	return FocusRangeIterator(iter) - n;
 }
 
+
+multimap<FocusRangeAxis,int> FocusRange::getBiologicalCellTypesRestriction()
+{
+	multimap<FocusRangeAxis,int> restriction;
+	auto celltypes = CPM::getCellTypes();
+	for (auto wct : celltypes) {
+		auto ct = wct.lock();
+		if (ct->isMedium())
+			continue;
+		restriction.insert( {FocusRangeAxis::CellType,ct->getID()} );
+	}
+	return restriction;
+}
+
 FocusRange::FocusRange(Granularity granularity, const Scope* scope) {
 	const CellType* ct = nullptr;
     multimap<FocusRangeAxis, int> restrictions;
@@ -293,17 +307,16 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 // 			}
 // 			cout << endl;
 		}
-		else if (restrictions.count(FocusRangeAxis::CellType) == 1) {
+		else if ( restrictions.count(FocusRangeAxis::CellType) == 1) {
 			ct = CPM::getCellTypes()[restrictions.find(FocusRangeAxis::CellType)->second].lock();
-			if (ct && !ct->isMedium()) {
-				range->spatial_restriction = FocusRangeDescriptor::RESTR_CELLPOP;
-// 				cout << "Read Restriction to celltype " << ct->getName() << endl;
-			}
-			else {
-				throw string( "Invalid CellType for FocusRangeLimits provided.");
-			}
+			range->spatial_restriction = FocusRangeDescriptor::RESTR_CELLPOP;
+// 			if (ct && !ct->isMedium()) {
+// // 				cout << "Read Restriction to celltype " << ct->getName() << endl;
+// 			}
+// 			else {
+// 				throw string( "Invalid CellType for FocusRangeLimits provided.");
+// 			}
 		}
-		
 	}
 	
 	switch (range->granularity) {
@@ -326,12 +339,22 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 			else {
 				range->data_axis.push_back(FocusRangeAxis::CELL);
 				auto celltypes = CPM::getCellTypes();
-				for (auto wct : celltypes) {
-					auto ct = wct.lock();
-					if (ct->isMedium())
-						continue;
-					auto cell_ids = ct->getCellIDs();
-					range->cell_range.insert(range->cell_range.end(),cell_ids.begin(), cell_ids.end());
+				auto ct_restr = restrictions.equal_range(FocusRangeAxis::CellType);
+				if (ct_restr.first != restrictions.end()) {
+					for (auto ct_id=ct_restr.first; ct_id!= ct_restr.second; ct_id++) {
+						auto ct = celltypes[ct_id->second].lock();
+						auto cell_ids = ct->getCellIDs();
+						range->cell_range.insert(range->cell_range.end(),cell_ids.begin(), cell_ids.end());
+					}
+				}
+				else {
+					for (auto wct : celltypes) {
+						auto ct = wct.lock();
+// 						if (ct->isMedium())
+// 							continue;
+						auto cell_ids = ct->getCellIDs();
+						range->cell_range.insert(range->cell_range.end(), cell_ids.begin(), cell_ids.end());
+					}
 				}
 			}
 			break;
@@ -359,7 +382,6 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 				range->data_axis.push_back(FocusRangeAxis::MEM_X);
 				if (range->pos_range.y>1)
 					range->data_axis.push_back(FocusRangeAxis::MEM_Y);
-				
 			}
 			else {
 				throw string("Can not iterate with membrane node granularity over global range in FocusRange");

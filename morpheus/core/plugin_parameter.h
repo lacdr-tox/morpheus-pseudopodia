@@ -424,7 +424,9 @@ public:
 	void setPartialSpecDefault(const ValType& val) {
 		partial_spec_val_set = true;
 		partial_spec_val = val;
-	} 
+	}
+	
+	void unsetPartialSpecDefault() { partial_spec_val_set = false; if (local_scope) init(local_scope);}
 	
 	string name() const { RequirementPolicy::assertDefined(); return symbol_name; }
 	const string& description() const  { RequirementPolicy::assertDefined(); return _accessor->description(); }

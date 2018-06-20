@@ -136,7 +136,6 @@ private:
 
 class FocusRange {
 public:
-	
 	/// Create a FocusRange with the given element granularity, restricted to the range of scope provided
 	FocusRange(Granularity granularity, const Scope* scope );
 	/// Create a FocusRange with the given element granularity, restricted to the cell provided
@@ -174,6 +173,9 @@ public:
 	const vector<CPM::CELL_ID>& cells() const { /*if (data->data_axis[0] == FocusRangeAxis::CELL)*/ return data->cell_range; /*else return vector<CPM::CELL_ID>();*/ }; 
 	/// Spatial extend of the focus range
 	const set<FocusRangeAxis>& spatialExtends() const { if (!data) throw string("Invalid FocusRange"); return data->spatial_dimensions; }
+	
+	// Restriction prefilled with biological celltypes
+	static multimap<FocusRangeAxis,int> getBiologicalCellTypesRestriction();
 
 private:
 	shared_ptr<const FocusRangeDescriptor> data;

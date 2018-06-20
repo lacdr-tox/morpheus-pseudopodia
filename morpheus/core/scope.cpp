@@ -176,7 +176,7 @@ void Scope::registerSubScopeSymbol(Scope *sub_scope, Symbol symbol) {
 			composite_sym_base = composite_sym;
 		}
 		else {
-			throw string("Composite symbol type not implemented in Scope ") + symbol->type();
+			throw string("Symbol type not implemented in CompositeSymbol ") + "\n" + symbol->type() + "!=" + TypeInfo<VDOUBLE>::name() + "!=" + TypeInfo<double>::name();
 		}
 		composite_sym_base->setScope(this);
 		composite_sym_i->addCellTypeAccessor(sub_scope_id, symbol);

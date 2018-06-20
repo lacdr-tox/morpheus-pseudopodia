@@ -157,6 +157,9 @@ const char* to_cstr(const T& value) {
 	tmp = to_str(value);
 	return tmp.c_str();
 }
+
+#include "vec.h" 
+
 #endif // TRAITS_H
 
 
