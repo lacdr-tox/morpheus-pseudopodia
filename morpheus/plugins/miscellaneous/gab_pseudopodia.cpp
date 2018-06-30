@@ -91,8 +91,14 @@ void Pseudopodia::executeTimeStep() {
 
 double Pseudopodia::delta(const SymbolFocus &cell_focus, const CPM::Update &update) const {
     double change{0};
-    change += calcNeighboringActinBonus(update);
-    change += calcPseudopodTipBonus(cell_focus, update);
+    /* These bonuses only apply when the medium is involved, otherwise the pseudopods might cause the cells to "drill"
+     * in each other
+     */
+    if(update.focusStateBefore().cell_id == CPM::getEmptyState().cell_id
+       || update.focusStateAfter().cell_id == CPM::getEmptyState().cell_id) {
+        change += calcNeighboringActinBonus(update);
+        change += calcPseudopodTipBonus(cell_focus, update);
+    }
     return change;
 }
 
@@ -137,11 +143,12 @@ double Pseudopodia::minDistanceToPseudopodTip(const VINT pos, const CPM::CELL_ID
 }
 
 double Pseudopodia::calcPseudopodTipBonus(const SymbolFocus &cell_focus, const CPM::Update &update) const {
-    auto pos = update.focusStateAfter().pos;
+    auto pos = cell_focus.pos();
+    // if update.opAdd() this will be the new cellID, if update.opRemove() it will be the old cellID
+    auto cellID = cell_focus.cellID();
+
     auto closeToOwnPseudoPod = FALSE;
-    //Check if pos is close to a pseudopod tip
-    auto currCellId = cell_focus.cellID();
-    if(minDistanceToPseudopodTip(pos, currCellId) <= pseudopodTipBonusMaxDistance) {
+    if(minDistanceToPseudopodTip(pos, cellID) <= pseudopodTipBonusMaxDistance) {
         closeToOwnPseudoPod = TRUE;
     }
 
@@ -150,7 +157,7 @@ double Pseudopodia::calcPseudopodTipBonus(const SymbolFocus &cell_focus, const C
     for(auto const& neighbor : neighbors) {
         auto neighborPos = pos + neighbor;
         auto neighborCellId = cpmLayer->get(neighborPos).cell_id;
-        if(neighborCellId == currCellId || neighborCellId == CPM::getEmptyState().cell_id) continue;
+        if(neighborCellId == cellID || neighborCellId == CPM::getEmptyState().cell_id) continue;
         // if neighbor belongs to a different cell and is close to a pseudopod tip -> give bonus
         if(minDistanceToPseudopodTip(pos, neighborCellId) <= pseudopodTipBonusMaxDistance) {
             if(update.opAdd()) {
@@ -162,7 +169,16 @@ double Pseudopodia::calcPseudopodTipBonus(const SymbolFocus &cell_focus, const C
             }
         }
     }
-    // no change
+    // not close to any neighbor pseudopod, only take own pseudopod bonus into account
+    if(closeToOwnPseudoPod) {
+        if(update.opAdd()) {
+            // Make more likely
+            return -pseudopodTipBonus;
+        } else if(update.opRemove()){
+            // Make less likely
+            return pseudopodTipBonus;
+        }
+    }
     return 0;
 }
 
