@@ -87,7 +87,7 @@ void Pseudopod::growBundle() {
     auto newPosCellId = _cpm_layer->get(VINT(newBundlePosition)).cell_id;
     if (newPosCellId != cellId) {
         //newBundlePosition is not in this cell
-        if(retractOnTouch_ && newPosCellId != CPM::getEmptyCelltypeID()) {
+        if(retractOnTouch_ && newPosCellId != CPM::getEmptyState().cell_id) {
             // cell is touching 'something' else -> retract
             setRetracting();
         }
