@@ -37,7 +37,7 @@ private:
     PluginParameter2<unsigned int, XMLValueReader, DefaultValPolicy> maxPseudopods;
     PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> movingDirection;
     PluginParameter2<Pseudopod::RetractionMethod, XMLNamedValueReader, DefaultValPolicy> retractionMethod;
-    PluginParameter2<bool, XMLValueReader, DefaultValPolicy> retractOnTouch;
+    PluginParameter2<Pseudopod::TouchBehavior , XMLNamedValueReader, DefaultValPolicy> touchBehavior;
 
     once_flag initPseudopods;
 

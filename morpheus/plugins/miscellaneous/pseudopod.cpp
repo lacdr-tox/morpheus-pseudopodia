@@ -19,11 +19,11 @@ static VDOUBLE RandomVonMisesPoint(VDOUBLE mu, double kappa) {
 Pseudopod::Pseudopod(unsigned int maxGrowthTime, const CPM::LAYER *cpm_layer, CPM::CELL_ID cellId,
           PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> *movingDirection,
           PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field, RetractionMethod retractionMethod,
-          double kappaInit, double kappaCont, bool retractOnTouch) :
+          double kappaInit, double kappaCont, TouchBehavior touchBehavior) :
         maxGrowthTime_(maxGrowthTime), _cpm_layer(cpm_layer), cellId(cellId),
         movingDirection_(movingDirection), state_(State::INIT), field_(field),
         timeLeftForGrowth_(0), timeNoExtension_(0), paramRetractionMethod_(retractionMethod), currRetractionMethod_(retractionMethod), kappaInit_(kappaInit),
-        kappaCont_(kappaCont), retractOnTouch_(retractOnTouch) {
+        kappaCont_(kappaCont), touchBehavior_(touchBehavior) {
     bundlePositions_.reserve(maxGrowthTime);
 }
 
@@ -54,9 +54,9 @@ void Pseudopod::addPosToBundle(VDOUBLE const &pos) {
     bundlePositions_.emplace_back(pos);
 }
 
-void Pseudopod::setRetracting() {
+void Pseudopod::setRetracting(RetractionMethod retractionMethod) {
     state_ = State::RETRACTING;
-    if(paramRetractionMethod_ == RetractionMethod::IN_MOVING_DIR) {
+    if(retractionMethod == RetractionMethod::IN_MOVING_DIR) {
         // Implementation JBB
         if(cos(polarisationDirection_.x - movingDirection_->get(SymbolFocus(cellId))) > 0.8) {
             currRetractionMethod_ = RetractionMethod::FORWARD;
@@ -64,7 +64,7 @@ void Pseudopod::setRetracting() {
             currRetractionMethod_ = RetractionMethod::BACKWARD;
         }
     } else {
-        currRetractionMethod_ = paramRetractionMethod_;
+        currRetractionMethod_ = retractionMethod;
     }
 }
 
@@ -74,7 +74,7 @@ void Pseudopod::growBundle() {
         // No extension this time
         timeNoExtension_++;
         if (timeNoExtension_ > timeNoExtensionLimit_) {
-            setRetracting();
+            setRetracting(paramRetractionMethod_);
         }
         return;
     }
@@ -87,9 +87,18 @@ void Pseudopod::growBundle() {
     auto newPosCellId = _cpm_layer->get(VINT(newBundlePosition)).cell_id;
     if (newPosCellId != cellId) {
         //newBundlePosition is not in this cell
-        if(retractOnTouch_ && newPosCellId != CPM::getEmptyCelltypeID()) {
-            // cell is touching 'something' else -> retract
-            setRetracting();
+        if(newPosCellId != CPM::getEmptyState().cell_id) {
+            // cell is touching 'something' else -> do touch behavior
+            switch(touchBehavior_) {
+                case TouchBehavior::NOTHING:
+                    break;
+                case TouchBehavior::RETRACT:
+                    setRetracting(paramRetractionMethod_);
+                    break;
+                case TouchBehavior::ATTACH:
+                    state_ = State::TOUCHING;
+                    break;
+            }
         }
         return;
     }
@@ -100,7 +109,7 @@ void Pseudopod::growBundle() {
     timeNoExtension_ = 0;
     timeLeftForGrowth_--;
     if (timeLeftForGrowth_ == 0) {
-        setRetracting();
+        setRetracting(paramRetractionMethod_);
     }
 }
 
@@ -145,6 +154,11 @@ void Pseudopod::timeStep() {
             break;
         case State::GROWING:
             growBundle();
+            break;
+        case State::TOUCHING:
+            if (getRandom01() < 1./100) {
+                setRetracting(RetractionMethod::FORWARD);
+            }
             break;
         case State::RETRACTING:
             retractBundle();
