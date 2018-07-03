@@ -37,9 +37,14 @@ Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpe
     retractionMethod.setConversionMap(retractionMethodMap);
     registerPluginParameter(retractionMethod);
 
-    retractOnTouch.setXMLPath("retract-on-touch");
-    retractOnTouch.setDefault("false");
-    registerPluginParameter(retractOnTouch);
+    touchBehavior.setXMLPath("touch-behavior");
+    touchBehavior.setDefault("nothing");
+    map<string, Pseudopod::TouchBehavior> touchBehaviorMap;
+    touchBehaviorMap["nothing"] = Pseudopod::TouchBehavior::NOTHING;
+    touchBehaviorMap["attach"] = Pseudopod::TouchBehavior::ATTACH;
+    touchBehaviorMap["retract"] = Pseudopod::TouchBehavior::RETRACT;
+    touchBehavior.setConversionMap(touchBehaviorMap);
+    registerPluginParameter(touchBehavior);
 }
 
 // called during initialization
@@ -69,7 +74,7 @@ void Pseudopodia::executeTimeStep() {
         for (auto &cellId : cells) {
             auto pseudopod = Pseudopod((unsigned int) maxGrowthTime(), cpmLayer.get(),
                                        cellId, &movingDirection, &field, retractionMethod(), directionalStrengthInit(),
-                                       directionalStrengthCont(), retractOnTouch());
+                                       directionalStrengthCont(), touchBehavior());
             pseudopods.insert(make_pair(cellId, vector<Pseudopod>((size_t) maxPseudopods(), pseudopod)));
         }
     });

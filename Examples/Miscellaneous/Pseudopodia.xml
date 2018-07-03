@@ -36,7 +36,7 @@
         <CellType class="biological" name="amoeba">
             <VolumeConstraint target="350" strength="10"/>
             <ConnectivityConstraint/>
-            <Pseudopodia max-pseudopods="2" retract-on-touch="false" field="act" moving-direction="d.phi" retraction-mode="in-moving-direction" max-growth-time="20" cont-dir-strength="16"/>
+            <Pseudopodia field="act" moving-direction="d.phi"/>
             <PropertyVector symbol="d" value="0, 0, 0" name="moving direction"/>
             <MotilityReporter time-step="10">
                 <Velocity symbol-ref="d"/>

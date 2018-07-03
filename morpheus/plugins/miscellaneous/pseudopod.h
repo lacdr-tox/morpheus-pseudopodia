@@ -13,6 +13,7 @@ public:
     enum class State {
         INIT,
         GROWING,
+        TOUCHING,
         RETRACTING,
         INACTIVE
     };
@@ -20,6 +21,11 @@ public:
         FORWARD,
         BACKWARD,
         IN_MOVING_DIR
+    };
+    enum class TouchBehavior {
+        ATTACH,
+        RETRACT,
+        NOTHING
     };
 
 private:
@@ -40,13 +46,13 @@ private:
     const CPM::LAYER *_cpm_layer;
     PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field_;
     PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> *movingDirection_;
-    bool retractOnTouch_;
+    TouchBehavior touchBehavior_;
 
     void startNewBundle();
     void retractBundle();
     void decrementActinLevelAt(VINT pos) const;
     void growBundle();
-    void setRetracting();
+    void setRetracting(RetractionMethod retractionMethod);
     void addPosToBundle(const VDOUBLE &pos);
 
 
@@ -54,7 +60,7 @@ public:
     Pseudopod(unsigned int maxGrowthTime, const CPM::LAYER *cpm_layer, CPM::CELL_ID cellId,
               PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> *movingDirection,
               PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field, RetractionMethod retractionMethod,
-              double kappaInit, double kappaCont, bool retractOnTouch);
+              double kappaInit, double kappaCont, TouchBehavior touchBehavior);
 
     State state() const;
     void timeStep();
