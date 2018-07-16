@@ -156,7 +156,7 @@ void Pseudopod::timeStep() {
             growBundle();
             break;
         case State::TOUCHING:
-            if (getRandom01() < 1./100) {
+            if (getRandom01() < touch_retractprob) {
                 setRetracting(RetractionMethod::FORWARD);
             }
             break;
