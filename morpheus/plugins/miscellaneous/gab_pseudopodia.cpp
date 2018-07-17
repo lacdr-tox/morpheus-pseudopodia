@@ -148,6 +148,7 @@ double Pseudopodia::minDistanceToPseudopodTip(const VINT pos, const CPM::CELL_ID
 }
 
 double Pseudopodia::calcPseudopodTipBonus(const SymbolFocus &cell_focus, const CPM::Update &update) const {
+    //TODO check if touching
     auto pos = cell_focus.pos();
     // if update.opAdd() this will be the new cellID, if update.opRemove() it will be the old cellID
     auto cellID = cell_focus.cellID();
