@@ -148,35 +148,35 @@ double Pseudopodia::minDistanceToPseudopodTip(const VINT pos, const CPM::CELL_ID
 }
 
 double Pseudopodia::calcPseudopodTipBonus(const SymbolFocus &cell_focus, const CPM::Update &update) const {
-    //TODO check if touching
     auto pos = cell_focus.pos();
     // if update.opAdd() this will be the new cellID, if update.opRemove() it will be the old cellID
     auto cellID = cell_focus.cellID();
 
-    auto closeToOwnPseudoPod = FALSE;
+    auto isCloseToOwnPseudoPod = FALSE;
     if(minDistanceToPseudopodTip(pos, cellID) <= pseudopodTipBonusMaxDistance) {
-        closeToOwnPseudoPod = TRUE;
+        isCloseToOwnPseudoPod = TRUE;
     }
-
-    // TODO find better way of getting nearby cells
+    auto isTouchingNeighbor = FALSE;
+    // TODO find better way of getting nearby cells?
     auto neighbors = getLattice()->getNeighborhoodByOrder(2).neighbors();
     for(auto const& neighbor : neighbors) {
         auto neighborPos = pos + neighbor;
         auto neighborCellId = cpmLayer->get(neighborPos).cell_id;
         if(neighborCellId == cellID || neighborCellId == CPM::getEmptyState().cell_id) continue;
         // if neighbor belongs to a different cell and is close to a pseudopod tip -> give bonus
+        isTouchingNeighbor = TRUE;
         if(minDistanceToPseudopodTip(pos, neighborCellId) <= pseudopodTipBonusMaxDistance) {
             if(update.opAdd()) {
                 // Make more likely
-                return (closeToOwnPseudoPod ? 2 : 1) * -pseudopodTipBonus;
+                return (isCloseToOwnPseudoPod ? 2 : 1) * -pseudopodTipBonus;
             } else if(update.opRemove()){
                 // Make less likely
-                return (closeToOwnPseudoPod ? 2 : 1) * pseudopodTipBonus;
+                return (isCloseToOwnPseudoPod ? 2 : 1) * pseudopodTipBonus;
             }
         }
     }
-    // not close to any neighbor pseudopod, only take own pseudopod bonus into account
-    if(closeToOwnPseudoPod) {
+    // not close to any neighbor pseudopod, take own pseudopod bonus into account ONLY if touching
+    if(isTouchingNeighbor && isCloseToOwnPseudoPod) {
         if(update.opAdd()) {
             // Make more likely
             return -pseudopodTipBonus;
