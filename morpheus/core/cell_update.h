@@ -46,11 +46,14 @@ namespace CPM {
 		// NeighborhoodStencils
 		
 		/// Neighborhood used for the update operation selection, order is angualar
+		/// Is determined by CPM/MonteCarloSampler/Neighborhood
 		shared_ptr< const LatticeStencil> updateStencil() const { return d->update; };
 		/// Neighborhood used to determine surface nodes, as used for the connectivity constraint, order is angular
+		/// Is determined by Space/Lattice/Neighborhood
 		shared_ptr< const LatticeStencil> surfaceStencil() const { return d->surface; };
 		/// Neighborhood used to compute anything derived from shape boundary length.
 		/// Most prominently the Interactions, Perimeter, Perimeter constraints, 
+		/// Is determined by CPM/ShapeSurface/Neighborhood
 		shared_ptr< const StatisticalLatticeStencil> boundaryStencil() const { return d->boundary; };
 		
 		int op() const { return operation; };
