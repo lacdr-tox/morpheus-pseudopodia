@@ -194,6 +194,7 @@ double Pseudopodia::hamiltonian(CPM::CELL_ID cell_id) const {
 
 // We want to block removal of cells in the neighborhood of the actin bundles
 bool Pseudopodia::update_check(CPM::CELL_ID cell_id, const CPM::Update &update) {
+    //TODO don't use stencil?
     // If not removal continue
     if (!update.opRemove()) {
         return true;

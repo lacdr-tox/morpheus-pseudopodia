@@ -47,8 +47,8 @@ private:
     map<CPM::CELL_ID, vector<Pseudopod>> pseudopods;
 
     static constexpr double neighboringActinBonus = 1e4;
-    static constexpr double pseudopodTipBonus = 2e6;
-    static constexpr double pseudopodTipBonusMaxDistance = 2;
+    static constexpr double pseudopodTipBonus = 2e5;
+    static constexpr double pseudopodTipBonusMaxDistance = 3;
 
 public:
     // constructor
