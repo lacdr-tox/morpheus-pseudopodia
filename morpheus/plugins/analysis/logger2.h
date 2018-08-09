@@ -390,7 +390,7 @@ private:
 	// Node granularity
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> force_node_granularity;
 	// Medium exclusion
-	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> exclude_medium;
+	PluginParameter2<bool, XMLValueReader, OptionalPolicy> exclude_medium;
 
 public:
 	Logger(); // default values

@@ -57,8 +57,7 @@ void Logger::loadFromXML(const XMLNode xNode, Scope* scope){
 	force_node_granularity.setDefault("false");
 	registerPluginParameter(force_node_granularity);
 	// Exclude Medium types
-	exclude_medium.setXMLPath("Input/exclude-medium");
-	exclude_medium.setDefault("true");
+	exclude_medium.setXMLPath("Restriction/exclude-medium");
 	registerPluginParameter(exclude_medium);
 	
 	// output
@@ -130,7 +129,10 @@ void Logger::init(const Scope* scope){
 				c->unsetPartialSpecDefault();
 			}
 		}
-		else if ( exclude_medium() && (logger_granularity == Granularity::Cell || logger_granularity == Granularity::MembraneNode)) {
+		else if ( exclude_medium.isDefined() && exclude_medium()) {
+			permit_incomplete_symbols = true;
+		}
+		else if ( ! exclude_medium.isDefined() && (logger_granularity == Granularity::Cell || logger_granularity == Granularity::MembraneNode) ) {
 			permit_incomplete_symbols = true;
 		}
 		else {
