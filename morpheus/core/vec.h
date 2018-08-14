@@ -81,6 +81,7 @@ class _V {
 #endif
 
 		const _V<T>& operator *=(const _V<T> &a);
+        const _V<T>& operator *=(const T &a);
 		const _V<T>& operator +=(const _V<T> &a);
 		const _V<T>& operator -=(const _V<T> &a);
 		constexpr _V<T> operator -() const { return _V<T>(-x,-y,-z); }
@@ -152,6 +153,7 @@ class _V {
 };
 
 template <class T> const _V<T>& _V<T>::operator *=(const _V<T> &a) { this->x*=a.x; this->y*=a.y; this->z*=a.z; return *this; };
+template <class T> const _V<T>& _V<T>::operator *=(const T& a) { this->x*=a; this->y*=a; this->z*=a; return *this; };
 template <class T> const _V<T>& _V<T>::operator +=(const _V<T> &a) { this->x+=a.x; this->y+=a.y; this->z+=a.z; return *this; };
 template <class T> const _V<T>& _V<T>::operator -=(const _V<T> &a) { this->x-=a.x; this->y-=a.y; this->z-=a.z; return *this; };
 template <class T> constexpr double _V<T>::abs() const { return sqrt((this->x*this->x)+(this->y*this->y)+(this->z*this->z)); };
