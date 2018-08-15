@@ -94,9 +94,11 @@ private:
 
 	struct AutoFix {
 		QString match_path;
-		QString move_path;
+		QString target_path;
 		QString require_path;
-		bool copy;
+		enum { COPY, MOVE } operation;
+		bool replace_existing;
+		AutoFix() : operation(COPY), replace_existing(true) {};
 	};
 	QList<MorphModelEdit> applyAutoFixes(QDomDocument document);
 	

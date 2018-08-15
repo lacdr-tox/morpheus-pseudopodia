@@ -145,14 +145,14 @@ PDE Equation:
         </InitRectangle>
     </Disabled>
 -->
-            <Cell name="1">
+            <Cell id="1" name="1">
                 <Nodes>25 37 25</Nodes>
             </Cell>
         </Population>
     </CellPopulations>
     <Analysis>
         <Gnuplotter time-step="50">
-            <Terminal pointsize="1.5" name="png"/>
+            <Terminal name="png"/>
             <Plot>
                 <Field symbol-ref="U"/>
                 <Cells value="A" slice="25"/>
@@ -163,13 +163,6 @@ PDE Equation:
             <Channel symbol-ref="c" celltype="cells"/>
             <Channel symbol-ref="U"/>
         </TiffPlotter>
-        <!--    <Disabled>
-        <MembraneLogger time-step="10" celltype="cells">
-            <MembraneProperty symbol-ref="A"/>
-            <Plot terminal="png" time-step="10"/>
-        </MembraneLogger>
-    </Disabled>
--->
         <Logger time-step="50">
             <Input>
                 <Symbol symbol-ref="A"/>

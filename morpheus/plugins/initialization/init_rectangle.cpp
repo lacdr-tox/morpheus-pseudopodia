@@ -32,8 +32,8 @@ vector<CPM::CELL_ID> InitRectangle::run(CellType *ct) {
 	num_cells = num_cells_eval(global_focus);
 	mode = mode_eval();
 	random_displacement = random_displacement_eval(global_focus);
-	origin = origin_eval(global_focus);
-	size = size_eval(global_focus);
+	origin = VINT(origin_eval(global_focus));
+	size = VINT(size_eval(global_focus));
 
 	auto lattice = SIM::getLattice();
 
@@ -125,7 +125,7 @@ vector<CPM::CELL_ID> InitRectangle::setGrid() {
 	}
 	auto coordMask = VDOUBLE(1, latticeDims > 1, latticeDims > 2);
 
-	auto gridShape = computeGridShape(latticeDims, gridSize, num_cells);
+	auto gridShape = computeGridShape(latticeDims, VINT(gridSize), num_cells);
 	auto gridDistance = gridSize / gridShape; // distance between items on the grid
 
 	vector<CPM::CELL_ID> cells;

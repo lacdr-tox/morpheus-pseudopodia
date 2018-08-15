@@ -190,7 +190,9 @@ void CellType::init() {
 		for (int i=0; i < cp.xPopNode.nChildNode("Cell"); i++) {
 			XMLNode xCellNode = cp.xPopNode.getChildNode("Cell",i);
 			uint cell_id;
-			if ( getXMLAttribute(xCellNode, "name", cell_id) )
+			if ( getXMLAttribute(xCellNode, "id", cell_id) )
+				cell_id =  createCell(cell_id);
+			else if ( getXMLAttribute(xCellNode, "name", cell_id) )
 				cell_id =  createCell(cell_id);
 			else
 				cell_id =  createCell();
@@ -335,7 +337,7 @@ void CellType::loadPopulationFromXML(const XMLNode xNode) {
 		// Defer loading cells
 		if (string(xcpNode.getName()) == "Cell") continue;
 		if (string(xcpNode.getName()) =="InitProperty") {
-			IntitPropertyDesc ip;
+			InitPropertyDesc ip;
 			if ( ! getXMLAttribute(xcpNode, "symbol-ref", ip.symbol)) {
 				throw string ("Missing symbol in Population[") + this->name + "]/InitProperty";
 			}

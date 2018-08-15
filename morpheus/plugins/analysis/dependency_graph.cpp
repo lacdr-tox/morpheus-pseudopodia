@@ -36,7 +36,9 @@ void DependencyGraph::analyse(double time)
 {
 	if (!scope_info.empty())
 		return;
-	scope_info.resize(Scope::max_scope_id);
+	for (auto id=0; id<=Scope::max_scope_id; id++) {
+		scope_info.push_back(make_unique<ScopeInfo>());
+	}
 	
 	// setting up filters
 	exclude_plugins.insert(this->XMLName());
@@ -131,7 +133,7 @@ string DependencyGraph::tslDotName(TimeStepListener* tsl)
 {
 	string ts;
 	if (tsl->timeStep()>0)
-		ts =  to_str(tsl->timeStep(),4);
+		ts =  to_str(tsl->timeStep());
 	else 
 		ts = "0";
 	
@@ -168,7 +170,7 @@ string DependencyGraph::dotName(const string& a ) {
 
 void DependencyGraph::parse_scope(const Scope* scope)
 {
-	auto& info = scope_info[scope->getID()];
+	auto& info = *scope_info[scope->getID()];
 	// Parse the TimeStepListeners, register their dependencies and collect their links
 	auto tsls = scope->getTSLs();
 	
@@ -355,9 +357,9 @@ vector<Symbol> DependencyGraph::parse_symbol(Symbol symbol) {
 		return symbols;
 	}
 	else {
-		auto & registry = scope_info[symbol->scope()->getID()].symbols;
+		auto & registry = scope_info[symbol->scope()->getID()]->symbols;
 		if (!registry.count(symbol->name())) {
-			scope_info[symbol->scope()->getID()].symbols[symbol->name()] = symbol;
+			scope_info[symbol->scope()->getID()]->symbols[symbol->name()] = symbol;
 			auto dependencies = symbol->dependencies();
 			for (auto dep: dependencies) {
 				auto syms = parse_symbol(dep);
@@ -370,10 +372,10 @@ vector<Symbol> DependencyGraph::parse_symbol(Symbol symbol) {
 
 void DependencyGraph::write_scope(const Scope* scope, ostream& dot) {
 	if (scope->ct_component && scope->ct_component->isMedium()) {
-		if (scope_info[scope->getID()].definitions.str().empty())
+		if (scope_info[scope->getID()]->definitions.str().empty())
 			return;
 	}
-	dot << scope_info[scope->getID()].definitions.str();
+	dot << scope_info[scope->getID()]->definitions.str();
 	
 	for (auto sub_scope : scope->getSubScopes()) {
 		dot << "subgraph cluster_" << sub_scope->getID() <<" {\n";

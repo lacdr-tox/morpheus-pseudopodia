@@ -140,7 +140,7 @@ public:
 	XMLNode storeData() const override { 
 		auto node = XMLNode::createXMLTopNode(XMLDataName().c_str());
 		node.addAttribute("symbol-ref", symbol().c_str());
-		node.addAttribute("value",to_cstr(value));
+		node.addAttribute("value",TypeInfo<T>::toString(value).c_str());
 // 		node.addText(to_cstr(value));
 		return node;
 	};
@@ -268,12 +268,12 @@ protected:
 
 	// Cell populations
 	vector< CPM::CELL_ID > cell_ids;
-	struct IntitPropertyDesc {string symbol; string expression;  } ;
+	struct InitPropertyDesc {string symbol; string expression;  } ;
 	struct CellPopDesc {
 		int pop_size;
 		XMLNode xPopNode;
 		vector<CPM::CELL_ID> cells;
-		vector<IntitPropertyDesc> property_initializers;
+		vector<InitPropertyDesc> property_initializers;
 		vector< shared_ptr<Population_Initializer> > pop_initializers;
 	};
 	vector<CellPopDesc> cell_populations;

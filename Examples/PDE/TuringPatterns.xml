@@ -84,7 +84,7 @@ Miyazawa, Okamoto and Kondo, Blending of animal colour patterns by hybridization
                 <Slice value="s.x/2" axis="x"/>
             </Restriction>
             <Plots>
-                <Plot time-step="-1" name="slice at x is half">
+                <Plot time-step="-1" title="slice at half of x extension">
                     <Style style="lines" line-width="3.0"/>
                     <Terminal terminal="png"/>
                     <X-axis>

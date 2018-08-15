@@ -30,7 +30,7 @@ double Cell::getEccentricity() const {
 
 
 Cell::Cell(CPM::CELL_ID cell_name, CellType* ct)
-		: properties(p_properties), id(cell_name), celltype(ct), nodes(), shape_tracker(cell_name,nodes)
+		: properties(p_properties), id(cell_name), name(to_str(cell_name)), celltype(ct), nodes(), shape_tracker(cell_name,nodes)
 {
 	for (uint i=0;i< celltype->default_properties.size(); i++) {
 		p_properties.push_back(celltype->default_properties[i]->clone());
@@ -58,7 +58,7 @@ void Cell::init()
 
 
 Cell::Cell( Cell& other_cell, CellType* ct  )
-		: properties(p_properties), id(other_cell.getID()), celltype (ct),nodes(other_cell.nodes), node_sum(other_cell.node_sum),
+		: properties(p_properties), id(other_cell.getID()), name(other_cell.name), celltype (ct),nodes(other_cell.nodes), node_sum(other_cell.node_sum),
 		centerL(other_cell.centerL), center(other_cell.center), shape_tracker(id, nodes) 
 {
 	
@@ -126,7 +126,9 @@ void Cell::loadNodesFromXML(const XMLNode xNode) {
 }
 
 void Cell::loadFromXML(const XMLNode xNode) {
-
+	if (!getXMLAttribute(xNode, "name",name)) {
+		name = to_str(id);
+	}
 	// Try loading properties from XMLNode
 	for (auto prop : properties) {
 		XMLNode xData = xNode.getChildNodeWithAttribute(prop->XMLDataName().c_str(),"symbol-ref",prop->symbol().c_str());
@@ -139,7 +141,10 @@ void Cell::loadFromXML(const XMLNode xNode) {
 
 XMLNode Cell::saveToXML() const {
 	XMLNode xCNode = XMLNode::createXMLTopNode("Cell");
-	xCNode.addAttribute("name",to_cstr(id));
+	xCNode.addAttribute("id",to_str(id).c_str());
+	if (to_str(id) != name) {
+		xCNode.addAttribute("name",name.c_str());
+	}
 	
 	// save properties to XMLNode
 	for (uint prop=0; prop < properties.size(); prop++) {
@@ -147,7 +152,7 @@ XMLNode Cell::saveToXML() const {
 	}
 
  	if (track_nodes) {
- 		xCNode.addChild("Center").addText( to_cstr(getCenter(),6) );
+ 		xCNode.addChild("Center").addText( to_cstr(getCenter()) );
  		ostringstream node_data;
  		for (Nodes::const_iterator inode = nodes.begin(); inode != nodes.end(); inode++ )
  		{
