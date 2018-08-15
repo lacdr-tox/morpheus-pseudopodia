@@ -128,12 +128,12 @@ void Pseudopod::retractBundle() {
 
     VINT pos;
     if(currRetractionMethod_ == RetractionMethod::BACKWARD) {
-        pos = bundlePositions_.back();
+        pos = VINT(bundlePositions_.back());
     } else if (currRetractionMethod_ == RetractionMethod::FORWARD) {
-        pos = bundlePositions_.front();
+        pos = VINT(bundlePositions_.front());
     }
 
-    decrementActinLevelAt(VINT(pos));
+    decrementActinLevelAt(pos);
 
     if(currRetractionMethod_ == RetractionMethod::BACKWARD) {
         bundlePositions_.pop_back();
