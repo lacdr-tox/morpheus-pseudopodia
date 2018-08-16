@@ -12,7 +12,7 @@
 #ifndef SIMULATION_P_H
 #define SIMULATION_P_H
 
-#ifndef SIMULATION_CPP
+#if (not defined SIMULATION_CPP) && (not defined CPM_CPP)
 	#error You may not include simulation_p.h from any source but simulation.cpp!
 #endif
 
@@ -42,7 +42,6 @@
 #include "super_celltype.h"
 #include "diffusion.h"
 #include "time_scheduler.h"
-#include "cpm.h"
 #include "gnuplot_i/gnuplot_i.h"
 
 
@@ -52,67 +51,9 @@ vector<mt19937> random_engines;
 	vector<mt19937> random_engines_alt;
 // #else
 // 	vector<ranlux_base_01> random_engines_alt;
-// #endif	
-
-namespace CPM {
-	double time=0;
-	bool enabled = false;
-	
-	STATE InitialState,EmptyState; // get overridden during load process;
-	uint EmptyCellType;
-	
-	
-	Time_Scale time_per_mcs("MCSDuration",1);
-	UpdateData global_update_data;
-	
-	shared_ptr<LAYER> layer;
-	shared_ptr<CPMSampler> cpm_sampler;
-	Neighborhood boundary_neighborhood;
-	Neighborhood update_neighborhood;
-	Neighborhood surface_neighborhood;
-	bool surface_everywhere=false;
-// // 	vector<VINT> interaction_neighborhood;
-	shared_ptr<EdgeTrackerBase> edgeTracker;
-	
-	vector< shared_ptr<CellType> > celltypes;
-	map< std::string, uint > celltype_names;
-	XMLNode xCellPop,xCellTypes,xCPM;
-	
-	void loadFromXML(XMLNode node);
-	void loadCellTypes(XMLNode node);
-	void loadCellPopulations();
-	void init();
-	XMLNode saveCPM() { return xCPM; };
-	XMLNode saveCellTypes() { return xCellTypes; }
-	XMLNode saveCellPopulations();
-	void createLayer();
-
-	class BoundaryReader : public CPM::LAYER::ValueReader {
-		public:
-			void set(string input) override {
-					state.pos = VINT(0,0,0);
-					auto ct = celltype_names.find(input);
-					if ( ct== celltype_names.end()) {
-						throw MorpheusException(string("Unknown celltype '") + input + "' at the boundary", xCellPop);
-					}
-					if ( ! dynamic_pointer_cast<MediumCellType>( celltypes[ct->second] ) ) {
-						throw MorpheusException(string("Unable to set celltype '")+input+"' at the boundary. " +
-								+ "Medium-like celltype required! ", xCellPop);
-					}
-					state.cell_id = celltypes[ct->second]->createCell();
-				}
-				bool isSpaceConst() const override { return false; }
-				bool isTimeConst() const override { return true; }
-				CPM::STATE get(const VINT& pos) const override { CPM::STATE s(state); s.pos=pos; return s; }
-				shared_ptr<CPM::LAYER::ValueReader> clone() const override { return make_shared<BoundaryReader>(*this); }
-			private:
-				CPM::STATE state;
-	};
-}
-
+// #endif
 
 namespace SIM {
-	
 	const string dep_graph_format = "svg";
 	bool generate_symbol_graph_and_exit = false;
 	
@@ -136,8 +77,7 @@ namespace SIM {
 	string morpheus_file_version;
 	string prettyFormattingTime( double time_in_sec );
 	string prettyFormattingBytes(uint bytes);
-	extern "C" size_t getPeakRSS();
-	extern "C" size_t getCurrentRSS();
+
 	
 	uint random_seed = time(NULL);
 	string fileTitle="SnapShot";
@@ -155,50 +95,5 @@ namespace SIM {
 	
 }
 
-#endif
-
-//  Windows
-#ifdef _WIN32
-#include <Windows.h>
-double get_wall_time(){
-    LARGE_INTEGER time,freq;
-    if (!QueryPerformanceFrequency(&freq)){
-        //  Handle error
-        return 0;
-    }
-    if (!QueryPerformanceCounter(&time)){
-        //  Handle error
-        return 0;
-    }
-    return (double)time.QuadPart / freq.QuadPart;
-}
-double get_cpu_time(){
-    FILETIME a,b,c,d;
-    if (GetProcessTimes(GetCurrentProcess(),&a,&b,&c,&d) != 0){
-        //  Returns total user time.
-        //  Can be tweaked to include kernel times as well.
-        return
-            (double)(d.dwLowDateTime |
-            ((unsigned long long)d.dwHighDateTime << 32)) * 0.0000001;
-    }else{
-        //  Handle error
-        return 0;
-    }
-}
-
-//  Posix/Linux
-#else
-#include <sys/time.h>
-double get_wall_time(){
-    struct timeval time;
-    if (gettimeofday(&time,NULL)){
-        //  Handle error
-        return 0;
-    }
-    return (double)time.tv_sec + (double)time.tv_usec * .000001;
-}
-double get_cpu_time(){
-    return (double)clock() / CLOCKS_PER_SEC;
-}
 #endif
 

@@ -19,20 +19,20 @@
 
 /**
  * 
+ * \page PluginDev
+ * \section PluginParameters Plugin Parameters
  * 
- * \page PluginParameters
- * @{
- * \brief Flexible Plugin Paramters to be used in Plugins for accessing XML data
+ * Flexible constructs to mediate easy access to XML data.
  * 
- * \section Usage
+ * \subsection Usage
  * 
- * Reading from XML can be rather cumbersome, espacially when it comes to the interpretation of a 
+ * Reading from XML can be rather cumbersome, espacially when it comes to the interpretation of the 
  * provided string literal: Is it a value, what kind of value, or is it rather an
  * expression, which should be evaluated or do we even require a symbol which we can write to?
  *
  * The morpheus framework casts all these decisions into a policy-based template concept of PluginParameter.
- * This template class are instantiated by selecting the type and a set of policies alongside to 
- * obtain a preconfigured object of your choice:
+ * This template class is instantiated by selecting the parameter type and a set 
+ * of policies to obtain a preconfigured object of your choice:
  * 
  * Syntax: PlugParameters2\<value_type, ReaderPolicy, RequirementPolicy\> my_value;
  * 
@@ -53,8 +53,7 @@
  * For convenience, a specialised template exists for identifying a celltype via a celltype name 
  *    PluginParameterCellType\<RequirementPolicy\>
  * 
- * \subsection Examples Examples
- * 
+
  * \subsubsection Example1 Example 1: Reading a double value and assuming 0 for the case it is ommited
  * \verbatim  PluginParameter2<double,XMLValueReader,DefaultValPolicy> my_value;\endverbatim
  * 

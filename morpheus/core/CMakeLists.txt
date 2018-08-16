@@ -5,39 +5,40 @@ SET(tools_src
 )
 
 SET(morpheus_src
+	cell.cpp
+	celltype.cpp
 	cell_update.cpp
-	scales.cpp
-	lattice.cpp
-	domain.cpp
-	interfaces.cpp
-	plugin_parameter.cpp
-	time_scheduler.cpp
-	cell.cpp celltype.cpp
-	interaction_energy.cpp
-	simulation.cpp
+	cpm.cpp
 	cpm_layer.cpp
+	cpm_sampler.cpp
 	cpm_shape.cpp
 	cpm_shape_tracker.cpp
-	edge_tracker.cpp
-	cpm.cpp
-	field.cpp
+	data_mapper.cpp
+	domain.cpp
 	diffusion.cpp
-	property.cpp
-	symbol.cpp
-	expression_evaluator.cpp
-	function.cpp
-	equation.cpp
-	vector_equation.cpp
-	scope.cpp
-	focusrange.cpp
-	symbolfocus.cpp
-# 	symbol_accessor.cpp
 	diff_eqn.cpp
-	system.cpp
-# 	cell_membrane_accessor.cpp
+	edge_tracker.cpp
+	equation.cpp
+	expression_evaluator.cpp
+	field.cpp
+	focusrange.cpp
+	function.cpp
+	interaction_energy.cpp
+	interfaces.cpp
+	lattice.cpp
 	membrane_property.cpp
 	membranemapper.cpp
-	data_mapper.cpp
+	plugin_parameter.cpp
+	property.cpp
+	rss_stat.cpp
+	scales.cpp
+	scope.cpp
+	simulation.cpp
+	symbol.cpp
+	symbolfocus.cpp
+	system.cpp
+	time_scheduler.cpp
+	vector_equation.cpp
 # 	super_cell.cpp
 # 	super_celltype.cpp
 )
