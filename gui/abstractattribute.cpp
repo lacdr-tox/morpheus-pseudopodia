@@ -115,7 +115,7 @@ AbstractAttribute::AbstractAttribute( QObject* parent, QDomNode xsdAttrNode, QDo
 		{ is_required = true; }
 
 	simpleTypeName = xsdAttrNode.attributes().namedItem("type").nodeValue();
-	qDebug() << "Attribute " << name << " type " << simpleTypeName;
+// 	qDebug() << "Attribute " << name << " type " << simpleTypeName;
 	type = model_descr->xsd.getSimpleType(simpleTypeName);
 
 // 	if ( XSD::dynamicTypeRefs.contains(type->name) )

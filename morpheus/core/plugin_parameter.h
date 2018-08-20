@@ -32,7 +32,7 @@
  *
  * The morpheus framework casts all these decisions into a policy-based template concept of PluginParameter.
  * This template class is instantiated by selecting the parameter type and a set 
- * of policies to obtain a preconfigured object of your choice:
+ * of policies to obtain a tailored object of your choice:
  * 
  * Syntax: PlugParameters2\<value_type, ReaderPolicy, RequirementPolicy\> my_value;
  * 
@@ -246,6 +246,8 @@ public:
 	
 	void init(const Scope* scope)
 	{
+		if (is_initialized)
+			return;
 		if (! RequirementPolicy::isMissing()) {
 			if (require_global_scope)
 				local_scope = SIM::getGlobalScope();
@@ -323,6 +325,7 @@ public:
 	typename TypeInfo<value_type>::SReturn operator()() const { RequirementPolicy::assertDefined();  return value; };
 	typename TypeInfo<value_type>::SReturn get() const { RequirementPolicy::assertDefined();  return value; };
 	void setConversionMap(const value_map_type& value_map) { this->value_map = value_map; };
+	void setValueMap(const value_map_type& value_map) { setConversionMap(value_map); }
 
 protected:
 	XMLNamedValueReader() {};
