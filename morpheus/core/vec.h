@@ -210,7 +210,7 @@ string _V<T>::to_stringp() const {
 
 //template output operators
 template <class T>
-std::ostream& operator << (std::ostream& os, const _V<T>& a) { return os << to_string(a); }
+std::ostream& operator << (std::ostream& os, const _V<T>& a) { return os << a.x << ", " << a.y << ", " << a.z; }
 
 template <class T>
 std::istream& operator >> (std::istream& is, _V<T>& a) { char s; is >> a.x; is >> s; if (s!=',') is.putback(s);  is >> a.y; is >> s; if (s!=',') is.putback(s); is >> a.z; return (is); }

@@ -732,7 +732,7 @@ class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPoli
 		mutable stringstream out;
 		Type type;
 		PluginParameter2<double, XMLEvaluator, RequiredPolicy> double_expr;
-		PluginParameter2<double, XMLEvaluator, RequiredPolicy> vdouble_expr;
+		PluginParameter2<VDOUBLE, XMLEvaluator, RequiredPolicy> vdouble_expr;
 };
 
 /** PluginParameter -- parses a parameter from the XML and provides values
