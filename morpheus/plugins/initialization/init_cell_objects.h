@@ -138,7 +138,7 @@ public:
 			virtual string name() const =0;
 			virtual VDOUBLE center() const =0;
 			virtual void init(const Scope * scope) = 0;
-			virtual double distance(const VDOUBLE& pos) const =0;
+			virtual double affinity(const VDOUBLE& pos) const =0;
 			virtual bool inside(const VDOUBLE& pos) const =0;
 			virtual void displace(VDOUBLE distance) =0;
 			virtual unique_ptr<CellObject> clone() const =0;
@@ -155,8 +155,7 @@ private:
 	
 	struct Candidate{
 		int index;
-		VDOUBLE distance;
-		double abs_distance;
+		double affinity;
 	};
 
 	vector< unique_ptr<CellObject> > cellobjects;

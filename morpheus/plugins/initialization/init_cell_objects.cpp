@@ -11,7 +11,8 @@ public:
 	VDOUBLE center() const override { return _center; }
 	unique_ptr<CellObject> clone() const override { return make_unique<Point>(*this); }
 	bool inside(const VDOUBLE& pos) const override { return distance(pos)<=0.5;}
-	double distance(const VDOUBLE& pos) const override { return (pos-_center).abs(); } ;
+	double affinity(const VDOUBLE & pos) const override { return inside( pos); } 
+	double distance(const VDOUBLE& pos) const { return SIM::lattice().orth_distance(pos,_center).abs(); } ;
 	void displace(VDOUBLE distance) override { displacement +=distance; }
 private:
 	PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> p_center;
@@ -36,10 +37,14 @@ public:
 	unique_ptr<CellObject> clone() const override { return make_unique<Sphere>(*this); }
 	VDOUBLE center() const override { return _center; }
 	bool inside(const VDOUBLE& pos) const override { return distance(pos)<= 0;}
-	double distance(const VDOUBLE& pos) const override { 
-		double dist = (pos-_center).abs();
+	double affinity(const VDOUBLE & pos) const override {
+		double dist = SIM::lattice().orth_distance(pos,_center).abs();
+		return (dist<radius) ?  1 - dist/radius : 0;
+	}
+	double distance(const VDOUBLE& pos) const { 
+		double dist = SIM::lattice().orth_distance(pos,_center).abs();
 		if (dist<radius)
-			return dist/radius-1;
+			return 0;
 		return dist - radius; 
 	};
 	void displace(VDOUBLE distance) override { displacement +=distance; }
@@ -74,12 +79,17 @@ public:
 		return pos.x >= origin.x && pos.y >= origin.y && pos.z >= origin.z &&
 		pos.x <= top.x && pos.y <= top.y && pos.z <= top.z;
 	}
-	double distance(const VDOUBLE& real_pos) const override {
+	
+	double affinity(const VDOUBLE & pos) const override {
+		double d = distance(pos);
+		return (d<0) ? -d : 0;
+	}
+	double distance(const VDOUBLE& real_pos) const {
 		VDOUBLE out_distance;
 		VDOUBLE in_distance;
 		bool inside = false;
 		
-		auto pos = real_pos - origin;
+		auto pos = SIM::lattice().orth_distance(real_pos, origin);
 		
 		if (pos.x<origin.x)
 			out_distance.x=-pos.x;
@@ -156,7 +166,13 @@ public:
 		return (p < 1);
 	}
 	
-	double distance(const VDOUBLE& real_pos) const override {
+	double affinity(const VDOUBLE & pos) const override {
+		auto d = SIM::lattice().orth_distance( _center,  pos);
+		double p  = (sqr(d.x))/sqr(axes.x) + (sqr(d.y))/sqr(axes.y) + (axes.z>0 && abs(d.z)>0 ? (sqr(d.z))/sqr(axes.z): 0.0);
+		return (p<1) ? 1-p : 0;
+	}
+	
+	double distance(const VDOUBLE& real_pos) const {
 		
 		auto d = SIM::lattice().orth_distance( _center,  real_pos);
 		double p  = (sqr(d.x))/sqr(axes.x) + (sqr(d.y))/sqr(axes.y) + (axes.z>0 && abs(d.z)>0 ? (sqr(d.z))/sqr(axes.z): 0.0);
@@ -246,7 +262,8 @@ public:
 	unique_ptr<CellObject> clone() const override { return make_unique<Cylinder>(*this); }
 	VDOUBLE center() const override { return _center; }
 	bool inside(const VDOUBLE& pos) const override { return false;}
-	double distance(const VDOUBLE& pos) const override { return 0; };
+	double distance(const VDOUBLE& pos) const { return 0; };
+	double affinity(const VDOUBLE& pos) const override { return 0; };
 	void displace(VDOUBLE distance) override { displacement +=distance; }
 	
 /*								// for 3D cylinders objects, fill in the 3rd dimension
@@ -367,6 +384,8 @@ void InitCellObjects::loadFromXML(const XMLNode node, Scope* scope)
 	}
 }
 
+//============================================================================
+
 vector<CPM::CELL_ID> InitCellObjects::run(CellType* ct)
 {
 	lattice = SIM::getLattice();
@@ -396,53 +415,10 @@ vector<CPM::CELL_ID> InitCellObjects::run(CellType* ct)
 	return cells;
 }
 
-/*
-InitCellObjects::CellObject InitCellObjects::getObjectProperties(const XMLNode oNode){
-	CellObject c;
-	XMLNode node;
-	if( ! (node = oNode.getChildNode("Point")).isEmpty() ) {
-		c.type = POINT;
-		c.center->loadFromXML(node);
-	}
-	else if( ! (node = oNode.getChildNode("Sphere")).isEmpty() ) {
-		c.type = SPHERE;
-		c.center->loadFromXML(node);
-		c.radius->loadFromXML(node);
-	}
-	else if( ! (node = oNode.getChildNode("Ellipsoid")).isEmpty()) {
-		c.type = ELLIPSOID;
-		c.center->loadFromXML(node);
-		c.axes->loadFromXML(node);
-	}
-	else if( ! (node = oNode.getChildNode("Box")).isEmpty() ) {
-		c.type = BOX;
-		c.origin->loadFromXML(node);
-		c.boxsize->loadFromXML(node);
-// 		if (c.boxsize.z<1) c.boxsize.z=1;
-// 		if (c.boxsize.y<1) c.boxsize.y=1;
-// 		c.center = (c.origin + c.boxsize) / 2.0;
-	}
-	else if( ! (node = oNode.getChildNode("Cylinder")).isEmpty() ) {
-		c.type = CYLINDER;
-		c.center->loadFromXML(node);
-		c.radius->loadFromXML(node);
-		c.orientation->loadFromXML(node);
-		
-		c.center2->setDefault(c.center->stringVal());
-		c.center2->loadFromXML(node);
+//============================================================================
 
-		c.oblique = c.center2->get(SymbolFocus::global) != c.center->get(SymbolFocus::global);
-	}
-
-	
-	return c;
-}*/
-
-
-void InitCellObjects::arrangeObjectCombinatorial( unique_ptr<CellObject> c_template, vector< unique_ptr<CellObject> >& objectlist, VDOUBLE displacement, VINT repetitions, double random_displacement ){
-
-	VINT latsize = SIM::lattice().size();
-
+void InitCellObjects::arrangeObjectCombinatorial( unique_ptr<CellObject> c_template, vector< unique_ptr<CellObject> >& objectlist, VDOUBLE displacement, VINT repetitions, double random_displacement )
+{
 	VINT r(0,0,0);
 	for(r.x=0; r.x<repetitions.x; r.x++){
 		for(r.y=0; r.y<repetitions.y; r.y++){
@@ -459,35 +435,11 @@ void InitCellObjects::arrangeObjectCombinatorial( unique_ptr<CellObject> c_templ
 					));
 				}
 				n->init(local_scope);
- 		
-				/* TODO: Check SUPPORT FOR HEXAGONAL LATTICES! */
-				
-				/* Assert all points fit into the lattice */
-// 				bool resolve_result = true;
-// 				if( ! resolve_result ) {
-// 					cerr << "InitCellObjects: Error: Cell center " << n->center << " is outside of lattice. " << endl;
-// 					exit(-1);
-// 				}
-// 				
-// 				// Switch to lattice coordinates
-//  			n.center    = SIM::lattice().from_orth(n.center);
-// 				n.center2 	= SIM::lattice().from_orth(n.center2);
-// 				n.origin 	= SIM::lattice().from_orth(n.origin);
-				
-//  				cout  << " n.center: " << n.center << endl;
-				
-				
-				
+
 				objectlist.emplace_back( std::move(n) );
-// 				cout << r << ", objects: " << objectlist.size() << ", center: " << n.center << endl;
-//  				if( n.center.x > latsize.x || n.center.y > latsize.y || n.center.z > latsize.z ||
-//  					n.center.x < 0 || n.center.y < 0 || n.center.z < 0){
-//   						cerr << "InitCellObjects: Error: Cell center " << n.center << " is outside of lattice. " << endl;
-//   						exit(-1);
-//   				}
-            }
-        }
-    }
+			}
+		}
+	}
 }
 
 //============================================================================
@@ -507,129 +459,44 @@ int InitCellObjects::setNodes(CellType* ct)
 				// check whether multiple objects claim this lattice point
 				vector<Candidate> candidates;
 				VDOUBLE orth_pos = lattice->to_orth(pos);
-				lattice->orth_resolve(orth_pos);
 				
 				for(int o = 0; o < cellobjects.size() ; o++){
 					
-					//cout << "cellobject " << o  << " / " << cellobjects.size() << endl;
-					if ( ! cellobjects[o]->inside(pos) ) {
-						continue;
+					auto affinity = cellobjects[o]->affinity(orth_pos);
+					if ( affinity > 0 ) {
+						candidates.push_back( {o, affinity} );
 					}
-					
-					Candidate cand;
-					cand.index = o;
-					cand.abs_distance =  cellobjects[o]->distance(pos);
-					candidates.push_back( cand );
-// 					switch(co.type){
-// 						
-// 						case POINT:
-// 							cand.distance = lattice->orth_distance( co.origin, orth_pos ); ;
-// 							cand.abs_distance = cand.distance.abs();
-// 							if (cand.abs_distance < 0.5) {
-// 								candidates.push_back( cand );
-// 							}
-// 							break;
-// 						case BOX:{
-// 							// if pos is falls inside of specified box
-// 							if( orth_pos.x >= co.origin.x && orth_pos.y >= co.origin.y && orth_pos.z >= co.origin.z 
-// 								&& orth_pos.x < (co.origin.x + co.boxsize.x) && orth_pos.y < (co.origin.y + co.boxsize.y) && orth_pos.z < (co.origin.z + co.boxsize.z) ){
-// 								
-// 								cand.distance = lattice->orth_distance( co.center, orth_pos );
-// 								cand.abs_distance = cand.distance.abs();
-// 								candidates.push_back( cand );
-// 							}
-// 							break;
-// 						}
-// 						case SPHERE:{
-// 							cand.distance = lattice->orth_distance( co.center, orth_pos );
-//                             cand.abs_distance = cand.distance.abs();
-// 							if( cand.abs_distance <= co.radius ){
-// 								candidates.push_back( cand );
-// // 								cout << "Add object " << cand.index << " as candidate  for point  " << pos << endl;
-// 							}
-// 							break;
-// 						}
-// 						case ELLIPSOID:{
-// 							//cout << pos << "\tEllipse: " << co.center << ", ax: " << co.axes << "\n";
-// 							// if it is within the radius of the largest axes, put it as candidate
-// 
-// 							if( insideEllipsoid(orth_pos, co.center, co.axes) ) {
-// 								//cout << "INSIDE\n";
-// 
-// 								// the shortest distance from point to center of ellipse
-// 								//  is the distance to one of the 2 foci
-// 
-// 								setFociEllipsoid(co);
-// 								// 'distance' = distance to line segment between foci, weighted by distance to ellipse center
-// 								//TODO : Missing vector distance calculation
-// 								cand.abs_distance = distanceToLineSegment(orth_pos, co.focus1, co.focus2)
-// 													+ lattice->orth_distance( co.center,  orth_pos ).abs();
-// 								candidates.push_back( cand );
-// 							}
-// 							break;
-// 						}
-// 						case CYLINDER:{
-// 
-// 						default:{
-// 							cerr << "InitCellObjects: Unknown type of cell object" << endl;
-// 							exit(-1);
-// 							break;
-// 						}
-// 					}
 				}
 
 				// if multiple nodes, let first one (ORDER) or closest one (DISTANCE) have the nodes
 				if( candidates.size() > 0 ){
+					
+					int winner=-1;
+
 					switch( mode() ){
-						
-						// first one wins
-						case( Mode::ORDER ):
+						case( Mode::ORDER ): // first one wins
 						{  
-							if( CPM::getNode(pos) == CPM::getEmptyState() ){ // do not overwrite cells (unless medium)
-								CPM::setNode(pos, cellobjects[ candidates[0].index ]->cellID() );
-							}
-							
+							winner=0;
 							break;
 						}
-						// closest one wins
-						case( Mode::DISTANCE ): 
+						case( Mode::DISTANCE ): // smallest distance wins
 						{ 
-							
-							int winner=-1;
-							double min_dist = 99999.9;
+							double max_affinity = 0;
 							for(int c=0; c<candidates.size();c++){
-// 								if (candidates[c].abs_distance == min_dist) {
-// 									VDOUBLE d_n = candidates[c].distance;
-// 									VDOUBLE d_o = min_v_dist;
-// 									if (( d_n.z < d_o.z || (d_n.z==d_o.z  &&  (d_n.y<d_o.y || (d_n.y==d_o.y && d_n.x<d_o.x))))) {
-// 										winner = candidates[c].index;
-// 										min_v_dist = d_n;
-// 									}
-// 								}
-// 								else 
-								if( candidates[c].abs_distance < min_dist ){
-									min_dist = candidates[c].abs_distance;
+								if( candidates[c].affinity > max_affinity ){
+									max_affinity = candidates[c].affinity;
 									winner = candidates[c].index;
 								}
 							}
-
-							// take care that nodes positions in cells are contiguous, also in case of periodic boundary conditions
-// 							VINT pos_optimal = VINT(lattice->from_orth(cellobjects[winner].center)) -
-// 											lattice->node_distance( VINT(lattice->from_orth(cellobjects[ winner ].center)),  VINT(pos));
-							VINT pos_optimal = lattice->from_orth(cellobjects[winner]->center()) -
-											lattice->node_distance( lattice->from_orth(cellobjects[ winner ]->center()),  pos);
-											
-// 							cout << "center: " << lattice->to_orth(cellobjects[ winner ].center)
-// 								<< "\tpos:" << lattice->to_orth(pos) 
-// 								<< "\tdistance: " << lattice->node_distance(  lattice->to_orth(pos), lattice->to_orth(cellobjects[ winner ].center) )
-// 								<< "\tpos_c: " << lattice->to_orth(pos_optimal)
-// 								<< endl;
-								
-							// add node to cell
-// 							cout << "Adding " << pos_optimal << " to cell " << cellobjects[ winner ].id << endl;
-							CPM::setNode(pos_optimal, cellobjects[ winner ]->cellID());
 							break;
 						}
+						
+					}
+					if( CPM::getNode(pos) == CPM::getEmptyState() ) { // do not overwrite cells (unless medium)
+						// take care that node positions in cells are contiguous, also in case of periodic boundary conditions
+						VINT latt_center = lattice->from_orth(cellobjects[winner]->center());
+						VINT pos_optimal = latt_center - lattice->node_distance( latt_center,  pos);
+						CPM::setNode(pos_optimal, cellobjects[ candidates[winner].index ]->cellID() );
 					}
 				i++;
 				}
