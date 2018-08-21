@@ -126,17 +126,21 @@ template <class T>
 class SymbolAccessorBase : public SymbolBase {
 public:
 	SymbolAccessorBase(std::string name) : SymbolBase(), symbol_name(name), _scope(nullptr) {}
+	/// Unique string identifier for a the data type
 	const std::string& type() const final { return TypeInfo<T>::name(); }
+	/// Name of the symbol
 	const std::string& name() const override { return symbol_name; }
+	/// Granularity of the symbol
 	Granularity granularity() const final { return flags().granularity; }
+	/// Scope the Symbol is registered in
 	const Scope* scope() const final { return _scope; };
-	void setScope(const Scope* scope) override { _scope = scope; }
-
+	/// Dependencies of implicite symbols (i.e. Functions, Mappings)
 	std::set<SymbolDependency> dependencies() const override { return std::set<SymbolDependency>(); };
 	
-	
+	/// Symbol's meta information
 	const Flags& flags() const override { return _flags; }
-	Flags& flags() { return _flags; }   /// Writable access to symbol's meta information
+	/// Writable access to symbol's meta information
+	Flags& flags() { return _flags; }   
 	
 	/// Access data at SymbolFoxus @p f 
 	virtual typename TypeInfo<T>::SReturn get(const SymbolFocus& f) const =0;
@@ -153,8 +157,12 @@ public:
 	static shared_ptr<SymbolAccessorBase<T> > createVariable(string name, string description, const T& value);
 
 protected:
+	/// Scope the Symbol is registered in
+	void setScope(const Scope* scope) override { _scope = scope; }
+	friend class Scope;
 	
 private:
+	
 	std::string symbol_name;
 	const Scope* _scope;
 	Flags _flags;
@@ -188,7 +196,9 @@ shared_ptr<SymbolAccessorBase<T> > SymbolAccessorBase<T>::createConstant(string 
 /** \b SymbolRWAccessor base implementation with \b Read/Write access
  * 
  *  The SymbolRWAccessor usually does not contain the data itself. It rather mediates the data access 
- *  into a container. In addition, it provides all meta information requiered.
+ *  into a property, field or whatsoever.
+ * 
+ *  Interface to a buffer implementation is provided for buffering synchronous system updates
  */
 
 template <class T>
