@@ -169,8 +169,8 @@ void CellDivision::executeTimeStep() {
 					case CellDivision::NEWICK : 
 					{
 						// Generate NEWICK tree
-						//string mstr = "\""+to_string(mother_id)+"\"";
-						string mstr = to_string(mother_id);
+						string mstr = "\""+to_string(mother_id)+"\"";
+						//string mstr = to_string(mother_id);
 						bool mother_found=false;
 						for(int i=0; i < newicks.size(); i++){
 							std::size_t found = newicks[i].find(mstr);
@@ -179,8 +179,11 @@ void CellDivision::executeTimeStep() {
 								// string with time: newick format 3 (but has problems)
 								//string mstr2 = string("(\""+to_string(daughter1.getID())+"\":"+to_string(SIM::getTime())+",\""+
 								//						    to_string(daughter2.getID())+"\":"+to_string(SIM::getTime())+")"+mstr);
-								string mstr2 = string("("+to_string(daughter1.getID())+","+to_string(daughter2.getID())+")"+mstr);
-								newicks[i].replace(found,mstr.length(),mstr2);
+								//string mstr2 = string("("+to_string(daughter1.getID())+","+to_string(daughter2.getID())+")"+mstr);
+								//newicks[i].replace(found,mstr.length(),mstr2);
+								
+								string mstr2 = string("(\""+to_string(daughter1.getID())+"\",\""+to_string(daughter2.getID())+"\")");
+								newicks[i].insert(found,mstr2);
 							}
 						}
 						if( !mother_found ){ // add a new newick tree and file
@@ -188,7 +191,9 @@ void CellDivision::executeTimeStep() {
 							// string with time: newick format 3 (but has problems)
 							//string mstr2 = string("(\""+to_string(daughter1.getID())+"\":"+to_string(SIM::getTime())+",\""+
 							//						    to_string(daughter2.getID())+"\":"+to_string(SIM::getTime())+")"+mstr);
-							string mstr2 = string("("+to_string(daughter1.getID())+","+to_string(daughter2.getID())+")"+mstr);
+							//string mstr2 = string("("+to_string(daughter1.getID())+","+to_string(daughter2.getID())+")"+mstr);
+							string mstr2 = string("(\""+to_string(daughter1.getID())+"\",\""+to_string(daughter2.getID())+"\")"+mstr);
+
 							newicks.push_back( mstr2 );
 						}
 						// verbose: print newick tree to stdout
