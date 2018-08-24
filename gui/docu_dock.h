@@ -42,6 +42,7 @@ public slots :
 private slots:
 	void setRootOfHelpIndex();
 	void resetStatus();
+	void openHelpLink(const QUrl&);
 	
 protected:
     virtual void resizeEvent(QResizeEvent* event );

@@ -767,17 +767,8 @@ Tracking symbolic dependencies.
 \defgroup Parallelization
 \ingroup Concepts
 
-Multithreading
-openMP
+Morpheus employs \b OpenMP as the workload-sharing construct. CPM computation, however, does not yet make use of OpenMP.
+Use the environmental variable \b OMP_NUM_THREADS to adjust the number of threads used.
 
 **/
 
-
-/**
-\defgroup MuParser Evaluating math expressions
-\ingroup Concepts
-
-muParser
-
-
-**/

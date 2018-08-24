@@ -19,6 +19,8 @@
 \defgroup ConnectivityConstraint
 \ingroup ML_CellType
 \ingroup CellShapePlugins
+\ingroup Cell_Update_CheckerPlugins
+
 \brief Ensures cells remain connected components
 
 Prevents updates that disrupt connectivity of cell domains. I.e. ensures that cells remain connected components.

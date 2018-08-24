@@ -58,7 +58,7 @@ SET(morpheus_src ${morpheus_src} )
 # MESSAGE( "TIFF INCLUDE = " ${TIFF_INCLUDE_DIR})
 CONFIGURE_FILE(config.h.cmake config.h)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR} ${TIFF_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
-
+ 
 option(MORPHEUS_CORE_CATCH "Catch exceptions in the simulator core. Required for GUI integration. May be switched off for debuging purposese. " ON)
 mark_as_advanced(MORPHEUS_CORE_CATCH)
 
@@ -93,6 +93,8 @@ IF (EXISTS "${GRAPHVIZ_GRAPH_LIBRARY}")
 ELSE()
 	TARGET_LINK_LIBRARIES(${SIMULATOR_EXEC_NAME} ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_CGRAPH_LIBRARY} )
 ENDIF()
+
+
 
 IF  ("${MORPHEUS_OS}" STREQUAL "WIN32")
 	TARGET_LINK_LIBRARIES(${SIMULATOR_EXEC_NAME} pthread psapi)

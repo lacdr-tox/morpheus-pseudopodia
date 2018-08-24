@@ -16,7 +16,8 @@
 #include "core/plugin_parameter.h"
 
 /** \defgroup ML_HeterophilicAdhesion  HeterophilicAdhesion 
-\ingroup ML_Contact InteractionPlugins
+\ingroup ML_Contact InteractionPlugins CPM_InteractionPlugins
+
 \brief Heterophilic adhesive interaction between neighboring CPM cells.
 
 Increases adhesion (i.e. decreases cell-contact energy) between neighboring CPM cells based on heterophilic binding, represented in cell or membrane properties.
@@ -31,7 +32,7 @@ Saturated binding equation:
 */
 
 
-class HeterophilicAdhesion : public Interaction_Addon
+class HeterophilicAdhesion : public CPM_Interaction_Addon
 {
 	private:
 		PluginParameter2<double, XMLEvaluator, RequiredPolicy> adhesive1;

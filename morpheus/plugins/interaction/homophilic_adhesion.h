@@ -17,7 +17,7 @@
 
 /** \defgroup ML_HomophilicAdhesion HomophilicAdhesion 
 \ingroup  ML_Contact
-\ingroup InteractionPlugins
+\ingroup InteractionPlugins  CPM_InteractionPlugins
 \brief Homophilic adhesive interaction between neighboring CPM cells.
 
 Change cell-contact energy by factor based on binding between two identical adhesives \f$ a_{\sigma} \f$ on adjacent cells (i.e. cadherins).
@@ -68,7 +68,7 @@ dEnergy = min(adhesive(cell_1), adhesive(cell_2)) * Strength
  */
 
 /** Plugin providing configurable homophilic adhesion between CPM cells */
-class HomophilicAdhesion : public Interaction_Addon
+class HomophilicAdhesion : public CPM_Interaction_Addon
 {
 	private:
 		PluginParameter2<double, XMLEvaluator, RequiredPolicy> adhesive;

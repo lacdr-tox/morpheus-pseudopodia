@@ -82,6 +82,13 @@ CONFIGURE_FILE( "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
 ADD_CUSTOM_TARGET(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake )
 
+FIND_PACKAGE(Doxygen REQUIRED)
+ADD_CUSTOM_TARGET(doc
+	COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile
+# 	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy ${APP_DOC_HEADERS}  ${DOXYGEN_EXTRA_FILES}
+	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	  COMMENT "Generating documentation with Doxygen" VERBATIM)
+    
 IF(NOT CMAKE_BUILD_TYPE)
 	SET(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING
 		"Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)

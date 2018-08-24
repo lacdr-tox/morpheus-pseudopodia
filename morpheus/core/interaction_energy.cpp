@@ -103,18 +103,18 @@ void InteractionEnergy::loadFromXML( const XMLNode xNode, Scope* scope) {
 				p->loadFromXML(xNode, scope);
 				uint n_interfaces=0;
 				// TODO: check symbol creation
-				if ( dynamic_pointer_cast<Interaction_Overrider>(p) ) {
+				if ( dynamic_pointer_cast<CPM_Interaction_Overrider>(p) ) {
 					if ( ia_overrider[v_id1])
 						throw(string("Multiple interaction overriders for " + ct_name1 + " , " + ct_name2 + " defined!"));
-					ia_overrider[ v_id1 ] = dynamic_pointer_cast<Interaction_Overrider>(p);
-					ia_overrider[ v_id2 ] = dynamic_pointer_cast<Interaction_Overrider>(p);
+					ia_overrider[ v_id1 ] = dynamic_pointer_cast<CPM_Interaction_Overrider>(p);
+					ia_overrider[ v_id2 ] = dynamic_pointer_cast<CPM_Interaction_Overrider>(p);
 					cout << "Registering Interaction overrider " << p->XMLName() << endl;
 					has_overriders = true;
 				}
-				if (dynamic_pointer_cast<Interaction_Addon>(p) ) {
-					ia_addon[ v_id1 ].push_back(dynamic_pointer_cast<Interaction_Addon>(p) );
+				if (dynamic_pointer_cast<CPM_Interaction_Addon>(p) ) {
+					ia_addon[ v_id1 ].push_back(dynamic_pointer_cast<CPM_Interaction_Addon>(p) );
 					// IF NOT HOMOTYPIC INTERACTION
-					if (v_id1 != v_id2)  ia_addon[ v_id2 ].push_back( dynamic_pointer_cast<Interaction_Addon>(p) );
+					if (v_id1 != v_id2)  ia_addon[ v_id2 ].push_back( dynamic_pointer_cast<CPM_Interaction_Addon>(p) );
 					cout << "Registering Interaction plugin " << p->XMLName() << endl;
 					has_addons = true;
 				}

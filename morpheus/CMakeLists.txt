@@ -47,6 +47,7 @@ SET (APP_DOC_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/core/interfaces.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/docu.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/equation.h
+	${CMAKE_CURRENT_SOURCE_DIR}/core/expression_evaluator.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/field.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/vector_equation.h 
 	${CMAKE_CURRENT_SOURCE_DIR}/core/function.h 

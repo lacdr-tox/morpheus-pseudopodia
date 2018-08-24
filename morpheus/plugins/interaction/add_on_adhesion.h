@@ -17,7 +17,7 @@
 
 /** \defgroup ML_AddOnAdhesion AddOnAdhesion
 \ingroup ML_Contact
-\ingroup InteractionPlugins
+\ingroup InteractionPlugins  CPM_InteractionPlugins
 \brief Increases adhesion between neighboring CPM cells based on cell or membrane property
 
 Increases adhesion (i.e. decreases cell-contact energy) between neighboring CPM cells based on cell property or membrane property.
@@ -43,7 +43,7 @@ Both adhesive and strength can be provided as expression.
 */
 
 /** Plugin providing configurable adhesion between CPM cells */
-class AddonAdhesion: public Interaction_Addon
+class AddonAdhesion: public CPM_Interaction_Addon
 {
 	private:
 		PluginParameter2<double, XMLEvaluator, RequiredPolicy> adhesive;
