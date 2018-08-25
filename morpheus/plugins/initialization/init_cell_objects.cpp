@@ -392,7 +392,7 @@ vector<CPM::CELL_ID> InitCellObjects::run(CellType* ct)
 	for(int n = 0; n < cellobjects.size() ; n++){
 		int newID = ct->createCell();
 		cellobjects[n]->setCellID( newID );
-// 		cout << "CellObject " << n << " = center: " << cellobjects[n].center << ", id " << cellobjects[n].id << endl;
+// 		cout << "CellObject " << n << " = center: " << cellobjects[n]->center() << ", id " << cellobjects[n]->cellID() << endl;
 	}
 
 	int i = setNodes(ct);
@@ -485,7 +485,7 @@ int InitCellObjects::setNodes(CellType* ct)
 							for(int c=0; c<candidates.size();c++){
 								if( candidates[c].affinity > max_affinity ){
 									max_affinity = candidates[c].affinity;
-									winner = candidates[c].index;
+									winner = c;
 								}
 							}
 							break;
