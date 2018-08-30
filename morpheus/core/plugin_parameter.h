@@ -289,6 +289,7 @@ protected:
 	
 	bool read(const string& string_val){
 		evaluator = make_unique<Evaluator<ValType> >(string_val, allow_partial_spec);
+		is_initialized = false;
 		return true;
 	};
 	

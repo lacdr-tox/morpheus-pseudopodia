@@ -70,6 +70,8 @@ public:
 		origin = p_origin->get(SymbolFocus::global) + displacement-0.5;
 		p_size->init(scope);
 		size = p_size->get( SIM::lattice().from_orth(origin) );
+		if (SIM::lattice().getDimensions()<=2)  size.z=1;
+		if (SIM::lattice().getDimensions()<=1)  size.y=1;
 		top = origin+size;
 	}
 	string name() const override  { return "Box"; }
@@ -85,46 +87,46 @@ public:
 		return (d<0) ? -d : 0;
 	}
 	double distance(const VDOUBLE& real_pos) const {
-		VDOUBLE out_distance;
-		VDOUBLE in_distance;
+		VDOUBLE out_distance(0,0,0);
+		VDOUBLE in_distance(0,0,0);
 		bool inside = false;
 		
 		auto pos = SIM::lattice().orth_distance(real_pos, origin);
 		
-		if (pos.x<origin.x)
+		if (pos.x<0)
 			out_distance.x=-pos.x;
-		else if (pos.x>top.x) 
-			out_distance.x = pos.x-top.x;
+		else if (pos.x>=size.x) 
+			out_distance.x = pos.x-size.x;
 		else {
-			in_distance.x = min(pos.x, top.x-pos.x);
-			inside=true;
+			in_distance.x = min(pos.x, size.x-pos.x);
 		}
 		
-		if (pos.y<origin.y)
+		if (pos.y<0)
 			out_distance.y=-pos.y;
-		else if (pos.y>top.y)
-			out_distance.y = pos.y-top.y;
+		else if (pos.y>=size.y)
+			out_distance.y = pos.y-size.y;
 		else {
-			in_distance.y = min(pos.y, top.y-pos.y);
-			inside=true;
+			in_distance.y = min(pos.y, size.y-pos.y);
 		}
 
-		if (pos.x<origin.z)
+		if (pos.z<0)
 			out_distance.z=-pos.z;
-		else if (pos.z>top.z)
-			out_distance.z = pos.z-top.z;
+		else if (pos.z>=size.z)
+			out_distance.z = pos.z-size.z;
 		else {
-			in_distance.x = min(pos.z, top.z-pos.z);
-			inside=true;
+			in_distance.z = min(pos.z, size.z-pos.z);
 		}
-		
+
+		inside = (out_distance.abs() == 0);
 		if (inside) {
-			VDOUBLE rel_dist = (in_distance/size/2)-1;
+			// Distance from the boundary
+			VDOUBLE dist = (2*in_distance)/size;
 			if (SIM::lattice().getDimensions()==2) 
-				return max(rel_dist.x,rel_dist.y);
-			else if (SIM::lattice().getDimensions()==3)
-				return max(rel_dist.x,max(rel_dist.y,rel_dist.z));
-			else return rel_dist.x;
+				return -sqrt(dist.x * dist.y);
+			else if (SIM::lattice().getDimensions()==1) 
+				return -dist.x;
+			else 
+				return -sqrt(dist.x * dist.y * dist.z);
 		}
 		else {
 			return out_distance.abs();

@@ -376,7 +376,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		a.operation = AutoFix::COPY; a.replace_existing = false; a.match_path  = "MorpheusModel/CellPopulations/Population/Cell/@name"; a.target_path = "MorpheusModel/CellPopulations/Population/Cell/@id"; fixes.append(a);
 		
 		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Point"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Point"; fixes.append(a);
-		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Box"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Box"; fixes.append(a);
+		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Box"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Box"; fixes.append(a);
 		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Sphere"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Sphere"; fixes.append(a);
 		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Ellipsoid"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Ellipsoid"; fixes.append(a);
 		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Cylinder"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Cylinder"; fixes.append(a);
