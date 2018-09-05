@@ -60,6 +60,10 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 IF (GRAPHVIZ_FOUND)
 	include_directories( ${GRAPHVIZ_INCLUDE_DIR} )
 ENDIF()
+IF(Boost_FOUND)
+	include_directories( ${Boost_INCLUDE_DIR} )
+	add_definitions("-DHAS_BOOST")
+ENDIF()
 
 add_subdirectory(plugins)  # provides plugin_src variable as a list of Plugins
 add_subdirectory(core)
