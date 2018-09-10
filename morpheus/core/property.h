@@ -37,10 +37,12 @@ public:
 	static string CellPropertyXMLName();
 	
 	Container(Mode mode);
+	~Container() { if (_accessor && _accessor->scope()) const_cast<Scope*>(_accessor->scope())->removeSymbol(_accessor); }
 	string XMLName() const override;
 	const string& getName() const { return name.isDefined() ? name() : symbol();}
 	const string& getSymbol() const { return symbol(); }
 	T getInitValue(const SymbolFocus& F);
+	string getInitExpression() { return value.stringVal(); };
 	
 	void loadFromXML(XMLNode node, Scope* scope) override;
 	XMLNode saveToXML() const override;

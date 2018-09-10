@@ -36,86 +36,128 @@ enum SolverMethod { Discrete_Solver, Euler_Solver, Heun_Solver, Runge_Kutta_Solv
  *   
  **/
 
-/** @brief Function evaluation object
+/** 
+ * @brief System's expression evaluation unit
  *
- * Is used as an intenal storage for all kinds of solvers.
+ * Used as an intenal functional storage for the solvers.
  **/
+template <class T>
 class SystemFunc {
 public:
-	enum Type { ODE, EQU, FUN , VEQU};
-	SystemFunc() : value(NULL), value_x(NULL), value_y(NULL),value_z(NULL) {};
-	SystemFunc clone() {
-		SystemFunc s(*this);
-		s.parser=shared_ptr<mu::Parser>(new mu::Parser(*this->parser.get()));
+	enum Type { ODE, EQU, FUN, VAR_INIT};
+
+	shared_ptr<SystemFunc<T>> clone(shared_ptr<EvaluatorCache> cache) const {
+		auto s = make_shared<SystemFunc<T>>(*this);
+		s->cache = cache;
+		
+		if (evaluator) {
+			if (s->cache)
+				s->evaluator = make_shared<ExpressionEvaluator<T>>(*this->evaluator.get(), cache);
+			else {
+				s->evaluator = make_shared<ExpressionEvaluator<T>>(*this->evaluator.get());
+				s->cache = s->evaluator->evaluator_cache; 
+			}
+			
+			if (s->type == FUN) {
+				s->initFunction();
+			}
+		}
 		return s;
 	}
+	mu::fun_class_generic* getCallBack() { 
+		if (!callback) initFunction();
+		return callback.get();
+	}
+	
+	void initFunction();
+	
 		
 	Type type;
-	string symbol_name, expression;
-	shared_ptr<mu::Parser> parser;
-	set<string> dep_symbols;
-	int cache_pos;
-	double k0, k1, k2, k3, k4;
-	double *value;
-	double *value_x, *value_y, *value_z;
 	
-	SymbolRWAccessor<double> global_symbol;
+	SymbolRWAccessor<T> global_symbol;
+	int cache_idx;
+	
+	string symbol_name, expression;
 	bool vec_spherical;
-	SymbolRWAccessor<VDOUBLE> v_global_symbol;
+	shared_ptr< ExpressionEvaluator<T> > evaluator;
+	shared_ptr<EvaluatorCache> cache;
+	vector<double> fun_params;
+	vector<string> fun_params_names;
+	set<string> dep_symbols;
+	
+	T k0, k1, k2, k3, k4;
+
+private:
+	class CallBack;
+	shared_ptr<CallBack> callback;
+	class CallBack : public mu::fun_class_generic {
+		public:
+			CallBack(shared_ptr<ExpressionEvaluator<double> > evaluator, double *data, uint size) : evaluator(evaluator), params(data), nparams(size) {};
+			
+			mu::value_type operator()(const double* args, void * data) const override {
+				if (params) memcpy( params, args, sizeof(double)*nparams );
+				return evaluator->get(*reinterpret_cast<const SymbolFocus*>(data));
+			};
+			int argc() const override {
+				return nparams;
+			};
+			
+		private:
+			shared_ptr<ExpressionEvaluator<double> > evaluator;
+			double* params;
+			uint nparams;
+	};
+	
 };
 
+template<>
+void SystemFunc<double>::initFunction();
+template<>
+void SystemFunc<VDOUBLE>::initFunction();
+
 /**
- * The SystemSolver Interface
+ * The SystemSolver class 
  * 
- * 
- * There is a DATA CACHE with a particular data layout determined by the @c System class.
- * The following rule for the order applies:
- * 1. externaĺ symbols to be fetched
- * 1a. Dependend system variables
- * 1b. Equation/ODE variables
- * 2. local symbols
- * 2a. function variables
- * 2b. other internal variables, i.e. noise scaling and so on
- * 3. internal variables, the system may not be aware of.
- * This last point is optional to the solver.
- * 
- * !! Time symbol is always registered under 1a. to support local scaled time
- * 
- * Equations/Functions and ODEs are transfered as a vector of @c SystemFunc
- * 
+ * All expressions in a SystemSolver are represented by SystemFunc<> instances and evaluated by ExpressionEvaluators that share the same EvaluatorCache,
+ * thus their variable state is tightly coupled.
 */
 class SystemSolver{
 
 	public:
-		SystemSolver(vector<shared_ptr<SystemFunc> > f, map<string,int> cache_layout, SolverMethod method);
-		void solve();
-		valarray<double> cache;
+		// remove copy constructor and assignment operator
+		SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFunc< double >> >& fun, const std::vector< shared_ptr<SystemFunc< VDOUBLE >> >& vfun, SolverMethod method, double time_scaling);
+		SystemSolver(const SystemSolver& p);
+		const SystemSolver& operator=(const SystemSolver& p)= delete;
+		void solve(const SymbolFocus& f, bool use_buffer);
+// 		valarray<double> cache;
 		void setTimeStep(double ht);
+		set<Symbol> getExternalDependencies() { return cache->getExternalSymbols(); };
 		static const string noise_scaling_symbol;
 
 	private:
-		// remove copy constructor and assignment operator
-		SystemSolver(const SystemSolver& p) {};
-		const SystemSolver& operator=(const SystemSolver& p) { return *this;};
 		// timer
 		vector<struct timeval> sstart, send;
 		vector<long> smtime, sseconds, suseconds, stotal;
 
-		vector<SystemFunc> odes;
-		vector<SystemFunc> equations;
-		vector<SystemFunc> vec_equations;
-		vector<SystemFunc> functions;
+		vector<shared_ptr<SystemFunc<double>>> evals, odes, equations, functions, var_initializers;
+		vector<shared_ptr<SystemFunc<VDOUBLE>>> vec_evals, vec_equations, vec_var_initializers;
+		
 
-		map<string,int> cache_layout;
-		double *local_time, *noise_scaling;
+		shared_ptr<EvaluatorCache> cache;
+		uint local_time_idx, noise_scaling_idx;
+		
 		double time_step;
+		double time_scaling;
 		SolverMethod  solver_method;
 
-
-		void RungeKutta(double ht);
-		void Euler(double ht);
-		void Heun(double ht);
-		void Discrete();
+		void fetchSymbols(const SymbolFocus& f);
+		void writeSymbols(const SymbolFocus& f);
+		void writeSymbolsToBuffer(const SymbolFocus& f);
+		void updateLocalVars(const SymbolFocus& f);
+		void RungeKutta(const SymbolFocus& f, double ht);
+		void Euler(const SymbolFocus& f, double ht);
+		void Heun(const SymbolFocus& f, double ht);
+		void Discrete(const SymbolFocus& f);
 };
 
 
@@ -125,10 +167,10 @@ class SystemSolver{
  *  represented by the same class with different configuration
  */
 
-template <SystemType type>
 class System
 {
 public:
+	System(SystemType type);
 	void loadFromXML(const XMLNode node, Scope* scope);
 	void init();
 
@@ -141,6 +183,7 @@ public:
 	
 protected:
 	/// Compute Interface 
+	void computeToTarget(const SymbolFocus& f, bool use_buffer);
 	void compute(const SymbolFocus& f);
 
 	void computeContextToBuffer();
@@ -156,21 +199,21 @@ protected:
 	
 	Scope *local_scope;
 	CellType* celltype;
+	mutable GlobalMutex mutex;
 	
 	struct timeval start, end;
 	long mtime, seconds, useconds, total;
 	SolverMethod solver_method;
+	SystemType system_type;
 	double time_scaling;
 	
-	set<string> available_symbols;
+// 	set<string> available_symbols;
 	map<string,double> local_symbols;
-	static double* registerVariable(const char*, void*);
+// 	static double* registerVariable(const char*, void*);
 	vector< shared_ptr<Plugin> > plugins;
-	vector< shared_ptr<VectorEquation> > vec_equations;
-	vector< shared_ptr<SystemFunc> > functionals, equations, functions;
-	vector< SymbolAccessor<double> > external_symbols;
-	uint external_symbols_time__pos;
-	map<string, int> cache_layout;
+	vector< shared_ptr<SystemFunc<VDOUBLE>> > vec_evals, vec_equations;
+	vector< shared_ptr<SystemFunc<double>> > evals, equations;
+	shared_ptr<EvaluatorCache> cache;
 	vector< shared_ptr<SystemSolver> > solvers;
 	
 	
@@ -180,40 +223,41 @@ protected:
 /** @brief ContinuousSystem is a Solver for time continuous ODE systems that is thightly coupled to the TimeScheduler
  */
 
-class ContinuousSystem: public System<CONTINUOUS_SYS>, public ContinuousProcessPlugin {
+class ContinuousSystem: public System, public ContinuousProcessPlugin {
 public:
 	DECLARE_PLUGIN("System");
 
-    ContinuousSystem() : ContinuousProcessPlugin(ContinuousProcessPlugin::CONTI,TimeStepListener::XMLSpec::XML_REQUIRED) {};
+    ContinuousSystem() : System(CONTINUOUS_SYS), ContinuousProcessPlugin(ContinuousProcessPlugin::CONTI,TimeStepListener::XMLSpec::XML_REQUIRED) {};
 	/// Compute and Apply the state after time step @p step_size.
 	void loadFromXML(const XMLNode node, Scope* scope) override;
 	void init(const Scope* scope) override;
-	void prepareTimeStep() override { System<CONTINUOUS_SYS>::computeContextToBuffer(); };
-	void executeTimeStep() override { System<CONTINUOUS_SYS>::applyContextBuffer(); };
-	void setTimeStep(double t) override { ContinuousProcessPlugin::setTimeStep(t); System<CONTINUOUS_SYS>::setTimeStep(t * time_scaling); };
-	const Scope* scope()  override{ return System<CONTINUOUS_SYS>::getLocalScope(); };
+	void prepareTimeStep() override { System::computeContextToBuffer(); };
+	void executeTimeStep() override { System::applyContextBuffer(); };
+	void setTimeStep(double t) override { ContinuousProcessPlugin::setTimeStep(t); System::setTimeStep(t * time_scaling); };
+	const Scope* scope()  override{ return System::getLocalScope(); };
 };
 
 /** @brief DiscreteSystem regularly applies a System on each individual in a context.
  */
-class DiscreteSystem: public System<DISCRETE_SYS>, public InstantaneousProcessPlugin {
+class DiscreteSystem: public System, public InstantaneousProcessPlugin {
 public:
 	DECLARE_PLUGIN("DiscreteSystem");
-    DiscreteSystem() : InstantaneousProcessPlugin(TimeStepListener::XMLSpec::XML_REQUIRED) {};
+    DiscreteSystem() : System(DISCRETE_SYS), InstantaneousProcessPlugin(TimeStepListener::XMLSpec::XML_REQUIRED) {};
 
 	/// Compute and Apply the state after time step @p step_size.
-	void loadFromXML(const XMLNode node, Scope* scope) override {  InstantaneousProcessPlugin::loadFromXML(node, scope); System<DISCRETE_SYS>::loadFromXML(node, scope); };
+	void loadFromXML(const XMLNode node, Scope* scope) override {  InstantaneousProcessPlugin::loadFromXML(node, scope); System::loadFromXML(node, scope); };
 	void init(const Scope* scope) override;
-	void executeTimeStep() override { System<DISCRETE_SYS>::computeContextToBuffer(); System<DISCRETE_SYS>::applyContextBuffer();  };
-	const Scope* scope() override { return System<DISCRETE_SYS>::getLocalScope(); };
+	void executeTimeStep() override { System::computeContextToBuffer(); System::applyContextBuffer();  };
+	const Scope* scope() override { return System::getLocalScope(); };
 };
 
 
 /** @brief TriggeredSystem can be used to apply a System to an individual in a context and applies a System if it holds.
  */
-class TriggeredSystem: public System<DISCRETE_SYS> {
+class TriggeredSystem: public System {
 public:
-	void trigger(const SymbolFocus& f) { System<DISCRETE_SYS>::compute(f); };
+	TriggeredSystem() : System(DISCRETE_SYS) {}
+	void trigger(const SymbolFocus& f) { System::compute(f); };
 };
 
 
@@ -244,18 +288,18 @@ Set symbol "candivide" (e.g. assume its a CellProperty) to 1 after 1000 simulati
 \endverbatim
 */
 
-/** @brief EnventSystem checks regularly a condition for each individual in a context and applies a System if the condition holds.
+/** @brief EventSystem checks regularly a condition for each individual in a context and applies a System if the condition holds.
  */
-class EventSystem: public System<DISCRETE_SYS>, public InstantaneousProcessPlugin {
+class EventSystem: public System, public InstantaneousProcessPlugin {
 public:
 	DECLARE_PLUGIN("Event");
-    EventSystem() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_OPTIONAL ) {};
+    EventSystem() : System(DISCRETE_SYS), InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_OPTIONAL ) {};
     void loadFromXML ( const XMLNode node, Scope* scope) override;
     void init (const Scope* scope) override;
 	/// Compute and Apply the state after time step @p step_size.
 	void executeTimeStep() override;
 	CellType* celltype;
-	const Scope* scope() override { return System<DISCRETE_SYS>::getLocalScope(); };
+	const Scope* scope() override { return System::getLocalScope(); };
 
 protected:
 	// TODO We have to store the state of the event with respect to the context !! map<SymbolFocus, bool> old_value ?? that is a map lookup per context !!!
