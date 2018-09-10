@@ -257,9 +257,9 @@ bool PClass::factory_registration = registerPlugin<PClass>(); /* PluginFactory::
 
 class CPM_Energy : virtual public Plugin {
 	public:
-		/** Compute the change in energy due to an update with respect to cell cell_id. todo contains information about 
+		/** Compute the change in energy due to an update with respect to cell @p cell_id. 
 		 * 
-		 * Updated cell properties are availible in the Cell  via accessors prefaced with updated_ .
+		 *  Updated cell properties are available in the Cell via accessors prefixed with **updated_** .
 		 */
 		virtual double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const =0;
 		virtual double hamiltonian(CPM::CELL_ID cell_id) const =0;            // Berechnung gesamte Energie

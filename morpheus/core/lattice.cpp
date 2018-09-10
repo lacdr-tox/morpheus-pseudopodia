@@ -1,5 +1,5 @@
 #include "lattice.h"
-#include "simulation.h"
+#include "random_functions.h"
 
 
 
@@ -39,6 +39,31 @@ Lattice::Lattice() {
 		boundaries[i] = Boundary::periodic;
 	}
 }
+
+Lattice::Lattice(const Lattice::LatticeDesc& desc) : Lattice()
+{
+	for (auto const & bdry : desc.boundaries) {
+		boundaries[bdry.first] = bdry.second;
+	}
+	_size = desc.size;
+	default_neighborhood = getNeighborhoodByOrder(desc.neighborhood_order);
+}
+
+
+unique_ptr<Lattice> Lattice::createLattice(const Lattice::LatticeDesc& desc)
+{
+	switch (desc.structure) {
+		case cubic:
+			return make_unique<Cubic_Lattice>(desc);
+		case hexagonal:
+			return make_unique<Hex_Lattice>(desc);
+		case square:
+			return make_unique<Square_Lattice>(desc);
+		case linear:
+			return make_unique<Linear_Lattice>(desc);
+	}
+}
+
 
 void Lattice::loadFromXML(const XMLNode xnode) {
 // 	VINT xml_size, domain_size;

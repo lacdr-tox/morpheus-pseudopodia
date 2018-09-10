@@ -130,7 +130,7 @@ Example: To gain plotting speed, plot PDE layer using binary files, with a resol
 class LabelPainter  {
 public:
 	LabelPainter();
-	void loadFromXML(const XMLNode node);
+	void loadFromXML(const XMLNode node, const Scope * scope);
 	void init(const Scope* scope);
 	set<SymbolDependency> getInputSymbols() const;
 	const string& getDescription() const;
@@ -148,7 +148,7 @@ private:
 class ArrowPainter  {
 public:
 	ArrowPainter();
-    void loadFromXML(const XMLNode );
+	void loadFromXML(const XMLNode, const Scope * scope);
 	void init(const Scope* scope);
 	set<SymbolDependency> getInputSymbols() const;
 	void plotData(ostream& );
@@ -165,7 +165,7 @@ private:
  */
 class FieldPainter {
 public:
-    void loadFromXML(const XMLNode node );
+    void loadFromXML(const XMLNode node, const Scope * scope);
 	void init(const Scope* scope);
 	set<SymbolDependency> getInputSymbols() const;
 	void plotData(ostream& out );
@@ -199,7 +199,7 @@ private:
 
 class VectorFieldPainter  {
 public:
-    void loadFromXML(const XMLNode node_ );
+    void loadFromXML(const XMLNode node, const Scope * scope );
 	void init(const Scope* scope);
 	set<SymbolDependency> getInputSymbols() const;
 	void plotData(ostream& out_ );
@@ -259,7 +259,7 @@ class CellPainter  {
 		
 		CellPainter();
 		~CellPainter();
-		virtual void loadFromXML(const XMLNode );
+		virtual void loadFromXML(const XMLNode, const Scope* scope );
 		void init(const Scope* scope);
 		set<SymbolDependency> getInputSymbols() const;
 		float getMaxVal() { return max_val;}

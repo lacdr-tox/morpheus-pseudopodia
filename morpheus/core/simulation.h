@@ -61,14 +61,6 @@ class VectorField_Layer;
 
 
 
-// global random methods using a unique source of randomness to gain reproducability
-bool getRandomBool();
-double getRandom01();
-double getRandomGauss(double s);
-double getRandomGamma(double shape, double scale);
-uint getRandomUint(uint max_val);
-
-
 class MorpheusException {
 public:
 	MorpheusException(string what);
@@ -120,19 +112,9 @@ namespace SIM {
 	string getTimeScaleUnit();
 	void saveToXML();
 	
-	const Scope* getScope();
+   /// Get the global Scope. All other scopes are direct or indirect sub-scopes of the global scope.
 	const Scope* getGlobalScope();
-// 	Scope* createSubScope(string name, CellType* ct = 0);
-	void enterScope(const Scope *scope);
-	void leaveScope();
 
-	/// Find a symbol in the current scope
-	template <class S>
-	SymbolAccessor<S> findSymbol(string name) { return getScope()->findSymbol<S>(name); }
-	
-	///  \briefFind a writable symbol in the current scope
-	template <class S>
-	SymbolRWAccessor< S > findRWSymbol(string name) { return getScope()->findRWSymbol<S>(name); }
 	
 	/// \brief Find a globally accessible Symbol (global scope)
 	template <class S>
@@ -144,13 +126,6 @@ namespace SIM {
 	 */
 	template <class S>
 	SymbolAccessor<S> findGlobalSymbol(string name, const S& default_val) { return getGlobalScope()->findSymbol<S>(name,default_val); };
-	
-	/** Get the type name of the referred symbol
-	 * 
-	 * The naming convention is accessible via TypeInfo<type>::name()
-	 */
-	inline string getSymbolType(string name) { return getGlobalScope()->findSymbol(name)->type(); };
-
 		
 	/// Global symbol providing the simulation time
 	class TimeSymbol : public SymbolAccessorBase<double> {

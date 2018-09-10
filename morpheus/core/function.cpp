@@ -54,6 +54,7 @@ void FunctionPlugin::loadFromXML ( const XMLNode Node, Scope* scope)
 }
 
 void FunctionPlugin::init (const Scope* scope) {
+	if (initialized) return;
 	Plugin::init(local_scope);
 	
 	// Add Parameters as local variables to the evaluators
@@ -65,6 +66,7 @@ void FunctionPlugin::init (const Scope* scope) {
 	evaluator->setLocalsTable(parameter_table);
 	
 	accessor->setEvaluator(evaluator);
+	initialized = true;
 	evaluator->init();
 }
 

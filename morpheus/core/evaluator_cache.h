@@ -78,9 +78,12 @@ public:
 	 * Update the scalar expansion wrappers must be done manually by calling setExpansionIndex
 	 */
 	void setLocals(const double *data) {
-		assert(sizeof(data) == sizeof(double) * locals_cache.size() );
+// 		if (sizeof(data) != sizeof(double) * locals_cache.size() ) cout << sizeof(data) << " != " << locals_cache.size() <<  " * " << sizeof(double) << endl;
+// 		assert(sizeof(data) == sizeof(double) * locals_cache.size() );
 		memcpy( &locals_cache[0] , data, sizeof(double) * locals_cache.size() );
 	}
+	
+	void addParserLocal(const string& name) { parser_symbols.insert(name); }
 	
 	/// Get the current value of symbol @p name
 	double get(const string& name); 
@@ -162,14 +165,14 @@ protected:
 	// External variable storage
 	map<string, SymbolDesc> externals;
 	map<string, VSymbolDesc> v_externals;
-// 	vector<double> externals_cache;
 	
 	// infrastructure for vector symbol expansion
 	bool scalar_expansion_permitted = false;
 	bool scalar_expansion = false;
 	map<string,ExpansionDesc> expansions;
-	// value cache for expanded vector symbols 
-// 	vector<double> expansion_cache;
+
+	// parser local symbols, i.e. used for Function parameters
+	set<string> parser_symbols;
 };
 
 

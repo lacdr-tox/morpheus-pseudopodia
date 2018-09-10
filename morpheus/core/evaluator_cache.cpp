@@ -122,7 +122,6 @@ double EvaluatorCache::get(const string& name) {
 
 EvaluatorCache::ParserDesc EvaluatorCache::getDescriptor(mu::Parser *parser) {
 	auto symbols = parser->GetUsedVar();
-// 	parser->ClearVar();
 	ParserDesc desc;
 	desc.requires_expansion = false;
 	for (const auto & sym : symbols) {
@@ -148,7 +147,12 @@ EvaluatorCache::ParserDesc EvaluatorCache::getDescriptor(mu::Parser *parser) {
 				continue;
 			}
 		}
-		throw string("EvaluatorCache::attach:  Symbol ") + sym.first + " not registered.";
+		if (parser_symbols.count(sym.first)) {
+			desc.loc_symbols.insert(sym.first);
+			continue;
+		}
+
+		throw string("EvaluatorCache::getDescriptor:  Symbol ") + sym.first + " not registered.";
 	}
 	initialized = true;   // No more registration of local symbols are allowed to keep the cache positions.
 	return desc;
@@ -156,7 +160,6 @@ EvaluatorCache::ParserDesc EvaluatorCache::getDescriptor(mu::Parser *parser) {
 
 void EvaluatorCache::attach(mu::Parser *parser) {
 	auto symbols = parser->GetUsedVar();
-// 	parser->ClearVar();
 	for (const auto & sym : symbols) {
 		// look up local symbols
 		auto loc = locals.find(sym.first);
@@ -184,6 +187,10 @@ void EvaluatorCache::attach(mu::Parser *parser) {
 				continue;
 			}
 		}
+		
+		if (parser_symbols.count(sym.first))
+			continue;
+
 		throw string("EvaluatorCache::attach:  Symbol ") + sym.first + " not registered.";
 	}
 	initialized = true;   // No more registration of local symbols are allowed to keep the cache positions.

@@ -127,7 +127,6 @@ void CellType::loadFromXML(const XMLNode xCTNode, Scope* scope) {
 void CellType::loadPlugins()
 {
 	assert(plugins.empty());
-	SIM::enterScope(local_scope);
 	int nPlugins = stored_node.nChildNode();
 	for(int i=0; i<nPlugins; i++) {
 		XMLNode xNode = stored_node.getChildNode(i);
@@ -149,14 +148,12 @@ void CellType::loadPlugins()
 			throw MorpheusException(er, stored_node);
 		}
 	}
-	SIM::leaveScope();
 }
 
 
 void CellType::init() {
 	if (!local_scope)
 		throw string ("Celltype ")+ name + "has no scope in init()";
-	SIM::enterScope(local_scope);
 	
 	// Property initializer may fail gracefully when expressions require an explicite cell
 	for (auto plug : plugins) {
@@ -257,8 +254,8 @@ void CellType::init() {
 			SymbolRWAccessor<double> symbol;
 			symbol = local_scope->findRWSymbol<double>(ip.symbol);
 
-			ExpressionEvaluator<double> init_expression(ip.expression);
-			init_expression.init(local_scope);
+			ExpressionEvaluator<double> init_expression(ip.expression,local_scope);
+			init_expression.init();
 			
 			// Apply InitProperty expressions for all cells
 			for (auto cell : cp.cells) {
@@ -276,8 +273,6 @@ void CellType::init() {
 		CPM::CELL_ID cell_id = cell.first;
 		storage.cell(cell_id).loadFromXML( xCellNode );
 	}
-	
-	SIM::leaveScope();
 }
 
 multimap<Plugin*, SymbolDependency > CellType::cpmDependSymbols() const
@@ -318,8 +313,6 @@ XMLNode  CellType::savePopulationToXML() const {
 }
 
 void CellType::loadPopulationFromXML(const XMLNode xNode) {
-
-	SIM::enterScope(local_scope);
 	
 	CellPopDesc cp;
 	cp.xPopNode = xNode;
@@ -357,8 +350,6 @@ void CellType::loadPopulationFromXML(const XMLNode xNode) {
 	}
 	
 	cell_populations.push_back(cp);
-
-	SIM::leaveScope();
 }
 
 

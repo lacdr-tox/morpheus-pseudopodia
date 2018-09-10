@@ -38,6 +38,7 @@
 #include "version.h"
 #include "parse_arg.h"
 #include "interfaces.h"
+#include "random_functions.h"
 #include "celltype.h"
 #include "super_celltype.h"
 #include "diffusion.h"
@@ -45,13 +46,6 @@
 #include "gnuplot_i/gnuplot_i.h"
 
 
-// make a unique source of randomness available to everyone
-vector<mt19937> random_engines;
-// #if defined USING_CXX0X_TR1
-	vector<mt19937> random_engines_alt;
-// #else
-// 	vector<ranlux_base_01> random_engines_alt;
-// #endif
 
 namespace SIM {
 	const string dep_graph_format = "svg";

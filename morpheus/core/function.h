@@ -168,6 +168,7 @@ class FunctionPlugin : public Plugin {
 				friend class FunctionPlugin;
 		};
 	private:
+		bool initialized = false;
 		shared_ptr<Symbol> accessor;
 		shared_ptr<ThreadedExpressionEvaluator<double> > evaluator;
 		Scope* local_scope = nullptr;

@@ -17,8 +17,8 @@ void TimeScheduler::loadFromXML(XMLNode xTime, Scope* scope)
 	ts.stop_time.loadFromXML(xTime.getChildNode("StopTime"), scope);
 		
 	string expression;
-	 if (getXMLAttribute(xTime,"StopCondition/Condition/text",expression)) {
-		ts.stop_condition = shared_ptr<ExpressionEvaluator<double> >(new ExpressionEvaluator<double>(expression)) ;
+	if (getXMLAttribute(xTime,"StopCondition/Condition/text",expression)) {
+		ts.stop_condition = shared_ptr<ExpressionEvaluator<double> >(new ExpressionEvaluator<double>(expression, scope)) ;
 	}
 		
 	if (xTime.nChildNode("SaveInterval")) { 
@@ -266,7 +266,7 @@ void TimeScheduler::init()
 	ts.current_time = SIM::getStartTime();
 	
 	if (ts.stop_condition) {
-		ts.stop_condition->init(SIM::getGlobalScope());
+		ts.stop_condition->init();
 	}
 }
 

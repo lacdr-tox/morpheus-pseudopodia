@@ -590,4 +590,11 @@ void setUpdate(CPM::Update& update) {
 	
 }
 
+void finish() {
+	celltypes.clear();
+	celltype_names.clear();
+	cpm_sampler.reset();
+	layer.reset();
+}
+
 }

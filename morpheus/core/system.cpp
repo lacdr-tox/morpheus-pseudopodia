@@ -9,9 +9,14 @@ double getRandomNormValueSDE(double mean, double stdev, double scaling) {
 
 template <>
 void SystemFunc<double>::initFunction() {
-	for (uint i=0; i<fun_params.size(); i++) {
+	if (fun_params_names.size() != fun_params.size())
+		fun_params.resize( fun_params_names.size() );
+	for (uint i=0; i<fun_params_names.size(); i++) {
+		cout << "Registering parameter " << fun_params_names[i]<< endl;
 		evaluator->parser->DefineVar(fun_params_names[i], &fun_params[i]);
+		cache->addParserLocal(fun_params_names[i]);
 	}
+	
 	callback = make_shared<CallBack>(evaluator,  fun_params.empty() ? NULL : &fun_params[0], fun_params.size());
 }
 template<>
@@ -98,6 +103,7 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 					eqn->expression = function->getExpr();
 					eqn->symbol_name = function->getSymbol();
 					eqn->fun_params_names = function->getParams();
+					eqn->fun_params.resize( eqn->fun_params_names.size() );
 					evals.push_back(eqn);
 				}
 				else if (dynamic_pointer_cast<Container<double>>(p) && p->XMLName() == Container<double>::VariableXMLName()) {
@@ -236,12 +242,12 @@ void System::applyBuffer(const SymbolFocus& f)
 
 void System::computeToTarget(const SymbolFocus& f, bool use_buffer)
 {
-	// The cache order is essential and fixed, so never mess around with the blocks here
 	auto solv_num = omp_get_thread_num();
 	if (solv_num>=solvers.size()) {
 		mutex.lock();
 		while (solv_num>=solvers.size()) {
-			solvers.push_back(make_shared<SystemSolver>(*solvers[0]));
+			assert(solvers[0]);
+			solvers.push_back(shared_ptr<SystemSolver>(new SystemSolver(*solvers[0])));
 		}
 		mutex.unlock();
 	}
@@ -543,6 +549,7 @@ SystemSolver::SystemSolver(const SystemSolver& other)
 				var_initializers.push_back(e);
 				break;
 			case SystemFunc<double>::FUN :
+				e->initFunction();
 				functions.push_back(e);
 				break;
 			case SystemFunc<double>::EQU :

@@ -1,10 +1,7 @@
 SET(tools_src
-	parse_arg.cpp
-	xml_functions.cpp
-	string_functions.cpp
 )
 
-SET(morpheus_src
+SET(morpheus_core_src
 	cell.cpp
 	celltype.cpp
 	cell_update.cpp
@@ -19,6 +16,7 @@ SET(morpheus_src
 	diff_eqn.cpp
 	edge_tracker.cpp
 	equation.cpp
+	evaluator_cache.cpp
 	expression_evaluator.cpp
 	field.cpp
 	focusrange.cpp
@@ -30,15 +28,22 @@ SET(morpheus_src
 	membranemapper.cpp
 	plugin_parameter.cpp
 	property.cpp
-	rss_stat.cpp
+	random_functions.cpp
 	scales.cpp
 	scope.cpp
-	simulation.cpp
+	string_functions.cpp
 	symbol.cpp
 	symbolfocus.cpp
 	system.cpp
 	time_scheduler.cpp
 	vector_equation.cpp
+	xml_functions.cpp
+)
+SET(morpheus_src
+	parse_arg.cpp
+	rss_stat.cpp
+	simulation.cpp
+	${evaluator_src}
 # 	super_cell.cpp
 # 	super_celltype.cpp
 )
@@ -48,7 +53,7 @@ foreach(source ${plugin_src})
 	list(APPEND morpheus_src ../plugins/${source})
 endforeach(source)
 
-SET(morpheus_src ${morpheus_src} ${tools_src} )
+SET(morpheus_src ${morpheus_src} )
 
 # MESSAGE( "TIFF INCLUDE = " ${TIFF_INCLUDE_DIR})
 CONFIGURE_FILE(config.h.cmake config.h)
@@ -68,10 +73,12 @@ ENDIF()
 SET(SIMULATOR_EXEC_NAME ${MORPHEUS_EXEC_NAME})
 
 IF (HAVE_OBJECT_LINKAGE)
-	ADD_EXECUTABLE(${SIMULATOR_EXEC_NAME} ${morpheus_src} $<TARGET_OBJECTS:muParser>)
+	ADD_LIBRARY(morpheusCore OBJECT ${morpheus_core_src}  )
+	ADD_EXECUTABLE(${SIMULATOR_EXEC_NAME} ${morpheus_src} $<TARGET_OBJECTS:muParser> $<TARGET_OBJECTS:morpheusCore>)
 ELSE()
+	ADD_LIBRARY(morpheusCore ${morpheus_core_src})
 	ADD_EXECUTABLE(${SIMULATOR_EXEC_NAME} ${morpheus_src})
-	target_link_libraries(${SIMULATOR_EXEC_NAME} muParser)
+	target_link_libraries(${SIMULATOR_EXEC_NAME} muParser morpheusCore)
 ENDIF()
 
 IF (MORPHEUS_STATIC_BUILD)
