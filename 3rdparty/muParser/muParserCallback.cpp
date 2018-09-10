@@ -180,6 +180,16 @@ namespace mu
     ,m_bAllowOpti(a_bAllowOpti)
   {}
 
+  ParserCallback::ParserCallback(fun_class_generic *a_pFun, bool a_bAllowOpti) 
+    :m_pFun((void*)a_pFun)
+    ,m_iArgc(a_pFun->argc())
+    ,m_iPri(-1)
+    ,m_eOprtAsct(oaNONE)
+    ,m_iCode(cmFUNC_VAR)
+    ,m_iType(tpDBL)
+    ,m_bAllowOpti(a_bAllowOpti)
+  {}
+  
   //---------------------------------------------------------------------------
   ParserCallback::ParserCallback(bulkfun_type0 a_pFun, bool a_bAllowOpti)
     :m_pFun((void*)a_pFun)

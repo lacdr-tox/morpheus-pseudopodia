@@ -184,6 +184,7 @@ namespace mu
 
     // operators and functions
     cmFUNC,                ///< Code for a generic function item
+	cmFUNC_VAR,               ///< Code for a generic function item with private data
     cmFUNC_STR,            ///< Code for a function with a string parameter
     cmFUNC_BULK,           ///< Special callbacks for Bulk mode with an additional parameter for the bulk index 
     cmSTRING,              ///< Code for a string token
@@ -282,9 +283,18 @@ namespace mu
 
   // Parser callbacks
   
-  /** \brief Callback type used for functions without arguments. */
+  /** \brief Callback type used for annonymouns function onjkects. */
   typedef value_type (*generic_fun_type)();
-
+  
+  /** \brief Callback interface class  used for functions with a generic argument stack. The number of parameters is kept in the  */
+  class fun_class_generic {
+  public:
+	  /// Callback, arguments are in @p args, @p provides pass through data
+	  virtual value_type operator ()(const value_type*, void* data) const =0;
+	  /// return the number of arguments
+	  virtual int argc() const =0; 
+  };
+  
   /** \brief Callback type used for functions without arguments. */
   typedef value_type (*fun_type0)();
 
