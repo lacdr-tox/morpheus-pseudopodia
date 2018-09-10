@@ -17,6 +17,7 @@
 #include <stdexcept>
 #include "string_functions.h"
 #include "symbolfocus.h"
+#include "muParser/muParser.h"
 
 typedef std::deque<double> double_queue;
 
@@ -81,6 +82,7 @@ public:
 		bool writable;
 		bool partially_defined;
 		bool integer;
+		bool function;
 		Flags() :
 		  granularity(Granularity::Global),
 		  time_const(false),
@@ -89,7 +91,8 @@ public:
 		  delayed(false),
 		  writable(false),
 		  partially_defined(false),
-		  integer(false) {};
+		  integer(false), 
+		  function(false) {};
 	};
 	
 	virtual ~SymbolBase() {};
@@ -166,6 +169,16 @@ private:
 	std::string symbol_name;
 	const Scope* _scope;
 	Flags _flags;
+};
+
+/// Interface class for the parametric function call
+template <class T>
+class FunctionAccessor {
+	public:
+		virtual int parameterCount() const =0;
+		virtual mu::fun_class_generic* getCallBack() const =0;
+		virtual typename TypeInfo<T>::SReturn get(double parameters[], const SymbolFocus& focus) const =0;
+		virtual typename TypeInfo<T>::SReturn safe_get(double parameters[], const SymbolFocus& focus) const =0;
 };
 
 
