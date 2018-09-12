@@ -159,6 +159,14 @@ double getOR(double left, double right) {
 	return left || right;
 }
 
+double getLEQ(double left, double right) {
+	return left <= right;
+}
+
+double getGEQ(double left, double right) {
+	return left >= right;
+}
+
 double piecewise_3_function(double v0, double c0, double velse) {
 	return c0 ? v0 : velse;
 }
@@ -184,9 +192,12 @@ unique_ptr< mu::Parser > createMuParserInstance()
 	parser->DefineOprt("and",			&getAND, 1, mu::oaLEFT, true);
 	parser->DefineOprt("or",			&getOR, 2, mu::oaLEFT, true);
 	// SBML Import compatibility (from MathML <piecewise> construct)
-	parser->DefineFun("piecewise", &piecewise_3_function, true);
-	parser->DefineFun("piecewise", &piecewise_5_function, true);
+	parser->DefineFun("piecewise", 		&piecewise_3_function, true);
+	parser->DefineFun("piecewise", 		&piecewise_5_function, true);
+	parser->DefineFun("leq",			&getLEQ, true);
+	parser->DefineFun("geq",			&getGEQ, true);
 	
 	return parser;
 	
 }
+

@@ -164,7 +164,7 @@ void Logger::init(const Scope* scope){
 			else
 				throw MorpheusException(string("Cannot restrict Logger to celltype "+celltype()->getName()+" because it is not defined."), stored_node);
 		}
-		else if ( exclude_medium.isDefined() && exclude_medium() && (logger_granularity == Granularity::Cell || logger_granularity == Granularity::MembraneNode) ) {
+		else if ( (exclude_medium.isDefined() && exclude_medium()) || (!exclude_medium.isDefined() && (logger_granularity == Granularity::Cell || logger_granularity == Granularity::MembraneNode) )) {
 			// The FocusRange excludes CellTypes depending on celltype->isMedium()
 			// We just have to keep the partial spec option for the symbols.
 			// Right now there is no option to include the medium types

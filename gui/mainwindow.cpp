@@ -604,6 +604,8 @@ void MainWindow::menuBarTriggered(QAction* act)
 			QSharedPointer<MorphModel> sbml_import = SBMLImporter::importSBML();
 			if (sbml_import)
 				config::importModel(sbml_import);
+			modelViewer[current_model]->setModelPart("CellTypes");
+			showCurrentModel();
 		}
 	}
     if(act->text() == "&Quit")
