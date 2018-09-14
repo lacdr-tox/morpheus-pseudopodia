@@ -37,7 +37,7 @@ private:
     PluginParameter2<unsigned int, XMLValueReader, DefaultValPolicy> maxPseudopods;
     PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> movingDirection;
     PluginParameter2<Pseudopod::RetractionMethod, XMLNamedValueReader, DefaultValPolicy> retractionMethod;
-    PluginParameter2<Pseudopod::TouchBehavior , XMLNamedValueReader, DefaultValPolicy> touchBehavior;
+    PluginParameter2<Pseudopod::TouchBehavior, XMLNamedValueReader, DefaultValPolicy> touchBehavior;
 
     once_flag initPseudopods;
 
@@ -46,7 +46,7 @@ private:
     CellType *cellType;
     map<CPM::CELL_ID, vector<Pseudopod>> pseudopods;
 
-    static constexpr double neighboringActinBonus = 1e4;
+    static constexpr double neighboringActinBonus = 1e3;
     static constexpr double pseudopodTipBonus = 2e5;
     static constexpr double pseudopodTipBonusMaxDistance = 3;
 
