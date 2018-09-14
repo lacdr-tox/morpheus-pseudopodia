@@ -21,7 +21,7 @@ Pseudopod::Pseudopod(unsigned int maxGrowthTime, const CPM::LAYER *cpm_layer, CP
           PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field, RetractionMethod retractionMethod,
           double kappaInit, double kappaCont, TouchBehavior touchBehavior) :
         maxGrowthTime_(maxGrowthTime), _cpm_layer(cpm_layer), cellId(cellId),
-        movingDirection_(movingDirection), state_(State::INIT), field_(field),
+        movingDirection_(movingDirection), state_(State::INACTIVE), field_(field),
         timeLeftForGrowth_(0), timeNoExtension_(0), paramRetractionMethod_(retractionMethod), currRetractionMethod_(retractionMethod), kappaInit_(kappaInit),
         kappaCont_(kappaCont), touchBehavior_(touchBehavior) {
     bundlePositions_.reserve(maxGrowthTime);
@@ -143,7 +143,7 @@ void Pseudopod::retractBundle() {
 
     if (bundlePositions_.empty()) {
         // completely retracted, start over
-        state_ = State::INIT;
+        state_ = State::INACTIVE;
     }
 }
 
@@ -164,6 +164,9 @@ void Pseudopod::timeStep() {
             retractBundle();
             break;
         case State::INACTIVE:
+            if(getRandom01() < time_between_extensions) {
+                state_ = State::INIT;
+            }
             break;
     }
 }
