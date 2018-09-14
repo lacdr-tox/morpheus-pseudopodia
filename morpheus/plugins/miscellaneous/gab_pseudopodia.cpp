@@ -18,7 +18,7 @@ Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpe
     registerPluginParameter(directionalStrengthCont);
 
     maxPseudopods.setXMLPath("max-pseudopods");
-    maxPseudopods.setDefault("0");
+    maxPseudopods.setDefault("1");
     registerPluginParameter(maxPseudopods);
 
     field.setXMLPath("field");
