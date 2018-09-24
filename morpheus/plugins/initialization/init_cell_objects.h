@@ -137,7 +137,7 @@ public:
 			virtual ~CellObject() {};
 			virtual string name() const =0;
 			virtual VDOUBLE center() const =0;
-			virtual void init(const Scope * scope) = 0;
+			virtual void init() = 0;
 			virtual double affinity(const VDOUBLE& pos) const =0;
 			virtual bool inside(const VDOUBLE& pos) const =0;
 			virtual void displace(VDOUBLE distance) =0;

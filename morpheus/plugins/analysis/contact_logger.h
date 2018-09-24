@@ -53,7 +53,7 @@ Log all contacts between ct1 and ct2 (ignoring medium)
 
 */
 
-class ContactLogger : public AnalysisPlugin, InstantaneousProcessPlugin
+class ContactLogger : public AnalysisPlugin
 {
 
 	private:
@@ -64,6 +64,8 @@ class ContactLogger : public AnalysisPlugin, InstantaneousProcessPlugin
 		PluginParameter2<bool, XMLValueReader, DefaultValPolicy > ignore_medium;
 		// record duration
 		PluginParameter2<bool, XMLValueReader, OptionalPolicy > log_duration;
+		PluginParameter2<double, XMLValueReader, RequiredPolicy > logging_time_step;
+		double last_logging=0;
 		map< std::pair< CPM::CELL_ID, CPM::CELL_ID>, double> map_contact_duration;
 		
 	public:
@@ -73,7 +75,7 @@ class ContactLogger : public AnalysisPlugin, InstantaneousProcessPlugin
 		void loadFromXML(const XMLNode, Scope* scope ) override;
 		void init(const Scope* scope) override;
  		void finish() override;
-		void executeTimeStep() override;
+		void reportContacts() ;
 };
 
 #endif // CONTACTLOGGER_H

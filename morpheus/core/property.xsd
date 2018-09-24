@@ -52,6 +52,8 @@
 		<xs:choice>
 			<xs:element name="Constant" 			type="Constant"/>
 			<xs:element name="ConstantVector" 		type="ConstantVector"/>
+			<xs:element name="Intermediate"			type="Property" />
+			<xs:element name="IntermediateVector"	type="PropertyVector" />
 		</xs:choice>
 	</xs:group>
 
@@ -59,6 +61,8 @@
 		<xs:choice>
 			<xs:element name="Constant" 			type="Constant"/>
 			<xs:element name="ConstantVector" 		type="ConstantVector"/>
+			<xs:element name="Intermediate"			type="Property" />
+			<xs:element name="IntermediateVector"	type="PropertyVector" />
 		</xs:choice>
 	</xs:group>
 

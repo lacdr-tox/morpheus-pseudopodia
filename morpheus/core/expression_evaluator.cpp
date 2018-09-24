@@ -7,25 +7,25 @@ int ExpressionEvaluator<double>::expectedNumResults() const { return 1; }
 template <>
 double ExpressionEvaluator<double>::get(const SymbolFocus& focus, bool safe) const
 {
+	if (safe && !initialized)
+		const_cast<ExpressionEvaluator*>(this)->init();
 	if (expr_is_const)
 		return const_val;
 	if (expr_is_symbol)
-		return safe || allow_partial_spec ? symbols.front()->safe_get(focus) : symbols.front()->get(focus);
-	uint i=0;
-	try {
-		
-		for (i = 0; i<symbols.size(); i++) {
-			symbol_values[i] = safe || allow_partial_spec ? symbols[i]->safe_get(focus) : symbols[i]->get(focus);
-		}
-	} 
-	catch (string e) {
-		e+= "\nIn expression '" + this->getExpression() + "' for symbol '" + symbols[i]->name() +"'.";
-		throw e;
-	}
-	return parser->Eval();
+		return safe || allow_partial_spec ? symbol_val->safe_get(focus) : symbol_val->get(focus);
+	
+	evaluator_cache->fetch(focus, safe || allow_partial_spec);
+	return parser->Eval((void*)&focus);
 }
 
-
+template <>
+double ExpressionEvaluator<double>::plain_get(const SymbolFocus& focus) const
+{
+	if (expr_is_const)
+		return const_val;
+	
+	return parser->Eval((void*)&focus);
+}
 
 
 template <>
@@ -34,75 +34,56 @@ int ExpressionEvaluator<float>::expectedNumResults() const { return 1; }
 template <>
 float ExpressionEvaluator<float>::get(const SymbolFocus& focus, bool safe) const
 {
+	if (safe && !initialized)
+			const_cast<ExpressionEvaluator*>(this)->init();
 	if (expr_is_const)
 		return const_val;;
 	
 	if (expr_is_symbol)
-		return safe || allow_partial_spec ? symbols.front()->safe_get(focus) : symbols.front()->get(focus);
+		return safe || allow_partial_spec ? symbol_val->safe_get(focus) : symbol_val->get(focus);
 	
-	uint i = 0;
-	try {
-		for (i = 0; i<symbols.size(); i++) {
-			symbol_values[i] = safe || allow_partial_spec ? symbols[i]->safe_get(focus) : symbols[i]->get(focus);
-		}
-	} 
-	catch (string e) {
-		e+= "\n In expression '" + this->getExpression() + "' for symbol '" + symbols[i]->name() +"'.";
-		throw e;
-	}
+	evaluator_cache->fetch(focus, safe || allow_partial_spec);
+	return parser->Eval((void*)&focus);
+}
+
+template <>
+float ExpressionEvaluator<float>::plain_get(const SymbolFocus& focus) const
+{
+	if (expr_is_const)
+		return const_val;
 	
-	return parser->Eval();
+	return parser->Eval((void*)&focus);
 }
 
 template <>
 int ExpressionEvaluator<VDOUBLE>::expectedNumResults() const { return 3; }
 
 template <>
-const string& ExpressionEvaluator<VDOUBLE>::getDescription() const
-{
-	if (expr_is_symbol)
-		return v_symbols[0]->description();
-	else 
-		return expression;
-}
-
-template <>
 VDOUBLE ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus, bool safe) const
 {
+	if (safe && !initialized)
+		const_cast<ExpressionEvaluator*>(this)->init();
 	if (expr_is_const)
 		return const_val;
 	
 	if (expr_is_symbol)
-		return v_symbols.front()->get(focus);
+		return symbol_val->get(focus);
 	
 	VDOUBLE result;
+	evaluator_cache->fetch(focus, safe | allow_partial_spec);
 	if (expand_scalar_expr) {
-		for (uint i = 0; i<symbols.size(); i++) {
-			symbol_values[i] = safe ? symbols[i]->safe_get(focus) : symbols[i]->get(focus);
-		}
+		evaluator_cache->setExpansionIndex(0);
+		result.x = parser->Eval((void*)&focus);
 		
-		for (uint i=0;i<v_symbols.size(); i++) {
-			symbol_values[v_sym_cache_offset+i] = safe ? v_symbols[i]->safe_get(focus).x : v_symbols[i]->get(focus).x;
-		}
-		result.x = parser->Eval();
+		evaluator_cache->setExpansionIndex(1);
+		result.y = parser->Eval((void*)&focus);
 		
-		for (uint i=0;i<v_symbols.size(); i++) {
-			symbol_values[v_sym_cache_offset+i] = safe ? v_symbols[i]->safe_get(focus).y : v_symbols[i]->get(focus).y;
-		}
-		result.y = parser->Eval();
-		
-		for (uint i=0;i<v_symbols.size(); i++) {
-			symbol_values[v_sym_cache_offset+i] = safe ? v_symbols[i]->safe_get(focus).z : v_symbols[i]->get(focus).z;
-		}
-		result.z = parser->Eval();
+		evaluator_cache->setExpansionIndex(2);
+		result.z = parser->Eval((void*)&focus);
 	}
 	else {
-		for (uint i = 0; i<symbols.size(); i++) {
-			symbol_values[i] = safe ? symbols[i]->safe_get(focus) : symbols[i]->get(focus);
-		}
-
 		int n;
-		double* results = parser->Eval(n);
+		double* results = parser->Eval(n,(void*)&focus);
 		if (n != expectedNumResults()) {
 			cerr << "Wrong number of results " << n << " of 3 in VectorExpression " << this->expression << endl;
 			throw string("Wrong number of expressions in VectorExpression ") + this->expression;
@@ -112,7 +93,34 @@ VDOUBLE ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus, bool safe) c
 	return result;
 }
 
-
+template <>
+VDOUBLE ExpressionEvaluator<VDOUBLE>::plain_get(const SymbolFocus& focus) const
+{
+	if (expr_is_const)
+		return const_val;
+	
+	VDOUBLE result;
+	if (expand_scalar_expr) {
+		evaluator_cache->setExpansionIndex(0);
+		result.x = parser->Eval((void*)&focus);
+		
+		evaluator_cache->setExpansionIndex(1);
+		result.y = parser->Eval((void*)&focus);
+		
+		evaluator_cache->setExpansionIndex(2);
+		result.z = parser->Eval((void*)&focus);
+	}
+	else {
+		int n;
+		double* results = parser->Eval(n,(void*)&focus);
+		if (n != expectedNumResults()) {
+			cerr << "Wrong number of results " << n << " of 3 in VectorExpression " << this->expression << endl;
+			throw string("Wrong number of expressions in VectorExpression ") + this->expression;
+		}
+		result = VDOUBLE(results[0],results[1],results[2]);
+	}
+	return result;
+}
 
 
 

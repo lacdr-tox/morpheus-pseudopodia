@@ -253,6 +253,22 @@ Note: Systems define their own \ref Scope. This implies that values of symbols d
 
 **/
 /**
+\defgroup ML_Intermediate Intermediate
+\ingroup ML_System
+\ingroup ML_Event
+
+An Intermediate Symbol is available to all expressions within a System. Intermediates are evaluated prior to any other construct and may even depend on each other. Defining circular dependencies is discouraged, though.
+**/
+
+/**
+\defgroup ML_IntermediateVector IntermediateVector
+\ingroup ML_System
+\ingroup ML_Event
+
+An IntermediateVector Symbol is available to all expressions within a System. Intermediates are evaluated prior to any other construct and may even depend on each other. Defining circular dependencies is discouraged, though.
+**/
+
+/**
 \defgroup ML_Event Event
 \ingroup MathExpressions
 

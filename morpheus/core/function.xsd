@@ -43,14 +43,14 @@
 	<xs:group name="DiscreteSystemPlugins">
 		<xs:choice>
 			<xs:element name="Function"				type="Function"/>
-			<xs:element name="VectorFunction" 		type="VectorFunction"/>
+<!-- 			<xs:element name="VectorFunction" 		type="VectorFunction"/> -->
 		</xs:choice>
 	</xs:group>
 
 	<xs:group name="SystemPlugins">
 		<xs:choice>
 			<xs:element name="Function"				type="Function"/>
-			<xs:element name="VectorFunction" 		type="VectorFunction"/>
+<!-- 			<xs:element name="VectorFunction" 		type="VectorFunction"/> -->
 		</xs:choice>
 	</xs:group>
 
@@ -59,20 +59,20 @@
 		<xs:annotation>
 			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
 			<xs:appinfo>Math</xs:appinfo>
-			<xs:documentation>Defines an funtion to apply on a symbol at each time step.</xs:documentation>
+			<xs:documentation>Defines a (parametric) function usable in other contexts. Variables not defined as Constants or Parameters within the local scope will be queried from the target scope.</xs:documentation>
 		</xs:annotation>
 		
 		<xs:all>
 			<xs:element name="Expression"	type="cpmMathExpression" />
+			<xs:element name="Parameter"	type="funParameter" minOccurs="0" maxOccurs="unbounded"/>
+<!-- 			<xs:element name="VectorParameter"	type="funVectorParameter" minOccurs="0" maxOccurs="unbounded"/> -->
 		</xs:all>
 
-		
 		<xs:attribute name="name" 	type="cpmString"				use="optional" />
 		<xs:attribute name="symbol"	type="cpmDoubleSymbolDef"		use="required" />
 
 	</xs:complexType>
 
-	
 	<xs:complexType name="VectorFunction">
 	
 		<xs:annotation>
@@ -83,6 +83,8 @@
 		
 		<xs:all>
 			<xs:element name="Expression"	type="cpmVectorMathExpression" />
+			<xs:element name="Parameter"	type="funParameter" minOccurs="0" maxOccurs="unbounded"/>
+<!-- 			<xs:element name="VectorParameter"	type="funVectorParameter" minOccurs="0" maxOccurs="unbounded"/> -->
 		</xs:all>
 
 		<xs:attribute name="name" type="cpmString" use="optional" />
@@ -91,5 +93,22 @@
 		<xs:attribute name="spherical"	type="cpmBoolean"	default="false"	use="optional" />
 
 	</xs:complexType>
+
+	<xs:complexType name="funParameter">
+		<xs:annotation>
+			<xs:documentation>Defines function Parameter</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="name" 	type="cpmString"				use="optional" />
+		<xs:attribute name="symbol"	type="cpmDoubleSymbolDef"		use="required" />
+	</xs:complexType>
+
+	<xs:complexType name="funVectorParameter">
+		<xs:annotation>
+			<xs:documentation>Defines function vector parameter</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="name" 	type="cpmString"				use="optional" />
+		<xs:attribute name="symbol"	type="cpmVectorSymbolDef"		use="required" />
+	</xs:complexType>
+
 </xs:schema>
 

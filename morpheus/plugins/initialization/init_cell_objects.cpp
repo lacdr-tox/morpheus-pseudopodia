@@ -4,9 +4,9 @@ REGISTER_PLUGIN(InitCellObjects);
 
 class Point : public InitCellObjects::CellObject {
 public:
-	Point(XMLNode node) : displacement(0,0,0)  { p_center->setXMLPath("center");  p_center->loadFromXML(node);};
+	Point(XMLNode node, const Scope * scope) : displacement(0,0,0)  { p_center->setXMLPath("center");  p_center->loadFromXML(node, scope);};
 	Point(const Point&) = default;
-	void init(const Scope * scope) override { p_center->init(scope); _center = p_center->get(SymbolFocus::global) + displacement; }
+	void init() override { p_center->init(); _center = p_center->get(SymbolFocus::global) + displacement; }
 	string name() const override  { return "Point"; }
 	VDOUBLE center() const override { return _center; }
 	unique_ptr<CellObject> clone() const override { return make_unique<Point>(*this); }
@@ -22,15 +22,15 @@ private:
 
 class Sphere : public InitCellObjects::CellObject {
 public:
-	Sphere(XMLNode node) : displacement(0,0,0)  { 
-		p_center->setXMLPath("center"); p_center->loadFromXML(node);
-		p_radius->setXMLPath("radius"); p_radius->loadFromXML(node);
+	Sphere(XMLNode node, const Scope * scope) : displacement(0,0,0)  { 
+		p_center->setXMLPath("center"); p_center->loadFromXML(node, scope);
+		p_radius->setXMLPath("radius"); p_radius->loadFromXML(node, scope);
 	};
 	Sphere(const Sphere&) = default;
-	void init(const Scope * scope) override { 
-		p_center->init(scope); 
+	void init() override { 
+		p_center->init(); 
 		_center = p_center->get(SymbolFocus::global) + displacement;
-		p_radius->init(scope);
+		p_radius->init();
 		radius = p_radius->get( SIM::lattice().from_orth(_center) );
 	}
 	string name() const override  { return "Sphere"; }
@@ -60,15 +60,15 @@ private:
 
 class Box : public InitCellObjects::CellObject {
 public:
-	Box(XMLNode node) : displacement(0,0,0)  { 
-		p_origin->setXMLPath("origin"); p_origin->loadFromXML(node);
-		p_size->setXMLPath("size"); p_size->loadFromXML(node);
+	Box(XMLNode node, const Scope * scope) : displacement(0,0,0)  { 
+		p_origin->setXMLPath("origin"); p_origin->loadFromXML(node, scope);
+		p_size->setXMLPath("size"); p_size->loadFromXML(node, scope);
 	};
 	Box(const Box&) = default;
-	void init(const Scope * scope) override { 
-		p_origin->init(scope);
+	void init() override { 
+		p_origin->init();
 		origin = p_origin->get(SymbolFocus::global) + displacement-0.5;
-		p_size->init(scope);
+		p_size->init();
 		size = p_size->get( SIM::lattice().from_orth(origin) );
 		if (SIM::lattice().getDimensions()<=2)  size.z=1;
 		if (SIM::lattice().getDimensions()<=1)  size.y=1;
@@ -146,15 +146,15 @@ private:
 
 class Ellipsoid : public InitCellObjects::CellObject {
 public:
-	Ellipsoid(XMLNode node) : displacement(0,0,0)  { 
-		p_center->setXMLPath("center"); p_center->loadFromXML(node);
-		p_axes->setXMLPath("axes"); p_axes->loadFromXML(node);
+	Ellipsoid(XMLNode node, const Scope * scope) : displacement(0,0,0)  { 
+		p_center->setXMLPath("center"); p_center->loadFromXML(node, scope);
+		p_axes->setXMLPath("axes"); p_axes->loadFromXML(node, scope);
 	};
 	Ellipsoid(const Ellipsoid&) = default;
-	void init(const Scope * scope) override { 
-		p_center->init(scope);
+	void init() override { 
+		p_center->init();
 		_center = p_center->get(SymbolFocus::global) + displacement;
-		p_axes->init(scope);
+		p_axes->init();
 		axes = p_axes->get( SIM::lattice().from_orth(_center) );
 		setFoci();
 	}
@@ -231,21 +231,21 @@ class Cylinder : public InitCellObjects::CellObject {
 public:
 	enum class Orientation  { X, Y, Z };
 
-	Cylinder(XMLNode node) : displacement(0,0,0)  {
-		p_center->setXMLPath("center"); p_center->loadFromXML(node);
-		p_radius->setXMLPath("radius"); p_radius->loadFromXML(node);
-		p_center2->setXMLPath("center2"); p_center2->loadFromXML(node);
+	Cylinder(XMLNode node, const Scope * scope) : displacement(0,0,0)  {
+		p_center->setXMLPath("center"); p_center->loadFromXML(node, scope);
+		p_radius->setXMLPath("radius"); p_radius->loadFromXML(node, scope);
+		p_center2->setXMLPath("center2"); p_center2->loadFromXML(node, scope);
 		p_orientation->setXMLPath("orientation"); 
 		map<string, Orientation> omap = { {"x", Orientation::X},  {"y", Orientation::Y}, {"z", Orientation::Z} };
 		p_orientation->setValueMap(omap);
-		p_orientation->loadFromXML(node);
+		p_orientation->loadFromXML(node, scope);
 		
 	};
 	Cylinder(const Cylinder&) = default;
-	void init(const Scope * scope) override { 
-		p_center->init(scope); 
+	void init() override { 
+		p_center->init(); 
 		_center  = p_center->get(SymbolFocus::global) + displacement;
-		p_center2->init(scope);
+		p_center2->init();
 		if (p_center2->isDefined()) {
 			center2 = p_center2->get(SymbolFocus::global)+ displacement;
 			oblique = center2 != _center;
@@ -254,9 +254,9 @@ public:
 			center2 = _center;
 			oblique = true;
 		}
-		p_radius->init(scope);
+		p_radius->init();
 		radius = p_radius->get( SIM::lattice().from_orth(_center) );
-		p_orientation->init(scope);
+		p_orientation->init();
 		orientation = p_orientation->get();
 		
 	}
@@ -346,12 +346,12 @@ void InitCellObjects::loadFromXML(const XMLNode node, Scope* scope)
 	
 	for (int i=0; i < node.nChildNode("Arrangement"); i++) {
 		XMLNode aNode = node.getChildNode("Arrangement",i);
-		arrange_repetitions.loadFromXML(aNode);
-		arrange_repetitions.init(scope);
-		arrange_displacement.loadFromXML(aNode);
-		arrange_displacement.init(scope);
-		arrange_random_displacement.loadFromXML(aNode);
-		arrange_random_displacement.init(scope);
+		arrange_repetitions.loadFromXML(aNode, scope);
+		arrange_repetitions.init();
+		arrange_displacement.loadFromXML(aNode, scope);
+		arrange_displacement.init();
+		arrange_random_displacement.loadFromXML(aNode, scope);
+		arrange_random_displacement.init();
 		
 		VINT repetitions = VINT(arrange_repetitions(SymbolFocus::global));
 		repetitions.x = (repetitions.x==0 ? 1 : repetitions.x);
@@ -368,13 +368,13 @@ void InitCellObjects::loadFromXML(const XMLNode node, Scope* scope)
 			XMLNode oNode = aNode.getChildNode(j);
 			string tag_name(oNode.getName());
 			if (tag_name == "Point") 
-				c = make_unique<Point>(oNode);
+				c = make_unique<Point>(oNode, scope);
 			else if (tag_name == "Sphere")
-				c = make_unique<Sphere>(oNode);
+				c = make_unique<Sphere>(oNode, scope);
 			else if (tag_name == "Ellipsoid")
-				c = make_unique<Ellipsoid>(oNode);
+				c = make_unique<Ellipsoid>(oNode, scope);
 			else if (tag_name == "Box")
-				c = make_unique<Box>(oNode);
+				c = make_unique<Box>(oNode, scope);
 			else
 				throw MorpheusException(string("Unknown Object type ") + tag_name, oNode);
 			
@@ -436,7 +436,7 @@ void InitCellObjects::arrangeObjectCombinatorial( unique_ptr<CellObject> c_templ
 					            ( SIM::lattice().getDimensions() > 2 ? (getRandom01()*-0.5) * random_displacement : 0 )
 					));
 				}
-				n->init(local_scope);
+				n->init();
 
 				objectlist.emplace_back( std::move(n) );
 			}

@@ -97,9 +97,7 @@ PDE Equation:
                 <Constant symbol="K" value="1"/>
                 <Constant symbol="sigma" value="5.0" name="spatial-length-signal"/>
                 <Constant symbol="n" value="4" name="Hill coefficient"/>
-                <Function symbol="F">
-                    <Expression>B*(k_0+ s + (gamma*A^n) / (K^n + A^n) ) - delta*A</Expression>
-                </Function>
+                <Intermediate symbol="F" value="B*(k_0+ s + (gamma*A^n) / (K^n + A^n) ) - delta*A"/>
                 <DiffEqn symbol-ref="A">
                     <Expression>F</Expression>
                 </DiffEqn>

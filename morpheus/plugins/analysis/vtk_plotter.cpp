@@ -62,7 +62,7 @@ void VtkPlotter::init(const Scope* scope)
 	AnalysisPlugin::init( scope );
 	
 	for(uint c=0; c<plot.channels.size(); c++){
-		plot.channels[c]->celltype.init(scope);
+		plot.channels[c]->celltype.init();
 		if( plot.channels[c]->celltype.isDefined() ){
 			plot.channels[c]->symbol.setScope(plot.channels[c]->celltype()->getScope());
 		}
