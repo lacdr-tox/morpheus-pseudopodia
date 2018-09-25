@@ -644,7 +644,7 @@ nodeController* nodeController::insertChild(QString childName, int pos)
 nodeController* nodeController::insertChild(QDomNode xml_node, int pos)
 {
 	QString childName = xml_node.nodeName();
-	qDebug() << "Inserting Node " << childName;
+// 	qDebug() << "Inserting Node " << childName;
 	QDomNode disabled_content;
 
 	if (xml_node.nodeType() == QDomNode::CommentNode) {
