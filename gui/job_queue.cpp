@@ -33,7 +33,7 @@ void JobQueue::run() {
 //---------------------------------------------------------------------------------------------------
 
 void JobQueue::restoreSavedJobs() {
-	qDebug() << "JobQueue::restoreSavedJob()";
+// 	qDebug() << "JobQueue::restoreSavedJob()";
 
 	QSqlQuery q(config::getDatabase());
 	bool ok = q.exec("SELECT * FROM jobs;");
@@ -74,7 +74,17 @@ void JobQueue::restoreSavedJobs() {
 
 //---------------------------------------------------------------------------------------------------
 
-int JobQueue::newJobID() {
+int JobQueue::modelCount() {
+	QSqlQuery q(config::getDatabase());
+	
+	bool ok = q.exec("SELECT simTitle FROM jobs GROUP BY simTitle;");
+	if(!ok) qDebug() << "Error simTitle from jobs database: " << q.lastError();
+	int count =0;
+	while (q.next()) count++;
+	return count;
+}
+
+int JobQueue::maxJobID() {
 	QSqlQuery q(config::getDatabase());
 	bool ok = q.exec("SELECT MAX(id) FROM jobs;");
 	if(!ok) qDebug() << "Error getting MAX(id) from jobs database: " << q.lastError();
@@ -83,10 +93,12 @@ int JobQueue::newJobID() {
 	if( !q.isValid() ) qDebug() << "Query not valid... :" << q.last() << ", error: "<< q.lastError();
 	int index = r.indexOf("MAX(id)");
 	int last_id = r.value( index ).toInt();
-	int new_id = last_id + 1;
-
-// 	qDebug() << "lastID " << r.value( index ).toInt() << ", newJobID = " << new_id << " | index = " << index ;
 	q.finish();
+	return last_id;
+}
+
+int JobQueue::newJobID() {
+	int new_id = maxJobID() + 1;
 	return new_id;
 }
 

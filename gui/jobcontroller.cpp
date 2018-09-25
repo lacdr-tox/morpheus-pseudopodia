@@ -388,25 +388,36 @@ void JobView::openTerminal() {
     qDebug() << "Open Terminal @ " << out_dir;
 	QString terminal_command;
 #ifdef Q_OS_LINUX
-	if ( ! (terminal_command = config::getPathToExecutable("konsole")).isEmpty() ) {
-		QProcess::startDetached(terminal_command, QStringList() << QString("--workdir") << out_dir, out_dir);
-		return;
+	QStringList terminal_apps( { "x-terminal-emulator" , "konsole" , "gnome-terminal" , "xfce4-terminal" , "terminal"});
+
+	for (auto app : terminal_apps) {
+		terminal_command = config::getPathToExecutable(app);
+		if (!terminal_command.isEmpty()) {
+			QProcess::startDetached(terminal_command, QStringList(), out_dir);
+			return;
+		}
 	}
-	if ( ! (terminal_command = config::getPathToExecutable("gnome-terminal")).isEmpty() ) {
-		QProcess::startDetached(terminal_command, QStringList() << QString("--working-directory=")+out_dir << out_dir, out_dir);
-		return;
-	}
-	if ( ! (terminal_command = config::getPathToExecutable("terminal")).isEmpty() ) {
+// 	if ( ! (terminal_command = config::getPathToExecutable("konsole")).isEmpty() ) {
+// 		QProcess::startDetached(terminal_command, QStringList() << QString("--workdir") << out_dir, out_dir);
+// 		return;
+// 	}
+// 	if ( ! (terminal_command = config::getPathToExecutable("gnome-terminal")).isEmpty() ) {
+// 		QProcess::startDetached(terminal_command, QStringList() << QString("--working-directory=")+out_dir << out_dir, out_dir);
+// 		return;
+// 	}
+// 	if ( ! (terminal_command = config::getPathToExecutable("terminal")).isEmpty() ) {
+// 		QProcess::startDetached(terminal_command, QStringList(), out_dir);
+// 		return;
+// 	}
+#elif defined Q_OS_WIN32
+	if ( ! (terminal_command = config::getPathToExecutable("PowerShell.exe")).isEmpty() ) {
 		QProcess::startDetached(terminal_command, QStringList(), out_dir);
 		return;
 	}
-#elif defined Q_OS_WIN32
 	if ( ! (terminal_command = config::getPathToExecutable("cmd.exe")).isEmpty() ) {
 		QProcess::startDetached(terminal_command, QStringList() << QString("/E:ON") << QString("/F:ON") , out_dir);
 		return;
 	}
-	if (QProcess::startDetached( "/usr/bin/open -a Terminal.app" )) ///* << QResource(":/cd_mac").absoluteFilePath() << " " << out_dir*/, out_dir)){
-        return;
 #else //might be an apple?
 	if ( ! (terminal_command = config::getPathToExecutable("open")).isEmpty() ) {
 		QProcess::startDetached(terminal_command, QStringList() << "-a" << "Terminal.app", out_dir);

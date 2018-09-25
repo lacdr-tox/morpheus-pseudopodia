@@ -534,7 +534,7 @@ void XSD::createTypeMaps()
 		else {
 			simple_types[info->name] = info;
 		}
-		qDebug() << "Added Type "<< info->name;
+// 		qDebug() << "Added Type "<< info->name;
 	}
 	
 	list = xsdSchema.elementsByTagName("xs:group");
@@ -544,7 +544,7 @@ void XSD::createTypeMaps()
 			continue;
 		auto info = parseGroup(list.at(i));
 		group_defs[info.name] = info;
-		qDebug() << "Added Group "<< info.name;
+// 		qDebug() << "Added Group "<< info.name;
 	}
 
 	list = xsdSchema.elementsByTagName("xs:complexType");
@@ -557,14 +557,14 @@ void XSD::createTypeMaps()
 			simple_content_types[info->name] = info;
 		}
 		complex_types[info->name] = info;
-		qDebug() << "Added Type "<< info->name;
+// 		qDebug() << "Added Type "<< info->name;
 	}
 
 	for (auto type : simple_types) {
 		initSimpleType(type);
 	}
 	init_phase = false;
-	qDebug() << "done";
+// 	qDebug() << "done";
 }
 
 //------------------------------------------------------------------------------

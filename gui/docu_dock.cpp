@@ -16,93 +16,93 @@ public:
     static void sleep(unsigned long secs){QThread::sleep(secs);}
 };
 
-class HelpNetworkReply : public QNetworkReply
-{
-        public:
-                HelpNetworkReply(const QNetworkRequest &request, const QByteArray &fileData, const QString &mimeType);
-                
-                virtual void abort() override {}
-                virtual qint64 bytesAvailable() const override { return data.length() + QNetworkReply::bytesAvailable(); }
-                
-        protected:
-                virtual qint64 readData(char *data, qint64 maxlen) override;
-                
-        private:
-                QByteArray data;
-                qint64 origLen;
-};
- 
-
-class HelpNetworkAccessManager : public QNetworkAccessManager
-{
-        public:
-                HelpNetworkAccessManager(QHelpEngineCore *engine, QObject *parent)
-                        : QNetworkAccessManager(parent), m_helpEngine(engine) {}
- 
-        protected:
-                virtual QNetworkReply *createRequest(Operation op,
-                        const QNetworkRequest &request, QIODevice *outgoingData = 0) override;
- 
-        private:
-                QHelpEngineCore *m_helpEngine;
-};
-
-
-
-HelpNetworkReply::HelpNetworkReply(const QNetworkRequest &request,
-        const QByteArray &fileData, const QString &mimeType)
-    : data(fileData), origLen(fileData.length())
-{
-    setRequest(request);
-    setOpenMode(QIODevice::ReadOnly);
- 
-    setHeader(QNetworkRequest::ContentTypeHeader, mimeType);
-    setHeader(QNetworkRequest::ContentLengthHeader, QByteArray::number(origLen));
-    QTimer::singleShot(0, this, SIGNAL(metaDataChanged()));
-    QTimer::singleShot(0, this, SIGNAL(readyRead()));
-}
- 
-qint64 HelpNetworkReply::readData(char *buffer, qint64 maxlen)
-{
-        qint64 len = qMin(qint64(data.length()), maxlen);
-        if (len) {
-                memcpy(buffer, data.constData(), len);
-                data.remove(0, len);
-        }
-        if (!data.length())
-                QTimer::singleShot(0, this, SIGNAL(finished()));
-        return len;
-}
- 
-QNetworkReply *HelpNetworkAccessManager::createRequest(Operation op, const QNetworkRequest &request, QIODevice *outgoingData)
-{
-// 	qDebug() << "Creating Help File Request for URL " << request.url();
-	QString scheme = request.url().scheme();
-	if (scheme == QLatin1String("qthelp") || scheme == QLatin1String("about")) {
-		QString mimeType/* = QMimeDatabase().mimeTypeForUrl(request.url()).name()*/;
-		auto path = request.url().path();
-		path.replace("$relpath^","");
-		if (path.endsWith(".png")) 
-			mimeType = "image/png";
-		else if (path.endsWith(".html"))
-			mimeType = "text/html";
-		else if (path.endsWith(".js"))
-			mimeType = "text/javascript";
-		else if (path.endsWith(".css"))
-			mimeType = "text/css";
-		auto url = request.url();
-		url.setPath(path);
-		auto data = m_helpEngine->fileData(url);
-		if (data.isEmpty())
-			qDebug() << "Empty URL" << path << " / " << mimeType << " of " << data.size() << " bytes";
-		return new HelpNetworkReply(request, data , mimeType);
-	}
-	else {
-		QDesktopServices::openUrl(request.url());
-		return new HelpNetworkReply(request, QByteArray() , "text/html");
-	}
-	return QNetworkAccessManager::createRequest(op, request, outgoingData);
-}
+// class HelpNetworkReply : public QNetworkReply
+// {
+//         public:
+//                 HelpNetworkReply(const QNetworkRequest &request, const QByteArray &fileData, const QString &mimeType);
+//                 
+//                 virtual void abort() override {}
+//                 virtual qint64 bytesAvailable() const override { return data.length() + QNetworkReply::bytesAvailable(); }
+//                 
+//         protected:
+//                 virtual qint64 readData(char *data, qint64 maxlen) override;
+//                 
+//         private:
+//                 QByteArray data;
+//                 qint64 origLen;
+// };
+//  
+// 
+// class HelpNetworkAccessManager : public QNetworkAccessManager
+// {
+//         public:
+//                 HelpNetworkAccessManager(QHelpEngineCore *engine, QObject *parent)
+//                         : QNetworkAccessManager(parent), m_helpEngine(engine) {}
+//  
+//         protected:
+//                 virtual QNetworkReply *createRequest(Operation op,
+//                         const QNetworkRequest &request, QIODevice *outgoingData = 0) override;
+//  
+//         private:
+//                 QHelpEngineCore *m_helpEngine;
+// };
+// 
+// 
+// 
+// HelpNetworkReply::HelpNetworkReply(const QNetworkRequest &request,
+//         const QByteArray &fileData, const QString &mimeType)
+//     : data(fileData), origLen(fileData.length())
+// {
+//     setRequest(request);
+//     setOpenMode(QIODevice::ReadOnly);
+//  
+//     setHeader(QNetworkRequest::ContentTypeHeader, mimeType);
+//     setHeader(QNetworkRequest::ContentLengthHeader, QByteArray::number(origLen));
+//     QTimer::singleShot(0, this, SIGNAL(metaDataChanged()));
+//     QTimer::singleShot(0, this, SIGNAL(readyRead()));
+// }
+//  
+// qint64 HelpNetworkReply::readData(char *buffer, qint64 maxlen)
+// {
+//         qint64 len = qMin(qint64(data.length()), maxlen);
+//         if (len) {
+//                 memcpy(buffer, data.constData(), len);
+//                 data.remove(0, len);
+//         }
+//         if (!data.length())
+//                 QTimer::singleShot(0, this, SIGNAL(finished()));
+//         return len;
+// }
+//  
+// QNetworkReply *HelpNetworkAccessManager::createRequest(Operation op, const QNetworkRequest &request, QIODevice *outgoingData)
+// {
+// // 	qDebug() << "Creating Help File Request for URL " << request.url();
+// 	QString scheme = request.url().scheme();
+// 	if (scheme == QLatin1String("qthelp") || scheme == QLatin1String("about")) {
+// 		QString mimeType/* = QMimeDatabase().mimeTypeForUrl(request.url()).name()*/;
+// 		auto path = request.url().path();
+// 		path.replace("$relpath^","");
+// 		if (path.endsWith(".png")) 
+// 			mimeType = "image/png";
+// 		else if (path.endsWith(".html"))
+// 			mimeType = "text/html";
+// 		else if (path.endsWith(".js"))
+// 			mimeType = "text/javascript";
+// 		else if (path.endsWith(".css"))
+// 			mimeType = "text/css";
+// 		auto url = request.url();
+// 		url.setPath(path);
+// 		auto data = m_helpEngine->fileData(url);
+// 		if (data.isEmpty())
+// 			qDebug() << "Empty URL" << path << " / " << mimeType << " of " << data.size() << " bytes";
+// 		return new HelpNetworkReply(request, data , mimeType);
+// 	}
+// 	else {
+// 		QDesktopServices::openUrl(request.url());
+// 		return new HelpNetworkReply(request, QByteArray() , "text/html");
+// 	}
+// 	return QNetworkAccessManager::createRequest(op, request, outgoingData);
+// }
 
 
 class HelpBrowser : public QTextBrowser {
@@ -128,7 +128,7 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	connect(help_engine,SIGNAL(setupFinished()),this,SLOT(setRootOfHelpIndex()));
 	help_engine->setupData();
 	
-	hnam = new HelpNetworkAccessManager(help_engine,this);
+	hnam = config::getNetwork();
 
 #ifdef MORPHEUS_NO_QTWEBKIT
 	auto realViewer = new HelpBrowser();

@@ -36,6 +36,7 @@
 #endif
 
 #include "morpheus_model.h"
+#include "network_access.h"
 // #include "configuration.h"
 
 
@@ -100,14 +101,16 @@ private:
     static config *instance;
 
     application app;
-	QHelpEngine* helpEngine;
+	QHelpEngine* helpEngine = NULL;
+	ExtendedNetworkAccessManager* network = NULL;
 
     QList< SharedMorphModel > openModels;
     int current_model;
 
-    JobQueue* job_queue;
-	QThread* job_queue_thread;
+    JobQueue* job_queue = NULL;
+	QThread* job_queue_thread = NULL;
 	QSqlDatabase db;
+	QMutex change_lock;
 	/*!< SQLite database that stores job information*/
 
 
@@ -119,6 +122,9 @@ public:
 	
     static config* getInstance();
     /*!< Returns an instance of class config. */
+	
+	static QString getVersion();
+	/*!< Returns the Morpheus version string. */
 
     static const application& getApplication();
     /*!< Returns informations about the application-settings to start simulations. */
@@ -126,7 +132,8 @@ public:
     static SharedMorphModel getModel();
     ///< Returns the currently selected model
 	
-	static QHelpEngine* getHelpEngine();
+	static QHelpEngine* getHelpEngine(bool lock=true);
+	static ExtendedNetworkAccessManager* getNetwork();
 
     static void switchModel(int index);
 

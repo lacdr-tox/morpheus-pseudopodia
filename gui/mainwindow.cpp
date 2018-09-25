@@ -32,8 +32,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)//, ui(new Ui::Main
     QWidget::setAcceptDrops(true);
 
 
-    createMenuBar();
     createMainWidgets();
+    createMenuBar();
     initConfig();
 
     this->setStatusBar(new QStatusBar());
@@ -283,6 +283,11 @@ void MainWindow::createMenuBar()
 	aboutMorheusWebsite ->setStatusTip(tr("Open Morpheus website."));
 	connect(aboutMorheusWebsite,SIGNAL(triggered()), config::getInstance(),SLOT(openMorpheusWebsite()));
 	
+	QAction* aboutAnnounce = new QAction(tr("Announcements"),menubar);
+	aboutAnnounce->setStatusTip("Show all latest Announcementes");
+	connect(aboutAnnounce,SIGNAL(triggered()), announcer, SLOT(showAllAnnouncements()));
+	aboutMenu->addAction(aboutAnnounce);
+	
 	aboutMenu->addSeparator();
 	
 	QAction* aboutQt = new QAction(tr("&Qt"),menubar);
@@ -290,11 +295,10 @@ void MainWindow::createMenuBar()
 	connect(aboutQt,SIGNAL(triggered()), qApp, SLOT(aboutQt()));
     aboutMenu->addAction(aboutQt);
 	
-	QAction* aboutHelp = new QAction(tr("&Help"),menubar);
-	aboutQt->setStatusTip(tr("Show Morpheus help."));
-	connect(aboutHelp,SIGNAL(triggered()), config::getInstance(), SLOT(aboutHelp()));
-    aboutMenu->addAction(aboutHelp);
-	
+// 	QAction* aboutHelp = new QAction(tr("&Help"),menubar);
+// 	aboutQt->setStatusTip(tr("Show Morpheus help."));
+// 	connect(aboutHelp,SIGNAL(triggered()), config::getInstance(), SLOT(aboutHelp()));
+//     aboutMenu->addAction(aboutHelp);
 
     QToolBar *toolbar = new QToolBar("Main Toolbar",this);
     toolbar->setObjectName("Main Toolbar");
@@ -447,6 +451,17 @@ void MainWindow::createMainWidgets()
 	
     setCentralWidget(editorStack);
     editorStack->show();
+	
+	announcer = new AnnouncementDialog(this);
+	QTimer::singleShot(500, announcer, SLOT(showAnnouncements()));
+	
+	auto feedback = new FeedbackRequestWindow(this);
+	QTimer::singleShot(1000, feedback, SLOT(sendFeedBack()));
+
+	QTimer* feedbackTimer = new QTimer(this);
+	feedbackTimer->setInterval(24*60*60*1000);
+	connect(feedbackTimer, SIGNAL(timeout()), feedback, SLOT(sendFeedBack()));
+	feedbackTimer->start();
 }
 
 //------------------------------------------------------------------------------

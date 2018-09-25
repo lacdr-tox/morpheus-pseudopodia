@@ -31,6 +31,8 @@ public:
 
     const QMap<int, QSharedPointer<abstractProcess> >& getJobs();
 	QList<int> getInteractiveJobs() { QList<int> k(running_interactive_jobs); k.append(pending_interactive_jobs); return k; };
+	int jobCount() { return maxJobID(); };  /*!< Returns the number of Jobs done*/
+	int modelCount(); /*!< Returns the number of Models done*/
 
 public slots:
 	/*!< Start the job queue. */
@@ -56,7 +58,7 @@ private:
     void restoreSavedJobs(); /*!< Restore jobs from the QSettings. */
     enum QueueType { local, interactive, remote };
     QMap<QString,QueueType> queueNamesMap();
-
+	int maxJobID();
     int newJobID(); /*!< Returns a free Job ID */
 
 private slots:

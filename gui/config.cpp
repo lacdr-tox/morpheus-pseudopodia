@@ -218,7 +218,7 @@ config::config() : QObject(), helpEngine(NULL) {
 //------------------------------------------------------------------------------
 
 config* config::getInstance() {
-    if ( config::instance == 0 ) {
+    if ( ! config::instance ) {
         config::instance = new config();
     }
     return config::instance;
@@ -445,6 +445,9 @@ QSqlDatabase& config::getDatabase()
 }
 
 
+QString config::getVersion() {
+	return QString(MORPHEUS_VERSION_STRING);
+}
 
 //------------------------------------------------------------------------------
 
@@ -609,42 +612,58 @@ void config::aboutPlatform()
 }
 
 
-QHelpEngine* config::getHelpEngine()
+QHelpEngine* config::getHelpEngine(bool lock)
 {
 	config* conf = getInstance();
 	if (!conf->helpEngine) {
-		QApplication::applicationDirPath();
-		
-		QStringList doc_path;
-		doc_path <<  QApplication::applicationDirPath() + "/"
-					<< QApplication::applicationDirPath() + "/doc/"
-					<< QApplication::applicationDirPath() + "/../share/morpheus/"
-					<< QApplication::applicationDirPath() + "/../../Resources/doc/"; // for Mac app bundle
-		QString path;
-		foreach(const QString& p, doc_path) {
-			qDebug() << "Testing "  << p + "morpheus.qhc";
-			if (QFile::exists(p+"morpheus.qhc"))
-				path = p;
-		}
-		
-		if (path.isEmpty()) {
-			qDebug() << "Help engine setup failed. Unable to locate 'morpheus.qhc'.";
-			conf->helpEngine = new QHelpEngine("");
-		}
-		else {
-			conf->helpEngine = new QHelpEngine(path+"morpheus.qhc");
-			if (conf->helpEngine->setupData() == false)
-			{
-				qDebug() << "Help engine setup failed";
-				qDebug() << conf->helpEngine->error();
+		if (lock)
+			conf->change_lock.lock();
+		if (!conf->helpEngine) {
+			QApplication::applicationDirPath();
+			
+			QStringList doc_path;
+			doc_path <<  QApplication::applicationDirPath() + "/"
+						<< QApplication::applicationDirPath() + "/doc/"
+						<< QApplication::applicationDirPath() + "/../share/morpheus/"
+						<< QApplication::applicationDirPath() + "/../../Resources/doc/"; // for Mac app bundle
+			QString path;
+			foreach(const QString& p, doc_path) {
+	// 			qDebug() << "Testing "  << p + "morpheus.qhc";
+				if (QFile::exists(p+"morpheus.qhc"))
+					path = p;
 			}
-			else 
-				qDebug() << conf->helpEngine->namespaceName("morpheus.qhc");
+			
+			if (path.isEmpty()) {
+				qDebug() << "Help engine setup failed. Unable to locate 'morpheus.qhc'.";
+				conf->helpEngine = new QHelpEngine("");
+			}
+			else {
+				qDebug() << "Documentation located at "  << path + "morpheus.qhc";
+				conf->helpEngine = new QHelpEngine(path+"morpheus.qhc");
+				if (conf->helpEngine->setupData() == false)
+				{
+					qDebug() << "Help engine setup failed";
+					qDebug() << conf->helpEngine->error();
+				}
+			}
 		}
+		if (lock)
+			conf->change_lock.unlock();
 	}
 	return conf->helpEngine;
 }
 
+ExtendedNetworkAccessManager* config::getNetwork() {
+	config* conf = getInstance();
+	if (!conf->network) {
+		conf->change_lock.lock();
+		if (!conf->network) {
+			conf->network = new ExtendedNetworkAccessManager(conf, getHelpEngine(false));
+		}
+		conf->change_lock.unlock();
+	}
+	return conf->network;
+}
 
 void config::aboutHelp() {
 	
