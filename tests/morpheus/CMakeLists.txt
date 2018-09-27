@@ -26,7 +26,7 @@ add_executable(runMopheusTests
 	core/test_serialization.cpp 
 	evaluator/test_muparser.cpp 
 	evaluator/test_evaluator.cpp
-	evaluator/stup_simulator.cpp
+	evaluator/stub_simulator.cpp
 	$<TARGET_OBJECTS:muParser>
 	$<TARGET_OBJECTS:morpheusCore>
 )

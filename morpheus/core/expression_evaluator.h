@@ -89,7 +89,7 @@ public:
 	typename TypeInfo<T>::SReturn get(const SymbolFocus& focus, bool safe=false) const;
 	/// get the value for spatial element @p focus and before ensure the expression to be initialized
 	typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& focus) const { return get(focus, true);}
-	// get after the associated cache has been updated earlier.
+	/// get without updating the associated cache (has been updated earlier).
 	typename TypeInfo<T>::SReturn plain_get(const SymbolFocus& focus) const;
 	/// set of symbols the expression depends on
 	set<SymbolDependency> getDependSymbols() const;
@@ -325,7 +325,7 @@ void ExpressionEvaluator<T>::init()
 	}
 	catch(mu::Parser::exception_type &e){
 		string scopename = ( scope->getName() );
-		throw  (string("Error \'") + e.GetMsg() + "\' in expression \""+ e.GetExpr() +("\" in ")+ scopename + ("."));
+		throw  (string("Error \'") + e.GetMsg() + "\' in expression \""+ expression +("\" in ")+ scopename + ("."));
 	}
 	
 	// collapse the flags of the external symbols

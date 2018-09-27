@@ -25,14 +25,14 @@ mu::value_type* EvaluatorCache::registerSymbol_internal(const mu::char_type* sym
 	if (externals.count(symbol)) {
 		return &externals[symbol].val;
 	}
-	if (local_scope->getAllSymbolNames<double>().count(symbol)) {
+	if (local_scope->getAllSymbolNames<double>(allow_partial_spec).count(symbol)) {
 		SymbolDesc sd;
 		sd.sym = local_scope->findSymbol<double>(symbol, allow_partial_spec);
 		sd.val= 0;
 		auto ext_it = externals.insert({ symbol, sd }).first;
 		return &ext_it->second.val;
 	}
-	if (scalar_expansion_permitted && local_scope->getAllSymbolNames<VDOUBLE>().count(symbol)) {
+	if (scalar_expansion_permitted && local_scope->getAllSymbolNames<VDOUBLE>(allow_partial_spec).count(symbol)) {
 		/// create the scalar expansion wrapper
 		auto ext_it = v_externals.find(symbol);
 		// not registered yet
@@ -54,11 +54,11 @@ mu::value_type* EvaluatorCache::registerSymbol_internal(const mu::char_type* sym
 		mu::Parser::exception_type e(mu::ecINVALID_NAME,symbol);
 		cout << "EvaluatorCache::registerSymbol(): Unknown symbol " << symbol << endl;
 		cout << "Available is ";
-		set<string > all_symbols = local_scope->getAllSymbolNames<double>();
+		set<string > all_symbols = local_scope->getAllSymbolNames<double>(allow_partial_spec);
 		copy(all_symbols.begin(), all_symbols.end(),ostream_iterator<string>(cout,","));
 		for (const auto& sym : locals) cout << ", " << sym.first;
 		if (scalar_expansion_permitted) {
-			all_symbols = local_scope->getAllSymbolNames<VDOUBLE>();
+			all_symbols = local_scope->getAllSymbolNames<VDOUBLE>(allow_partial_spec);
 			copy(all_symbols.begin(), all_symbols.end(),ostream_iterator<string>(cout,","));
 			for (const auto& sym : v_locals) cout << ", " << sym.first;
 		}

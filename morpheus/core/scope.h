@@ -112,11 +112,11 @@ public:
 	
 	/// Find all symbols of type \<T\>
 	template <class T>
-	set<Symbol> getAllSymbols() const;
+	set<Symbol> getAllSymbols(bool allow_partial = false) const;
 	
 	/// Find names of all symbols of type \<T\>
 	template <class T>
-	set<string> getAllSymbolNames() const;
+	set<string> getAllSymbolNames(bool allow_partial = false) const;
 	
 	/// Get all TimeStepListeners registered within the scope
 	const set<TimeStepListener *>& getTSLs() const { return local_tsl;};
@@ -187,6 +187,7 @@ public:
 		if (default_val) {
 			setDefaultValue(default_val);
 		}
+		this->flags().space_const = false;
 	};
 	~CompositeSymbol() {};
 	const std::string& name() const override { return SymbolAccessorBase<T>::name(); };
@@ -342,7 +343,6 @@ SymbolAccessor<T> Scope::findSymbol(string name, bool allow_partial) const
 {
 	if(name.empty())
 		throw SymbolError(SymbolError::Type::Undefined, string("Requesting symbol without a name \"") + name + ("\""));
-
 	auto it = symbols.find(name);
 	if ( it != symbols.end()) {
 		if (TypeInfo<T>::name() != it->second->type()) {
@@ -403,13 +403,13 @@ SymbolAccessor<T> Scope::findSymbol(string name, const T& default_val) const
 };
 
 template <class T>
-set<Symbol> Scope::getAllSymbols() const {
+set<Symbol> Scope::getAllSymbols(bool allow_partial) const {
 	set<Symbol> r_symbols;
 	if (parent)
 		r_symbols = parent->getAllSymbols<T>();
 	for ( auto sym : symbols ) {
 		if (TypeInfo<T>::name() == sym.second->type()) {
-			if (sym.second->flags().partially_defined)
+			if (sym.second->flags().partially_defined && ! allow_partial)
 				continue;
 			r_symbols.insert(sym.second);
 		}
@@ -418,13 +418,13 @@ set<Symbol> Scope::getAllSymbols() const {
 }
 
 template <class T>
-set<string> Scope::getAllSymbolNames() const {
+set<string> Scope::getAllSymbolNames(bool allow_partial) const {
 	set<string> names;
 	if (parent)
 		names = parent->getAllSymbolNames<T>();
 	for ( auto sym : symbols ) {
 		if (TypeInfo<T>::name() == sym.second->type()) {
-			if (sym.second->flags().partially_defined)
+			if (sym.second->flags().partially_defined && ! allow_partial)
 				continue;
 			names.insert(sym.first);
 		}

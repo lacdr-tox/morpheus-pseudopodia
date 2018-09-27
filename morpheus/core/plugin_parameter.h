@@ -240,7 +240,7 @@ public:
 	
 	typename TypeInfo<ValType>::SReturn operator()(SymbolFocus f) const { return get(f);}
 	
-	void setScope(const Scope * scope) { assert(scope); local_scope = scope; require_global_scope=false;}
+	void setScope(const Scope * scope) { assert(scope); local_scope = scope; }
 	void setGlobalScope() { require_global_scope=true; };
 	void allowPartialSpec(bool allow=true) { allow_partial_spec=allow; }
 	
@@ -249,6 +249,7 @@ public:
 		if (is_initialized)
 			return;
 		if (! RequirementPolicy::isMissing()) {
+			cout << string_val << " -> Global? " << (require_global_scope? "true" : "false") << endl;
 			if (require_global_scope)
 				local_scope = SIM::getGlobalScope();
 			if (! local_scope)

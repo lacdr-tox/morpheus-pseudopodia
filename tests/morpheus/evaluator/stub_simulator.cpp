@@ -35,12 +35,6 @@ namespace SIM {
 		
 		return global_scope.get();
 	}
-	void enterScope(const Scope* scope) {
-		current_scope = scope;
-	}
-	void leaveScope() {
-		current_scope = global_scope.get();
-	}
 	void saveToXML() {};
 	string getTimeScaleUnit() { return "atu";}
 }
