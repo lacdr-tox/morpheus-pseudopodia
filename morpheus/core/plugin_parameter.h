@@ -249,7 +249,6 @@ public:
 		if (is_initialized)
 			return;
 		if (! RequirementPolicy::isMissing()) {
-			cout << string_val << " -> Global? " << (require_global_scope? "true" : "false") << endl;
 			if (require_global_scope)
 				local_scope = SIM::getGlobalScope();
 			if (! local_scope)
@@ -424,7 +423,7 @@ public:
 	}
 	
 	/// Require a Symbol from another scope (i.e. not the lexical scope)
-	void setScope(const Scope * scope) { local_scope = scope; require_global_scope=false; }
+	void setScope(const Scope * scope) { local_scope = scope; }
 	/// Require a globally valid Symbol
 	void setGlobalScope() { require_global_scope =true; }
 	
@@ -502,7 +501,7 @@ public:
 			_accessor = local_scope->findRWSymbol<ValType>(symbol_name);
 		}
 	}
-	void setScope(const Scope* scope) { local_scope = scope; require_global_scope=false; }
+	void setScope(const Scope* scope) { local_scope = scope; }
 	void setGlobalScope() { require_global_scope = true; }
 	
 	string name() { RequirementPolicy::assertDefined(); return symbol_name; }
