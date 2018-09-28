@@ -527,11 +527,11 @@ void config::receiveNodeCopy(QDomNode nodeCopy) {
 
 //------------------------------------------------------------------------------
 void config::openExamplesWebsite(){
-	QDesktopServices::openUrl(QUrl("http://imc.zih.tu-dresden.de/wiki/morpheus/doku.php?id=examples:examples"));
+	QDesktopServices::openUrl(QUrl("http://morpheus.gitlab.io/#examples"));
 }
 //------------------------------------------------------------------------------
 void config::openMorpheusWebsite(){
-	QDesktopServices::openUrl(QUrl("http://imc.zih.tu-dresden.de/wiki/morpheus"));
+	QDesktopServices::openUrl(QUrl("http://morpheus.gitlab.io"));
 }
 
 //------------------------------------------------------------------------------

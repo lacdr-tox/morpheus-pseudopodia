@@ -69,7 +69,7 @@ Illustrates how to
             </Output>
             <Plots>
                 <Plot time-step="-1">
-                    <Style style="lines" line-width="4.0"/>
+                    <Style style="lines" line-width="2.0"/>
                     <Terminal terminal="png"/>
                     <X-axis>
                         <Symbol symbol-ref="time"/>
@@ -80,7 +80,7 @@ Illustrates how to
                     </Y-axis>
                 </Plot>
                 <Plot time-step="-1">
-                    <Style style="lines" line-width="4.0"/>
+                    <Style style="lines" line-width="2.0"/>
                     <Terminal terminal="png"/>
                     <X-axis>
                         <Symbol symbol-ref="N"/>
@@ -88,7 +88,7 @@ Illustrates how to
                     <Y-axis>
                         <Symbol symbol-ref="P"/>
                     </Y-axis>
-                    <Color-bar>
+                    <Color-bar palette="rainbow">
                         <Symbol symbol-ref="time"/>
                     </Color-bar>
                 </Plot>
