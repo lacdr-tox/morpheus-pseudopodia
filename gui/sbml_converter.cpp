@@ -459,7 +459,7 @@ void SBMLImporter::addSBMLFunctions(nodeController* target, Model* sbml_model)
 	for (uint fun=0; fun<sbml_model->getNumFunctionDefinitions();fun++) {
 		auto mo_function = target->insertChild("Function");
 		FunctionDefinition* function = sbml_model->getFunctionDefinition(fun);
-		mo_function->attribute("name")->set(function->getIdAttribute());
+		mo_function->attribute("name")->set(function->getId());
 		for (uint i=0; i<function->getNumArguments(); i++ ) {
 			mo_function->insertChild("Parameter")->attribute("name")->set(function->getArgument(i)->getId());
 		}

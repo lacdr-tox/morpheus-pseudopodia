@@ -75,6 +75,7 @@ Execute script along the simulation in a background process.
 #include <core/plugin_parameter.h>
 #include "tiny-process/process.hpp"
 #include <thread>
+#include <cstdlib>
 
 struct DetachedProcess {
 	enum { RUNNING, KILLED, FINISHED } state;
