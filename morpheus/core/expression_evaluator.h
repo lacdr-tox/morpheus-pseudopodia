@@ -177,7 +177,7 @@ private:
 			if (evaluators.size()<=t) {
 				evaluators.resize(t+1);
 			}
-			evaluators[t] = unique_ptr<ExpressionEvaluator<T> >( new ExpressionEvaluator<T>(*evaluators[0]) );
+			evaluators[t] = make_unique<ExpressionEvaluator<T> >( *evaluators[0] );
 			mutex.unlock();
 		}
 		return evaluators[t].get();
@@ -227,22 +227,27 @@ template <class T>
 ExpressionEvaluator<T>::ExpressionEvaluator(const ExpressionEvaluator<T> & other, shared_ptr<EvaluatorCache> cache)
 {
 	// at first, copy all configuration
+	scope = other.scope;
 	expression = other.expression;
-	expr_is_symbol = other.expr_is_symbol;
+	clean_expression = other.clean_expression;
+	allow_partial_spec = other.allow_partial_spec;
+	
+	initialized =  other.initialized;
 	expr_is_const = other.expr_is_const;
 	const_val = other.const_val;
-	allow_partial_spec = other.allow_partial_spec;
-	expand_scalar_expr = other.expand_scalar_expr;
+	expr_is_symbol = other.expr_is_symbol;
+	symbol_val = other.symbol_val;
 	
-	scope = other.scope;
+	expr_flags = other.expr_flags;
+	expand_scalar_expr = other.expand_scalar_expr;
 	depend_symbols = other.depend_symbols;
 	
 	
 	// explicit copies
 	if (other.parser) {
-		parser = unique_ptr<mu::Parser>( new mu::Parser(*other.parser));
+		parser = make_unique<mu::Parser>( *other.parser );
 	}
-	if (other.evaluator_cache) {
+	if (other.evaluator_cache || cache) {
 		if (cache)
 			evaluator_cache = cache;
 		else 

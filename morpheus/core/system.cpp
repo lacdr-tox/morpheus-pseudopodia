@@ -243,12 +243,15 @@ void System::applyBuffer(const SymbolFocus& f)
 void System::computeToTarget(const SymbolFocus& f, bool use_buffer)
 {
 	auto solv_num = omp_get_thread_num();
-	if (solv_num>=solvers.size()) {
+
+	if (solv_num>=solvers.size() || ! solvers[solv_num]) {
 		mutex.lock();
-		while (solv_num>=solvers.size()) {
-			assert(solvers[0]);
-			solvers.push_back(shared_ptr<SystemSolver>(new SystemSolver(*solvers[0])));
-		}
+		// Accomodate the solver
+		if (solv_num>=solvers.size())
+			solvers.resize(solv_num+1);
+		// Create and place the solver
+		if (! solvers[solv_num])
+			solvers[solv_num] = make_shared<SystemSolver>(*solvers[0]);
 		mutex.unlock();
 	}
 	solvers[solv_num]->solve(f, use_buffer);
@@ -592,7 +595,7 @@ SystemSolver::SystemSolver(const SystemSolver& other)
 			eval->evaluator->parser->UpdateFun(fun_def->symbol_name, fun_def->getCallBack());
 		}
 	}
-
+	cout << "+"; cout.flush();
 };
 
 void SystemSolver::setTimeStep(double ht) {
