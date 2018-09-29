@@ -1,5 +1,6 @@
 
 FIND_PACKAGE(ZLIB REQUIRED)
+FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem)
 
 SET(GRAPHVIZ_ROOT "" CACHE PATH "Set root directory to search for GraphViz" )
 MARK_AS_ADVANCED(GRAPHVIZ_ROOT)
@@ -39,6 +40,11 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 IF (GRAPHVIZ_FOUND)
 	include_directories( ${GRAPHVIZ_INCLUDE_DIR} )
 ENDIF()
+IF(Boost_FOUND)
+	include_directories( ${Boost_INCLUDE_DIR} )
+	add_definitions("-DHAS_BOOST")
+ENDIF()
+
 
 add_subdirectory(plugins)  # provides plugin_src variable as a list of Plugins
 add_subdirectory(core)
@@ -48,16 +54,16 @@ SET (APP_DOC_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/core/docu.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/equation.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/field.h
-	${CMAKE_CURRENT_SOURCE_DIR}/core/vector_equation.h 
-	${CMAKE_CURRENT_SOURCE_DIR}/core/function.h 
+	${CMAKE_CURRENT_SOURCE_DIR}/core/vector_equation.h
+	${CMAKE_CURRENT_SOURCE_DIR}/core/function.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/membrane_property.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/property.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/system.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/cpm.h
-	
+
 )
 
-SET(XSD_SOURCES 
+SET(XSD_SOURCES
 	core/base_types.xsd
 	core/diff_eqn.xsd
 	core/equation.xsd

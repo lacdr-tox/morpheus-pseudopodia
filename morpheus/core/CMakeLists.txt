@@ -116,7 +116,7 @@ IF  ("${MORPHEUS_OS}" STREQUAL "WIN32")
 # 	ENDIF()
 ENDIF()
 
-
+target_link_libraries(${SIMULATOR_EXEC_NAME} ${Boost_LIBRARIES})
 
 # Installation of the program
 IF  ( "${MORPHEUS_OS}" STREQUAL "WIN32")
