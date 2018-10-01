@@ -18,8 +18,14 @@
 #include <functional>
 #include <assert.h>
 
-template <class T>
-class Container;
+/** 
+ * Plugin Frontend for the configuration of Properties
+ * 
+ * This is the handler for interfacing Properties with the XML model definition.
+ * The handler reads the XML, creates Properties (incl. Constants and Variables)
+ * and provides the initializers. 
+ * 
+ */
 
 template <class T>
 class Container : virtual public Plugin {
@@ -31,10 +37,12 @@ public:
 	static string CellPropertyXMLName();
 	
 	Container(Mode mode);
+	~Container() { if (_accessor && _accessor->scope()) const_cast<Scope*>(_accessor->scope())->removeSymbol(_accessor); }
 	string XMLName() const override;
 	const string& getName() const { return name.isDefined() ? name() : symbol();}
 	const string& getSymbol() const { return symbol(); }
 	T getInitValue(const SymbolFocus& F);
+	string getInitExpression() { return value.stringVal(); };
 	
 	void loadFromXML(XMLNode node, Scope* scope) override;
 	XMLNode saveToXML() const override;
@@ -58,7 +66,11 @@ protected:
 };
 
 
-/** Generic Container interfaced Property template
+/** Generic Container-interfaced Property
+ * 
+ * This template class stores one value, and initializes the value using the Container
+ * XML-interface class. A Data tag name for snapshoting/loading of the value is derived from the 
+ * Container XML tag name by appending 'Data'.
  * 
  * T ist the interfactial type of the Symbol attached to the property
  * V is the actual value type of the property
@@ -97,6 +109,13 @@ public:
 	Container<T>* parent;
 };
 
+
+/** Symbol (accessor) for constant values
+ * 
+ * The ConstantSymbol template attaches a constant value to a scope.
+ * It provides all the necessary meta-information (type, constness, symbol name)
+ * and the mediates access to the value.
+ */
 template <class T>
 class ConstantSymbol : public PrimitiveConstantSymbol<T> {
 	public:
@@ -111,6 +130,14 @@ class ConstantSymbol : public PrimitiveConstantSymbol<T> {
 		friend class Container<T>;
 };
 
+/** Symbol (accessor) for variable values
+ * 
+ * The VariableSymbol template attaches a variable value to a scope.
+ * It provides all the necessary meta-information (type, constness, symbol name)
+ * and the mediates access to the value. 
+ * 
+ * When snapshoting, the value is copied back to the XML interfacing Container.
+ */
 template <class T>
 class VariableSymbol : public PrimitiveVariableSymbol<T> {
 	public:
@@ -125,13 +152,20 @@ class VariableSymbol : public PrimitiveVariableSymbol<T> {
 		friend class Container<T>;
 };
 
+/** Symbol (accessor) for cell-attached Properties
+ * 
+ * Alike the PrimitivePropertySymbol, the PropertySymbol attaches Properties to a scope.
+ * In addition, it interaces to a Container plugin to mediate initialization, snapshoting and loading of values
+ * 
+ * When snapshoting, the XML data tag name is derived from the XML interfacing Container tag name by appanding 'Data'.
+ */
 template <class T>
 class PropertySymbol : public PrimitivePropertySymbol<T> {
 	public:
 		PropertySymbol(Container<T>* parent, const CellType* ct, uint pid) : PrimitivePropertySymbol<T>(parent->getSymbol(), ct, pid), parent(parent) { }
 		std::string linkType() const override { return "CellPropertyLink"; }
 		const string& description() const override { if (parent) return parent->getName();  return this->name();}
-		typename TypeInfo<T>::SReturn get(const SymbolFocus& f) const override { return getCellProperty(f)->value; }
+// 		typename TypeInfo<T>::SReturn get(const SymbolFocus& f) const override { return getCellProperty(f)->value; }
 		typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const override {
 			auto p=getCellProperty(f); 
 			if (!p->initialized) 
@@ -147,17 +181,19 @@ class PropertySymbol : public PrimitivePropertySymbol<T> {
 			} catch (...) { cout << "Warning: Could not intialize default property "<<  this->name() << " of celltype " << this->celltype->getName() << "." << endl; }
 			
 		}
-		void set(const SymbolFocus& f, typename TypeInfo<T>::Parameter value) const override { getCellProperty(f)->value = value; };
-		void setBuffer(const SymbolFocus& f, typename TypeInfo<T>::Parameter value) const override { getCellProperty(f)->buffer = value; };
-		void applyBuffer() const override;
-		void applyBuffer(const SymbolFocus& f) const override {  getCellProperty(f)->value =  getCellProperty(f)->buffer; };
-	private:
+		// These are all inherited by PrimitivePropertySymbol
+// 		void set(const SymbolFocus& f, typename TypeInfo<T>::Parameter value) const override { getCellProperty(f)->value = value; };
+// 		void setBuffer(const SymbolFocus& f, typename TypeInfo<T>::Parameter value) const override { getCellProperty(f)->buffer = value; };
+// 		void applyBuffer() const override;
+// 		void applyBuffer(const SymbolFocus& f) const override {  getCellProperty(f)->value =  getCellProperty(f)->buffer; };
+	protected:
+		/// Provide a Property<T,T> associated with the SymbolFocus @p f
 		Property<T,T>* getCellProperty(const SymbolFocus& f) const { 
 			assert(f.cell().getCellType() == this->celltype);
 			return static_cast<Property<T,T>*>(f.cell().properties[this->property_id].get()); 
 		}
 		Container<T>* parent;
-		friend class Container<T>;
+// 		friend class Container<T>;
 };
 
 typedef Property<double,deque<double>> DelayProperty;
@@ -375,14 +411,14 @@ T Container<T>::getInitValue(const SymbolFocus& f) {
 	return value.safe_get(f);
 }
 
-template<class T> void PropertySymbol<T>::applyBuffer() const
-{
-	auto cells = this->celltype->getCellIDs();
-	for (auto cell : cells) {
-		auto p = getCellProperty(SymbolFocus(cell));
-		p->value = p->buffer;
-	}
-}
+// template<class T> void PropertySymbol<T>::applyBuffer() const
+// {
+// 	auto cells = this->celltype->getCellIDs();
+// 	for (auto cell : cells) {
+// 		auto p = getCellProperty(SymbolFocus(cell));
+// 		p->value = p->buffer;
+// 	}
+// }
 
 
 #endif // PROPERTY_H

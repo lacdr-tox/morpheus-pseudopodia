@@ -1,6 +1,6 @@
 
 FIND_PACKAGE(ZLIB REQUIRED)
-FIND_PACKAGE(Boost REQUIRED)
+FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem)
 
 SET(GRAPHVIZ_ROOT "" CACHE PATH "Set root directory to search for GraphViz" )
 MARK_AS_ADVANCED(GRAPHVIZ_ROOT)
@@ -22,22 +22,6 @@ CHECK_TYPE_SIZE(uint UINT)
 
 FIND_PACKAGE(OpenMP)
 
-
-# IF( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" )
-# 	SET(OpenMP_CXX_FLAGS "-fopenmp")
-# ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-# 	include_directories("/usr/include")
-# 	SET(OpenMP_CXX_FLAGS  "-fopenmp=libomp")
-# ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-# 	SET(OpenMP_CXX_FLAGS "-openmp")
-# ELSE()
-# 	MESSAGE(FATAL_ERROR "Unknown compiler id ${CMAKE_CXX_COMPILER_ID}, cannot set openmp flags")
-# ENDIF()
-# 
-# SET(CMAKE_REQUIRED_FLAGS ${OpenMP_CXX_FLAGS})
-# CHECK_INCLUDE_FILES("omp.h" OPENMP_FOUND)
-# UNSET(CMAKE_REQUIRED_FLAGS)
-
 option(MORPHEUS_OPENMP "Switch off the usage of OPENMP" ON)
 
 IF (OPENMP_FOUND AND MORPHEUS_OPENMP)
@@ -51,10 +35,6 @@ ELSE()
 	MESSAGE(STATUS "OpenMP support was switched off manually. Disabling OpenMP. ")
 	SET(HAVE_OPENMP OFF)
 ENDIF()
-
-#add_subdirectory(muParser)
-#add_subdirectory(xmlParser)
-#add_subdirectory(gnuplot_i)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 IF (GRAPHVIZ_FOUND)
@@ -73,16 +53,16 @@ SET (APP_DOC_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/core/docu.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/equation.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/field.h
-	${CMAKE_CURRENT_SOURCE_DIR}/core/vector_equation.h 
-	${CMAKE_CURRENT_SOURCE_DIR}/core/function.h 
+	${CMAKE_CURRENT_SOURCE_DIR}/core/vector_equation.h
+	${CMAKE_CURRENT_SOURCE_DIR}/core/function.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/membrane_property.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/property.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/system.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/cpm.h
-	
+
 )
 
-SET(XSD_SOURCES 
+SET(XSD_SOURCES
 	core/base_types.xsd
 	core/diff_eqn.xsd
 	core/equation.xsd

@@ -74,14 +74,10 @@
             </InitProperty>
             <InitCellObjects mode="distance">
                 <Arrangement repetitions="6,4,0" displacements="64,80,0">
-                    <Object>
-                        <Sphere radius="32" center="82,82,0"/>
-                    </Object>
+                    <Sphere radius="32" center="82,82,0"/>
                 </Arrangement>
                 <Arrangement repetitions="6,4,0" displacements="64,80,0">
-                    <Object>
-                        <Sphere radius="32" center="114,122,0"/>
-                    </Object>
+                    <Sphere radius="32" center="114,122,0"/>
                 </Arrangement>
             </InitCellObjects>
         </Population>

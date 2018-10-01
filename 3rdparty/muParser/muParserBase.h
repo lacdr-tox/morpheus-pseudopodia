@@ -103,9 +103,9 @@ private:
 
     virtual ~ParserBase();
     
-	  value_type  Eval() const;
-    value_type* Eval(int &nStackSize) const;
-    void Eval(value_type *results, int nBulkSize);
+    value_type  Eval(void* p_fun_data = NULL) const;
+    value_type* Eval(int &nStackSize, void* p_fun_data = NULL) const;
+    void Eval(value_type *results, int nBulkSize, void* p_fun_data = NULL);
 
     int GetNumResults() const;
 
@@ -132,6 +132,12 @@ private:
     void DefineFun(const string_type &a_strName, T a_pFun, bool a_bAllowOpt = true)
     {
       AddCallback( a_strName, ParserCallback(a_pFun, a_bAllowOpt), m_FunDef, ValidNameChars() );
+    }
+    
+    template<typename T>
+    void UpdateFun(const string_type &a_strName, T a_pFun, bool a_bAllowOpt = true)
+    {
+      UpdateCallback( a_strName, ParserCallback(a_pFun, a_bAllowOpt), m_FunDef);
     }
 
     void DefineOprt(const string_type &a_strName, 
@@ -241,6 +247,10 @@ private:
                       const ParserCallback &a_Callback, 
                       funmap_type &a_Storage,
                       const char_type *a_szCharSet );
+	
+	void UpdateCallback( const string_type &a_strName,
+                         const ParserCallback &a_Callback, 
+                         funmap_type &a_Storage);
 
     void ApplyRemainingOprt(ParserStack<token_type> &a_stOpt,
                                 ParserStack<token_type> &a_stVal) const;
@@ -281,6 +291,7 @@ private:
     mutable ParseFunction  m_pParseFormula;
     mutable ParserByteCode m_vRPN;        ///< The Bytecode class.
     mutable stringbuf_type  m_vStringBuf; ///< String buffer, used for storing string function arguments
+    mutable void* p_data;
     stringbuf_type  m_vStringVarBuf;
 
     std::unique_ptr<token_reader_type> m_pTokenReader; ///< Managed pointer to the token reader object.

@@ -7,5 +7,6 @@ set(plugin_src
 	init_rectangle.cpp
 	init_voronoi.cpp
 	tiff_reader.cpp
+	csv_reader.cpp
 	
 PARENT_SCOPE)

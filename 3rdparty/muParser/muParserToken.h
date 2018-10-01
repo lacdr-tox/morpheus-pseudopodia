@@ -69,7 +69,7 @@ namespace mu
       TString m_strTok;   ///< Token string
       TString m_strVal;   ///< Value for string variables
       value_type m_fVal;  ///< the value 
-      std::unique_ptr<ParserCallback> m_pCallback;
+      mutable std::unique_ptr<ParserCallback> m_pCallback;
 	  std::map<int,std::unique_ptr<ParserCallback> > m_Arg_pCallback;
 
   public:
@@ -338,13 +338,9 @@ namespace mu
                  </ul>
           \sa ECmdCode
       */
-      generic_fun_type GetFuncAddr(int argc = -1) const
+      generic_fun_type GetFuncAddr() const
       {
-		if (argc == -1)
-			return (m_pCallback.get()) ? (generic_fun_type)m_pCallback->GetAddr() : 0;
-		
-		auto it = m_Arg_pCallback.find(argc);
-		return (it == m_Arg_pCallback.end()) ? 0 : (generic_fun_type) it->second->GetAddr();
+		return (m_pCallback.get()) ? (generic_fun_type)m_pCallback->GetAddr() : 0;
       }
 
       //------------------------------------------------------------------------------
@@ -382,20 +378,27 @@ namespace mu
 
         Valid only if m_iType==CmdFUNC.
       */
-      int GetArgCount(int expect = -1) const
+      int GetArgCount(int expect=-2) const
       {
         assert(m_pCallback.get());
 
         if (!m_pCallback->GetAddr())
             throw ParserError(ecINTERNAL_ERROR);
-        if (expect == -1)
-            return m_pCallback->GetArgc();
-        // Try to find an overload with the number of arguments expected
-        auto cb = m_Arg_pCallback.find(expect);
-        if (cb == m_Arg_pCallback.end())
-            return  m_pCallback->GetArgc();
-        else
-            return cb->second->GetArgc();
+		
+		if (expect >= 0 && m_pCallback->GetArgc() != expect ){
+		// Try to find an overload with the number of arguments expected
+			auto cb = m_Arg_pCallback.find(expect);
+			if (cb == m_Arg_pCallback.end()) {
+				// fallback to multi function
+				cb = m_Arg_pCallback.find(-1);
+			}
+			if (cb != m_Arg_pCallback.end()) {
+				// Select the suitable callback
+				m_pCallback = std::unique_ptr<ParserCallback>(new ParserCallback(*cb->second.get()));
+// 				m_iCode = m_pCallback->GetCode(); .--> the code is directly read from m_pCallback, if it'S defined
+			}
+		}
+		return  m_pCallback->GetArgc();
       }
 
       //------------------------------------------------------------------------------

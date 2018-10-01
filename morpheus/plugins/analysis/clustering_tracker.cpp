@@ -26,9 +26,7 @@ void Clustering_Tracker::loadFromXML(const XMLNode xNode, Scope* scope)
 
 void Clustering_Tracker::init(const Scope* scope)
 {
-	celltype.init(scope);
 	cluster_id.setScope(celltype()->getScope());
-	
 	
 	AnalysisPlugin::init(scope);
 	

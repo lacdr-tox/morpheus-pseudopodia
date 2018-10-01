@@ -15,25 +15,59 @@ REGISTER_PLUGIN ( FunctionPlugin );
 
 void FunctionPlugin::loadFromXML ( const XMLNode Node, Scope* scope)
 {
+	local_scope = scope->createSubScope("Function");
 	symbol.setXMLPath("symbol");
 	registerPluginParameter(symbol);
 	raw_expression.setXMLPath("Expression/text");
 	registerPluginParameter(raw_expression);
 	
-	Plugin::loadFromXML(Node,scope);
+	for (int i=0; i<Node.nChildNode(); i++) {
+		
+		// Right now, the order in the XML determines the parameter syntax of the function
+		auto child = Node.getChildNode(i);
+		if (string(child.getName()) == "Parameter") {
+			FunParameter p;
+			p.type = EvaluatorVariable::DOUBLE;
+			p.symbol->setXMLPath(string("Parameter[") +to_str(i) + "]/symbol");
+			p.name->setXMLPath(string("Parameter[") +to_str(i) + "]/name");
+			registerPluginParameter(p.symbol);
+			registerPluginParameter(p.name);
+			parameters.emplace_back(p);
+		}
+// 		else if (string(child.getName()) == "VectorParameter") {
+// 			FunParameter p;
+// 			p.type = EvaluatorVariable::VECTOR;
+// 			p.symbol->setXMLPath(string("VectorParameter[") +to_str(i) + "]/symbol");
+// 			p.name->setXMLPath(string("VectorParameter[") +to_str(i) + "]/name");
+// 			registerPluginParameter(p.symbol);
+// 			registerPluginParameter(p.name);
+// 			parameters.emplace_back(p);
+// 		}
+	}
 	
+	Plugin::loadFromXML(Node,local_scope);
+	
+	// register the symbol in the parental scope
 	accessor = make_shared<Symbol>(this);
 	scope->registerSymbol(accessor);
-	
-	evaluator = make_shared<ThreadedExpressionEvaluator<double> >(raw_expression(), false);
+	evaluator = make_shared<ThreadedExpressionEvaluator<double> >(raw_expression(), scope, false);
 }
 
 void FunctionPlugin::init (const Scope* scope) {
-	Plugin::init(scope);
-	evaluator->init(scope);
+	if (initialized) return;
+	Plugin::init(local_scope);
+	
+	// Add Parameters as local variables to the evaluators
+	// we don't add them as local variables to the scope, because then they would be shared by all evaluators and may not be used concurrently
+	vector<EvaluatorVariable> parameter_table;
+	for ( auto p : parameters ) {
+		parameter_table.push_back( {p.symbol(),p.type} );
+	}
+	evaluator->setLocalsTable(parameter_table);
+	
 	accessor->setEvaluator(evaluator);
-// 	registerInputSymbols( evaluator->getDependSymbols() );
-// 	registerOutputSymbols(function_symbol,scope);
+	initialized = true;
+	evaluator->init();
 }
 
 
@@ -45,6 +79,8 @@ XMLNode FunctionPlugin::saveToXML() const
 	Node.addChild("Expression").addText(raw_expression().c_str());
 	return Node;
 }
+
+
 
 REGISTER_PLUGIN ( VectorFunction );
 
@@ -58,6 +94,29 @@ void VectorFunction::loadFromXML ( const XMLNode Node, Scope* scope)
 	is_spherical.setDefault("False");
 	registerPluginParameter(is_spherical);
 	
+	for (int i=0; i<Node.nChildNode(); i++) {
+		
+		// Right now, the order in the XML determines the parameter syntax of the function
+		auto child = Node.getChildNode(i);
+		if (string(child.getName()) == "Parameter") {
+			FunParameter p;
+			p.type = EvaluatorVariable::DOUBLE;
+			p.symbol->setXMLPath(string("Parameter[") +to_str(i) + "]/symbol");
+			p.name->setXMLPath(string("Parameter[") +to_str(i) + "]/name");
+			registerPluginParameter(p.symbol);
+			registerPluginParameter(p.name);
+			parameters.emplace_back(p);
+		}
+// 		else if (string(child.getName()) == "VectorParameter") {
+// 			FunParameter p;
+// 			p.type = EvaluatorVariable::VECTOR;
+// 			p.symbol->setXMLPath(string("VectorParameter[") +to_str(i) + "]/symbol");
+// 			p.name->setXMLPath(string("VectorParameter[") +to_str(i) + "]/name");
+// 			registerPluginParameter(p.symbol);
+// 			registerPluginParameter(p.name);
+// 			parameters.emplace_back(p);
+// 		}
+	}
 	Plugin::loadFromXML(Node,scope);
 
 	description = this->plugin_name;
@@ -65,14 +124,13 @@ void VectorFunction::loadFromXML ( const XMLNode Node, Scope* scope)
 	accessor = make_shared<Symbol>(this);
 	scope->registerSymbol(accessor);
 	
-	Plugin::loadFromXML( Node, scope );
 	
-	evaluator = make_shared<ThreadedExpressionEvaluator<VDOUBLE> >(raw_expression(), false);
+	evaluator = make_shared<ThreadedExpressionEvaluator<VDOUBLE> >(raw_expression(), scope, false);
 }
 
 void VectorFunction::init (const Scope* scope) {
 	Plugin::init(scope);
-	evaluator->init(scope);
+	evaluator->init();
 	accessor->setEvaluator(evaluator);
 	registerInputSymbols( evaluator->getDependSymbols() );
 }

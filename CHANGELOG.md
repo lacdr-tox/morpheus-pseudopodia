@@ -4,6 +4,7 @@
 
 ### MorpheusML
   * The generalized **Mapper** now takes care to map information between spatial contexts, replaces the CellReporter
+  * The **Function** plugin now supports parametric functions and function overloading.
   * The new **External** plugin allows to run external code during analysis steps
   * The new **ContactLogger** tracks cell contacts over time
   * The value of a **Constant** can be provided via expression
@@ -11,7 +12,7 @@
   * Multiple **Population** per CellType are now supported
   * **GnuPlotter** layout adjustments to efficiently support large lattices
   * Binary **VTK** export (performance)
-  * Full support for snapshoting simulation states
+  * Full support for **snapshoting** simulation states
   * Removed any remains of time / space units
 
 ### GUI

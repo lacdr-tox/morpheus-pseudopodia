@@ -29,10 +29,10 @@ Morpeus implementation by ECMI 2012 summer course:
             <Constant symbol="c1" value="0.0065"/>
             <Constant symbol="c2" value="0.841"/>
             <DiffEqn symbol-ref="c">
-                <Expression>is_amoeba*(-f -r)</Expression>
+                <Expression>is_amoeba*(-f() -r)</Expression>
             </DiffEqn>
             <DiffEqn symbol-ref="r">
-                <Expression>is_amoeba*epsilon*(3.5*c-b-r)</Expression>
+                <Expression>is_amoeba*epsilon()*(3.5*c-b-r)</Expression>
             </DiffEqn>
             <Function symbol="epsilon">
                 <Expression>if(c &lt; c1, 0.5,
@@ -144,7 +144,7 @@ phase
         </Population>
         <Population size="1" type="amoeba">
             <InitRectangle mode="regular" number-of-cells="250">
-                <Dimensions size="l" origin="3,3,0"/>
+                <Dimensions size="l.x-6,l.y-6,1" origin="3,3,0"/>
             </InitRectangle>
         </Population>
     </CellPopulations>

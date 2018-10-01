@@ -368,6 +368,29 @@ namespace mu
 	ReInit();
   }
 
+  /** \brief Update a function or operator callback in the parser. */
+  void ParserBase::UpdateCallback( const string_type &a_strName,
+                                const ParserCallback &a_Callback, 
+                                funmap_type &a_Storage )
+  {
+    if (a_Callback.GetAddr()==0)
+        Error(ecINVALID_FUN_PTR);
+
+    funmap_type *pFunMap = &a_Storage;
+
+    // Check for existing operator or function names
+    // fun_signature a_signature = {a_strName, a_Callback.GetArgc()};
+	auto fun_range = pFunMap->equal_range(a_strName);
+	for (auto it = fun_range.first; it!=fun_range.second; it++) {
+		if (it->second.GetArgc() == a_Callback.GetArgc()) {
+			it->second = a_Callback;
+			ReInit();
+			return;
+		}
+	}
+	
+	Error(ecINVALID_NAME);
+  }
   //---------------------------------------------------------------------------
   /** \brief Check if a name contains invalid characters. 
 
@@ -814,6 +837,7 @@ namespace mu
   //---------------------------------------------------------------------------
   /** \brief Apply a function token. 
       \param iArgCount Number of Arguments actually gathered used only for multiarg functions.
+             ++ also used for determining the proper function overload
       \post The result is pushed to the value stack
       \post The function token is removed from the stack
       \throw exception_type if Argument count does not mach function requirements.
@@ -838,7 +862,7 @@ namespace mu
 
     // determine how many parameters the function needs. To remember iArgCount includes the 
     // string parameter whilst GetArgCount() counts only numeric parameters.
-    int iArgRequired = (funTok.GetCode()==cmFUNC)? funTok.GetArgCount(a_iArgCount) : funTok.GetArgCount() + ((funTok.GetType()==tpSTR) ? 1 : 0);
+    int iArgRequired = (funTok.GetCode()==cmFUNC || funTok.GetCode()==cmFUNC_VAR )? funTok.GetArgCount(iArgCount) : funTok.GetArgCount(iArgCount) + ((funTok.GetType()==tpSTR) ? 1 : 0);
 
     // Thats the number of numerical parameters
     int iArgNumerical = iArgCount - ((funTok.GetType()==tpSTR) ? 1 : 0);
@@ -846,7 +870,7 @@ namespace mu
     if (funTok.GetCode()==cmFUNC_STR && iArgCount-iArgNumerical>1)
       Error(ecINTERNAL_ERROR);
 
-    if (funTok.GetArgCount()>=0 && iArgCount>iArgRequired) 
+    if (funTok.GetArgCount(iArgCount)>=0 && iArgCount>iArgRequired) 
       Error(ecTOO_MANY_PARAMS, m_pTokenReader->GetPos()-1, funTok.GetAsString());
 
     if (funTok.GetCode()!=cmOPRT_BIN && iArgCount<iArgRequired )
@@ -877,18 +901,21 @@ namespace mu
           break;
 
     case  cmFUNC_BULK: 
-          m_vRPN.AddBulkFun(funTok.GetFuncAddr(iArgNumerical), (int)stArg.size()); 
+          m_vRPN.AddBulkFun(funTok.GetFuncAddr(), (int)stArg.size()); 
           break;
 
     case  cmOPRT_BIN:
     case  cmOPRT_POSTFIX:
     case  cmOPRT_INFIX:
     case  cmFUNC:
-          if (funTok.GetArgCount()==-1 && iArgCount==0)
+          if (funTok.GetArgCount(iArgCount)==-1 && iArgCount==0)
             Error(ecTOO_FEW_PARAMS, m_pTokenReader->GetPos(), funTok.GetAsString());
 
-          m_vRPN.AddFun(funTok.GetFuncAddr(iArgNumerical), (funTok.GetArgCount()==-1) ? -iArgNumerical : iArgNumerical);
+          m_vRPN.AddFun(funTok.GetFuncAddr(), (funTok.GetArgCount()==-1) ? -iArgNumerical : iArgNumerical);
           break;
+	case  cmFUNC_VAR:
+		  m_vRPN.AddVarFun(funTok.GetFuncAddr(), funTok.GetArgCount());
+		  break;
     }
 
     // Push dummy value representing the function result to the stack
@@ -1142,7 +1169,13 @@ namespace mu
                 continue;
               }
             }
-
+      // Next is generic functions with private data 
+      case  cmFUNC_VAR: 
+		{
+			sidx -= pTok->Fun.argc -1;
+			Stack[sidx] = (*(fun_class_generic*)pTok->Fun.ptr)(Stack+sidx, p_data);
+			continue;
+		}
       // Next is treatment of string functions
       case  cmFUNC_STR:
             {
@@ -1297,6 +1330,7 @@ namespace mu
 
                     if (iArgCount>1 && ( stOpt.size()==0 || 
                                         (stOpt.top().GetCode()!=cmFUNC && 
+                                         stOpt.top().GetCode()!=cmFUNC_VAR && 
                                          stOpt.top().GetCode()!=cmFUNC_BULK && 
                                          stOpt.top().GetCode()!=cmFUNC_STR) ) )
                       Error(ecUNEXPECTED_ARG, m_pTokenReader->GetPos());
@@ -1389,6 +1423,7 @@ namespace mu
 
         case cmOPRT_INFIX:
         case cmFUNC:
+        case cmFUNC_VAR:
         case cmFUNC_BULK:
         case cmFUNC_STR:  
                 stOpt.push(opt);
@@ -1670,6 +1705,9 @@ namespace mu
         case cmFUNC:  mu::console() << _T("FUNC \"") 
                                     << stOprt.top().GetAsString() 
                                     << _T("\"\n");   break;
+        case cmFUNC_VAR : mu::console() << _T("FUNC_VAR \"") 
+                                    << stOprt.top().GetAsString() 
+                                    << _T("\"\n");   break;
         case cmFUNC_BULK:  mu::console() << _T("FUNC_BULK \"") 
                                          << stOprt.top().GetAsString() 
                                          << _T("\"\n");   break;
@@ -1704,8 +1742,9 @@ namespace mu
       This member function can be used to retriev all results of an expression
       made up of multiple comma seperated subexpressions (i.e. "x+y,sin(x),cos(y)")
   */
-  value_type* ParserBase::Eval(int &nStackSize) const
+  value_type* ParserBase::Eval(int &nStackSize, void* p_fun_data) const
   {
+    p_data = p_fun_data;
     (this->*m_pParseFormula)(); 
     nStackSize = m_nFinalResultIdx;
 
@@ -1724,7 +1763,7 @@ namespace mu
   {
     return m_nFinalResultIdx;
   }
-
+  
   //---------------------------------------------------------------------------
   /** \brief Calculate the result.
 
@@ -1741,14 +1780,16 @@ namespace mu
     \return The evaluation result
     \throw ParseException if no Formula is set or in case of any other error related to the formula.
   */
-  value_type ParserBase::Eval() const
+  value_type ParserBase::Eval(void* p_fun_data) const
   {
+	p_data = p_fun_data;
     return (this->*m_pParseFormula)(); 
   }
 
   //---------------------------------------------------------------------------
-  void ParserBase::Eval(value_type *results, int nBulkSize)
+  void ParserBase::Eval(value_type *results, int nBulkSize, void* p_fun_data)
   {
+	p_data = p_fun_data;
     CreateRPN();
 
     int i = 0;

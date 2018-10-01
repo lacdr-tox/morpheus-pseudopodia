@@ -373,8 +373,14 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		a.match_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@symbol-ref";a.target_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@value"; fixes.append(a);
 		a.match_path = "MorpheusModel/Analysis/Logger/Restriction/@force-node-granularity";a.target_path = "MorpheusModel/Analysis/Logger/Input/@force-node-granularity"; fixes.append(a);
 		
-		a.operation = AutoFix::COPY; a.replace_existing = false; a.match_path  = "MorpheusModel/CellPopulations/Population/Cell/@name"; a.target_path = "MorpheusModel/CellPopulations/Population/Cell/@id"; fixes.append(a); 
+		a.operation = AutoFix::COPY; a.replace_existing = false; a.match_path  = "MorpheusModel/CellPopulations/Population/Cell/@name"; a.target_path = "MorpheusModel/CellPopulations/Population/Cell/@id"; fixes.append(a);
 		
+		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Point"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Point"; fixes.append(a);
+		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Box"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Box"; fixes.append(a);
+		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Sphere"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Sphere"; fixes.append(a);
+		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Ellipsoid"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Ellipsoid"; fixes.append(a);
+		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Cylinder"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Cylinder"; fixes.append(a);
+		// TODO Allow to specify a target path, finished by / to keep the node name!
 	}
 
 	qDebug() << QString("Applying fixes from version %1 to %2").arg(morpheus_file_version).arg(fix_version);

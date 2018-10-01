@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+	<xs:group name="PopulationInitPlugins">
+		<xs:choice>
+			<xs:element name="CSVReader" 		type="CSVReaderPop"/>
+		</xs:choice>
+	</xs:group>
+
+	<xs:complexType name="CSVReaderPop">
+		<xs:annotation>
+			<xs:appinfo>Initialization</xs:appinfo>
+		</xs:annotation>
+		<xs:attribute name="filename" use="required" type="cpmSystemFile" />
+	</xs:complexType>
+
+</xs:schema>

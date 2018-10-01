@@ -57,16 +57,26 @@ private:
 
 class Lattice {
 public:
-// XML interface
+
+	enum Structure { linear, square , hexagonal, cubic } structure;
+
 	virtual string getXMLName() const =0;
 	void loadFromXML(const XMLNode xnode);
 	XMLNode saveToXML();
 
 	Lattice();  /// Configure a Lattice from a XML node
+	struct LatticeDesc {
+		Structure structure;
+		VINT size;
+		uint neighborhood_order = 1;
+		map<Boundary::Codes,Boundary::Type> boundaries;
+	};
+	Lattice(const LatticeDesc& desc);
+	static unique_ptr<Lattice> createLattice(const LatticeDesc& desc);
+	
 	virtual ~Lattice() {};
 
 //  Lattice extend
-	enum Structure { linear, square , hexagonal, cubic } structure;
 	const VINT& size() const { return _size;}					 /// Size of the lattice
 	bool equal_pos(const VINT& a, const VINT& b) const;	 /// equality operator that respects periodic BCs
 	/// Check wether the node referred by @param a is numerically within the range of lattice size
@@ -292,6 +302,7 @@ inline bool Lattice::inside(const VINT& a) const {
 class Hex_Lattice: public Lattice {
 	public:
 	Hex_Lattice(const XMLNode xnode);
+	Hex_Lattice(const LatticeDesc& desc) : Lattice(desc) { dimensions=2; structure = hexagonal;  _size.z=1; };
 	string getXMLName() const override { return "hexagonal"; };
 	VDOUBLE to_orth(const VDOUBLE& a) const override;
 	VDOUBLE orth_distance(const VDOUBLE& a, const VDOUBLE& b) const override;
@@ -308,6 +319,7 @@ private:
 class Orth_Lattice: public Lattice {
 public:
 	Orth_Lattice(const XMLNode a) : Lattice() {};
+	Orth_Lattice(const LatticeDesc& desc) : Lattice(desc) {};
 	VDOUBLE to_orth(const VDOUBLE& a) const override;
 	VDOUBLE orth_distance(const VDOUBLE& a, const VDOUBLE& b) const override;
 	VINT from_orth(const VDOUBLE& a) const override;
@@ -316,6 +328,7 @@ public:
 class Cubic_Lattice: public Orth_Lattice {
 public:
 	Cubic_Lattice(const XMLNode xnode);
+	Cubic_Lattice(const LatticeDesc& desc) : Orth_Lattice(desc) { dimensions=3; structure = cubic; };
 	string getXMLName() const override { return "cubic"; };
 	Neighborhood getNeighborhoodByName(std::string name) const override;
 private:
@@ -327,7 +340,8 @@ private:
 class Square_Lattice: public Orth_Lattice {
 public:
        static Square_Lattice* create(VINT resolution, bool spherical);
-       Square_Lattice(const XMLNode xNode);
+	Square_Lattice(const XMLNode xNode);
+	Square_Lattice(const LatticeDesc& desc) : Orth_Lattice(desc) { dimensions=2; structure = square; _size.z=1; };
 	string getXMLName() const override { return "square"; };
 private:
 	vector<VINT> get_all_neighbors() const override;
@@ -338,8 +352,9 @@ private:
 
 class Linear_Lattice: public Orth_Lattice {
 public:
-        static Linear_Lattice* create(VINT length, bool periodic);
+	static Linear_Lattice* create(VINT length, bool periodic);
 	Linear_Lattice(const XMLNode xNode);
+	Linear_Lattice(const LatticeDesc& desc) : Orth_Lattice(desc) { dimensions=1; structure = linear; _size.y=1; _size.z=1; };
 	string getXMLName() const override { return "linear"; };
 private:
 	vector<VINT> get_all_neighbors() const override;

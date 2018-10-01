@@ -56,7 +56,7 @@ PDE Equation:
     </Time>
     <CellTypes>
         <CellType class="biological" name="cells">
-            <Chemotaxis field="U" strength="50*(A)" retraction="true"/>
+            <Chemotaxis field="U" strength="100*(A)" retraction="true"/>
             <VolumeConstraint target="5000" strength="0.1"/>
             <SurfaceConstraint target="1" mode="aspherity" strength="0.05"/>
             <MembraneProperty symbol="A" value="0.5" name="A">
@@ -97,9 +97,7 @@ PDE Equation:
                 <Constant symbol="K" value="1"/>
                 <Constant symbol="sigma" value="5.0" name="spatial-length-signal"/>
                 <Constant symbol="n" value="4" name="Hill coefficient"/>
-                <Function symbol="F">
-                    <Expression>B*(k_0+ s + (gamma*A^n) / (K^n + A^n) ) - delta*A</Expression>
-                </Function>
+                <Intermediate symbol="F" value="B*(k_0+ s + (gamma*A^n) / (K^n + A^n) ) - delta*A"/>
                 <DiffEqn symbol-ref="A">
                     <Expression>F</Expression>
                 </DiffEqn>

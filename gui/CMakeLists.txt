@@ -139,6 +139,7 @@ SET( SOURCES
     domnodeviewer.cpp
     domnodeeditor.cpp
     equationhighlighter.cpp 
+    feedback.cpp
     imagetable.cpp
     infoaction.cpp 
     jobcontroller.cpp
@@ -155,6 +156,7 @@ SET( SOURCES
     morpheus_model.cpp
     morpheus_xml.cpp
     moviedialog.cpp
+    network_access.cpp
     nodeadapter.cpp
     nodecontroller.cpp 
     parametersweeper.cpp
@@ -179,6 +181,7 @@ SET( HEADERS #headers that are commented out are not necessary for moc_* files (
     domnodeeditor.h
     domnodeviewer.h
     equationhighlighter.h 
+    feedback.h
     imagetable.h
     infoaction.h 
     jobcontroller.h 
@@ -193,6 +196,7 @@ SET( HEADERS #headers that are commented out are not necessary for moc_* files (
     # morpheus_xml.h
     model_index_mime_data.h
     moviedialog.h 
+    network_access.h
     nodeadapter.h
     nodecontroller.h
     localprocess.h 

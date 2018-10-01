@@ -19,7 +19,7 @@
 #include <sstream>
 #include <algorithm>
 
-#include "xsd.h"
+// #include "xsd.h"
 #include "config.h"
 #include "job_queue.h"
 #include "parametersweeper.h"
@@ -33,6 +33,7 @@
 #include "xmlpreview.h"
 #include "settingsdialog.h"
 #include "sbml_import.h"
+#include "feedback.h"
 
 using namespace std;
 
@@ -81,6 +82,7 @@ private:
     QListWidget *fixBoard;
     QDockWidget* dwid_fixBoard;
 	DocuDock* docuDock;
+	AnnouncementDialog* announcer;
 //     QTreeView* jobQueueView;
 // 	QListWidget* jobQueueStatusText;
 // 	QProgressBar* jobQueueStatusPorgress;

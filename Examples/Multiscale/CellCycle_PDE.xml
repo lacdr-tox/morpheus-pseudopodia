@@ -125,9 +125,7 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
         <Population size="0" type="cells">
             <InitCellObjects mode="order">
                 <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
-                    <Object>
-                        <Sphere radius="45" center="125, 110, 0"/>
-                    </Object>
+                    <Sphere radius="45" center="125, 110, 0"/>
                 </Arrangement>
             </InitCellObjects>
             <InitProperty symbol-ref="CDK1">

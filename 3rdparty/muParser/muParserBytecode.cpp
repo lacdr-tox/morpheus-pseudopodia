@@ -373,6 +373,25 @@ namespace mu
     tok.Fun.ptr = a_pFun;
     m_vRPN.push_back(tok);
   }
+  
+  //---------------------------------------------------------------------------
+  /** \brief Add function to bytecode. 
+
+      \param a_iArgc Number of arguments, negative numbers indicate multiarg functions.
+      \param a_pFun Pointer to function callback.
+  */
+  void ParserByteCode::AddVarFun(generic_fun_type a_pFun, int a_iArgc)
+  {
+    assert(a_iArgc>=0);
+    m_iStackPos = m_iStackPos - a_iArgc + 1; 
+	m_iMaxStackSize = std::max(m_iMaxStackSize, (size_t)m_iStackPos);
+
+    SToken tok;
+    tok.Cmd = cmFUNC_VAR;
+    tok.Fun.argc = a_iArgc;
+    tok.Fun.ptr = a_pFun;
+    m_vRPN.push_back(tok);
+  }
 
   //---------------------------------------------------------------------------
   /** \brief Add a bulk function to bytecode. 
@@ -534,7 +553,8 @@ namespace mu
                       mu::console() << _T(" + [") << m_vRPN[i].Val.data2 << _T("]\n");
                       break;
 
-      case cmFUNC:  mu::console() << _T("CALL\t");
+	  case cmFUNC_VAR:
+	  case cmFUNC:  mu::console() << _T("CALL\t");
                     mu::console() << _T("[ARG:") << std::dec << m_vRPN[i].Fun.argc << _T("]"); 
                     mu::console() << _T("[ADDR: 0x") << std::hex << m_vRPN[i].Fun.ptr << _T("]"); 
                     mu::console() << _T("\n");

@@ -13,7 +13,7 @@
 			<xs:appinfo>Container</xs:appinfo>
 		</xs:annotation>
 		<xs:all>
-			<xs:element name="Diffusion" type="cpmDiffusion" />
+			<xs:element name="Diffusion" type="cpmDiffusion"  minOccurs="0" />
 <!-- 			<xs:element name="BoundaryConditions"  type="cpmPDEBoundaryConditions" minOccurs="0" /> -->
 			<xs:element name="BoundaryValue" type="cpmPDEBoundaryValue" minOccurs="0" maxOccurs="unbounded" />
 			<xs:element name="Reduction" type="cpmBoundary" minOccurs="0" />

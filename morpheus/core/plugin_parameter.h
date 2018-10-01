@@ -19,20 +19,20 @@
 
 /**
  * 
+ * \page PluginDev
+ * \section PluginParameters Plugin Parameters
  * 
- * \page PluginParameters
- * @{
- * \brief Flexible Plugin Paramters to be used in Plugins for accessing XML data
+ * Flexible constructs to mediate easy access to XML data.
  * 
- * \section Usage
+ * \subsection Usage
  * 
- * Reading from XML can be rather cumbersome, espacially when it comes to the interpretation of a 
+ * Reading from XML can be rather cumbersome, espacially when it comes to the interpretation of the 
  * provided string literal: Is it a value, what kind of value, or is it rather an
  * expression, which should be evaluated or do we even require a symbol which we can write to?
  *
  * The morpheus framework casts all these decisions into a policy-based template concept of PluginParameter.
- * This template class are instantiated by selecting the type and a set of policies alongside to 
- * obtain a preconfigured object of your choice:
+ * This template class is instantiated by selecting the parameter type and a set 
+ * of policies to obtain a tailored object of your choice:
  * 
  * Syntax: PlugParameters2\<value_type, ReaderPolicy, RequirementPolicy\> my_value;
  * 
@@ -53,8 +53,7 @@
  * For convenience, a specialised template exists for identifying a celltype via a celltype name 
  *    PluginParameterCellType\<RequirementPolicy\>
  * 
- * \subsection Examples Examples
- * 
+
  * \subsubsection Example1 Example 1: Reading a double value and assuming 0 for the case it is ommited
  * \verbatim  PluginParameter2<double,XMLValueReader,DefaultValPolicy> my_value;\endverbatim
  * 
@@ -101,8 +100,8 @@ class PluginParameter2 ;*/
 // The type agnostic interface for the integration into the plugin architecture.
 class PluginParameterBase {
 public:
-	virtual void loadFromXML(XMLNode node) =0; // read from value, optionally from symbol
-	virtual void init(const Scope* scope) =0;
+	virtual void loadFromXML(XMLNode node, const Scope* scope) =0; // read from value, optionally from symbol
+	virtual void init() =0;
 	virtual void read(string value) =0;
 	virtual string XMLPath() const =0;
 	virtual set<SymbolDependency> getDependSymbols() const =0;
@@ -197,12 +196,12 @@ protected:
 	XMLValueReader() {};
 	// Delete Policies only from derived classes
 	~XMLValueReader() {};
-	
+	void setScope(const Scope * scope) {};
 	void read(const string& string_val) {
 		const_val = TypeInfo<ValType>::fromString(string_val);
 	};
 	
-	void init(const Scope*) {};
+	void init() {};
 	
 	set<SymbolDependency> getDependSymbols() const { return set<SymbolDependency>(); };
 	set<SymbolDependency> getOutputSymbols() const { return set<SymbolDependency>(); };
@@ -231,7 +230,7 @@ public:
 	typename TypeInfo<ValType>::SReturn safe_get(SymbolFocus f) const {
 		if (!is_initialized) {
 // 			cout << "Warning: Evaluator initialisation during get() for expression '" << evaluator->getExpression() << "'" << endl;
-			const_cast<XMLEvaluatorBase<ValType,RequirementPolicy,Evaluator>* >(this)->init(SIM::getScope());
+			const_cast<XMLEvaluatorBase<ValType,RequirementPolicy,Evaluator>* >(this)->init();
 		}
 		if (is_const)
 			return const_expr;
@@ -241,19 +240,22 @@ public:
 	
 	typename TypeInfo<ValType>::SReturn operator()(SymbolFocus f) const { return get(f);}
 	
-	void setScope(const Scope * scope) { assert(scope); local_scope = scope; require_global_scope=false;}
+	void setScope(const Scope * scope) { assert(scope); local_scope = scope; }
 	void setGlobalScope() { require_global_scope=true; };
 	void allowPartialSpec(bool allow=true) { allow_partial_spec=allow; }
 	
-	void init(const Scope* scope)
+	void init()
 	{
+		if (is_initialized)
+			return;
 		if (! RequirementPolicy::isMissing()) {
 			if (require_global_scope)
 				local_scope = SIM::getGlobalScope();
-			if (local_scope)
-				evaluator->init(local_scope);
-			else
-				evaluator->init(scope);
+			if (! local_scope)
+				throw string("PluginParameter missing scope");
+			
+			evaluator = make_unique<Evaluator<ValType> >(string_val, local_scope, allow_partial_spec);
+			evaluator->init();
 			
 			if (evaluator->flags().space_const && evaluator->flags().time_const) { 
 				is_const =  true;
@@ -287,7 +289,8 @@ protected:
 	
 	
 	bool read(const string& string_val){
-		evaluator = make_unique<Evaluator<ValType> >(string_val, allow_partial_spec);
+		this->string_val = string_val;
+		is_initialized = false;
 		return true;
 	};
 	
@@ -301,6 +304,7 @@ private:
 	bool require_global_scope;
 	bool allow_partial_spec;
 	ValType const_expr;
+	string string_val;
 	unique_ptr< Evaluator<ValType> > evaluator;
 };
 
@@ -324,9 +328,11 @@ public:
 	typename TypeInfo<value_type>::SReturn operator()() const { RequirementPolicy::assertDefined();  return value; };
 	typename TypeInfo<value_type>::SReturn get() const { RequirementPolicy::assertDefined();  return value; };
 	void setConversionMap(const value_map_type& value_map) { this->value_map = value_map; };
+	void setValueMap(const value_map_type& value_map) { setConversionMap(value_map); }
 
 protected:
 	XMLNamedValueReader() {};
+	void setScope(const Scope * scope) {};
 	void read(const string& string_val) {
 		if (value_map.empty()) {
 			throw string("XMLNamedValueReader::read() : Empty value map");
@@ -336,7 +342,7 @@ protected:
 		}
 		value = value_map[string_val];
 	}
-	void init(const Scope* scope) {};
+	void init() {};
 	set<SymbolDependency> getDependSymbols() const { return set<SymbolDependency>(); };
 	set<SymbolDependency> getOutputSymbols() const { return set<SymbolDependency>(); };
 	
@@ -357,7 +363,12 @@ class XMLNamedValueReader< shared_ptr<const CellType>,  RequirementPolicy> : pub
 public:
 	typedef shared_ptr<const CellType> value_type;
 	typename TypeInfo<value_type>::SReturn operator()() const { return get(); };
-	typename TypeInfo<value_type>::SReturn get() const { RequirementPolicy::assertDefined();  return value.lock(); };
+	typename TypeInfo<value_type>::SReturn get() const {
+		RequirementPolicy::assertDefined();
+		if(value.expired())
+			const_cast<XMLNamedValueReader< shared_ptr<const CellType>,  RequirementPolicy>* >(this)->init();
+		return value.lock();
+	};
 
 protected:
 	typedef weak_ptr<const CellType> int_value_type;
@@ -367,8 +378,8 @@ protected:
 	void read(const string& val) {
 		this->string_val = val;
 	}
-	
-	void init(const Scope* scope) {
+	void setScope(const Scope * scope) {};
+	void init() {
 		if (! RequirementPolicy::isMissing()) {
 			value_map_type value_map = CPM::getCellTypesMap();
 			if (!value_map.count(string_val)) {
@@ -397,12 +408,12 @@ public:
 	/// read the XML-specified value
 	void read(const string& string_val) { symbol_name = string_val; if (symbol_name.empty()) throw string("Missing Symbol name in XMLReadableSymbol::read()");};
 	/// Initialize the symbol
-	void init(const Scope* scope) {
+	void init() {
 		if (! RequirementPolicy::isMissing()) {
 			if (require_global_scope)
 				local_scope = SIM::getGlobalScope();
-			else if (!local_scope)
-				local_scope = scope;
+			if (! local_scope)
+				throw string("PluginParameter missing scope");
 			
 			if (partial_spec_val_set)
 				_accessor = local_scope->findSymbol<ValType>(symbol_name, partial_spec_val);
@@ -412,7 +423,7 @@ public:
 	}
 	
 	/// Require a Symbol from another scope (i.e. not the lexical scope)
-	void setScope(const Scope * scope) { local_scope = scope; require_global_scope=false; }
+	void setScope(const Scope * scope) { local_scope = scope; }
 	/// Require a globally valid Symbol
 	void setGlobalScope() { require_global_scope =true; }
 	
@@ -426,7 +437,7 @@ public:
 		partial_spec_val = val;
 	}
 	
-	void unsetPartialSpecDefault() { partial_spec_val_set = false; if (local_scope) init(local_scope);}
+	void unsetPartialSpecDefault() { partial_spec_val_set = false; if (local_scope) init();}
 	
 	string name() const { RequirementPolicy::assertDefined(); return symbol_name; }
 	const string& description() const  { RequirementPolicy::assertDefined(); return _accessor->description(); }
@@ -481,17 +492,16 @@ template <class ValType, class RequirementPolicy>
 class XMLWritableSymbol : public RequirementPolicy {
 public:
 	void read(const string& string_val) { symbol_name = string_val; if (symbol_name.empty()) throw string("Missing Symbol name in XMLWritableSymbol::read()");};
-	void init(const Scope * scope) {
+	void init() {
 		if (! RequirementPolicy::isMissing()) {
 			if (require_global_scope)
 				local_scope = SIM::getGlobalScope();
-			if (local_scope)
-				_accessor = local_scope->findRWSymbol<ValType>(symbol_name);
-			else
-				_accessor = scope->findRWSymbol<ValType>(symbol_name);
+			if (! local_scope)
+				throw string("PluginParameter missing scope");
+			_accessor = local_scope->findRWSymbol<ValType>(symbol_name);
 		}
 	}
-	void setScope(const Scope* scope) { local_scope = scope; require_global_scope=false; }
+	void setScope(const Scope* scope) { local_scope = scope; }
 	void setGlobalScope() { require_global_scope = true; }
 	
 	string name() { RequirementPolicy::assertDefined(); return symbol_name; }
@@ -574,7 +584,7 @@ public:
 	
 	void setXMLPath(string xml_path) { this->xml_path = xml_path; }
 	string XMLPath() const override { return this->xml_path; }
-	void loadFromXML(XMLNode node) override {
+	void loadFromXML(XMLNode node, const Scope* scope) override {
 		stored_node = node;
 		try {
 			string raw_string;
@@ -590,6 +600,8 @@ public:
 			}
 			if (! XMLValueInterpreter<T, RequirementPolicy>::isMissing())
 				XMLValueInterpreter<T, RequirementPolicy>::read(XMLValueInterpreter<T, RequirementPolicy>::stringVal());
+			
+			XMLValueInterpreter<T, RequirementPolicy>::setScope(scope);
 		}
 		catch (string e) {
 			auto tokens = tokenize(xml_path,"/");
@@ -600,8 +612,8 @@ public:
 	
 	void read(string value) override { XMLValueInterpreter<T, RequirementPolicy>::read(value); }
 	// void name() { RequirementPolicy::stringVal(); }
-	void init(const Scope* scope) override {
-		try { XMLValueInterpreter<T, RequirementPolicy>::init(scope);}
+	void init() override {
+		try { XMLValueInterpreter<T, RequirementPolicy>::init();}
 		catch (string e) {
 			auto tokens = tokenize(xml_path,"/");
 			if (!tokens.empty()) tokens.pop_back();
@@ -632,17 +644,17 @@ class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPoli
 	// Just try to forward to either XMLEvaluator for double or VDOUBLE, as required
 	public:
 		void read(const string& string_val) { this->string_val = string_val; };
-		void init(const Scope *scope) {
+		void init() {
 			type = Type::Undef;
 			if (! RequirementPolicy::isMissing()) {
-				const Scope* local_scope = SIM::getScope();
-				if (!local_scope)
-					local_scope = scope;
+				if (! local_scope)
+					throw string("PluginParameter missing scope");
 
 				try {
 					double_expr.allowPartialSpec();
 					double_expr.read(string_val);
-					double_expr.init(local_scope);
+					double_expr.setScope(local_scope);
+					double_expr.init();
 					type = Type::D;
 				}
 				catch (...) {
@@ -651,7 +663,8 @@ class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPoli
 					try {
 						vdouble_expr.allowPartialSpec();
 						vdouble_expr.read(string_val);
-						vdouble_expr.init(local_scope);
+						vdouble_expr.setScope(local_scope);
+						vdouble_expr.init();
 						type = Type::VD;
 					}
 					catch (...) {
@@ -733,7 +746,7 @@ class XMLStringifyExpression<string,RequirementPolicy>  : public RequirementPoli
 		mutable stringstream out;
 		Type type;
 		PluginParameter2<double, XMLEvaluator, RequiredPolicy> double_expr;
-		PluginParameter2<double, XMLEvaluator, RequiredPolicy> vdouble_expr;
+		PluginParameter2<VDOUBLE, XMLEvaluator, RequiredPolicy> vdouble_expr;
 };
 
 /** PluginParameter -- parses a parameter from the XML and provides values

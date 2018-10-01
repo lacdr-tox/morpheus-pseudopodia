@@ -33,26 +33,25 @@ enum SystemType { DISCRETE_SYS, CONTINUOUS_SYS};
 
 using namespace std;
 /**
- * \page PluginSystem Plugin System
- * \brief The Plugin System allows for easy extension of the framework by self-crafted plugin descendants
+ * \page PluginDev Plugin Development
+ * \brief Guide to extend the framework by self-crafted plugins.
  * 
  * \tableofcontents
  */
 
-// we might have celltype plugins, cell plugins, and pde_layer plugins ?? In case it's more convenient we might also plug all to the a single Factory. However, you should keep in mind that all keys must finally be unique!
 /** 
- * \page PluginSystem 
+ * \page PluginDev 
  * \section Introduction Introduction to plugin development
 
-This page provides a quick intro on plugin development.
-
-Derived from the base class Plugin several are provided to interface with the simulation process.
+Morpheus Plugins can 
+ Derived from the base class Plugin several are provided to interface with the simulation process.
 You may derive your plugin from a subset of these \ref PluginInterfaces classes.
 
-\subsection PluginExample Example
 */
+
 /*\verbatim
 
+\subsection PluginExample Example
 class MyPlugin : public Check_Update_Listener, public Update_Listener
 {
 	public:
@@ -106,9 +105,8 @@ void init() {
 
 
 /**
- * \page PluginSystem
+ * \page PluginDev 
  * 
- * \section Development Plugin Development
  * \subsection PluginInterfaces Plugin Interfaces 
  * 
  * Several predefined base classes allow a Plugin to interfere with the simulation
@@ -131,9 +129,11 @@ void init() {
  * 
  * \subsection Integration Plugin Integration
  *
- * Integration of plugins is largely automated.
+ * Integration of plugins is largely automated. In the class header include the DECLARE_PLUGIN(<TagName>) macro, and in the source file the REGISTER_PLUGIN(class_name) macro.
  * 
- * Example
+ * If you provide data in terms of a symbol, read the Symbol System Guide for instructions how to integrate.
+ * 
+ * 
  */
 
 
@@ -257,9 +257,9 @@ bool PClass::factory_registration = registerPlugin<PClass>(); /* PluginFactory::
 
 class CPM_Energy : virtual public Plugin {
 	public:
-		/** Compute the change in energy due to an update with respect to cell cell_id. todo contains information about 
+		/** Compute the change in energy due to an update with respect to cell @p cell_id. 
 		 * 
-		 * Updated cell properties are availible in the Cell  via accessors prefaced with updated_ .
+		 *  Updated cell properties are available in the Cell via accessors prefixed with **updated_** .
 		 */
 		virtual double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const =0;
 		virtual double hamiltonian(CPM::CELL_ID cell_id) const =0;            // Berechnung gesamte Energie

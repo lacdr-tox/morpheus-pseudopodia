@@ -78,22 +78,14 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
         <Population size="0" type="amoeba">
             <InitCellObjects mode="distance">
                 <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
-                    <Object>
-                        <Sphere radius="25" center="100,100,0"/>
-                    </Object>
+                    <Sphere radius="25" center="100,100,0"/>
                 </Arrangement>
             </InitCellObjects>
         </Population>
         <Population size="1" type="obstacle">
             <InitCellObjects mode="distance">
                 <Arrangement repetitions="2, 1, 1" displacements="100, 1, 1">
-                    <Object>
-                        <!--    <Disabled>
-        <Box size="20,20,0" origin="150,100,0"/>
-    </Disabled>
--->
-                        <Sphere radius="10" center="50,100,0"/>
-                    </Object>
+                    <Sphere radius="10" center="50,100,0"/>
                 </Arrangement>
             </InitCellObjects>
         </Population>

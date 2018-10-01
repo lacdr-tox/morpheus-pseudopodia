@@ -41,6 +41,8 @@ public:
 	virtual void setDefaultValue(Symbol) =0;
 	/// Add a celltype specific symbol, that may override a default value in it's celltype scope.
 	virtual void addCellTypeAccessor(int celltype_id,  Symbol symbol) =0;
+	/// Remove a celltype specific symbol, that may override a default value in it's celltype scope.
+	virtual void removeCellTypeAccessor(Symbol symbol) =0;
 	/// Get a list of component sub-scopes.
 	virtual vector<const Scope*> getSubScopes() const =0;
 	virtual ~CompositeSymbol_I() {};
@@ -91,6 +93,8 @@ public:
 	 */
 	void registerSymbol(Symbol sym); 
 	
+	void removeSymbol(Symbol sym);
+	
 	/// Find a symbol @p name, without any data access
 	Symbol findSymbol(string name) const;
 	
@@ -106,10 +110,13 @@ public:
 	template<class T>
 	SymbolRWAccessor<T> findRWSymbol(string name) const;
 	
-	
 	/// Find all symbols of type \<T\>
 	template <class T>
-	set<string> getAllSymbolNames() const;
+	set<Symbol> getAllSymbols(bool allow_partial = false) const;
+	
+	/// Find names of all symbols of type \<T\>
+	template <class T>
+	set<string> getAllSymbolNames(bool allow_partial = false) const;
 	
 	/// Get all TimeStepListeners registered within the scope
 	const set<TimeStepListener *>& getTSLs() const { return local_tsl;};
@@ -133,16 +140,10 @@ private:
 	 *  Currently, this is only available for CellType scopes, that override the global scope within the lattice part that they occupy.
 	 */
 	void registerSubScopeSymbol(Scope *sub_scope, Symbol symbol);
-	
-
+	void removeSubScopeSymbol(Symbol sym);
 	
 	vector< shared_ptr<Scope> > sub_scopes;
 	vector< shared_ptr<Scope> > component_scopes;
-	
-
-	
-// 	void init_symbol(SymbolData* data) const;
-// 	mutable set<SymbolData*> initializing_symbols;
 	
 	// INTERFACE FOR SCHEDULING THROUGH THE TimeScheduler
 	friend class TimeScheduler;
@@ -186,6 +187,7 @@ public:
 		if (default_val) {
 			setDefaultValue(default_val);
 		}
+		this->flags().space_const = false;
 	};
 	~CompositeSymbol() {};
 	const std::string& name() const override { return SymbolAccessorBase<T>::name(); };
@@ -209,6 +211,13 @@ public:
 		if (_description.empty())
 			_description = symbol->description();
 		combineFlags(symbol->flags());
+	};
+	
+	void removeCellTypeAccessor(Symbol symbol) override {
+		for (auto& acc : celltype_accessors) {
+			if (acc == dynamic_pointer_cast<const SymbolAccessorBase< T > >(symbol)) 
+				acc = default_val;
+		}
 	};
 	
 	void setDefaultValue(Symbol d) override {
@@ -334,7 +343,6 @@ SymbolAccessor<T> Scope::findSymbol(string name, bool allow_partial) const
 {
 	if(name.empty())
 		throw SymbolError(SymbolError::Type::Undefined, string("Requesting symbol without a name \"") + name + ("\""));
-
 	auto it = symbols.find(name);
 	if ( it != symbols.end()) {
 		if (TypeInfo<T>::name() != it->second->type()) {
@@ -395,13 +403,28 @@ SymbolAccessor<T> Scope::findSymbol(string name, const T& default_val) const
 };
 
 template <class T>
-set<string> Scope::getAllSymbolNames() const {
+set<Symbol> Scope::getAllSymbols(bool allow_partial) const {
+	set<Symbol> r_symbols;
+	if (parent)
+		r_symbols = parent->getAllSymbols<T>();
+	for ( auto sym : symbols ) {
+		if (TypeInfo<T>::name() == sym.second->type()) {
+			if (sym.second->flags().partially_defined && ! allow_partial)
+				continue;
+			r_symbols.insert(sym.second);
+		}
+	}
+	return r_symbols;
+}
+
+template <class T>
+set<string> Scope::getAllSymbolNames(bool allow_partial) const {
 	set<string> names;
 	if (parent)
 		names = parent->getAllSymbolNames<T>();
 	for ( auto sym : symbols ) {
 		if (TypeInfo<T>::name() == sym.second->type()) {
-			if (sym.second->flags().partially_defined)
+			if (sym.second->flags().partially_defined && ! allow_partial)
 				continue;
 			names.insert(sym.first);
 		}

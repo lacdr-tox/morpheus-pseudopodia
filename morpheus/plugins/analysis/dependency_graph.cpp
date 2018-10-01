@@ -1,5 +1,5 @@
 #include "dependency_graph.h"
-#include "core/cpm.h"
+#include "core/cpm_sampler.h"
 
 REGISTER_PLUGIN(DependencyGraph);
 

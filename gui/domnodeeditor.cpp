@@ -8,11 +8,14 @@ domNodeEditor::domNodeEditor(QWidget* parent) : QWidget(parent)
 	all_edits.append(value_label);
 	
 	multi_line_math_editor = new mathTextEdit(this);
+	multi_line_math_editor->setLineWrapMode(QTextEdit::WidgetWidth);;
+
 // 	eq_highlighter = new equationHighlighter(multi_line_math_editor);
 	main_layout->addWidget(multi_line_math_editor);
 	all_edits.append(multi_line_math_editor);
 	
 	multi_line_text_editor = new QTextEdit(this);
+	multi_line_text_editor->setLineWrapMode(QTextEdit::WidgetWidth);;
 	main_layout->addWidget(multi_line_text_editor);
 	all_edits.append(multi_line_text_editor);
 	
