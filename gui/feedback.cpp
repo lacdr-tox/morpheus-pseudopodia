@@ -167,13 +167,13 @@ AnnouncementDialog::AnnouncementDialog(QWidget* parent)
 	button_layout->addStretch(1);
 	
 	back_button  = new QPushButton("");
-	back_button->setIcon(QIcon::fromTheme("go-previous"));
+	back_button->setIcon(QIcon::fromTheme("go-previous", QIcon(":/go-previous.png")));
 	back_button->setDefault(false);
 	connect(back_button,SIGNAL(clicked()),this, SLOT(last()));
 	button_layout->addWidget(back_button);
 	
 	forth_button  = new QPushButton("");
-	forth_button->setIcon(QIcon::fromTheme("go-next"));
+	forth_button->setIcon(QIcon::fromTheme("go-next",QIcon(":/go-next.png")));
 	forth_button->setDefault(false);
 	connect(forth_button,SIGNAL(clicked()),this, SLOT(next()));
 	button_layout->addWidget(forth_button);
