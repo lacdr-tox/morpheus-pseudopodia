@@ -6,9 +6,10 @@
 void FeedbackRequestWindow::sendFeedBack()
 {
 	QSettings settings;
+	auto app = config::getApplication();
 	settings.beginGroup("preferences");
 	service_url = settings.value("feedback_url", service_url).toString();
-	auto allow_feedback = settings.value("allow_feedback", false).toBool();
+	auto allow_feedback = app.preference_allow_feedback;
 	auto uuid = settings.value("uuid", "").toString();
 	int notif = settings.value("notif",-1).toInt();
 	
@@ -31,7 +32,8 @@ void FeedbackRequestWindow::sendFeedBack()
 	if (query_user) {
 		// executing the Dialog
 		allow_feedback = this->exec() == QDialog::Accepted;
-		settings.setValue("allow_feedback", allow_feedback);
+		app.preference_allow_feedback = allow_feedback;
+		config::setApplication(app);
 		settings.setValue("notif",0);
 	}
 	
@@ -61,7 +63,7 @@ void FeedbackRequestWindow::sendFeedBack()
 		QNetworkRequest request;
 		request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 		request.setUrl(QUrl(service_url));
-		qDebug() << "Sending feedback to " << request.url();
+		qDebug() << "Sending feedback to Morpheus @ TU-Dresden";
 		
 		QString message;
 		message += "{\n";
@@ -78,7 +80,7 @@ void FeedbackRequestWindow::sendFeedBack()
 		}
 		message += "}\n";
 		
-		qDebug() << "Message: " << message;
+// 		qDebug() << "Message: " << message;
 		auto reply = netw->post(request, QByteArray(message.toStdString().c_str()));
 		this->connect(reply, SIGNAL(finished()), this, SLOT(feedbackFinished()));
 	}

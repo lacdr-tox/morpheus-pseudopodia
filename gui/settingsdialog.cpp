@@ -70,6 +70,10 @@ void settingsDialog::createGeneralTab(QTabWidget *tabWid)
     le_general_outputDir = new QLineEdit(general);
     le_general_outputDir->setText(app.general_outputDir);
     QPushButton *bt_outputDir = new QPushButton(QThemedIcon("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)),"", general);
+		
+	QLabel *lb_feedback = new QLabel("Permit usage feedback: ", general);
+	cb_feedback = new QCheckBox(general);
+	cb_feedback->setChecked( app.preference_allow_feedback );
 
     QSpacerItem *spacer = new QSpacerItem(1, 1, QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 
@@ -87,6 +91,10 @@ void settingsDialog::createGeneralTab(QTabWidget *tabWid)
     lay->addWidget(le_general_outputDir,row, 1, 1, 1);
     lay->addWidget(bt_outputDir,        row, 2, 1, 1);
 
+	row++;
+	lay->addWidget(lb_feedback,     row, 0, 1, 1);
+	lay->addWidget(cb_feedback,     row, 1, 1, 1);
+	
     row++;
     lay->addItem(spacer, row, 3, 1, 1);
 
@@ -132,7 +140,6 @@ void settingsDialog::createPreferenceTab(QTabWidget *tabWid)
     sb_jobqueue_interval_remote->setValue( app.preference_jobqueue_interval_remote );
     QLabel *lb_jobqueue_interval_remote_unit = new QLabel("msec ", pref);
 
-
     QSpacerItem *spacer = new QSpacerItem(1, 1, QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 
 
@@ -158,7 +165,7 @@ void settingsDialog::createPreferenceTab(QTabWidget *tabWid)
     lay->addWidget(lb_jobqueue_interval_remote,     row, 0, 1, 1);
     lay->addWidget(sb_jobqueue_interval_remote,     row, 1, 1, 1);
     lay->addWidget(lb_jobqueue_interval_remote_unit ,row, 2, 1, 1);
-
+	
     row++;
     lay->addItem(spacer, row, 3, 1, 1);
 
@@ -424,6 +431,7 @@ void settingsDialog::saveSettings()
         app_new.preference_max_recent_files = sb_max_recent_files->value();
         app_new.preference_jobqueue_interval= sb_jobqueue_interval->value();
         app_new.preference_jobqueue_interval_remote= sb_jobqueue_interval_remote->value();
+		app_new.preference_allow_feedback = cb_feedback->isChecked();
 
         qDebug() << "Preferences: "<< endl;
         qDebug() << "\t app.preference_stdout_limit             :  " <<app_new.preference_stdout_limit << endl;

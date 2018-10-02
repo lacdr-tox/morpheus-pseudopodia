@@ -65,7 +65,7 @@ public:
         QString general_resource; /*!< Location where morpheus-simulations should be executed. (local or remote) */
         QString general_outputDir; /*!< Local directory in which the data of simulations should be saved. */
 
-
+		bool preference_allow_feedback;
         int preference_stdout_limit; /*!< Limit to the size of stdout in model.xml.out (simulation terminates when exceeded) */
         int preference_max_recent_files; /*!< Number of the maximal shown recent files in the menubar of morpheus-gui. */
         int preference_jobqueue_interval; /*!< Interval between updates of jobs in job queue */
