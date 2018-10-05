@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## Release 2.0
 
 ### MorpheusML
   * The generalized **Mapper** now takes care to map information between spatial contexts, replaces the CellReporter
@@ -29,11 +29,16 @@
   * Parallelize diffusion for **Fields** in domains
   * **Field boundaries** can be expressions
   * Add **GoogleTest** as testing framework
+  * Performance improvements, i.e.
+    * Adding dynamic EdgeTracker defragmentation
+    * OpenMP for Domain diffusion
+    * Precalculating constant expressions at initialisation
+    * ...
 
 ### others
   * Tons of compiler compatibility fixes
   * Doxygen issue workarounds
   
-## 1.9.2 
+## 1.9.3 
   * Initial import
 
