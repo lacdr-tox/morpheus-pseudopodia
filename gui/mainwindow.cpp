@@ -471,7 +471,12 @@ void MainWindow::createMainWidgets()
 	
 	announcer = new AnnouncementDialog(this);
 	QTimer::singleShot(500, announcer, SLOT(showAnnouncements()));
+	QTimer* announcementTimer = new QTimer(this);
+	announcementTimer->setInterval(24*60*60*1000);
+	connect(announcementTimer, SIGNAL(timeout()), announcer, SLOT(showAnnouncements()));
+	announcementTimer->start();
 	
+#ifdef MORPHEUS_FEEDBACK
 	auto feedback = new FeedbackRequestWindow(this);
 	QTimer::singleShot(1000, feedback, SLOT(sendFeedBack()));
 
@@ -479,6 +484,7 @@ void MainWindow::createMainWidgets()
 	feedbackTimer->setInterval(24*60*60*1000);
 	connect(feedbackTimer, SIGNAL(timeout()), feedback, SLOT(sendFeedBack()));
 	feedbackTimer->start();
+#endif
 }
 
 //------------------------------------------------------------------------------

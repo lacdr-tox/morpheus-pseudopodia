@@ -40,6 +40,8 @@
 // #include "configuration.h"
 
 
+// Enable the Morpheus Usage Feedback System
+// #define MORPHEUS_FEEDBACK
 
 class JobView;
 class JobQueue;

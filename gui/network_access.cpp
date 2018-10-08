@@ -47,7 +47,7 @@ qint64 QRCNetworkReply::readData(char *buffer, qint64 maxlen)
 	}
 
 	qint64 len = df.read(buffer,maxlen);
-	qDebug() << "QRC read " << len  << " of " << df.size() << " bytes leaving " << df.size() - df.pos();
+// 	qDebug() << "QRC read " << len  << " of " << df.size() << " bytes leaving " << df.size() - df.pos();
 // 	if (df.atEnd())
 // 		QTimer::singleShot(0, this, SIGNAL(finished()));
 	return len;

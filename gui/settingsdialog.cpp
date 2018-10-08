@@ -70,11 +70,11 @@ void settingsDialog::createGeneralTab(QTabWidget *tabWid)
     le_general_outputDir = new QLineEdit(general);
     le_general_outputDir->setText(app.general_outputDir);
     QPushButton *bt_outputDir = new QPushButton(QThemedIcon("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)),"", general);
-		
+#ifdef MORPHEUS_FEEDBACK
 	QLabel *lb_feedback = new QLabel("Permit usage feedback: ", general);
 	cb_feedback = new QCheckBox(general);
 	cb_feedback->setChecked( app.preference_allow_feedback );
-
+#endif
     QSpacerItem *spacer = new QSpacerItem(1, 1, QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 
 
@@ -91,9 +91,11 @@ void settingsDialog::createGeneralTab(QTabWidget *tabWid)
     lay->addWidget(le_general_outputDir,row, 1, 1, 1);
     lay->addWidget(bt_outputDir,        row, 2, 1, 1);
 
+#ifdef MORPHEUS_FEEDBACK
 	row++;
 	lay->addWidget(lb_feedback,     row, 0, 1, 1);
 	lay->addWidget(cb_feedback,     row, 1, 1, 1);
+#endif
 	
     row++;
     lay->addItem(spacer, row, 3, 1, 1);
