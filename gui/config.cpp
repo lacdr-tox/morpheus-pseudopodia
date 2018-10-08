@@ -214,6 +214,9 @@ config::config() : QObject(), helpEngine(NULL) {
 	connect( job_queue_thread, SIGNAL(finished()), job_queue_thread, SLOT(deleteLater()) );
 
 	job_queue_thread->start();
+	
+	// Attaching to Clipboard
+	connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(ClipBoardChanged()));
 }
 
 //------------------------------------------------------------------------------
@@ -525,6 +528,17 @@ void config::receiveNodeCopy(QDomNode nodeCopy) {
     while(xmlNodeCopies.size() > MaxNodeCopies) {
         xmlNodeCopies.pop_back();
     }
+}
+
+void config::ClipBoardChanged() {
+	auto mimeData = QApplication::clipboard()->mimeData();
+	
+	if (mimeData->hasText()) {
+		clipBoard_Document.setContent(mimeData->text());
+		if (!clipBoard_Document.firstChildElement().isNull()) {
+			receiveNodeCopy(clipBoard_Document.firstChildElement());
+		}
+	}
 }
 
 //------------------------------------------------------------------------------

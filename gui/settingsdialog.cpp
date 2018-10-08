@@ -300,7 +300,7 @@ void settingsDialog::createLocalTab(QTabWidget *tabWid)
 
 void settingsDialog::createRemoteTab(QTabWidget *tabWid)
 {
-    QWidget *remote = new QWidget(tabWid);
+    QWidget *remote = new QWidget(this);
 
     QLabel *lb_user = new QLabel("Username: ", remote);
     le_remote_user = new QLineEdit(remote);
@@ -398,7 +398,9 @@ void settingsDialog::createRemoteTab(QTabWidget *tabWid)
 
     lay->addItem(spacer,                        10, 3, 1, 1);
 
-    tabWid->addTab(remote, "Remote");
+    int idx = tabWid->addTab(remote, "Remote");
+//  TODO Remote config disabled
+	tabWid->setTabEnabled(idx, false);
 
     config::application app = config::getApplication();
     le_remote_user->setText(app.remote_user);

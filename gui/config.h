@@ -51,13 +51,16 @@ class JobQueue;
   The main-task of it is providing interfaces to validate, load and save xml-configurations of cpm-models.<br>
   Additionally it is possible to manipulate the informations hold in this class via some functions.
   */
+
 class config : public QObject
 {
 Q_OBJECT
 
 public:
-
-
+	// Singleton
+	config(const config&) = delete;
+	const config& operator=(const config&) = delete;
+	
     /*!
       This struct holds informations necessary to start morpheus-simulations.
       */
@@ -106,6 +109,7 @@ private:
 
     QList< SharedMorphModel > openModels;
     int current_model;
+	
 
     JobQueue* job_queue = NULL;
 	QThread* job_queue_thread = NULL;
@@ -114,7 +118,8 @@ private:
 	/*!< SQLite database that stores job information*/
 
 
-    QList<QDomNode> xmlNodeCopies; /*!< Temporarily stored copies of xml-nodes. */
+	QList<QDomNode> xmlNodeCopies; /*!< Temporarily stored copies of xml-nodes. */
+	QDomDocument clipBoard_Document;
 
 public:
 	static QSqlDatabase& getDatabase();
@@ -160,7 +165,8 @@ public:
     static void setApplication(application a);
     /*!< Sets the application-informations to @param a. */
 
-
+private slots:
+	void ClipBoardChanged();
 
 public slots:
     void setComputeResource(QString resource);

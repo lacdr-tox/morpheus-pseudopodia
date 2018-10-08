@@ -18,6 +18,7 @@
 #include "model_index_mime_data.h"
 #include "paramsweepmodel.h"
 
+Q_DECLARE_METATYPE(QDomNode);
 
 //class domNodeViewer;
 struct MorphModelPart {

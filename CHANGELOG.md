@@ -19,6 +19,7 @@
   * Largely Improved inApp Documentation
   * Adaptive size editor for expressions in attributes
   * Reenabled SBML import
+  * Allow Copy/Paste & Drag/Drop of external XML text 
   * Option to preset random seeds for parameter sweeps
 
 ### Simulator
