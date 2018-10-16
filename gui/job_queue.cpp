@@ -45,7 +45,7 @@ void JobQueue::restoreSavedJobs() {
 		QSqlRecord record = q.record();
 
 		// create local or remote abstractProcess
-		QSharedPointer<abstractProcess> job ;                
+		QSharedPointer<abstractProcess> job ;
 		if( q.value(field_resource)  == ProcessInfo::local )
 			job = QSharedPointer<abstractProcess>(new localProcess( record ));
 		else
@@ -68,7 +68,7 @@ void JobQueue::restoreSavedJobs() {
 		}
 
 		emit processAdded(info.job_id);
-	}	
+	}
 	q.finish();
 }
 
@@ -76,7 +76,7 @@ void JobQueue::restoreSavedJobs() {
 
 int JobQueue::modelCount() {
 	QSqlQuery q(config::getDatabase());
-	
+
 	bool ok = q.exec("SELECT simTitle FROM jobs GROUP BY simTitle;");
 	if(!ok) qDebug() << "Error simTitle from jobs database: " << q.lastError();
 	int count =0;
@@ -143,7 +143,7 @@ void JobQueue::addSweep(SharedMorphModel model, int sweep_id)
 	QueueType queue = queueNamesMap()[config::getInstance()->getApplication().general_resource];
 	// sweeps cannot be done interactively
 	if ( queue == interactive ) queue = local;
-	
+
 	model->sweep_lock = true;
 	emit statusMessage(QString("Starting Parameter Sweep %1").arg(sweep_id),0);
 	// Create Parameter List and store Parameter values
@@ -152,10 +152,10 @@ void JobQueue::addSweep(SharedMorphModel model, int sweep_id)
 	QList<QStringList> param_values;
 
 	model->param_sweep.createJobList(flat_params,param_values);
-	
+
 	for (uint i=0;i<flat_params.size();i++)
 		stored_parameters.push_back(flat_params[i]->get());
-	
+
 	// Set output terminals to file ...
 	QList<AbstractAttribute*> terminal_names = model->rootNodeContr->getModelDescr().terminal_names;
 	QList<QString> stored_terminals;
@@ -165,7 +165,7 @@ void JobQueue::addSweep(SharedMorphModel model, int sweep_id)
 				terminal_names[i]->set("png");
 		}
 	}
-	
+
 	// Fetching sweep information
 	QSqlQuery sweep_jobs(config::getDatabase());
 	if ( ! sweep_jobs.exec(QString("SELECT * FROM sweeps WHERE id=%1").arg(sweep_id)) ) {
@@ -181,13 +181,22 @@ void JobQueue::addSweep(SharedMorphModel model, int sweep_id)
 	sweep_dir.mkdir(sweep_dir_name);
 	sweep_dir.cd(sweep_dir_name);
 	QString sweep_header =  sweep_jobs.value(sweep_jobs.record().indexOf("header")).toString();
-	
-// 	writing the sweep summary
-	QFile summary_file(sweep_dir.absolutePath() + "/sweep_summary.txt");
-	summary_file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate);
-	QTextStream summary(&summary_file);
-	summary << sweep_header << endl;
-	
+
+	// writing the sweep header and sweep data
+	QFile header_file(sweep_dir.absolutePath() + "/sweep_header.csv");
+	header_file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate);
+	QTextStream header(&header_file);
+	header << sweep_header << endl;
+	header_file.close();
+
+	QFile data_file(sweep_dir.absolutePath() + "/sweep_data.csv");
+	data_file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate);
+	QTextStream data(&data_file);
+	data << "Folder";
+	for(uint i=0; i<stored_parameters.size(); i++)
+		data << "\tP"<<i+1;
+	data << endl;
+
 	// Fetching all the jobs planned
 	bool ok = sweep_jobs.exec(QString("SELECT * FROM sweep_jobs WHERE sweep=%1").arg(sweep_id));
 	if (!ok) {
@@ -197,7 +206,7 @@ void JobQueue::addSweep(SharedMorphModel model, int sweep_id)
 	}
 	int param_idx = sweep_jobs.record().indexOf("paramSet");
 	int sweep_job_idx = sweep_jobs.record().indexOf("id");
-	
+
 	QList<QStringList> param_sets;
 	QList<int> sweep_job_ids;
 	while (sweep_jobs.next()) {
@@ -220,11 +229,11 @@ void JobQueue::addSweep(SharedMorphModel model, int sweep_id)
 // 	sweep_dialog->layout()->addWidget(pBar);
 //
 // 	sweep_dialog->open();
-	
+
 	QSqlQuery("BEGIN TRANSACTION",config::getDatabase()).exec();
 	QSqlQuery update_sweep_job(config::getDatabase());
 	update_sweep_job.prepare("UPDATE sweep_jobs SET job = :job_id WHERE id = :sweep_job_id");
-	
+
 	// Creating all the jobs
 	for (uint job=0; job<sweep_job_ids.size();job++) {
 
@@ -246,7 +255,7 @@ void JobQueue::addSweep(SharedMorphModel model, int sweep_id)
 		else {
 			process = QSharedPointer<remoteProcess>(new remoteProcess(model, job_id, sweep_dir_name));
 		}
-		
+
 		// Update DB information (link job to sweep)
 		jobs[job_id] = process;
 		update_sweep_job.bindValue(":job_id",job_id);
@@ -255,10 +264,10 @@ void JobQueue::addSweep(SharedMorphModel model, int sweep_id)
 			qDebug() << "Unable to update job id in sweep_jobs " << update_sweep_job.lastError();
 			emit criticalMessage(QString("Unable to update job %1 in sweep_jobs ").arg(job_id).append(update_sweep_job.lastError().text()), job_id);
 		}
-		
+
 		// write summary information
-		summary << process->info().sim_dir << "\t" << param_sets[job].join("\t")<< endl;
-		
+		data << process->info().sim_dir << "\t" << param_sets[job].join("\t")<< endl;
+
 		// connetct queue notifiers
 		connect(process.data(), SIGNAL(stateChanged(abstractProcess*)), this, SLOT(processStateChanged(abstractProcess*)));
 		connect(process.data(), SIGNAL(outputChanged(abstractProcess*)), this, SLOT(processStateChanged(abstractProcess*)));
@@ -274,7 +283,8 @@ void JobQueue::addSweep(SharedMorphModel model, int sweep_id)
 		}
 	}
 	QSqlQuery("COMMIT TRANSACTION",config::getDatabase()).exec();
-	summary_file.close();
+	data_file.close();
+
 	//revert changed terminals
 	for (int i=0; i<stored_terminals.size(); i++) {
 		terminal_names[i]->set(stored_terminals[i]);
@@ -412,7 +422,7 @@ void JobQueue::processQueue()
 		pending_interactive_jobs.pop_front();
 		running_jobs.push_back(job_id);
 		running_interactive_jobs.push_back(job_id);
-		
+
         jobs[job_id]->start();
     }
 
@@ -421,8 +431,8 @@ void JobQueue::processQueue()
 		int job_id = pending_jobs.front();
 		pending_jobs.pop_front();
 		running_jobs.push_back(job_id);
-        
-		
+
+
         jobs[job_id]->start();
 
     }
