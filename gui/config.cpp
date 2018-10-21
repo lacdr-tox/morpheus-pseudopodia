@@ -304,6 +304,7 @@ int config::openModel(QString filepath) {
 	QString xmlFile = QFileInfo(filepath).absoluteFilePath();
 	for (int i=0; i<conf->openModels.size(); i++) {
 		if (xmlFile==conf->openModels[i]->xml_file.path) {
+			emit conf->modelSelectionChanged(i);
 			return i;
 		}
 	}
