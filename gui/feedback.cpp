@@ -184,7 +184,7 @@ AnnouncementDialog::AnnouncementDialog(QWidget* parent)
 	button_layout->addWidget(forth_button);
 	
 	button_layout->addStretch(1);
-	auto ok_button = new QPushButton("Leave");
+	auto ok_button = new QPushButton("Close");
 	ok_button->setDefault(true);
 	connect(ok_button,SIGNAL(clicked()),this, SLOT(accept()));
 	button_layout->addWidget(ok_button);
