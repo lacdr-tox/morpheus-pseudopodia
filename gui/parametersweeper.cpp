@@ -8,10 +8,10 @@ parameterSweeper::parameterSweeper()
 
 	QGridLayout *grid_layout = new QGridLayout();
 	main_layout->addLayout(grid_layout);
-	
+
 	QHBoxLayout *line_layout = new QHBoxLayout();
 	main_layout->addLayout(line_layout);
-	QLabel * sweep_label = new QLabel("Name of the Sweep:");
+	QLabel * sweep_label = new QLabel("Name of sweep:");
 	grid_layout->addWidget(sweep_label,0,0,1,1);
 // 	line_layout->addWidget(scan_label);
 	sweep_name = new QLineEdit();
@@ -19,19 +19,19 @@ parameterSweeper::parameterSweeper()
 	grid_layout->addItem(new QSpacerItem(10,0,QSizePolicy::Preferred,QSizePolicy::Preferred),0,1,2,1);
 	grid_layout->addWidget(sweep_name,0,2,1,1);
 	grid_layout->addItem(new QSpacerItem(20,0,QSizePolicy::MinimumExpanding,QSizePolicy::Preferred),0,3,2,1);
-	
 
-	QLabel * nsweep_label = new QLabel("Number of Jobs:");
+
+	QLabel * nsweep_label = new QLabel("Number of jobs:");
 	grid_layout->addWidget(nsweep_label,1,0,1,1);
 	n_sweeps = new QLineEdit();
 	n_sweeps -> setText("0");
 	n_sweeps -> setReadOnly(true);
 	grid_layout->addWidget(n_sweeps,1,2,1,1);
-	
+
 	main_layout->addSpacerItem(new QSpacerItem(0,20,QSizePolicy::Minimum,QSizePolicy::Preferred));
-	QLabel * param_label = new QLabel("Parameters and Value Sets");
+	QLabel * param_label = new QLabel("Parameters and values");
 	main_layout->addWidget(param_label);
-	
+
 	param_sweep_view = new QTreeView(this);
 	param_sweep_view->setTextElideMode(Qt::ElideLeft);
 
@@ -45,16 +45,16 @@ parameterSweeper::parameterSweeper()
 	preset_random_seed -> setText("preset random seeds");
 	main_layout->addWidget(preset_random_seed);
 
-	
-	
+
+
 	QLabel *lb_valueInformation = new QLabel( ""
 "Syntax:\n"
 "List:\tvalue1; value2; value3\n"
 "Range:\tmin:stepping:max\n"
 "\n\n"
-" Stepping\t\tDescription\t\tExample\n\n"
+" Stepping\tDescription\t\tExample\n\n"
 " [width]\t\tinterval spacing\t\t0:2:10 -> 0;2;4;6;8;10\n"
-" #[count]\t\tnumber of intervals\t\t0:#2:10 -> 0;5;10\n"
+" #[count]\t\tnumber of intervals\t0:#2:10 -> 0;5;10\n"
 " #[count]log\tlogarithmic scale\t\t1:#2log:100 -> 1;10;100\n"
 "\n\n"
 "Pairwise parameters:\n"
@@ -64,7 +64,7 @@ parameterSweeper::parameterSweeper()
 	main_layout->addStretch();
 
 	connect(param_sweep_view,SIGNAL(doubleClicked(QModelIndex)),this, SLOT(paramDoubleClicked(QModelIndex)));
-    
+
 }
 
 //------------------------------------------------------------------------------
@@ -196,7 +196,7 @@ void parameterSweeper::submitSweep()
 {
 	// at first, squeeze all params into a data baloon
 	QByteArray param_data = model->param_sweep.store();
-	
+
     // secondary, create the cross- and pairwise parameter combinations
 	QList<AbstractAttribute* > parameters;
 	QList<QStringList> parameter_sets;
@@ -218,7 +218,7 @@ void parameterSweeper::submitSweep()
 			}
 		 }
 	 }
-	 
+
 	jobSummary summary(parameters, parameter_sets, sweep_name->text());
 	summary.exec();
 	if (summary.result() == QDialog::Accepted) {
@@ -229,20 +229,22 @@ void parameterSweeper::submitSweep()
 		sweep_name.replace(" ","_");
 		QString sweep_sub_dir = sweep_name + "_" + QString::number(sweep_id);
 		QString sweep_header;
-		
+
 		QTextStream ts_header(&sweep_header);
-		ts_header << "# Parametersweep Date: " << QDate::currentDate().toString() << " Time: " << QTime::currentTime().toString() << endl;
-		ts_header << "# Starting " << parameter_sets.size() << " Jobs" << endl;
+		ts_header << "Date\t" << QDate::currentDate().toString() << endl;
+		ts_header << "Time\t" << QTime::currentTime().toString() << endl;
+		ts_header << "Jobs\t" << parameter_sets.size() << endl;
+		ts_header << "Params\t" << parameters.size() << endl;
 		for (int s=0; s<parameters.size(); s++) {
-			ts_header << "# Parameter P" << s << " : " << parameters[s]->getXMLPath() << endl;
+			ts_header << "P" << s+1 << "\t" << parameters[s]->getXMLPath() << endl;
 		}
-		ts_header << "# JOB LIST" <<endl;
-		ts_header << "# Folder";
-		for (int s=0; s<parameters.size(); s++) {
-			ts_header << "\tP" << s;
-		}
+		//ts_header << "# JOB LIST" <<endl;
+		//ts_header << "Folder";
+		//for (int s=0; s<parameters.size(); s++) {
+		//	ts_header << "\tP" << s;
+		//}
 		ts_header << endl;
-	
+
 		QSqlQuery insert_sweep;
 		insert_sweep.exec("BEGIN TRANSACTION");
 		insert_sweep.prepare(
