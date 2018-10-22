@@ -22,6 +22,9 @@
 typedef unsigned int uint;
 #endif
 
+#ifdef __APPLE__
+typedef unsigned int uint;
+#endif
 
 #include <assert.h>
 #include <cstdint>
