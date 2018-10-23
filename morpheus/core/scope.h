@@ -365,7 +365,7 @@ SymbolAccessor<T> Scope::findSymbol(string name, bool allow_partial) const
 		return parent->findSymbol<T>(name, allow_partial);
 	}
 	else {
-		throw (string("Symbol \"")+name+"\" is not defined in Scope " + this->getName() );
+		throw SymbolError(SymbolError::Type::Undefined, string("Symbol \"")+name+"\" is not defined in Scope " + this->getName() );
 	}
 };
 

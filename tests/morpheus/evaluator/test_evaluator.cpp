@@ -2,6 +2,34 @@
 #include <memory>
 #include "core/expression_evaluator.h"
 
+TEST (Scope, UndefinedSymbol) {
+	auto scope = make_unique<Scope>();
+	auto variable_a = make_shared<PrimitiveVariableSymbol<double>>("a","a test a",3.0);
+	scope->registerSymbol(variable_a);
+	
+	bool symbol_undefined = false;
+	try {
+		auto k = scope->findSymbol<double>("b");
+	}
+	catch (SymbolError& e) {
+		if (e.type() == SymbolError::Type::Undefined) {
+			symbol_undefined = true;
+		}
+	}
+	EXPECT_TRUE(symbol_undefined);
+	
+	symbol_undefined = false;
+	try {
+		auto k = scope->findSymbol<double>("b",true);
+	}
+	catch (SymbolError& e) {
+		if (e.type() == SymbolError::Type::Undefined) {
+			symbol_undefined = true;
+		}
+	}
+	EXPECT_TRUE(symbol_undefined);
+}
+
 TEST (ExpressionEvaluator, Intialisation) {
 	auto scope = make_unique<Scope>();
 	auto cache = make_shared<EvaluatorCache>(scope.get());
