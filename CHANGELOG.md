@@ -25,13 +25,13 @@
 ### Simulator
   * Many fixes to cell population initializers
   * **Symbolic Linking** infrastructure rewritten to enable extensibility
-  * Scheduling fixesfor **DelayProperties**
+  * Scheduling fixes for **DelayProperties**
   * **Gnuplotter** and **Logger** now deal better with sub and superscript in symbol names or descriptions
   * **Field boundaries** can be expressions
   * Added **GoogleTest** as testing framework
   * Performance improvements, i.e.
-    * Adding dynamic EdgeTracker defragmentation
-    * OpenMP parallelization of diffusion in domains
+    * Added dynamic EdgeTracker defragmentation
+    * Parallelized diffusion in domain Fields
     * Precalculating constant expressions at initialisation
     * ...
 
