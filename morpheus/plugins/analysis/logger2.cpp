@@ -932,7 +932,9 @@ LoggerPlotBase::LoggerPlotBase(Logger& logger, string xml_base_path)
 	terminalmap["screen"] = Terminal::SCREEN;
 	
 	time_step.setXMLPath(xml_base_path+"/time-step");
+	time_step.setDefault("-1");
 	logger.registerPluginParameter(time_step);
+	
 	
 	title.setXMLPath(xml_base_path+"/title");
 	logger.registerPluginParameter(title);
