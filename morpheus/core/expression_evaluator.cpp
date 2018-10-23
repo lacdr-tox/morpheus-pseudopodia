@@ -159,12 +159,36 @@ double getOR(double left, double right) {
 	return left || right;
 }
 
+double getXOR(double left, double right) {
+	return !left xor !right;
+}
+
+double getNOT(double val) {
+	return val<=0;
+}
+
 double getLEQ(double left, double right) {
 	return left <= right;
 }
 
 double getGEQ(double left, double right) {
 	return left >= right;
+}
+
+double getLT(double left, double right) {
+	return left < right;
+}
+
+double getGT(double left, double right) {
+	return left > right;
+}
+
+double getEQ(double left, double right) {
+	return left == right;
+}
+
+double getNEQ(double left, double right) {
+	return left != right;
 }
 
 double piecewise_3_function(double v0, double c0, double velse) {
@@ -178,25 +202,42 @@ double piecewise_5_function(double v0, double c0, double v1, double c1,double ve
 unique_ptr< mu::Parser > createMuParserInstance()
 {
 	unique_ptr<mu::Parser> parser(new mu::Parser());
-	string name_chars = "0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZαβγδεζηθικλμνξοπρσςτυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ.";
-	parser->DefineNameChars(name_chars.c_str());
-	parser->DefineConst("pi",M_PI);
-	parser->DefineFun( sym_RandomUni,	&getRandomUniValue,  false);
-	parser->DefineFun( sym_RandomInt,	&getRandomIntValue,  false);
-	parser->DefineFun( sym_RandomNorm,	&getRandomNormValue, false);
-	parser->DefineFun( sym_RandomBool,	&getRandomBoolValue, false);
-	parser->DefineFun( sym_RandomGamma, &getRandomGammaValue, false);
-	parser->DefineFun( sym_Modulo, 		&getModulo, true);
-	parser->DefineFun( "pow",			&getPow, true);
-	parser->DefineFun( "if",			&getIf, true);
-	parser->DefineOprt("and",			&getAND, 1, mu::oaLEFT, true);
-	parser->DefineOprt("or",			&getOR, 2, mu::oaLEFT, true);
-	// SBML Import compatibility (from MathML <piecewise> construct)
-	parser->DefineFun("piecewise", 		&piecewise_3_function, true);
-	parser->DefineFun("piecewise", 		&piecewise_5_function, true);
-	parser->DefineFun("leq",			&getLEQ, true);
-	parser->DefineFun("geq",			&getGEQ, true);
-	
+	try {
+		string name_chars = "0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZαβγδεζηθικλμνξοπρσςτυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ.";
+		parser->DefineNameChars(name_chars.c_str());
+		parser->DefineConst("pi",M_PI);
+		parser->DefineFun( sym_RandomUni,	&getRandomUniValue,  false);
+		parser->DefineFun( sym_RandomInt,	&getRandomIntValue,  false);
+		parser->DefineFun( sym_RandomNorm,	&getRandomNormValue, false);
+		parser->DefineFun( sym_RandomBool,	&getRandomBoolValue, false);
+		parser->DefineFun( sym_RandomGamma, &getRandomGammaValue, false);
+		parser->DefineFun( sym_Modulo, 		&getModulo, true);
+		parser->DefineFun( "pow",			&getPow, true);
+		parser->DefineFun( "if",			&getIf, true);
+		parser->DefineInfixOprt("!",		&getNOT, mu::prINFIX, true);
+		parser->DefineOprt("and",			&getAND, mu::prLAND, mu::oaLEFT, true);
+		parser->DefineOprt("or",			&getOR, mu::prLOR, mu::oaLEFT, true);
+		parser->DefineOprt("xor",			&getXOR, mu::prLOR, mu::oaLEFT, true);
+		
+		// SBML Import compatibility (from MathML <piecewise> construct)
+		parser->DefineFun("piecewise", 		&piecewise_3_function, true);
+		parser->DefineFun("piecewise", 		&piecewise_5_function, true);
+		parser->DefineFun("leq",			&getLEQ, true);
+		parser->DefineFun("geq",			&getGEQ, true);
+		parser->DefineFun("lt",				&getLT, true);
+		parser->DefineFun("gt",				&getGT, true);
+		parser->DefineFun("eq",				&getEQ, true);
+		parser->DefineFun("neq",			&getNEQ, true);
+		parser->DefineFun("arcsin",			&mu::MathImpl<double>::ASin, true);
+		parser->DefineFun("arccos",			&mu::MathImpl<double>::ACos, true);
+		parser->DefineFun("arctan",			&mu::MathImpl<double>::ATan, true);
+		parser->DefineFun("arcsinh",		&mu::MathImpl<double>::ASinh, true);
+		parser->DefineFun("arccosh",		&mu::MathImpl<double>::ACosh, true);
+		parser->DefineFun("arctanh",		&mu::MathImpl<double>::ATanh, true);
+	}
+	catch (mu::ParserError& e) {
+		throw e.GetMsg() + " in muParser instance creation.";
+	}
 	return parser;
 	
 }

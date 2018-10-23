@@ -987,7 +987,7 @@ void LoggerPlotBase::checkedPlot()
 		this->plot(); last_plot_time = SIM::getTime();
 	}
 	else if (time_step() <= 0.0) { // if time=step=0.0 or -1, only plot at the end of simulation
-		if( SIM::getTime() == SIM::getStopTime() ){
+		if( SIM::getStopTime() - SIM::getTime() <  10e-6){
 			this->plot(); last_plot_time = SIM::getTime();
 		}
 	}
