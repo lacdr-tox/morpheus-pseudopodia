@@ -20,6 +20,8 @@ void Logger::loadFromXML(const XMLNode xNode, Scope* scope){
 	inputs.resize(xInput.nChildNode("Symbol"));
 	for (uint i=0; i<xInput.nChildNode("Symbol"); i++) {
 		inputs[i]->setXMLPath("Input/Symbol["+to_str(i)+"]/symbol-ref");
+		// Preliminary allow partially specified symbols
+		inputs[i]->setPartialSpecDefault(0);
 		registerPluginParameter(inputs[i]);
 	}
 	
@@ -54,7 +56,10 @@ void Logger::loadFromXML(const XMLNode xNode, Scope* scope){
 	force_node_granularity.setXMLPath("Input/force-node-granularity");
 	force_node_granularity.setDefault("false");
 	registerPluginParameter(force_node_granularity);
-
+	// Exclude Medium types
+	exclude_medium.setXMLPath("Restriction/exclude-medium");
+	registerPluginParameter(exclude_medium);
+	
 	// output
 	XMLNode xOutput = xNode.getChildNode("Output");
 	if (xOutput.nChildNode("TextOutput")) {
@@ -86,18 +91,8 @@ void Logger::loadFromXML(const XMLNode xNode, Scope* scope){
 
 void Logger::init(const Scope* scope){
 // 	cout << "Logger::init" << endl;
-	
-	// Set the PluginParameters of the symbols to be resolved in celltype scope, if it is defined as a restriction.
-	const Scope* logging_scope = scope;
-	celltype.init(scope);
-	if ( celltype.isDefined() && celltype() &&  ! cellids_str.isDefined()) {
-		logging_scope = celltype()->getScope();
-		for (auto &c : inputs) {
-			c->setScope(logging_scope);
-		}
-	}
-		
-    AnalysisPlugin::init(scope);
+
+   AnalysisPlugin::init(scope);
 
 	try{
 		// Determine GRANULARITY
@@ -118,8 +113,36 @@ void Logger::init(const Scope* scope){
 			logger_granularity = Granularity::Node;
 // 			cout << "Logger: Forced node granularity" <<  endl;
 		}
-        
-        if (slice_axis.isDefined() && slice_value.isDefined()) {
+      
+		// process scope restrictions
+		if (cellids_str.isDefined()) {
+			// We probably do not require the symbol to be globally defined. 
+			// However, it's hard to ensure that the cells will the symbol defined throughout the simulation. 
+			// TODO What happens in case the symbol is not defined ? --> crash
+			permit_incomplete_symbols = true;
+		}
+		else if ( celltype.isDefined() && celltype() ) {
+			auto logging_scope = celltype()->getScope();
+			for (auto &c : inputs) {
+				c->setScope(logging_scope);
+				permit_incomplete_symbols = false;
+				c->unsetPartialSpecDefault();
+			}
+		}
+		else if ( exclude_medium.isDefined() && exclude_medium()) {
+			permit_incomplete_symbols = true;
+		}
+		else if ( ! exclude_medium.isDefined() && (logger_granularity == Granularity::Cell || logger_granularity == Granularity::MembraneNode) ) {
+			permit_incomplete_symbols = true;
+		}
+		else {
+			permit_incomplete_symbols = false;
+			for (auto &c : inputs) {
+				c->unsetPartialSpecDefault();
+			}
+		}
+		
+		if (slice_axis.isDefined() && slice_value.isDefined()) {
 			slice = true;
 		}
 // 		cout << "Slice...?" << (slice?"true":"false") << endl;
@@ -140,6 +163,12 @@ void Logger::init(const Scope* scope){
 			}
 			else
 				throw MorpheusException(string("Cannot restrict Logger to celltype "+celltype()->getName()+" because it is not defined."), stored_node);
+		}
+		else if ( (exclude_medium.isDefined() && exclude_medium()) || (!exclude_medium.isDefined() && (logger_granularity == Granularity::Cell || logger_granularity == Granularity::MembraneNode) )) {
+			// The FocusRange excludes CellTypes depending on celltype->isMedium()
+			// We just have to keep the partial spec option for the symbols.
+			// Right now there is no option to include the medium types
+			restrictions = FocusRange::getBiologicalCellTypesRestriction();
 		}
 		
 		if( slice ){
@@ -350,7 +379,7 @@ void LoggerTextWriter::init() {
 	
 	// Pick the right scope from logger restrictions definition
 	output_scope=SIM::getGlobalScope();
-	if (logger.getRestrictions().count(FocusRangeAxis::CellType)==1)
+	if (logger.getRestrictions().count(FocusRangeAxis::CellType)==1 )
 		output_scope = CPM::getCellTypes()[logger.getRestrictions().find(FocusRangeAxis::CellType)->second].lock()->getScope();
 	
 	if (forced_format) {
@@ -453,9 +482,14 @@ void LoggerTextWriter::init() {
 int LoggerTextWriter::addSymbol(string name) {
 	 assert(output_scope);
 // 		output_scope = SIM::getGlobalScope();
-
-	SymbolAccessor<double> d = output_scope->findSymbol<double>(name);
+	SymbolAccessor<double> d;
+	if (logger.permitIncompleteSymbols())
+		d=output_scope->findSymbol<double>(name,0);
+	else
+		d=output_scope->findSymbol<double>(name);
+	
 	output_symbols.push_back(d);
+	
 	if (OutputFormat::CSV == file_format) {
 		csv_header.push_back(d->name());
 	}
@@ -898,7 +932,9 @@ LoggerPlotBase::LoggerPlotBase(Logger& logger, string xml_base_path)
 	terminalmap["screen"] = Terminal::SCREEN;
 	
 	time_step.setXMLPath(xml_base_path+"/time-step");
+	time_step.setDefault("-1");
 	logger.registerPluginParameter(time_step);
+	
 	
 	title.setXMLPath(xml_base_path+"/title");
 	logger.registerPluginParameter(title);

@@ -30,6 +30,7 @@ config::config() : QObject(), helpEngine(NULL) {
 
 
     settings.beginGroup("preferences");
+		app.preference_allow_feedback = settings.value("allow_feedback", false).toBool();
         app.preference_stdout_limit = settings.value("stdout_limit", 10).toInt();
         app.preference_max_recent_files = settings.value("max_recent_files", 10).toInt();
         app.preference_jobqueue_interval = settings.value("jobqueue_interval", 2500).toInt();
@@ -213,12 +214,15 @@ config::config() : QObject(), helpEngine(NULL) {
 	connect( job_queue_thread, SIGNAL(finished()), job_queue_thread, SLOT(deleteLater()) );
 
 	job_queue_thread->start();
+	
+	// Attaching to Clipboard
+	connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(ClipBoardChanged()));
 }
 
 //------------------------------------------------------------------------------
 
 config* config::getInstance() {
-    if ( config::instance == 0 ) {
+    if ( ! config::instance ) {
         config::instance = new config();
     }
     return config::instance;
@@ -300,6 +304,7 @@ int config::openModel(QString filepath) {
 	QString xmlFile = QFileInfo(filepath).absoluteFilePath();
 	for (int i=0; i<conf->openModels.size(); i++) {
 		if (xmlFile==conf->openModels[i]->xml_file.path) {
+			emit conf->modelSelectionChanged(i);
 			return i;
 		}
 	}
@@ -445,6 +450,9 @@ QSqlDatabase& config::getDatabase()
 }
 
 
+QString config::getVersion() {
+	return QString(MORPHEUS_VERSION_STRING);
+}
 
 //------------------------------------------------------------------------------
 
@@ -477,6 +485,7 @@ void config::setApplication(application a) {
     settings.endGroup();
 
     settings.beginGroup("preferences");
+		settings.setValue("allow_feedback",a.preference_allow_feedback);
         settings.setValue("stdout_limit", a.preference_stdout_limit);
         settings.setValue("max_recent_files", a.preference_max_recent_files);
         settings.setValue("jobqueue_interval", a.preference_jobqueue_interval);
@@ -522,13 +531,24 @@ void config::receiveNodeCopy(QDomNode nodeCopy) {
     }
 }
 
+void config::ClipBoardChanged() {
+	auto mimeData = QApplication::clipboard()->mimeData();
+	
+	if (mimeData->hasText()) {
+		clipBoard_Document.setContent(mimeData->text());
+		if (!clipBoard_Document.firstChildElement().isNull()) {
+			receiveNodeCopy(clipBoard_Document.firstChildElement());
+		}
+	}
+}
+
 //------------------------------------------------------------------------------
 void config::openExamplesWebsite(){
-	QDesktopServices::openUrl(QUrl("http://imc.zih.tu-dresden.de/wiki/morpheus/doku.php?id=examples:examples"));
+	QDesktopServices::openUrl(QUrl("http://morpheus.gitlab.io/#examples"));
 }
 //------------------------------------------------------------------------------
 void config::openMorpheusWebsite(){
-	QDesktopServices::openUrl(QUrl("http://imc.zih.tu-dresden.de/wiki/morpheus"));
+	QDesktopServices::openUrl(QUrl("http://morpheus.gitlab.io"));
 }
 
 //------------------------------------------------------------------------------
@@ -609,42 +629,58 @@ void config::aboutPlatform()
 }
 
 
-QHelpEngine* config::getHelpEngine()
+QHelpEngine* config::getHelpEngine(bool lock)
 {
 	config* conf = getInstance();
 	if (!conf->helpEngine) {
-		QApplication::applicationDirPath();
-		
-		QStringList doc_path;
-		doc_path <<  QApplication::applicationDirPath() + "/"
-					<< QApplication::applicationDirPath() + "/doc/"
-					<< QApplication::applicationDirPath() + "/../share/morpheus/"
-					<< QApplication::applicationDirPath() + "/../../Resources/doc/"; // for Mac app bundle
-		QString path;
-		foreach(const QString& p, doc_path) {
-			qDebug() << "Testing "  << p + "morpheus.qhc";
-			if (QFile::exists(p+"morpheus.qhc"))
-				path = p;
-		}
-		
-		if (path.isEmpty()) {
-			qDebug() << "Help engine setup failed. Unable to locate 'morpheus.qhc'.";
-			conf->helpEngine = new QHelpEngine("");
-		}
-		else {
-			conf->helpEngine = new QHelpEngine(path+"morpheus.qhc");
-			if (conf->helpEngine->setupData() == false)
-			{
-				qDebug() << "Help engine setup failed";
-				qDebug() << conf->helpEngine->error();
+		if (lock)
+			conf->change_lock.lock();
+		if (!conf->helpEngine) {
+			QApplication::applicationDirPath();
+			
+			QStringList doc_path;
+			doc_path <<  QApplication::applicationDirPath() + "/"
+						<< QApplication::applicationDirPath() + "/doc/"
+						<< QApplication::applicationDirPath() + "/../share/morpheus/"
+						<< QApplication::applicationDirPath() + "/../../Resources/doc/"; // for Mac app bundle
+			QString path;
+			foreach(const QString& p, doc_path) {
+	// 			qDebug() << "Testing "  << p + "morpheus.qhc";
+				if (QFile::exists(p+"morpheus.qhc"))
+					path = p;
 			}
-			else 
-				qDebug() << conf->helpEngine->namespaceName("morpheus.qhc");
+			
+			if (path.isEmpty()) {
+				qDebug() << "Help engine setup failed. Unable to locate 'morpheus.qhc'.";
+				conf->helpEngine = new QHelpEngine("");
+			}
+			else {
+				qDebug() << "Documentation located at "  << path + "morpheus.qhc";
+				conf->helpEngine = new QHelpEngine(path+"morpheus.qhc");
+				if (conf->helpEngine->setupData() == false)
+				{
+					qDebug() << "Help engine setup failed";
+					qDebug() << conf->helpEngine->error();
+				}
+			}
 		}
+		if (lock)
+			conf->change_lock.unlock();
 	}
 	return conf->helpEngine;
 }
 
+ExtendedNetworkAccessManager* config::getNetwork() {
+	config* conf = getInstance();
+	if (!conf->network) {
+		conf->change_lock.lock();
+		if (!conf->network) {
+			conf->network = new ExtendedNetworkAccessManager(conf, getHelpEngine(false));
+		}
+		conf->change_lock.unlock();
+	}
+	return conf->network;
+}
 
 void config::aboutHelp() {
 	

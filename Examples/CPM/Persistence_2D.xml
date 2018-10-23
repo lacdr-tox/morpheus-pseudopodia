@@ -26,6 +26,11 @@
         <RandomSeed value="4"/>
     </Time>
     <CellTypes>
+        <CellType class="biological" name="obstacle">
+            <FreezeMotion>
+                <Condition>1</Condition>
+            </FreezeMotion>
+        </CellType>
         <CellType class="biological" name="ct1">
             <PropertyVector symbol="d" value="0.0, 0.0, 0.0" name="Moving direction"/>
             <Property symbol="s" value="5"/>
@@ -37,11 +42,6 @@
             </MotilityReporter>
         </CellType>
         <CellType class="medium" name="medium"/>
-        <CellType class="biological" name="obstacle">
-            <FreezeMotion>
-                <Condition>1</Condition>
-            </FreezeMotion>
-        </CellType>
     </CellTypes>
     <CPM>
         <Interaction>
@@ -62,19 +62,17 @@
         </ShapeSurface>
     </CPM>
     <CellPopulations>
+        <Population size="1" type="obstacle">
+            <InitCellObjects mode="distance">
+                <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
+                    <Box size="20,30,0" origin="130,100,0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
         <Population size="0" type="ct1">
             <InitCircle mode="regular" number-of-cells="400">
                 <Dimensions radius="100" center="100, 100, 0"/>
             </InitCircle>
-        </Population>
-        <Population size="1" type="obstacle">
-            <InitCellObjects mode="distance">
-                <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
-                    <Object>
-                        <Box size="20,30,0" origin="130,100,0"/>
-                    </Object>
-                </Arrangement>
-            </InitCellObjects>
         </Population>
     </CellPopulations>
     <Analysis>

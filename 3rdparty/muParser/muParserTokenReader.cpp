@@ -437,7 +437,7 @@ namespace mu
               if (m_iSynFlags & noBO)
 	              Error(ecUNEXPECTED_PARENS, m_iPos, pOprtDef[i]);
               
-              if (m_lastTok.GetCode()==cmFUNC)
+              if (m_lastTok.GetCode()==cmFUNC || m_lastTok.GetCode()==cmFUNC_VAR)
                 m_iSynFlags = noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN | noIF | noELSE;
               else
                 m_iSynFlags = noBC | noOPT | noEND | noARG_SEP | noPOSTOP | noASSIGN| noIF | noELSE;

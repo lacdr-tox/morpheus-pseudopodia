@@ -73,6 +73,8 @@ Versatile interface to
 
 - \b time-step (optional): time between logging events. If unspecified adopts to the frequency of input updates. Setting \b time-step<=0 will log only the final state of the simulation.
 - \b name (optional, default=none): shows in GUI, only for user-convenience
+- \b force-node-granularity (optional, default=false): force logging per node in a grid-like fashion.
+- \b exclude-medium (optional, default=true): when logging cell properties, only include biological cells.
 
 \subsubsection Symbol (required)
 
@@ -111,7 +113,7 @@ Restrict the data query to a certain slice, a cell type or certain cell ids.
 - \b domain-only (optional, default=true): query only nodes within domain. if false, also include node outside of domain.
 - \b force-node-granularity (optional, default=false): granularity of automatically detected by default, but may be overridden if specified
 
-\subsection Plot (optional)
+\subsection Plots (optional)
 
 Specifies one or more plots, generated from the data in the written data file.
 
@@ -163,7 +165,7 @@ Symbols can be selected for X and Y dimensions + color and the range of time poi
     - -1  : end of simulation
     -  0  : same interval as Logger
     - else: should be multiple of Logger/time-step
-- \b name (optional, default=none): shows in GUI, only for user-convenience
+- \b title (optional, default=none): Title caption for the Plot
 
 \subsubsection SurfacePlot (optional)
 
@@ -366,7 +368,8 @@ private:
 	vector<shared_ptr<LoggerWriterBase> > writers;
 	vector<shared_ptr<LoggerPlotBase> > plots;
 
-	Granularity logger_granularity;
+	Granularity logger_granularity = Granularity::Global;
+	bool permit_incomplete_symbols = true;
 	FocusRange range;
 
 	// Restrictions
@@ -386,6 +389,8 @@ private:
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> domain_only;
 	// Node granularity
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> force_node_granularity;
+	// Medium exclusion
+	PluginParameter2<bool, XMLValueReader, OptionalPolicy> exclude_medium;
 
 public:
 	Logger(); // default values
@@ -406,6 +411,7 @@ public:
 
 	Granularity getGranularity() { return logger_granularity; }
 	const multimap<FocusRangeAxis, int>& getRestrictions() { return restrictions; }
+	bool permitIncompleteSymbols() { return permit_incomplete_symbols; }
 	bool getDomainOnly() { return domain_only(); };
 };
 
@@ -506,7 +512,7 @@ protected:
 	map<Terminal, string> terminal_name;
 	PluginParameter2<Terminal, XMLNamedValueReader, DefaultValPolicy> terminal;
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> logcommands;
-	PluginParameter2<double, XMLValueReader, OptionalPolicy> time_step;
+	PluginParameter2<double, XMLValueReader, DefaultValPolicy> time_step;
 	PluginParameter2<string, XMLValueReader, OptionalPolicy> title;
 	double last_plot_time;
 	uint plot_num;

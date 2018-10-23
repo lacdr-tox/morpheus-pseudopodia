@@ -2,6 +2,9 @@
     <qresource prefix="/">
         <file>data/processProxy.sh</file>
         <file>data/autofix_rules.txt</file>
+		<file alias="feedback_request.html">data/feedback_request.html</file>
+		<file alias="no_announcement.html">data/no_announcement.html</file>
+		<file alias="morpheusgui.gif">data/morpheusgui.gif</file>
         <file alias="task-done.png">icons/16x16/task-complete.png</file>
         <file alias="task-running.png">icons/16x16/task-ongoing.png</file>
         <file alias="task-pending.png">icons/16x16/task-pending.png</file>
@@ -12,6 +15,8 @@
         <file alias="edit-copy.png">icons/16x16/edit-copy.png</file>
         <file alias="edit-paste.png">icons/16x16/edit-paste.png</file>
         <file alias="edit-cut.png">icons/16x16/edit-cut.png</file>
+        <file alias="go-previous.png">icons/16x16/go-previous.png</file>
+        <file alias="go-next.png">icons/16x16/go-next.png</file>
         <file alias="list-add.png">icons/16x16/list-add.png</file>
         <file alias="list-remove.png">icons/16x16/list-remove.png</file>
         <file alias="applications-science.png">icons/16x16/applications-science.png</file>

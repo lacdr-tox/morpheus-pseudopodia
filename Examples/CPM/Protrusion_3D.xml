@@ -67,9 +67,7 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
         <Population size="0" type="amoeba">
             <InitCellObjects mode="distance">
                 <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
-                    <Object>
-                        <Sphere radius="10" center="100,100,100"/>
-                    </Object>
+                    <Sphere radius="10" center="100,100,100"/>
                 </Arrangement>
             </InitCellObjects>
         </Population>

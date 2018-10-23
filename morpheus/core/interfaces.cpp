@@ -14,7 +14,7 @@ void Plugin::loadFromXML(const XMLNode xNode, Scope* scope) {
 	getXMLAttribute(xNode, "name",plugin_name,false);
 
 	for (uint i=0; i<plugin_parameters2.size(); i++) {
-		plugin_parameters2[i]->loadFromXML(xNode);
+		plugin_parameters2[i]->loadFromXML(xNode, scope);
 	}
 	// Use the current scope as default scope;
 	local_scope = scope;
@@ -76,7 +76,7 @@ void Plugin::init(const Scope* scope)
 	
 	for (uint i=0; i<plugin_parameters2.size(); i++) {
 		cout << this->XMLName() << ": Initializing parameter " << plugin_parameters2[i]->XMLPath()<< endl;
-		plugin_parameters2[i]->init(scope);
+		plugin_parameters2[i]->init();
 		
 		auto in = plugin_parameters2[i]->getDependSymbols();
 		input_symbols.insert(in.begin(), in.end());

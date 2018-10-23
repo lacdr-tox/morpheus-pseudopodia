@@ -46,9 +46,7 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
                 <Rule symbol-ref="tumble.run_duration" name="new update time">
                     <Expression>20 * rand_gamma(0.5, 5)</Expression>
                 </Rule>
-                <Function symbol="angle">
-                    <Expression>rand_uni(0, 2*pi)</Expression>
-                </Function>
+                <Intermediate symbol="angle" value="rand_uni(0, 2*pi)"/>
                 <VectorRule symbol-ref="move_dir" spherical="true">
                     <Expression>angle, 0 , 1</Expression>
                 </VectorRule>
@@ -75,7 +73,7 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
     </CPM>
     <CellPopulations>
         <Population size="1" type="amoeba">
-            <Cell name="">
+            <Cell id="1" name="1">
                 <Nodes>50,100,0</Nodes>
             </Cell>
         </Population>

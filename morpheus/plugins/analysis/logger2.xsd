@@ -97,12 +97,12 @@
 <!--   -->
 
 	<xs:complexType name="cpmLoggerRestrictions" >
-		<xs:choice>
+		<xs:choice  minOccurs="0">
 			<xs:element name="Slice"	type="cpmLoggerSlice" minOccurs="0" maxOccurs="1"/>
 			<xs:element name="Celltype"	type="cpmLoggerCellType" minOccurs="0" maxOccurs="1"/>
 			<xs:element name="Cells"	type="cpmLoggerCells" minOccurs="0" maxOccurs="1"/>
 		</xs:choice>
-		<!--<xs:attribute name="force-node-granularity" type="cpmBoolean" use="optional" default="false" />-->
+		<xs:attribute name="exclude-medium" type="cpmBoolean" use="optional" default="true" />
 		<xs:attribute name="domain-only" type="cpmBoolean" use="optional" default="true" />
 	</xs:complexType>
 

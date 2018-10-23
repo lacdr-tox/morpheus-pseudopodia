@@ -1,43 +1,49 @@
 SET(tools_src
-	parse_arg.cpp
-	xml_functions.cpp
-	string_functions.cpp
 )
 
-SET(morpheus_src
+SET(morpheus_core_src
+	cell.cpp
+	celltype.cpp
 	cell_update.cpp
-	scales.cpp
-	lattice.cpp
-	domain.cpp
-	interfaces.cpp
-	plugin_parameter.cpp
-	time_scheduler.cpp
-	cell.cpp celltype.cpp
-	interaction_energy.cpp
-	simulation.cpp
+	cpm.cpp
 	cpm_layer.cpp
+	cpm_sampler.cpp
 	cpm_shape.cpp
 	cpm_shape_tracker.cpp
-	edge_tracker.cpp
-	cpm.cpp
-	field.cpp
+	data_mapper.cpp
+	domain.cpp
 	diffusion.cpp
-	property.cpp
-	symbol.cpp
-	expression_evaluator.cpp
-	function.cpp
-	equation.cpp
-	vector_equation.cpp
-	scope.cpp
-	focusrange.cpp
-	symbolfocus.cpp
-# 	symbol_accessor.cpp
 	diff_eqn.cpp
-	system.cpp
-# 	cell_membrane_accessor.cpp
+	edge_tracker.cpp
+	equation.cpp
+	evaluator_cache.cpp
+	expression_evaluator.cpp
+	field.cpp
+	focusrange.cpp
+	function.cpp
+	interaction_energy.cpp
+	interfaces.cpp
+	lattice.cpp
 	membrane_property.cpp
 	membranemapper.cpp
-	data_mapper.cpp
+	plugin_parameter.cpp
+	property.cpp
+	random_functions.cpp
+	scales.cpp
+	scope.cpp
+	string_functions.cpp
+	symbol.cpp
+	symbolfocus.cpp
+	system.cpp
+	time_scheduler.cpp
+	vector_equation.cpp
+	xml_functions.cpp
+)
+SET(morpheus_src
+	parse_arg.cpp
+	rss_stat.cpp
+	simulation.cpp
+	${evaluator_src}
 # 	super_cell.cpp
 # 	super_celltype.cpp
 )
@@ -47,12 +53,12 @@ foreach(source ${plugin_src})
 	list(APPEND morpheus_src ../plugins/${source})
 endforeach(source)
 
-SET(morpheus_src ${morpheus_src} ${tools_src} )
+SET(morpheus_src ${morpheus_src} )
 
 # MESSAGE( "TIFF INCLUDE = " ${TIFF_INCLUDE_DIR})
 CONFIGURE_FILE(config.h.cmake config.h)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR} ${TIFF_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
-
+ 
 option(MORPHEUS_CORE_CATCH "Catch exceptions in the simulator core. Required for GUI integration. May be switched off for debuging purposese. " ON)
 mark_as_advanced(MORPHEUS_CORE_CATCH)
 
@@ -67,10 +73,12 @@ ENDIF()
 SET(SIMULATOR_EXEC_NAME ${MORPHEUS_EXEC_NAME})
 
 IF (HAVE_OBJECT_LINKAGE)
-	ADD_EXECUTABLE(${SIMULATOR_EXEC_NAME} ${morpheus_src} $<TARGET_OBJECTS:muParser>)
+	ADD_LIBRARY(morpheusCore OBJECT ${morpheus_core_src}  )
+	ADD_EXECUTABLE(${SIMULATOR_EXEC_NAME} ${morpheus_src} $<TARGET_OBJECTS:muParser> $<TARGET_OBJECTS:morpheusCore>)
 ELSE()
+	ADD_LIBRARY(morpheusCore ${morpheus_core_src})
 	ADD_EXECUTABLE(${SIMULATOR_EXEC_NAME} ${morpheus_src})
-	target_link_libraries(${SIMULATOR_EXEC_NAME} muParser)
+	target_link_libraries(${SIMULATOR_EXEC_NAME} muParser morpheusCore)
 ENDIF()
 
 IF (MORPHEUS_STATIC_BUILD)
@@ -85,6 +93,8 @@ IF (EXISTS "${GRAPHVIZ_GRAPH_LIBRARY}")
 ELSE()
 	TARGET_LINK_LIBRARIES(${SIMULATOR_EXEC_NAME} ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_CGRAPH_LIBRARY} )
 ENDIF()
+
+
 
 IF  ("${MORPHEUS_OS}" STREQUAL "WIN32")
 	TARGET_LINK_LIBRARIES(${SIMULATOR_EXEC_NAME} pthread psapi)

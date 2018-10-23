@@ -18,7 +18,8 @@
 
 /** \defgroup Protrusion
 \ingroup ML_CellType
-\ingroup CPM_EnergyPlugins CellMotilityPlugins 
+\ingroup CPM_EnergyPlugins CellMotilityPlugins Cell_Update_ListenerPlugins
+
 \brief Energetically favors updates in region of high protusive activity (actin-inspired)
 
 Implements the 'Act model' (Niculescu et al, 2015) which extends the CPM with a local feedback mechanism resulting in cell protrusions and, as a consequence, in cell motility. The mechanism amplifies the inherent membrane fluctuations of CPM cells in a manner depending on the size of the fluctuations and their recent protrusive activity.

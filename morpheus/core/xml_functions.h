@@ -73,11 +73,16 @@ bool getXMLAttribute(const XMLNode XML_base, string path, T& value, bool verbose
 	else if (xNode.isAttributeSet(attribute.c_str()) ) str_val = xNode.getAttribute(attribute.c_str());
 	else { if (verbose) cout << " .. not found" << endl; return false; }
 
-	T tmp = TypeInfo<T>::fromString(str_val);
-
-	if (verbose) cout << ": " << TypeInfo<T>::toString(tmp) << endl;
-	value=tmp;
+	try {
+		T tmp = TypeInfo<T>::fromString(str_val);
+		if (verbose) cout << ": " << TypeInfo<T>::toString(tmp) << endl;
+		value=tmp;
+	}
+	catch (...) {
+		return false;
+	}
 	return true;
+
 }
 
 // template <>

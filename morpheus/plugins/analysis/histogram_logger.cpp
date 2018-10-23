@@ -77,7 +77,7 @@ void HistogramLogger::init(const Scope* scope) {
 	// Preinitialize celltype parameters to transfer their celltype scopes to the symbol reference
 	for (auto c : columns) {
 		if (c->celltype.isDefined()) {
-			c->celltype.init(scope);
+			c->celltype.init();
 			cout << "celltype " << c->celltype()->getName() << "defined for symbol " << c->symbol.stringVal();
 			c->symbol.setScope(c->celltype()->getScope());
 		}

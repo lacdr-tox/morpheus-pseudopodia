@@ -166,8 +166,8 @@ void PDE_Layer::init(const SymbolFocus& focus)
 	phi_coarsening[l_size.y-1]=l_size.x;
 
 	if (!initial_expression.empty() && !init_by_restore) {
-		ExpressionEvaluator<double> init_val(initial_expression);
-		init_val.init(local_scope);
+		ExpressionEvaluator<double> init_val(initial_expression, local_scope);
+		init_val.init();
 		if (is_surface) {
 			CPM::CELL_ID cell_id = focus.cellID();
 			FocusRange range(Granularity::MembraneNode, cell_id);
@@ -643,17 +643,18 @@ bool PDE_Layer::solve_fwd_euler_diffusion_generalized(double time_interval)
 			}
 		}
 		else {
+			double beta = (1-alpha_total);
+// 			write_buffer = data*beta;
 #pragma omp parallel for
 			for (int idx=start; idx<=stop; idx++ ) {
-				if (domain[idx] != Boundary::none) {
-					write_buffer[idx] = data[idx];
+				if (domain[idx] == Boundary::none) {
+					write_buffer[idx] = data[idx] * beta;
+					for (uint i=0; i<neighbors.size(); i++) {
+						write_buffer[idx] +=  ((domain[idx + neighbor_index_offst[i]] == Boundary::noflux) ? data[idx] : data[idx + neighbor_index_offst[i]]) * neighbor_alpha[i];
+					}
 				}
 				else {
 					write_buffer[idx] = data[idx];
-					for (uint i=0; i<neighbors.size(); i++) {
-						write_buffer[idx] += (domain[idx + neighbor_index_offst[i]] == Boundary::noflux) ? 0.0 :
-											(data[idx + neighbor_index_offst[i]] - data[idx]) * neighbor_alpha[i];
-					}
 				}
 			}
 		}
@@ -1071,8 +1072,8 @@ void VectorField_Layer::loadFromXML(XMLNode node, Scope* scope)
 void VectorField_Layer::init(const Scope* scope) {
 	
 	if (!initial_expression.empty() && !init_by_restore) {
-		ExpressionEvaluator<VDOUBLE> init_val(initial_expression);
-		init_val.init(scope);
+		ExpressionEvaluator<VDOUBLE> init_val(initial_expression, scope);
+		init_val.init();
 		FocusRange range(Granularity::Node, scope);
 		for (auto focus : range) {
 			this->set(focus.pos(),init_val.get(focus));

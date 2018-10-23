@@ -47,8 +47,8 @@ class InteractionEnergy : public Plugin {
 		double default_interaction;
 		vector<double> ia_energies;
 		vector< vector< shared_ptr<Plugin> > > plugins;
-		vector< shared_ptr<Interaction_Overrider> > ia_overrider;
-		vector< vector< shared_ptr<Interaction_Addon> > > ia_addon;
+		vector< shared_ptr<CPM_Interaction_Overrider> > ia_overrider;
+		vector< vector< shared_ptr<CPM_Interaction_Addon> > > ia_addon;
 		
 		set< SymbolDependency > dependencies;
 

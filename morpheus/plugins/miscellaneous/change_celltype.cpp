@@ -18,12 +18,12 @@ void ChangeCelltype::loadFromXML(const XMLNode xNode, Scope* scope)
 	InstantaneousProcessPlugin::loadFromXML(xNode, scope);
 
 	triggers = shared_ptr<TriggeredSystem>(new TriggeredSystem);
-	celltype_new.init(scope);
-	SIM::enterScope(celltype_new()->getScope());
+	celltype_new.init();
+
 	if (xNode.nChildNode("Triggers")) {
 		triggers->loadFromXML(xNode.getChildNode("Triggers"), const_cast<Scope*>(celltype_new()->getScope()));
 	}
-	SIM::leaveScope();
+
 }
 
 void ChangeCelltype::init(const Scope* scope)

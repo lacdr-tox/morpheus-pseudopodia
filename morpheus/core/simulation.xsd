@@ -179,7 +179,8 @@ This allows the user to create populations a heterogeneous initial population. T
 		</xs:element>
 	  </xs:choice>	  
 	  <!--<xs:attribute name="volume" type="cpmUnsignedInteger"/>-->
-	  <xs:attribute name="name" type="cpmString"/>
+	  <xs:attribute name="id" type="cpmUnsignedInteger" />
+	  <xs:attribute name="name" type="cpmString" use="optional"/>
 	</xs:complexType>
 
 	<xs:simpleType name="cpmNodes">
@@ -255,7 +256,12 @@ This allows the user to create populations a heterogeneous initial population. T
 				</xs:complexType>
 			</xs:element>
 			<xs:element name="Neighborhood" type="cpmNeighborhood" />
-			<xs:element name="MCSDuration" type="cpmTime" default="1" minOccurs="1" />
+			<xs:element name="MCSDuration" minOccurs="1" >
+				<xs:complexType>
+					<xs:attribute name="value" type="cpmUnsignedDouble" use="required" default="1" />
+					<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="optional" default="mcs_duration" />
+				</xs:complexType>
+			</xs:element>	
 		</xs:all>
 
 		<xs:attribute name="stepper" type="cpmStepper" use="required"/>
@@ -308,12 +314,12 @@ To exactly reproduce simulation results, choose the same random seed. Note that 
 				</xs:complexType>
 			</xs:element>
 			
-			<xs:element name="StartTime" minOccurs="1" type="cpmTime" >
+			<xs:element name="StartTime" minOccurs="1" type="cpmTime" default ="0">
 				<xs:annotation>
 					<xs:documentation>Initial time of the simulation.</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-			<xs:element name="StopTime" minOccurs="1" type="cpmTime" >
+			<xs:element name="StopTime" minOccurs="1" type="cpmTime" default="1">
 				<xs:annotation>
 					<xs:documentation>Termination time of simulation.</xs:documentation>
 				</xs:annotation>

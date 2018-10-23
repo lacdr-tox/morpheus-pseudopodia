@@ -36,9 +36,12 @@
 #endif
 
 #include "morpheus_model.h"
+#include "network_access.h"
 // #include "configuration.h"
 
 
+// Enable the Morpheus Usage Feedback System
+// #define MORPHEUS_FEEDBACK
 
 class JobView;
 class JobQueue;
@@ -50,13 +53,16 @@ class JobQueue;
   The main-task of it is providing interfaces to validate, load and save xml-configurations of cpm-models.<br>
   Additionally it is possible to manipulate the informations hold in this class via some functions.
   */
+
 class config : public QObject
 {
 Q_OBJECT
 
 public:
-
-
+	// Singleton
+	config(const config&) = delete;
+	const config& operator=(const config&) = delete;
+	
     /*!
       This struct holds informations necessary to start morpheus-simulations.
       */
@@ -64,7 +70,7 @@ public:
         QString general_resource; /*!< Location where morpheus-simulations should be executed. (local or remote) */
         QString general_outputDir; /*!< Local directory in which the data of simulations should be saved. */
 
-
+		bool preference_allow_feedback;
         int preference_stdout_limit; /*!< Limit to the size of stdout in model.xml.out (simulation terminates when exceeded) */
         int preference_max_recent_files; /*!< Number of the maximal shown recent files in the menubar of morpheus-gui. */
         int preference_jobqueue_interval; /*!< Interval between updates of jobs in job queue */
@@ -100,18 +106,22 @@ private:
     static config *instance;
 
     application app;
-	QHelpEngine* helpEngine;
+	QHelpEngine* helpEngine = NULL;
+	ExtendedNetworkAccessManager* network = NULL;
 
     QList< SharedMorphModel > openModels;
     int current_model;
+	
 
-    JobQueue* job_queue;
-	QThread* job_queue_thread;
+    JobQueue* job_queue = NULL;
+	QThread* job_queue_thread = NULL;
 	QSqlDatabase db;
+	QMutex change_lock;
 	/*!< SQLite database that stores job information*/
 
 
-    QList<QDomNode> xmlNodeCopies; /*!< Temporarily stored copies of xml-nodes. */
+	QList<QDomNode> xmlNodeCopies; /*!< Temporarily stored copies of xml-nodes. */
+	QDomDocument clipBoard_Document;
 
 public:
 	static QSqlDatabase& getDatabase();
@@ -119,6 +129,9 @@ public:
 	
     static config* getInstance();
     /*!< Returns an instance of class config. */
+	
+	static QString getVersion();
+	/*!< Returns the Morpheus version string. */
 
     static const application& getApplication();
     /*!< Returns informations about the application-settings to start simulations. */
@@ -126,7 +139,8 @@ public:
     static SharedMorphModel getModel();
     ///< Returns the currently selected model
 	
-	static QHelpEngine* getHelpEngine();
+	static QHelpEngine* getHelpEngine(bool lock=true);
+	static ExtendedNetworkAccessManager* getNetwork();
 
     static void switchModel(int index);
 
@@ -153,7 +167,8 @@ public:
     static void setApplication(application a);
     /*!< Sets the application-informations to @param a. */
 
-
+private slots:
+	void ClipBoardChanged();
 
 public slots:
     void setComputeResource(QString resource);

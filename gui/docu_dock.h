@@ -14,7 +14,7 @@
 
 #include "config.h"
 #include "nodecontroller.h"
-#include <QtNetwork/QNetworkAccessManager>
+// #include <QtNetwork/QNetworkAccessManager>
 
 #ifdef MORPHEUS_NO_QTWEBKIT
 #include <QTextBrowser>
@@ -42,6 +42,7 @@ public slots :
 private slots:
 	void setRootOfHelpIndex();
 	void resetStatus();
+	void openHelpLink(const QUrl&);
 	
 protected:
     virtual void resizeEvent(QResizeEvent* event );

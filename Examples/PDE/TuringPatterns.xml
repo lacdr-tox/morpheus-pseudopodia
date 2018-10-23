@@ -27,16 +27,16 @@ Miyazawa, Okamoto and Kondo, Blending of animal colour patterns by hybridization
             <Constant symbol="synU_max" value="0.23"/>
             <Constant symbol="synV_max" value="0.50"/>
             <Function symbol="s_u">
-                <Expression>max( 0, min( synU_max, A*u-B*v+C))</Expression>
+                <Expression>max( 0, min( synU_max, A()*u-B*v+C()))</Expression>
             </Function>
             <Function symbol="s_v">
                 <Expression>max( 0, min( synV_max, E*u - F))</Expression>
             </Function>
             <DiffEqn symbol-ref="u">
-                <Expression>R*(s_u - D*u)</Expression>
+                <Expression>R*(s_u() - D*u)</Expression>
             </DiffEqn>
             <DiffEqn symbol-ref="v">
-                <Expression>R*(s_v - G*v)</Expression>
+                <Expression>R*(s_v() - G*v)</Expression>
             </DiffEqn>
         </System>
     </Global>
@@ -84,7 +84,7 @@ Miyazawa, Okamoto and Kondo, Blending of animal colour patterns by hybridization
                 <Slice value="s.x/2" axis="x"/>
             </Restriction>
             <Plots>
-                <Plot time-step="-1" name="slice at x is half">
+                <Plot title="slice at half of x extension" time-step="-1">
                     <Style style="lines" line-width="3.0"/>
                     <Terminal terminal="png"/>
                     <X-axis>

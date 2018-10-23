@@ -88,6 +88,7 @@ public:
  	static QSharedPointer<MorphModel> importSBML();
 private:
 	QLineEdit* path;
+	QCheckBox* into_celltype;
 
 	QSharedPointer<MorphModel> model;
 	QList<QString> conversion_messages;
@@ -101,8 +102,8 @@ private:
 	QSet<QString> vars_with_assignments;
 	QMap<QString, AbstractAttribute*> diffeqn_map;
 
-	void readSBML(QString sbml_file);
-    void readSBMLFunctions(Model* sbml_model);
+	void readSBML(QString sbml_file, bool into_celltype);
+    void addSBMLFunctions(nodeController* target, Model* sbml_model);
 	void sanitizeAST(ASTNode* math);
     void addSBMLSpecies(nodeController* celltype, Model* sbml_model);
     void addSBMLParameters(nodeController* celltype, Model* sbml_model);

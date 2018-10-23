@@ -21,22 +21,6 @@ CHECK_TYPE_SIZE(uint UINT)
 
 FIND_PACKAGE(OpenMP)
 
-
-# IF( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" )
-# 	SET(OpenMP_CXX_FLAGS "-fopenmp")
-# ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-# 	include_directories("/usr/include")
-# 	SET(OpenMP_CXX_FLAGS  "-fopenmp=libomp")
-# ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-# 	SET(OpenMP_CXX_FLAGS "-openmp")
-# ELSE()
-# 	MESSAGE(FATAL_ERROR "Unknown compiler id ${CMAKE_CXX_COMPILER_ID}, cannot set openmp flags")
-# ENDIF()
-# 
-# SET(CMAKE_REQUIRED_FLAGS ${OpenMP_CXX_FLAGS})
-# CHECK_INCLUDE_FILES("omp.h" OPENMP_FOUND)
-# UNSET(CMAKE_REQUIRED_FLAGS)
-
 option(MORPHEUS_OPENMP "Switch off the usage of OPENMP" ON)
 
 IF (OPENMP_FOUND AND MORPHEUS_OPENMP)
@@ -51,10 +35,6 @@ ELSE()
 	SET(HAVE_OPENMP OFF)
 ENDIF()
 
-#add_subdirectory(muParser)
-#add_subdirectory(xmlParser)
-#add_subdirectory(gnuplot_i)
-
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 IF (GRAPHVIZ_FOUND)
 	include_directories( ${GRAPHVIZ_INCLUDE_DIR} )
@@ -67,13 +47,15 @@ SET (APP_DOC_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/core/interfaces.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/docu.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/equation.h
+	${CMAKE_CURRENT_SOURCE_DIR}/core/expression_evaluator.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/field.h
+	${CMAKE_CURRENT_SOURCE_DIR}/core/diffusion.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/vector_equation.h 
 	${CMAKE_CURRENT_SOURCE_DIR}/core/function.h 
 	${CMAKE_CURRENT_SOURCE_DIR}/core/membrane_property.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/property.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/system.h
-	${CMAKE_CURRENT_SOURCE_DIR}/core/cpm.h
+	${CMAKE_CURRENT_SOURCE_DIR}/core/cpm_sampler.h
 	
 )
 

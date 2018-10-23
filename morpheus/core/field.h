@@ -93,7 +93,7 @@ public:
 	class ExpressionReader : public ValueReader {
 		public:
 			ExpressionReader(const Scope* scope) : scope(scope) {};
-			void set(string string_val) override { value = make_unique<ExpressionEvaluator<double> >(string_val); value->init(scope); };
+			void set(string string_val) override { value = make_unique<ExpressionEvaluator<double> >(string_val, scope); value->init(); };
 			bool isSpaceConst() const override { return value->flags().space_const; }
 			bool isTimeConst() const override { return value->flags().time_const; };
 			double get(const VINT& pos) const override { return value->get(SymbolFocus(pos)); }
@@ -261,7 +261,7 @@ private:
 	class ExpressionReader : public ValueReader {
 		public:
 			ExpressionReader(const Scope* scope) : scope(scope) {};
-			void set(string string_val) override { value = make_unique<ExpressionEvaluator<VDOUBLE> >(string_val); value->init(scope); };
+			void set(string string_val) override { value = make_unique<ExpressionEvaluator<VDOUBLE> >(string_val,scope); value->init(); };
 			bool isSpaceConst() const override { return value->flags().space_const; }
 			bool isTimeConst() const override { return value->flags().time_const; }
 			VDOUBLE get(const VINT& pos) const override { return value->get(SymbolFocus(pos)); }

@@ -33,26 +33,25 @@ enum SystemType { DISCRETE_SYS, CONTINUOUS_SYS};
 
 using namespace std;
 /**
- * \page PluginSystem Plugin System
- * \brief The Plugin System allows for easy extension of the framework by self-crafted plugin descendants
+ * \page PluginDev Plugin Development
+ * \brief Guide to extend the framework by self-crafted plugins.
  * 
  * \tableofcontents
  */
 
-// we might have celltype plugins, cell plugins, and pde_layer plugins ?? In case it's more convenient we might also plug all to the a single Factory. However, you should keep in mind that all keys must finally be unique!
 /** 
- * \page PluginSystem 
+ * \page PluginDev 
  * \section Introduction Introduction to plugin development
 
-This page provides a quick intro on plugin development.
-
-Derived from the base class Plugin several are provided to interface with the simulation process.
+Morpheus Plugins can 
+ Derived from the base class Plugin several are provided to interface with the simulation process.
 You may derive your plugin from a subset of these \ref PluginInterfaces classes.
 
-\subsection PluginExample Example
 */
+
 /*\verbatim
 
+\subsection PluginExample Example
 class MyPlugin : public Check_Update_Listener, public Update_Listener
 {
 	public:
@@ -106,34 +105,43 @@ void init() {
 
 
 /**
- * \page PluginSystem
+ * \page PluginDev 
  * 
- * \section Development Plugin Development
  * \subsection PluginInterfaces Plugin Interfaces 
  * 
  * Several predefined base classes allow a Plugin to interfere with the simulation
- * system. Pick a single one for your plugin.
+ * system. 
  * 
+ * The simplest base class is
  *  - \ref Plugin
+ * 
+ * You may pick a single one to interact with the time stepping (see \ref Scheduling)
+ *  - \ref TimeStepListener
  *  - \ref ContinuousProcessPlugin
  *  - \ref InstantaneousProcessPlugin
  *  - \ref ReporterPlugin
  *  - \ref AnalysisPlugin
- *
- * In addition, several abstract interfaces allow to extend the interface  with the simulation
- * system.
- *  - \ref CPM_Energy
+ * 
+ * Interfere with the general spatial cell updating
  *  - \ref Cell_Update_Checker
  *  - \ref Cell_Update_Listener
  * 
- * Derive from a base class, maybe add additional interfaces and develop your own plugins.
+ * Interfere with the CPM Mont Carlo simulation
+ *  - \ref CPM_Energy
+ *  - \ref CPM_Interaction_Addon
+ *  - \ref CPM_Interaction_Overrider
+ * 
+ * Derive from a base class, add additional interfaces and develop your own plugins.
  * 
  * 
  * \subsection Integration Plugin Integration
  *
- * Integration of plugins is largely automated.
+ * Integration of plugins is largely automated. In the class header include the DECLARE_PLUGIN("TagName") macro,
+ * and in the source file the REGISTER_PLUGIN(class_name) macro.Plugin tag names must be unique.
  * 
- * Example
+ * If you provide data in terms of a symbol, read the Symbol System Guide for instructions how to integrate.
+ * 
+ * 
  */
 
 
@@ -153,6 +161,8 @@ void init() {
  * \remark
  *    Take care that you call the inherited methods first when overriding them in your plugin.
  *    Else, plugin integration will fail.
+ * \defgroup PluginsByInterface by Interface
+ * \ingroup Plugins
  */
 class Plugin {
 	private:
@@ -247,7 +257,7 @@ bool PClass::factory_registration = registerPlugin<PClass>(); /* PluginFactory::
 
 
 /** \defgroup CPM_EnergyPlugins CPM Hamiltonian Plugins
- *  \ingroup Plugins
+ *  \ingroup PluginsByInterface
  */
 
 /** \brief Plugin interface for defining an energy term in the CPM hamiltonian.
@@ -257,9 +267,9 @@ bool PClass::factory_registration = registerPlugin<PClass>(); /* PluginFactory::
 
 class CPM_Energy : virtual public Plugin {
 	public:
-		/** Compute the change in energy due to an update with respect to cell cell_id. todo contains information about 
+		/** Compute the change in energy due to an update with respect to cell @p cell_id. 
 		 * 
-		 * Updated cell properties are availible in the Cell  via accessors prefaced with updated_ .
+		 *  Updated cell properties are available in the Cell via accessors prefixed with **updated_** .
 		 */
 		virtual double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const =0;
 		virtual double hamiltonian(CPM::CELL_ID cell_id) const =0;            // Berechnung gesamte Energie
@@ -272,7 +282,7 @@ class CPM_Energy : virtual public Plugin {
 
 
 /** \defgroup Cell_Update_CheckerPlugins Cell Update Checker Plugins
- *  \ingroup Plugins
+ *  \ingroup PluginsByInterface
  *  Plugin interface for defining a rule to check a cell update before it take place.
  *  E.g. CPM's connectivity constraint is based on the refusing cell updates disrupting a cell. 
  */
@@ -294,7 +304,7 @@ class Cell_Update_Checker : virtual public Plugin
 };
 
 /** \defgroup Cell_Update_ListenerPlugins CPM Update Listener Plugins
- *  \ingroup Plugins
+ *  \ingroup PluginsByInterface
  *  Plugin interface for getting notifications of cell updates check rule for the CPM.
  */
 
@@ -309,6 +319,10 @@ class Cell_Update_Listener : virtual public Plugin
 		virtual void set_update_notify(CPM::CELL_ID cell_id, const CPM::Update& update) {};
 		virtual void update_notify(CPM::CELL_ID cell_id, const CPM::Update& update) =0;
 };
+
+/** \defgroup TimeStepListenerPlugins TimeStep Listener Plugins
+\ingroup PluginsByInterface
+**/
 
 
 /** \brief Plugin interface for getting included into the Frameworks TimeScheduler.
@@ -402,7 +416,7 @@ private:
 };
 
 /** \defgroup ContinuousProcessPlugins Continuous Process Plugins
-\ingroup Plugins
+\ingroup PluginsByInterface
 **/
 
 /** \brief Interface providing basic functionality and methods to develop plugins for time continuous processes
@@ -438,7 +452,7 @@ private:
 };
 
 /** \defgroup InstantaneousProcessPlugins Instantaneous Process Plugins
-\ingroup Plugins
+\ingroup PluginsByInterface
 */
 
 /** \brief Interface providing basic functionality and methods to develop plugins for instantaneous processes
@@ -457,7 +471,7 @@ private:
 };
 
 /** \defgroup ReporterPlugins Reporter Plugins
-\ingroup Plugins
+\ingroup PluginsByInterface
 **/
 
 /** \brief Interface providing basic functionality and methods to develop Reporter plugins
@@ -483,7 +497,7 @@ private:
 
 
 /** \defgroup AnalysisPlugins Analysis Plugins
-\ingroup Plugins
+\ingroup PluginsByInterface
 **/
 
 /** \brief Interface providing basic functionality and methods to develop Analysis/Output generating plugins
@@ -517,7 +531,7 @@ private:
 
 
 /** \defgroup InitializerPlugins Population Initializer Plugins
-\ingroup Plugins
+\ingroup PluginsByInterface
 **/
 class Population_Initializer : virtual public Plugin
 {
@@ -532,23 +546,24 @@ class Field_Initializer : virtual public Plugin
 };
 
 /** \defgroup CPM_InteractionPlugins CPM Interaction Plugins
- \ingroup Plugins
+ \ingroup PluginsByInterface
  */
 
 /// Interface to override the interaction energies between CPM cells computed by the CPM logic
-class Interaction_Overrider : virtual public Plugin {
+class CPM_Interaction_Overrider : virtual public Plugin {
 	public:
 		virtual double interaction(CPM::STATE s1, CPM::STATE s2, double base_interaction) =0;
 };
 
 /// Interface to provide additional interaction energies between CPM cells
-class Interaction_Addon : virtual public Plugin {
+class CPM_Interaction_Addon : virtual public Plugin {
 	public:
 		/// Compute additional interaction energies between CPM cell **s1** and **s2**, that may depend on the individual cells.
 		virtual double interaction(CPM::STATE s1, CPM::STATE s2) =0;
 };
 
 
+/// Abstract base class for attachable Properties
 class AbstractProperty {
 public:
 	virtual const string& symbol() const =0;

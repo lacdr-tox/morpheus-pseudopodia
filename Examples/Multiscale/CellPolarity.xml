@@ -56,7 +56,7 @@ PDE Equation:
     </Time>
     <CellTypes>
         <CellType class="biological" name="cells">
-            <Chemotaxis field="U" strength="50*(A)" retraction="true"/>
+            <Chemotaxis field="U" strength="100*(A)" retraction="true"/>
             <VolumeConstraint target="5000" strength="0.1"/>
             <SurfaceConstraint target="1" mode="aspherity" strength="0.05"/>
             <MembraneProperty symbol="A" value="0.5" name="A">
@@ -97,9 +97,7 @@ PDE Equation:
                 <Constant symbol="K" value="1"/>
                 <Constant symbol="sigma" value="5.0" name="spatial-length-signal"/>
                 <Constant symbol="n" value="4" name="Hill coefficient"/>
-                <Function symbol="F">
-                    <Expression>B*(k_0+ s + (gamma*A^n) / (K^n + A^n) ) - delta*A</Expression>
-                </Function>
+                <Intermediate symbol="F" value="B*(k_0+ s + (gamma*A^n) / (K^n + A^n) ) - delta*A"/>
                 <DiffEqn symbol-ref="A">
                     <Expression>F</Expression>
                 </DiffEqn>
@@ -145,14 +143,14 @@ PDE Equation:
         </InitRectangle>
     </Disabled>
 -->
-            <Cell name="1">
+            <Cell id="1" name="1">
                 <Nodes>25 37 25</Nodes>
             </Cell>
         </Population>
     </CellPopulations>
     <Analysis>
         <Gnuplotter time-step="50">
-            <Terminal pointsize="1.5" name="png"/>
+            <Terminal name="png"/>
             <Plot>
                 <Field symbol-ref="U"/>
                 <Cells value="A" slice="25"/>
@@ -163,13 +161,6 @@ PDE Equation:
             <Channel symbol-ref="c" celltype="cells"/>
             <Channel symbol-ref="U"/>
         </TiffPlotter>
-        <!--    <Disabled>
-        <MembraneLogger time-step="10" celltype="cells">
-            <MembraneProperty symbol-ref="A"/>
-            <Plot terminal="png" time-step="10"/>
-        </MembraneLogger>
-    </Disabled>
--->
         <Logger time-step="50">
             <Input>
                 <Symbol symbol-ref="A"/>

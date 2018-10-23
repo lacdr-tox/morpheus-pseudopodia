@@ -46,9 +46,9 @@ ArrowPainter::ArrowPainter() {
 	arrow.allowPartialSpec();
 }
 
-void ArrowPainter::loadFromXML(const XMLNode node)
+void ArrowPainter::loadFromXML(const XMLNode node, const Scope * scope)
 {
-	arrow.loadFromXML(node);
+	arrow.loadFromXML(node, scope);
 	style = 3;
 	getXMLAttribute(node,"style",style);
 }
@@ -57,7 +57,7 @@ int ArrowPainter::getStyle() { return style; }
 
 void ArrowPainter::init(const Scope* scope)
 {
-	arrow.init(scope);
+	arrow.init();
 }
 
 set< SymbolDependency > ArrowPainter::getInputSymbols() const
@@ -102,32 +102,32 @@ void ArrowPainter::plotData(ostream& out)
 	}
 }
 
-void FieldPainter::loadFromXML(const XMLNode node)
+void FieldPainter::loadFromXML(const XMLNode node, const Scope * scope)
 {
 	field_value.setXMLPath("symbol-ref");
-	field_value.loadFromXML(node);
+	field_value.loadFromXML(node, scope);
 	
 	coarsening.setXMLPath("coarsening");
 	coarsening.setDefault("1");
-	coarsening.loadFromXML(node);
+	coarsening.loadFromXML(node, scope);
 	if (coarsening()<0)
 		throw MorpheusException("Invalid coarsening value.", node);
 	
 	min_value.setXMLPath("min");
-	min_value.loadFromXML(node);
+	min_value.loadFromXML(node, scope);
 	
 	max_value.setXMLPath("max");
-	max_value.loadFromXML(node);
+	max_value.loadFromXML(node, scope);
 	
 	isolines.setXMLPath("isolines");
-	isolines.loadFromXML(node);
+	isolines.loadFromXML(node, scope);
 	
 	surface.setXMLPath("surface");
-	surface.loadFromXML(node);
+	surface.loadFromXML(node, scope);
 	
 	z_slice.setXMLPath("slice");
 	z_slice.setDefault("0");
-	z_slice.loadFromXML(node);
+	z_slice.loadFromXML(node, scope);
 	if (z_slice()<0 || z_slice() >= SIM::lattice().size().z)
 		throw MorpheusException("Invalid z_slice.", node);
 		
@@ -150,11 +150,11 @@ void FieldPainter::loadFromXML(const XMLNode node)
 
 void FieldPainter::init(const Scope* scope)
 {
-	field_value.init(scope);
+	field_value.init();
 	if( min_value.isDefined() )
-		min_value.init(scope);
+		min_value.init();
 	if( max_value.isDefined() )
-		max_value.init(scope);
+		max_value.init();
 }
 
 const string& FieldPainter::getDescription() const
@@ -300,10 +300,10 @@ void FieldPainter::plotData(ostream& out)
 }
 
 
-void VectorFieldPainter::loadFromXML(const XMLNode node)
+void VectorFieldPainter::loadFromXML(const XMLNode node, const Scope* scope)
 {
 	value.setXMLPath("value");
-	value.loadFromXML(node);
+	value.loadFromXML(node, scope);
 	
 // 	if ( ! getXMLAttribute(node, "x-symbol-ref", x_symbol.name)) { cerr << "Undefined x-symbol-ref in GnuPlot -> VectorField"; exit(-1);}
 // 	if ( ! getXMLAttribute(node, "y-symbol-ref", y_symbol.name)) { cerr << "Undefined y-symbol-ref in GnuPlot -> VectorField"; exit(-1);};
@@ -321,7 +321,7 @@ void VectorFieldPainter::loadFromXML(const XMLNode node)
 
 void VectorFieldPainter::init(const Scope* scope)
 {
-	value.init(scope);
+	value.init();
 }
 
 set< SymbolDependency > VectorFieldPainter::getInputSymbols() const
@@ -374,9 +374,9 @@ LabelPainter::LabelPainter()
 
 
 
-void LabelPainter::loadFromXML(const XMLNode node)
+void LabelPainter::loadFromXML(const XMLNode node, const Scope* scope)
 {
-	value.loadFromXML(node);
+	value.loadFromXML(node, scope);
 
 	getXMLAttribute(node,"fontcolor",_fontcolor);
 	getXMLAttribute(node,"fontsize",_fontsize);
@@ -399,7 +399,7 @@ void LabelPainter::loadFromXML(const XMLNode node)
 
 void LabelPainter::init(const Scope* scope)
 {
-	value.init(scope);
+	value.init();
 }
 
 
@@ -460,9 +460,9 @@ CellPainter::CellPainter()
 
 CellPainter::~CellPainter() { }
 
-void CellPainter::loadFromXML(const XMLNode node)
+void CellPainter::loadFromXML(const XMLNode node, const Scope* scope)
 {
-	symbol.loadFromXML(node);	
+	symbol.loadFromXML(node,scope);	
 	
 	external_palette = false;
 	external_range = false;
@@ -522,7 +522,7 @@ void CellPainter::loadPalette(const XMLNode node)
 }
 
 void CellPainter::init(const Scope* scope) {
-	symbol.init(scope);
+	symbol.init();
 	
 	cpm_layer = CPM::getLayer();
 	
@@ -1043,28 +1043,28 @@ void Gnuplotter::loadFromXML(const XMLNode xNode, Scope* scope)
 			string node_name = xPlotChild.getName();
 			if (node_name == "Cells"){
 				plot.cell_painter = shared_ptr<CellPainter>(new CellPainter());
-				plot.cell_painter->loadFromXML(xPlotChild);
+				plot.cell_painter->loadFromXML(xPlotChild, scope);
 				plot.cells = true;
 			}
 			else if (node_name == "CellLabels"){
 				plot.label_painter = shared_ptr<LabelPainter>(new LabelPainter());
-				plot.label_painter->loadFromXML(xPlotChild);
+				plot.label_painter->loadFromXML(xPlotChild, scope);
 				plot.labels = true;
 			}
 			else if (node_name == "CellArrows") {
 				plot.arrows = true;
 				plot.arrow_painter = shared_ptr<ArrowPainter>(new ArrowPainter());
-				plot.arrow_painter->loadFromXML(xPlotChild);
+				plot.arrow_painter->loadFromXML(xPlotChild, scope);
 			}
 			else if (node_name == "VectorField") {
 				plot.vectors = true;
 				plot.vector_field_painter = shared_ptr<VectorFieldPainter>(new VectorFieldPainter());
-				plot.vector_field_painter->loadFromXML(xPlotChild);
+				plot.vector_field_painter->loadFromXML(xPlotChild, scope);
 			}
 			else if (node_name == "Field") {
 				plot.field = true;
 				plot.field_painter = shared_ptr<FieldPainter>(new FieldPainter());
-				plot.field_painter->loadFromXML(xPlotChild);
+				plot.field_painter->loadFromXML(xPlotChild, scope);
 			}
 			
 		}

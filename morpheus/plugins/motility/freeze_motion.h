@@ -18,6 +18,7 @@
 /** \defgroup FreezeMotion
 \ingroup ML_CellType
 \ingroup CellMotilityPlugins
+\ingroup Cell_Update_CheckerPlugins
 
 FreezeMotion conditionally prevents all CPM updates, rendering a cell immotile.
 

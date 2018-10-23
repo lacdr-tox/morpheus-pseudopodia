@@ -17,6 +17,7 @@
 #include "config.h"
 #include "traits.h"
 #include <cmath>
+#include <array>
 #include <iostream>
 #include <functional>
 #include "cpp_future.h"
@@ -34,14 +35,14 @@
 
 inline int pmod(int a, int b) { a%=b; return (a<0) ? a+b : a; }
 inline double pmod(double a, double b) { double k=fmod(a,b); return (k<0) ? k+b : k; }
-[[deprecated]] inline int MOD(int a, int b) { a%=b; return (a<0) ? a+b : a; }
-[[deprecated]] inline double MOD(double a, double b) { double k=fmod(a,b); return (k<0) ? k+b : k;	}
+DEPRECATED inline int MOD(int a, int b) { a%=b; return (a<0) ? a+b : a; }
+DEPRECATED inline double MOD(double a, double b) { double k=fmod(a,b); return (k<0) ? k+b : k;	}
 
 
 constexpr int pdiv(const int a, const int b) { return   (a>=0) ? a/b : (a/b-(a%b<0)); } // should be the same as int(floor(double(a)/b))
 inline double pdiv(double a, double b){ return floor(a/b);}
-[[deprecated]] constexpr int DIV(const int a, const int b) { return   (a>=0) ? a/b : (a/b-(a%b<0)); } // should be the same as int(floor(double(a)/b))
-[[deprecated]] inline double DIV(double a, double b) { return floor(a/b);}
+DEPRECATED constexpr int DIV(const int a, const int b) { return   (a>=0) ? a/b : (a/b-(a%b<0)); } // should be the same as int(floor(double(a)/b))
+DEPRECATED inline double DIV(double a, double b) { return floor(a/b);}
 // inline double DIV(double a, int b){ return floor(a/b);}
 
 // 	int pow(int a, int b) { int r=1; for (; b>0; --b) r*=a; return r;}
@@ -210,7 +211,7 @@ string _V<T>::to_stringp() const {
 
 //template output operators
 template <class T>
-std::ostream& operator << (std::ostream& os, const _V<T>& a) { return os << to_string(a); }
+std::ostream& operator << (std::ostream& os, const _V<T>& a) { return os << a.x << ", " << a.y << ", " << a.z; }
 
 template <class T>
 std::istream& operator >> (std::istream& is, _V<T>& a) { char s; is >> a.x; is >> s; if (s!=',') is.putback(s);  is >> a.y; is >> s; if (s!=',') is.putback(s); is >> a.z; return (is); }
@@ -280,23 +281,21 @@ struct CompareAngle {
 };
 
 
-template <class T>
-struct TypeInfo<_V<T> > {
-	typedef const _V<T>& Return;
-	typedef _V<T> SReturn;
-	typedef const _V<T>& Parameter; 
-	typedef _V<T>& Reference; 
-	static SReturn fromString(const string& val) {
-		stringstream s(val);
-		_V<T>  ret;
-		s >> ret;
-		if (s.fail()) { throw string("Unable to read value from string \'") + val + "'";} 
-		return ret; 
-	}
+template <>
+struct TypeInfo<VDOUBLE > : public TypeInfoDefault<VDOUBLE>{
 	static string toString(Parameter val) {
-		return TypeInfo<T>::toString(val.x) + "," + TypeInfo<T>::toString(val.y) + "," + TypeInfo<T>::toString(val.z);
+		return TypeInfo<double>::toString(val.x) + "," + TypeInfo<double>::toString(val.y) + "," + TypeInfo<double>::toString(val.z);
 	}
 	static const string& name() { static const string n("VDouble"); return n;};
+};
+
+
+template <>
+struct TypeInfo<VINT > : public TypeInfoDefault<VINT>{
+	static string toString(Parameter val) {
+		return TypeInfo<int>::toString(val.x) + "," + TypeInfo<int>::toString(val.y) + "," + TypeInfo<int>::toString(val.z);
+	}
+	static const string& name() { static const string n("VInt"); return n;};
 };
 
 

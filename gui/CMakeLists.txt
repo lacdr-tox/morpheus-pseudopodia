@@ -43,7 +43,7 @@ if( ( CMAKE_VERSION VERSION_GREATER "2.8.4") AND (NOT "${MORPHEUS_OS}" STREQUAL 
 	ENDIF()
 ENDIF()
 
-FIND_PACKAGE(Doxygen REQUIRED)
+
 SET(QT_DOC_FOLDER ${CMAKE_CURRENT_BINARY_DIR}/doc)
 
 SET(QT_HELP_PROJECT "${QT_DOC_FOLDER}/html/index.qhp")
@@ -139,6 +139,7 @@ SET( SOURCES
     domnodeviewer.cpp
     domnodeeditor.cpp
     equationhighlighter.cpp 
+    feedback.cpp
     imagetable.cpp
     infoaction.cpp 
     jobcontroller.cpp
@@ -155,6 +156,7 @@ SET( SOURCES
     morpheus_model.cpp
     morpheus_xml.cpp
     moviedialog.cpp
+    network_access.cpp
     nodeadapter.cpp
     nodecontroller.cpp 
     parametersweeper.cpp
@@ -179,6 +181,7 @@ SET( HEADERS #headers that are commented out are not necessary for moc_* files (
     domnodeeditor.h
     domnodeviewer.h
     equationhighlighter.h 
+    feedback.h
     imagetable.h
     infoaction.h 
     jobcontroller.h 
@@ -193,6 +196,7 @@ SET( HEADERS #headers that are commented out are not necessary for moc_* files (
     # morpheus_xml.h
     model_index_mime_data.h
     moviedialog.h 
+    network_access.h
     nodeadapter.h
     nodecontroller.h
     localprocess.h 

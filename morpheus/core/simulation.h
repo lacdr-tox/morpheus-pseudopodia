@@ -51,24 +51,14 @@
 // due to non-linearity of the dependencies, we need forward declarations
 class PDE_Layer;
 class VectorField_Layer;
-class CellType;
-class Cell;
-class EdgeTrackerBase;
 
 #include "xml_functions.h"
 #include "scope.h"
 #include "scales.h"
-#include "cpm_layer.h"
-#include "cell_update.h"
+#include "cpm.h"
+// #include "cpm_layer.h"
+// #include "cell_update.h"
 
-
-
-// global random methods using a unique source of randomness to gain reproducability
-bool getRandomBool();
-double getRandom01();
-double getRandomGauss(double s);
-double getRandomGamma(double shape, double scale);
-uint getRandomUint(uint max_val);
 
 
 class MorpheusException {
@@ -95,67 +85,16 @@ private:
 };
 
 
-namespace CPM {
-	
-	
-	/// Is a CPM model
-	bool isEnabled();
-	/// Duration of a Monte Carlo Step
-	double getMCSDuration();
-	/// Temperature for Metropolis Kinetics
-// 	double getTemperature();
-    
-	shared_ptr<const CPM::LAYER> getLayer();
-	
-	const CPM::STATE& getNode(const VINT& pos);
-	const CPM::STATE& getEmptyState();
-		/**
-	 *   Get the position of a random empty node in the sub-lattice provided by the 
-	 *   range @param min , @param mx. If no range is provided, the whole lattice
-	 *   is parsed.
-	 *   This method throws an exception when it is unable to find an empty node
-	 *   in the given range
-	 */
-	VINT findEmptyNode(VINT min = VINT(0,0,0) , VINT max = VINT(0,0,0));
-	bool setNode(VINT position, CELL_ID cell_id);
-	// Interface for the MonteCarloSampler
-
-	const CPM::Update& createUpdate(VINT source, VINT direction, Update::Operation opx);
-	void setUpdate(CPM::Update& update);
-	bool executeCPMUpdate(const CPM::Update& update);
-	
-	const CPM::INDEX& getCellIndex(const CELL_ID cell_id);
-	const Cell& getCell(CELL_ID cell_id);
-	bool cellExists(CELL_ID cell_id);
-	
-	vector< weak_ptr<const CellType> > getCellTypes();
-	map<string, weak_ptr<const CellType> > getCellTypesMap();
-	
-	uint getEmptyCelltypeID();
-	weak_ptr<const CellType> getEmptyCelltype();
-	weak_ptr<const CellType> findCellType(string name);  /// Seek for celltype named @p name. Returns a pointer to the Celltype or an empty pointer if the celltype is unknown.
-	CELL_ID setCellType(CELL_ID cell_id, uint celltype);
-	
-	void enableEgdeTracking();
-	shared_ptr<const EdgeTrackerBase> cellEdgeTracker();
-	
-	/// 
-	bool isSurface(const VINT& pos);
-	uint nSurfaces(const VINT& pos);
-	void setInteractionSurface(bool enabled = true);
-	const Neighborhood& getBoundaryNeighborhood(); /// Returns the Neighborhood of a node boundary, sorted counterclockwise
-	const Neighborhood& getSurfaceNeighborhood(); /// Returns the Neighborhood, that designates a node to be surface node, sorted counterclockwise
-	
-}
-
-
 namespace SIM {
-
+	/// Simulation title as defined by XML
 	const string getTitle();
 	
-	/// Lenght of a lattice node in microns
+	/// Just create the dependency graph
+	bool dependencyGraphMode();
 	
+	/// Lenght of a lattice node in microns
 	double getNodeLength();
+	
 	string getLengthScaleUnit();
 	double getLengthScaleValue();
 	shared_ptr<const Lattice> getLattice();
@@ -172,7 +111,22 @@ namespace SIM {
 	string getTimeName(double time);
 	string getTimeScaleUnit();
 	void saveToXML();
-    
+	
+   /// Get the global Scope. All other scopes are direct or indirect sub-scopes of the global scope.
+	const Scope* getGlobalScope();
+
+	
+	/// \brief Find a globally accessible Symbol (global scope)
+	template <class S>
+	SymbolAccessor<S> findGlobalSymbol(string name) { return getGlobalScope()->findSymbol<S>(name); };
+	
+	/** \brief Find a globally accessible Symbol (global scope), that assumes a default if it's not defined in some sub-scopes
+	 * 
+	 *  \note Fails if the symbol is not defined in any sub-scopes
+	 */
+	template <class S>
+	SymbolAccessor<S> findGlobalSymbol(string name, const S& default_val) { return getGlobalScope()->findSymbol<S>(name,default_val); };
+		
 	/// Global symbol providing the simulation time
 	class TimeSymbol : public SymbolAccessorBase<double> {
 	public:
@@ -197,37 +151,6 @@ namespace SIM {
 		string linkType() const override { return "SpaceLink"; }
 	};
 	
-	const Scope* getScope();
-	const Scope* getGlobalScope();
-// 	Scope* createSubScope(string name, CellType* ct = 0);
-	void enterScope(const Scope *scope);
-	void leaveScope();
-
-	/// Find a symbol in the current scope
-	template <class S>
-	SymbolAccessor<S> findSymbol(string name) { return getScope()->findSymbol<S>(name); }
-	
-	///  \briefFind a writable symbol in the current scope
-	template <class S>
-	SymbolRWAccessor< S > findRWSymbol(string name) { return getScope()->findRWSymbol<S>(name); }
-	
-	/// \brief Find a globally accessible Symbol (global scope)
-	template <class S>
-	SymbolAccessor<S> findGlobalSymbol(string name) { return getGlobalScope()->findSymbol<S>(name); };
-	
-	/** \brief Find a globally accessible Symbol (global scope), that assumes a default if it's not defined in some sub-scopes
-	 * 
-	 *  \note Fails if the symbol is not defined in any sub-scopes
-	 */
-	template <class S>
-	SymbolAccessor<S> findGlobalSymbol(string name, const S& default_val) { return getGlobalScope()->findSymbol<S>(name,default_val); };
-	
-	/** Get the type name of the referred symbol
-	 * 
-	 * The naming convention is accessible via TypeInfo<type>::name()
-	 */
-	inline string getSymbolType(string name) { return getGlobalScope()->findSymbol(name)->type(); };
-
 }
 
 

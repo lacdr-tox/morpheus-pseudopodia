@@ -37,6 +37,7 @@ private:
     QSpinBox *sb_max_recent_files; /*!< Spinbox to type the maximum number of recent files */
     QSpinBox *sb_jobqueue_interval; /*!< Spinbox to type the interval between updates of jobs in JobQueue */
     QSpinBox *sb_jobqueue_interval_remote; /*!< Spinbox to type the interval between updates of jobs in JobQueue */
+    QCheckBox *cb_feedback;
 
     QLineEdit *le_local_executable; /*!< LineEdit to type in the path to the executable of the local morpheus executable. */
     QLineEdit *le_local_GnuPlot_executable; /*!< LineEdit to type in the path to the executable of the local GnuPlot. */

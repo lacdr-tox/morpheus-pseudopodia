@@ -276,27 +276,31 @@ void domNodeViewer::createTreeContextMenu(QPoint point)
 
         pasteNodeAction->menu()->clear();
         QList<QString> childs = contr->getAddableChilds(true);
-        QList<QDomNode> nodes = config::getInstance()->getNodeCopies();
-        for(int i = 0; i < nodes.size(); i++) {
-            QDomNode n = nodes.at(i);
-
-            QDomDocument doc("");
-            doc.appendChild(n);
-			QStringList xml_hint = doc.toString(4).split("\n");
-			if (xml_hint.size()>6) {
-				QStringList new_text;
-				new_text.append(xml_hint[0]);
-				new_text.append(xml_hint[1]);
-				new_text.append(xml_hint[2]);
-				new_text.append("\t\t...");
-				new_text.append(xml_hint[xml_hint.size()-3]);
-				new_text.append(xml_hint[xml_hint.size()-2]);
-				new_text.append(xml_hint[xml_hint.size()-1]);
-				xml_hint = new_text;
+		
+		// Get Nodes from local cache
+		QList<QDomNode> nodes = config::getInstance()->getNodeCopies();
+		for(int i = 0; i < nodes.size(); i++) {
+			QDomNode n = nodes.at(i);
+			if (childs.contains(n.nodeName())) {
+				QDomDocument doc("");
+				doc.appendChild(n);
+				QStringList xml_hint = doc.toString(4).split("\n");
+				if (xml_hint.size()>6) {
+					QStringList new_text;
+					new_text.append(xml_hint[0]);
+					new_text.append(xml_hint[1]);
+					new_text.append(xml_hint[2]);
+					new_text.append("\t\t...");
+					new_text.append(xml_hint[xml_hint.size()-3]);
+					new_text.append(xml_hint[xml_hint.size()-2]);
+					new_text.append(xml_hint[xml_hint.size()-1]);
+					xml_hint = new_text;
+				}
+				infoAction* act = new infoAction(n.nodeName(), xml_hint.join("\n"), this);
+				auto data = QVariant::fromValue(n);
+				act->setData(data);
+				pasteNodeAction->menu()->addAction(act);// Paste
 			}
-            infoAction* act = new infoAction(n.nodeName(), xml_hint.join("\n"), this);
-            act->setEnabled(childs.contains(n.nodeName()));
-            pasteNodeAction->menu()->addAction(act);// Paste
         }
         pasteNodeAction->setEnabled(! disabled && ! pasteNodeAction->menu()->isEmpty() );
 
@@ -381,8 +385,8 @@ void domNodeViewer::doContextMenuAction(QAction *action)
 
     QMenu *m = pasteNodeAction->menu(); // Paste
     if( m && m->actions().contains(action)) {
-        int i = m->actions().indexOf(action);
-        model->insertNode(treePopupIndex, config::getInstance()->getNodeCopies().at(i).cloneNode());
+		if (!action->data().value<QDomNode>().isNull())
+			model->insertNode(treePopupIndex, action->data().value<QDomNode>().cloneNode());
         return;
     }
 

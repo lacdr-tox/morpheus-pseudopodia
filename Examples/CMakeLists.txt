@@ -2,10 +2,11 @@ SET(EXAMPLE_SOURCES
 
 	ODE/PredatorPrey.xml
 	ODE/CellCycle.xml
+	ODE/CellCycle_Global.xml
 	ODE/MAPK_SBML.xml
 	ODE/LateralSignaling.xml
 	ODE/CellCycleDelay.xml
-	
+
 
 	PDE/ActivatorInhibitor_1D.xml
 	PDE/ActivatorInhibitor_2D.xml
@@ -27,6 +28,7 @@ SET(EXAMPLE_SOURCES
 	CPM/RunAndTumble.xml
 	CPM/ConvergentExtension.xml
 	#CPM/Protrusion.xml
+	CPM/CPM_Game_of_Life.xml
 
 
 	Multiscale/AutocrineChemotaxis.xml
@@ -37,18 +39,20 @@ SET(EXAMPLE_SOURCES
 	Multiscale/PlanarCellPolarity.xml
 	Multiscale/VascularPatterning.xml
 	Multiscale/Dictyostelium.xml
+	Multiscale/ExcitableTissue.xml
 
 
 	Miscellaneous/GameOfLife.xml
+	Miscellaneous/GameOfLife_Global.xml
 	Miscellaneous/FrenchFlag.xml
 	Miscellaneous/ParticleAggregation.xml
 	Miscellaneous/ShellCA.xml
 
 )
 
-IF (NOT MORPHEUS_RELEASE_BUNDLE) 
-	SET(EXAMPLE_SOURCES 	
-	# add non-public examples 
+IF (NOT MORPHEUS_RELEASE_BUNDLE)
+	SET(EXAMPLE_SOURCES
+	# add non-public examples
 	${EXAMPLE_SOURCES})
 ENDIF()
 

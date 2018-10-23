@@ -98,6 +98,30 @@ void Scope::registerSymbol(Symbol const_symbol)
 	}
 }
 
+void Scope::removeSymbol(Symbol sym) {
+	auto it = symbols.find(sym->name());
+	if (it != symbols.end())  {
+		symbols.erase(it);
+		if (dynamic_pointer_cast<const SymbolAccessorBase<VDOUBLE> >( sym)) {
+			symbols.erase(sym->name() + ".x");
+			symbols.erase(sym->name() + ".y");
+			symbols.erase(sym->name() + ".z");
+			symbols.erase(sym->name() + ".theta");
+			symbols.erase(sym->name() + ".phi");
+			symbols.erase(sym->name() + ".abs");
+		}
+		if ( ct_component ) {
+			assert(parent);
+			// if it's a real symbol, not derived like 'vec.x' 
+			if (! dynamic_pointer_cast<const VectorComponentAccessor>(sym) ) {
+				parent->removeSubScopeSymbol(sym);
+			}
+		}
+	}
+	else cout << "Unable to remove Symbol " << sym->name() << " of type " << sym->linkType() << endl;
+	
+};
+
 void Scope::init()
 {
 	for (auto symbol : composite_symbols) {
@@ -176,12 +200,19 @@ void Scope::registerSubScopeSymbol(Scope *sub_scope, Symbol symbol) {
 			composite_sym_base = composite_sym;
 		}
 		else {
-			throw string("Composite symbol type not implemented in Scope ") + symbol->type();
+			throw string("Symbol type not implemented in CompositeSymbol ") + "\n" + symbol->type() + "!=" + TypeInfo<VDOUBLE>::name() + "!=" + TypeInfo<double>::name();
 		}
 		composite_sym_base->setScope(this);
 		composite_sym_i->addCellTypeAccessor(sub_scope_id, symbol);
 		composite_symbols[composite_sym_i->name()] = composite_sym_i;
 		registerSymbol(composite_sym_base);
+	}
+}
+
+void Scope::removeSubScopeSymbol(Symbol sym) {
+	auto it = symbols.find(sym->name());
+	if (it != symbols.end()) {
+		dynamic_pointer_cast<CompositeSymbol_I>(it->second)->removeCellTypeAccessor(sym);
 	}
 }
 
@@ -194,7 +225,7 @@ Symbol Scope::findSymbol(string name) const {
 		return parent->findSymbol(name);
 	}
 	else {
-		throw string("Unknown symbol '") + name + string("' in findSymbol.");
+		throw SymbolError(SymbolError::Type::Undefined, string("Unknown symbol '") + name + string("' in findSymbol."));
 	}
 }
 

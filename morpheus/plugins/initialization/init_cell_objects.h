@@ -15,10 +15,11 @@
 #include "core/interfaces.h"
 #include "core/celltype.h"
 
-/** \defgroup InitCellObjects
+/** 
+ * \defgroup InitCellObjects
+ * \brief Initialize a population of cells with predefined geometrical objects in a regular lattice
  * \ingroup ML_Population
-\ingroup InitializerPlugins
-\brief Initialize a population of cells with predefined geometrical objects in a regular lattice
+ * \ingroup InitializerPlugins
 
 Initializes cells with defined shapes in 2D and 3D, arranged in a regular fashion. 
 
@@ -121,68 +122,75 @@ choose lattice size (repetitions.x * displacements.x, repetitions.y * displaceme
 
 */
 
-bool more_double (const pair<double, int>& i, const pair<double, int>& j);
-
 class InitCellObjects : public Population_Initializer
 {
-private:
-	enum Mode { ORDER, DISTANCE };
-	enum OType { POINT, BOX, SPHERE, ELLIPSOID, CYLINDER};
-	enum Orientation  { X, Y, Z };
-
-	PluginParameter2<Mode, XMLNamedValueReader, DefaultValPolicy> mode;
-
-	double random_displacement;
-	shared_ptr<const Lattice> lattice;
-
-
-	struct CellObject{
-		int id;
-		VDOUBLE center;
-		VDOUBLE center2; // only used for oblique cylinders (i.e. cylinders that are not aligned to x,y,z axis)
-		VDOUBLE axes; // only used ellipes and ellipsoids
-		VDOUBLE focus1; // only used ellipes and ellipsoids
-		VDOUBLE focus2; // only used ellipes and ellipsoids
-		bool oblique;
-		double radius;
-		VDOUBLE origin;
-		VDOUBLE boxsize;
-		OType type;
-		Orientation orientation;
-	};
 	
-	struct Candidate{
-		int index;
-		VDOUBLE distance;
-		double abs_distance;
-	};
-
-	
-// 	Mode mode;
-	vector<CellObject> cellobjects;
-	int setNodes(CellType* ct);
-	
-	//void arrangeObject( CellObject c, vector<CellObject>& objectlist, VDOUBLE displacement, VINT repetitions);
-	void arrangeObjectCombinatorial( CellObject c, vector<CellObject>& objectlist, VDOUBLE displacement, VINT repetitions);
-	CellObject getObjectProperties(const XMLNode oNode);
-	
-	void setFociEllipsoid(CellObject& co);
-	bool insideEllipsoid(VDOUBLE point, VDOUBLE center, VDOUBLE axes);
-	double distanceToLineSegment(VDOUBLE p, VDOUBLE l1, VDOUBLE l2);
-
-	double distancePointToEllipse(double e0, double e1, double y0, double y1, double& x0, double& x1);
-	double distancePointToEllipsoid(double e0, double e1, double e2, double y0, double y1, double y2, double& x0, double& x1, double& x2);
-	
-	void convertPos(string str_Pos);
-	bool createNode(VINT newPos, CellType* ct);
-	int calculateLines(CellType* ct);
-
 public:
 	InitCellObjects();
 	DECLARE_PLUGIN("InitCellObjects");
-
 	void loadFromXML(const XMLNode, Scope* scope) override;
 	vector<CPM::CELL_ID> run(CellType* ct) override;
+	
+	/// Interface class for Objects to be placed.
+	class CellObject {
+		public:
+			virtual ~CellObject() {};
+			virtual string name() const =0;
+			virtual VDOUBLE center() const =0;
+			virtual void init() = 0;
+			virtual double affinity(const VDOUBLE& pos) const =0;
+			virtual bool inside(const VDOUBLE& pos) const =0;
+			virtual void displace(VDOUBLE distance) =0;
+			virtual unique_ptr<CellObject> clone() const =0;
+			void setCellID(CPM::CELL_ID id) { cell_id= id; } 
+			CPM::CELL_ID cellID() { return cell_id; } 
+		private: 
+			CPM::CELL_ID cell_id = CPM::NO_CELL;
+	};
+	
+private:
+	enum class  Mode { ORDER, DISTANCE };
+	PluginParameter2<Mode, XMLNamedValueReader, DefaultValPolicy> mode;
+	shared_ptr<const Lattice> lattice;
+	
+	struct Candidate{
+		int index;
+		double affinity;
+	};
+
+	vector< unique_ptr<CellObject> > cellobjects;
+	int setNodes(CellType* ct);
+	void arrangeObjectCombinatorial( unique_ptr<CellObject> c_template, vector< unique_ptr<CellObject> >& objectlist, VDOUBLE displacement, VINT repetitions, double random_displacement);
+	VDOUBLE distanceToLineSegment(VDOUBLE p, VDOUBLE l1, VDOUBLE l2);
+	
+// 	struct CellObject{
+// 		CellObject() {
+// 			displacement = VDOUBLE(0,0,0);
+// 			center->setXMLPath("center");
+// 			center2->setXMLPath("center2");
+// 			axes->setXMLPath("axes");
+// 			radius->setXMLPath("radius");
+// 			origin->setXMLPath("origin");
+// 			boxsize->setXMLPath("size");
+// 			orientation->setXMLPath("orientation");
+// 			map<string, Orientation> omap = { {"x", Orientation::X},  {"y", Orientation::Y}, {"z", Orientation::Z} };
+// 			orientation->setConversionMap(omap);
+// 		}
+// 		int id;
+// 		VDOUBLE displacement;
+// 		PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> center;
+// 		PluginParameter_Shared<VDOUBLE, XMLEvaluator, DefaultValPolicy> center2; // only used for oblique cylinders (i.e. cylinders that are not aligned to x,y,z axis)
+// 		PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> axes; // only used ellipes and ellipsoids
+// // 		PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> focus1; // only used ellipes and ellipsoids
+// // 		PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> focus2; // only used ellipes and ellipsoids
+// 		bool oblique;
+// 		PluginParameter_Shared<double,  XMLEvaluator, RequiredPolicy> radius;
+// 		PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> origin;
+// 		PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> boxsize;
+// 		OType type;
+// 		PluginParameter_Shared<Orientation, XMLNamedValueReader, RequiredPolicy> orientation;
+// 	};
+	
 
 };
 

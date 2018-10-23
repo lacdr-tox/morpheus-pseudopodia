@@ -149,6 +149,15 @@ public:
 	T value, buffer;
 };
 
+/** Primitive Symbol (accessor) for cell-attached Properties
+ * 
+ * The PrimitivePropertySymbol attaches cell Properties to a scope.
+ * It provides all the necessary meta-information (type, constness, symbol name)
+ * and the mediates access to the cell-attached Properties. 
+ * 
+ * XML snapshoting is not supported. See PropertySymbol for XML interfaced properties.
+ */
+
 template <class T>
 class PrimitivePropertySymbol : public SymbolRWAccessorBase<T> {
 public:
@@ -158,6 +167,7 @@ public:
 	std::string linkType() const override { return "CellPropertyLink"; }
 	const string& description() const override { return this->name(); }
 	typename TypeInfo<T>::SReturn get(const SymbolFocus& f) const override { return getCellProperty(f)->value; }
+	typename TypeInfo<T>::Reference getRef(const SymbolFocus& f) const { return getCellProperty(f)->value; }
 // 		void init(const SymbolFocus&) const override {};
 	void set(const SymbolFocus& f, typename TypeInfo<T>::Parameter value) const override { getCellProperty(f)->value = value; };
 	void setBuffer(const SymbolFocus& f, typename TypeInfo<T>::Parameter value) const override { getCellProperty(f)->buffer = value; };
@@ -268,12 +278,12 @@ protected:
 
 	// Cell populations
 	vector< CPM::CELL_ID > cell_ids;
-	struct IntitPropertyDesc {string symbol; string expression;  } ;
+	struct InitPropertyDesc {string symbol; string expression;  } ;
 	struct CellPopDesc {
 		int pop_size;
 		XMLNode xPopNode;
 		vector<CPM::CELL_ID> cells;
-		vector<IntitPropertyDesc> property_initializers;
+		vector<InitPropertyDesc> property_initializers;
 		vector< shared_ptr<Population_Initializer> > pop_initializers;
 	};
 	vector<CellPopDesc> cell_populations;

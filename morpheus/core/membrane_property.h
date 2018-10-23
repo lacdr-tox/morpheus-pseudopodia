@@ -33,7 +33,6 @@ A MembraneProperty is a circular (2D) or spherical (3D) lattice mapped to the su
 Optionally, a \b Diffusion rate may be specified.
 
 - \b rate: diffusion coefficient
-- \b unit (optional): physical unit of diffusion coefficient
 - \b well-mixed (optional): if true, homogenizes scalar field. Requires rate=0.
 
 **/

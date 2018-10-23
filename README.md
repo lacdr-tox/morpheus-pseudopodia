@@ -2,7 +2,7 @@ Morpheus
 ========
 
 Morpheus is a modeling and simulation environment for the study of multiscale and multicellular systems.
-For further information look at https://imc.zih.tu-dresden.de/wiki/morpheus .
+For further information look at https://morpheus.gitlab.io .
 
 Morpheus has been developed by Jörn Starruß and Walter de Back at the Center for High Performance Computing at the Technische Universität Dresden, Germany.
 
@@ -13,7 +13,7 @@ Morpheus has been developed by Jörn Starruß and Walter de Back at the Center f
 Looking for latest stable release?
 =====================
 
-If you are looking for the latest stable release of Morpheus, and do not necessarily need the source code, please download the precompiled packages for MS Windows, Mac OSX and Linux are available on the [download page](https://imc.zih.tu-dresden.de/wiki/morpheus/doku.php?id=download:download). 
+If you are looking for the latest stable release of Morpheus, and do not necessarily need the source code, please download the precompiled packages for MS Windows, Mac OSX and Linux are available on the [download page](https://morpheus.gitlab.io/#download). 
 
 
 Resources
@@ -24,7 +24,7 @@ Morpheus is actively supported and provides help for users and developers:
 - [User forum](https://groups.google.com/forum/#!forum/morpheus-users): Questions and answers on modeling with Morpheus
 - [Issue tracker](https://gitlab.com/morpheus.lab/morpheus/issues): Bug reports and feature requests
 
-Documentation for users as well as plugin developers here found on the [wiki pages](https://gitlab.com/morpheus.lab/morpheus/wikis/home):
+Documentation for users as well as plugin developers here found on the [gitlab wiki](https://gitlab.com/morpheus.lab/morpheus/wikis/home) and on the on the [old wiki](https://imc.zih.tu-dresden.de/wiki/morpheus):
 
 - [User manual](https://gitlab.com/morpheus.lab/morpheus/wikis/user-manual) (under construction)
 - [Plugin dev guide](https://gitlab.com/morpheus.lab/morpheus/wikis/dev-guide) (under construction)
@@ -33,7 +33,8 @@ These docs may not reflect the latest state and are currently being updated.
 
 To find out more about Morpheus, please take a look at the home page:
 
-- [Homepage](https://imc.zih.tu-dresden.de//wiki/morpheus): Binary downloads and documentation (slightly outdated, will move to gitlab in due course)
+- [Homepage](https://morpheus.gitlab.io): Binary downloads and news.
+
 
 Install
 =======

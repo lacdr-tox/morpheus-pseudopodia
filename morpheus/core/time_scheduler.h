@@ -18,19 +18,24 @@
 #include "interfaces.h"
 // #include "function.h"
 
-/** \page Scheduling Time Scheduling
-frequencies to dependent processes.  
- *  \brief Time Scheduling takes care to safely join models with different updating schemes into a coupled simulation system,
- *  and to propagate update frequencies to dependent processes.
+/** 
+ * \page Scheduling Scheduling
+ * \brief Time Scheduling takes care to safely join various model components into a coupled simulation.
  * 
- *  Time continuous vs. time discrete vs. instantaneous vs. reporters vs. analysers ..
+ * Model components with different updating schemes, i.e sub-models, data mappers, events, .. ,
+ * are safely joined into a coupled simulation by ordering their execution and adjusting their
+ * update frequencies using the dependency graph.
  * 
- *  Here shall be a lot of information about the scheduling ....
- *  \section Aims
- *   - Determine the order of updating schemes and plugins
- *   - Determine the update frequencies based on the model interdependencies and numerical constraints.
+ * Based on their rules for time step adjustment we discriminate time continuous, time discrete
+ * and instantaneous processes, mappers and analysers (see TimeStepListener).
  * 
- *  \section DependencyProTree Dependency tree
+ * \section Aims
+ *   - Determine a valid sequential order of the model components.
+ *   - Determine an optimized update frequencies based on the model interdependencies \
+ *     and numerical constraints. the constraints of the numerical schemes.
+ * 
+ *  \section DependencyTree Dependency tree
+ * Morpheus uses Symbol
  * 
  *  \section UpdatePhase Update phases
  * 

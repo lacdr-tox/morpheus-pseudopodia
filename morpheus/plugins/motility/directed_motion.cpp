@@ -37,7 +37,7 @@ double DirectedMotion::delta(const SymbolFocus& cell_focus, const CPM::Update& u
 	
 	double s = 0.0;
 	if ( (update.opAdd() && protrusion()) || ( update.opRemove() && retraction()) )
-		s = strength( update.focus() );
+		s = strength( cell_focus );
 	
 	double dE = -s * cell_volume * dot( update_direction, preferred_direction );
 
