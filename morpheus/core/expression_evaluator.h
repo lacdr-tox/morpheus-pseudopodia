@@ -24,15 +24,19 @@ unique_ptr<mu::Parser> createMuParserInstance();
 \defgroup MuParser Evaluating math expressions
 \ingroup Concepts
 
-Mathematical expressions are evaluated at run-time using [MuParser](http://beltoforion.de/article.php?a=muparser), while all variables are resolved using with Morpheus' \ref symbol system.
+Mathematical expressions are evaluated at run-time using [MuParser](http://beltoforion.de/article.php?a=muparser), while all variables are resolved using Morpheus' \ref Symbols system.
 
-Operators:
+**Operators**:
 +, -, *, /, ^, =, >=, <=, !=, ==, <, >
+and, or, xor, !
 
-Predefined Functions:
-if([condition], [then], [else]), and, or, xor, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh, log2, log10, ln, exp, pow, sqrt, sign, rint, abs, min, max, sum, avg, mod, piecewise, leq, geq
+**Predefined Functions**:
+if([condition], [then], [else]), and, or, xor, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh, log2, log10, ln, exp, pow, sqrt, sign, rint, abs, min, max, sum, avg, mod
 
-Random number generators:
+**SBML compatibility Functions**:
+piecewise, lt, leq, eq, neq, geq, gt, arcsin, arccos, arctan, arcsinh, arccosh, arctanh
+
+**Random number** generators:
 rand_uni([min], [max])
 rand_int([min], [max])
 rand_norm([mean], [stdev])
@@ -172,7 +176,7 @@ typedef std::mutex GlobalMutex;
 template <class T>
 class ThreadedExpressionEvaluator {
 public:
-	ThreadedExpressionEvaluator(string expression, const Scope* scope, bool partial_spec = false) { evaluators.push_back( unique_ptr<ExpressionEvaluator<T> >(new ExpressionEvaluator<T>(expression, scope, partial_spec)) );};
+	ThreadedExpressionEvaluator(string expression, const Scope* scope, bool partial_spec = false) { evaluators.push_back( make_unique<ExpressionEvaluator<T> >(expression, scope, partial_spec) );};
 	
 	void setLocalsTable(const vector<EvaluatorVariable>& locals) { for (auto& evaluator : evaluators) evaluator->setLocalsTable(locals); }
 	void setLocals(const double* data) const { getEvaluator()->setLocals(data); }
