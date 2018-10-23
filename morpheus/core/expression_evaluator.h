@@ -24,7 +24,7 @@ unique_ptr<mu::Parser> createMuParserInstance();
 \defgroup MuParser Evaluating math expressions
 \ingroup Concepts
 
-Mathematical expressions are evaluated at run-time using [MuParser](http://beltoforion.de/article.php?a=muparser), while all variables are resolved using with Morpheus' \ref symbols system.
+Mathematical expressions are evaluated at run-time using [MuParser](http://beltoforion.de/article.php?a=muparser), while all variables are resolved using with Morpheus' \ref symbol system.
 
 Operators:
 +, -, *, /, ^, =, >=, <=, !=, ==, <, >

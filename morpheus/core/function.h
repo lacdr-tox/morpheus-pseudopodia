@@ -10,7 +10,7 @@
 //////
 
 /**
-\defgroup Function
+\defgroup ML_Function Function
 \ingroup ML_Global
 \ingroup ML_CellType
 \ingroup ML_System
