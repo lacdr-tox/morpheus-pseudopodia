@@ -496,7 +496,7 @@ int InitCellObjects::setNodes(CellType* ct)
 					}
 					if( CPM::getNode(pos) == CPM::getEmptyState() ) { // do not overwrite cells (unless medium)
 						// take care that node positions in cells are contiguous, also in case of periodic boundary conditions
-						VINT latt_center = lattice->from_orth(cellobjects[winner]->center());
+						VINT latt_center = lattice->from_orth(cellobjects[ candidates[winner].index ]->center());
 						VINT pos_optimal = latt_center - lattice->node_distance( latt_center,  pos);
 						CPM::setNode(pos_optimal, cellobjects[ candidates[winner].index ]->cellID() );
 					}

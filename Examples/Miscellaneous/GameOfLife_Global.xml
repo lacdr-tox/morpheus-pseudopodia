@@ -45,8 +45,7 @@ if((s == 0 and sum >= y and sum &lt;= z ), 1, 0))
         <TimeSymbol symbol="time"/>
     </Time>
     <Analysis>
-        <!--    <Disabled>
-        <Gnuplotter time-step="5" interpolation="false" decorate="false">
+        <Gnuplotter time-step="1" decorate="false">
             <Terminal name="png"/>
             <Plot>
                 <Field symbol-ref="s">
@@ -56,31 +55,6 @@ if((s == 0 and sum >= y and sum &lt;= z ), 1, 0))
                     </ColorMap>
                 </Field>
             </Plot>
-            <Disabled>
-                <Plot>
-                    <Field symbol-ref="sum"/>
-                </Plot>
-            </Disabled>
         </Gnuplotter>
-    </Disabled>
--->
-        <!--    <Disabled>
-        <Logger time-step="1">
-            <Input>
-                <Symbol symbol-ref="s"/>
-                <Symbol symbol-ref="sum"/>
-            </Input>
-            <Output>
-                <TextOutput file-format="matrix" header="false"/>
-            </Output>
-        </Logger>
-    </Disabled>
--->
-        <!--    <Disabled>
-        <TiffPlotter timelapse="true" format="8bit" OME-header="true" compression="false" time-step="5">
-            <Channel symbol-ref="s"/>
-        </TiffPlotter>
-    </Disabled>
--->
     </Analysis>
 </MorpheusModel>
