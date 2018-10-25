@@ -1,5 +1,9 @@
 # ChangeLog
 
+## Patch 2.0.1
+  * Fixed VectorRules not working
+  * Fixed broken image table for parameter sweeps
+
 ## Release 2.0
 
 ### MorpheusML
