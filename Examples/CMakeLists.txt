@@ -29,6 +29,7 @@ SET(EXAMPLE_SOURCES
 	CPM/ConvergentExtension.xml
 	#CPM/Protrusion.xml
 	CPM/CPM_Game_of_Life.xml
+	CPM/Stigmergy_VectorField.xml
 
 
 	Multiscale/AutocrineChemotaxis.xml
