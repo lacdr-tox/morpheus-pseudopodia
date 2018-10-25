@@ -44,7 +44,7 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
     <CellTypes>
         <CellType class="biological" name="amoeba">
             <VolumeConstraint target="2500" strength="50"/>
-            <SurfaceConstraint target="0.9" mode="aspherity" strength="5"/>
+            <SurfaceConstraint target="1" mode="aspherity" strength="5"/>
             <Protrusion field="act" maximum="200" strength="80"/>
             <ConnectivityConstraint/>
         </CellType>
