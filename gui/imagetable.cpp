@@ -247,7 +247,7 @@ void ImageTableDialog::readSweepSummary( QString image_filename ){
 
 
     QDir dir(currentdir);
-    QFile file(currentdir+"/"+"sweep_summary.txt");
+    QFile file(currentdir+"/"+"sweep_data.csv");
     if(!file.open(QIODevice::ReadOnly)) {
         QMessageBox::information(0, "error", file.errorString());
     }
@@ -353,7 +353,7 @@ void ImageTableDialog::makePDF( ){
 
     WaitThread* wt = new WaitThread();
 	wt->msleep(1000);
-	
+
     bool file_exists = QFile(fi.absoluteFilePath()).exists();
     while( !file_exists ){
             wt->msleep(100);
