@@ -435,7 +435,9 @@ void settingsDialog::saveSettings()
         app_new.preference_max_recent_files = sb_max_recent_files->value();
         app_new.preference_jobqueue_interval= sb_jobqueue_interval->value();
         app_new.preference_jobqueue_interval_remote= sb_jobqueue_interval_remote->value();
-		app_new.preference_allow_feedback = cb_feedback->isChecked();
+#ifdef MORPHEUS_FEEDBACK
+        app_new.preference_allow_feedback = cb_feedback->isChecked();
+#endif
 
         qDebug() << "Preferences: "<< endl;
         qDebug() << "\t app.preference_stdout_limit             :  " <<app_new.preference_stdout_limit << endl;
