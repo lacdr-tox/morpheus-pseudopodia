@@ -91,7 +91,7 @@ public:
 		VDOUBLE in_distance(0,0,0);
 		bool inside = false;
 		
-		auto pos = SIM::lattice().orth_distance(real_pos, origin);
+		auto pos = SIM::lattice().orth_distance(real_pos, center()) + 0.5*size;
 		
 		if (pos.x<0)
 			out_distance.x=-pos.x;
