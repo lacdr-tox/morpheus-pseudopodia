@@ -1,9 +1,10 @@
 MESSAGE(STATUS "BUILDING MORPHEUS GUI")
 
-
-FIND_PACKAGE(Qt4 REQUIRED COMPONENTS QtCore QtGui QtSql QtNetwork QtXML QtHelp QtSvg OPTIONAL_COMPONENTS QtWebkit)
-OPTION(MORPHEUS_NO_QTWEBKIT "Don't use QtWebKit to show documentation. Fallback to QTextView" OFF)
-MARK_AS_ADVANCED(MORPHEUS_NO_QTWEBKIT)
+cmake_policy(SET CMP0071 NEW)
+#FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets Sql Network Xml Svg WebKit Help  REQUIRED)
+FIND_PACKAGE(Qt5 REQUIRED Widgets Sql Network Xml Svg WebKit Help)
+# OPTION(MORPHEUS_NO_QTWEBKIT "Don't use QtWebKit to show documentation. Fallback to QTextView" OFF)
+# MARK_AS_ADVANCED(MORPHEUS_NO_QTWEBKIT)
 
 ### Include Qt directories  *  Add Qt standard Defines  *  Create QT_LIBRARIES variable, including all required libs 
 
@@ -12,8 +13,12 @@ FIND_PACKAGE(ZLIB REQUIRED)
 SET(GUI_EXEC_NAME "${MORPHEUS_EXEC_NAME}-gui")
 #OPTION(MORPHEUS_REMOTE "Enable support for remote computing resources. Depends on libSSH." OFF)
 
-INCLUDE(${QT_USE_FILE})
-ADD_DEFINITIONS(${QT_DEFINITIONS})
+#Do we still need that?
+#INCLUDE(${QT_USE_FILE})
+MESSAGE(STATUS qt5 ${QT5_DEFINITIONS} qt ${QT_DEFINITIONS})
+ADD_DEFINITIONS(${QT5_DEFINITIONS})
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fPIC" )
+
 
 #IF (MORPHEUS_REMOTE)
 #	FIND_PACKAGE(SSH)
@@ -247,8 +252,8 @@ ENDIF()
 SET(EXAMPLES_RC_FILES  "")
 SET(RESOURCE_DEPENDENCIES "")
 foreach(example ${EXAMPLES_SRC} )
-	SET(EXAMPLES_RC_FILES  ${EXAMPLES_RC_FILES} "		<file alias=\"${example}\">${EXAMPLES_PATH}/${example}</file>\n")
-# 	LIST( APPEND RESOURCE_DEPENDENCIES ${EXAMPLES_PATH}/${example} )
+	SET(EXAMPLES_RC_FILES  "${EXAMPLES_RC_FILES}		<file alias=\"${example}\">${EXAMPLES_PATH}/${example}</file>\n")
+#	LIST( APPEND EXAMPLES_RC_FILES "           <file alias=\"${example}\">${EXAMPLES_PATH}/${example}</file>" )
 endforeach()
 # LIST( APPEND RESOURCE_DEPENDENCIES ${MORPHEUS_XSD_FILE})
 
@@ -256,7 +261,7 @@ endforeach()
 configure_file(ext_files.rc.in ext_files.rc @ONLY)
 # compile the resources
 SET( RESOURCES link_data.qrc ${CMAKE_CURRENT_BINARY_DIR}/ext_files.rc)
-QT4_ADD_RESOURCES( RESOURCES_RCC ${RESOURCES} )
+QT5_ADD_RESOURCES( RESOURCES_RCC ${RESOURCES} )
 
 IF( MINGW )
 	SET( ICON_RESOURCE icons/win/morpheus.rc )
@@ -268,7 +273,8 @@ ENDIF( )
 
 
 ### run moc and rcc over the headers and resource files
-QT4_WRAP_CPP( HEADERS_MOC ${HEADERS} )
+# QT4_WRAP_CPP( HEADERS_MOC ${HEADERS} )
+SET(CMAKE_AUTOMOC ON)
 
 ADD_EXECUTABLE( ${GUI_EXEC_NAME} WIN32 ${SOURCES} ${HEADERS_MOC} ${RESOURCES_RCC} )
 ADD_DEPENDENCIES(${GUI_EXEC_NAME} xmlSchema AppDoc)
@@ -282,7 +288,9 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR} ${ZLIB_INCLUDE_DIR})
 ### create executable and link to Qt libraries and external libraries
 # note: use the moc/rcc processed  headers/reources 
 
-
+INCLUDE_DIRECTORIES(${Qt5Widgets_INCLUDE_DIRS} ${Qt5Xml_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${Qt5Webkit_INCLUDE_DIRS} )
+MESSAGE(STATUS WebKit ${Qt5WebKit_INCLUDE_DIRS} )
 TARGET_LINK_LIBRARIES(${GUI_EXEC_NAME} qtsingleapp ${QT_LIBRARIES} ${ZLIB_LIBRARY} )
 
 IF( "${MORPHEUS_OS}" STREQUAL "WIN32")
