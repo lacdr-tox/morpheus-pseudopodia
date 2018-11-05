@@ -44,6 +44,7 @@ struct ModelDescriptor {
     QList<MorphModelEdit> edit_operations;
     QList<AbstractAttribute*> terminal_names;
 	QList<AbstractAttribute*> sys_file_refs;
+	AbstractAttribute* time_symbol = nullptr;
     QString title;
     QString details;
     int edits;

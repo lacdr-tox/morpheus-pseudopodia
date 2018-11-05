@@ -177,6 +177,9 @@ QObject(parent)
 	if ( name=="Details" ) {
 		model_descr->details = getText() ;
 	}
+	if ( name=="TimeSymbol") {
+		model_descr->time_symbol = attribute("symbol");
+	}
 	if ( name=="Lattice" ) {
 		if (attributes.contains("class") && firstActiveChild("Size")->attributes.contains("value")) {
 			QObject* adapter = new LatticeStructureAdapter(this, attributes["class"], firstActiveChild("Size")->attributes["value"]);

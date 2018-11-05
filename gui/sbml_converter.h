@@ -12,10 +12,17 @@
 #ifndef SBML_CONVERTER_H
 #define SBML_CONVERTER_H
 
-#include <QDialog>
 #include <QDomDocument>
 #include <QMap>
 #include <QStringList>
+#include <QDialog>
+#include <QLineEdit>
+#include <QLabel>
+#include <QCheckBox>
+#include <QPushButton>
+#include <QGroupBox>
+#include <QLayout>
+#include <QStyle>
 #include <QDebug>
 #include "morpheus_model.h"
 #include "config.h"
@@ -31,12 +38,16 @@
 
 //LIBSBML_CPP_NAMESPACE
 
+struct DelayDef { string symbol; string delayed_symbol; double delay; };
 
 namespace ASTTool {
 	void renameSymbol(ASTNode* node, const QString& old_name, const QString& new_name );
 	void renameSymbol(ASTNode* node, const string& old_name, const string& new_name );
+	void renameTimeSymbol(ASTNode* node, const QString& time_symbol);
 	void replaceSymbolByValue(ASTNode* node, const string& name, double value );
 	void replaceFunction(ASTNode* node, FunctionDefinition* function);
+	
+	void replaceDelays(ASTNode* math, QList<DelayDef>& delays);
 }
 
 //LIBSBML_CPP_NAMESPACE
@@ -105,6 +116,7 @@ private:
 	QSet<QString> constants;
 	QSet<QString> variables;
 	QSet<QString> vars_with_assignments;
+	QList<DelayDef> delays;
 	QMap<QString, AbstractAttribute*> diffeqn_map;
 
 	bool readSBML(QString sbml_file, QString target_code);

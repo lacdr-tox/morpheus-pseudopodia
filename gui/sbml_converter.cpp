@@ -9,6 +9,8 @@
  *
  * */
 
+bool operator ==(const DelayDef& a, const DelayDef& b) { return a.symbol == b.symbol && a.delay == b.delay; }
+
 namespace ASTTool {
 
 void renameSymbol(ASTNode* node, const QString& old_name, const QString& new_name ) {
@@ -23,6 +25,17 @@ void renameSymbol(ASTNode* node, const string& old_name, const string& new_name)
 	for (uint i=0; i<node->getNumChildren(); i++) {
 		renameSymbol(node->getChild(i),old_name, new_name);
 	}
+}
+
+void renameTimeSymbol(ASTNode* node, const QString& time_name) {
+	if (node->getType() == AST_NAME_TIME) {
+		node->setType(AST_NAME);
+		node->setName(time_name.toStdString().c_str());
+	}
+	for (uint i=0; i<node->getNumChildren(); i++) {
+		renameTimeSymbol(node->getChild(i),time_name);
+	}
+	
 }
 
 void replaceSymbolByValue(ASTNode* node, const string& name, double value)
@@ -57,6 +70,27 @@ void replaceFunction(ASTNode* node, FunctionDefinition* function)
 	}
 	for (uint i=0; i<node->getNumChildren(); i++) {
 		replaceFunction(node->getChild(i), function);
+	}
+}
+
+void  replaceDelays(ASTNode* math, QList<DelayDef>& delays) {
+	if (math->getType() == AST_FUNCTION_DELAY) {
+		// TODO We should check here what kind of delays already exist ....
+		DelayDef d;
+		d.symbol = math->getChild(0)->getValue();
+		d.delay = math->getChild(1)->getValue();
+		d.delayed_symbol = d.symbol + "_"+ to_string(d.delay);
+		if (int i=delays.indexOf(d))
+			d=delays[i];
+		else 
+			delays << d;
+		
+		math->setType(AST_NAME);
+		math->setName(d.delayed_symbol.c_str());
+	}
+	
+	for (uint i=0; i<math->getNumChildren(); i++) {
+		replaceDelays(math->getChild(i),delays);
 	}
 }
 
@@ -391,6 +425,22 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 
 	this->addSBMLInitialAssignments(sbml_model);
 
+	// Add all delays collected while parsing
+	for (const auto& delay : delays) {
+		bool does_not_exist=delays.contains(delay);
+		if (does_not_exist) {
+			auto delay_property = target_scope->insertChild("DelayProperty");
+			delay_property->attribute("symbol")->set(delay.delayed_symbol);
+			delay_property->attribute("delay")->set(delay.delay);
+			
+			auto delay_eqn = target_scope->insertChild("Equation");
+			delay_eqn->attribute("symbol-ref")->set(delay.delayed_symbol);
+			delay_eqn->setText(QString::fromStdString(delay.symbol));
+			
+			delays.append(delay);
+		}
+	}
+
 	this->parseMissingFeatures(sbml_model);
 	
 	
@@ -555,7 +605,10 @@ void SBMLImporter::sanitizeAST(ASTNode* math)
 {
 	if (!compartment_symbol.isEmpty())
 		ASTTool::replaceSymbolByValue(math, compartment_symbol.toStdString(), compartment_size);
-
+	
+	ASTTool::renameTimeSymbol(math, target_scope->getModelDescr().time_symbol->get());
+	
+	ASTTool::replaceDelays(math, delays);
 // 	QMap<QString, FunctionDefinition* >::const_iterator it;
 // 	for (it=functions.begin() ; it!=functions.end(); it++) {
 // 		ASTTool::replaceFunction(math,it.value());
@@ -574,15 +627,18 @@ void SBMLImporter::addSBMLRules(Model* sbml_model)
 				break;
 			case SBML_ASSIGNMENT_RULE :
 				rule_node = target_scope->insertChild("Equation");
+				rule_node->attribute("symbol-ref")->set(rule->getVariable());
+// 				rule_node = target_system->insertChild("Function");
+// 				rule_node->attribute("symbol")->set(rule->getVariable());
 				break;
 			case SBML_RATE_RULE :
 				rule_node = target_system->insertChild("DiffEqn");
+				rule_node->attribute("symbol-ref")->set(rule->getVariable());
 				break;
 			default :
 				throw SBMLConverterException(SBMLConverterException::SBML_INVALID);
 				break;
 		}
-		rule_node->attribute("symbol-ref")->set(rule->getVariable());
 		if (rule->isSetName()) {
 			rule_node->attribute("name")->set(rule->getName());
 			rule_node->attribute("name")->setActive(true);
