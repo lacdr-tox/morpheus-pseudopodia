@@ -1,7 +1,7 @@
 #include "docu_dock.h"
 
 #ifndef MORPHEUS_NO_QTWEBKIT
-#include <QWebHistory>
+// #include <QtWebHistory>
 #endif
 
 #include <QtNetwork/QNetworkAccessManager>

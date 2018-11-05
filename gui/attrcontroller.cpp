@@ -129,7 +129,7 @@ QWidget *attrController::createEditor(QWidget *parent, const QStyleOptionViewIte
 	}
 	else if (widget_type == SystemPath) {
 		QFileDialog* system_dialog = new QFileDialog(parent);
-		system_dialog->setDirectory(QDesktopServices::storageLocation(QDesktopServices::HomeLocation));
+		system_dialog->setDirectory(QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
 		if (attr->getType()->name == "cpmSystemPath" )
 			system_dialog->setFileMode( QFileDialog::DirectoryOnly );
 		current_editor = system_dialog;

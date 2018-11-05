@@ -20,7 +20,8 @@
 #include <QTextBrowser>
 #warning Compiling without QtWebKit
 #else 
-#include <QtWebKit/QWebView>
+#include <QtWebKitWidgets/QWebView>
+#include <QtWebKit/QWebHistory>
 #endif
 
 class DocuDock : public QDockWidget

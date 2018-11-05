@@ -37,19 +37,19 @@ struct MorphModelEdit {
 };
 
 struct ModelDescriptor {
-    AttributeMap symbolNames;
-    XSD xsd;
+	AttributeMap symbolNames;
+	XSD xsd;
 	bool track_next_change;
-    QList<MorphModelEdit> auto_fixes;
-    QList<MorphModelEdit> edit_operations;
-    QList<AbstractAttribute*> terminal_names;
+	QList<MorphModelEdit> auto_fixes;
+	QList<MorphModelEdit> edit_operations;
+	QList<AbstractAttribute*> terminal_names;
 	QList<AbstractAttribute*> sys_file_refs;
 	AbstractAttribute* time_symbol = nullptr;
     QString title;
     QString details;
     int edits;
 	int change_count;
-    QMap<QString,QString> getSymbolNames(QString type_name) const;
+	QMap<QString,QString> getSymbolNames(QString type_name) const;
 };
 
 class ModelException : public exception {

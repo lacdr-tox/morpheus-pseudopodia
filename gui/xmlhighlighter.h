@@ -14,6 +14,7 @@
 
 #include <QSyntaxHighlighter>
 #include <QtGui>
+#include <QTextEdit>
 #include <iostream>
 
 using namespace std;

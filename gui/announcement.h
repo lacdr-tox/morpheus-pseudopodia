@@ -1,11 +1,17 @@
+#ifndef FEEDBACK_H
+#define FEEDBACK_H
+
 #include <QtGui>
+#include <QDialog>
+#include <QLayout>
+#include <QPushButton>
 #include <QNetworkReply>
 
 #ifdef MORPHEUS_NO_QTWEBKIT
 #include <QTextBrowser>
 #warning Compiling without QtWebKit
 #else 
-#include <QtWebKit/QWebView>
+#include <QtWebKitWidgets/QWebView>
 #endif
 
 
@@ -43,3 +49,5 @@ class AnnouncementDialog : public QDialog {
 		
 		
 };
+
+#endif

@@ -61,8 +61,9 @@ public:
 
     virtual QVariant data( const QModelIndex &index, int role ) const;
     virtual QVariant headerData( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
-
-    Qt::DropActions supportedDropActions () const;
+; 
+    Qt::DropActions supportedDropActions () const override { return Qt::CopyAction | Qt::MoveAction;};
+	 Qt::DropActions supportedDragActions() const override { return Qt::CopyAction | Qt::MoveAction; } 
     QStringList mimeTypes () const;
     QMimeData* mimeData(const QModelIndexList &indexes) const;
     bool dropMimeData( const QMimeData * data, Qt::DropAction action, int row, int column, const QModelIndex & parent );

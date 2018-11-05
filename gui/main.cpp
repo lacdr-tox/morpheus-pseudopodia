@@ -1,4 +1,4 @@
-#include <QtGui/QApplication>
+#include <QApplication>
 #include <QTextCodec>
 #include "qtsingleapp/qtsingleapplication.h"
 #include "mainwindow.h"
@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 			return 0;
 	}
 	
-	QTextCodec::setCodecForCStrings( QTextCodec::codecForName("UTF-8") );
+// 	QTextCodec::setCodecForCStrings( QTextCodec::codecForName("UTF-8") );
 
 	
 	//anlegen des hauptfensters

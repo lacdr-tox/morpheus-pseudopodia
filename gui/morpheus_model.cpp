@@ -258,7 +258,6 @@ void MorphModel::initModel()
 	temp_folder.cd(name);
 	
 	loadModelParts();
-	setSupportedDragActions(Qt::CopyAction | Qt::MoveAction);
 }
 
 
@@ -1023,12 +1022,6 @@ void MorphModel::setDisabled(const QModelIndex &node_index, bool disable) {
 		node->setDisabled(disable);
 		emit dataChanged(node_index, node_index);
 	}
-}
-
-//------------------------------------------------------------------------------
-
-Qt::DropActions MorphModel::supportedDropActions () const {
-    return Qt::CopyAction | Qt::MoveAction;
 }
 
 // ------------------------------------------------------------------------------

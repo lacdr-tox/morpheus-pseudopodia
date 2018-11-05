@@ -1,32 +1,17 @@
 MESSAGE(STATUS "BUILDING MORPHEUS GUI")
 
 cmake_policy(SET CMP0071 NEW)
-#FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets Sql Network Xml Svg WebKit Help  REQUIRED)
-FIND_PACKAGE(Qt5 REQUIRED Widgets Sql Network Xml Svg WebKit Help)
+
+FIND_PACKAGE(Qt5 COMPONENTS Widgets Sql Network Xml Svg WebKit WebView WebKitWidgets Help REQUIRED)
 # OPTION(MORPHEUS_NO_QTWEBKIT "Don't use QtWebKit to show documentation. Fallback to QTextView" OFF)
 # MARK_AS_ADVANCED(MORPHEUS_NO_QTWEBKIT)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 ### Include Qt directories  *  Add Qt standard Defines  *  Create QT_LIBRARIES variable, including all required libs 
 
 FIND_PACKAGE(ZLIB REQUIRED)
 
-SET(GUI_EXEC_NAME "${MORPHEUS_EXEC_NAME}-gui")
-#OPTION(MORPHEUS_REMOTE "Enable support for remote computing resources. Depends on libSSH." OFF)
-
-#Do we still need that?
-#INCLUDE(${QT_USE_FILE})
-MESSAGE(STATUS qt5 ${QT5_DEFINITIONS} qt ${QT_DEFINITIONS})
-ADD_DEFINITIONS(${QT5_DEFINITIONS})
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fPIC" )
-
-
-#IF (MORPHEUS_REMOTE)
-#	FIND_PACKAGE(SSH)
-#	IF(NOT LIBSSH_FOUND)
-#		SET(MORPHEUS_REMOTE OFF FORCE)
-#		MESSAGE(STATUS "LIBSSH not found. Remote computing support disabled.")
-#	ENDIF()
-#ENDIF()
+OPTION(MORPHEUS_SBML "Build with SBML import support." ON)
 
 OPTION(LIBSBML_STATIC "Link the libSBML Library statically." OFF)
 mark_as_advanced(LIBSBML_STATIC)
@@ -64,13 +49,42 @@ ELSE()
 ENDIF()
 
 
-##  check whether the required sqlite plugin is available (if fails if the Variable ends eith NOTFOUND)
-if( ( CMAKE_VERSION VERSION_GREATER "2.8.4") AND (NOT "${MORPHEUS_OS}" STREQUAL "WIN32") )
-	if (NOT QT_QSQLITE_PLUGIN_RELEASE)
-		message(FATAL_ERROR "QT SQLITE plugin not found. Install libqt4-sql-sqlite package .. ${MORPHEUS_OS}" )
-	ENDIF()
+#
+# ##  check whether the required sqlite plugin is available (if fails if the Variable ends eith NOTFOUND)
+# if( ( CMAKE_VERSION VERSION_GREATER "2.8.4") AND (NOT "${MORPHEUS_OS}" STREQUAL "WIN32") )
+# 	if (NOT QT_QSQLITE_PLUGIN_RELEASE)
+# 		message(FATAL_ERROR "QT SQLITE plugin not found. Install libqt4-sql-sqlite package .. ${MORPHEUS_OS}" )
+# 	ENDIF()
+#ENDIF()
+
+IF(LIBSBML_FOUND AND MORPHEUS_SBML)
+	SET(SOURCES ${SOURCES} sbml_converter.cpp)
+	SET(HEADERS ${HEADERS} sbml_converter.h)
 ENDIF()
 
+
+SET(GUI_EXEC_NAME "${MORPHEUS_EXEC_NAME}-gui")
+#OPTION(MORPHEUS_REMOTE "Enable support for remote computing resources. Depends on libSSH." OFF)
+
+
+#IF (MORPHEUS_REMOTE)
+#	FIND_PACKAGE(SSH)
+#	IF(NOT LIBSSH_FOUND)
+#		SET(MORPHEUS_REMOTE OFF FORCE)
+#		MESSAGE(STATUS "LIBSSH not found. Remote computing support disabled.")
+#	ENDIF()
+#ENDIF()
+
+##  check whether the required sqlite plugin is available (if fails if the Variable ends eith NOTFOUND)
+# if( ( CMAKE_VERSION VERSION_GREATER "2.8.4") AND (NOT "${MORPHEUS_OS}" STREQUAL "WIN32") )
+# 	if (NOT QT_QSQLITE_PLUGIN_RELEASE)
+# 		message(FATAL_ERROR "QT SQLITE plugin not found. Install libqt4-sql-sqlite package .. ${MORPHEUS_OS}" )
+# 	ENDIF()
+# ENDIF()
+
+
+### CREATE IN APP DOCUMENTATION ###
+# uses doxygen and qcollectiongenerator
 
 SET(QT_DOC_FOLDER ${CMAKE_CURRENT_BINARY_DIR}/doc)
 
@@ -156,7 +170,7 @@ ADD_CUSTOM_COMMAND(
 add_custom_target( AppDoc DEPENDS ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED} )
 
 ### set the source, headers and resources
-SET( SOURCES
+SET( SOURCES ${SOURCES}
     about_model.cpp
     abstractattribute.cpp 
     abstractprocess.cpp 
@@ -198,54 +212,6 @@ SET( SOURCES
     xsd.cpp 
    )
 
-SET( HEADERS #headers that are commented out are not necessary for moc_* files (avoids compiler warnings)
-    abstractattribute.h 
-    attrcontroller.h
-    addattrdialog.h 
-    abstractprocess.h 
-    about_model.h
-    config.h 
-    docu_dock.h
-    domnodeeditor.h
-    domnodeviewer.h
-    equationhighlighter.h 
-    announcement.h
-    imagetable.h
-    infoaction.h 
-    jobcontroller.h 
-    job_progress_delegate.h
-    job_queue.h 
-    jobviewmodel.h
-    jobview.h
-    jobsummary.h
-    mainwindow.h 
-    mathtextedit.h 
-    morpheus_model.h
-    # morpheus_xml.h
-    model_index_mime_data.h
-    moviedialog.h 
-    network_access.h
-    nodeadapter.h
-    nodecontroller.h
-    localprocess.h 
-    parametersweeper.h
-    paramsweepmodel.h
-    remoteprocess.h 
-    settingsdialog.h 
-    # sshproxy.h
-    # synchronizer.h
-    # xmlpreview.h
-    # xmlhighlighter.h
-    # xsd.h
-   )
-
-OPTION(MORPHEUS_SBML "Build with SBML import support." ON)
-
-IF(LIBSBML_FOUND AND MORPHEUS_SBML)
-	SET(SOURCES ${SOURCES} sbml_converter.cpp)
-	SET(HEADERS ${HEADERS} sbml_converter.h)
-ENDIF()
-
 
 ## Prepare external ressources for inclusion
 # Construct resource list from example files
@@ -273,7 +239,6 @@ ENDIF( )
 
 
 ### run moc and rcc over the headers and resource files
-# QT4_WRAP_CPP( HEADERS_MOC ${HEADERS} )
 SET(CMAKE_AUTOMOC ON)
 
 ADD_EXECUTABLE( ${GUI_EXEC_NAME} WIN32 ${SOURCES} ${HEADERS_MOC} ${RESOURCES_RCC} )
@@ -285,13 +250,10 @@ IF (MORPHEUS_STATIC_BUILD)
 ENDIF()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR} ${ZLIB_INCLUDE_DIR}) 
-### create executable and link to Qt libraries and external libraries
-# note: use the moc/rcc processed  headers/reources 
 
-INCLUDE_DIRECTORIES(${Qt5Widgets_INCLUDE_DIRS} ${Qt5Xml_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${Qt5Webkit_INCLUDE_DIRS} )
-MESSAGE(STATUS WebKit ${Qt5WebKit_INCLUDE_DIRS} )
-TARGET_LINK_LIBRARIES(${GUI_EXEC_NAME} qtsingleapp ${QT_LIBRARIES} ${ZLIB_LIBRARY} )
+### create executable and link to Qt libraries and external libraries
+qt5_use_modules(${GUI_EXEC_NAME} Widgets Xml Sql Svg WebKit WebKitWidgets Help Network)
+TARGET_LINK_LIBRARIES(${GUI_EXEC_NAME} qtsingleapp ${ZLIB_LIBRARY} )
 
 IF( "${MORPHEUS_OS}" STREQUAL "WIN32")
 	IF( CMAKE_COMPILER_IS_GNUCXX )

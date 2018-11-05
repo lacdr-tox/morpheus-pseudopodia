@@ -13,6 +13,10 @@
 #define XMLPREVIEW_H
 
 #include <QtGui>
+#include <QDialog>
+#include <QLayout>
+#include <QTextEdit>
+#include <QPushButton>
 #include "xmlhighlighter.h"
 
 /*!

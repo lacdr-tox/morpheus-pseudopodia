@@ -9,6 +9,10 @@
 //
 //////
 
+#ifndef ABOUTMODEL_H
+#define ABOUTMODEL_H
+
+
 #include <QWidget>
 #include <QGraphicsScene>
 #include <QtSvg/QGraphicsSvgItem>
@@ -33,3 +37,5 @@ private slots:
 	void assignTitle(QString title);
 	void assignDescription();
 };
+
+#endif

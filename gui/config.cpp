@@ -23,7 +23,7 @@ config::config() : QObject(), helpEngine(NULL) {
     /* Restore Configuration setting from QSettings file*/
     QSettings settings;
     settings.beginGroup("simulation");
-        QString oD_default = QDesktopServices::storageLocation(QDesktopServices::HomeLocation);
+        QString oD_default = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
         oD_default +="/morpheus";
         app.general_outputDir       = settings.value("outputDir", oD_default).toString();
     settings.endGroup();
@@ -86,7 +86,8 @@ config::config() : QObject(), helpEngine(NULL) {
 		if (!sqlPlugin ) throw;
 		db = QSqlDatabase::addDatabase(sqlPlugin->create("QSQLITE"));*/
 		
-		QDir job_db_path(QDesktopServices::storageLocation(QDesktopServices::DataLocation));
+		// The data location has been changed between qt4 and qt5, thus we have to manually retain the old behaviour here
+		QDir job_db_path(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)+"/data/Morpheus/Morpheus");
 		job_db_path.mkpath(job_db_path.path());
 		db.setDatabaseName(job_db_path.filePath("morpheus.db.sqlite"));
 		qDebug() << "SQLite database path: " << db.databaseName();

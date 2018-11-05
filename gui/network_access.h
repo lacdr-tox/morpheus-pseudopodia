@@ -1,3 +1,6 @@
+#ifndef NETWORKACCESS_H
+#define NETWORKACCESS_H
+
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QFile>
@@ -52,5 +55,4 @@ class ExtendedNetworkAccessManager : public QNetworkAccessManager
 		QHelpEngineCore *m_helpEngine;
 };
 
-
-
+#endif

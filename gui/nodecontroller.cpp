@@ -188,6 +188,10 @@ QObject(parent)
 		else
 			qDebug() << "Cannot register LatticeStructureAdapter! Attributes not found!";
 	}
+	if ( name=="TimeSymbol" ) {
+// 		if (attribute("symbol"))
+			model_descr->time_symbol = attribute("symbol");
+	}
 }
 
 //------------------------------------------------------------------------------
