@@ -35,9 +35,7 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 {
 	timer = NULL;
 	help_engine = config::getHelpEngine();
-	
 	connect(help_engine,SIGNAL(setupFinished()),this,SLOT(setRootOfHelpIndex()));
-	help_engine->setupData();
 	
 	hnam = config::getNetwork();
 
@@ -66,7 +64,7 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	toc_widget->sortByColumn(0,Qt::AscendingOrder);
 	
 	root_reset = false;
-
+	
 	auto tb = new QToolBar();
 
 	b_back = new QAction(QThemedIcon("go-previous", style()->standardIcon(QStyle::SP_ArrowLeft)),"Back",this);
@@ -116,6 +114,8 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	connect(toc_widget, SIGNAL(clicked(const QModelIndex&)), this, SLOT(setCurrentIndex(const QModelIndex&)) );
 	
 	this->setWidget(splitter);
+	
+	help_engine->setupData();
 	resetStatus();
 }
 

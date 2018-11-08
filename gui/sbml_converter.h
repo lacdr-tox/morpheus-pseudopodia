@@ -18,6 +18,7 @@
 #include <QStringList>
 #include <QDebug>
 #include "morpheus_model.h"
+#include "config.h"
 #include <stdexcept>
 #include <cstdio>
 
@@ -81,18 +82,22 @@ private:
 class SBMLImporter: public QDialog {
 	Q_OBJECT
 public:
-	SBMLImporter(QWidget* parent=NULL);
+	SBMLImporter(QWidget* parent, QSharedPointer< MorphModel > current_model);
 	QSharedPointer<MorphModel> getMorpheusModel() { return model;};
 // the interface for making this feature puggable
 	static const bool supported = true;
  	static QSharedPointer<MorphModel> importSBML();
 private:
 	QLineEdit* path;
-	QCheckBox* into_celltype;
+	QComboBox* into_celltype;
 
 	QSharedPointer<MorphModel> model;
 	QList<QString> conversion_messages;
-
+	
+	QMap<QString, double>  compartment_sizes;
+	nodeController* target_system=NULL;
+	nodeController* target_scope=NULL;
+	
 	QString compartment_symbol;
 	double compartment_size;
 
@@ -102,15 +107,15 @@ private:
 	QSet<QString> vars_with_assignments;
 	QMap<QString, AbstractAttribute*> diffeqn_map;
 
-	void readSBML(QString sbml_file, bool into_celltype);
-    void addSBMLFunctions(nodeController* target, Model* sbml_model);
+	bool readSBML(QString sbml_file, QString target_code);
+    void addSBMLFunctions(Model* sbml_model);
 	void sanitizeAST(ASTNode* math);
-    void addSBMLSpecies(nodeController* celltype, Model* sbml_model);
-    void addSBMLParameters(nodeController* celltype, Model* sbml_model);
-    void addSBMLRules(nodeController* celltype,Model* sbml_model);
-	void addSBMLEvents(nodeController* celltype,Model* sbml_model);
-	void addSBMLInitialAssignments(nodeController* cellPopulation,Model* sbml_model);
-    void translateSBMLReactions(nodeController* celltype, Model* sbml_model);
+    void addSBMLSpecies(Model* sbml_model);
+    void addSBMLParameters(Model* sbml_model);
+    void addSBMLRules(Model* sbml_model);
+	void addSBMLEvents(Model* sbml_model);
+	void addSBMLInitialAssignments(Model* sbml_model);
+    void translateSBMLReactions(Model* sbml_model);
     void parseMissingFeatures(Model* sbml_model);
 
 private slots:
