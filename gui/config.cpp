@@ -235,8 +235,10 @@ SharedMorphModel config::getModel() {
 //    qDebug() << getInstance()->current_model << " " << getInstance()->openModels.size();
 	if (getInstance()->openModels.empty())
 		return SharedMorphModel();
-    if (getInstance()->current_model > getInstance()->openModels.size() -1)
-        getInstance()->current_model = getInstance()->openModels.size() -1;
+	
+    if (getInstance()->current_model > getInstance()->openModels.size() -1 || getInstance()->current_model == 0)
+		return SharedMorphModel();
+//         getInstance()->current_model = getInstance()->openModels.size() -1;
     return getInstance()->openModels[getInstance()->current_model];
 }
 
@@ -433,6 +435,7 @@ bool config::closeModel(int index, bool create_model)
 void config::switchModel(int index) {
     config* conf = config::getInstance();
     if (index == conf->current_model) return;
+	qDebug() << "Switch to model " << index;
     conf->current_model = index;
     if (index>=0)
         emit conf->modelSelectionChanged(conf->current_model);

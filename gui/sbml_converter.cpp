@@ -162,37 +162,40 @@ SBMLImporter::SBMLImporter(QWidget* parent, QSharedPointer< MorphModel > current
 	into_celltype  = new QComboBox(this);
 	into_celltype->addItem("Global (new model)", "new,global");
 	into_celltype->addItem("CellType (new model)", "new,celltype,sbml_cell");
-	into_celltype->insertSeparator(2);
-	into_celltype->addItem("Global", "current,global");
-	QString new_celltype = "sbml_cell";
-	int i=0;
-	for (const auto& part :current_model->parts ) {
-		if (part.label=="CellTypes" && part.enabled) {
-			 part.element->getChilds();
-			for (auto ct : part.element->activeChilds("CellType")) {
-				auto ct_name = ct->attribute("name")->get();
-				into_celltype->addItem(
-					QString("CellType \"%1\"").arg(ct_name),
-					QString("current,celltype,%1").arg(ct_name)
-				);
-				// Check name to not overlap new celltype naming convention
-				if (ct_name == new_celltype && i==0)
-					i=1;
-				else {
-					QRegExp ct_id("sbml_cell_(\\d+)");
-					if (ct_id.exactMatch(ct_name)) {
-						if (i<ct_id.cap(0).toInt())
-							i = ct_id.cap(0).toInt();
+	
+	if (current_model) {
+		into_celltype->insertSeparator(2);
+		into_celltype->addItem("Global", "current,global");
+		QString new_celltype = "sbml_cell";
+		int i=0;
+		for (const auto& part :current_model->parts ) {
+			if (part.label=="CellTypes" && part.enabled) {
+				part.element->getChilds();
+				for (auto ct : part.element->activeChilds("CellType")) {
+					auto ct_name = ct->attribute("name")->get();
+					into_celltype->addItem(
+						QString("CellType \"%1\"").arg(ct_name),
+						QString("current,celltype,%1").arg(ct_name)
+					);
+					// Check name to not overlap new celltype naming convention
+					if (ct_name == new_celltype && i==0)
+						i=1;
+					else {
+						QRegExp ct_id("sbml_cell_(\\d+)");
+						if (ct_id.exactMatch(ct_name)) {
+							if (i<ct_id.cap(0).toInt())
+								i = ct_id.cap(0).toInt();
+						}
 					}
 				}
 			}
 		}
+		if (i!=0)
+			into_celltype->addItem("new CellType", QString("current,celltype,sbml_cell_%1").arg(i));
+		else 
+			into_celltype->addItem("new CellType", QString("current,celltype,sbml_cell"));
+		model = current_model;
 	}
-	if (i!=0)
-		into_celltype->addItem("new CellType", QString("current,celltype,sbml_cell_%1").arg(i));
-	else 
-		into_celltype->addItem("new CellType", QString("current,celltype,sbml_cell"));
-	model = current_model;
 	
 	QLabel* celltype_label = new QLabel("Import into ",this);	
 	celltype_layout->addWidget(celltype_label);
@@ -289,7 +292,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 		throw SBMLConverterException(SBMLConverterException::SBML_MULTI_COMPARTMENT, message );
 	}
 
-	// Setup target model / scope
+	// Setup target model
 	
 	QSharedPointer<MorphModel> morph_model;
 	auto target = target_code.split(",");
@@ -346,6 +349,8 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 		morph_model = model;
 	}
 
+	// Setup target scope
+	
 	if (target[1]=="global" )  {
 		morph_model->addPart("Global");
 		target_scope = morph_model->rootNodeContr->firstActiveChild("Global");
@@ -374,10 +379,6 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 			target_scope->attribute("class")->set("biological");
 		}
 		
-		target_system = target_scope->insertChild("System");
-		target_system->attribute("solver")->set("runge-kutta");
-		target_system->attribute("time-step")->set("0.1");
-		
 		if (target[0] == "new") {
 			morph_model->addPart("CellPopulations");
 			auto population = morph_model->rootNodeContr->firstActiveChild("CellPopulations")->firstActiveChild("Population");
@@ -385,6 +386,15 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 			population->attribute("type")->set(target[2]);
 		}
 	}
+	
+	// Setup target system 
+	
+	target_system = target_scope->insertChild("System");
+	target_system->attribute("solver")->set("runge-kutta");
+	target_system->attribute("time-step")->set("0.1");
+	
+	// Add annotation for new models
+	
 	if (target[0] == "new") {
 		nodeController* description = morph_model->rootNodeContr->firstActiveChild("Description");
 		if (!description) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Description node not found." );

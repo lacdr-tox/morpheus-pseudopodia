@@ -492,10 +492,13 @@ void MainWindow::createMainWidgets()
 void MainWindow::selectModel(int index, int part)
 {
 	config::modelIndex selected = modelListIndex(modelList->currentItem());
-
+	if (index<0) return;
 	if (model_index.model != index) {
 		qDebug() << "Switching model";
 		model_index.model = index;
+		this->blockSignals(true);
+		config::switchModel(model_index.model);
+		this->blockSignals(false);
 		current_model = config::getOpenModels()[model_index.model];
 		if (selected.model == model_index.model)
 			part = selected.part;
@@ -1035,7 +1038,7 @@ void MainWindow::removeModel(int index) {
     modelList->takeTopLevelItem(index);
     if (model_index.model == index) {
         model_index.model = -1;
-		config::switchModel(model_index.model) ;
+		config::switchModel(model_index.model);
     }
 }
 
@@ -1065,11 +1068,11 @@ void MainWindow::showCurrentModel() {
 void MainWindow::modelListChanged(QTreeWidgetItem * item) {
 
     config::modelIndex selection = modelListIndex(item);
-    if (model_index.model != selection.model)
-        config::switchModel(selection.model);
-    else {
+//     if (model_index.model != selection.model)
+//         config::switchModel(selection.model);
+//     else {
         selectModel(selection.model, selection.part);
-	}
+// 	}
  }
  
 void MainWindow::activatePart(QModelIndex idx)
@@ -1082,7 +1085,7 @@ void MainWindow::activatePart(QModelIndex idx)
 		auto model = config::getOpenModels()[selection.model];
 		model->activatePart(selection.part);
 		
-		modelList->setCurrentIndex(QModelIndex().child(selection.model,0).child(selection.part,0));
+		modelList->setCurrentItem(modelList->invisibleRootItem()->child(selection.model)->child(selection.part));
 		selectModel(selection.model,selection.part);
 // 		if ( !model->parts[selection.part].enabled ) {
 // 			if (model->activatePart(selection.part)) {
@@ -1165,6 +1168,7 @@ void MainWindow::selectAttribute(AbstractAttribute* attr)
 
 void MainWindow::fixBoardClicked(QModelIndex item) {
     int row = item.row();
+	if (current_model->rootNodeContr->getModelDescr().auto_fixes.size()<= row) return;
     const MorphModelEdit& e = current_model->rootNodeContr->getModelDescr().auto_fixes[row];
 
 	QDomNode node = e.xml_parent;
