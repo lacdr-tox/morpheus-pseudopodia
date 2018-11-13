@@ -243,6 +243,8 @@ public:
 	
 	void setScope(const Scope * scope) { assert(scope); local_scope = scope; }
 	void setGlobalScope() { require_global_scope=true; };
+	void setLocalsTable(const vector<EvaluatorVariable>& table) { if (is_initialized) throw string("too late to modify the locals table -- expression initialized"); locals_table = table; }
+	void setLocals(const double* data) { if (!evaluator) throw string("expression not initialized"); evaluator->setLocals(data); }
 	void allowPartialSpec(bool allow=true) { allow_partial_spec=allow; }
 	
 	void init()
@@ -254,8 +256,11 @@ public:
 				local_scope = SIM::getGlobalScope();
 			if (! local_scope)
 				throw string("PluginParameter missing scope");
-			
+
 			evaluator = make_unique<Evaluator<ValType> >(string_val, local_scope, allow_partial_spec);
+			if (!locals_table.empty())
+				evaluator->setLocalsTable(locals_table);
+			
 			evaluator->init();
 			
 			if (evaluator->flags().space_const && evaluator->flags().time_const) { 
@@ -306,6 +311,7 @@ private:
 	bool allow_partial_spec;
 	ValType const_expr;
 	string string_val;
+	vector<EvaluatorVariable> locals_table;
 	unique_ptr< Evaluator<ValType> > evaluator;
 };
 

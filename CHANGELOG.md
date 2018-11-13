@@ -1,5 +1,10 @@
 # ChangeLog
 
+## Changes not released yet
+
+   * Optionally expose local symbols to the input of the Neighborhood(Vector)Reporter.
+
+
 ## Patch 2.0.1
   * Fixed VectorRules not working
   * Fixed broken image table for parameter sweeps

@@ -35,6 +35,8 @@ A single \b Input element must be specified:
 be a rate per node length.
 - \b noflux-cell-medium: if true, the cell-medium interfaces are treated as no-flux boundaries. That is, at these interfaces, the value will be taken from the cell itself instead of the (empty) neighborhood.
 
+Accessing the local cell's properties in the input expression is not directly possible, since it is evaluated in the context of the neighborhood. Use the \b ExposeLocal tag to make local symbols (\b symbol-ref) available in the input expression (\b symbol). 
+
 If input variable is a Vector, use \ref NeighborhoodVectorReporter.
 
 Several Output tags can be specified, each referring to an individual property of the aquired information.
@@ -60,7 +62,9 @@ Spatially resolved distribution of a (membrane) concentration into a CellMembran
 (Consider cMemProt to be a concentration of a membrane Protein)
 \verbatim
 <NeighborhoodReporter>
-	<Input value="cMemProt"/>
+	<Input value="min(cMemProt,myMemProt)">
+		<ExposeLocal symbol-ref="cMemProt" symbol="myMemProt" />
+	</Input>
 	<Output symbol-ref="B" />
 </NeighborhoodReporter>
 \endverbatim
@@ -101,13 +105,18 @@ class NeighborhoodReporter : public ReporterPlugin
 		enum InputModes{ INTERFACES, CELLS };
 		
 		CellType* celltype;
-		shared_ptr <const CPM::LAYER > cpm_layer;
 		
 		PluginParameter2<double, XMLThreadsaveEvaluator, RequiredPolicy> input;
-		PluginParameter2<InputModes, XMLNamedValueReader, OptionalPolicy> input_mode;
-		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> noflux_cell_medium_interface;
-		bool noflux_cell_medium;
+		PluginParameter2<InputModes, XMLNamedValueReader, OptionalPolicy> scaling;
+		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> exclude_medium;
 
+		struct ExposeSpec {
+			PluginParameter_Shared<double, XMLReadableSymbol> local_symbol;
+			PluginParameter_Shared<string, XMLValueReader> symbol;
+		};
+		vector< ExposeSpec > exposed_locals;
+		Granularity exposed_locals_granularity;
+		
 		struct OutputSpec {
 			PluginParameter2<DataMapper::Mode, XMLNamedValueReader, OptionalPolicy> mapping;
 			shared_ptr<DataMapper> mapper;
@@ -128,7 +137,7 @@ class NeighborhoodReporter : public ReporterPlugin
 	
 		void init(const Scope* scope) override;
 		void loadFromXML(const XMLNode, Scope* scope) override;
-		virtual void report() override;
+		void report() override;
 };
 
 #endif

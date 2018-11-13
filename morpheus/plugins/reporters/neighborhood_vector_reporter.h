@@ -10,8 +10,10 @@
 //////
 
 /** \defgroup NeighborhoodVectorReporter
+\ingroup ML_Global
 \ingroup ML_CellType
 \ingroup ReporterPlugins
+
 \brief Reports data about the cell's neighborhood or 'microenvironment' using Vector input. 
 
 \section Description
@@ -27,7 +29,9 @@ A single \b Input element must be specified:
 - \b scaling: setting scaling to \b per_cell will aquire information per neighboring cell (entity), \b per_length will scale the information with the interface length, i.e. the input value is considered to
 be a rate per node length.
 
-If input variable is a Vector, use \ref NeighborhoodVectorReporter.
+Accessing the local cell's properties in the input expression is not directly possible, since it is evaluated in the context of the neighborhood. Use the \b ExposeLocal tag to make local symbols (\b symbol-ref) available in the input expression (\b symbol).
+
+If input variable is a scalar, use \ref NeighborhoodReporter.
 
 Several Output tags can be specified, each referring to an individual property of the aquired information.
 If the information is written to a MembraneProperty, no mapping is required, since their granularity is sufficient.
@@ -51,6 +55,7 @@ Multiple \b Output elements can be specified:
 
 #include "core/interfaces.h"
 #include "core/celltype.h"
+#include "core/focusrange.h"
 
 class NeighborhoodVectorReporter : public ReporterPlugin
 {
@@ -64,10 +69,18 @@ class NeighborhoodVectorReporter : public ReporterPlugin
 		PluginParameter2<InputModes, XMLNamedValueReader,DefaultValPolicy> scaling;
 		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> exclude_medium;
 		
+		struct ExposeSpec {
+			PluginParameter_Shared<double, XMLReadableSymbol> local_symbol;
+			PluginParameter_Shared<string, XMLValueReader> symbol;
+		};
+		vector< ExposeSpec > exposed_locals;
+		Granularity exposed_locals_granularity;
+		
 		PluginParameter2<VDOUBLE,XMLWritableSymbol, RequiredPolicy> output;
 		PluginParameter2<OutputMode,XMLNamedValueReader, RequiredPolicy> output_mode;
 
-
+		void reportCelltype(CellType* celltype);
+		void reportGlobal();
 		
 	public:
 		DECLARE_PLUGIN("NeighborhoodVectorReporter");
@@ -76,8 +89,6 @@ class NeighborhoodVectorReporter : public ReporterPlugin
 		void init(const Scope* scope) override;
 		void loadFromXML(const XMLNode, Scope* scope) override;
 		void report() override;
-		
-		int getNeighborCells(const Cell& cell);
 };
 
 #endif
