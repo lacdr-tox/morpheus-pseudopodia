@@ -58,7 +58,8 @@ public:
 	enum ExceptionType  {
 		FILE_READ_ERROR,
 		SBML_LEVEL_GREATER_2,
-		SBML_MULTI_COMPARTMENT,
+		SBML_UNKNOWN_COMPARTMENT,
+		SBML_DYNAMIC_COMPARTMENT,
 		SBML_ALGEBRAIC_RULE,
 		SBML_MULTIPLE_DEFINITION,
 		SBML_INVALID,
@@ -72,7 +73,8 @@ public:
 		switch (d_type) {
 			case FILE_READ_ERROR : return "FILE_READ_ERROR";
 			case SBML_LEVEL_GREATER_2: return "SBML_LEVEL_GREATER_2";
-			case SBML_MULTI_COMPARTMENT: return "SBML_MULTI_COMPARTMENT";
+			case SBML_UNKNOWN_COMPARTMENT: return "SBML_UNKNOWN_COMPARTMENT";
+			case SBML_DYNAMIC_COMPARTMENT: return "SBML_DYNAMIC_COMPARTMENT";
 			case SBML_ALGEBRAIC_RULE : return "SBML_ALGEBRAIC_RULE";
 			case SBML_INVALID : return "SBML_INVALID";
 			case SBML_MULTIPLE_DEFINITION : return "SBML_MULTIPLE_DEFINITION";
@@ -105,13 +107,22 @@ private:
 	QSharedPointer<MorphModel> model;
 	QList<QString> conversion_messages;
 	
-	QMap<QString, double>  compartment_sizes;
+	struct CompartmendDesc {
+		QString name;
+		double init_value;
+		QString init_assignment;
+		bool dynamic;
+	};
+	QMap<QString, CompartmendDesc> compartments;
 	nodeController* target_system=NULL;
 	nodeController* target_scope=NULL;
 	
-	QString compartment_symbol;
-	double compartment_size;
-
+	struct SpeciesDesc {
+		QString name;
+		QString compartment;
+		bool is_const;
+	};
+	QMap<QString, SpeciesDesc> species;
 	QMap<QString, FunctionDefinition*> functions;
 	QSet<QString> constants;
 	QSet<QString> variables;
