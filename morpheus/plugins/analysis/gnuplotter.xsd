@@ -24,7 +24,7 @@ Note: this plugin requires stand-alone installation of Gnuplot 4.4+. When not fo
 <!-- 			<xs:element name="Membrane" 	type="cpmMembraneRef" 		minOccurs="0" /> -->
 		</xs:all>
 
-		<xs:attribute name="time-step" use="optional" type="cpmDouble" default="1">
+		<xs:attribute name="time-step" use="optional" type="cpmMathExpression" default="1">
 			<xs:annotation>
 				<xs:documentation>Time interval of plots.</xs:documentation>
 			</xs:annotation>

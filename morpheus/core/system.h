@@ -24,12 +24,12 @@
 // performance timer
 #include <sys/time.h>
 
-enum SolverMethod { Discrete_Solver, Euler_Solver, Heun_Solver, Runge_Kutta_Solver };
 /** Systemm Types
- *  - time continuous --> ode / pde  --> time intervals have to correspond to the connected systems.
- *    Can be shrinked modified to change that.
+ *  - time continuous --> ode / pde  
+ *    --> time intervals have to correspond to the connected systems.
+ *    --> time intercals can be shrinked modified to change that.
  *  - time discrete --> start time + regular interval
- *    + Synchronous Automat --> Discrete System with update frequ. 1
+ *    + Synchronous Automaton --> Discrete System with update frequ. 1
  *    + regular time interval events
  *    + single fire event systems
  *  - Event triggered systems --> i.e. upon cell division or whatsoever.
@@ -85,19 +85,21 @@ public:
 	vector<string> fun_params_names;
 	set<string> dep_symbols;
 	
-	T k0, k1, k2, k3, k4;
+	T k0, k1, k2, k3, k4, k5, k6, k7;
+	T err, dy;
 
 private:
-	class CallBack;
-	shared_ptr<CallBack> callback;
+	/// @brief Private CallBack class for registration of the internal evaluator in mu_parser as a generic lambda object
 	class CallBack : public mu::fun_class_generic {
 		public:
 			CallBack(shared_ptr<ExpressionEvaluator<double> > evaluator, double *data, uint size) : evaluator(evaluator), params(data), nparams(size) {};
 			
+			/// Evaluate the lambda with arguments @p args in a spatial context given by the anonymous @p data pointer, which points in fact to a (const) SymbolFocus.
 			mu::value_type operator()(const double* args, void * data) const override {
 				if (params) memcpy( params, args, sizeof(double)*nparams );
 				return evaluator->get(*reinterpret_cast<const SymbolFocus*>(data));
 			};
+			/// Number of arguments the lambda expects
 			int argc() const override {
 				return nparams;
 			};
@@ -108,10 +110,12 @@ private:
 			uint nparams;
 	};
 	
+	shared_ptr<CallBack> callback;
 };
 
 template<>
 void SystemFunc<double>::initFunction();
+
 template<>
 void SystemFunc<VDOUBLE>::initFunction();
 
@@ -124,8 +128,22 @@ void SystemFunc<VDOUBLE>::initFunction();
 class SystemSolver{
 
 	public:
+		enum class Method {
+			Discrete,
+			Euler,
+			Heun,
+			Runge_Kutta4,
+			Runge_Kutta_AdaptiveCK,
+			Runge_Kutta_AdaptiveDP
+		};
+		struct Spec {
+			SystemSolver::Method method;
+			double epsilon;
+			double time_scaling;
+			double time_step;
+		};
 		// remove copy constructor and assignment operator
-		SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFunc< double >> >& fun, const std::vector< shared_ptr<SystemFunc< VDOUBLE >> >& vfun, SolverMethod method, double time_scaling);
+		SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFunc< double >> >& fun, const std::vector< shared_ptr<SystemFunc< VDOUBLE >> >& vfun, SystemSolver::Spec spec);
 		SystemSolver(const SystemSolver& p);
 		const SystemSolver& operator=(const SystemSolver& p)= delete;
 		void solve(const SymbolFocus& f, bool use_buffer);
@@ -136,8 +154,8 @@ class SystemSolver{
 
 	private:
 		// timer
-		vector<struct timeval> sstart, send;
-		vector<long> smtime, sseconds, suseconds, stotal;
+// 		vector<struct timeval> sstart, send;
+// 		vector<long> smtime, sseconds, suseconds, stotal;
 
 		vector<shared_ptr<SystemFunc<double>>> evals, odes, equations, functions, var_initializers;
 		vector<shared_ptr<SystemFunc<VDOUBLE>>> vec_evals, vec_equations, vec_var_initializers;
@@ -146,20 +164,24 @@ class SystemSolver{
 		shared_ptr<EvaluatorCache> cache;
 		uint local_time_idx, noise_scaling_idx;
 		
-		double time_step;
-		double time_scaling;
-		SolverMethod  solver_method;
+		Spec spec;
 
 		void fetchSymbols(const SymbolFocus& f);
 		void writeSymbols(const SymbolFocus& f);
 		void writeSymbolsToBuffer(const SymbolFocus& f);
 		void updateLocalVars(const SymbolFocus& f);
+		
+		void check_result(double value , const SystemFunc<double>& e) const;
+		void check_result(const VDOUBLE& value , const SystemFunc<VDOUBLE>& e) const;
+		
 		void RungeKutta(const SymbolFocus& f, double ht);
+		void RungeKutta_adaptive(const SymbolFocus& f, double ht);
+		void RungeKutta_45CashKarp(const SymbolFocus& f, double ht);
+		void RungeKutta_45DormandPrince(const SymbolFocus& f, double ht);
 		void Euler(const SymbolFocus& f, double ht);
 		void Heun(const SymbolFocus& f, double ht);
 		void Discrete(const SymbolFocus& f);
-};
-
+}; 
 
 /** @brief System class takes care to solve numerical interpolation of [ODE/Discret Equation/Triggered] Systems
  *
@@ -179,6 +201,7 @@ public:
 	const Scope* getLocalScope() { return local_scope; }; 
 	set< SymbolDependency > getDependSymbols();
 	set< SymbolDependency > getOutputSymbols();
+	bool adaptive() const;
 	void setTimeStep(double ht);
 	
 protected:
@@ -203,9 +226,8 @@ protected:
 	
 	struct timeval start, end;
 	long mtime, seconds, useconds, total;
-	SolverMethod solver_method;
+	SystemSolver::Spec solver_spec;
 	SystemType system_type;
-	double time_scaling;
 	
 // 	set<string> available_symbols;
 	map<string,double> local_symbols;
@@ -233,7 +255,7 @@ public:
 	void init(const Scope* scope) override;
 	void prepareTimeStep() override { System::computeContextToBuffer(); };
 	void executeTimeStep() override { System::applyContextBuffer(); };
-	void setTimeStep(double t) override { ContinuousProcessPlugin::setTimeStep(t); System::setTimeStep(t * time_scaling); };
+	void setTimeStep(double t) override { ContinuousProcessPlugin::setTimeStep(t); System::setTimeStep(t); };
 	const Scope* scope()  override{ return System::getLocalScope(); };
 };
 

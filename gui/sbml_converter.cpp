@@ -305,11 +305,11 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
     </Space> \
     <Time> \
         <StartTime value=\"0\"/> \
-        <StopTime value=\"1\"/> \
+        <StopTime value=\"1\" symbol=\"stop\"/> \
         <TimeSymbol symbol=\"time\"/> \
     </Time> \
-    <Analysis time-step=\"1\"> \
-        <Logger> \
+    <Analysis> \
+        <Logger  time-step=\"stop/500\"> \
             <Input> \
             </Input> \
             <Output> \
@@ -379,8 +379,8 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 	// Setup target system 
 	
 	target_system = target_scope->insertChild("System");
-	target_system->attribute("solver")->set("runge-kutta");
-	target_system->attribute("time-step")->set("0.1");
+	target_system->attribute("solver")->set("runge-kutta-adaptive");
+	target_system->attribute("time-step")->set("stop");
 	
 	
 	Model* sbml_model = sbml_doc->getModel();
@@ -445,7 +445,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 
 	this->addSBMLEvents(sbml_model);
 
-	this->addSBMLInitialAssignments(sbml_model);
+// 	this->addSBMLInitialAssignments(sbml_model);
 
 	// Add all delays collected while parsing
 	for (const auto& delay : delays) {
@@ -509,9 +509,6 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 		morph_model->rootNodeContr->firstActiveChild("Time")->firstActiveChild("StopTime")->attribute("value")->set("100.0");
 	}
 
-	morph_model->rootNodeContr->trackNextChange();
-	target_system->attribute("time-step")->set("0.1");
-
 	for (int i=0; i<conversion_messages.size(); i++) {
 		morph_model->rootNodeContr->trackInformation(conversion_messages[i]);
 	}
@@ -551,7 +548,13 @@ void SBMLImporter::addSBMLSpecies(Model* sbml_model)
 		}
 		
 		QString init_value;
-		if (species->isSetInitialConcentration()) {
+		if (sbml_model->getInitialAssignmentBySymbol(species->getId())) {
+			auto init=sbml_model->getInitialAssignmentBySymbol(species->getId());
+			auto math = init->getMath()->deepCopy();
+			sanitizeAST( math );
+			init_value = QString(SBML_formulaToString(math));
+		}
+		else if (species->isSetInitialConcentration()) {
 			init_value = QString::number(species->getInitialConcentration());
 		}
 		else if (species->isSetInitialAmount() ){
@@ -658,40 +661,45 @@ void SBMLImporter::addSBMLRules(Model* sbml_model)
 		if (compartments.count(s2q(rule->getVariable()))) {
 			throw SBMLConverterException(SBMLConverterException::SBML_DYNAMIC_COMPARTMENT, string("Compartment size dynamics currently not supported.") );
 		}
+		
+		ASTNode* math = rule->getMath()->deepCopy();
+		sanitizeAST(math);
+		auto expression =  QString(SBML_formulaToString(math));
+		delete math;
+		
 		switch (rule->getTypeCode()) {
 			case SBML_ALGEBRAIC_RULE :
 				throw SBMLConverterException(SBMLConverterException::SBML_ALGEBRAIC_RULE);
 				break;
 			case SBML_ASSIGNMENT_RULE :
-				rule_node = target_scope->insertChild("Equation");
+// 				rule_node = target_scope->insertChild("Equation");
+// 				rule_node->attribute("symbol-ref")->set(rule->getVariable());
+				rule_node = target_system->insertChild("Rule");
 				rule_node->attribute("symbol-ref")->set(rule->getVariable());
-// 				rule_node = target_system->insertChild("Function");
-// 				rule_node->attribute("symbol")->set(rule->getVariable());
+				rule_node->firstActiveChild("Expression")->setText(expression);
+				if (rule->isSetName()) {
+					rule_node->attribute("name")->set(rule->getName());
+					rule_node->attribute("name")->setActive(true);
+				}
+				
+				vars_with_assignments.insert(s2q(rule->getVariable()));
 				break;
 			case SBML_RATE_RULE :
 				rule_node = target_system->insertChild("DiffEqn");
 				rule_node->attribute("symbol-ref")->set(rule->getVariable());
+				rule_node->firstActiveChild("Expression")->setText(expression);
+				if (rule->isSetName()) {
+					rule_node->attribute("name")->set(rule->getName());
+					rule_node->attribute("name")->setActive(true);
+				}
+				
+				diffeqn_map.insert(s2q(rule->getVariable()),rule_node->firstActiveChild("Expression")->textAttribute());
 				break;
 			default :
 				throw SBMLConverterException(SBMLConverterException::SBML_INVALID);
 				break;
 		}
-		if (rule->isSetName()) {
-			rule_node->attribute("name")->set(rule->getName());
-			rule_node->attribute("name")->setActive(true);
-		}
 
-		ASTNode* math = rule->getMath()->deepCopy();
-		sanitizeAST(math);
-		rule_node->firstActiveChild("Expression")->setText(SBML_formulaToString(math));
-		delete math;
-
-		if (rule->getTypeCode() == SBML_ASSIGNMENT_RULE) {
-			vars_with_assignments.insert(s2q(rule->getVariable()));
-		}
-		else if (rule->getTypeCode() == SBML_RATE_RULE) {
-			diffeqn_map.insert(s2q(rule->getVariable()),rule_node->firstActiveChild("Expression")->textAttribute());
-		}
 	}
 };
 
@@ -813,15 +821,6 @@ void SBMLImporter::translateSBMLReactions(Model* sbml_model)
 			if (vars_with_assignments.contains(reactant_name))
 				continue;
 
-			if (! diffeqn_map.contains(reactant_name)) {
-				nodeController* deq_node = target_system->insertChild("DiffEqn");
-				deq_node->attribute("symbol-ref")->set(reactant_name);
-				deq_node->attribute("name")->set("gained from reactions");
-				deq_node->attribute("name")->setActive(true);
-
-				diffeqn_map.insert(reactant_name,deq_node->firstActiveChild("Expression")->textAttribute());
-			}
-
 			QString term;
 
 			if (reactant->isSetStoichiometryMath()) {
@@ -834,8 +833,20 @@ void SBMLImporter::translateSBMLReactions(Model* sbml_model)
 			// divide by compartment size, since kinetics describe the amount flux, not concentration flux
 			term += "(" + QString(SBML_formulaToString(kinetics_math)) + ")";
 			term += "/" + species[reactant_name].compartment;
+			
+			if (! diffeqn_map.contains(reactant_name)) {
+				nodeController* deq_node = target_system->insertChild("DiffEqn");
+				deq_node->attribute("symbol-ref")->set(reactant_name);
+				deq_node->attribute("name")->set("gained from reactions");
+				deq_node->attribute("name")->setActive(true);
 
-			diffeqn_map[reactant_name]->set(diffeqn_map[reactant_name]->get() + " - " + term);
+				diffeqn_map.insert(reactant_name,deq_node->firstActiveChild("Expression")->textAttribute());
+				diffeqn_map[reactant_name]->set(QString("- ") + term);
+			}
+			else {
+				diffeqn_map[reactant_name]->append(" - " + term);
+			}
+
 		}
 
 		// Solve the right hand side -- products of the reaction
@@ -852,15 +863,6 @@ void SBMLImporter::translateSBMLReactions(Model* sbml_model)
 			if (vars_with_assignments.contains(product_name))
 				continue; 
 
-			if (! diffeqn_map.contains(product_name)) {
-				nodeController* deq_node = target_system->insertChild("DiffEqn");
-				deq_node->attribute("symbol-ref")->set(product_name);
-				deq_node->attribute("name")->set("gained from reactions");
-				deq_node->attribute("name")->setActive(true);
-
-				diffeqn_map.insert(product_name,deq_node->firstActiveChild("Expression")->textAttribute());
-			}
-
 			QString term;
 			if (product->isSetStoichiometryMath()) {
 				throw SBMLConverterException(SBMLConverterException::SBML_INVALID);
@@ -872,9 +874,19 @@ void SBMLImporter::translateSBMLReactions(Model* sbml_model)
 			term += "(" + QString(SBML_formulaToString(kinetics_math)) + ")";
 			term += "/" + species[product_name].compartment;
 			
-			QString expr = diffeqn_map[product_name]->get();
+			if (! diffeqn_map.contains(product_name)) {
+				nodeController* deq_node = target_system->insertChild("DiffEqn");
+				deq_node->attribute("symbol-ref")->set(product_name);
+				deq_node->attribute("name")->set("gained from reactions");
+				deq_node->attribute("name")->setActive(true);
 
-			diffeqn_map[product_name]->set(expr + (expr.isEmpty() ? " " : " + ") + term);
+				diffeqn_map.insert(product_name,deq_node->firstActiveChild("Expression")->textAttribute());
+				diffeqn_map[product_name]->set(term);
+			}
+			else {
+				diffeqn_map[product_name]->append(" + " + term);
+			}
+
 		}
 		delete kinetics_math;
 	}

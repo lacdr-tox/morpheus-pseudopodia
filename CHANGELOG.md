@@ -1,9 +1,15 @@
 # ChangeLog
 
-## Changes not released yet
-
-   * Optionally expose local symbols to the input of the Neighborhood(Vector)Reporter.
-
+## Unreleased Changes
+  * Improve SBML import
+     * Provide more import target options
+     * Add support for multiple compartments
+     * Support delays by converting to DelayProperties
+  * Allow constant expressions in time-step specifications
+  * MacOS fix crash on double-clicking symbol list
+  * Windows fix SBML support (suitible library build)
+  * Fix rare misplacement in box object initializer
+  * Optionally expose local symbols to the input of the Neighborhood(Vector)Reporter.
 
 ## Patch 2.0.1
   * Fixed VectorRules not working

@@ -75,7 +75,7 @@ void Plugin::init(const Scope* scope)
 		local_scope = scope;
 	
 	for (uint i=0; i<plugin_parameters2.size(); i++) {
-		cout << this->XMLName() << ": Initializing parameter " << plugin_parameters2[i]->XMLPath()<< endl;
+// 		cout << this->XMLName() << ": Initializing parameter " << plugin_parameters2[i]->XMLPath()<< endl;
 		plugin_parameters2[i]->init();
 		
 		auto in = plugin_parameters2[i]->getDependSymbols();
@@ -107,8 +107,6 @@ set< SymbolDependency > Plugin::getOutputSymbols() const { return output_symbols
 
 TimeStepListener::TimeStepListener(TimeStepListener::XMLSpec spec) : xml_spec(spec)
 {
-	is_adjustable =  (xml_spec == XMLSpec::XML_NONE);
-	 
 	valid_time = -1;
 	time_step = -1;
 	latest_time_step = -1;
@@ -146,6 +144,10 @@ void TimeStepListener::setTimeStep(double t)
 // 	assert(t>0);
 	time_step = t;
 	if (time_step<0) {
+		valid_time = numeric_limits< double >::max();
+		latest_time_step = numeric_limits< double >::max();
+	}
+	else if (time_step == 0 ) {
 		valid_time = numeric_limits< double >::max();
 	}
 	else 
@@ -189,48 +191,50 @@ void TimeStepListener::propagateSourceTS(double ts)
 
 void TimeStepListener::loadFromXML(const XMLNode node, Scope* scope)
 {
-	Plugin::loadFromXML(node, scope);
-	
-	if (xml_spec == XMLSpec::XML_REQUIRED) {
-		is_adjustable = false;
-		if ( ! getXMLAttribute(node, "time-step", time_step) ) {
-			throw MorpheusException(string("Missing required time-step element in TSL \"") + XMLName() + "\"", node);
-		}
-		if (time_step<=0) {
-			// disable scheduling the plugin
-			time_step=-1;
-		}
-	}
-	else if (xml_spec == XMLSpec::XML_OPTIONAL) {
-		time_step = -1;
-		if (getXMLAttribute(node, "time-step", time_step)) {
-			if (time_step<=0) {
-				time_step=-1;
-			}
-			is_adjustable = false;
-			
-		} else {
+	switch (xml_spec) {
+		case XMLSpec::XML_NONE: 
 			is_adjustable = true;
-		}
+			break;
+		case XMLSpec::XML_OPTIONAL: 
+			if (node.isAttributeSet("time-step")) {
+				xml_time_step.setXMLPath("time-step");
+				registerPluginParameter(xml_time_step);
+				is_adjustable = false;
+				xml_spec = XMLSpec::XML_REQUIRED;
+			}
+			else {
+				xml_spec = XMLSpec::XML_NONE;
+				is_adjustable = true;
+			}
+			break;
+		case XMLSpec::XML_REQUIRED:
+			xml_time_step.setXMLPath("time-step");
+			registerPluginParameter(xml_time_step);
+			is_adjustable = false;
+			break;
 	}
-	else {
-		is_adjustable = true;
-	}
-	
+		
+	Plugin::loadFromXML(node, scope);
 }
 
 
 void TimeStepListener::init(const Scope* scope)
 {
 	Plugin::init(scope);
+	
 	valid_time = SIM::getTime();
-	latest_time_step = -1;
-	if (time_step>0)
-		setTimeStep(time_step);
+	
+	if (xml_spec == XMLSpec::XML_REQUIRED) {
+		if (xml_time_step(SymbolFocus::global)>0) {
+			setTimeStep(xml_time_step(SymbolFocus::global));
+		}
+		else {
+			setTimeStep(-1);
+		}
+	}
 	else {
-		valid_time = numeric_limits< double >::max();
-		if (time_step<0)
-			latest_time_step = numeric_limits< double >::max();
+		is_adjustable = true;
+		setTimeStep(time_step);
 	}
 
 	TimeScheduler::reg(this);
@@ -297,7 +301,7 @@ void InstantaneousProcessPlugin::setTimeStep(double ts)
 	
 }
 
-ReporterPlugin::ReporterPlugin() : TimeStepListener(TimeStepListener::XMLSpec::XML_NONE) 
+ReporterPlugin::ReporterPlugin(TimeStepListener::XMLSpec spec) : TimeStepListener(spec) 
 {
 	min_source_timestep = -1;
 	min_sink_timestep = -1;

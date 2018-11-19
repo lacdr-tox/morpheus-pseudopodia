@@ -45,7 +45,7 @@
 		</xs:all>
 		
 		<xs:attribute name="name" type="cpmString" use="optional" />
-<!-- 		<xs:attribute name="time-step" type="cpmDouble" use="optional" /> -->
+		<xs:attribute name="time-step" type="cpmMathExpression" use="optional" />
 	</xs:complexType>
 	
 	<xs:complexType name="NeighborhoodGlobalReporter" mixed="false" >
@@ -69,6 +69,7 @@
 		</xs:all>
 		
 		<xs:attribute name="name" type="cpmString" use="optional" />
+		<xs:attribute name="time-step" type="cpmMathExpression" use="optional" />
 	</xs:complexType>
 	
 	

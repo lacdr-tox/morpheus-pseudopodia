@@ -19,6 +19,7 @@ void SystemFunc<double>::initFunction() {
 	
 	callback = make_shared<CallBack>(evaluator,  fun_params.empty() ? NULL : &fun_params[0], fun_params.size());
 }
+
 template<>
 void SystemFunc<VDOUBLE>::initFunction() {}
 
@@ -42,27 +43,38 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 		string str_solver;
 		if (getXMLAttribute(node,"solver",str_solver)) {
 			if (str_solver =="euler" || str_solver =="1") {
-				solver_method = Euler_Solver;
+				solver_spec.method = SystemSolver::Method::Euler;
 			}
 			else if (str_solver =="heun" || str_solver =="2") {
-				solver_method = Heun_Solver;
+				solver_spec.method = SystemSolver::Method::Heun;
 			}
 			else if (str_solver =="runge-kutta" || str_solver =="4") {
-				solver_method = Runge_Kutta_Solver;
+				solver_spec.method = SystemSolver::Method::Runge_Kutta4;
+			}
+			else if (str_solver == "runge-kutta-adaptive" || str_solver == "45") {
+				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveCK;
+			}
+			else if (str_solver == "runge-kutta-adaptiveCK") {
+				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveCK;
+			}
+			else if (str_solver == "runge-kutta-adaptiveDP") {
+				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveDP;
 			}
 			else {
-				cout << "Unknown solver \"" << str_solver << "\" for System!\nSelecting Runge-Kutta 4th order." << endl;
-				solver_method = Runge_Kutta_Solver;
+				cout << "Unknown solver \"" << str_solver << "\" for System!\nSelecting Runge-Kutta adaptive." << endl;
+				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveCK;
 			}
 		}
 		else
-			solver_method = Runge_Kutta_Solver;
-		time_scaling = 1.0;
-		getXMLAttribute(node,"time-scaling",time_scaling);
+			solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveCK;
+		solver_spec.time_scaling = 1.0;
+		getXMLAttribute(node,"time-scaling",solver_spec.time_scaling);
+		solver_spec.epsilon = 1e-4;
+		getXMLAttribute(node,"solver-eps",solver_spec.epsilon);
 	}
 	else {
-		solver_method = Discrete_Solver;
-		time_scaling = 1.0;
+		solver_spec.method = SystemSolver::Method::Discrete;
+		solver_spec.time_scaling = 1.0;
 	}
 	
 	int nPlugins = node.nChildNode();
@@ -220,9 +232,11 @@ void System::init() {
 	/////////////////////////////////////////
 	//        Creating blueprint solver for thread 1
 	/////////////////////////////////////////
-	solvers.push_back(make_shared<SystemSolver>(local_scope, evals, vec_evals, solver_method,time_scaling));
+	solvers.push_back(make_shared<SystemSolver>(local_scope, evals, vec_evals, solver_spec));
 
 }
+
+bool System::adaptive() const { return solver_spec.method == SystemSolver::Method::Runge_Kutta_AdaptiveCK || solver_spec.method == SystemSolver::Method::Runge_Kutta_AdaptiveDP; };
 
 void System::computeToBuffer(const SymbolFocus& f)
 {
@@ -290,7 +304,8 @@ void System::applyContextBuffer()
 
 void System::setTimeStep ( double ht )
 {
-	for (uint i=0; i<solvers.size(); i++) solvers[i]->setTimeStep(ht);
+	for (uint i=0; i<solvers.size(); i++) 
+		solvers[i]->setTimeStep(ht * solver_spec.time_scaling);
 }
 
 set< SymbolDependency > System::getDependSymbols()
@@ -317,7 +332,7 @@ set< SymbolDependency > System::getOutputSymbols()
 }
 
 
-bool injectGaussionNoiseScaling(string& expression, SolverMethod solver_method)
+bool injectGaussionNoiseScaling(string& expression, SystemSolver::Method solver_method)
 {
 	// Setup proper random noise generators for gaussian noise
 	size_t pos=0; bool modified_expr=false;
@@ -326,7 +341,7 @@ bool injectGaussionNoiseScaling(string& expression, SolverMethod solver_method)
 		pos += sym_RandomNorm.size();
 
 		if (expression[pos] == '(') {
-			if ( solver_method == Runge_Kutta_Solver ) {
+			if ( solver_method != SystemSolver::Method::Heun && solver_method != SystemSolver::Method::Euler ) {
 				cerr << "System: ODE contains stochastic term, but no Runge-Kutta solver for stochastic differential equations is available (choose Euler or Heun method instead)."<< endl;
 				// TODO Should throw
 				exit(-1);
@@ -354,17 +369,16 @@ bool injectGaussionNoiseScaling(string& expression, SolverMethod solver_method)
 }
 
 
-SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFunc< double >> >& fun, const std::vector< shared_ptr<SystemFunc< VDOUBLE >> >& vfun, SolverMethod method, double time_scaling)
+SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFunc< double >> >& fun, const std::vector< shared_ptr<SystemFunc< VDOUBLE >> >& vfun, SystemSolver::Spec spec)
 {
-	solver_method = method;
-	this->time_scaling = time_scaling;
+	this->spec = spec;
 // Situation: This constructor is called after loading all functionals and 
-// optionally retrieve the required external symbols
+// optionally retrieval of the required external symbols
 	this->cache = make_shared<EvaluatorCache>(scope);
-	// override the global time with the local scaled time
+	// override the global time with a solver local scaled time
 	local_time_idx = cache->addLocal(SymbolBase::Time_symbol,0.0);
+	// override the noise_scaling with a solver local
 	noise_scaling_idx = cache->addLocal(SystemSolver::noise_scaling_symbol,0.0);
-	
 	
 	// Copy the functionals and wire them to the local cache
 	for (uint i=0; i<fun.size(); i++) {
@@ -391,7 +405,7 @@ SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFun
 				if (!eval->global_symbol) eval->global_symbol = scope->findRWSymbol<double>(eval->symbol_name);
 				eval->cache_idx = cache->addLocal(eval->symbol_name,0.0);
 				eval->evaluator->parser->DefineFun( sym_RandomNorm,  &getRandomNormValueSDE,  false);
-				if (injectGaussionNoiseScaling(eval->expression, solver_method))
+				if (injectGaussionNoiseScaling(eval->expression, spec.method))
 					cout << "System: Adding scaling to noise function in SystemSolver: " << eval->expression << endl;
 				break;
 		}
@@ -536,11 +550,10 @@ SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFun
 
 SystemSolver::SystemSolver(const SystemSolver& other)
 {
-	solver_method = other.solver_method;
 	cache = make_shared<EvaluatorCache>(*other.cache);
 	local_time_idx = other.local_time_idx;
 	noise_scaling_idx = other.noise_scaling_idx;
-	time_step = other.time_step;
+	spec = other.spec;
 	
 	// Copy the functionals and wire them to the local cache
 	for (uint i=0; i<other.evals.size(); i++) {
@@ -599,18 +612,21 @@ SystemSolver::SystemSolver(const SystemSolver& other)
 };
 
 void SystemSolver::setTimeStep(double ht) {
-	time_step = ht;
+	spec.time_step = ht;
 }
 
 void SystemSolver::solve(const SymbolFocus& f, bool use_buffer) {
 	// Fetch data
 	fetchSymbols(f);
 
-	switch (solver_method) {
-		case Euler_Solver: Euler(f, time_step); break;
-		case Heun_Solver : Heun(f, time_step); break;
-		case Runge_Kutta_Solver : RungeKutta(f, time_step); break;
-		case Discrete_Solver : Discrete(f); break;
+	switch (spec.method) {
+		case Method::Euler: Euler(f, spec.time_step); break;
+		case Method::Heun : Heun(f, spec.time_step); break;
+		case Method::Runge_Kutta4 : RungeKutta(f, spec.time_step); break;
+		case Method::Discrete : Discrete(f); break;
+		case Method::Runge_Kutta_AdaptiveCK :
+		case Method::Runge_Kutta_AdaptiveDP :
+			RungeKutta_adaptive(f,spec.time_step); break;
 	}
 	// Write back
 	if (use_buffer)
@@ -633,7 +649,7 @@ void SystemSolver::fetchSymbols(const SymbolFocus& f)
 	}
 	
 	// adjust time for time scaling
-	cache->setLocal(local_time_idx, SIM::getTime() * time_scaling);
+	cache->setLocal(local_time_idx, SIM::getTime() * spec.time_scaling);
 	
 	updateLocalVars(f);
 // 	cout << cache->toString() << endl;
@@ -669,6 +685,34 @@ void SystemSolver::updateLocalVars(const SymbolFocus& f) {
 }
 
 
+void SystemSolver::check_result(double value , const SystemFunc<double>& e) const {
+	if ( std::isnan( value ) || std::isinf( value ) ){
+		stringstream s;
+		s << "SystemSolver returned " << (std::isnan( value ) ? "NaN" : "Inf") << " for expression '" << e.expression << "'." << endl;
+		const mu::varmap_type& symbols = e.evaluator->parser->GetUsedVar();
+		for (auto ii  : symbols) s << ii.first << "=" << *(ii.second) << "; "; 
+		s << endl;
+		if (std::isinf( value ))
+			throw ExpressionException(s.str(), ExpressionException::ErrorType::INF);
+		else
+			throw ExpressionException(s.str(), ExpressionException::ErrorType::NaN);
+	}
+}
+
+void SystemSolver::check_result(const VDOUBLE& value , const SystemFunc<VDOUBLE>& e) const {
+	if ( std::isnan( value.x ) || std::isinf( value.x ) ||  std::isnan( value.y ) || std::isinf( value.y ) ||  std::isnan( value.z ) || std::isinf( value.z ) ){
+		stringstream s;
+		s << "SystemSolver returned NaN/Inf for expression '" << e.expression << "'." << endl;
+		const mu::varmap_type& symbols = e.evaluator->parser->GetUsedVar();
+		for (auto ii  : symbols) s << ii.first << "=" << *(ii.second) << "; "; 
+		s << endl;
+		if (std::isinf( value.x ) || std::isinf( value.y ) || std::isinf( value.z ) )
+			throw ExpressionException(s.str(), ExpressionException::ErrorType::INF);
+		else
+			throw ExpressionException(s.str(), ExpressionException::ErrorType::NaN);
+	}
+}
+
 void SystemSolver::Discrete(const SymbolFocus& f) {
 	
 	if (equations.size() == 0 && vec_equations.size()==0)
@@ -676,26 +720,11 @@ void SystemSolver::Discrete(const SymbolFocus& f) {
 	
 	for (uint i=0; i < equations.size(); i++){
 		SystemFunc<double> &e = *equations[i];
-		e.k1 = e.evaluator->get(f);
-		if ( std::isnan( e.k1 ) || std::isinf( e.k1 ) ){
-			cerr << "SystemSolver returned " << (std::isnan( e.k1 ) ? "NaN" : "Inf") << " for expression '" << e.expression << "'." << endl;
-			const mu::varmap_type& symbols = e.evaluator->parser->GetUsedVar();
-			for (auto ii  : symbols) cerr << ii.first << "=" << *(ii.second) << "; "; 
-			cerr << endl;
-			exit(-1);
-		}
+		e.k1 = e.evaluator->get(f); check_result(e.k1,e);
 	}
 	for (uint i=0; i < vec_equations.size(); i++) {
 		SystemFunc<VDOUBLE> &e = *vec_equations[i];
-		e.k1 = e.evaluator->get(f);
-		
-		if ( std::isnan( e.k1.x ) || std::isinf( e.k1.x ) ||  std::isnan( e.k1.y ) || std::isinf( e.k1.y ) ||  std::isnan( e.k1.z ) || std::isinf( e.k1.z ) ){
-			cerr << "SystemSolver returned NaN/Inf for expression '" << e.expression << "'." << endl;
-			const mu::varmap_type& symbols = e.evaluator->parser->GetUsedVar();
-			for (auto ii  : symbols) cerr << ii.first << "=" << *(ii.second) << "; "; 
-			cerr << endl;
-			exit(-1);
-		}
+		e.k1 = e.evaluator->get(f); check_result(e.k1,e);
 	}
 	for (uint i=0; i < equations.size(); i++){
 		this->cache->setLocal(equations[i]->cache_idx, equations[i]->k1);
@@ -713,14 +742,7 @@ void SystemSolver::Euler(const SymbolFocus& f, double ht) {
 	for (uint i=0; i < odes.size(); i++){
 		SystemFunc<double> &e = *odes[i];
 		e.k0 = cache->getLocalD(e.cache_idx);
-		e.k1 = e.evaluator->plain_get(f);
-		if( std::isnan( e.k1 ) || std::isinf( e.k1 ) ){
-			cerr << "SystemSolver returned " << (std::isnan( e.k1 ) ? "NaN" : "Inf") << " for expression '" << e.expression << "'." << endl;
-			const mu::varmap_type& symbols = e.evaluator->parser->GetUsedVar();
-			for (auto ii  : symbols) cerr << ii.first << "=" << *(ii.second) << "; "; 
-			cerr << endl;
-			exit(-1);
-		}
+		e.k1 = e.evaluator->plain_get(f); check_result(e.k1,e);
 	}
 	for (uint i=0; i < odes.size(); i++){
 		SystemFunc<double> &e = *odes[i];
@@ -738,38 +760,25 @@ void SystemSolver::Heun(const SymbolFocus& f, double ht) {
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
 		e.k0 = cache->getLocalD(e.cache_idx);
-		e.k1 = e.evaluator->plain_get(f);
-
-		if( std::isnan( e.k1 ) || std::isinf( e.k1 ) ){
-			cerr << "SystemSolver returned " << (std::isnan( e.k1 ) ? "NaN" : "Inf") << " for expression '" << e.expression << "'." << endl;
-			const mu::varmap_type& symbols = e.evaluator->parser->GetUsedVar();
-			for (auto ii  : symbols) cerr << ii.first << "=" << *(ii.second) << "; "; 
-			cerr << endl;
-			exit(-1);
-		}
+	}
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k1 = e.evaluator->plain_get(f); check_result(e.k1,e);
 	}
 
+	// Second Step interpolation
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
 		cache->setLocal(e.cache_idx, e.k0 + 0.5 * ht * e.k1);
 	}
 	cache->setLocal(local_time_idx, cache->getLocalD(local_time_idx) + ht);
-
-	// Second Step interpolation
 	updateLocalVars(f);
-	
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
-		e.k2 = e.evaluator->plain_get(f);
-		if( std::isnan( e.k2 ) || std::isinf( e.k2 ) ){
-			cerr << "SystemSolver returned " << (std::isnan( e.k2 ) ? "NaN" : "Inf") << " for expression '" << e.expression << "'." << endl;
-			const mu::varmap_type& symbols = e.evaluator->parser->GetUsedVar();
-			for (auto ii  : symbols) cerr << ii.first << "=" << *(ii.second) << "; "; 
-			cerr << endl;
-			exit(-1);
-		}
+		e.k2 = e.evaluator->plain_get(f); check_result(e.k2,e);
 	}
 	
+	// Apply the step to the local cache
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
 		cache->setLocal(e.cache_idx, e.k0 + 0.5 * ht * (e.k1 + e.k2) );
@@ -790,88 +799,340 @@ void SystemSolver::RungeKutta(const SymbolFocus& f, double ht) {
 
 	
 	// First Step interpolation
+
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
 		e.k0 = cache->getLocalD(e.cache_idx);
-		e.k1 = e.evaluator->plain_get(f);
-
-		if( std::isnan( e.k1 ) || std::isinf( e.k1 ) ){
-			cerr << "SystemSolver returned " << (std::isnan( e.k1 ) ? "NaN" : "Inf") << " for expression '" << e.expression << "'." << endl;
-			const mu::varmap_type& symbols = e.evaluator->parser->GetUsedVar();
-			for (auto ii  : symbols) cerr << ii.first << "=" << *(ii.second) << "; "; 
-			cerr << endl;
-			exit(-1);
-		}
+		e.k1 = e.evaluator->plain_get(f); check_result(e.k1,e);
 	}
 
+	// Second Step interpolation
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
 		cache->setLocal(e.cache_idx, e.k0 + a21 * ht * e.k1);
 	}
-
-	// Second Step interpolation
 	cache->setLocal(local_time_idx, cache->getLocalD(local_time_idx) + c2*ht);
 	updateLocalVars(f);
 	
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
-		e.k2 = e.evaluator->plain_get(f);
-		if( std::isnan( e.k2 ) || std::isinf( e.k2 ) ){
-			cerr << "SystemSolver returned " << (std::isnan( e.k2 ) ? "NaN" : "Inf") << " for expression '" << e.expression << "'." << endl;
-			const mu::varmap_type& symbols = e.evaluator->parser->GetUsedVar();
-			for (auto ii  : symbols) cerr << ii.first << "=" << *(ii.second) << "; "; 
-			cerr << endl;
-			exit(-1);
-		}
+		e.k2 = e.evaluator->plain_get(f); check_result(e.k2,e);
 	}
+	
+	// Third Step interpolation
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
 		cache->setLocal(e.cache_idx, e.k0 + a31 * ht * e.k1 + a32 * ht * e.k2);
 	}
-	
-	// Third Step interpolation
 	cache->setLocal(local_time_idx, cache->getLocalD(local_time_idx) + (c3-c2)*ht);
 	updateLocalVars(f);
 	
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
-		e.k3 = e.evaluator->plain_get(f);
-		if( std::isnan( e.k3 ) || std::isinf( e.k3 ) ){
-			cerr << "SystemSolver returned " << (std::isnan( e.k3 ) ? "NaN" : "Inf") << " for expression '" << e.expression << "'." << endl;
-			const mu::varmap_type& symbols = e.evaluator->parser->GetUsedVar();
-			for (auto ii  : symbols) cerr << ii.first << "=" << *(ii.second) << "; "; 
-			cerr << endl;
-			exit(-1);
-		}
+		e.k3 = e.evaluator->plain_get(f); check_result(e.k3,e);
 	}
+
+	// Fourth Step interpolation
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
 		cache->setLocal(e.cache_idx,  e.k0 + a41 * ht * e.k1 + a42 * ht * e.k2 + a43 * ht * e.k3);
 	}
-
-	// Fourth Step interpolation
 	cache->setLocal(local_time_idx, cache->getLocalD(local_time_idx) + (c4-c3)*ht);
 	updateLocalVars(f);
-	
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
-		e.k4 = e.evaluator->plain_get(f);
-		if( std::isnan( e.k4 ) || std::isinf( e.k4 ) ){
-			cerr << "SystemSolver returned " << (std::isnan( e.k4 ) ? "NaN" : "Inf") << " for expression '" << e.expression << "'." << endl;
-			const mu::varmap_type& symbols = e.evaluator->parser->GetUsedVar();
-			for (auto ii  : symbols) cerr << ii.first << "=" << *(ii.second) << "; "; 
-			cerr << endl;
-			exit(-1);
-		}
+		e.k4 = e.evaluator->plain_get(f);check_result(e.k4,e);
 	}
+	
+	// Apply the step to the local cache
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
 		cache->setLocal(e.cache_idx, e.k0 + ht *( b1*e.k1 + b2*e.k2 + b3*e.k3 + b4*e.k4) );
 	}
-	
 	this->Discrete(f);
 }
 
+void SystemSolver::RungeKutta_adaptive(const SymbolFocus& f, double ht) {
+	double local_ht = ht;
+	double total_ht = 0;
+	const double tiny = 1e-15;
+	const double safety = 0.9;
+	const double epsilon = spec.epsilon;
+	const double min_ht = 1e-30;
+	const double starttime = cache->getLocalD(local_time_idx);
+	
+	for (;;){
+		double max_err;
+		max_err=0;
+		try {
+			if (spec.method==Method::Runge_Kutta_AdaptiveCK)
+				RungeKutta_45CashKarp(f,local_ht);
+			else 
+				RungeKutta_45DormandPrince(f,local_ht);
+			// compute maximum scaled error
+			
+			for (uint i=0; i < odes.size(); i++) {
+				SystemFunc<double> &e = *odes[i];
+// 				cout << "err " << to_str(e.err) << " y " << to_str(e.k0) << " dy " << to_str(e.dy) << " rel " << to_str(abs(e.err/(e.k0 + local_ht*e.dy + tiny))) << endl;
+				max_err = max(max_err,abs(e.err/(e.k0 + local_ht*e.dy + tiny)));
+			}
+			max_err /= epsilon;
+			if (max_err>1.0) {
+				if ( local_ht <= min_ht) {
+					throw string("Unable to integrate system. Minimal time step") + to_string(min_ht) + "reached.";
+				}
+// 				cout << "Error for ts " << to_str(local_ht) << " too big " << to_str(max_err) << ">" << "1.0" <<endl; 
+				double new_ht = safety * local_ht * pow(max_err, -0.25);
+				local_ht = max(0.1*local_ht, new_ht); // cap at 1/10 of the current time step.
+// 				cout << "Downscaling to time step " << to_str(local_ht) << endl;
+				continue;
+			}
+		}
+		catch (const ExpressionException& e) {
+			if (local_ht > min_ht) { // Retry
+				// Reset the dirty cache
+				for(uint i=0; i < odes.size(); i++) {
+					SystemFunc<double> &e = *odes[i];
+					cache->setLocal(e.cache_idx,e.k0);
+				}
+				cache->setLocal(local_time_idx, starttime+total_ht);
+				// Rescale
+				local_ht *= 0.1;
+// 				cout << "Downscaling to time step " << to_str(local_ht) << endl;
+				continue;
+			}
+			else 
+				throw string("Unable to integrate system. Minimal time step") + to_string(min_ht) + "reached.\n" + e.what();
+		}
+		
+		// Apply step to the cache
+		for (uint i=0; i < odes.size(); i++) {
+			SystemFunc<double> &e = *odes[i];
+// 			if (e.k0 + e.dy < 0) {
+// 				cout << "Got negative " << to_str(e.k0) << "+" << to_str(e.dy) << " ("<< to_str(e.err) << ")" <<endl;
+// 			}
+			cache->setLocal(e.cache_idx, e.k0 + e.dy );
+		}
+		total_ht += local_ht;
+		cache->setLocal(local_time_idx, starttime + total_ht);
+		
+		if (total_ht >= ht) break;
+
+		if (max_err < 0.75) {
+			local_ht = safety * local_ht * pow(max_err, -0.20);
+// 			cout << "Upscaling to time step " << to_str(local_ht) << endl;
+		}
+		// Adjust next step
+		local_ht = min(local_ht, ht-total_ht);
+	}
+// 	cout << "Time " << starttime << " dt " << to_str(total_ht)<< endl;
+	this->Discrete(f); // Execute rule based paradigms with the fixed external time step.
+}
+
+void SystemSolver::RungeKutta_45CashKarp(const SymbolFocus& f, double ht) {
+	// constants of the butcher tableau of Runge-Kutta-45, the Cash-Karp parameterization
+	// time steps
+	const double c1=0.0, c2=0.2, c3=0.3, c4=0.6, c5=1.0, c6=7.0/8;
+	// interpolation coefficients
+	const double a21=0.2;
+	const double a31=3.0/40, a32=9.0/40;
+	const double a41=0.3, a42=-0.9, a43=1.2;
+	const double a51=-11.0/54, a52=2.5, a53=-70.0/27, a54=35.0/27;
+	const double a61=1631.0/55296, a62=175.0/512, a63=575.0/13824, a64=44275.0/110592, a65=253.0/4096;
+	// solution coeffitients
+	const double b5_1=37.0/378, b5_2=0, b5_3=250.0/621, b5_4=125.0/594, b5_5=0, b5_6=512.0/1771;
+	const double b4_1=2825.0/27648, b4_2=0, b4_3=18575.0/48384, b4_4=13525.0/55296, b4_5=277.0/14336 , b4_6=1.0/4;
+	// solution error coefficients
+	const double berr_1=b5_1-b4_1, berr_2=b5_2-b4_2, berr_3=b5_3-b4_3, berr_4=b5_4-b4_4, berr_5=b5_5-b4_5, berr_6=b5_6-b4_6;
+
+
+	const double starttime = cache->getLocalD(local_time_idx);
+	// First Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k0 = cache->getLocalD(e.cache_idx);
+		e.k1 = e.evaluator->plain_get(f); check_result(e.k1,e);
+	}
+
+	// Second Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		cache->setLocal(e.cache_idx, e.k0 + a21 * ht * e.k1);
+	}
+	cache->setLocal(local_time_idx, starttime + c2*ht);
+	updateLocalVars(f);
+	
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k2 = e.evaluator->plain_get(f); check_result(e.k2,e);
+	}
+	
+	// Third Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		cache->setLocal(e.cache_idx, e.k0 + a31 * ht * e.k1 + a32 * ht * e.k2);
+	}
+	cache->setLocal(local_time_idx, starttime + c3*ht);
+	updateLocalVars(f);
+	
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k3 = e.evaluator->plain_get(f); check_result(e.k3,e);
+	}
+
+	// Fourth Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		cache->setLocal(e.cache_idx,  e.k0 + ht* (a41*e.k1 + a42*e.k2 + a43*e.k3));
+	}
+	cache->setLocal(local_time_idx,  starttime + c4*ht);
+	updateLocalVars(f);
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k4 = e.evaluator->plain_get(f); check_result(e.k4,e);
+	}
+	
+	// Fifth Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		cache->setLocal(e.cache_idx,  e.k0 + ht* (a51*e.k1 + a52*e.k2 + a53*e.k3 + a54*e.k4));
+	}
+	cache->setLocal(local_time_idx,  starttime + c5*ht);
+	updateLocalVars(f);
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k5 = e.evaluator->plain_get(f); check_result(e.k5,e);
+	}
+	
+	// Sixth Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		cache->setLocal(e.cache_idx,  e.k0 + ht* (a61*e.k1 + a62*e.k2 + a63*e.k3 + a64*e.k4 + a65*e.k5));
+	}
+	cache->setLocal(local_time_idx,  starttime + c6*ht);
+	updateLocalVars(f);
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k6 = e.evaluator->plain_get(f); check_result(e.k6,e);
+	}
+	
+	// Estimate dy and err and reset the cache
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.err = abs(ht *( berr_1*e.k1 + berr_2*e.k2 + berr_3*e.k3 + berr_4*e.k4 + berr_5*e.k5 + berr_6*e.k6));
+		e.dy = ht *( b5_1*e.k1 + b5_2*e.k2 + b5_3*e.k3 + b5_4*e.k4 +  b5_5*e.k5 + b5_6*e.k6);
+		cache->setLocal(e.cache_idx,e.k0);
+	}
+	cache->setLocal(local_time_idx, starttime);
+}
+
+void SystemSolver::RungeKutta_45DormandPrince(const SymbolFocus& f, double ht) {
+	// constants of the butcher tableau of Runge-Kutta-45, the Dormand-Prince parameterization
+	// time steps
+	const double c1=0.0, c2=0.2, c3=0.3, c4=0.8, c5=8.0/9, c6=1, c7=1;
+	// interpolation coefficients
+	const double a21=0.2;
+	const double a31=3.0/40, a32=9.0/40;
+	const double a41=44.0/45, a42=-56.0/15, a43=32.0/9;
+	const double a51=19372.0/6561, a52= -25360.0/2187, a53=64448.0/6561, a54= -212.0/729;
+	const double a61=9017.0/3168, a62= -355.0/33, a63=46732.0/5247, a64=49.0/176, a65=-5103.0/18656;
+	const double a71=35.0/384, a72=0, a73=500.0/1113, a74=125.0/192, a75=-2187.0/6784,a76=11.0/84;
+	// solution coeffitients
+	const double b5_1=37.0/378, b5_2=0, b5_3=500.0/1113, b5_4=125.0/192, b5_5=-2187.0/6784, b5_6=11.0/84, b5_7=0;
+	const double b4_1=5179.0/57600, b4_2=0, b4_3=7571.0/16695, b4_4=393.0/640, b4_5=-92097.0/339200 , b4_6=187.0/2100, b4_7=1.0/40;
+	// solution error coefficients
+	const double berr_1=b5_1-b4_1, berr_2=b5_2-b4_2, berr_3=b5_3-b4_3, berr_4=b5_4-b4_4, berr_5=b5_5-b4_5, berr_6=b5_6-b4_6, berr_7=b5_7-b4_7;
+
+	const double starttime = cache->getLocalD(local_time_idx);
+
+	// First Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k0 = cache->getLocalD(e.cache_idx);
+		e.k1 = e.evaluator->plain_get(f); check_result(e.k1,e);
+	}
+
+	// Second Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		cache->setLocal(e.cache_idx, e.k0 + a21 * ht * e.k1);
+	}
+	cache->setLocal(local_time_idx, starttime + c2*ht);
+	updateLocalVars(f);
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k2 = e.evaluator->plain_get(f); check_result(e.k2,e);
+	}
+	
+	// Third Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		cache->setLocal(e.cache_idx, e.k0 + ht *(a31*e.k1 + a32*e.k2));
+	}
+	cache->setLocal(local_time_idx, starttime + c3*ht);
+	updateLocalVars(f);
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k3 = e.evaluator->plain_get(f); check_result(e.k3,e);
+	}
+
+	// Fourth Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		cache->setLocal(e.cache_idx,  e.k0 + ht* (a41*e.k1 + a42*e.k2 + a43*e.k3));
+	}
+	cache->setLocal(local_time_idx, starttime + c4*ht);
+	updateLocalVars(f);
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k4 = e.evaluator->plain_get(f); check_result(e.k4,e);
+	}
+	
+	// Fifth Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		cache->setLocal(e.cache_idx,  e.k0 + ht* (a51*e.k1 + a52*e.k2 + a53*e.k3 + a54*e.k4));
+	}
+	cache->setLocal(local_time_idx, starttime + c5*ht);
+	updateLocalVars(f);
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k5 = e.evaluator->plain_get(f); check_result(e.k5,e);
+	}
+	
+	// Sixth Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		cache->setLocal(e.cache_idx,  e.k0 + ht* (a61*e.k1 + a62*e.k2 + a63*e.k3 + a64*e.k4 + a65*e.k5));
+	}
+	cache->setLocal(local_time_idx, starttime + c6*ht);
+	updateLocalVars(f);
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k6 = e.evaluator->plain_get(f); check_result(e.k6,e);
+	}
+	
+	// Seventh Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		cache->setLocal(e.cache_idx,  e.k0 + ht* (a71*e.k1 + a72*e.k2 + a73*e.k3 + a74*e.k4 + a75*e.k5 + a76*e.k6));
+	}
+	cache->setLocal(local_time_idx, starttime + c7*ht);
+	updateLocalVars(f);
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k7 = e.evaluator->plain_get(f); check_result(e.k7,e);
+	}
+	
+	// Estimate dy and err and reset the cache
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.err = abs(ht *( berr_1*e.k1 + berr_2*e.k2 + berr_3*e.k3 + berr_4*e.k4 +  berr_5*e.k5 + berr_6*e.k6+ berr_7*e.k7));
+		e.dy = ht *( b5_1*e.k1 + b5_2*e.k2 + b5_3*e.k3 + b5_4*e.k4 +  b5_5*e.k5 + b5_6*e.k6 + b5_7*e.k7);
+		cache->setLocal(e.cache_idx,e.k0);
+	}
+	cache->setLocal(local_time_idx, starttime);
+}
 
 void DiscreteSystem::init(const Scope* scope)
 {
@@ -987,7 +1248,10 @@ void EventSystem::executeTimeStep()
 void ContinuousSystem::init(const Scope* scope) {
 	ContinuousProcessPlugin::init(scope);
 	System::init();
-	System::setTimeStep(TimeStepListener::timeStep() * time_scaling);
+	if (System::adaptive()) {
+		is_adjustable = true;
+	}
+	System::setTimeStep(TimeStepListener::timeStep());
 	registerInputSymbols(System::getDependSymbols());
 	registerOutputSymbols(System::getOutputSymbols());
 	Plugin::local_scope = System::local_scope;
@@ -998,7 +1262,7 @@ void ContinuousSystem::loadFromXML(const XMLNode node, Scope* scope) {
 	ContinuousProcessPlugin::loadFromXML(node, scope);
 	System::loadFromXML(node, scope);
 	// The TimeStepListener was reading the internal timeStep, thus has to be readjusted to the global time !!
-	ContinuousProcessPlugin::setTimeStep(ContinuousProcessPlugin::timeStep() / time_scaling);
+	ContinuousProcessPlugin::setTimeStep(ContinuousProcessPlugin::timeStep() / solver_spec.time_scaling);
 };
 
 
