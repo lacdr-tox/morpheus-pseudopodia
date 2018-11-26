@@ -33,7 +33,7 @@
 #include "xmlpreview.h"
 #include "settingsdialog.h"
 #include "sbml_import.h"
-#include "feedback.h"
+#include "announcement.h"
 
 using namespace std;
 

@@ -139,7 +139,7 @@ SET( SOURCES
     domnodeviewer.cpp
     domnodeeditor.cpp
     equationhighlighter.cpp 
-    feedback.cpp
+    announcement.cpp
     imagetable.cpp
     infoaction.cpp 
     jobcontroller.cpp
@@ -181,7 +181,7 @@ SET( HEADERS #headers that are commented out are not necessary for moc_* files (
     domnodeeditor.h
     domnodeviewer.h
     equationhighlighter.h 
-    feedback.h
+    announcement.h
     imagetable.h
     infoaction.h 
     jobcontroller.h 
