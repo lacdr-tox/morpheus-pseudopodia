@@ -10,7 +10,7 @@ NeighborhoodReporter::NeighborhoodReporter() : ReporterPlugin(TimeStepListener::
 	map<string, InputModes> value_map;
 	value_map["cell"] = CELLS;
 	value_map["length"] = INTERFACES;
-	   scaling.setConversionMap(value_map);
+	scaling.setConversionMap(value_map);
 	registerPluginParameter(scaling);
 	
 	input.setXMLPath("Input/value");
@@ -38,15 +38,6 @@ void NeighborhoodReporter::loadFromXML(const XMLNode xNode, Scope* scope)
 		output.push_back(out);
 	}
 	
-	for (uint i=0; i<xNode.getChildNode("Input").nChildNode("ExposeLocal"); i++) {
-		ExposeSpec e;
-		e.local_symbol->setXMLPath("Input/ExposeLocal/symbol-ref");
-		e.symbol->setXMLPath("Input/ExposeLocal/symbol");
-		registerPluginParameter(e.local_symbol);
-		registerPluginParameter(e.symbol);
-		exposed_locals.push_back(e);
-	}
-	
 	// Load all the defined PluginParameters
 	ReporterPlugin::loadFromXML(xNode, scope);
 }
@@ -54,19 +45,17 @@ void NeighborhoodReporter::loadFromXML(const XMLNode xNode, Scope* scope)
 
 void NeighborhoodReporter::init(const Scope* scope)
 {
-	// Add variables to be exposed from the local cell
-	vector<EvaluatorVariable> locals;
-	for (auto & local : exposed_locals) {
-		local.symbol->init();
-		locals.push_back({local.symbol(),EvaluatorVariable::DOUBLE});
-	}
-	input.setLocalsTable(locals);
-	
+	input.addNameSpaceScope("local",scope);
+
     ReporterPlugin::init(scope);
 	
-	exposed_locals_granularity = Granularity::Global;
-	for (auto & local : exposed_locals) {
-		exposed_locals_granularity += local.local_symbol->granularity();
+	local_ns_id = input.getNameSpaceId("local");
+	
+	local_ns_granularity = Granularity::Global;
+	using_local_ns = false;
+	for (auto & local : input.getNameSpaceUsedSymbols(local_ns_id)) {
+		local_ns_granularity += local->granularity();
+		using_local_ns = true;
 	}
 	
     celltype = scope->getCellType();
@@ -154,15 +143,15 @@ void NeighborhoodReporter::reportGlobal() {
 		for ( auto const& out : output) {
 			thread_mapper.push_back(DataMapper::create(out->mapping()));
 		}
-		valarray<double> l_data(0.0,exposed_locals.size());
 #pragma omp for schedule(static)
 		for (auto i_node = range.begin(); i_node<range.end(); ++i_node) {
 			const auto& node = *i_node;
+			
 			// Expose local symbols to input
-			for (uint i = 0; i<exposed_locals.size(); i++) {
-				l_data[i] = exposed_locals[i].local_symbol(node);
+			if (using_local_ns) {
+				input.setNameSpaceFocus(local_ns_id, node);
 			}
-			input.setLocals(&l_data[0]);
+			
 	// 	for (auto node : range) { // syntax cannot be used with openMP
 			// loop through its neighbors
 			for ( int i_nei = 0; i_nei < neighbors.size(); ++i_nei ) {
@@ -183,7 +172,6 @@ void NeighborhoodReporter::reportGlobal() {
 	}
 }
 
-
 void NeighborhoodReporter::reportCelltype(CellType* celltype) {
     vector<CPM::CELL_ID> cells = celltype->getCellIDs();
 	if (cells.empty()) return;
@@ -200,7 +188,6 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 		MembraneMapper mapper(MembraneMapper::MAP_CONTINUOUS,false);
 		struct count_data { double val; double count; };
 		map<CPM::CELL_ID,count_data> cell_mapper;
-		valarray<double> l_data(0.0,exposed_locals.size());
 // #pragma omp for schedule(static)
 		for ( auto i_cell_id = cells.begin(); i_cell_id<cells.end(); ++i_cell_id) {
 //		for ( auto cell_id : cells) {
@@ -208,12 +195,9 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 			auto cell_id = *i_cell_id;
 			SymbolFocus cell_focus(cell_id);
 			
-			if (exposed_locals_granularity != Granularity::MembraneNode) {
+			if ( using_local_ns && local_ns_granularity != Granularity::MembraneNode) {
 				// Expose local symbols to input
-				for (uint i = 0; i<exposed_locals.size(); i++) {
-					l_data[i] = exposed_locals[i].local_symbol(cell_focus);
-				}
-				input.setLocals(&l_data[0]);
+				input.setNameSpaceFocus(local_ns_id, cell_focus);
 			}
 			
 			Cell::Nodes halo_nodes; // holds nodes of neighbors of membrane nodes. Used for <concentration>
@@ -247,14 +231,10 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 				// Report halo input into membrane mapper, coordinating the transfer into an intermediate membrane property
 				mapper.attachToCell(cell_id);
 				for ( auto const & i :halo_nodes) {
-					SymbolFocus f(i);
-					if (exposed_locals_granularity == Granularity::MembraneNode) {
+					if ( using_local_ns && local_ns_granularity == Granularity::MembraneNode) {
 						// Expose local symbols to input
 						cell_focus.setPosition(i);
-						for (uint i = 0; i<exposed_locals.size(); i++) {
-							l_data[i] = exposed_locals[i].local_symbol(cell_focus);
-						}
-						input.setLocals(&l_data[0]);
+						input.setNameSpaceFocus(local_ns_id, cell_focus);
 					}
 					double value = input(SymbolFocus(i));
 					mapper.map(i, std::isnan(value) ? 0 : value );
@@ -293,6 +273,12 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 				cell_mapper.clear();
 				for ( auto const & i :halo_nodes) {
 					SymbolFocus f(i);
+					
+					if (using_local_ns) {
+						// Expose local symbols to input
+						input.setNameSpaceFocus(local_ns_id, cell_focus);
+					}
+					
 					double value = input(SymbolFocus(i));
 					cell_mapper[f.cellID()].val += std::isnan(value) ? 0 : value ;
 					cell_mapper[f.cellID()].count ++;
@@ -322,15 +308,14 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 	
 	if ( !interf_output.empty()) {
 		// Assume cell granularity
-		valarray<double> l_data(0.0,exposed_locals.size());
 		for (int c=0; c<cells.size(); c++) {
 			SymbolFocus cell_focus(cells[c]);
 			
 			// Expose local symbols to input
-			for (uint i = 0; i<exposed_locals.size(); i++) {
-				l_data[i] = exposed_locals[i].local_symbol(cell_focus);
+			if (using_local_ns) {
+				// Expose local symbols to input
+				input.setNameSpaceFocus(local_ns_id, cell_focus);
 			}
-			input.setLocals(&l_data[0]);
 			
 			const auto& interfaces = CPM::getCell(cells[c]).getInterfaceLengths();
 			

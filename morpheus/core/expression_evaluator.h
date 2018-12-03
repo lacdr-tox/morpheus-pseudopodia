@@ -46,7 +46,7 @@ rand_bool()
 
 **/
 
-typedef EvaluatorCache::EvaluatorSymbol EvaluatorVariable;
+typedef EvaluatorCache::LocalSymbolDesc EvaluatorVariable;
 
 /** @brief Run-time Expression Evaluation
  * 
@@ -70,18 +70,31 @@ public:
 	
 	
 	/**  \brief Set the list of local variables to be used for expression evaluation. 
+	 * 
 	 *   These local variables must be set separately and override symbols from the scope.
 	 *   The order in the vector is also decisive for the expected data order in setLocals().
 	 */
 	void setLocalsTable(const vector<EvaluatorVariable>& locals) { evaluator_cache->setLocalsTable(locals); };
 	
+	/*! \brief Add a foreign Scope @p scope as namespace @p ns_name to the local variable scope.
+	 * 
+	 * Returns the name space reference @return id.
+	 */
+	uint addNameSpaceScope(const string& ns_name, const Scope* scope) { return evaluator_cache->addNameSpaceScope(ns_name,scope); };
+	/// Get all symbols used from name space @p ns_id. The namespace prefix is not contained in the symbols returned.
+	set<Symbol> getNameSpaceUsedSymbols(uint ns_id) const { return evaluator_cache->getNameSpaceUsedSymbols(ns_id); } 
+	/// Set the focus of name space @p ns_id
+	void setNameSpaceFocus(uint ns_id, const SymbolFocus& f) const{ evaluator_cache->setNameSpaceFocus(ns_id, f); } ;
+	
 	/** \brief Set the evaluator's local variables
+	 * 
 	 *  @p data is a contiguous array of doubles values, where a VECTOR type parameter
 	 *  is composed of three entries representing x, y and z component.
 	 */
 	void setLocals(const double* data) const { evaluator_cache->setLocals(data);/*(&symbol_values[l_sym_cache_offset], data, sizeof(double) * local_symbols.size()); */};
 	
 	/** \brief Initialize expression evaluator.
+	 * 
 	 *  In particular, all dependent symbols, functions and parameters must be declared prior
 	 *  to initalisation. Symbols are retrieved form the scope.
 	 */
@@ -105,7 +118,7 @@ public:
 	/// Description used for graphical visualization and reporting
 	const string& getDescription() const;
 	/// Raw expression
-	string getExpression() const { return expression; }
+	const string& getExpression() const { return expression; }
 	
 	/// get the value for spatial element @p focus
 	typename TypeInfo<T>::SReturn get(const SymbolFocus& focus, bool safe=false) const;
@@ -176,9 +189,14 @@ typedef std::mutex GlobalMutex;
 template <class T>
 class ThreadedExpressionEvaluator {
 public:
-	ThreadedExpressionEvaluator(string expression, const Scope* scope, bool partial_spec = false) { evaluators.push_back( make_unique<ExpressionEvaluator<T> >(expression, scope, partial_spec) );};
+	ThreadedExpressionEvaluator(const string& expression, const Scope* scope, bool partial_spec = false) { evaluators.push_back( make_unique<ExpressionEvaluator<T> >(expression, scope, partial_spec) );};
 	
 	void setLocalsTable(const vector<EvaluatorVariable>& locals) { for (auto& evaluator : evaluators) evaluator->setLocalsTable(locals); }
+
+	uint addNameSpaceScope(const string& ns_name, const Scope* scope) { uint id=0; for (auto& evaluator : evaluators) id = evaluator->addNameSpaceScope(ns_name, scope); return id; }
+	set<Symbol> getNameSpaceUsedSymbols(uint ns_id) const { return evaluators[0]->getNameSpaceUsedSymbols(ns_id); }
+	void setNameSpaceFocus(uint ns_id, const SymbolFocus& f) const { getEvaluator()->setNameSpaceFocus(ns_id, f); }
+	
 	void setLocals(const double* data) const { getEvaluator()->setLocals(data); }
 	int getLocalsCount() const { return evaluators[0]->getLocalsCount(); } 
 	
@@ -186,7 +204,7 @@ public:
 	const string& getDescription() const { return evaluators[0]->getDescription(); };
 	const SymbolBase::Flags& flags() const { return evaluators[0]->flags(); }
 	Granularity getGranularity() const { return evaluators[0]->getGranularity(); };
-	string getExpression() const { return evaluators[0]->getExpression(); };
+	const string& getExpression() const { return evaluators[0]->getExpression(); };
 
 	typename TypeInfo<T>::SReturn get(const SymbolFocus& focus) const { return getEvaluator()->get(focus); };
 	typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& focus) const { return getEvaluator()->safe_get(focus); };

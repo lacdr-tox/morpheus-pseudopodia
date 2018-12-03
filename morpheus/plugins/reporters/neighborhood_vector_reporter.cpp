@@ -34,33 +34,23 @@ NeighborhoodVectorReporter::NeighborhoodVectorReporter() : ReporterPlugin() {
 
 void NeighborhoodVectorReporter::loadFromXML(const XMLNode xNode, Scope* scope)
 {   
-	for (uint i=0; i<xNode.getChildNode("Input").nChildNode("ExposeLocal"); i++) {
-		ExposeSpec e;
-		e.local_symbol->setXMLPath("Input/ExposeLocal/symbol-ref");
-		e.symbol->setXMLPath("Input/ExposeLocal/symbol");
-		registerPluginParameter(e.local_symbol);
-		registerPluginParameter(e.symbol);
-		exposed_locals.push_back(e);
-	}
-	
 	ReporterPlugin::loadFromXML(xNode, scope);
 }
 
 void NeighborhoodVectorReporter::init(const Scope* scope)
 {
-	// Add variables to be exposed from the local cell
-	vector<EvaluatorVariable> locals;
-	for (auto & local : exposed_locals) {
-		local.symbol->init();
-		locals.push_back({local.symbol(),EvaluatorVariable::DOUBLE});
-	}
-	input.setLocalsTable(locals);
+	// Add a callback to automativally exposed symbols from the local cell
+	input.addNameSpaceScope("local",scope);
 	
 	ReporterPlugin::init(scope);
 	
-	exposed_locals_granularity = Granularity::Global;
-	for (auto & local : exposed_locals) {
-		exposed_locals_granularity += local.local_symbol->granularity();
+	local_ns_id = input.getNameSpaceId("local");
+	
+	local_ns_granularity = Granularity::Global;
+	using_local_ns = false;
+	for (auto & local : input.getNameSpaceUsedSymbols(local_ns_id)) {
+		local_ns_granularity += local->granularity();
+		using_local_ns = true;
 	}
 	
 	// Reporter input depends on cell position
@@ -84,15 +74,14 @@ void NeighborhoodVectorReporter::reportGlobal() {
 	auto neighbors = SIM::lattice().getDefaultNeighborhood().neighbors();
 #pragma omp parallel
 	{
-		valarray<double> l_data(0.0,exposed_locals.size());
 #pragma omp for schedule(static)
 		for (auto i_node = range.begin(); i_node<range.end(); ++i_node) {
 			const auto& node = *i_node;
+			
 			// Expose local symbols to input
-			for (uint i = 0; i<exposed_locals.size(); i++) {
-				l_data[i] = exposed_locals[i].local_symbol(node);
+			if (using_local_ns) {
+				input.setNameSpaceFocus(local_ns_id, node);
 			}
-			input.setLocals(&l_data[0]);
 			
 			double total_interface = 0; // interface-based: number all cell-cell interfaces; cell-based: number of neighboring cells
 			VDOUBLE total_signal(0.0,0.0,0.0);
@@ -130,16 +119,14 @@ void NeighborhoodVectorReporter::reportCelltype(CellType* celltype) {
 	vector<bool> is_medium_type;
 	for (auto ct : celltypes ) { is_medium_type.push_back(ct.lock()->isMedium()); }
 	
-	valarray<double> l_data(0.0,exposed_locals.size());
     vector<CPM::CELL_ID> cells = celltype->getCellIDs();
     for (auto cell_id : cells) {
 		SymbolFocus cell_focus(cell_id);
 
 		// Expose local symbols to input
-		for (uint i = 0; i<exposed_locals.size(); i++) {
-			l_data[i] = exposed_locals[i].local_symbol(cell_focus);
+		if (using_local_ns) {
+			input.setNameSpaceFocus(local_ns_id, cell_focus);
 		}
-		input.setLocals(&l_data[0]);
 		
 		double total_interface = 0; // interface-based: number all cell-cell interfaces; cell-based: number of neighboring cells
 		VDOUBLE total_signal(0.0,0.0,0.0);
