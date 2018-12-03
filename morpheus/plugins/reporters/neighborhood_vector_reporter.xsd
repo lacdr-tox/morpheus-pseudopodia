@@ -47,7 +47,10 @@
 		
 		
 		<xs:attribute name="name" type="cpmString" use="optional" />
+		<xs:attribute name="time-step" type="cpmMathExpression" use="optional" />
 	</xs:complexType>
+	
+	
 	
 	
 	<xs:simpleType name="cpmVectorArrayStatistics">

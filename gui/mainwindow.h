@@ -33,7 +33,7 @@
 #include "xmlpreview.h"
 #include "settingsdialog.h"
 #include "sbml_import.h"
-#include "feedback.h"
+#include "announcement.h"
 
 using namespace std;
 
@@ -156,7 +156,7 @@ private slots:
 	void showSweep(QList<int> job_ids);
     
     
-    void reloadModelParts(int model=-1);
+	void syncModelList(int model=-1);
 
     void fixBoardClicked(QModelIndex item);
 	void fixBoardCopyNode();
@@ -172,4 +172,6 @@ signals:
 };
 
 #endif // MAINWINDOW_H
+
+
 

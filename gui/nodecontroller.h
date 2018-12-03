@@ -73,8 +73,8 @@ public:
     QSharedPointer<XSD::SimpleTypeInfo> textType();
     AbstractAttribute* textAttribute();           /// Return the attribut which represents the text of the xml-node.
 
-	int activeChilds(QString childName = "");
-	nodeController* firstActiveChild(QString childName = "");  /// Find the first child named @p childName
+	QList<nodeController*> activeChilds(QString childName = ""); /// Find all active child nodes named @p childName
+	nodeController* firstActiveChild(QString childName = "");  /// Find the first active child named @p childName
 // 	nodeController* findGroupChild(QString group); /// Returns the child of the group @p group. Returns NULL if none exists.
 	const QList< nodeController* >& getChilds() { return childs; } 
     nodeController* find(QDomNode xml_node);      /// Find the nodeController of the XML node @p xml_node in the document

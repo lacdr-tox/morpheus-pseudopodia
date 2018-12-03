@@ -429,9 +429,11 @@ void ExpressionEvaluator<T>::init()
 		expr_is_const = false;
 		const_val = safe_get(SymbolFocus::global);
 		expr_is_const = true;
-		cout << "Expression " << this->getExpression() << " is const (";
-		for (auto const& dep: depend_symbols ) { cout << dep->name() << ", " ; }
-		cout << ")" << endl;
+		if (depend_symbols.size()>0) {
+			cout << "Expression " << this->getExpression() << " is const (";
+			for (auto const& dep: depend_symbols ) { cout << dep->name() << ", " ; }
+			cout << ")" << endl;
+		}
 	}
 	
 	// Check for direct symbol

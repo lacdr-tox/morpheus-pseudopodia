@@ -914,7 +914,7 @@ void MorphModel::prepareActivationOrInsert(nodeController* node, QString name) {
 	auto childInfo = node->childInformation();
 	
 	if (childInfo.is_choice) {
-		while (childInfo.max_occurs != "unbounded" && node->activeChilds() >= childInfo.max_occurs.toInt()) {
+		while (childInfo.max_occurs != "unbounded" && node->activeChilds().size() >= childInfo.max_occurs.toInt()) {
 			qDebug() << "Enabled node is exchanging";
 			auto other = node->firstActiveChild();
 			other->setDisabled(true);
@@ -923,7 +923,7 @@ void MorphModel::prepareActivationOrInsert(nodeController* node, QString name) {
 		}
 	}
 	else if (childInfo.max_occurs != "unbounded" && childInfo.children[name].max_occurs != "unbounded") {
-		while (childInfo.max_occurs.toInt() * childInfo.children[name].max_occurs.toInt() <= node->activeChilds(name) ) {
+		while (childInfo.max_occurs.toInt() * childInfo.children[name].max_occurs.toInt() <= node->activeChilds(name).size() ) {
 			nodeController* other =  node->firstActiveChild(name);
 			other->setDisabled(true);
 			emit dataChanged(itemToIndex(other),itemToIndex(other));

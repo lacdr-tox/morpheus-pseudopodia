@@ -5,8 +5,8 @@ using namespace SIM;
 
 REGISTER_PLUGIN(NeighborhoodReporter);
 
-NeighborhoodReporter::NeighborhoodReporter() {
-	   scaling.setXMLPath("Input/scaling");
+NeighborhoodReporter::NeighborhoodReporter() : ReporterPlugin(TimeStepListener::XMLSpec::XML_OPTIONAL) {
+	scaling.setXMLPath("Input/scaling");
 	map<string, InputModes> value_map;
 	value_map["cell"] = CELLS;
 	value_map["length"] = INTERFACES;

@@ -408,6 +408,7 @@ class TimeStepListener : virtual public Plugin
 		
 private:
 		/// time step duration
+		PluginParameter2<double, XMLEvaluator, OptionalPolicy> xml_time_step;
 		double time_step;
 		/// time needed for execution (measured in milliseconds)
 		double execute_systemtime;
@@ -482,7 +483,7 @@ private:
 
 class ReporterPlugin : public TimeStepListener {
 public:
-    ReporterPlugin();
+    ReporterPlugin(TimeStepListener::XMLSpec spec = TimeStepListener::XMLSpec::XML_NONE);
 	virtual void report() = 0;
 protected:
 	void updateSourceTS(double ts) override;

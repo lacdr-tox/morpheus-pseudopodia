@@ -50,7 +50,7 @@ Note:
 			<xs:group ref="SystemPlugins" />
 		</xs:choice>
 		<xs:attribute name="name" type="cpmString" use="optional" />
-		<xs:attribute name="time-step" type="cpmDouble" use="required" default="1.0">
+		<xs:attribute name="time-step" type="cpmMathExpression" use="required" default="1.0">
 			<xs:annotation>
 				<xs:documentation>Time step ('dt') used in the numerical solver.
 Given in units of system time, i.e. simulation time scaled by the systems time-scaling, in case it is provided.
@@ -69,6 +69,7 @@ Given in units of system time, i.e. simulation time scaled by the systems time-s
 			</xs:annotation>
 		</xs:attribute>
 		<xs:attribute name="solver" type="cpmSolver" use="required"/>
+		<xs:attribute name="solver-eps" type="cpmDouble" use="optional" default="1e-4"/>
 	</xs:complexType>
 
 	<xs:simpleType name="cpmSolver">
@@ -84,6 +85,9 @@ Solver for differential equations:
 			<xs:enumeration value="heun"/>
 			<xs:enumeration value="euler"/>
 			<xs:enumeration value="runge-kutta"/>
+			<xs:enumeration value="runge-kutta-adaptive"/>
+<!-- 			<xs:enumeration value="runge-kutta-adaptiveCK"/> -->
+<!-- 			<xs:enumeration value="runge-kutta-adaptiveDP"/> -->
 		</xs:restriction>
 	</xs:simpleType>
 	
@@ -98,7 +102,7 @@ Solver for differential equations:
 			<xs:group ref="DiscreteSystemPlugins" />
 		</xs:choice>
 		<xs:attribute name="name" type="cpmString" use="optional" />
-		<xs:attribute name="time-step" type="cpmDouble" use="optional" />
+		<xs:attribute name="time-step" type="cpmMathExpression" use="optional" />
 	</xs:complexType>
 	
 	<xs:complexType name="TriggeredSystem">
@@ -127,7 +131,7 @@ Solver for differential equations:
 			<xs:group ref="DiscreteSystemPlugins" />
 		</xs:choice>
 		<xs:attribute name="name" type="cpmString" use="optional" />
-		<xs:attribute name="time-step" type="cpmDouble" use="optional">
+		<xs:attribute name="time-step" type="cpmMathExpression" use="optional">
 			<xs:annotation>
 				<xs:documentation> Frequency for testing the Event's Condition
 				The testing frequncy is adjusted according to the change of the input symbols of the condition.

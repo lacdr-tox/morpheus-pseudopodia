@@ -9,6 +9,8 @@
  *
  * */
 
+bool operator ==(const DelayDef& a, const DelayDef& b) { return a.symbol == b.symbol && a.delay == b.delay; }
+
 namespace ASTTool {
 
 void renameSymbol(ASTNode* node, const QString& old_name, const QString& new_name ) {
@@ -23,6 +25,17 @@ void renameSymbol(ASTNode* node, const string& old_name, const string& new_name)
 	for (uint i=0; i<node->getNumChildren(); i++) {
 		renameSymbol(node->getChild(i),old_name, new_name);
 	}
+}
+
+void renameTimeSymbol(ASTNode* node, const QString& time_name) {
+	if (node->getType() == AST_NAME_TIME) {
+		node->setType(AST_NAME);
+		node->setName(time_name.toStdString().c_str());
+	}
+	for (uint i=0; i<node->getNumChildren(); i++) {
+		renameTimeSymbol(node->getChild(i),time_name);
+	}
+	
 }
 
 void replaceSymbolByValue(ASTNode* node, const string& name, double value)
@@ -60,6 +73,27 @@ void replaceFunction(ASTNode* node, FunctionDefinition* function)
 	}
 }
 
+void  replaceDelays(ASTNode* math, QList<DelayDef>& delays) {
+	if (math->getType() == AST_FUNCTION_DELAY) {
+		// TODO We should check here what kind of delays already exist ....
+		DelayDef d;
+		d.symbol = math->getChild(0)->getValue();
+		d.delay = math->getChild(1)->getValue();
+		d.delayed_symbol = d.symbol + "_"+ to_string(d.delay);
+		if (int i=delays.indexOf(d))
+			d=delays[i];
+		else 
+			delays << d;
+		
+		math->setType(AST_NAME);
+		math->setName(d.delayed_symbol.c_str());
+	}
+	
+	for (uint i=0; i<math->getNumChildren(); i++) {
+		replaceDelays(math->getChild(i),delays);
+	}
+}
+
 
 }
 
@@ -67,7 +101,8 @@ QString s2q(const std::string& s) { return QString::fromStdString(s); }
 
 
 QSharedPointer<MorphModel> SBMLImporter::importSBML() {
-	SBMLImporter* importer = new SBMLImporter();
+	SBMLImporter* importer = new SBMLImporter(nullptr, config::getModel());
+	
 	if (QDialog::Accepted == importer->exec()) {
 		return importer->getMorpheusModel();
 	}
@@ -76,11 +111,14 @@ QSharedPointer<MorphModel> SBMLImporter::importSBML() {
 	}
 }
 
-SBMLImporter::SBMLImporter(QWidget* parent) : QDialog(parent)
+SBMLImporter::SBMLImporter(QWidget* parent, QSharedPointer< MorphModel > current_model) : QDialog(parent)
 {
 	this->setMaximumWidth(500);
 	this->setMinimumHeight(250);
 	QVBoxLayout* layout = new QVBoxLayout(this);
+// 	this->setLayout(layout);
+// 	auto layout = this->layout();
+	
 
 
 // 	QLabel* header = new QLabel(this);
@@ -93,7 +131,7 @@ SBMLImporter::SBMLImporter(QWidget* parent) : QDialog(parent)
 	layout->addStretch(1);
 	QGroupBox* frame = new QGroupBox("", this);
 
-	frame->setLayout(new QHBoxLayout(this));
+	frame->setLayout(new QHBoxLayout());
 	frame->setFlat(true);
 
 	QLabel* excl = new QLabel(this);
@@ -111,7 +149,7 @@ SBMLImporter::SBMLImporter(QWidget* parent) : QDialog(parent)
 
 	layout->addStretch(1);
 
-	QHBoxLayout* path_layout = new QHBoxLayout(this);
+	QHBoxLayout* path_layout = new QHBoxLayout();
 	QLabel* path_label = new QLabel("SBML File ",this);
 	path_layout->addWidget(path_label);
 
@@ -119,12 +157,51 @@ SBMLImporter::SBMLImporter(QWidget* parent) : QDialog(parent)
 	path_label->setBuddy(path);
 	path_layout->addWidget(path);
 	
-	QHBoxLayout* celltype_layout = new QHBoxLayout(this);
-	into_celltype  = new QCheckBox(this);
-	celltype_layout->addWidget(into_celltype);
-	QLabel* celltype_label = new QLabel("Into new CellType",this);
+	QHBoxLayout* celltype_layout = new QHBoxLayout();
+	
+	into_celltype  = new QComboBox(this);
+	into_celltype->addItem("Global (new model)", "new,global");
+	into_celltype->addItem("CellType (new model)", "new,celltype,sbml_cell");
+	
+	if (current_model) {
+		into_celltype->insertSeparator(2);
+		into_celltype->addItem("Global", "current,global");
+		QString new_celltype = "sbml_cell";
+		int i=0;
+		for (const auto& part :current_model->parts ) {
+			if (part.label=="CellTypes" && part.enabled) {
+				part.element->getChilds();
+				for (auto ct : part.element->activeChilds("CellType")) {
+					auto ct_name = ct->attribute("name")->get();
+					into_celltype->addItem(
+						QString("CellType \"%1\"").arg(ct_name),
+						QString("current,celltype,%1").arg(ct_name)
+					);
+					// Check name to not overlap new celltype naming convention
+					if (ct_name == new_celltype && i==0)
+						i=1;
+					else {
+						QRegExp ct_id("sbml_cell_(\\d+)");
+						if (ct_id.exactMatch(ct_name)) {
+							if (i<ct_id.cap(0).toInt())
+								i = ct_id.cap(0).toInt();
+						}
+					}
+				}
+			}
+		}
+		if (i!=0)
+			into_celltype->addItem("new CellType", QString("current,celltype,sbml_cell_%1").arg(i));
+		else 
+			into_celltype->addItem("new CellType", QString("current,celltype,sbml_cell"));
+		model = current_model;
+	}
+	
+	QLabel* celltype_label = new QLabel("Import into ",this);	
 	celltype_layout->addWidget(celltype_label);
+	celltype_layout->addWidget(into_celltype);
 	celltype_label->setBuddy(into_celltype);
+	
 	celltype_layout->addStretch(1);
 	
 
@@ -137,7 +214,7 @@ SBMLImporter::SBMLImporter(QWidget* parent) : QDialog(parent)
 	
 	layout->addStretch(3);
 
-	QHBoxLayout *bottom = new QHBoxLayout(this);
+	QHBoxLayout *bottom = new QHBoxLayout();
 
 	bottom->addStretch(1);
 
@@ -151,6 +228,7 @@ SBMLImporter::SBMLImporter(QWidget* parent) : QDialog(parent)
 	bottom->addWidget(cancel);
 	layout->addLayout(bottom);
 }
+
 
 void SBMLImporter::fileDialog()
 {
@@ -170,7 +248,8 @@ void SBMLImporter::fileDialog()
 void SBMLImporter::import()
 {
 	try {
-		readSBML(path->text(), into_celltype->isChecked());
+		if (readSBML(path->text(), into_celltype->itemData(into_celltype->currentIndex()).toString()))
+			accept();
 	}
 	catch (SBMLConverterException e) {
 		qDebug() << "Unable to import SBML due to " <<  s2q(e.type2name())<< " "<< s2q(e.what());
@@ -180,13 +259,11 @@ void SBMLImporter::import()
 		qDebug() << "Unable to import SBML due to " << s;
 		QMessageBox::critical (this,"SBML Import Error", QString("Unable to import %1 due to the following error:\nSBML_INTERNAL_ERROR - %2").arg(path->text(),s),QMessageBox::Ok);
 	}
-	if (model)
-		accept();
 }
 
 
 
-void SBMLImporter::readSBML(QString sbml_file, bool into_celltype)
+bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 {
 	if ( ! QFileInfo(sbml_file).exists() ) {
 		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, sbml_file.toStdString());
@@ -196,24 +273,21 @@ void SBMLImporter::readSBML(QString sbml_file, bool into_celltype)
 	if (! sbml_doc)
 		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR);
 
+	
+	// Load model, test compatibility
+	
 	//if ( sbml_doc->checkL2v4Compatibility() != 0 && sbml_doc->checkL2v1Compatibility() != 0) {
 	//	sbml_doc->getError(0)->print(cout);
 	//	throw SBMLConverterException(SBMLConverterException::SBML_LEVEL_GREATER_2, sbml_doc->getError(0)->getMessage());
 	//}
 
-
-	Model* sbml_model = sbml_doc->getModel();
-
-	if (sbml_model->getNumCompartments() > 1 ) {
-		std::string message = "Defined compartments: ";
-		message.append(sbml_model->getCompartment(0)->getId());
-		for (uint i=1; i<sbml_model->getNumCompartments();i++) {
-			message.append(", ").append(sbml_model->getCompartment(i)->getId());
-		}
-		throw SBMLConverterException(SBMLConverterException::SBML_MULTI_COMPARTMENT, message );
-	}
-
-	QString plain_morpheus_model(
+	// Setup target model
+	
+	QSharedPointer<MorphModel> morph_model;
+	auto target = target_code.split(",");
+	
+	if (target[0] == "new") {
+		QString plain_morpheus_model(
 "<?xml version='1.0' encoding='UTF-8'?> \
 <MorpheusModel version=\"3\"> \
     <Description> \
@@ -231,13 +305,11 @@ void SBMLImporter::readSBML(QString sbml_file, bool into_celltype)
     </Space> \
     <Time> \
         <StartTime value=\"0\"/> \
-        <StopTime value=\"1\"/> \
+        <StopTime value=\"1\" symbol=\"stop\"/> \
         <TimeSymbol symbol=\"time\"/> \
     </Time> \
-    <Global> \
-    </Global> \
     <Analysis> \
-        <Logger> \
+        <Logger  time-step=\"stop/500\"> \
             <Input> \
             </Input> \
             <Output> \
@@ -258,158 +330,246 @@ void SBMLImporter::readSBML(QString sbml_file, bool into_celltype)
     </Analysis> \
 </MorpheusModel>\"");
 
-	QDomDocument morph_doc;
-	morph_doc.setContent(plain_morpheus_model);
-	QSharedPointer<MorphModel> morph_model(new MorphModel(morph_doc));
-
-	nodeController* description = morph_model->rootNodeContr->firstActiveChild("Description");
-	if (!description) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Description node not found." );
-
-	string title;
-	if (sbml_doc->isSetName())
-		title = sbml_model->getName();
-	else
-		title = sbml_model->getId();
-	description->firstActiveChild("Title")->setText(s2q(title));
-
-	std::string details = sbml_doc->getNotesString();
-	description->firstActiveChild("Details")->setText(s2q(details));
-	
-	if (sbml_model->getNumCompartments()) {
-		compartment_symbol = s2q(sbml_model->getCompartment(0)->getId());
-		compartment_size   = sbml_model->getCompartment(0)->getSize();
+		QDomDocument morph_doc;
+		morph_doc.setContent(plain_morpheus_model);
+		morph_model = QSharedPointer<MorphModel>(new MorphModel(morph_doc));
 	}
 	else {
-		compartment_symbol = "";
-		compartment_size = 1;
+		morph_model = model;
 	}
 
-	nodeController* target;
-	if (into_celltype) {
-		morph_model->addPart("CellTypes");
-		target = morph_model->rootNodeContr->firstActiveChild("CellTypes")->firstActiveChild("CellType");
-		target->attribute("class")->set("biological");
-		target->attribute("name")->set("sbml_ct");
-		morph_model->addPart("CellPopulations");
-		auto population = morph_model->rootNodeContr->firstActiveChild("CellPopulations")->firstActiveChild("Population");
-		population->attribute("size")->set("1");
-		population->attribute("type")->set("sbml_ct");
-	}
-	else 
-		target = morph_model->rootNodeContr->firstActiveChild("Global");
+	// Setup target scope
 	
-	if (!target) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Celltype node not found.");
+	if (target[1]=="global" )  {
+		morph_model->addPart("Global");
+		target_scope = morph_model->rootNodeContr->firstActiveChild("Global");
+		if (!target_scope) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Target scope could not be created.");
+	}
+	else /* (target[2]=="celltype") */ {
+		auto cts_part_idx = MorphModelPart::all_parts_index["CellTypes"];
+		if (!morph_model->parts[cts_part_idx].enabled) {
+			morph_model->activatePart(cts_part_idx);
+			// Reuse the default celltype created
+			target_scope = morph_model->parts[cts_part_idx].element->firstActiveChild("CellType");
+			if (target_scope) {
+				target_scope->attribute("name")->set(target[2]);
+				target_scope->attribute("class")->set("biological");
+			}
+		}
+		else { // Try to find an existing celltyoe
+			
+			target_scope = morph_model->rootNodeContr->find(QStringList() << "CellTypes" << QString("CellType[name=%1]").arg(target[2]));
+		}
+		if (!target_scope) { // create CellType from scratch
+			target_scope = morph_model->rootNodeContr->firstActiveChild("CellTypes")->insertChild("CellType");
+			if (!target_scope) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Target scope could not be created.");
+			
+			target_scope->attribute("name")->set(target[2]);
+			target_scope->attribute("class")->set("biological");
+		}
+		
+		if (target[0] == "new") {
+			morph_model->addPart("CellPopulations");
+			auto population = morph_model->rootNodeContr->firstActiveChild("CellPopulations")->firstActiveChild("Population");
+			population->attribute("size")->set("1");
+			population->attribute("type")->set(target[2]);
+		}
+	}
+	
+	// Setup target system 
+	
+	target_system = target_scope->insertChild("System");
+	target_system->attribute("solver")->set("runge-kutta-adaptive");
+	target_system->attribute("time-step")->set("stop");
+	
+	
+	Model* sbml_model = sbml_doc->getModel();
+	// Add annotation for new models
+	
+	if (target[0] == "new") {
+		nodeController* description = morph_model->rootNodeContr->firstActiveChild("Description");
+		if (!description) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Description node not found." );
 
-	this->addSBMLFunctions(target, sbml_model);
-	this->addSBMLParameters(target, sbml_model);
+		string title;
+		if (sbml_doc->isSetName())
+			title = sbml_model->getName();
+		else
+			title = sbml_model->getId();
+		description->firstActiveChild("Title")->setText(s2q(title));
 
-	this->addSBMLSpecies(target,sbml_model);
+		std::string details = sbml_doc->getNotesString();
+		description->firstActiveChild("Details")->setText(s2q(details));
+	}
+	
+	// Convert to target scope
 
-	this->addSBMLRules(target,sbml_model);
+	this->addSBMLFunctions(sbml_model);
+	
+	this->addSBMLParameters(sbml_model);
+	
+	if (sbml_model->getNumCompartments()) {
+		for (uint i=0; i<sbml_model->getNumCompartments(); i++ ) {
+			CompartmendDesc comp;
+			comp.name = s2q(sbml_model->getCompartment(i)->getId());
+			comp.init_value = sbml_model->getCompartment(i)->getSize();
+			if (auto init = sbml_model->getInitialAssignmentBySymbol(comp.name.toStdString())) {
+				auto math = init->getMath()->deepCopy();
+				sanitizeAST(math);
+				comp.init_assignment = SBML_formulaToString(math);
+			}
+			bool is_const = (sbml_model->getCompartment(i)->isSetConstant() && sbml_model->getCompartment(i)->getConstant());
+			is_const = true; // HACK we do not allow compartment size dynamics anyways.
+			nodeController* compartment_node = target_scope->insertChild((is_const ? "Constant" : "Variable"));
+			compartment_node -> attribute("symbol") -> set(comp.name);
+			if (!comp.init_assignment.isEmpty())
+				compartment_node -> attribute("value") -> set(comp.init_assignment);
+			else
+				compartment_node -> attribute("value") -> set(comp.init_value);
 
-	this->translateSBMLReactions(target,sbml_model);
+		}
+	}
+	else {
+		CompartmendDesc comp;
+		comp.name = "";
+		comp.init_value = 1;
+		comp.dynamic = false;
+		comp.init_assignment = "";
+		compartments[comp.name] = comp;
+	}
 
-	this->addSBMLEvents(target,sbml_model);
+	this->addSBMLSpecies(sbml_model);
 
-// 	nodeController* cellpopulation = morph_model->rootNodeContr->firstActiveChild("CellPopulations")->firstActiveChild("Population");
-	this->addSBMLInitialAssignments(target, sbml_model);
+	this->addSBMLRules(sbml_model);
+
+	this->translateSBMLReactions(sbml_model);
+
+	this->addSBMLEvents(sbml_model);
+
+// 	this->addSBMLInitialAssignments(sbml_model);
+
+	// Add all delays collected while parsing
+	for (const auto& delay : delays) {
+		bool does_not_exist=delays.contains(delay);
+		if (does_not_exist) {
+			auto delay_property = target_scope->insertChild("DelayProperty");
+			delay_property->attribute("symbol")->set(delay.delayed_symbol);
+			delay_property->attribute("delay")->set(delay.delay);
+			
+			auto delay_eqn = target_scope->insertChild("Equation");
+			delay_eqn->attribute("symbol-ref")->set(delay.delayed_symbol);
+			delay_eqn->setText(QString::fromStdString(delay.symbol));
+			
+			delays.append(delay);
+		}
+	}
 
 	this->parseMissingFeatures(sbml_model);
-
-	nodeController* logger = morph_model->rootNodeContr->firstActiveChild("Analysis")->firstActiveChild("Logger");
-	if (!logger) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Logger node not found.");
-	if (into_celltype) {
-		logger->insertChild("Restriction")->attribute("exclude-medium")->setActive(true);
-		logger->firstActiveChild("Restriction")->attribute("exclude-medium")->set("true");
-	}
-
-	// add symbols to GLobal and Logger (both in Logger/Input and in Logger/Plots/Plot/Y-axis)
-// 	nodeController* global      = morph_model->rootNodeContr->firstActiveChild("Global");
-// 	if (!global) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Global node not found.");
-	nodeController* logger_log  = logger->firstActiveChild("Input");
-	nodeController* logger_plot = logger->firstActiveChild("Plots")->firstActiveChild("Plot")->firstActiveChild("Y-axis");
-
-	bool first=true;
-	foreach (const QString& var, variables){
-		cout << "Variable : " << var.toStdString() << endl; 
-// 		nodeController* global_const = global->insertChild("Constant");
-// 		global_const->attribute("symbol")->set(var);
-// 		global_const->attribute("value")->set("0.0");
-		
-		if( first ){
-			logger_log->firstActiveChild("Symbol")->attribute("symbol-ref")->set(var);
-			logger_plot->firstActiveChild("Symbol")->attribute("symbol-ref")->set(var);
-			first = false;
-		}
-		else{
-			nodeController* symbol_log = logger_log->insertChild("Symbol");			
-			symbol_log->attribute("symbol-ref")->set(var);
-			nodeController* symbol_plot = logger_plot->insertChild("Symbol");
-			symbol_plot->attribute("symbol-ref")->set(var);
-		}
-	}
-	cout << flush;
 	
+	
+	// Create Analysis section for new models
+	
+	if (target[0] == "new") {
+		nodeController* logger = morph_model->rootNodeContr->firstActiveChild("Analysis")->firstActiveChild("Logger");
+		if (!logger) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Logger node not found.");
+		if (into_celltype) {
+			logger->insertChild("Restriction")->attribute("exclude-medium")->setActive(true);
+			logger->firstActiveChild("Restriction")->attribute("exclude-medium")->set("true");
+		}
 
-/*	logger->firstChild("Format")->attribute("string")->set(QStringList(QList<QString>::fromSet(variables)).join(" "));
-	QStringList columns;
-	int col=3;
-	foreach (const QString& var,variables) {
-		columns.append(QString::number(col));
-		col++;
+		// add symbols to GLobal and Logger (both in Logger/Input and in Logger/Plots/Plot/Y-axis)
+	// 	nodeController* global      = morph_model->rootNodeContr->firstActiveChild("Global");
+	// 	if (!global) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Global node not found.");
+		nodeController* logger_log  = logger->firstActiveChild("Input");
+		nodeController* logger_plot = logger->firstActiveChild("Plots")->firstActiveChild("Plot")->firstActiveChild("Y-axis");
+
+		bool first=true;
+		foreach (const QString& var, variables){
+			if( first ){
+				logger_log->firstActiveChild("Symbol")->attribute("symbol-ref")->set(var);
+				logger_plot->firstActiveChild("Symbol")->attribute("symbol-ref")->set(var);
+				first = false;
+			}
+			else{
+				nodeController* symbol_log = logger_log->insertChild("Symbol");			
+				symbol_log->attribute("symbol-ref")->set(var);
+				nodeController* symbol_plot = logger_plot->insertChild("Symbol");
+				symbol_plot->attribute("symbol-ref")->set(var);
+			}
+		}
 	}
-	logger->firstChild("Plot")->firstChild("Y-axis")->attribute("columns")->set(columns.join(" "));
-*/
+		
 
 	SBMLDocument_free(sbml_doc);
 
 	morph_model->rootNodeContr->clearTrackedChanges();
 
-	morph_model->rootNodeContr->trackNextChange();
-	morph_model->rootNodeContr->firstActiveChild("Time")->firstActiveChild("StopTime")->attribute("value")->set("1.0");
-
-	morph_model->rootNodeContr->trackNextChange();
-	target->firstActiveChild("System")->attribute("time-step")->set("0.01");
+	// Create notifications for assumed default values
+	if (target[0] == "new") {
+		morph_model->rootNodeContr->trackNextChange();
+		morph_model->rootNodeContr->firstActiveChild("Time")->firstActiveChild("StopTime")->attribute("value")->set("100.0");
+	}
 
 	for (int i=0; i<conversion_messages.size(); i++) {
 		morph_model->rootNodeContr->trackInformation(conversion_messages[i]);
 	}
-	model = morph_model;
+	
+	if (target[0]=="new") {
+		model = morph_model;
+	}
+	else {
+		model.clear();
+	}
+	return true;
 	
 };
 
-void SBMLImporter::addSBMLSpecies(nodeController* target, Model* sbml_model)
+void SBMLImporter::addSBMLSpecies(Model* sbml_model)
 {
 // 	double compartment_size = sbml_model->getCompartment(0)->getSize();
-	bool is_celltype = target->getName() == "CellType";
+	bool is_celltype = target_scope->getName() == "CellType";
 	QStringList all_species;
 	for (uint spec=0; spec<sbml_model->getNumSpecies(); spec++) {
 		Species* species = sbml_model->getSpecies(spec);
-		bool is_const = (species->isSetConstant() && species->getConstant());
+		SpeciesDesc desc;
+		desc.compartment = s2q(species->getCompartment());
+		desc.is_const = (species->isSetConstant() && species->getConstant());
+		desc.name = s2q(species->getId());
+		
 
-		nodeController* property_node = target->insertChild((is_const ? "Constant" : (is_celltype ? "Property" : "Variable")));
-
-		this->variables.insert(s2q(species->getId()));
+		nodeController* property_node = target_scope->insertChild((desc.is_const ? "Constant" : (is_celltype ? "Property" : "Variable")));
+		
+		this->variables.insert(desc.name);
+		this->species[desc.name] = desc;
 
 		property_node->attribute("symbol")->set(species->getId());
 		if (species->isSetName()){
 			property_node->attribute("name")->setActive(true);
 			property_node->attribute("name")->set(species->getName());
 		}
-
-		double init_value;
-		if (species->isSetInitialConcentration()) {
-			init_value = species->getInitialConcentration();
+		
+		QString init_value;
+		if (sbml_model->getInitialAssignmentBySymbol(species->getId())) {
+			auto init=sbml_model->getInitialAssignmentBySymbol(species->getId());
+			auto math = init->getMath()->deepCopy();
+			sanitizeAST( math );
+			init_value = QString(SBML_formulaToString(math));
+		}
+		else if (species->isSetInitialConcentration()) {
+			init_value = QString::number(species->getInitialConcentration());
+		}
+		else if (species->isSetInitialAmount() ){
+			init_value = QString::number(species->getInitialAmount());
+			init_value = QString("(") + init_value + ")/" + desc.compartment;
 		}
 		else {
-			init_value = species->getInitialAmount();
-			if (compartment_size !=0) init_value /= compartment_size;
+			init_value = "0";
 		}
+		
 		property_node->attribute("value")->set(init_value);
 	}
 };
 
-void SBMLImporter::addSBMLParameters(nodeController* target, Model* sbml_model)
+void SBMLImporter::addSBMLParameters(Model* sbml_model)
 {
 	// Adding the compartment size as a constant -- some sane models use that as value
 // 	nodeController* compartment_size_constant = celltype->insertChild("Constant");
@@ -417,12 +577,12 @@ void SBMLImporter::addSBMLParameters(nodeController* target, Model* sbml_model)
 // 	compartment_size_constant->attribute("name")  -> set("compartment size");
 // 	compartment_size_constant->attribute("name")  -> setActive(true);
 // 	compartment_size_constant->attribute("value") -> set(sbml_model->getCompartment(0)->getSize());
-	bool is_celltype = target->getName() == "CellType";
+	bool is_celltype = target_scope->getName() == "CellType";
 	for (uint param=0; param<sbml_model->getNumParameters(); param++){
 		Parameter* parameter = sbml_model->getParameter(param);
 
 		if (parameter->isSetConstant() &&  ! parameter->getConstant()) { // this is a variable parameter
-			nodeController* property_node = target->insertChild((is_celltype ? "Property" :  "Variable"));
+			nodeController* property_node = target_scope->insertChild((is_celltype ? "Property" :  "Variable"));
 
 			property_node->attribute("symbol")->set(parameter->getId());
 			variables.insert(s2q(parameter->getId()));
@@ -440,7 +600,7 @@ void SBMLImporter::addSBMLParameters(nodeController* target, Model* sbml_model)
 			property_node->attribute("value")->set(init_value);
 		}
 		else {
-			nodeController* const_node = target->insertChild("Constant");
+			nodeController* const_node = target_scope->insertChild("Constant");
 			const_node->attribute("symbol")->set(parameter->getId());
 			constants.insert(s2q(parameter->getId()));
 
@@ -454,10 +614,10 @@ void SBMLImporter::addSBMLParameters(nodeController* target, Model* sbml_model)
 	}
 }
 
-void SBMLImporter::addSBMLFunctions(nodeController* target, Model* sbml_model)
+void SBMLImporter::addSBMLFunctions(Model* sbml_model)
 {
 	for (uint fun=0; fun<sbml_model->getNumFunctionDefinitions();fun++) {
-		auto mo_function = target->insertChild("Function");
+		auto mo_function = target_scope->insertChild("Function");
 		FunctionDefinition* function = sbml_model->getFunctionDefinition(fun);
 		mo_function->attribute("symbol")->set(function->getId());
 		mo_function->attribute("name")->set(function->getName());
@@ -477,9 +637,9 @@ void SBMLImporter::addSBMLFunctions(nodeController* target, Model* sbml_model)
 
 void SBMLImporter::sanitizeAST(ASTNode* math)
 {
-	if (!compartment_symbol.isEmpty())
-		ASTTool::replaceSymbolByValue(math, compartment_symbol.toStdString(), compartment_size);
-
+	ASTTool::renameTimeSymbol(math, target_scope->getModelDescr().time_symbol->get());
+	
+	ASTTool::replaceDelays(math, delays);
 // 	QMap<QString, FunctionDefinition* >::const_iterator it;
 // 	for (it=functions.begin() ; it!=functions.end(); it++) {
 // 		ASTTool::replaceFunction(math,it.value());
@@ -487,48 +647,63 @@ void SBMLImporter::sanitizeAST(ASTNode* math)
 }
 
 
-void SBMLImporter::addSBMLRules(nodeController* celltype, Model* sbml_model)
+void SBMLImporter::addSBMLRules(Model* sbml_model)
 {
-	nodeController*  system = celltype->firstActiveChild("System");
-	if (!system) system = celltype->insertChild("System");
 	for (uint rul=0; rul<sbml_model->getNumRules();rul++) {
 		const Rule* rule = sbml_model->getRule(rul);
+		
+		if (species.count(s2q(rule->getVariable()))) {
+			if (species[s2q(rule->getVariable())].is_const) {
+				continue;
+			}
+		}
 		nodeController* rule_node;
+		if (compartments.count(s2q(rule->getVariable()))) {
+			throw SBMLConverterException(SBMLConverterException::SBML_DYNAMIC_COMPARTMENT, string("Compartment size dynamics currently not supported.") );
+		}
+		
+		ASTNode* math = rule->getMath()->deepCopy();
+		sanitizeAST(math);
+		auto expression =  QString(SBML_formulaToString(math));
+		delete math;
+		
 		switch (rule->getTypeCode()) {
 			case SBML_ALGEBRAIC_RULE :
 				throw SBMLConverterException(SBMLConverterException::SBML_ALGEBRAIC_RULE);
 				break;
 			case SBML_ASSIGNMENT_RULE :
-				rule_node = celltype->insertChild("Equation");
+// 				rule_node = target_scope->insertChild("Equation");
+// 				rule_node->attribute("symbol-ref")->set(rule->getVariable());
+				rule_node = target_system->insertChild("Rule");
+				rule_node->attribute("symbol-ref")->set(rule->getVariable());
+				rule_node->firstActiveChild("Expression")->setText(expression);
+				if (rule->isSetName()) {
+					rule_node->attribute("name")->set(rule->getName());
+					rule_node->attribute("name")->setActive(true);
+				}
+				
+				vars_with_assignments.insert(s2q(rule->getVariable()));
 				break;
 			case SBML_RATE_RULE :
-				rule_node = system->insertChild("DiffEqn");
+				rule_node = target_system->insertChild("DiffEqn");
+				rule_node->attribute("symbol-ref")->set(rule->getVariable());
+				rule_node->firstActiveChild("Expression")->setText(expression);
+				if (rule->isSetName()) {
+					rule_node->attribute("name")->set(rule->getName());
+					rule_node->attribute("name")->setActive(true);
+				}
+				
+				diffeqn_map.insert(s2q(rule->getVariable()),rule_node->firstActiveChild("Expression")->textAttribute());
 				break;
 			default :
 				throw SBMLConverterException(SBMLConverterException::SBML_INVALID);
 				break;
 		}
-		rule_node->attribute("symbol-ref")->set(rule->getVariable());
-		if (rule->isSetName()) {
-			rule_node->attribute("name")->set(rule->getName());
-			rule_node->attribute("name")->setActive(true);
-		}
 
-		ASTNode* math = rule->getMath()->deepCopy();
-		sanitizeAST(math);
-		rule_node->firstActiveChild("Expression")->setText(SBML_formulaToString(math));
-		delete math;
-
-		if (rule->getTypeCode() == SBML_ASSIGNMENT_RULE) {
-			vars_with_assignments.insert(s2q(rule->getVariable()));
-		}
-		else if (rule->getTypeCode() == SBML_RATE_RULE) {
-			diffeqn_map.insert(s2q(rule->getVariable()),rule_node->firstActiveChild("Expression")->textAttribute());
-		}
 	}
 };
 
-void SBMLImporter::addSBMLEvents(nodeController* celltype, Model* sbml_model)
+void SBMLImporter::addSBMLEvents(Model* sbml_model)
 {
 	for (uint i=0; i< sbml_model->getNumEvents(); i++) {
 		Event* e = sbml_model->getEvent(i);
@@ -542,7 +717,7 @@ void SBMLImporter::addSBMLEvents(nodeController* celltype, Model* sbml_model)
 			);
 			continue;
 		}
-		nodeController* event = celltype->insertChild("Event");
+		nodeController* event = target_scope->insertChild("Event");
 		if (e->isSetName()) {
 			event->attribute("name")->setActive(true);
 			event->attribute("name")->set(s2q(e->getName()));
@@ -570,7 +745,7 @@ void SBMLImporter::addSBMLEvents(nodeController* celltype, Model* sbml_model)
 }
 
 
-void SBMLImporter::translateSBMLReactions(nodeController* celltype, Model* sbml_model)
+void SBMLImporter::translateSBMLReactions(Model* sbml_model)
 {
 	// Here we have to take care, that all symbols are meant to be reaction local,
 	// i.e. only valid in the scope the current reaction.
@@ -579,10 +754,6 @@ void SBMLImporter::translateSBMLReactions(nodeController* celltype, Model* sbml_
 	QSet<QString> all_symbols_defined = variables + constants + functions.keys().toSet();
 	bool have_renamed = false;
 
-	nodeController* system = celltype->firstActiveChild("System");
-	if (!system) {
-		system = celltype->insertChild("System");
-	}
 	// this was inspired by the soslib odeConstruct.c:Species_odeFromReactions();
 	for ( uint r=0; r<sbml_model->getNumReactions(); r++ ) {
 		Reaction* reaction = sbml_model->getReaction(r);
@@ -617,7 +788,7 @@ void SBMLImporter::translateSBMLReactions(nodeController* celltype, Model* sbml_
 			constants.insert(param_symbol);
 			all_symbols_defined.insert(param_symbol);
 
-			nodeController* param_node = system->insertChild("Constant");
+			nodeController* param_node = target_system->insertChild("Constant");
 			param_node->attribute("symbol")->set(param_symbol);
 			if (param->isSetName()) {
 				param_node->attribute("name")->set(param->getName());
@@ -635,50 +806,62 @@ void SBMLImporter::translateSBMLReactions(nodeController* celltype, Model* sbml_
 		sanitizeAST(kinetics_math);
 
 		// Solve the left hand side -- reactants of the equation
+		string reactants_compartment;
 		for (uint j=0; j<reaction->getNumReactants(); j++) {
 			SpeciesReference* reactant = reaction->getReactant(j);
 			QString reactant_name = s2q(reactant->getSpecies());
+			if (!species.count(reactant_name))
+				throw SBMLConverterException(SBMLConverterException::SBML_INVALID,string("Unknown Species ")+ reactant_name.toStdString());
+				
+			// Skip dynamics of const species 
+			if (species[reactant_name].is_const) {
+				continue;
+			}
+			// Skip dynamics of species with direct assignments
 			if (vars_with_assignments.contains(reactant_name))
 				continue;
-
-			if (! diffeqn_map.contains(reactant_name)) {
-				nodeController* deq_node = system->insertChild("DiffEqn");
-				deq_node->attribute("symbol-ref")->set(reactant_name);
-				deq_node->attribute("name")->set("gained from reactions");
-				deq_node->attribute("name")->setActive(true);
-
-				diffeqn_map.insert(reactant_name,deq_node->firstActiveChild("Expression")->textAttribute());
-			}
 
 			QString term;
 
 			if (reactant->isSetStoichiometryMath()) {
-				throw SBMLConverterException(SBMLConverterException::SBML_INVALID);
+				throw SBMLConverterException(SBMLConverterException::SBML_INVALID, "Stochiometry set via MathML is not supported");
 			}
 			if (reactant->getStoichiometry() != 1.0) {
 				term += QString::number(reactant->getStoichiometry()) + "*";
 			}
 
-			term += QString(SBML_formulaToString(kinetics_math));
+			// divide by compartment size, since kinetics describe the amount flux, not concentration flux
+			term += "(" + QString(SBML_formulaToString(kinetics_math)) + ")";
+			term += "/" + species[reactant_name].compartment;
+			
+			if (! diffeqn_map.contains(reactant_name)) {
+				nodeController* deq_node = target_system->insertChild("DiffEqn");
+				deq_node->attribute("symbol-ref")->set(reactant_name);
+				deq_node->attribute("name")->set("gained from reactions");
+				deq_node->attribute("name")->setActive(true);
 
-			diffeqn_map[reactant_name]->set(diffeqn_map[reactant_name]->get() + " - " + term);
+				diffeqn_map.insert(reactant_name,deq_node->firstActiveChild("Expression")->textAttribute());
+				diffeqn_map[reactant_name]->set(QString("- ") + term);
+			}
+			else {
+				diffeqn_map[reactant_name]->append(" - " + term);
+			}
+
 		}
 
 		// Solve the right hand side -- products of the reaction
 		for (uint j=0; j<reaction->getNumProducts(); j++) {
 			SpeciesReference* product = reaction->getProduct(j);
 			QString product_name = s2q(product->getSpecies());
-			if (vars_with_assignments.contains(product_name))
+			if (!species.count(product_name))
+				throw SBMLConverterException(SBMLConverterException::SBML_INVALID,string("Unknown Species ")+ product_name.toStdString());
+			
+			// Skip dynamics of const species 
+			if (species[product_name].is_const)
 				continue;
-
-			if (! diffeqn_map.contains(product_name)) {
-				nodeController* deq_node = system->insertChild("DiffEqn");
-				deq_node->attribute("symbol-ref")->set(product_name);
-				deq_node->attribute("name")->set("gained from reactions");
-				deq_node->attribute("name")->setActive(true);
-
-				diffeqn_map.insert(product_name,deq_node->firstActiveChild("Expression")->textAttribute());
-			}
+			// Skip dynamics of species with direct assignments
+			if (vars_with_assignments.contains(product_name))
+				continue; 
 
 			QString term;
 			if (product->isSetStoichiometryMath()) {
@@ -687,27 +870,36 @@ void SBMLImporter::translateSBMLReactions(nodeController* celltype, Model* sbml_
 			if (product->getStoichiometry() != 1.0) {
 				term += QString::number(product->getStoichiometry()) + "*";
 			}
+			// divide by compartment size, since kinetics describe the amount flux, not concentration flux
+			term += "(" + QString(SBML_formulaToString(kinetics_math)) + ")";
+			term += "/" + species[product_name].compartment;
+			
+			if (! diffeqn_map.contains(product_name)) {
+				nodeController* deq_node = target_system->insertChild("DiffEqn");
+				deq_node->attribute("symbol-ref")->set(product_name);
+				deq_node->attribute("name")->set("gained from reactions");
+				deq_node->attribute("name")->setActive(true);
 
-			term += QString(SBML_formulaToString(kinetics_math));
-			QString expr = diffeqn_map[product_name]->get();
+				diffeqn_map.insert(product_name,deq_node->firstActiveChild("Expression")->textAttribute());
+				diffeqn_map[product_name]->set(term);
+			}
+			else {
+				diffeqn_map[product_name]->append(" + " + term);
+			}
 
-			diffeqn_map[product_name]->set(expr + (expr.isEmpty() ? " " : " + ") + term);
 		}
 		delete kinetics_math;
-		// TODO Divides by the size of the compartment.
-		// Here soslib divides by the size of the compartment.
-		// Can we safely discard this due to the fact that odes are rate equations based on concentrations?
 	}
 	if (have_renamed) {
 		conversion_messages.append("Some parameters of the reaction kinetics had to be renamed. Renaming naming scheme is {parameter}_{#reaction}");
 	}
 }
 
-void SBMLImporter::addSBMLInitialAssignments(nodeController* target, Model* sbml_model)
+void SBMLImporter::addSBMLInitialAssignments(Model* sbml_model)
 {
 	for (uint i=0; i< sbml_model->getNumInitialAssignments(); i++) {
 		InitialAssignment* e = sbml_model->getInitialAssignment(i);
-		auto childs = target->getChilds();
+		auto childs = target_scope->getChilds();
 		bool found_matching =false;
 		for (auto child :childs) {
 			if (child->getName() == "Constant" || child->getName() == "Variable" || child->getName() == "Property" ) {

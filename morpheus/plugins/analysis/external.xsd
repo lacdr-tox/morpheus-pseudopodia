@@ -12,11 +12,11 @@
 			<xs:appinfo>Data analysis</xs:appinfo>
 		</xs:annotation>
 		<xs:all>
-			<xs:element name="Command" type="cpmMathExpression"  minOccurs="1" maxOccurs="1" />
+			<xs:element name="Command" type="cpmString"  minOccurs="1" maxOccurs="1" />
 			<xs:element name="Environment" type="ExternalEnvVarCommand" minOccurs="0" maxOccurs="unbounded" />
 		</xs:all>
 		<xs:attribute name="name" type="cpmString" use="optional"/>
-		<xs:attribute name="time-step" type="cpmDouble" use="optional"/>
+		<xs:attribute name="time-step" type="cpmMathExpression" use="optional"/>
 		<xs:attribute name="detach" type="cpmBoolean" use="optional" default="true"/>
 		<xs:attribute name="timeout" type="cpmInteger" use="optional" default="30"/>
     </xs:complexType>

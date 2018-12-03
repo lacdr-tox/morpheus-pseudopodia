@@ -12,12 +12,20 @@
 #ifndef SBML_CONVERTER_H
 #define SBML_CONVERTER_H
 
-#include <QDialog>
 #include <QDomDocument>
 #include <QMap>
 #include <QStringList>
+#include <QDialog>
+#include <QLineEdit>
+#include <QLabel>
+#include <QCheckBox>
+#include <QPushButton>
+#include <QGroupBox>
+#include <QLayout>
+#include <QStyle>
 #include <QDebug>
 #include "morpheus_model.h"
+#include "config.h"
 #include <stdexcept>
 #include <cstdio>
 
@@ -30,12 +38,16 @@
 
 //LIBSBML_CPP_NAMESPACE
 
+struct DelayDef { string symbol; string delayed_symbol; double delay; };
 
 namespace ASTTool {
 	void renameSymbol(ASTNode* node, const QString& old_name, const QString& new_name );
 	void renameSymbol(ASTNode* node, const string& old_name, const string& new_name );
+	void renameTimeSymbol(ASTNode* node, const QString& time_symbol);
 	void replaceSymbolByValue(ASTNode* node, const string& name, double value );
 	void replaceFunction(ASTNode* node, FunctionDefinition* function);
+	
+	void replaceDelays(ASTNode* math, QList<DelayDef>& delays);
 }
 
 //LIBSBML_CPP_NAMESPACE
@@ -46,7 +58,8 @@ public:
 	enum ExceptionType  {
 		FILE_READ_ERROR,
 		SBML_LEVEL_GREATER_2,
-		SBML_MULTI_COMPARTMENT,
+		SBML_UNKNOWN_COMPARTMENT,
+		SBML_DYNAMIC_COMPARTMENT,
 		SBML_ALGEBRAIC_RULE,
 		SBML_MULTIPLE_DEFINITION,
 		SBML_INVALID,
@@ -60,7 +73,8 @@ public:
 		switch (d_type) {
 			case FILE_READ_ERROR : return "FILE_READ_ERROR";
 			case SBML_LEVEL_GREATER_2: return "SBML_LEVEL_GREATER_2";
-			case SBML_MULTI_COMPARTMENT: return "SBML_MULTI_COMPARTMENT";
+			case SBML_UNKNOWN_COMPARTMENT: return "SBML_UNKNOWN_COMPARTMENT";
+			case SBML_DYNAMIC_COMPARTMENT: return "SBML_DYNAMIC_COMPARTMENT";
 			case SBML_ALGEBRAIC_RULE : return "SBML_ALGEBRAIC_RULE";
 			case SBML_INVALID : return "SBML_INVALID";
 			case SBML_MULTIPLE_DEFINITION : return "SBML_MULTIPLE_DEFINITION";
@@ -81,36 +95,50 @@ private:
 class SBMLImporter: public QDialog {
 	Q_OBJECT
 public:
-	SBMLImporter(QWidget* parent=NULL);
+	SBMLImporter(QWidget* parent, QSharedPointer< MorphModel > current_model);
 	QSharedPointer<MorphModel> getMorpheusModel() { return model;};
 // the interface for making this feature puggable
 	static const bool supported = true;
  	static QSharedPointer<MorphModel> importSBML();
 private:
 	QLineEdit* path;
-	QCheckBox* into_celltype;
+	QComboBox* into_celltype;
 
 	QSharedPointer<MorphModel> model;
 	QList<QString> conversion_messages;
-
-	QString compartment_symbol;
-	double compartment_size;
-
+	
+	struct CompartmendDesc {
+		QString name;
+		double init_value;
+		QString init_assignment;
+		bool dynamic;
+	};
+	QMap<QString, CompartmendDesc> compartments;
+	nodeController* target_system=NULL;
+	nodeController* target_scope=NULL;
+	
+	struct SpeciesDesc {
+		QString name;
+		QString compartment;
+		bool is_const;
+	};
+	QMap<QString, SpeciesDesc> species;
 	QMap<QString, FunctionDefinition*> functions;
 	QSet<QString> constants;
 	QSet<QString> variables;
 	QSet<QString> vars_with_assignments;
+	QList<DelayDef> delays;
 	QMap<QString, AbstractAttribute*> diffeqn_map;
 
-	void readSBML(QString sbml_file, bool into_celltype);
-    void addSBMLFunctions(nodeController* target, Model* sbml_model);
+	bool readSBML(QString sbml_file, QString target_code);
+    void addSBMLFunctions(Model* sbml_model);
 	void sanitizeAST(ASTNode* math);
-    void addSBMLSpecies(nodeController* celltype, Model* sbml_model);
-    void addSBMLParameters(nodeController* celltype, Model* sbml_model);
-    void addSBMLRules(nodeController* celltype,Model* sbml_model);
-	void addSBMLEvents(nodeController* celltype,Model* sbml_model);
-	void addSBMLInitialAssignments(nodeController* cellPopulation,Model* sbml_model);
-    void translateSBMLReactions(nodeController* celltype, Model* sbml_model);
+    void addSBMLSpecies(Model* sbml_model);
+    void addSBMLParameters(Model* sbml_model);
+    void addSBMLRules(Model* sbml_model);
+	void addSBMLEvents(Model* sbml_model);
+	void addSBMLInitialAssignments(Model* sbml_model);
+    void translateSBMLReactions(Model* sbml_model);
     void parseMissingFeatures(Model* sbml_model);
 
 private slots:

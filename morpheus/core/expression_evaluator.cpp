@@ -122,8 +122,9 @@ VDOUBLE ExpressionEvaluator<VDOUBLE>::plain_get(const SymbolFocus& focus) const
 	return result;
 }
 
-
-
+double unary_plus(double val) {
+	return val;
+}
 double getRandomUniValue(double min, double max) {
         return getRandom01()*(max-min)+min;
 }
@@ -206,6 +207,7 @@ unique_ptr< mu::Parser > createMuParserInstance()
 		string name_chars = "0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZαβγδεζηθικλμνξοπρσςτυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ.";
 		parser->DefineNameChars(name_chars.c_str());
 		parser->DefineConst("pi",M_PI);
+		parser->DefineInfixOprt("+",		&unary_plus);
 		parser->DefineFun( sym_RandomUni,	&getRandomUniValue,  false);
 		parser->DefineFun( sym_RandomInt,	&getRandomIntValue,  false);
 		parser->DefineFun( sym_RandomNorm,	&getRandomNormValue, false);

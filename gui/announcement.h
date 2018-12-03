@@ -8,21 +8,6 @@
 #include <QtWebKit/QWebView>
 #endif
 
-class FeedbackRequestWindow : public QDialog {
-	Q_OBJECT
-	QMap<QString,QString> data;
-	QNetworkAccessManager* netw = NULL;
-	QString service_url = "https://imc.zih.tu-dresden.de/morpheus/service/user_tics";
-	public:
-		FeedbackRequestWindow(QWidget* parent = NULL, Qt::WindowFlags f = 0);
-		void setData(QMap<QString,QString> data) { this->data = data; };
-		
-	public slots:
-		void sendFeedBack();
-		void feedbackFinished();
-		
-};
-
 
 class AnnouncementDialog : public QDialog {
 	Q_OBJECT
