@@ -23,7 +23,7 @@
 			<xs:element name="Input" minOccurs="1">
 				<xs:complexType>
 					<xs:all>
-						<xs:element name="ExposeLocal" minOccurs="0"  maxOccurs="unbounded">
+						<xs:element name="LocalSymbol" minOccurs="0"  maxOccurs="unbounded">
 							<xs:complexType>
 								<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required" />
 								<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required"/>
@@ -56,6 +56,14 @@
 		<xs:all>
 			<xs:element name="Input" minOccurs="1">
 				<xs:complexType>
+					<xs:all>
+						<xs:element name="AddLocalSymbol" minOccurs="0"  maxOccurs="unbounded">
+							<xs:complexType>
+								<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required" />
+								<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required"/>
+							</xs:complexType>
+						</xs:element>
+					</xs:all>
 					<xs:attribute name="value" type="cpmMathExpression" use="required" />
 				</xs:complexType>
 			</xs:element>

@@ -16,20 +16,29 @@
 
 \brief Reports data about the cell's neighborhood or 'microenvironment' using Vector input. 
 
-\section Description
+\section Description for ML_Global
+
+NeighborhoodVectorReporter reports about the adjacent Neighborhood of a node, i.e. the node's 'microenvironment' and writes it to a Field.
+
+The neighorhood size is retrieved from the \ref ML_Lattice definition of the default neighborhood.
+
+\section Description for CellType
 
 NeighborhoodVectorReporter reports about the adjacent Neighborhood of a cell, i.e. the cell's 'microenvironment' using Vector input.
 
 Information can be retrieved from all contexts within the neighborhood and, if necessary, mapped to a single value.
 
-The neighorhood size is retrieved from the \ref ML_Lattice definition of the boundary neighborhood (Space/Lattice/Neighborhood). 
+The neighorhood size is retrieved from the \ref ML_CPM definition of the ShapeSurface neighborhood (CPM/). 
+
+\section Parameters
 
 A single \b Input element must be specified:
-- \b value: input variable (e.g. VectorProperty). May contain expression.
+- \b value: input expression (e.g. VectorProperty), which is evaluated at global scope in the  whole neighborhood. The local cell's/node's scope is available under namespace 'local', i.e. a cell's id is 'local.cell.id'.
 - \b scaling: setting scaling to \b per_cell will aquire information per neighboring cell (entity), \b per_length will scale the information with the interface length, i.e. the input value is considered to
 be a rate per node length.
 
-Accessing the local cell's properties in the input expression is not directly possible, since it is evaluated in the context of the neighborhood. Use the \b ExposeLocal tag to make local symbols (\b symbol-ref) available in the input expression (\b symbol).
+Accessing the local cell's/node's properties in the input expression is directly possible through the symbol namespace 'local'.
+
 
 If input variable is a scalar, use \ref NeighborhoodReporter.
 
@@ -68,13 +77,11 @@ class NeighborhoodVectorReporter : public ReporterPlugin
 		PluginParameter2<VDOUBLE,XMLEvaluator> input;
 		PluginParameter2<InputModes, XMLNamedValueReader,DefaultValPolicy> scaling;
 		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> exclude_medium;
+
+		Granularity local_ns_granularity;
+		uint local_ns_id;
+		bool using_local_ns;
 		
-		struct ExposeSpec {
-			PluginParameter_Shared<double, XMLReadableSymbol> local_symbol;
-			PluginParameter_Shared<string, XMLValueReader> symbol;
-		};
-		vector< ExposeSpec > exposed_locals;
-		Granularity exposed_locals_granularity;
 		
 		PluginParameter2<VDOUBLE,XMLWritableSymbol, RequiredPolicy> output;
 		PluginParameter2<OutputMode,XMLNamedValueReader, RequiredPolicy> output_mode;
