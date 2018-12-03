@@ -1,15 +1,24 @@
 # ChangeLog
 
-## Unreleased Changes
+## Release 2.1
+
+### GUI
   * Improve SBML import
      * Provide more import target options
      * Add support for multiple compartments
      * Support delays by converting to DelayProperties
+  * Fix MacOS crash on double-clicking symbol list
+  * Fix Windows SBML support (suitible library build)
+
+### MorpheusML
+  * Expose local symbols to the input of the Neighborhood(Vector)Reporter
   * Allow constant expressions in time-step specifications
-  * MacOS fix crash on double-clicking symbol list
-  * Windows fix SBML support (suitible library build)
+  * MorpheusML version bump 4.0
+
+### Simulator
+  * Add an adaptive step size ODE solver (RK45)
+  * Renewed implementation of Poissonian Disc Population Initializer
   * Fix rare misplacement in box object initializer
-  * Optionally expose local symbols to the input of the Neighborhood(Vector)Reporter.
 
 ## Patch 2.0.1
   * Fixed VectorRules not working
