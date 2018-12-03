@@ -236,7 +236,7 @@ protected:
 	vector< shared_ptr<SystemFunc<VDOUBLE>> > vec_evals, vec_equations;
 	vector< shared_ptr<SystemFunc<double>> > evals, equations;
 	shared_ptr<EvaluatorCache> cache;
-	deque< shared_ptr<SystemSolver> > solvers;
+	vector< shared_ptr<SystemSolver> > solvers;
 	
 	
 };
