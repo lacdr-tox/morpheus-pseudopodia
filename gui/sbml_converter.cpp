@@ -77,8 +77,8 @@ void  replaceDelays(ASTNode* math, QList<DelayDef>& delays) {
 	if (math->getType() == AST_FUNCTION_DELAY) {
 		// TODO We should check here what kind of delays already exist ....
 		DelayDef d;
-		d.symbol = math->getChild(0)->getValue();
-		d.delay = math->getChild(1)->getValue();
+		d.symbol = math->getChild(0)->getReal();
+		d.delay = math->getChild(1)->getReal();
 		d.delayed_symbol = d.symbol + "_"+ to_string(d.delay);
 		if (int i=delays.indexOf(d))
 			d=delays[i];
@@ -412,7 +412,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 			CompartmendDesc comp;
 			comp.name = s2q(sbml_model->getCompartment(i)->getId());
 			comp.init_value = sbml_model->getCompartment(i)->getSize();
-			if (auto init = sbml_model->getInitialAssignmentBySymbol(comp.name.toStdString())) {
+			if (auto init = sbml_model->getInitialAssignment(comp.name.toStdString())) {
 				auto math = init->getMath()->deepCopy();
 				sanitizeAST(math);
 				comp.init_assignment = SBML_formulaToString(math);
@@ -548,8 +548,8 @@ void SBMLImporter::addSBMLSpecies(Model* sbml_model)
 		}
 		
 		QString init_value;
-		if (sbml_model->getInitialAssignmentBySymbol(species->getId())) {
-			auto init=sbml_model->getInitialAssignmentBySymbol(species->getId());
+		if (sbml_model->getInitialAssignment(species->getId())) {
+			auto init=sbml_model->getInitialAssignment(species->getId());
 			auto math = init->getMath()->deepCopy();
 			sanitizeAST( math );
 			init_value = QString(SBML_formulaToString(math));

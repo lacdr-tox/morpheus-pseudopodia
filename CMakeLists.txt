@@ -242,6 +242,9 @@ ELSEIF("${MORPHEUS_OS}" STREQUAL "WIN32")
   SET(CPACK_NSIS_CONTACT "${MAINTAINTER}")
   #SET(CPACK_PACKAGE_EXECUTABLES "${M_EXEC_NAME}" "${EWS_APP_NAME}")
   SET(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\imc.zih.tu-dresden.de\\\\wiki\\\\morpheus")
+  
+  # RTF update: pandoc -s -f markdown -t rtf LICENSE.md  > LICENSE.rtf
+  SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.rtf")
 
   # create Start Menu links (application, uninstaller and website)
   SET(CPACK_NSIS_MENU_LINKS "${GUI_EXEC_NAME}" "${M_APP_NAME}")
