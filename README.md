@@ -41,6 +41,7 @@ build tools required:
   - xmllint (optional)
   - doxygen
   - git
+  - gnuplot (runtime)
 
 Libraries required (debian package notation):
   - zlib1g-dev libtiff-dev graphviz-dev
@@ -57,7 +58,7 @@ Libraries required (debian package notation):
 
 ## Building on Debian based systems
 
-To install all dependencies on Ubuntu 16.04 run:
+To install all dependencies on Ubuntu 16.04 and 18.04 run:
 ```  
 sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libtiff5-dev libgraphviz-dev libqt4-dev libqt4-sql-sqlite libqt4-network libqtwebkit-dev libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools libsbml5-dev
 ``` 
