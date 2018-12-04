@@ -157,6 +157,7 @@ public:
 	
 private:
 	PluginParameter2<VDOUBLE, XMLEvaluator, DefaultValPolicy > arrow;
+	PluginParameter2<bool, XMLNamedValueReader, DefaultValPolicy > centering;
 	int style;
 	
 };
@@ -209,6 +210,7 @@ public:
 private:
 // 	vector <shared_ptr <const CellType > > celltypes;
 	PluginParameter2<VDOUBLE,XMLEvaluator> value;
+	PluginParameter2<bool, XMLNamedValueReader, DefaultValPolicy > centering;
 // 	SymbolReader x_symbol, y_symbol;
 // 	double scaling;
 	int style;

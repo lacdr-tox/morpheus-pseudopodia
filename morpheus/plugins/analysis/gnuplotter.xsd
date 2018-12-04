@@ -176,18 +176,9 @@ Note: when (membrane) property has been selected, you MUST provide a symbol-ref 
 		<xs:annotation>
 			<xs:documentation>Plots arrows representing cell properties at the center of cells.</xs:documentation>
 		</xs:annotation>
-		<xs:attribute name="orientation" type="cpmVectorMathExpression" use="required" >
-		</xs:attribute>
-<!--		<xs:attribute name="scaling" type="cpmDouble" use="optional" default="1" >
-			<xs:annotation>
-				<xs:documentation>Scaling factor for the arrow length.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>-->
-		<xs:attribute name="style" type="cpmArrowStyle" use="optional" default="1">
-			<xs:annotation>
-				<xs:documentation>Choose from one of 8 predefined styles.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
+		<xs:attribute name="orientation" type="cpmVectorMathExpression" use="required" />
+		<xs:attribute name="style" type="cpmArrowStyle" use="optional" default="1" />
+		<xs:attribute name="center" type="cpmArrowCenter" use="optional" default="midpoint" />
 	</xs:complexType>
 
 	<xs:complexType name="cpmVectorPlotRef">
@@ -210,6 +201,7 @@ Note: when (membrane) property has been selected, you MUST provide a symbol-ref 
 			</xs:annotation>
 		</xs:attribute>
 		<xs:attribute name="color" type="cpmColors" use="required" default="black"/>
+		<xs:attribute name="center" type="cpmArrowCenter" use="optional" default="midpoint" />
 
 	</xs:complexType>
 	
@@ -223,6 +215,13 @@ Note: when (membrane) property has been selected, you MUST provide a symbol-ref 
 			<xs:enumeration value="6"/>
 			<xs:enumeration value="7"/>
 			<xs:enumeration value="8"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="cpmArrowCenter">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="midpoint"/>
+			<xs:enumeration value="origin"/>
 		</xs:restriction>
 	</xs:simpleType>
 	
