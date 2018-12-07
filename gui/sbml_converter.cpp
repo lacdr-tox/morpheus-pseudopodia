@@ -76,11 +76,20 @@ void replaceFunction(ASTNode* node, FunctionDefinition* function)
 void  replaceDelays(ASTNode* math, QList<DelayDef>& delays) {
 	if (math->getType() == AST_FUNCTION_DELAY) {
 		DelayDef d;
-		d.symbol = math->getChild(0)->getName();
-		d.delay = math->getChild(1)->getReal();
-		d.delayed_symbol = d.symbol + "_"+ to_string(d.delay);
+		d.symbol = SBML_formulaToString(math->getChild(0));
+		if (math->getChild(1)->isInteger()) {
+			d.delay = math->getChild(1)->getInteger();
+			d.delayed_symbol = d.symbol + "_"+ to_string(math->getChild(1)->getInteger());
+		}
+		else {
+			d.delay = math->getChild(1)->getReal();
+			d.delayed_symbol = d.symbol + "_"+ to_string(d.delay);
+		}
+		
 		replace(d.delayed_symbol.begin(),d.delayed_symbol.end(), ',', '_');
 		replace(d.delayed_symbol.begin(),d.delayed_symbol.end(), '.', '_');
+		replace(d.delayed_symbol.begin(),d.delayed_symbol.end(), '(', '_');
+		replace(d.delayed_symbol.begin(),d.delayed_symbol.end(), ')', '_');
 
 		if (!delays.contains(d))
 			delays << d;
@@ -418,7 +427,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 				comp.init_assignment = SBML_formulaToString(math);
 			}
 			bool is_const = (sbml_model->getCompartment(i)->isSetConstant() && sbml_model->getCompartment(i)->getConstant());
-			is_const = true; // HACK we do not allow compartment size dynamics anyways.
+// 			is_const = true; // HACK we do not allow compartment size dynamics anyways.
 			nodeController* compartment_node = target_scope->insertChild((is_const ? "Constant" : "Variable"));
 			compartment_node -> attribute("symbol") -> set(comp.name);
 			if (!comp.init_assignment.isEmpty())
