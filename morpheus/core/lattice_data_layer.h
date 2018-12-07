@@ -83,6 +83,7 @@ public:
 	void useBuffer(bool);
 	const int shadow_base_width;
 	bool setBuffer(const VINT& pos, typename TypeInfo<T>::Parameter val);
+	typename TypeInfo<T>::Return getBuffer(const VINT& pos) const;
 	void applyBuffer(const VINT& pos);
 	void copyDataToBuffer();
 	void swapBuffer();

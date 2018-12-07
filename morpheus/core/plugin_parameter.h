@@ -844,6 +844,8 @@ public:
 };
 
 
+template <class T, template <class S, class R> class XMLValueInterpreter, class RequirementPolicy>
+using PluginParameter = PluginParameter2<T, XMLValueInterpreter, RequirementPolicy>;
 
 template < class RequirementPolicy >
 using PluginParameterCellType = PluginParameter2< shared_ptr<const CellType>, XMLNamedValueReader, RequirementPolicy >;

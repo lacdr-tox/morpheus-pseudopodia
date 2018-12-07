@@ -245,16 +245,27 @@ void System::computeToBuffer(const SymbolFocus& f)
 
 void System::applyBuffer(const SymbolFocus& f)
 {
-// 	solvers[0]->applyBuffer(f);
 	for (uint i =0; i<equations.size(); i++) {
 		equations[i]->global_symbol->applyBuffer(f);
 	}
 	for (uint i =0; i<vec_equations.size(); i++) {
-		equations[i]->global_symbol->applyBuffer(f);
+		vec_equations[i]->global_symbol->applyBuffer(f);
 	}
 }
 
-void System::computeToTarget(const SymbolFocus& f, bool use_buffer)
+void System::applyBuffer(const SymbolFocus& f, const vector<double>& buffer)
+{
+	uint b=0;
+	for (uint i =0; i<equations.size(); i++) {
+		equations[i]->global_symbol->set(f, buffer[b++]);
+	}
+	for (uint i =0; i<vec_equations.size(); i++) {
+		vec_equations[i]->global_symbol->set(f,VDOUBLE(buffer[b],buffer[b+1],buffer[b+2]));
+		b+=3;
+	}
+}
+
+void System::computeToTarget(const SymbolFocus& f, bool use_buffer, vector<double>* buffer)
 {
 	auto solv_num = omp_get_thread_num();
 
@@ -270,7 +281,7 @@ void System::computeToTarget(const SymbolFocus& f, bool use_buffer)
 		}
 		mutex.unlock();
 	}
-	solvers[solv_num]->solve(f, use_buffer);
+	solvers[solv_num]->solve(f, use_buffer, buffer);
 }
 
 void System::compute(const SymbolFocus& f)
@@ -617,7 +628,7 @@ void SystemSolver::setTimeStep(double ht) {
 	spec.time_step = ht;
 }
 
-void SystemSolver::solve(const SymbolFocus& f, bool use_buffer) {
+void SystemSolver::solve(const SymbolFocus& f, bool use_buffer, vector<double>* ext_buffer) {
 	// Fetch data
 	fetchSymbols(f);
 
@@ -631,8 +642,12 @@ void SystemSolver::solve(const SymbolFocus& f, bool use_buffer) {
 			RungeKutta_adaptive(f,spec.time_step); break;
 	}
 	// Write back
-	if (use_buffer)
-		writeSymbolsToBuffer(f);
+	if (use_buffer) {
+		if (ext_buffer)
+			writeSymbolsToExtBuffer(ext_buffer);
+		else
+			writeSymbolsToBuffer(f);
+	}
 	else
 		writeSymbols(f);
 }
@@ -677,6 +692,20 @@ void SystemSolver::writeSymbolsToBuffer(const SymbolFocus& f)
 	}
 	for (const auto& eval : vec_equations) {
 		eval->global_symbol->setBuffer(f,cache->getLocalV(eval->cache_idx ));
+	}
+}
+
+void SystemSolver::writeSymbolsToExtBuffer(vector<double>* ext_buffer) {
+	ext_buffer->clear();
+	for (const auto& eval : evals) {
+		if (eval->type == SystemFunc<double>::ODE || eval->type == SystemFunc<double>::EQU ) 
+			ext_buffer->push_back(cache->getLocalD(eval->cache_idx ));
+	}
+	for (const auto& eval : vec_equations) {
+		auto val = cache->getLocalV(eval->cache_idx);
+		ext_buffer->push_back(val.x);
+		ext_buffer->push_back(val.y);
+		ext_buffer->push_back(val.z);
 	}
 }
 
@@ -1144,6 +1173,19 @@ void DiscreteSystem::init(const Scope* scope)
 	registerOutputSymbols(System::getOutputSymbols());
 }
 
+EventSystem::EventSystem() : System(DISCRETE_SYS), InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_OPTIONAL ) {
+	delay.setDefault("0");
+	delay.setXMLPath("delay");
+	registerPluginParameter(delay);
+	delay_compute.setDefault("on-trigger");
+	delay_compute.setXMLPath("compute-time");
+	delay_compute.setConversionMap({{"on-trigger",false},{"on-execution",true}});
+	registerPluginParameter(delay_compute);
+	trigger_on_change.setDefault("on change");
+	trigger_on_change.setXMLPath("trigger");
+	trigger_on_change.setConversionMap({{"when true",false},{"on change",true}});
+	registerPluginParameter(trigger_on_change);
+};
 
 void EventSystem::loadFromXML ( const XMLNode node, Scope* scope )
 {
@@ -1152,21 +1194,6 @@ void EventSystem::loadFromXML ( const XMLNode node, Scope* scope )
 	// Allow manual adjustment that cannot be overridden
 	if (timeStep()>0)
 		this->is_adjustable = false;
-
-	trigger_on_change = true;
-	string trigger_mode ;
-	if (getXMLAttribute(node,"trigger",trigger_mode) ) {
-		if (trigger_mode == "on change") {
-			trigger_on_change = true;
-		}
-		else if (trigger_mode == "when true") {
-			trigger_on_change = false;
-		}
-		else {
-			cerr << "Invalid trigger mode \"" << trigger_mode << "\" in Event." << endl;
-			exit(-1);
-		}
-	}
 
 	if (node.nChildNode("Condition")) {
 		string expression;
@@ -1193,28 +1220,6 @@ void EventSystem::init ( const Scope* scope)
 	if (condition)
 		condition->init();
 	
-// 	celltype = scope->getCellType();
-// 	
-// 	if (trigger_on_change) {
-// 		switch (condition->getGranularity()) {
-// 			case Granularity::Global: {
-// 				condition_granularity = Granularity::Global;
-// 				condition_history_val = 0;
-// 				break;
-// 			}
-// 			case Granularity::Cell : {
-// 				condition_granularity = Granularity::Cell;
-// 				condition_history_prop = celltype->addProperty<double>("_event_history","Event History",0);
-// 				break;
-// 			}
-// 			case Granularity::MembraneNode: 
-// 			case Granularity::Node :
-// 			default:
-// 				throw string("Events with on-change trigger can only be used with condition depending on globals variables or cell properties.\nMissing implementation.");
-// 				break;
-// 		}
-// 	}
-	
 	if (condition) {
 		registerInputSymbols(condition->getDependSymbols());
 	}
@@ -1225,16 +1230,33 @@ void EventSystem::init ( const Scope* scope)
 
 void EventSystem::executeTimeStep()
 {
+	auto time = SIM::getTime();
 	FocusRange range(target_granularity, target_scope);
-	if (trigger_on_change) {
+	if (trigger_on_change()) {
 		for (auto focus : range) {
+			
 			double cond = condition->get(focus);
-			auto history_val = condition_history.find(SymbolFocus::global);
+			auto history_val = condition_history.find(focus);
 			double trigger = ( history_val != condition_history.end()? history_val->second <= 0.0 : true) && cond;
-			if (trigger)
-				compute(focus);
-			if (history_val != condition_history.end())
+			if (trigger) {
+				double d = delay(focus);
+				if (d == 0) {
+					compute(focus);
+				}
+				else if (delay_compute()) {
+					DelayedAssignment assignment {focus,{}};
+					delayed_assignments.insert({time + d,assignment});
+				}
+				else {
+					DelayedAssignment assignment {focus,{}};
+					computeToTarget(focus,true, &assignment.value_cache);
+					delayed_assignments.insert({time + d,assignment});
+				}
+				
+			}
+			if (history_val != condition_history.end()) {
 				history_val->second = cond;
+			}
 			else 
 				condition_history[focus] = cond;
 		}
@@ -1243,6 +1265,21 @@ void EventSystem::executeTimeStep()
 		for (auto focus : range) {
 			if (condition->get(focus))
 				compute(focus);
+		}
+	}
+	
+	if (!delayed_assignments.empty()) {
+		auto last = delayed_assignments.upper_bound(time);
+		if (last == delayed_assignments.begin()) return;
+		
+		for (auto assignment = delayed_assignments.begin(); assignment!=last;) {
+			if (delay_compute()) {
+				compute(assignment->second.focus);
+			}
+			else {
+				applyBuffer(assignment->second.focus, assignment->second.value_cache);
+			}
+			delayed_assignments.erase(assignment++);
 		}
 	}
 };

@@ -107,20 +107,14 @@ void DelayPropertyPlugin::setTimeStep(double t)
 		queue_length = floor(delay/t);
 		t = delay / queue_length;
 		queue_length += 1; // need one more storage locations than intervals;
-		
-// 		if ( abs(delay/t - rint(delay/t)) > 0.01 ) {
-// 			throw string("Time Stepping override (") + to_str(t) + ") for DelayProperty " +  symbolic_name + " is not an integer fraction of the time delay ("  + to_str(delay)  + ").";
-// 			exit(-1);
-// 		}
-// 		queue_length = max(int(rint(delay/t)),1);
-		queue_length += 1; // need one more storage locations than intervals;
 	}
-	
+	//TODO This resizeing of the downstream containers should be done by the Symbols !!! However, the value sits here in the Plugin.
 	if (mode==Mode::Variable) {
-		
+		static_pointer_cast<DelayVariableSymbol>(_accessor)->property.value.resize(queue_length,value.safe_get(SymbolFocus::global));
 	}
 	else if (mode == Mode::CellProperty) {
 		const CellType*  celltype = scope()->getCellType();
+		
 		static_pointer_cast<DelayProperty>(celltype->default_properties[property_id])->value.resize(queue_length,value.safe_get(SymbolFocus::global));
 		// Assume there are no cells yet ...
 		for (auto cell_id : celltype->getCellIDs()) {
