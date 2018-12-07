@@ -5,6 +5,13 @@ SET(GRAPHVIZ_ROOT "" CACHE PATH "Set root directory to search for GraphViz" )
 MARK_AS_ADVANCED(GRAPHVIZ_ROOT)
 FIND_PACKAGE(Graphviz)
 
+FIND_PACKAGE(Boost REQUIRED)
+IF (Boost_FOUND) 
+	SET(HAVE_BOOST 1)
+ELSE()
+	MESSAGE(STATUS "Unable to detect Boost library. Turning off Delay support.")
+ENDIF()
+
 #IF( NOT GNUPLOT_FOUND )
 #	MESSAGE("Cannot find Gnuplot. To use the Gnuplotter visualization plugin, install a recent version (4.0+) of gnuplot.")
 #ENDIF ()
@@ -35,7 +42,7 @@ ELSE()
 	SET(HAVE_OPENMP OFF)
 ENDIF()
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR} ${Boost_INCLUDE_DIR})
 IF (GRAPHVIZ_FOUND)
 	include_directories( ${GRAPHVIZ_INCLUDE_DIR} )
 ENDIF()
@@ -54,9 +61,9 @@ SET (APP_DOC_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/core/function.h 
 	${CMAKE_CURRENT_SOURCE_DIR}/core/membrane_property.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/property.h
+	${CMAKE_CURRENT_SOURCE_DIR}/core/delay.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/system.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/cpm_sampler.h
-	
 )
 
 SET(XSD_SOURCES 
@@ -68,9 +75,15 @@ SET(XSD_SOURCES
 	core/lattice.xsd
 	core/membrane_property.xsd
 	core/property.xsd
+	
 	core/simulation.xsd
 	core/system.xsd
 )
+
+IF (Boost_FOUND) 
+  LIST(APPEND XSD_SOURCES core/delay.xsd)
+  LIST(APPEND APP_DOC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/core/delay.h)
+ENDIF()
 
 foreach(source ${plugin_src})
 	STRING(REGEX REPLACE "\\.cpp" ".h" header ${source})

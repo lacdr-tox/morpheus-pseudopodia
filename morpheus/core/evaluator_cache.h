@@ -38,9 +38,17 @@ public:
 	/// Symbol factory to be used with muParser
 	static mu::value_type* registerSymbol(const mu::char_type* symbol, void* ptr);
 	
-	
 	/// Add a local symbol @p name to the cache and return it's cache position
 	int addLocal(string name, double value);
+	
+	/// Add a local symbol @p name to the cache and return it's cache position
+	int addLocal(string name, VDOUBLE value);
+	
+	int getLocalIdx(string name) {
+		if (locals.count(name)) return locals[name];
+		if (v_locals.count(name)) return v_locals[name];
+		return -1;
+	}
 	
 	/// Set a cache local symbol @p name to @p value
 	void setLocal(string name, double value) {
@@ -52,18 +60,6 @@ public:
 	void setLocal(uint cache_pos, double value) {
 		locals_cache[cache_pos] = value;
 	}
-	
-	/*! \brief Add a foreign Scope @p scope as namespace @p ns_name to the local variable scope.
-	 * 
-	 * Returns the name space reference @return id. */
-	uint addNameSpaceScope(const string& ns_name, const Scope* scope);
-	/// Get all symbols used from name space @p ns_id. The namespace prefix is not contained in the symbols returned.
-	set<Symbol> getNameSpaceUsedSymbols(uint ns_id) const;
-	/// Set the focus of name space @p ns_id
-	void setNameSpaceFocus(uint ns_id, const SymbolFocus& f) const;
-	
-	/// Add a local symbol @p name to the cache and return it's cache position
-	int addLocal(string name, VDOUBLE value);
 	
 	/// Set a cache local symbol @p name to @p value
 	void setLocal(string name, VDOUBLE value) {
@@ -81,12 +77,21 @@ public:
 		locals_cache[cache_pos+2] = value.z;
 	}
 	
+	/*! \brief Add a foreign Scope @p scope as namespace @p ns_name to the local variable scope.
+	 * 
+	 * Returns the name space reference @return id. */
+	uint addNameSpaceScope(const string& ns_name, const Scope* scope);
+	/// Get all symbols used from name space @p ns_id. The namespace prefix is not contained in the symbols returned.
+	set<Symbol> getNameSpaceUsedSymbols(uint ns_id) const;
+	/// Set the focus of name space @p ns_id
+	void setNameSpaceFocus(uint ns_id, const SymbolFocus& f) const;
+	
+	
 	/// Get the memory layout of local symbols. Using that table, setLocals will update all local data at once.
 	const vector<LocalSymbolDesc>& getLocalsTable() const { return locals_table; }
 	
 	/// Set the table of local symbols in a compact way.
 	void setLocalsTable(const vector<LocalSymbolDesc>& layout);
-	
 	/** Set all local data at once using @p data
 	 *  
 	 * Update the scalar expansion wrappers must be done manually by calling setExpansionIndex

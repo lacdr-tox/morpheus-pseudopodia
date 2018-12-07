@@ -39,6 +39,11 @@ SET(morpheus_core_src
 	vector_equation.cpp
 	xml_functions.cpp
 )
+
+IF (Boost_FOUND) 
+  LIST(APPEND morpheus_core_src delay.cpp)
+ENDIF()
+
 SET(morpheus_src
 	parse_arg.cpp
 	rss_stat.cpp

@@ -9,8 +9,6 @@
  *
  * */
 
-bool operator ==(const DelayDef& a, const DelayDef& b) { return a.symbol == b.symbol && a.delay == b.delay; }
-
 namespace ASTTool {
 
 void renameSymbol(ASTNode* node, const QString& old_name, const QString& new_name ) {
@@ -73,34 +71,21 @@ void replaceFunction(ASTNode* node, FunctionDefinition* function)
 	}
 }
 
-void  replaceDelays(ASTNode* math, QList<DelayDef>& delays) {
-	if (math->getType() == AST_FUNCTION_DELAY) {
-		DelayDef d;
-		d.symbol = SBML_formulaToString(math->getChild(0));
-		if (math->getChild(1)->isInteger()) {
-			d.delay = math->getChild(1)->getInteger();
-			d.delayed_symbol = d.symbol + "_"+ to_string(math->getChild(1)->getInteger());
-		}
-		else {
-			d.delay = math->getChild(1)->getReal();
-			d.delayed_symbol = d.symbol + "_"+ to_string(d.delay);
-		}
-		
-		replace(d.delayed_symbol.begin(),d.delayed_symbol.end(), ',', '_');
-		replace(d.delayed_symbol.begin(),d.delayed_symbol.end(), '.', '_');
-		replace(d.delayed_symbol.begin(),d.delayed_symbol.end(), '(', '_');
-		replace(d.delayed_symbol.begin(),d.delayed_symbol.end(), ')', '_');
-
-		if (!delays.contains(d))
-			delays << d;
-		
-		math->setType(AST_NAME);
-		math->setName(d.delayed_symbol.c_str());
+void replaceRateOf(ASTNode* node)
+{
+#if LIBSBML_VERSION >= LIBSBML_L3V2_VERSION 
+	if (node->getType() == AST_FUNCTION_RATE_OF) {
+		string symbol = node->getChild(0)->getName();
+		node->removeChild(0);
+		node->setType(AST_NAME);
+		node->setName((symbol+".rate").c_str());
 	}
-	
-	for (uint i=0; i<math->getNumChildren(); i++) {
-		replaceDelays(math->getChild(i),delays);
+	else {
+		for (uint i=0; i<node->getNumChildren(); i++) {
+			replaceRateOf(node->getChild(i));
+		}
 	}
+#endif
 }
 
 
@@ -108,6 +93,35 @@ void  replaceDelays(ASTNode* math, QList<DelayDef>& delays) {
 
 QString s2q(const std::string& s) { return QString::fromStdString(s); }
 
+
+void  SBMLImporter::replaceDelays(ASTNode* math) {
+	if (math->getType() == AST_FUNCTION_DELAY) {
+		DelayDef d;
+		d.symbol = formulaToString(math->getChild(0));
+		if (math->getChild(1)->isInteger()) {
+			d.delay = math->getChild(1)->getInteger();
+			d.delayed_symbol = d.symbol + "_"+ QString::number(math->getChild(1)->getInteger());
+		}
+		else {
+			d.delay = math->getChild(1)->getReal();
+			d.delayed_symbol = d.symbol + "_"+ QString::number(d.delay);
+		}
+		d.delayed_symbol.remove('(');
+		d.delayed_symbol.remove(')');
+		d.delayed_symbol.replace(',','_');
+		d.delayed_symbol.replace('.','_');
+
+		if (!delays.contains(d))
+			delays << d;
+		
+		math->setType(AST_NAME);
+		math->setName(d.delayed_symbol.toLatin1());
+	}
+	
+	for (uint i=0; i<math->getNumChildren(); i++) {
+		replaceDelays(math->getChild(i));
+	}
+}
 
 QSharedPointer<MorphModel> SBMLImporter::importSBML() {
 	SBMLImporter* importer = new SBMLImporter(nullptr, config::getModel());
@@ -274,6 +288,14 @@ void SBMLImporter::import()
 
 bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 {
+	compartments.clear();
+	species.clear();
+	constants.clear();
+	variables.clear();
+	vars_with_assignments.clear();
+	delays.clear();
+	diffeqn_map.clear();
+	
 	if ( ! QFileInfo(sbml_file).exists() ) {
 		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, sbml_file.toStdString());
 	}
@@ -421,20 +443,18 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 			CompartmendDesc comp;
 			comp.name = s2q(sbml_model->getCompartment(i)->getId());
 			comp.init_value = sbml_model->getCompartment(i)->getSize();
-			if (auto init = sbml_model->getInitialAssignment(comp.name.toStdString())) {
-				auto math = init->getMath()->deepCopy();
-				sanitizeAST(math);
-				comp.init_assignment = SBML_formulaToString(math);
+			auto init = sbml_model->getInitialAssignment(comp.name.toStdString());
+			if (init) {
+				comp.init_assignment = formulaToString(init->getMath());
 			}
-			bool is_const = (sbml_model->getCompartment(i)->isSetConstant() && sbml_model->getCompartment(i)->getConstant());
-// 			is_const = true; // HACK we do not allow compartment size dynamics anyways.
-			nodeController* compartment_node = target_scope->insertChild((is_const ? "Constant" : "Variable"));
+			comp.dynamic = (sbml_model->getCompartment(i)->isSetConstant() && ! sbml_model->getCompartment(i)->getConstant());
+			nodeController* compartment_node = target_scope->insertChild((comp.dynamic ? "Variable" : "Constant"));
 			compartment_node -> attribute("symbol") -> set(comp.name);
 			if (!comp.init_assignment.isEmpty())
 				compartment_node -> attribute("value") -> set(comp.init_assignment);
 			else
 				compartment_node -> attribute("value") -> set(comp.init_value);
-
+			compartments[comp.name] = comp;
 		}
 	}
 	else {
@@ -454,7 +474,24 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 
 	this->addSBMLEvents(sbml_model);
 
-// 	this->addSBMLInitialAssignments(sbml_model);
+	// All rate equations are done, now compensate for compartments with changing vbolumes
+	for (const auto& comp : compartments) {
+		if (comp.dynamic && diffeqn_map.contains(comp.name)) {
+			// Expose dv/dt
+			auto dv = target_system->insertChild("Intermediate");
+			QString dv_name = comp.name + ".rate";
+			dv->attribute("symbol")->set(dv_name);
+			dv->attribute("value")->set(diffeqn_map[comp.name]->get());
+			
+			//Manipulate all specie's odes rules in the compartment
+			
+			for (auto species_ode = diffeqn_map.begin(); species_ode !=diffeqn_map.end(); species_ode++) {
+				if  (species[species_ode.key()].compartment == comp.name && (!species[species_ode.key()].is_amount) ) {
+					species_ode.value()->append( QString(" - %1*%2/%3").arg(species_ode.key()).arg(dv_name).arg(comp.name)  );
+				}
+			}
+		}
+	}
 
 	// Add all delays collected while parsing
 	for (const auto& delay : delays) {
@@ -466,9 +503,9 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 			delay_property->attribute("symbol")->set(delay.delayed_symbol);
 			delay_property->attribute("delay")->set(delay.delay);
 			
-			auto delay_eqn = target_scope->insertChild("Equation");
-			delay_eqn->attribute("symbol-ref")->set(delay.delayed_symbol);
-			delay_eqn->firstActiveChild("Expression")->setText(QString::fromStdString(delay.symbol));
+			auto delay_rule = target_system->insertChild("Rule");
+			delay_rule->attribute("symbol-ref")->set(delay.delayed_symbol);
+			delay_rule->firstActiveChild("Expression")->setText(delay.symbol);
 			
 			delays.append(delay);
 		}
@@ -545,10 +582,14 @@ void SBMLImporter::addSBMLSpecies(Model* sbml_model)
 		desc.compartment = s2q(species->getCompartment());
 		desc.is_const = (species->isSetConstant() && species->getConstant());
 		desc.name = s2q(species->getId());
+		desc.is_amount = false;
+		if (species->isSetSubstanceUnits()) {
+			if (species->getSubstanceUnits() == string("substance") ) desc.is_amount = true;
+			if (species->getSubstanceUnits() == string("mole") ) desc.is_amount = true;
+		}
 		
 
 		nodeController* property_node = target_scope->insertChild((desc.is_const ? "Constant" : (is_celltype ? "Property" : "Variable")));
-		
 		this->variables.insert(desc.name);
 		this->species[desc.name] = desc;
 
@@ -559,18 +600,20 @@ void SBMLImporter::addSBMLSpecies(Model* sbml_model)
 		}
 		
 		QString init_value;
-		if (sbml_model->getInitialAssignment(species->getId())) {
-			auto init=sbml_model->getInitialAssignment(species->getId());
-			auto math = init->getMath()->deepCopy();
-			sanitizeAST( math );
-			init_value = QString(SBML_formulaToString(math));
+		
+		auto init=sbml_model->getInitialAssignment(species->getId());
+		if (init) {
+			init_value = formulaToString(init->getMath());
 		}
 		else if (species->isSetInitialConcentration()) {
 			init_value = QString::number(species->getInitialConcentration());
+			if (desc.is_amount)
+				init_value = init_value + "*" + desc.compartment;
 		}
 		else if (species->isSetInitialAmount() ){
 			init_value = QString::number(species->getInitialAmount());
-			init_value = QString("(") + init_value + ")/" + desc.compartment;
+			if ( ! desc.is_amount)
+				init_value = init_value + "/" + desc.compartment;
 		}
 		else {
 			init_value = "0";
@@ -637,24 +680,24 @@ void SBMLImporter::addSBMLFunctions(Model* sbml_model)
 			auto param = mo_function->insertChild("Parameter",i);
 			param->attribute("symbol")->set(function->getArgument(i)->getName());
 		}
-		const ASTNode* f_math = function->getMath();
-		ASTNode* math = f_math->getChild(f_math->getNumChildren()-1)->deepCopy();
-		sanitizeAST(math);
-		mo_function->firstActiveChild("Expression")->setText(SBML_formulaToString(math));
-// 		functions.insert(s2q(function->getId()),function);
-		delete math;
+		mo_function->firstActiveChild("Expression")->setText(formulaToString(function->getMath()));
 	}
 };
 
-void SBMLImporter::sanitizeAST(ASTNode* math)
+QString SBMLImporter::formulaToString(const ASTNode* math)
 {
-	ASTTool::renameTimeSymbol(math, target_scope->getModelDescr().time_symbol->get());
+	auto m = std::unique_ptr<ASTNode>(math->deepCopy());
+	ASTTool::renameTimeSymbol(m.get(), target_scope->getModelDescr().time_symbol->get());
 	
-	ASTTool::replaceDelays(math, delays);
-// 	QMap<QString, FunctionDefinition* >::const_iterator it;
-// 	for (it=functions.begin() ; it!=functions.end(); it++) {
-// 		ASTTool::replaceFunction(math,it.value());
-// 	}
+	replaceDelays(m.get());
+	
+	ASTTool::replaceRateOf(m.get());
+#if LIBSBML_VERSION >= LIBSBML_L3PARSER_VERSION
+	auto c = std::unique_ptr<char[]>(SBML_formulaToL3String(m.get()));
+#else
+	auto c = std::unique_ptr<char[]>(SBML_formulaToString(m.get()));
+#endif
+	return QString(c.get());
 }
 
 
@@ -669,22 +712,19 @@ void SBMLImporter::addSBMLRules(Model* sbml_model)
 			}
 		}
 		nodeController* rule_node;
-		if (compartments.count(s2q(rule->getVariable()))) {
-			throw SBMLConverterException(SBMLConverterException::SBML_DYNAMIC_COMPARTMENT, string("Compartment size dynamics currently not supported.") );
-		}
+// 		if (compartments.count(s2q(rule->getVariable()))) {
+// 			throw SBMLConverterException(SBMLConverterException::SBML_DYNAMIC_COMPARTMENT, string("Compartment size dynamics currently not supported.") );
+// 		}
 		
-		ASTNode* math = rule->getMath()->deepCopy();
-		sanitizeAST(math);
-		auto expression =  QString(SBML_formulaToString(math));
-		delete math;
+		auto expression = formulaToString(rule->getMath());
 		
 		switch (rule->getTypeCode()) {
 			case SBML_ALGEBRAIC_RULE :
 				throw SBMLConverterException(SBMLConverterException::SBML_ALGEBRAIC_RULE);
 				break;
 			case SBML_ASSIGNMENT_RULE :
-// 				rule_node = target_scope->insertChild("Equation");
-// 				rule_node->attribute("symbol-ref")->set(rule->getVariable());
+			{
+				// TODO: This is a workaround for missing sub-step hooks in morpheus itself --> would need System sub-step hooks !!
 				rule_node = target_system->insertChild("Rule");
 				rule_node->attribute("symbol-ref")->set(rule->getVariable());
 				rule_node->firstActiveChild("Expression")->setText(expression);
@@ -692,9 +732,20 @@ void SBMLImporter::addSBMLRules(Model* sbml_model)
 					rule_node->attribute("name")->set(rule->getName());
 					rule_node->attribute("name")->setActive(true);
 				}
-				
+				auto variable = target_scope->find(QStringList() << QString("Variable[symbol=%1]").arg(s2q(rule->getVariable())));
+				if (variable) {
+					variable->attribute("value")->set(expression);
+					qDebug() << "Overriding " << s2q(rule->getVariable())<< " default " << expression;
+				}
+				else {
+					qDebug() << "No compartment or species " << s2q(rule->getVariable())<< " for overriding with  " << expression;
+					qDebug() << "Species " << species.keys();
+					qDebug() << "Compartments " << compartments.keys();
+					qDebug() << "Parameters " << variables;
+				}
 				vars_with_assignments.insert(s2q(rule->getVariable()));
 				break;
+			}
 			case SBML_RATE_RULE :
 				rule_node = target_system->insertChild("DiffEqn");
 				rule_node->attribute("symbol-ref")->set(rule->getVariable());
@@ -724,19 +775,14 @@ void SBMLImporter::addSBMLEvents(Model* sbml_model)
 			event->attribute("name")->set(s2q(e->getName()));
 		}
 		if (e->isSetTrigger()) {
-			ASTNode* math = e->getTrigger()->getMath()->deepCopy();
-			sanitizeAST(math);
 			nodeController* condition = event->firstActiveChild("Condition");
 			if (!condition)
 				condition = event->insertChild("Condition");
-			condition->setText(SBML_formulaToString(math));
-			delete math;
+			condition->setText(formulaToString(e->getTrigger()->getMath()));
 		}
 		if (e->isSetDelay()) {
 			event->attribute("delay")->setActive(true);
-			ASTNode* math = e->getDelay()->getMath()->deepCopy();
-			sanitizeAST(math);
-			event->attribute("delay")->set(SBML_formulaToString(math));
+			event->attribute("delay")->set(formulaToString(e->getDelay()->getMath()));
 			if ( e->isSetUseValuesFromTriggerTime() && e->getUseValuesFromTriggerTime() ) {
 				event->attribute("compute-time")->setActive(true);
 				event->attribute("compute-time")->set("on-trigger");
@@ -755,11 +801,7 @@ void SBMLImporter::addSBMLEvents(Model* sbml_model)
 			const EventAssignment* ass = e->getEventAssignment(j);
 			nodeController* equation =  event->insertChild("Rule");
 			equation->attribute("symbol-ref")->set(ass->getVariable());
-
-			ASTNode* math = ass->getMath()->deepCopy();
-			sanitizeAST(math);
-			equation->firstActiveChild("Expression")->setText(SBML_formulaToString(math));
-			delete math;
+			equation->firstActiveChild("Expression")->setText(formulaToString(ass->getMath()));
 		}
 	}
 }
@@ -780,7 +822,7 @@ void SBMLImporter::translateSBMLReactions(Model* sbml_model)
 		KineticLaw* kinetics = reaction->getKineticLaw();
 		QMap<QString,QString> renamed_symbols;
 		if (!kinetics)
-			throw SBMLConverterException(SBMLConverterException::SBML_INVALID);
+			throw SBMLConverterException(SBMLConverterException::SBML_INVALID, "Missing reaction kinetics");
 
 		ListOfParameters* local_params = kinetics->getListOfParameters();
 		for (uint p=0; p<local_params->size(); p++) {
@@ -819,12 +861,12 @@ void SBMLImporter::translateSBMLReactions(Model* sbml_model)
 		
 		// After parsing the params, we know which symbols to rename in the kinetics
 		QMap<QString,QString>::iterator rename;
-		ASTNode* kinetics_math = kinetics->getMath()->deepCopy();
+		auto kinetics_math = unique_ptr<ASTNode>(kinetics->getMath()->deepCopy());
 		for (rename = renamed_symbols.begin(); rename!=renamed_symbols.end(); rename++) {
-			ASTTool::renameSymbol(kinetics_math, rename.key(), rename.value());
+			ASTTool::renameSymbol(kinetics_math.get(), rename.key(), rename.value());
 		}
-		sanitizeAST(kinetics_math);
-
+		auto kinetics_formula = formulaToString(kinetics_math.get());
+		
 		// Solve the left hand side -- reactants of the equation
 		string reactants_compartment;
 		for (uint j=0; j<reaction->getNumReactants(); j++) {
@@ -849,10 +891,12 @@ void SBMLImporter::translateSBMLReactions(Model* sbml_model)
 			if (reactant->getStoichiometry() != 1.0) {
 				term += QString::number(reactant->getStoichiometry()) + "*";
 			}
-
-			// divide by compartment size, since kinetics describe the amount flux, not concentration flux
-			term += "(" + QString(SBML_formulaToString(kinetics_math)) + ")";
-			term += "/" + species[reactant_name].compartment;
+			
+			term += "(" + kinetics_formula + ")";
+			if (!species[reactant_name].is_amount) {
+				// divide by compartment size, since kinetics describe the amount flux, not concentration flux
+				term += "/" + species[reactant_name].compartment;
+			}
 			
 			if (! diffeqn_map.contains(reactant_name)) {
 				nodeController* deq_node = target_system->insertChild("DiffEqn");
@@ -885,14 +929,16 @@ void SBMLImporter::translateSBMLReactions(Model* sbml_model)
 
 			QString term;
 			if (product->isSetStoichiometryMath()) {
-				throw SBMLConverterException(SBMLConverterException::SBML_INVALID);
+				throw SBMLConverterException(SBMLConverterException::SBML_INVALID, "Stochiometry set via MathML is not supported");
 			}
 			if (product->getStoichiometry() != 1.0) {
 				term += QString::number(product->getStoichiometry()) + "*";
 			}
-			// divide by compartment size, since kinetics describe the amount flux, not concentration flux
-			term += "(" + QString(SBML_formulaToString(kinetics_math)) + ")";
-			term += "/" + species[product_name].compartment;
+			term += "(" + kinetics_formula + ")";
+			if (!species[product_name].is_amount) {
+				// divide by compartment size, since kinetics describe the amount flux, not concentration flux
+				term += "/" + species[product_name].compartment;
+			}
 			
 			if (! diffeqn_map.contains(product_name)) {
 				nodeController* deq_node = target_system->insertChild("DiffEqn");
@@ -908,7 +954,7 @@ void SBMLImporter::translateSBMLReactions(Model* sbml_model)
 			}
 
 		}
-		delete kinetics_math;
+
 	}
 	if (have_renamed) {
 		conversion_messages.append("Some parameters of the reaction kinetics had to be renamed. Renaming naming scheme is {parameter}_{#reaction}");
@@ -924,10 +970,7 @@ void SBMLImporter::addSBMLInitialAssignments(Model* sbml_model)
 		for (auto child :childs) {
 			if (child->getName() == "Constant" || child->getName() == "Variable" || child->getName() == "Property" ) {
 				if (child->attribute("symbol") && child->attribute("symbol")->get() == s2q(e->getSymbol()) ) {
-					ASTNode* math = e->getMath()->deepCopy();
-					sanitizeAST(math);
-					child->attribute("value")->set(SBML_formulaToString(math));
-					delete math;
+					child->attribute("value")->set(formulaToString(e->getMath()));
 					found_matching= true;
 					break;
 				}

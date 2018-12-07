@@ -3,10 +3,11 @@
 ## Release 2.1
 
 ### GUI
-  * Improve SBML import
+  * Largely improve SBML import
      * Provide more import target options
-     * Add support for multiple compartments
-     * Support delays by converting to DelayProperties
+     * Add support for multiple compartments and variable size compartments
+     * Support delays by via DelayProperties
+     * Support Events with delays
   * Fix MacOS crash on double-clicking symbol list
   * Fix Windows SBML support (suitible library build)
 

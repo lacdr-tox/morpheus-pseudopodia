@@ -297,7 +297,7 @@ public:
 			
 			evaluator->init();
 			
-			if (evaluator->flags().space_const && evaluator->flags().time_const) { 
+			if (evaluator->flags().space_const && evaluator->flags().time_const && locals_table.empty()) { 
 				is_const =  true;
 				const_expr = evaluator->safe_get(SymbolFocus::global);
 			}
