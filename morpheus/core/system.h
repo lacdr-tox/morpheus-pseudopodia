@@ -146,7 +146,7 @@ class SystemSolver{
 		SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFunc< double >> >& fun, const std::vector< shared_ptr<SystemFunc< VDOUBLE >> >& vfun, SystemSolver::Spec spec);
 		SystemSolver(const SystemSolver& p);
 		const SystemSolver& operator=(const SystemSolver& p)= delete;
-		void solve(const SymbolFocus& f, bool use_buffer);
+		void solve(const SymbolFocus& f, bool use_buffer, vector<double>* ext_buffer=nullptr);
 // 		valarray<double> cache;
 		void setTimeStep(double ht);
 		set<Symbol> getExternalDependencies() { return cache->getExternalSymbols(); };
@@ -169,6 +169,7 @@ class SystemSolver{
 		void fetchSymbols(const SymbolFocus& f);
 		void writeSymbols(const SymbolFocus& f);
 		void writeSymbolsToBuffer(const SymbolFocus& f);
+		void writeSymbolsToExtBuffer(vector<double>* ext_buffer);
 		void updateLocalVars(const SymbolFocus& f);
 		
 		void check_result(double value , const SystemFunc<double>& e) const;
@@ -206,7 +207,7 @@ public:
 	
 protected:
 	/// Compute Interface 
-	void computeToTarget(const SymbolFocus& f, bool use_buffer);
+	void computeToTarget(const SymbolFocus& f, bool use_buffer, vector<double>* buffer=nullptr);
 	void compute(const SymbolFocus& f);
 
 	void computeContextToBuffer();
@@ -214,6 +215,7 @@ protected:
 
 	void computeToBuffer(const SymbolFocus& f);
 	void applyBuffer(const SymbolFocus& f);
+	void applyBuffer(const SymbolFocus& f, const vector<double>& buffer);
 	
 	bool target_defined;
 	const Scope *target_scope;
@@ -283,39 +285,12 @@ public:
 };
 
 
-/** \defgroup ML_Event Event
-\ingroup ML_Global
-\ingroup ML_CellType
-\ingroup InstantaneousProcessPlugins
-
-\section Description
-An Event is a conditionally executed set of assignemnts. A provided Condition
-is tested in regular intervals (time-step) for all different contexts in the current scope.
-If no time-step is provided, the minimal time-step of the input symbols is used. 
-
-The set of assignments is executed when the conditions turns from false to true (trigger = "on change")
-or whenever the condition is found true (trigger="when true").
-
-\section Examples
-
-Set symbol "candivide" (e.g. assume its a CellProperty) to 1 after 1000 simulation time units
-
-\verbatim
-	<Event trigger="on change" time-step="1000">
-		<Condition>time >= 1000</Condition>
-		<Rule symbol-ref="candivide">
-			<Expression>1</Expression>
-		</Rule>
-	</Event>
-\endverbatim
-*/
-
 /** @brief EventSystem checks regularly a condition for each individual in a context and applies a System if the condition holds.
  */
 class EventSystem: public System, public InstantaneousProcessPlugin {
 public:
 	DECLARE_PLUGIN("Event");
-    EventSystem() : System(DISCRETE_SYS), InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_OPTIONAL ) {};
+    EventSystem();
     void loadFromXML ( const XMLNode node, Scope* scope) override;
     void init (const Scope* scope) override;
 	/// Compute and Apply the state after time step @p step_size.
@@ -325,10 +300,18 @@ public:
 
 protected:
 	// TODO We have to store the state of the event with respect to the context !! map<SymbolFocus, bool> old_value ?? that is a map lookup per context !!!
-	// Alternatively, we can also create a hidden cell-property --> maybe a wse way to store the state
+	// Alternatively, we can also create a hidden cell-property --> maybe a wise way to store the state
 	shared_ptr<ExpressionEvaluator<double> > condition;
+	PluginParameter<bool,XMLNamedValueReader,DefaultValPolicy> delay_compute;  /// Also delay the computation of the assignments
+	PluginParameter<double,XMLEvaluator, DefaultValPolicy> delay;  /// Duration of the delay
+	PluginParameter<bool,XMLNamedValueReader,DefaultValPolicy> trigger_on_change;
 	map<SymbolFocus,double> condition_history;
-	bool trigger_on_change;
+	struct DelayedAssignment {
+		const SymbolFocus focus;
+		vector<double> value_cache;
+	};
+	multimap<double, DelayedAssignment> delayed_assignments;
+	
 	Granularity condition_granularity;
 	vector<SymbolFocus> contexts_with_buffered_data;
 };

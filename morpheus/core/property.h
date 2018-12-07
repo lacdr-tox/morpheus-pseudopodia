@@ -72,7 +72,7 @@ protected:
  * XML-interface class. A Data tag name for snapshoting/loading of the value is derived from the 
  * Container XML tag name by appending 'Data'.
  * 
- * T ist the interfactial type of the Symbol attached to the property
+ * T ist the interfacial type of the Symbol attached to the property
  * V is the actual value type of the property
  */
 template <class T, class V = T>
@@ -181,11 +181,6 @@ class PropertySymbol : public PrimitivePropertySymbol<T> {
 			} catch (...) { cout << "Warning: Could not intialize default property "<<  this->name() << " of celltype " << this->celltype->getName() << "." << endl; }
 			
 		}
-		// These are all inherited by PrimitivePropertySymbol
-// 		void set(const SymbolFocus& f, typename TypeInfo<T>::Parameter value) const override { getCellProperty(f)->value = value; };
-// 		void setBuffer(const SymbolFocus& f, typename TypeInfo<T>::Parameter value) const override { getCellProperty(f)->buffer = value; };
-// 		void applyBuffer() const override;
-// 		void applyBuffer(const SymbolFocus& f) const override {  getCellProperty(f)->value =  getCellProperty(f)->buffer; };
 	protected:
 		/// Provide a Property<T,T> associated with the SymbolFocus @p f
 		Property<T,T>* getCellProperty(const SymbolFocus& f) const { 

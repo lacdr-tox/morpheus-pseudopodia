@@ -139,7 +139,7 @@ bool SymbolFocus::operator<(const SymbolFocus& rhs) const {
 				return has_membrane;
 			}
 			else {
-				return true;
+				return false;
 			}
 		}
 		else
@@ -148,7 +148,7 @@ bool SymbolFocus::operator<(const SymbolFocus& rhs) const {
 	else if (has_cell || rhs.has_cell)
 		return has_cell;
 	else
-		return true;
+		return false;
 }
 
 bool SymbolFocus::operator==(const SymbolFocus& rhs) const {

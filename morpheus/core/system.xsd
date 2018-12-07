@@ -139,8 +139,11 @@ Solver for differential equations:
 				</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
-		<xs:attribute name="trigger" type="cpmEventTriggerMode" use="optional" default="on change">
-		</xs:attribute>
+		<xs:attribute name="trigger" type="cpmEventTriggerMode" use="optional" default="on change" />
+		<xs:attribute name="compute-time" type="cpmEventDelayMode" use="optional" default="on-trigger" />
+		<xs:attribute name="delay" type="cpmMathExpression" use="optional" default="0" />
+		- \b delay: time by which the execution of the assignments of the event are delayed.
+- \b compute-time: time at which the values of the assignments are computes on-trigger/on-execution.
 	</xs:complexType>
 
 	<xs:simpleType name="cpmEventTriggerMode">
@@ -155,6 +158,21 @@ Solver for differential equations:
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="on change"/>
 			<xs:enumeration value="when true"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+		<xs:simpleType name="cpmEventDelayMode">
+		<xs:annotation>
+			<xs:documentation> Trigger of the event
+				"on change" means, that the system is triggered when the condition changes from FALSE to TRUE.
+				"when true" means, that the system is triggered always when the condition is TRUE, no matter what the previous state was.
+
+				While the first version is in line with SBML, the second one follows a more mechanistic view on triggers.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="on-trigger"/>
+			<xs:enumeration value="on-execution"/>
 		</xs:restriction>
 	</xs:simpleType>
 </xs:schema>

@@ -75,14 +75,14 @@ void replaceFunction(ASTNode* node, FunctionDefinition* function)
 
 void  replaceDelays(ASTNode* math, QList<DelayDef>& delays) {
 	if (math->getType() == AST_FUNCTION_DELAY) {
-		// TODO We should check here what kind of delays already exist ....
 		DelayDef d;
-		d.symbol = math->getChild(0)->getReal();
+		d.symbol = math->getChild(0)->getName();
 		d.delay = math->getChild(1)->getReal();
 		d.delayed_symbol = d.symbol + "_"+ to_string(d.delay);
-		if (int i=delays.indexOf(d))
-			d=delays[i];
-		else 
+		replace(d.delayed_symbol.begin(),d.delayed_symbol.end(), ',', '_');
+		replace(d.delayed_symbol.begin(),d.delayed_symbol.end(), '.', '_');
+
+		if (!delays.contains(d))
 			delays << d;
 		
 		math->setType(AST_NAME);
@@ -451,13 +451,15 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 	for (const auto& delay : delays) {
 		bool does_not_exist=delays.contains(delay);
 		if (does_not_exist) {
-			auto delay_property = target_scope->insertChild("DelayProperty");
+			
+			bool is_celltype = target[1]!="global";
+			auto delay_property = target_scope->insertChild(is_celltype ? "DelayProperty" : "DelayVariable");
 			delay_property->attribute("symbol")->set(delay.delayed_symbol);
 			delay_property->attribute("delay")->set(delay.delay);
 			
 			auto delay_eqn = target_scope->insertChild("Equation");
 			delay_eqn->attribute("symbol-ref")->set(delay.delayed_symbol);
-			delay_eqn->setText(QString::fromStdString(delay.symbol));
+			delay_eqn->firstActiveChild("Expression")->setText(QString::fromStdString(delay.symbol));
 			
 			delays.append(delay);
 		}
@@ -707,16 +709,6 @@ void SBMLImporter::addSBMLEvents(Model* sbml_model)
 {
 	for (uint i=0; i< sbml_model->getNumEvents(); i++) {
 		Event* e = sbml_model->getEvent(i);
-		if (e->isSetDelay()) {
-			this->conversion_messages.append(
-				QString("Dropped unsupported SBML Event \"%1\" assigning %2 = %3 due to unsupported Delay").arg(
-					s2q( (e->isSetId()?e->getId() : e->getName()) ),
-					s2q( e->getEventAssignment(0)->getVariable()),
-					SBML_formulaToString (e->getEventAssignment(0)->getMath())
-				)
-			);
-			continue;
-		}
 		nodeController* event = target_scope->insertChild("Event");
 		if (e->isSetName()) {
 			event->attribute("name")->setActive(true);
@@ -730,6 +722,25 @@ void SBMLImporter::addSBMLEvents(Model* sbml_model)
 				condition = event->insertChild("Condition");
 			condition->setText(SBML_formulaToString(math));
 			delete math;
+		}
+		if (e->isSetDelay()) {
+			event->attribute("delay")->setActive(true);
+			ASTNode* math = e->getDelay()->getMath()->deepCopy();
+			sanitizeAST(math);
+			event->attribute("delay")->set(SBML_formulaToString(math));
+			if ( e->isSetUseValuesFromTriggerTime() && e->getUseValuesFromTriggerTime() ) {
+				event->attribute("compute-time")->setActive(true);
+				event->attribute("compute-time")->set("on-trigger");
+			}
+			else {
+				event->attribute("compute-time")->setActive(true);
+				event->attribute("compute-time")->set("on-execution");
+			}
+		}
+		if (e->isSetPriority()) {
+			this->conversion_messages.append(
+				QString("Dropped unsupported priority element on SBML Event \"%1\"").arg( s2q( (e->isSetId()?e->getId() : e->getName()) ) )
+			);
 		}
 		for (uint j=0; j<e->getNumEventAssignments(); j++) {
 			const EventAssignment* ass = e->getEventAssignment(j);

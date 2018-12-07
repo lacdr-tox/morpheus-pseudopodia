@@ -768,6 +768,11 @@ bool Lattice_Data_Layer<T>::setBuffer(const VINT& pos, typename TypeInfo<T>::Par
 }
 
 template <class T>
+typename TypeInfo<T>::Return Lattice_Data_Layer<T>::getBuffer(const VINT& pos) const {
+	assert(using_buffer); return write_buffer[get_data_index(pos)];
+}
+
+template <class T>
 void Lattice_Data_Layer<T>::applyBuffer(const VINT& pos) {
 	 data[get_data_index(pos)] = write_buffer[get_data_index(pos)];
 }

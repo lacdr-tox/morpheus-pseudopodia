@@ -24,25 +24,7 @@ unique_ptr<mu::Parser> createMuParserInstance();
 \defgroup MuParser Evaluating math expressions
 \ingroup Concepts
 
-Mathematical expressions are evaluated at run-time using [MuParser](http://beltoforion.de/article.php?a=muparser), while all variables are resolved using Morpheus' \ref Symbols system.
-
-**Operators**:
-+, -, *, /, ^, =, >=, <=, !=, ==, <, >
-and, or, xor, !
-
-**Predefined Functions**:
-if([condition], [then], [else]), and, or, xor, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh, log2, log10, ln, exp, pow, sqrt, sign, rint, abs, min, max, sum, avg, mod
-
-**SBML compatibility Functions**:
-piecewise, lt, leq, eq, neq, geq, gt, arcsin, arccos, arctan, arcsinh, arccosh, arctanh
-
-**Random number** generators:
-rand_uni([min], [max])
-rand_int([min], [max])
-rand_norm([mean], [stdev])
-rand_gamma([shape], [scale])
-rand_bool()
-
+Mathematical expressions are evaluated  at run-time using [MuParser](http://beltoforion.de/article.php?a=muparser), while all variables are resolved using Morpheus' \ref Symbols system. Vector expression evaluation is performed component-wise.  see \ref MathExpressions
 
 **/
 

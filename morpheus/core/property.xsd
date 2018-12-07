@@ -7,6 +7,7 @@
 			<xs:element name="ConstantVector" 		type="ConstantVector"/>
 			<xs:element name="Variable" 			type="Property"/>
 			<xs:element name="VariableVector"		type="PropertyVector"/>
+			<xs:element name="DelayVariable" 		type="DelayProperty"/>
 		</xs:choice>
 	</xs:group>
 	
