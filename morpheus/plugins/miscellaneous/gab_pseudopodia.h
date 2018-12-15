@@ -46,9 +46,9 @@ private:
     CellType *cellType;
     map<CPM::CELL_ID, vector<Pseudopod>> pseudopods;
 
-    static constexpr double neighboringActinBonus = 1e3;
+    static constexpr double neighboringActinBonus = 1e2;
     static constexpr double pseudopodTipBonus = 2e5;
-    static constexpr double pseudopodTipBonusMaxDistance = 3;
+    static constexpr double pseudopodTipBonusMaxDistance = 5;
 
 public:
     // constructor
