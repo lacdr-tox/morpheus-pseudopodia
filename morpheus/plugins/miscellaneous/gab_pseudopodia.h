@@ -30,6 +30,9 @@ A detailed description of my example plugin that can contain mathematical formul
 class Pseudopodia : CPM_Energy, Cell_Update_Checker, InstantaneousProcessPlugin {
 private:
     // parameters that are specified in XML (as values, strings or symbolic expressions)
+    PluginParameter2<double, XMLValueReader, DefaultValPolicy> neighboringActinBonus;
+    PluginParameter2<double, XMLValueReader, DefaultValPolicy> pseudopodTipBonus;
+    PluginParameter2<double, XMLValueReader, DefaultValPolicy> pseudopodTipBonusMaxDistance;
     PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> field;
     PluginParameter2<double, XMLValueReader, DefaultValPolicy> maxGrowthTime;
     PluginParameter2<double, XMLValueReader, DefaultValPolicy> directionalStrengthInit;
@@ -45,10 +48,6 @@ private:
     shared_ptr<const CPM::LAYER> cpmLayer;
     CellType *cellType;
     map<CPM::CELL_ID, vector<Pseudopod>> pseudopods;
-
-    static constexpr double neighboringActinBonus = 1e2;
-    static constexpr double pseudopodTipBonus = 2e5;
-    static constexpr double pseudopodTipBonusMaxDistance = 5;
 
 public:
     // constructor

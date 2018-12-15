@@ -9,6 +9,18 @@ Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpe
     maxGrowthTime.setDefault("20");
     registerPluginParameter(maxGrowthTime);
 
+    pseudopodTipBonus.setXMLPath("tip-bonus");
+    pseudopodTipBonus.setDefault("2e5");
+    registerPluginParameter(pseudopodTipBonus);
+
+    pseudopodTipBonusMaxDistance.setXMLPath("max-distance-for-tip-bonus");
+    pseudopodTipBonusMaxDistance.setDefault("5");
+    registerPluginParameter(pseudopodTipBonusMaxDistance);
+
+    neighboringActinBonus.setXMLPath("neighboring-actin-bonus");
+    neighboringActinBonus.setDefault("1e2");
+    registerPluginParameter(neighboringActinBonus);
+
     directionalStrengthInit.setXMLPath("init-dir-strength");
     directionalStrengthInit.setDefault("8.0");
     registerPluginParameter(directionalStrengthInit);
@@ -118,7 +130,7 @@ double Pseudopodia::calcNeighboringActinBonus(const CPM::Update &update) const {
         // if neighbor belongs to the same cell and has positive actin level -> give bonus
         if(cpmLayer->get(neighborPos).cell_id == update.source().cellID()
            && field.get(neighborPos) > 0) {
-            return -neighboringActinBonus;
+            return -neighboringActinBonus();
         }
 
     }
@@ -153,7 +165,7 @@ double Pseudopodia::calcPseudopodTipBonus(const SymbolFocus &cell_focus, const C
     auto cellID = cell_focus.cellID();
 
     auto isCloseToOwnPseudoPod = FALSE;
-    if(minDistanceToPseudopodTip(pos, cellID) <= pseudopodTipBonusMaxDistance) {
+    if(minDistanceToPseudopodTip(pos, cellID) <= pseudopodTipBonusMaxDistance()) {
         isCloseToOwnPseudoPod = TRUE;
     }
     auto isTouchingNeighbor = FALSE;
@@ -165,13 +177,13 @@ double Pseudopodia::calcPseudopodTipBonus(const SymbolFocus &cell_focus, const C
         if(neighborCellId == cellID || neighborCellId == CPM::getEmptyState().cell_id) continue;
         // if neighbor belongs to a different cell and is close to a pseudopod tip -> give bonus
         isTouchingNeighbor = TRUE;
-        if(minDistanceToPseudopodTip(pos, neighborCellId) <= pseudopodTipBonusMaxDistance) {
+        if(minDistanceToPseudopodTip(pos, neighborCellId) <= pseudopodTipBonusMaxDistance()) {
             if(update.opAdd()) {
                 // Make more likely
-                return (isCloseToOwnPseudoPod ? 2 : 1) * -pseudopodTipBonus;
+                return (isCloseToOwnPseudoPod ? 2 : 1) * -pseudopodTipBonus();
             } else if(update.opRemove()){
                 // Make less likely
-                return (isCloseToOwnPseudoPod ? 2 : 1) * pseudopodTipBonus;
+                return (isCloseToOwnPseudoPod ? 2 : 1) * pseudopodTipBonus();
             }
         }
     }
@@ -179,10 +191,10 @@ double Pseudopodia::calcPseudopodTipBonus(const SymbolFocus &cell_focus, const C
     if(isTouchingNeighbor && isCloseToOwnPseudoPod) {
         if(update.opAdd()) {
             // Make more likely
-            return -pseudopodTipBonus;
+            return -pseudopodTipBonus();
         } else if(update.opRemove()){
             // Make less likely
-            return pseudopodTipBonus;
+            return pseudopodTipBonus();
         }
     }
     return 0;
