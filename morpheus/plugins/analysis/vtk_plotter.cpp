@@ -4,6 +4,8 @@ using namespace SIM;
 
 REGISTER_PLUGIN(VtkPlotter);
 
+int VtkPlotter::instances = 0;
+
 void VtkPlotter::loadFromXML(const XMLNode node, Scope* scope)	//einlesen der Daten aus der XML
 {
 	
@@ -82,6 +84,9 @@ void VtkPlotter::init(const Scope* scope)
 		cpm_layer = CPM::getLayer();
 
 	plot_number=0;
+	
+	VtkPlotter::instances++;
+	instance_id=VtkPlotter::instances;
 };
 
 //-------------------------------------------------------------------
@@ -98,7 +103,7 @@ void VtkPlotter::writeVTK(double time){
 
 	ofstream vtkstream;
 	stringstream fn;
-	fn << "./plot_" << setfill('0') << setw(6) << plot_number << ".vtk";
+	fn << "./plot_" << (instance_id==0 ? "" : to_string(instance_id)+"_") << setfill('0') << setw(6) << plot_number << ".vtk";
 	vtkstream.open(fn.str().c_str(), ios::out | ios::trunc);
 	
 	if( !vtkstream.is_open() ){
