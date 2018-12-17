@@ -3,6 +3,7 @@
 ## Release 2.1
 
 ### GUI
+  * Reworked DelayProperty/Variable that allows varying delay times, expression initialisation
   * Largely improve SBML import
      * Provide more import target options
      * Add support for multiple compartments and variable size compartments

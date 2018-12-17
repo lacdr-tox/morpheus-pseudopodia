@@ -236,7 +236,7 @@ SharedMorphModel config::getModel() {
 	if (getInstance()->openModels.empty())
 		return SharedMorphModel();
 	
-    if (getInstance()->current_model > getInstance()->openModels.size() -1 || getInstance()->current_model == 0)
+    if (getInstance()->current_model > getInstance()->openModels.size() -1 || getInstance()->current_model < 0)
 		return SharedMorphModel();
 //         getInstance()->current_model = getInstance()->openModels.size() -1;
     return getInstance()->openModels[getInstance()->current_model];

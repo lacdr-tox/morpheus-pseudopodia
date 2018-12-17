@@ -97,14 +97,19 @@ QString s2q(const std::string& s) { return QString::fromStdString(s); }
 void  SBMLImporter::replaceDelays(ASTNode* math) {
 	if (math->getType() == AST_FUNCTION_DELAY) {
 		DelayDef d;
-		d.symbol = formulaToString(math->getChild(0));
+		d.formula = math->getChild(0);
+		d.symbol = formulaToString(d.formula);
 		if (math->getChild(1)->isInteger()) {
 			d.delay = math->getChild(1)->getInteger();
-			d.delayed_symbol = d.symbol + "_"+ QString::number(math->getChild(1)->getInteger());
+			d.delayed_symbol = d.symbol + "_" + d.delay;
+		}
+		else if (math->getChild(1)->isReal()) {
+			d.delay = math->getChild(1)->getReal();
+			d.delayed_symbol = d.symbol + "_" + d.delay;
 		}
 		else {
-			d.delay = math->getChild(1)->getReal();
-			d.delayed_symbol = d.symbol + "_"+ QString::number(d.delay);
+			d.delay = formulaToString( math->getChild(1));
+			d.delayed_symbol = d.symbol + "_" + d.delay[0];
 		}
 		d.delayed_symbol.remove('(');
 		d.delayed_symbol.remove(')');
@@ -114,6 +119,8 @@ void  SBMLImporter::replaceDelays(ASTNode* math) {
 		if (!delays.contains(d))
 			delays << d;
 		
+		math->removeChild(1);
+		math->removeChild(0);
 		math->setType(AST_NAME);
 		math->setName(d.delayed_symbol.toLatin1());
 	}
@@ -302,8 +309,12 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 	SBMLDocument* sbml_doc =0;
 	sbml_doc = readSBMLFromFile(sbml_file.toStdString().c_str());
 	if (! sbml_doc)
-		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR);
+		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read file.");
 
+	Model* sbml_model = sbml_doc->getModel();
+	if (! sbml_model)
+		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "File does not contain an SBML model.");
+	// Add annotation for new models
 	
 	// Load model, test compatibility
 	
@@ -411,11 +422,18 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 	
 	target_system = target_scope->insertChild("System");
 	target_system->attribute("solver")->set("runge-kutta-adaptive");
-	target_system->attribute("time-step")->set("stop");
-	
-	
-	Model* sbml_model = sbml_doc->getModel();
-	// Add annotation for new models
+	auto stop_symbol_attr = morph_model->rootNodeContr->firstActiveChild("Time")->firstActiveChild("StopTime")->attribute("symbol");
+	QString stop_symbol;
+	if (stop_symbol_attr->isActive()) {
+		stop_symbol = stop_symbol_attr->get();
+	}
+	if (stop_symbol.isEmpty()) {
+		stop_symbol_attr->setActive(true);
+		stop_symbol_attr->set("stop");
+		stop_symbol = "stop";
+	}
+		
+	target_system->attribute("time-step")->set(stop_symbol);
 	
 	if (target[0] == "new") {
 		nodeController* description = morph_model->rootNodeContr->firstActiveChild("Description");
@@ -495,20 +513,27 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 
 	// Add all delays collected while parsing
 	for (const auto& delay : delays) {
-		bool does_not_exist=delays.contains(delay);
-		if (does_not_exist) {
+// 		bool does_not_exist=delays.contains(delay);
+// 		if (does_not_exist) {
 			
 			bool is_celltype = target[1]!="global";
 			auto delay_property = target_scope->insertChild(is_celltype ? "DelayProperty" : "DelayVariable");
 			delay_property->attribute("symbol")->set(delay.delayed_symbol);
 			delay_property->attribute("delay")->set(delay.delay);
 			
+			// TODO This does only work for symbol delays, not with delayed formulas.
+			// We must replace *all* symbols in a delayed formula with the respective initAssignments. 
+			auto init = sbml_model->getInitialAssignment(delay.symbol.toStdString().c_str());
+			if (init) {
+				delay_property->attribute("value")->set(formulaToString(init->getMath()));
+			}
+			
 			auto delay_rule = target_system->insertChild("Rule");
 			delay_rule->attribute("symbol-ref")->set(delay.delayed_symbol);
 			delay_rule->firstActiveChild("Expression")->setText(delay.symbol);
 			
-			delays.append(delay);
-		}
+// 			delays.append(delay);
+// 		}
 	}
 
 	this->parseMissingFeatures(sbml_model);
@@ -625,46 +650,35 @@ void SBMLImporter::addSBMLSpecies(Model* sbml_model)
 
 void SBMLImporter::addSBMLParameters(Model* sbml_model)
 {
-	// Adding the compartment size as a constant -- some sane models use that as value
-// 	nodeController* compartment_size_constant = celltype->insertChild("Constant");
-// 	compartment_size_constant->attribute("symbol")-> set(sbml_model->getCompartment(0)->getId());
-// 	compartment_size_constant->attribute("name")  -> set("compartment size");
-// 	compartment_size_constant->attribute("name")  -> setActive(true);
-// 	compartment_size_constant->attribute("value") -> set(sbml_model->getCompartment(0)->getSize());
 	bool is_celltype = target_scope->getName() == "CellType";
 	for (uint param=0; param<sbml_model->getNumParameters(); param++){
 		Parameter* parameter = sbml_model->getParameter(param);
 
+		nodeController* param_node = nullptr;
 		if (parameter->isSetConstant() &&  ! parameter->getConstant()) { // this is a variable parameter
-			nodeController* property_node = target_scope->insertChild((is_celltype ? "Property" :  "Variable"));
-
-			property_node->attribute("symbol")->set(parameter->getId());
+			param_node = target_scope->insertChild((is_celltype ? "Property" :  "Variable"));
 			variables.insert(s2q(parameter->getId()));
 
-			if (parameter->isSetName()) {
-				property_node->attribute("name")->set(parameter->getName());
-				property_node->attribute("name")->setActive(true);
-			}
-
-			double init_value;
-			if (parameter->isSetValue())
-				init_value = parameter->getValue();
-			else
-				init_value = 0.0;
-			property_node->attribute("value")->set(init_value);
 		}
 		else {
-			nodeController* const_node = target_scope->insertChild("Constant");
-			const_node->attribute("symbol")->set(parameter->getId());
+			param_node = target_scope->insertChild("Constant");
 			constants.insert(s2q(parameter->getId()));
-
-			if (parameter->isSetName()) {
-				const_node->attribute("name")->set(parameter->getName());
-				const_node->attribute("name")->setActive(true);
-			}
-			const_node->attribute("value")->set(parameter->getValue());
-
 		}
+		
+		param_node->attribute("symbol")->set(parameter->getId());
+		if (parameter->isSetName()) {
+			param_node->attribute("name")->set(parameter->getName());
+			param_node->attribute("name")->setActive(true);
+		}
+
+		auto init=sbml_model->getInitialAssignment(parameter->getId());
+		if (init) {
+			param_node->attribute("value")->set( formulaToString(init->getMath()) );
+		}
+		else if (parameter->isSetValue())
+			param_node->attribute("value")->set( parameter->getValue() );
+		else
+			param_node->attribute("value")->set( "0.0" );
 	}
 }
 

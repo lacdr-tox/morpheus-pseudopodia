@@ -126,8 +126,9 @@ private:
 	
 	struct DelayDef {
 		QString symbol;
+		const ASTNode* formula;
 		QString delayed_symbol;
-		double delay;
+		QString delay;
 		bool operator ==(const DelayDef& b) { return symbol == b.symbol && delay == b.delay; }
 	};
 	

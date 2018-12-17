@@ -23,7 +23,7 @@
 			</xs:documentation>
 		</xs:annotation>
 			<xs:attribute name="name" type="cpmString" use="optional" />
-			<xs:attribute name="delay" type="cpmDouble" use="required" default="1" />
+			<xs:attribute name="delay" type="cpmMathExpression" use="required" default="1" />
 			<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required" />
 			<xs:attribute name="value" type="cpmMathExpression" use="required" />
 	</xs:complexType>

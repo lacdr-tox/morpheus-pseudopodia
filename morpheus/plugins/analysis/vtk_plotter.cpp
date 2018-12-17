@@ -103,7 +103,7 @@ void VtkPlotter::writeVTK(double time){
 
 	ofstream vtkstream;
 	stringstream fn;
-	fn << "./plot_" << (instance_id==0 ? "" : to_string(instance_id)+"_") << setfill('0') << setw(6) << plot_number << ".vtk";
+	fn << "./plot" << (instance_id==0 ? "" : to_string(instance_id)) << "_" << setfill('0') << setw(6) << plot_number << ".vtk";
 	vtkstream.open(fn.str().c_str(), ios::out | ios::trunc);
 	
 	if( !vtkstream.is_open() ){

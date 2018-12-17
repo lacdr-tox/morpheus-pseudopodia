@@ -13,7 +13,8 @@ istream& operator>>(istream& in, DelayData& d) {
 
 
 DelayPropertyPlugin::DelayPropertyPlugin(Mode mode): Container<double>(mode), ContinuousProcessPlugin(ContinuousProcessPlugin::DELAY, XMLSpec::XML_NONE), tsl_initialized(false) {
-
+	delay.setXMLPath("delay");
+	registerPluginParameter(delay);
 };
 
 Plugin* DelayPropertyPlugin::createVariableInstance(){ return new DelayPropertyPlugin(Mode::Variable) ; };
@@ -55,9 +56,6 @@ void DelayPropertyPlugin::loadFromXML(XMLNode node, Scope* scope)
 	vector<EvaluatorVariable> table  {{SymbolBase::Time_symbol, EvaluatorVariable::DOUBLE}};
 	value.setLocalsTable(table);
 
-	if (!getXMLAttribute(node,"delay",delay) ) {
-		delay =0;
-	}
 	if (!type_registration)
 		cout << "Don't ever remove me! " << " I take care to register this Plugin !!" << endl;
 }
@@ -70,7 +68,8 @@ void DelayPropertyPlugin::init(const Scope* scope) {
 		ContinuousProcessPlugin::init(scope);
 		tsl_initialized = true;
 	}
-	setTimeStep(delay);
+	
+	setTimeStep(delay(SymbolFocus::global));
 	
 	if (mode == Mode::Variable) {
 		static_pointer_cast<DelayVariableSymbol>(_accessor)->init();
@@ -80,8 +79,11 @@ void DelayPropertyPlugin::init(const Scope* scope) {
 	}
 };
 
-double DelayPropertyPlugin::getInitValue(const SymbolFocus f, double time) {
+void DelayPropertyPlugin::assert_initialized() {
 	if (! this->initialized) init(local_scope);
+}
+
+double DelayPropertyPlugin::getInitValue(const SymbolFocus f, double time) {
 	value.setLocals(&time);
 	return value.safe_get(f);
 }
@@ -90,12 +92,13 @@ template<>
 void DelayProperty::init(const SymbolFocus& f) {
 	auto time = SIM::getTime();
 	auto real_parent = static_cast<DelayPropertyPlugin*>(parent);
+	real_parent->assert_initialized();
 	auto delay = real_parent->getDelay();
-	
-	if (this->value.capacity()< 11) this->value.set_capacity(11);
+	const int intervals = 30;
+	if (this->value.capacity()<intervals+1) this->value.set_capacity(intervals+1);
 	this->value.clear();
-	for (int i=0; i<11; i++) {
-		double t = time - (1-i/10.0) * delay;
+	for (int i=0; i<=intervals; i++) {
+		double t = time - (1-i/double(intervals)) * delay;
 		this->value.push_back( { t, real_parent->getInitValue(f, t)} );
 	}
 	initialized = true;
