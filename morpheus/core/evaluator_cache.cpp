@@ -203,7 +203,7 @@ mu::value_type* EvaluatorCache::registerSymbol_internal(const mu::char_type* sym
 int EvaluatorCache::addLocal(string name, double value) {
 	if (initialized) throw string("Cannot add locals after initilization in EvaluatorCache!");
 	if (locals.count(name)) throw string("Cannot add local in EvaluatorCache! Symbol ") + name + " already exists";
-	uint pos = locals_cache.size();
+	int pos = locals_cache.size();
 	locals_cache.push_back(value);
 	locals[name] = pos;
 	locals_table.push_back( { name, LocalSymbolDesc::DOUBLE } );
@@ -214,7 +214,7 @@ int EvaluatorCache::addLocal(string name, double value) {
 int EvaluatorCache::addLocal(string name, VDOUBLE value) {
 	if (initialized) throw string("Cannot add locals after initilization in EvaluatorCache!");
 	if (locals.count(name)) throw string("Cannot add local in EvaluatorCache! Symbol ") + name + " already exists";
-	uint pos = locals_cache.size();
+	int pos = locals_cache.size();
 	locals_cache.push_back(value.x);
 	locals_cache.push_back(value.y);
 	locals_cache.push_back(value.z);
@@ -222,7 +222,7 @@ int EvaluatorCache::addLocal(string name, VDOUBLE value) {
 	locals_table.push_back( { name, LocalSymbolDesc::VECTOR } );
 	locals[name+".x"] = pos;
 	locals[name+".y"] = pos+1;
-	locals[name+".z"] = pos+1;
+	locals[name+".z"] = pos+2;
 	return pos;
 }
 

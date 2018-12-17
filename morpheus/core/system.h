@@ -76,6 +76,7 @@ public:
 	
 	SymbolRWAccessor<T> global_symbol;
 	int cache_idx;
+	int rate_cache_idx;
 	
 	string symbol_name, expression;
 	bool vec_spherical;

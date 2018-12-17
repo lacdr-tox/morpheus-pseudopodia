@@ -36,9 +36,11 @@
 	using namespace libsbml;
 #endif
 
-//LIBSBML_CPP_NAMESPACE
+#define LIBSBML_MIN_VERSION 50000
+#define LIBSBML_L3PARSER_VERSION 50900
+#define LIBSBML_L3V2_VERSION 51500
 
-struct DelayDef { string symbol; string delayed_symbol; double delay; };
+//LIBSBML_CPP_NAMESPACE
 
 namespace ASTTool {
 	void renameSymbol(ASTNode* node, const QString& old_name, const QString& new_name );
@@ -46,8 +48,6 @@ namespace ASTTool {
 	void renameTimeSymbol(ASTNode* node, const QString& time_symbol);
 	void replaceSymbolByValue(ASTNode* node, const string& name, double value );
 	void replaceFunction(ASTNode* node, FunctionDefinition* function);
-	
-	void replaceDelays(ASTNode* math, QList<DelayDef>& delays);
 }
 
 //LIBSBML_CPP_NAMESPACE
@@ -121,7 +121,16 @@ private:
 		QString name;
 		QString compartment;
 		bool is_const;
+		bool is_amount;
 	};
+	
+	struct DelayDef {
+		QString symbol;
+		QString delayed_symbol;
+		double delay;
+		bool operator ==(const DelayDef& b) { return symbol == b.symbol && delay == b.delay; }
+	};
+	
 	QMap<QString, SpeciesDesc> species;
 	QMap<QString, FunctionDefinition*> functions;
 	QSet<QString> constants;
@@ -132,7 +141,7 @@ private:
 
 	bool readSBML(QString sbml_file, QString target_code);
     void addSBMLFunctions(Model* sbml_model);
-	void sanitizeAST(ASTNode* math);
+	QString formulaToString(const ASTNode* math);
     void addSBMLSpecies(Model* sbml_model);
     void addSBMLParameters(Model* sbml_model);
     void addSBMLRules(Model* sbml_model);
@@ -140,6 +149,7 @@ private:
 	void addSBMLInitialAssignments(Model* sbml_model);
     void translateSBMLReactions(Model* sbml_model);
     void parseMissingFeatures(Model* sbml_model);
+	void replaceDelays(ASTNode* math);
 
 private slots:
 	void import();

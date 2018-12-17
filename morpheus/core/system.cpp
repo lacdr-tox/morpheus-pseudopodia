@@ -393,6 +393,25 @@ SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFun
 	// override the noise_scaling with a solver local
 	noise_scaling_idx = cache->addLocal(SystemSolver::noise_scaling_symbol,0.0);
 	
+	for (uint i=0; i<fun.size(); i++) {
+		auto& eval =fun[i];
+		switch (eval->type) {
+			case SystemFunc<double>::VAR_INIT :
+				eval->cache_idx = cache->getLocalIdx(eval->symbol_name);
+				if (eval->cache_idx==-1)
+					eval->cache_idx = cache->addLocal(eval->symbol_name,0.0);
+				break;
+			case SystemFunc<double>::ODE:
+				eval->rate_cache_idx = cache->getLocalIdx(eval->symbol_name);
+				if (eval->rate_cache_idx==-1) {
+					cout << "Adding " << eval->symbol_name+".rate" << endl;
+					eval->rate_cache_idx = cache->addLocal(eval->symbol_name+".rate",0.0);
+				}
+				break;
+			default: break;
+		}
+	}
+	
 	// Copy the functionals and wire them to the local cache
 	for (uint i=0; i<fun.size(); i++) {
 		auto eval = fun[i]->clone(cache);
@@ -401,7 +420,6 @@ SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFun
 		switch (eval->type) {
 			case SystemFunc<double>::VAR_INIT :
 				var_initializers.push_back(eval);
-				eval->cache_idx = cache->addLocal(eval->symbol_name,0.0);
 				break;
 			case SystemFunc<double>::FUN :
 				functions.push_back(eval);
@@ -598,9 +616,9 @@ SystemSolver::SystemSolver(const SystemSolver& other)
 			case SystemFunc<VDOUBLE>::VAR_INIT :
 				vec_var_initializers.push_back(e);
 				break;
-// 			case SystemFunc<VDOUBLE>::FUN :
+			case SystemFunc<VDOUBLE>::FUN :
 // 				vec_functions.push_back(e);
-// 				break;
+				break;
 			case SystemFunc<VDOUBLE>::EQU :
 				vec_equations.push_back(e);
 				break;
@@ -777,7 +795,9 @@ void SystemSolver::Euler(const SymbolFocus& f, double ht) {
 	}
 	for (uint i=0; i < odes.size(); i++){
 		SystemFunc<double> &e = *odes[i];
-		cache->setLocal(e.cache_idx, e.k0 + ht * e.k1);
+		e.dy = e.k1;
+		cache->setLocal(e.rate_cache_idx, e.dy);
+		cache->setLocal(e.cache_idx, e.k0 + ht * e.dy);
 	}
 	cache->setLocal(local_time_idx, cache->getLocalD(local_time_idx) + ht);
 	this->Discrete(f);
@@ -812,7 +832,9 @@ void SystemSolver::Heun(const SymbolFocus& f, double ht) {
 	// Apply the step to the local cache
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
-		cache->setLocal(e.cache_idx, e.k0 + 0.5 * ht * (e.k1 + e.k2) );
+		e.dy = 0.5 * (e.k1 + e.k2);
+		cache->setLocal(e.rate_cache_idx, e.dy);
+		cache->setLocal(e.cache_idx, e.k0 + ht * e.dy );
 	}
 	
 	this->Discrete(f);
@@ -878,7 +900,9 @@ void SystemSolver::RungeKutta(const SymbolFocus& f, double ht) {
 	// Apply the step to the local cache
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
-		cache->setLocal(e.cache_idx, e.k0 + ht *( b1*e.k1 + b2*e.k2 + b3*e.k3 + b4*e.k4) );
+		e.dy = b1*e.k1 + b2*e.k2 + b3*e.k3 + b4*e.k4;
+		cache->setLocal(e.rate_cache_idx, e.dy);
+		cache->setLocal(e.cache_idx, e.k0 + ht * e.dy );
 	}
 	this->Discrete(f);
 }
@@ -942,7 +966,7 @@ void SystemSolver::RungeKutta_adaptive(const SymbolFocus& f, double ht) {
 // 			if (e.k0 + e.dy < 0) {
 // 				cout << "Got negative " << to_str(e.k0) << "+" << to_str(e.dy) << " ("<< to_str(e.err) << ")" <<endl;
 // 			}
-			cache->setLocal(e.cache_idx, e.k0 + e.dy );
+			cache->setLocal(e.cache_idx, e.k0 + local_ht * e.dy );
 		}
 		total_ht += local_ht;
 		cache->setLocal(local_time_idx, starttime + total_ht);
@@ -1051,8 +1075,9 @@ void SystemSolver::RungeKutta_45CashKarp(const SymbolFocus& f, double ht) {
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
 		e.err = abs(ht *( berr_1*e.k1 + berr_2*e.k2 + berr_3*e.k3 + berr_4*e.k4 + berr_5*e.k5 + berr_6*e.k6));
-		e.dy = ht *( b5_1*e.k1 + b5_2*e.k2 + b5_3*e.k3 + b5_4*e.k4 +  b5_5*e.k5 + b5_6*e.k6);
-		cache->setLocal(e.cache_idx,e.k0);
+		e.dy = ( b5_1*e.k1 + b5_2*e.k2 + b5_3*e.k3 + b5_4*e.k4 +  b5_5*e.k5 + b5_6*e.k6);
+		cache->setLocal(e.rate_cache_idx, e.dy);
+		cache->setLocal(e.cache_idx, e.k0); // + ht * e.dy is added by the adaptive gouverner 
 	}
 	cache->setLocal(local_time_idx, starttime);
 }
@@ -1159,8 +1184,9 @@ void SystemSolver::RungeKutta_45DormandPrince(const SymbolFocus& f, double ht) {
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
 		e.err = abs(ht *( berr_1*e.k1 + berr_2*e.k2 + berr_3*e.k3 + berr_4*e.k4 +  berr_5*e.k5 + berr_6*e.k6+ berr_7*e.k7));
-		e.dy = ht *( b5_1*e.k1 + b5_2*e.k2 + b5_3*e.k3 + b5_4*e.k4 +  b5_5*e.k5 + b5_6*e.k6 + b5_7*e.k7);
-		cache->setLocal(e.cache_idx,e.k0);
+		e.dy = ( b5_1*e.k1 + b5_2*e.k2 + b5_3*e.k3 + b5_4*e.k4 +  b5_5*e.k5 + b5_6*e.k6 + b5_7*e.k7);
+		cache->setLocal(e.rate_cache_idx, e.dy);
+		cache->setLocal(e.cache_idx,e.k0); // + ht * e.dy is added by the adaptive gouverner 
 	}
 	cache->setLocal(local_time_idx, starttime);
 }

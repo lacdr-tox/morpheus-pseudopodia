@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="GlobalPlugins">
+		<xs:choice>
+			<xs:element name="DelayVariable" 		type="DelayProperty"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="DelayProperty" 		type="DelayProperty"/>
+		</xs:choice>
+	</xs:group>
+
+	<xs:complexType name="DelayProperty">
+		<xs:annotation>
+			<xs:appinfo>Container</xs:appinfo>
+			<xs:documentation>Numeric delay-property for each cell that can be referenced via a symbol.
+
+				At time t, the container provides numerical values that have been written at t-delay.
+				The specified value serves as the initial (or default) value.
+			</xs:documentation>
+		</xs:annotation>
+			<xs:attribute name="name" type="cpmString" use="optional" />
+			<xs:attribute name="delay" type="cpmDouble" use="required" default="1" />
+			<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required" />
+			<xs:attribute name="value" type="cpmMathExpression" use="required" />
+	</xs:complexType>
+
+	<xs:complexType name="DelayPropertyData">
+		<xs:annotation>
+			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+			<xs:appinfo>Container</xs:appinfo>
+			<xs:documentation>Specify the numeric property of a cell that can be referenced via a symbol.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="symbol-ref"	type="cpmDoubleSymbolRef"		use="required" />
+		<xs:attribute name="value"	type="cpmDelayData"		use="required" />
+	</xs:complexType>
+	
+	<xs:simpleType name="cpmDelayData">
+		<xs:restriction base="xs:string">
+			 <xs:pattern value="(\s*\(-?\d+(\.\d+)?(e[-\+]?\d{2})?\s*,\s*-?\d+(\.\d+)?(e[-\+]?\d{2})\)\s*\,?)*"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+</xs:schema>

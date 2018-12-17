@@ -496,18 +496,15 @@ void MainWindow::selectModel(int index, int part)
 	if (model_index.model != index) {
 		qDebug() << "Switching model";
 		model_index.model = index;
-		this->blockSignals(true);
-		config::switchModel(model_index.model);
-		this->blockSignals(false);
 		current_model = config::getOpenModels()[model_index.model];
 		if (selected.model == model_index.model)
 			part = selected.part;
 		model_index.part = part>=0 ? part : 0;
 
-		setWindowTitle(tr("Morpheus - %1").arg(  current_model->xml_file.name ) );
-
 		modelViewer[current_model]->updateConfig();
 		modelList->topLevelItem(index)->setExpanded(true);
+
+		setWindowTitle(tr("Morpheus - %1").arg(  current_model->xml_file.name ) );
 
 		fixBoard->clear();
 		QList<MorphModelEdit> fixes = current_model->rootNodeContr->getModelDescr().auto_fixes;
@@ -532,7 +529,9 @@ void MainWindow::selectModel(int index, int part)
 				QListWidgetItem* item = fixBoard->item(fixBoard->count()-1);
 				item->setToolTip(fixes[i].value);
 			}
-        }
+		}
+		
+		config::switchModel(model_index.model);
     }
     else {
 		qDebug() << "Switching model part";
