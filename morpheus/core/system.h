@@ -44,7 +44,7 @@
 template <class T>
 class SystemFunc {
 public:
-	enum Type { ODE, EQU, FUN, VAR_INIT};
+	enum Type { ODE, RULE, FUN, VAR_INIT, EQN};
 
 	shared_ptr<SystemFunc<T>> clone(shared_ptr<EvaluatorCache> cache) const {
 		auto s = make_shared<SystemFunc<T>>(*this);
@@ -158,9 +158,8 @@ class SystemSolver{
 // 		vector<struct timeval> sstart, send;
 // 		vector<long> smtime, sseconds, suseconds, stotal;
 
-		vector<shared_ptr<SystemFunc<double>>> evals, odes, equations, functions, var_initializers;
-		vector<shared_ptr<SystemFunc<VDOUBLE>>> vec_evals, vec_equations, vec_var_initializers;
-		
+		vector<shared_ptr<SystemFunc<double>>> evals, odes, rules, functions, var_initializers, equations;
+		vector<shared_ptr<SystemFunc<VDOUBLE>>> vec_evals, vec_rules, vec_var_initializers, vec_equations;
 
 		shared_ptr<EvaluatorCache> cache;
 		uint local_time_idx, noise_scaling_idx;
@@ -183,6 +182,7 @@ class SystemSolver{
 		void Euler(const SymbolFocus& f, double ht);
 		void Heun(const SymbolFocus& f, double ht);
 		void Discrete(const SymbolFocus& f);
+		void EquationHooks(const SymbolFocus& f);
 }; 
 
 /** @brief System class takes care to solve numerical interpolation of [ODE/Discret Equation/Triggered] Systems
@@ -205,6 +205,7 @@ public:
 	set< SymbolDependency > getOutputSymbols();
 	bool adaptive() const;
 	void setTimeStep(double ht);
+	void setSubStepHooks(const vector<ReporterPlugin*> hooks) { assert(sub_step_hooks.empty()); sub_step_hooks = hooks; this->init(); };
 	
 protected:
 	/// Compute Interface 
@@ -240,7 +241,7 @@ protected:
 	vector< shared_ptr<SystemFunc<double>> > evals, equations;
 	shared_ptr<EvaluatorCache> cache;
 	vector< shared_ptr<SystemSolver> > solvers;
-	
+	vector<ReporterPlugin*> sub_step_hooks;
 	
 };
 
@@ -259,6 +260,7 @@ public:
 	void prepareTimeStep() override { System::computeContextToBuffer(); };
 	void executeTimeStep() override { System::applyContextBuffer(); };
 	void setTimeStep(double t) override { ContinuousProcessPlugin::setTimeStep(t); System::setTimeStep(t); };
+	void setSubStepHooks(const vector<ReporterPlugin*> hooks) { System::setSubStepHooks(hooks); }
 	const Scope* scope()  override{ return System::getLocalScope(); };
 };
 

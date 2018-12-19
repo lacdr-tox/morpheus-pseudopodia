@@ -1,5 +1,6 @@
 #include "system.h"
 #include "property.h"
+#include "delay.h"
 
 // Time interval scaled Noise Functions for contiuous time Processes
 
@@ -12,7 +13,7 @@ void SystemFunc<double>::initFunction() {
 	if (fun_params_names.size() != fun_params.size())
 		fun_params.resize( fun_params_names.size() );
 	for (uint i=0; i<fun_params_names.size(); i++) {
-		cout << "Registering parameter " << fun_params_names[i]<< endl;
+// 		cout << "Registering parameter " << fun_params_names[i]<< endl;
 		evaluator->parser->DefineVar(fun_params_names[i], &fun_params[i]);
 		cache->addParserLocal(fun_params_names[i]);
 	}
@@ -132,7 +133,7 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 				}
 				else if ( dynamic_pointer_cast<Equation>(p)) {
 					auto eqn = make_shared<SystemFunc<double> >();
-					eqn->type = SystemFunc<double>::EQU;
+					eqn->type = SystemFunc<double>::RULE;
 					eqn->expression = dynamic_pointer_cast<Equation>(p)->getExpr();
 					eqn->symbol_name = dynamic_pointer_cast<Equation>(p)->getSymbol();
 					evals.push_back(eqn);
@@ -147,7 +148,7 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 				}
 				else if ( dynamic_pointer_cast<VectorEquation>(p)) {
 					auto eqn = make_shared<SystemFunc<VDOUBLE> >();
-					eqn->type = SystemFunc<VDOUBLE>::EQU;
+					eqn->type = SystemFunc<VDOUBLE>::RULE;
 					eqn->expression = dynamic_pointer_cast<VectorEquation>(p)->getExpr();
 					eqn->symbol_name = dynamic_pointer_cast<VectorEquation>(p)->getSymbol();
 					eqn->vec_spherical = dynamic_pointer_cast<VectorEquation>(p)->isSpherical();
@@ -180,6 +181,31 @@ bool less_fun_dep_level(shared_ptr<SystemFunc<double>> a, shared_ptr <SystemFunc
 
 void System::init() {
 	assert(local_scope);
+	
+	for (auto p : sub_step_hooks) {
+		if ( dynamic_cast<Equation*>(p)) {
+			auto eqn = make_shared<SystemFunc<double> >();
+			eqn->type = SystemFunc<double>::EQN;
+			eqn->expression = static_cast<Equation*>(p)->getExpr();
+			eqn->symbol_name = static_cast<Equation*>(p)->getSymbol();
+			evals.push_back(eqn);
+// 			equations.push_back(eqn);
+			cout << "Equation hook registered " << eqn->symbol_name << "=" << eqn->expression << endl;
+		}
+		else if ( dynamic_cast<VectorEquation*>(p)) {
+			auto eqn = make_shared<SystemFunc<VDOUBLE> >();
+			eqn->type = SystemFunc<VDOUBLE>::EQN;
+			eqn->expression = static_cast<VectorEquation*>(p)->getExpr();
+			eqn->symbol_name = static_cast<VectorEquation*>(p)->getSymbol();
+			eqn->vec_spherical = static_cast<VectorEquation*>(p)->isSpherical();
+			vec_evals.push_back(eqn);
+// 			vec_equations.push_back(eqn);
+		}
+		else {
+			throw string("Unknown sub-step hook type");
+		}
+	}
+	
 	// 	cout << "System init with " <<  omp_get_max_threads() << " threads for CellType " << (ct ? ct->getName() : " NULL " ) << endl;
 	for (auto plugin : plugins) {
 		plugin->init(local_scope);
@@ -187,12 +213,12 @@ void System::init() {
 
 	// initialize assignment targets
 	for (const auto& eval : evals) {
-		if (eval->type == SystemFunc<double>::ODE || eval->type == SystemFunc<double>::EQU) {
+		if (eval->type == SystemFunc<double>::ODE || eval->type == SystemFunc<double>::RULE || eval->type == SystemFunc<double>::EQN ) {
 			eval->global_symbol = local_scope->findRWSymbol<double>(eval->symbol_name);
 		}
 	}
 	for (const auto& eval : vec_evals) {
-		if (eval->type == SystemFunc<VDOUBLE>::EQU) {
+		if (eval->type == SystemFunc<VDOUBLE>::RULE || eval->type == SystemFunc<VDOUBLE>::EQN) {
 			eval->global_symbol = local_scope->findRWSymbol<VDOUBLE>(eval->symbol_name);
 		}
 	}
@@ -204,8 +230,8 @@ void System::init() {
 	target_defined = false;
 	uint num_assignments = 0;
 	for (uint i=0; i<evals.size(); i++) {
-			// Check uniform output containers for non-contexted application
-		if (evals[i]->type == SystemFunc<double>::ODE || evals[i]->type == SystemFunc<double>::EQU) {
+		// Check uniform output containers for non-contexted application
+		if (evals[i]->type == SystemFunc<double>::ODE || evals[i]->type == SystemFunc<double>::RULE || evals[i]->type == SystemFunc<double>::EQN) {
 			num_assignments++;
 			if ( ! target_defined) {
 				target_granularity = evals[i]->global_symbol->granularity();
@@ -217,7 +243,7 @@ void System::init() {
 		}
 	}
 	for (uint i=0; i<vec_evals.size(); i++) {
-		if (vec_evals[i]->type == SystemFunc<VDOUBLE>::EQU) {
+		if (vec_evals[i]->type == SystemFunc<VDOUBLE>::RULE || vec_evals[i]->type == SystemFunc<VDOUBLE>::EQN) {
 			num_assignments++;
 			if ( ! target_defined) {
 				target_granularity = vec_evals[i]->global_symbol->granularity();
@@ -232,6 +258,7 @@ void System::init() {
 	/////////////////////////////////////////
 	//        Creating blueprint solver for thread 1
 	/////////////////////////////////////////
+	solvers.clear();
 	solvers.push_back(make_shared<SystemSolver>(local_scope, evals, vec_evals, solver_spec));
 
 }
@@ -317,8 +344,9 @@ void System::applyContextBuffer()
 
 void System::setTimeStep ( double ht )
 {
+	solver_spec.time_step = ht * solver_spec.time_scaling;
 	for (uint i=0; i<solvers.size(); i++) 
-		solvers[i]->setTimeStep(ht * solver_spec.time_scaling);
+		solvers[i]->setTimeStep(solver_spec.time_step);
 }
 
 set< SymbolDependency > System::getDependSymbols()
@@ -404,7 +432,7 @@ SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFun
 			case SystemFunc<double>::ODE:
 				eval->rate_cache_idx = cache->getLocalIdx(eval->symbol_name);
 				if (eval->rate_cache_idx==-1) {
-					cout << "Adding " << eval->symbol_name+".rate" << endl;
+// 					cout << "Adding " << eval->symbol_name+".rate" << endl;
 					eval->rate_cache_idx = cache->addLocal(eval->symbol_name+".rate",0.0);
 				}
 				break;
@@ -426,8 +454,8 @@ SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFun
 				// register the Functions parameters
 				eval->initFunction();
 				break;
-			case SystemFunc<double>::EQU :
-				equations.push_back(eval);
+			case SystemFunc<double>::RULE :
+				rules.push_back(eval);
 				if (!eval->global_symbol) eval->global_symbol = scope->findRWSymbol<double>(eval->symbol_name);
 				eval->cache_idx = cache->addLocal(eval->symbol_name,0.0);
 				break;
@@ -438,6 +466,11 @@ SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFun
 				eval->evaluator->parser->DefineFun( sym_RandomNorm,  &getRandomNormValueSDE,  false);
 				if (injectGaussionNoiseScaling(eval->expression, spec.method))
 					cout << "System: Adding scaling to noise function in SystemSolver: " << eval->expression << endl;
+				break;
+			case SystemFunc<double>::EQN:
+				equations.push_back(eval);
+				if (!eval->global_symbol) eval->global_symbol = scope->findRWSymbol<double>(eval->symbol_name);
+				eval->cache_idx = cache->addLocal(eval->symbol_name,0.0);
 				break;
 		}
 	}
@@ -456,14 +489,20 @@ SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFun
 				throw string("VectorFunctions not supported");
 // 				vec_functions.push_back(eval);
 				break;
-			case SystemFunc<VDOUBLE>::EQU :
-				vec_equations.push_back(eval);
+			case SystemFunc<VDOUBLE>::RULE :
+				vec_rules.push_back(eval);
 				if (!eval->global_symbol) eval->global_symbol = scope->findRWSymbol<VDOUBLE>(eval->symbol_name);
 				eval->cache_idx = cache->addLocal(eval->symbol_name,VDOUBLE(0,0,0));
 				break;
 			case SystemFunc<VDOUBLE>::ODE:
 				throw string("Vector differential equations not supported");
 				break;
+			case SystemFunc<VDOUBLE>::EQN:
+				vec_equations.push_back(eval);
+				if (!eval->global_symbol) eval->global_symbol = scope->findRWSymbol<VDOUBLE>(eval->symbol_name);
+				eval->cache_idx = cache->addLocal(eval->symbol_name,VDOUBLE(0,0,0));
+				break;
+				
 		}
 	}
 	
@@ -473,7 +512,7 @@ SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFun
 		// register local functions
 		for (const auto& fun : functions) {
 			eval->evaluator->parser->DefineFun(fun->symbol_name, fun->getCallBack());
-			cout << "Registered function " << fun->symbol_name << " with " << fun->getCallBack()->argc() << " parameters." << endl;
+// 			cout << "Registered function " << fun->symbol_name << " with " << fun->getCallBack()->argc() << " parameters." << endl;
 		}
 		// Initialize the evaluator aka parsing the expression
 		assert(eval->evaluator);
@@ -491,6 +530,8 @@ SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFun
 				throw string("System: stochastic ODEs may only contain normal-distributed noise \"") + sym_RandomNorm + "()\".";
 			}
 		}
+		
+// 		cout << eval->symbol_name << " at cache pos " << eval->cache_idx << endl;
 	}
 	for (auto& eval :vec_evals) {
 		// register local functions
@@ -599,11 +640,14 @@ SystemSolver::SystemSolver(const SystemSolver& other)
 				e->initFunction();
 				functions.push_back(e);
 				break;
-			case SystemFunc<double>::EQU :
-				equations.push_back(e);
+			case SystemFunc<double>::RULE :
+				rules.push_back(e);
 				break;
 			case SystemFunc<double>::ODE:
 				odes.push_back(e);
+				break;
+			case SystemFunc<double>::EQN:
+				equations.push_back(e);
 				break;
 		}
 	}
@@ -619,11 +663,14 @@ SystemSolver::SystemSolver(const SystemSolver& other)
 			case SystemFunc<VDOUBLE>::FUN :
 // 				vec_functions.push_back(e);
 				break;
-			case SystemFunc<VDOUBLE>::EQU :
-				vec_equations.push_back(e);
+			case SystemFunc<VDOUBLE>::RULE :
+				vec_rules.push_back(e);
 				break;
 			case SystemFunc<VDOUBLE>::ODE:
 				throw string("Vector differential equations not supported");
+				break;
+			case SystemFunc<VDOUBLE>::EQN:
+				vec_equations.push_back(e);
 				break;
 		}
 	}
@@ -639,7 +686,7 @@ SystemSolver::SystemSolver(const SystemSolver& other)
 			eval->evaluator->parser->UpdateFun(fun_def->symbol_name, fun_def->getCallBack());
 		}
 	}
-	cout << "+"; cout.flush();
+// 	cout << "+"; cout.flush();
 };
 
 void SystemSolver::setTimeStep(double ht) {
@@ -675,11 +722,11 @@ void SystemSolver::fetchSymbols(const SymbolFocus& f)
 	cache->fetch(f);
 	
 	for (const auto& eval : evals) {
-		if (eval->type == SystemFunc<double>::ODE || eval->type == SystemFunc<double>::EQU )  {
+		if (eval->type == SystemFunc<double>::ODE || eval->type == SystemFunc<double>::RULE || eval->type == SystemFunc<double>::EQN )  {
 			cache->setLocal(eval->cache_idx, eval->global_symbol->get(f));
 		}
 	}
-	for (const auto& eval : vec_equations) {
+	for (const auto& eval : vec_rules) {
 		cache->setLocal(eval->cache_idx, eval->global_symbol->get(f));
 	}
 	
@@ -693,10 +740,10 @@ void SystemSolver::fetchSymbols(const SymbolFocus& f)
 void SystemSolver::writeSymbols(const SymbolFocus& f)
 {
 	for (const auto& eval : evals) {
-		if (eval->type == SystemFunc<double>::ODE || eval->type == SystemFunc<double>::EQU ) 
+		if (eval->type == SystemFunc<double>::ODE || eval->type == SystemFunc<double>::RULE /*|| eval->type == SystemFunc<double>::EQN*/) 
 			eval->global_symbol->set(f,cache->getLocalD(eval->cache_idx ));
 	}
-	for (const auto& eval : vec_equations) {
+	for (const auto& eval : vec_rules) {
 		eval->global_symbol->set(f,cache->getLocalV(eval->cache_idx ));
 	}
 }
@@ -705,10 +752,12 @@ void SystemSolver::writeSymbolsToBuffer(const SymbolFocus& f)
 {
 // 	cout << "writeSymbolsToBuffer " << cache->toString() << endl;
 	for (const auto& eval : evals) {
-		if (eval->type == SystemFunc<double>::ODE || eval->type == SystemFunc<double>::EQU ) 
+		if (eval->type == SystemFunc<double>::ODE || eval->type == SystemFunc<double>::RULE /*|| eval->type == SystemFunc<double>::EQN */) {
 			eval->global_symbol->setBuffer(f,cache->getLocalD(eval->cache_idx ));
+		}
+		
 	}
-	for (const auto& eval : vec_equations) {
+	for (const auto& eval : vec_rules) {
 		eval->global_symbol->setBuffer(f,cache->getLocalV(eval->cache_idx ));
 	}
 }
@@ -716,10 +765,10 @@ void SystemSolver::writeSymbolsToBuffer(const SymbolFocus& f)
 void SystemSolver::writeSymbolsToExtBuffer(vector<double>* ext_buffer) {
 	ext_buffer->clear();
 	for (const auto& eval : evals) {
-		if (eval->type == SystemFunc<double>::ODE || eval->type == SystemFunc<double>::EQU ) 
+		if (eval->type == SystemFunc<double>::ODE || eval->type == SystemFunc<double>::RULE/* || eval->type == SystemFunc<double>::EQN*/) 
 			ext_buffer->push_back(cache->getLocalD(eval->cache_idx ));
 	}
-	for (const auto& eval : vec_equations) {
+	for (const auto& eval : vec_rules) {
 		auto val = cache->getLocalV(eval->cache_idx);
 		ext_buffer->push_back(val.x);
 		ext_buffer->push_back(val.y);
@@ -728,6 +777,7 @@ void SystemSolver::writeSymbolsToExtBuffer(vector<double>* ext_buffer) {
 }
 
 void SystemSolver::updateLocalVars(const SymbolFocus& f) {
+	if (var_initializers.empty()) return;
 	for (uint i =0; i<var_initializers.size(); i++) {
 		cache->setLocal(var_initializers[i]->cache_idx, var_initializers[i]->evaluator->get(f));
 	}
@@ -762,24 +812,66 @@ void SystemSolver::check_result(const VDOUBLE& value , const SystemFunc<VDOUBLE>
 	}
 }
 
-void SystemSolver::Discrete(const SymbolFocus& f) {
-	
-	if (equations.size() == 0 && vec_equations.size()==0)
+void SystemSolver::EquationHooks(const SymbolFocus& f) {
+	// equations is not what it appears to be ....
+	if (equations.empty() && vec_equations.empty())
 		return;
 	
-	for (uint i=0; i < equations.size(); i++){
+	// Sequential processing of Equation hooks
+	for (uint i=0; i < equations.size(); i++ ) {
 		SystemFunc<double> &e = *equations[i];
-		e.k1 = e.evaluator->get(f); check_result(e.k1,e);
+		e.k0 = e.evaluator->get(f); check_result(e.k0,e);
+		if (e.global_symbol->flags().delayed) {
+			if (e.global_symbol->granularity() == Granularity::Cell) {
+				auto delay = static_pointer_cast<const DelayPropertySymbol>(e.global_symbol);
+				auto global_time = cache->getLocalD(local_time_idx) / spec.time_scaling;
+				delay->set(f, global_time, e.k0);
+				this->cache->setLocal(e.cache_idx, delay->get(f, global_time));
+// 				cout << "Setting " << delay->name() << " = {"<< global_time << "->" << e.k0<< "}" << endl;
+			}
+			else if (e.global_symbol->granularity() == Granularity::Global) {
+				auto delay = static_pointer_cast<const DelayVariableSymbol>(e.global_symbol);
+				auto global_time = cache->getLocalD(local_time_idx) / spec.time_scaling;
+				delay->set(f, global_time, e.k0);
+				this->cache->setLocal(e.cache_idx, delay->get(f, global_time));
+// 				cout << "Setting " << delay->name() << " = {"<< global_time << "->" << e.k0<< "}" << endl;
+			}
+			else 
+				throw string("Unsupported granularity for delayed Symbol ") + e.global_symbol->name() + " of type " + e.global_symbol->linkType();
+		}
+		else {
+			
+			this->cache->setLocal(e.cache_idx, e.k0);
+		}
 	}
 	for (uint i=0; i < vec_equations.size(); i++) {
 		SystemFunc<VDOUBLE> &e = *vec_equations[i];
+		e.k0 = e.evaluator->get(f); check_result(e.k0,e);
+		this->cache->setLocal(e.cache_idx, e.k0);
+	}
+	
+	EquationHooks(f);
+}
+
+void SystemSolver::Discrete(const SymbolFocus& f) {
+	
+	if (rules.empty() && vec_rules.empty()==0)
+		return;
+	
+	for (uint i=0; i < rules.size(); i++){
+		SystemFunc<double> &e = *rules[i];
 		e.k1 = e.evaluator->get(f); check_result(e.k1,e);
 	}
-	for (uint i=0; i < equations.size(); i++){
-		this->cache->setLocal(equations[i]->cache_idx, equations[i]->k1);
+	for (uint i=0; i < vec_rules.size(); i++) {
+		SystemFunc<VDOUBLE> &e = *vec_rules[i];
+		e.k1 = e.evaluator->get(f); check_result(e.k1,e);
 	}
-	for (uint i=0; i < vec_equations.size(); i++) {
-		auto& e = *vec_equations[i];
+	// Assign locals
+	for (uint i=0; i < rules.size(); i++){
+		this->cache->setLocal(rules[i]->cache_idx, rules[i]->k1);
+	}
+	for (uint i=0; i < vec_rules.size(); i++) {
+		auto& e = *vec_rules[i];
 		this->cache->setLocal(e.cache_idx, e.vec_spherical ?  VDOUBLE::from_radial(e.k1) : e.k1);
 	}
 }
@@ -862,7 +954,7 @@ void SystemSolver::RungeKutta(const SymbolFocus& f, double ht) {
 	// Second Step interpolation
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
-		cache->setLocal(e.cache_idx, e.k0 + a21 * ht * e.k1);
+		cache->setLocal(e.cache_idx, e.k0 + ht * a21 * e.k1);
 	}
 	cache->setLocal(local_time_idx, cache->getLocalD(local_time_idx) + c2*ht);
 	updateLocalVars(f);
@@ -875,7 +967,7 @@ void SystemSolver::RungeKutta(const SymbolFocus& f, double ht) {
 	// Third Step interpolation
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
-		cache->setLocal(e.cache_idx, e.k0 + a31 * ht * e.k1 + a32 * ht * e.k2);
+		cache->setLocal(e.cache_idx, e.k0 + ht * (a31 * e.k1 + a32 * e.k2));
 	}
 	cache->setLocal(local_time_idx, cache->getLocalD(local_time_idx) + (c3-c2)*ht);
 	updateLocalVars(f);
@@ -888,7 +980,7 @@ void SystemSolver::RungeKutta(const SymbolFocus& f, double ht) {
 	// Fourth Step interpolation
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
-		cache->setLocal(e.cache_idx,  e.k0 + a41 * ht * e.k1 + a42 * ht * e.k2 + a43 * ht * e.k3);
+		cache->setLocal(e.cache_idx,  e.k0 +  ht * (a41 * e.k1 + a42 * e.k2 + a43 * e.k3));
 	}
 	cache->setLocal(local_time_idx, cache->getLocalD(local_time_idx) + (c4-c3)*ht);
 	updateLocalVars(f);
@@ -973,10 +1065,13 @@ void SystemSolver::RungeKutta_adaptive(const SymbolFocus& f, double ht) {
 		
 		if (total_ht >= ht) break;
 
+		EquationHooks(f);
+		
 		if (max_err < 0.75) {
 			local_ht = safety * local_ht * pow(max_err, -0.20);
 // 			cout << "Upscaling to time step " << to_str(local_ht) << endl;
 		}
+		
 		// Adjust next step
 		local_ht = min(local_ht, ht-total_ht);
 	}

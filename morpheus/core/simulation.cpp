@@ -1,6 +1,6 @@
 #define SIMULATION_CPP
 
-#define NO_CORE_CATCH
+// #define NO_CORE_CATCH
 #ifdef NO_CORE_CATCH
 #warning "NO_CORE_CATCH defined. Do not use for productive systems !!"
 #endif

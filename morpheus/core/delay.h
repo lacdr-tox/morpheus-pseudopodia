@@ -58,11 +58,23 @@ public:
 	std::string linkType() const override { return "DelayPropertyLink"; }
 	const string& description() const override { if (parent) return parent->getName();  return this->name();}
 	double get(const SymbolFocus& f) const override {
+		return get(f, SIM::getTime());
+	}
+	double get(const SymbolFocus& f, double time) const {
 		auto& history = getCellProperty(f)->value;
-		auto time = SIM::getTime();
 		auto delay = parent->getDelay();
 		clearHistory(history, time);
-		if (history[0].time > time-delay) history.push_front({time-delay,parent->getInitValue(f,time-delay)});
+		if (history[0].time > time-delay) {
+			if (time-delay<SIM::getStartTime()) 
+				history.push_front({time-delay,parent->getInitValue(f,time-delay)});
+			else 
+				history.push_front({time-delay, history[0].value});
+		}
+		cout << "Delay " << this->name() << "={"; 
+		for (const auto& h: history) {
+			cout << h.time << "->" << h.value << ", ";
+		}
+		cout << "}" << endl;
 // 		if (history.size() == 1) return history[0].value;
 		const auto& h0 = history[0]; const auto& h1 = history[1];
 		auto fraction = ((time - delay) - h0.time) / (h1.time - h0.time + 1e-25);
@@ -81,12 +93,14 @@ public:
 				p->init(SymbolFocus::global);
 			} catch (...) { cout << "Warning: Could not initialize default property " << this->name() << " of CellType " << celltype->getName() << "." << endl;}
 	}
-	void set(const SymbolFocus& f, double value) const override { 
-		DelayData d = { SIM::getTime(), value};
+	void set(const SymbolFocus& f, double value) const override {
+		set(f, SIM::getTime(), value);
+	}
+	void set(const SymbolFocus& f, double time, double value) const { 
 		auto& history = getCellProperty(f)->value;
-		clearHistory(history,d.time);
+		clearHistory(history,time);
 		if (history.full()) history.set_capacity((history.size()*4)/3);
-		history.push_back(d);
+		history.push_back({time, value});
 	};
 	void setBuffer(const SymbolFocus& f, double value) const override { set(f,value); };
 	void applyBuffer() const override {};
@@ -113,11 +127,25 @@ public:
 	std::string linkType() const override { return "DelayVariableLink"; }
 	const string& description() const override { if (parent) return parent->getName();  return this->name();}
 	double get(const SymbolFocus& f) const override {
-		auto time = SIM::getTime();
+		return get(f, SIM::getTime());
+	}
+	double get(const SymbolFocus& f, double time) const {
 		auto delay = parent->getDelay();
 		clearHistory(time);
 		auto& history = property.value;
-		if (history[0].time > time-delay) history.push_front({time-delay,parent->getInitValue(f,time-delay)});
+		
+		if (history[0].time > time-delay) {
+			if (time-delay < SIM::getStartTime())
+				history.push_front({time-delay,parent->getInitValue(f,time-delay)});
+			else
+				history.push_front({time-delay,history[0].value});
+		}
+		cout << "Delay " << this->name() << "={"; 
+		for (const auto& h: history) {
+			cout << h.time << "->" << h.value << ", ";
+		}
+		cout << "}" << endl;
+		
 		if (history.size() == 1) return history[0].value;
 		auto fraction = ((time - delay) - history[0].time) / (history[1].time - history[0].time + 1e-25);
 		return history[0].value * (1-fraction) + history[1].value * fraction;
@@ -130,10 +158,13 @@ public:
 		return get(f);
 	}
 	void init() { if (!property.initialized) property.init(SymbolFocus::global); }
-	void set(const SymbolFocus&, double value) const override {
+	void set(const SymbolFocus& f, double value) const override {
+		set(f, SIM::getTime(), value);
+	}
+	void set(const SymbolFocus&, double time, double value) const {
 		auto& history = property.value;
 		if (history.full()) history.set_capacity((history.size() * 4)/3);
-		history.push_back({SIM::getTime(),value});
+		history.push_back({time,value});
 	};
 	void setBuffer(const SymbolFocus& f, double value) const override { set(f,value); };
 	void applyBuffer() const override {};

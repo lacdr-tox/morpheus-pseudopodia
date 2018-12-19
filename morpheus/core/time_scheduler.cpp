@@ -1,4 +1,30 @@
 #include "time_scheduler.h"
+#include "equation.h"
+#include "vector_equation.h"
+#include "system.h"
+
+
+template<class T> 
+bool set_disjoint(const std::set<T> &set1, const std::set<T> &set2)
+{
+    typename std::set<T>::const_iterator 
+		it1 = set1.begin(), 
+		it1End = set1.end(),
+		it2 = set2.begin(), 
+		it2End = set2.end();
+
+//     if (*set2.rbegin() < *it1 || *set1.rbegin() < *it2) return true;
+
+    while(it1 != it1End && it2 != it2End)
+    {
+        if(*it1 == *it2) return false;
+        if(*it1 < *it2) { it1++; }
+        else { it2++; }
+    }
+
+    return true;
+}
+
 
 TimeScheduler::TimeScheduler() : start_time("StartTime",0), save_interval("SaveInterval",-1), is_state_valid(false), stop_time("StopTime",1000) {};
 
@@ -39,6 +65,35 @@ void TimeScheduler::init()
 	TimeScheduler& ts = getInstance();
 	ts.current_time = ts.start_time();
 	ts.progress_notify_interval = (ts.stop_time() - ts.current_time)/ 100;
+	
+	/// Add Equations as sub-step hooks to adaptive Systems
+	vector<ReporterPlugin* > equations;
+	for (auto tsl : ts.all_listeners) {
+		if ( dynamic_cast<Equation*>(tsl)) {
+			equations.push_back(static_cast<ReporterPlugin*>(tsl));
+		}
+		else if  ( dynamic_cast<VectorEquation*>(tsl)) {
+			equations.push_back(static_cast<ReporterPlugin*>(tsl));
+		}
+	}
+	
+	for (auto tsl : ts.all_listeners) {
+		if ( dynamic_cast<ContinuousSystem*>(tsl)) {
+			vector<ReporterPlugin*> hooks;
+			for (auto eqn : equations) {
+				auto a = eqn->getLeafOutputSymbols();
+				auto b = tsl->getDependSymbols();
+// 				if (set_disjoint(a,b)) continue;
+				a = eqn->getLeafDependSymbols();
+				b = tsl->getOutputSymbols();
+				if (set_disjoint(a,b)) continue;
+				
+				hooks.push_back(eqn);
+			}
+			if (!hooks.empty())
+				static_cast<ContinuousSystem*>(tsl)->setSubStepHooks(hooks);
+		}
+	}
 	
 	/// REgister symbol Readers and Writers in their respective Scopes
 	for (auto tsl : ts.all_listeners) {
@@ -123,7 +178,7 @@ void TimeScheduler::init()
 	for (uint i=0; i<ts.all_phase2.size(); i++) {
 		set<SymbolDependency> out_sym = ts.all_phase2[i]->getOutputSymbols();
 		for (const auto& sym : out_sym) {
-			if (! sym->flags().delayed && sym->name() != SymbolBase::CellCenter_symbol) {
+			if (/*! sym->flags().delayed &&*/ sym->name() != SymbolBase::CellCenter_symbol) {
 				const_cast<Scope*>(sym->scope())->addUnresolvedSymbol(sym->name());
 			}
 		}
@@ -137,7 +192,8 @@ void TimeScheduler::init()
 
 	// Iteratively sort out the all_instant instances with no unresolved output symbols left
 	// and remove their output symbols from the unresolved_symbols list
-	for (uint i=0;i<ts.all_phase2.size();i++) {
+	bool ignore_delays = false;
+	for (uint i=0;i<ts.all_phase2.size();) {
 		uint j;
 		// Schedule ONE instance
 		for (j=0; j<ts.all_phase2.size();j++) {
@@ -147,7 +203,7 @@ void TimeScheduler::init()
 			set<SymbolDependency> dep_syms = ts.all_phase2[j]->getDependSymbols();
 			set<string> unresolved_symbols;
 			for (const auto& sym: dep_syms ){
-				if (const_cast<Scope*>(sym->scope())->isUnresolved(sym->name())) {
+				if (const_cast<Scope*>(sym->scope())->isUnresolved(sym->name()) && ! (ignore_delays && sym->flags().delayed)) {
 					unresolved_symbols.insert(sym->name());
 				}
 			}
@@ -160,6 +216,7 @@ void TimeScheduler::init()
 						unresolved_symbols.erase(sym->name());
 					}
 				}
+				
 			}
 			
 			// 
@@ -184,6 +241,10 @@ void TimeScheduler::init()
 		
 		// Exit if no instance that can be scheduled is found ...
 		if (j==ts.all_phase2.size()) {
+			if (!ignore_delays) {
+				ignore_delays = true;
+				continue;
+			}
 			cerr << "TimeScheduler detected loop dependencies in Reporters / Instantaneous Processes :" << endl;
 			for (j=0; j<ts.all_phase2.size();j++) {
 				if ( ! scheduled_inst[j]) {
@@ -195,6 +256,8 @@ void TimeScheduler::init()
 // 			cerr << "Left unresolved " << join(unresolved_symbols,",") << endl;
 			exit(-1);
 		}
+		
+		i++;
 	}
 
 	ts.all_phase2 = ordered_phase2;

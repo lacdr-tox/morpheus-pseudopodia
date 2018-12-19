@@ -5,7 +5,7 @@
 void Time_Scale::loadFromXML(const XMLNode xNode, Scope* scope )
 {
 	if (xNode.isEmpty()) {
-		cerr << "Empty node in Time_Scale" << endl;
+		cerr << "Empty node in Time_Scale " << xml_tag_name << endl;
 		return;
 	}
 	getXMLAttribute(xNode, "value", xml_time);

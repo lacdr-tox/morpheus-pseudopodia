@@ -27,10 +27,10 @@ bool DelayPropertyPlugin::type_registration =
 
 void DelayPropertyPlugin::loadFromXML(XMLNode node, Scope* scope)
 {
+// 	Plugin::loadFromXML(node, scope);
 	ContinuousProcessPlugin::loadFromXML(node, scope);
 	
 // 	Container< double >::loadFromXML(node, scope);
-	Plugin::loadFromXML(node, scope);
 	
 	switch (mode) {
 		case Mode::Variable : 
@@ -39,7 +39,7 @@ void DelayPropertyPlugin::loadFromXML(XMLNode node, Scope* scope)
 		case Mode::CellProperty : {
 			auto ct = scope->getCellType();
 			if (! ct)
-				throw MorpheusException(CellPropertyXMLName() + " requires to be defined within acelltype scope ", node);
+				throw MorpheusException(CellPropertyXMLName() + " requires to be defined within a celltype scope ", node);
 			auto property = make_shared<DelayProperty>(this, DelayBuffer(10));
 			property_id = ct->addProperty(property);
 			_accessor = make_shared<DelayPropertySymbol>(this,ct,property_id);
@@ -50,7 +50,7 @@ void DelayPropertyPlugin::loadFromXML(XMLNode node, Scope* scope)
 	}
 	
 	scope->registerSymbol(_accessor);
-	registerInputSymbol(_accessor);
+// 	registerInputSymbol();
 	registerOutputSymbol(_accessor);
 	
 	vector<EvaluatorVariable> table  {{SymbolBase::Time_symbol, EvaluatorVariable::DOUBLE}};

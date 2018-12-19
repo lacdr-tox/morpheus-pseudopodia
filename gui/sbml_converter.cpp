@@ -100,16 +100,16 @@ void  SBMLImporter::replaceDelays(ASTNode* math) {
 		d.formula = math->getChild(0);
 		d.symbol = formulaToString(d.formula);
 		if (math->getChild(1)->isInteger()) {
-			d.delay = math->getChild(1)->getInteger();
+			d.delay = QString::number(math->getChild(1)->getInteger());
 			d.delayed_symbol = d.symbol + "_" + d.delay;
 		}
-		else if (math->getChild(1)->isReal()) {
-			d.delay = math->getChild(1)->getReal();
+		else if (math->getChild(1)->isNumber()) {
+			d.delay = QString::number(math->getChild(1)->getReal());
 			d.delayed_symbol = d.symbol + "_" + d.delay;
 		}
 		else {
 			d.delay = formulaToString( math->getChild(1));
-			d.delayed_symbol = d.symbol + "_" + d.delay[0];
+			d.delayed_symbol = d.symbol + "_" + d.symbol.left(4);
 		}
 		d.delayed_symbol.remove('(');
 		d.delayed_symbol.remove(')');
@@ -528,7 +528,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 				delay_property->attribute("value")->set(formulaToString(init->getMath()));
 			}
 			
-			auto delay_rule = target_system->insertChild("Rule");
+			auto delay_rule = target_scope->insertChild("Equation");
 			delay_rule->attribute("symbol-ref")->set(delay.delayed_symbol);
 			delay_rule->firstActiveChild("Expression")->setText(delay.symbol);
 			
@@ -738,26 +738,13 @@ void SBMLImporter::addSBMLRules(Model* sbml_model)
 				break;
 			case SBML_ASSIGNMENT_RULE :
 			{
-				// TODO: This is a workaround for missing sub-step hooks in morpheus itself --> would need System sub-step hooks !!
-				rule_node = target_system->insertChild("Rule");
+				rule_node = target_scope->insertChild("Equation");
 				rule_node->attribute("symbol-ref")->set(rule->getVariable());
 				rule_node->firstActiveChild("Expression")->setText(expression);
 				if (rule->isSetName()) {
 					rule_node->attribute("name")->set(rule->getName());
 					rule_node->attribute("name")->setActive(true);
 				}
-				auto variable = target_scope->find(QStringList() << QString("Variable[symbol=%1]").arg(s2q(rule->getVariable())));
-				if (variable) {
-					variable->attribute("value")->set(expression);
-					qDebug() << "Overriding " << s2q(rule->getVariable())<< " default " << expression;
-				}
-				else {
-					qDebug() << "No compartment or species " << s2q(rule->getVariable())<< " for overriding with  " << expression;
-					qDebug() << "Species " << species.keys();
-					qDebug() << "Compartments " << compartments.keys();
-					qDebug() << "Parameters " << variables;
-				}
-				vars_with_assignments.insert(s2q(rule->getVariable()));
 				break;
 			}
 			case SBML_RATE_RULE :
