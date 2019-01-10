@@ -473,12 +473,12 @@ int InitCellObjects::setNodes(CellType* ct)
 				// if multiple nodes, let first one (ORDER) or closest one (DISTANCE) have the nodes
 				if( candidates.size() > 0 ){
 					
-					int winner=-1;
+					int winner_candidate=-1;
 
 					switch( mode() ){
 						case( Mode::ORDER ): // first one wins
 						{  
-							winner=0;
+							winner_candidate=0;
 							break;
 						}
 						case( Mode::DISTANCE ): // smallest distance wins
@@ -487,18 +487,22 @@ int InitCellObjects::setNodes(CellType* ct)
 							for(int c=0; c<candidates.size();c++){
 								if( candidates[c].affinity > max_affinity ){
 									max_affinity = candidates[c].affinity;
-									winner = c;
+									winner_candidate = c;
 								}
 							}
 							break;
 						}
 						
 					}
+					
+					if (winner_candidate==-1) winner_candidate=0;
+					int winner_object_id = candidates[winner_candidate].index;
+					
 					if( CPM::getNode(pos) == CPM::getEmptyState() ) { // do not overwrite cells (unless medium)
 						// take care that node positions in cells are contiguous, also in case of periodic boundary conditions
-						VINT latt_center = lattice->from_orth(cellobjects[winner]->center());
+						VINT latt_center = lattice->from_orth(cellobjects[ winner_object_id ]->center());
 						VINT pos_optimal = latt_center - lattice->node_distance( latt_center,  pos);
-						CPM::setNode(pos_optimal, cellobjects[ candidates[winner].index ]->cellID() );
+						CPM::setNode(pos_optimal, cellobjects[ winner_object_id ]->cellID() );
 					}
 				i++;
 				}

@@ -99,8 +99,12 @@ void External::execute(){
 	string output_log = string("external_") + to_str(instance_id) + "_output.log";
 	string error_log = string("external_") + to_str(instance_id) + "_error.log";
 	for (auto& kv : environvars) {
-		setenv(kv.first.c_str(),kv.first.c_str(),1);
-		cout << kv.first << " : " << kv.second << endl;
+#ifdef WIN32
+		string def=kv.first +"="+kv.second;
+		putenv(def.c_str());
+#else
+		setenv(kv.first.c_str(),kv.second.c_str(),1);
+#endif
 	}
 	
 	auto process = shared_ptr<TinyProcessLib::Process>(new 

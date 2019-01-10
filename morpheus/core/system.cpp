@@ -284,7 +284,7 @@ void System::applyContextBuffer()
 		equations[i]->global_symbol->applyBuffer();
 	}
 	for (uint i =0; i<vec_equations.size(); i++) {
-		equations[i]->global_symbol->applyBuffer();
+		vec_equations[i]->global_symbol->applyBuffer();
 	}
 }
 

@@ -57,10 +57,8 @@ Supported shapes (2D/3D) are: square / box, circle / sphere, ellipse / ellipsoid
 Initializing a single circle or sphere:
 \verbatim
 <InitCellObjects mode="distance">
-	<Arrangement repetitions="1 1 1" displacements="0 0 0">
-		<Object>
-			<Sphere center="50 50 0" radius="50"/>
-		</Object>
+	<Arrangement repetitions="1,1,1" displacements="0,0,0">
+		<Sphere center="50,50,0" radius="50"/>
 	</Arrangement>
 </InitCellObjects>
 \endverbatim
@@ -68,10 +66,8 @@ Initializing a single circle or sphere:
 Initializing 6*6 circles or spheres:
 \verbatim
 <InitCellObjects mode="distance">
-	<Arrangement repetitions="6 6 0" displacements="10 10 0">
-		<Object>
-			<Sphere center="10 10 0" radius="10"/>
-		</Object>
+	<Arrangement repetitions="6,6,0" displacements="10,10,0">
+		<Sphere center="10,10,0" radius="10"/>
 	</Arrangement>
 </InitCellObjects>
 \endverbatim
@@ -80,42 +76,37 @@ Hexagonal tesselation:
 choose lattice size (repetitions.x * displacements.x, repetitions.y * displacements.y, 0)
 \verbatim
 <InitCellObjects mode="distance">
-	<Arrangement repetitions="16 14 0" displacements="32 40 0">
-		<Object>
-			<Sphere radius="30" center="16 16 0"/>
-		</Object>
+	<Arrangement repetitions="16,14,0" displacements="32,40,0">
+		<Sphere radius="30" center="16,16,0"/>
 	</Arrangement>
-	<Arrangement repetitions="16 14 0" displacements="32 40 0">
-		<Object>
-			<Sphere radius="30" center="32 40 0"/>
-		</Object>
+	<Arrangement repetitions="16,14,0" displacements="32,40,0">
+		<Sphere radius="30" center="32,40,0"/>
 	</Arrangement>
 </InitCellObjects>
 \endverbatim
 
-Rhombic dodecahedrons
-choose lattice size (repetitions.x * displacements.x, repetitions.y * displacements.y, repetitions.z * displacements.z)
+Rhombic dodecahedrons using expressions
+Choose lattice size (r.x*d.x, r.y*d.y, r.z*d.z)
+
 \verbatim
+<Global>
+   <ConstantVector symbol="r" name="repetitions" value="5,4,3" />
+   <ConstantVector symbol="p" name="position" value="16,16,16" />
+   <ConstantVector symbol="d" name="displacements" value="2*p.x, 3*p.y, 3*p.z" />
+</Global>
+...
 <InitCellObjects mode="distance">
-	<Arrangement repetitions="5 4 3" displacements="32 48 48">
-		<Object>
-			<Sphere radius="21" center="16 16 16"/>
-		</Object>
+	<Arrangement repetitions="r" displacements="d">
+		<Sphere radius="21" center="p"/>
 	</Arrangement>
-	<Arrangement repetitions="5 4 3" displacements="32 48 48">
-		<Object>
-			<Sphere radius="21" center="32 40 16"/>
-		</Object>
+	<Arrangement repetitions="r" displacements="d">
+		<Sphere radius="21" center="2*p.x, 2.5*p.y, p.z"/>
 	</Arrangement>
-	<Arrangement repetitions="5 4 3" displacements="32 48 48">
-		<Object>
-			<Sphere radius="21" center="32 24 40"/>
-		</Object>
+	<Arrangement repetitions="r" displacements="d">
+		<Sphere radius="21" center="2*p.x, 1.5*p.y, 2.5*p.z"/>
 	</Arrangement>
-	<Arrangement repetitions="5 4 3" displacements="32 48 48">
-		<Object>
-			<Sphere radius="21" center="16 48 40"/>
-		</Object>
+	<Arrangement repetitions="r" displacements="d">
+		<Sphere radius="21" center="p.x, 3*p.y, 2.5*p.z"/>
 	</Arrangement>
 </InitCellObjects>
 \endverbatim
@@ -162,36 +153,6 @@ private:
 	int setNodes(CellType* ct);
 	void arrangeObjectCombinatorial( unique_ptr<CellObject> c_template, vector< unique_ptr<CellObject> >& objectlist, VDOUBLE displacement, VINT repetitions, double random_displacement);
 	VDOUBLE distanceToLineSegment(VDOUBLE p, VDOUBLE l1, VDOUBLE l2);
-	
-// 	struct CellObject{
-// 		CellObject() {
-// 			displacement = VDOUBLE(0,0,0);
-// 			center->setXMLPath("center");
-// 			center2->setXMLPath("center2");
-// 			axes->setXMLPath("axes");
-// 			radius->setXMLPath("radius");
-// 			origin->setXMLPath("origin");
-// 			boxsize->setXMLPath("size");
-// 			orientation->setXMLPath("orientation");
-// 			map<string, Orientation> omap = { {"x", Orientation::X},  {"y", Orientation::Y}, {"z", Orientation::Z} };
-// 			orientation->setConversionMap(omap);
-// 		}
-// 		int id;
-// 		VDOUBLE displacement;
-// 		PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> center;
-// 		PluginParameter_Shared<VDOUBLE, XMLEvaluator, DefaultValPolicy> center2; // only used for oblique cylinders (i.e. cylinders that are not aligned to x,y,z axis)
-// 		PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> axes; // only used ellipes and ellipsoids
-// // 		PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> focus1; // only used ellipes and ellipsoids
-// // 		PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> focus2; // only used ellipes and ellipsoids
-// 		bool oblique;
-// 		PluginParameter_Shared<double,  XMLEvaluator, RequiredPolicy> radius;
-// 		PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> origin;
-// 		PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> boxsize;
-// 		OType type;
-// 		PluginParameter_Shared<Orientation, XMLNamedValueReader, RequiredPolicy> orientation;
-// 	};
-	
-
 };
 
 #endif //INITSPHERECELL_H

@@ -459,11 +459,15 @@ void SBMLImporter::addSBMLFunctions(nodeController* target, Model* sbml_model)
 	for (uint fun=0; fun<sbml_model->getNumFunctionDefinitions();fun++) {
 		auto mo_function = target->insertChild("Function");
 		FunctionDefinition* function = sbml_model->getFunctionDefinition(fun);
-		mo_function->attribute("name")->set(function->getIdAttribute());
+		mo_function->attribute("symbol")->set(function->getId());
+		mo_function->attribute("name")->set(function->getName());
+		mo_function->attribute("name")->setActive(true);
 		for (uint i=0; i<function->getNumArguments(); i++ ) {
-			mo_function->insertChild("Parameter")->attribute("name")->set(function->getArgument(i)->getId());
+			auto param = mo_function->insertChild("Parameter",i);
+			param->attribute("symbol")->set(function->getArgument(i)->getName());
 		}
-		ASTNode* math = function->getMath()->deepCopy();
+		const ASTNode* f_math = function->getMath();
+		ASTNode* math = f_math->getChild(f_math->getNumChildren()-1)->deepCopy();
 		sanitizeAST(math);
 		mo_function->firstActiveChild("Expression")->setText(SBML_formulaToString(math));
 // 		functions.insert(s2q(function->getId()),function);

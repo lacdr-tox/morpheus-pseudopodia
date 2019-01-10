@@ -45,10 +45,11 @@ This information only serves for human readability and does not affect the simul
 
 Section to include mathematical variabes and equations in the global \ref Scope.
 
-Globals provides section for:
-- Global \ref ML_Constant and \ref ML_Variable that can be overwritten in local scopes such as \ref ML_CellType and \ref ML_System. In this case, Globals serve as default values.
+\b Global provides section for:
+- Global \ref ML_Constant and \ref ML_Variable that can be overridden in local scopes such as \ref ML_CellType and \ref ML_System. In this case, \b Global serve as default values.
 - \b ODE systems: \ref ML_System of \ref ML_DiffEqn operating on \ref ML_Variable
 - \b Reaction-diffusion PDE systems: \ref ML_System of \ref ML_DiffEqn operating on diffusive \ref ML_Field
+- Global \b Events: \ref ML_Event changing global variables.
 
 \section Examples
 - Globally defined constant 'e' and a variable 'v'. These symbols can be overwritten in subscopes, in which case the global values act as defaults.
@@ -84,10 +85,10 @@ Globals provides section for:
 \verbatim
 <Global>
 	<Field symbol="a" value="rand_norm(0.5,0.1)" name="activator">
-		<Diffusion rate="0.02" unit="µm²/s"/>
+		<Diffusion rate="0.02" />
 	</Field>
 	<Field symbol="i" value="0.1" name="inhibitor">
-		<Diffusion rate="1" unit="µm²/s"/>
+		<Diffusion rate="1" />
 	</Field>
 	<System solver="runge-kutta" time-step="5" name="Meinhardt">
 		<Constant symbol="rho" value="0.001"/>
@@ -120,9 +121,9 @@ Valid symbol identifiers may contain the following characters
 - Numbers: 0123456789
 - Special chars: ._
 
-and may not start with a number.
+but may not start with a number.
 
-The \b name attribute is used for descriptive purpose only. In particular, graph labels will carry this information. You may use latex style super- and subscripts
+The \b name attribute is used for descriptive purposes only. In particular, graph labels will carry this information. You may use latex style super- and subscripts
   * (c_{1})^{2} will become \f$ (c_1)^{2} \f$
 
 **/
@@ -216,7 +217,7 @@ Symbol with a cell-bound scalar value and a \b delay time before values become c
 \ingroup ML_CellType
 \ingroup Symbols
 
-Symbol with cell-bound variable 3D vector value.
+Symbol with cell-bound, variable 3D vector value.
 
 Syntax is comma-separated: x,y,z
 **/
@@ -274,13 +275,13 @@ An IntermediateVector Symbol is available to all expressions within a System. In
 
 Environment for conditionally executed set of assignments.
 
-- \b time-step: if specified, Condition is evulated in regular intervals (\b time-step). If not specified, If no time-step is provided, the minimal time-step of the input symbols is used.
+- \b time-step: if specified, Condition is evulated in regular intervals (\b time-step). If not specified, if no time-step is provided, the minimal time-step of the input symbols is used.
 - \b trigger: whether assigments are executed when the Condition turns from false to true (trigger = "on change", as in SBML) or whenever the condition is found true (trigger="when true").
 
 \b Condition: expression to evaluate to trigger assignments.
 
 \section Example
-Set symbol "c" (e.g. assume its a CellProperty) to 1 after 1000 simulation time units
+Set symbol "c" (e.g. assume it's a CellProperty) to 1 after 1000 simulation time units
 \verbatim
 <Event trigger="on change" time-step="1">
     <Condition>a > 10</Condition>
@@ -406,7 +407,7 @@ To specify a membrane property with a lattice discretization of 100 and definiti
 </MembraneLattice>
 \endverbatim
 
-Note that the symbols defined above can be used initialize the membrane property, independent of the lattice discretization. 
+Note that the symbols defined above can be used to initialize the membrane property, independent of the lattice discretization. 
 Here, using a sine wave, scaled between 0 and 1 by just referring to the x part of the current membrane position.
 \verbatim
 <InitProperty symbol-ref="membrane">
@@ -437,7 +438,7 @@ Circular domains may be defined via the \b Circle tag.
 
 Specifies a symbol referring to the current location as a 3D vector (x,y,z). 
 
-This symbol can then be used to make aspects dependent on space, such as gradient field
+This symbol can then be used to make aspects dependent on space, such as a gradient field
 
 \section Example
 To create a gradient along the x direction from 0 to 1, first specify a SpaceSymbol:
@@ -530,7 +531,7 @@ CellType can contain any of the following plugin types:
 A CellType defines its own \ref Scope. This implies that symbols defined within a CellType are not accessible outside of the CellType.
 However, if the identical symbol is defined in all CellTypes, it is also accessible at the global scope.
 
-I addition, celltype scopes provide symbols to access cell properties
+In addition, celltype scopes provide symbols to access cell properties
 - cell.id
 - cell.center
 - cell.volume
@@ -558,7 +559,7 @@ Specify the spatial configuration and cell states of a cellular population.
 
 Spatial configuration can be generated by \ref InitializerPlugins.
 
-If SaveInterval is specified (see \ref ML_Time), the simulation state for each cells in a population is written to Population/Cell elements. 
+If SaveInterval is specified (see \ref ML_Time), the simulation state for each cell in a population is written to Population/Cell elements. 
 
 **/
 
@@ -579,7 +580,7 @@ This includes:
 - \b DelayPropertyData: history of values of a \ref ML_DelayProperty symbol
 - \b MembranePropertyData: current values of the scalar field of a \ref ML_MembraneProperty
 
-Note, this element is not meant for human specification. 
+Note, this element is not meant for manual specification by humans. 
 **/
 
 /**
@@ -588,7 +589,7 @@ Note, this element is not meant for human specification.
 
 InitProperty sets the value of a cell-bound \ref ML_Property or \ref ML_MembraneProperty during the initialization of a cell. May contain expressions. 
 
-Expressions are evaluated separately for each cell, such that properties can be made stochastically or dependent on cell-position.
+Expressions are evaluated separately for each cell, such that properties can become stochastic or dependent on cell-position.
 
 Note the difference to initialization with CellType/Property: InitProperty is called ONLY during initialization (at StartTime, see \ref ML_Time). 
 Therefore, InitProperty is NOT called for cells created during simulation, e.g. using the \ref ML_AddCell plugin.
@@ -607,7 +608,7 @@ Container for \ref AnalysisPlugins for data analysis, logging and visualization.
 \defgroup ParamSweep
 \ingroup MorpheusML
 
-Specification of batch process for parameter exploration or sensitivity analysis.
+Specification of a batch process for parameter exploration or sensitivity analysis.
 
 - Parameter(s) are selected via the context menu.
 - Parameter values are specified as a list or range under \b Values.
@@ -618,7 +619,7 @@ Specification of batch process for parameter exploration or sensitivity analysis
 
 /**
  \defgroup Plugins Plugin Types
- \brief All Modules of morpheus belong to one or multiple basic plugin types that listed below.
+ \brief All Modules of morpheus belong to one or multiple basic plugin types that are listed below.
  **/ 
 
 /** \defgroup CellMotilityPlugins Cell Motility Plugin
@@ -646,20 +647,20 @@ Specification of batch process for parameter exploration or sensitivity analysis
 \defgroup Scope
 \ingroup Concepts
 
-A \b Scope is a portion of the model in which a symbol is defined and valid. Symbols defined in any of these scopes are invalid outside of this scope. This is analogous to the local and global variables in most programming languages.
+\b Scopes are the symbol governors of (nested) sections of the model, where symbols can be defined and retrieved. Symbols defined in a scope are invalid outside of this scope, and available in all sub-scoped, i.e. nested sections. This is analogous to the local variable scoping in most programming languages.
 
-The following model elements define their own scopes:
-- \ref ML_Global
+The top-most scope is \ref ML_Global.
+The following model elements define their own sub-scopes:
 - \ref ML_CellType
 - \ref ML_System (including Trigger environments)
+- \ref ML_Function 
 
-Symbols are inherited from the global to local scopes, but may be overwritten in local scopes, even to differ in constness and granularity (e.g. Global/Constant may be overwritten by a System/Variable). 
-The type of the symbol (scalar / vector), however, has to be identical. In this way, global symbols can be used as default values.
+Symbols are inherited from the parental to the local scopes, but may be overwritten, even to differ in constness and granularity (e.g. Global/Constant may be overwritten by a System/Variable). 
+The type of the symbol (scalar / vector), however, has to be conserved. In this way, global symbols can be used as default values.
 
-Unlike the other scopes, the \ref ML_CellType scope is provides a spatial compartment, such that symbol defined in the CellType scope
-can only be resolved at the spatial positions occupied by cells of this CellType. Therefore, in some cases, it may be required to provide a global constant as a default value.
+Unlike the other scopes, the \ref ML_CellType scope also represents a spatial compartment. In order to adhere to intuitive modelling logics, we apply \b spatial \b scoping, such that symbols defined in the CellType scope can override parental, i.e. global, symbols in the dynamic spatial region the celltype occupies. Therefore, a global symbol can be effectively composed of a global value and celltype specific values defined within the celltypes themself.
 
-As a special case, when a symbol is declared in all local scopes (e.g. in all CellTypes), it also becomes available in the global scope. (Known as a virtual composite symbol.)
+As a special case, when a symbol is declared in all CellType scopes (e.g. in all CellTypes), it also becomes available in the global scope. (Known as a virtual composite symbol.)
 
 \section Examples
 In the following example, 'a=1' is declared in the Global scope, and 'b=2' is declared in the System scope. The global variable 'result' will yield '3'.
@@ -719,13 +720,13 @@ Because 'p' is defined in all CellTypes, it is automatically also available in t
 
 **/
 
-/**
+/*
 \defgroup Interpreter
 \ingroup Concepts
 
 
 
-**/
+*/
 
 
 /**
@@ -734,50 +735,41 @@ Because 'p' is defined in all CellTypes, it is automatically also available in t
 
 \section Schedule
 
-Initialization
+Morpheus currently applies a static scheduling scheme, which means that the schedule is constructed before the simulation starts and remains unchanged until the end of the simulation.
+
+In the initialization phase, all symbols are registered, the plugins and their interdependencies are analysed and a ** dependency tree** is constructed. Using the dependency tree, a schedule is constructed along the following guidelines. 
+
+- \b Correctness: Update time steps must be fine-grained enough.
+- \b Order: Sequential order must obey the order in the directed acyclic dependency graph (DAG), which is constructed by opening up potential closed loops.
+- \b Validity: Updates must be performed frequently enough to provide the latest input values for other plugins.
+- \b Efficiency: Updates are not scheduled more often than the plugins' output is required.
+
+The \b sequential update scheme will look as follows:
 
 - \b Phase 1: \ref ContinuousProcessPlugins
 
-  + Diffusion, ... CFL
-  + System, including 
-  + CPM, incl. \ref CPM_EnergyPlugins, \ref Cell_Update_CheckerPlugins, \ref Cell_Update_ListenerPlugins, \ref CPM_InteractionPlugins
+  + \ref ML_Field diffusion (CFL condition)
+  + \ref ML_System
+  + \ref ML_CPM
 
-- \b Phase 2: \ref InstantaneousProcessPlugins
+- \b Phase 2: Sequential schemes ordered by dependencies 
 
   + \ref ReporterPlugins
-  + ...?
+  + \ref InstantaneousProcessPlugins
 
   
 - \b Phase 3:
 
   + \ref AnalysisPlugins
-  + ...?
 
-\section Order
-
-Tracking symbolic dependencies.
-
-\section Intervals
-
-1. as often as input can change.
-2. not more often than output is used.
 **/
 
 /**
 \defgroup Parallelization
 \ingroup Concepts
 
-Multithreading
-openMP
+Morpheus employs \b OpenMP as the workload-sharing construct. CPM computation, however, does not yet make use of OpenMP.
+Use the environmental variable \b OMP_NUM_THREADS to adjust the number of threads used.
 
 **/
 
-
-/**
-\defgroup MuParser Evaluating math expressions
-\ingroup Concepts
-
-muParser
-
-
-**/

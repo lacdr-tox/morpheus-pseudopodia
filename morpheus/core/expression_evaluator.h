@@ -20,7 +20,35 @@
 
 unique_ptr<mu::Parser> createMuParserInstance();
 
-/** Expression Evaluation
+/**
+\defgroup MuParser Evaluating math expressions
+\ingroup Concepts
+
+Mathematical expressions are evaluated at run-time using [MuParser](http://beltoforion.de/article.php?a=muparser), while all variables are resolved using Morpheus' \ref Symbols system.
+
+**Operators**:
++, -, *, /, ^, =, >=, <=, !=, ==, <, >
+and, or, xor, !
+
+**Predefined Functions**:
+if([condition], [then], [else]), and, or, xor, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh, log2, log10, ln, exp, pow, sqrt, sign, rint, abs, min, max, sum, avg, mod
+
+**SBML compatibility Functions**:
+piecewise, lt, leq, eq, neq, geq, gt, arcsin, arccos, arctan, arcsinh, arccosh, arctanh
+
+**Random number** generators:
+rand_uni([min], [max])
+rand_int([min], [max])
+rand_norm([mean], [stdev])
+rand_gamma([shape], [scale])
+rand_bool()
+
+
+**/
+
+typedef EvaluatorCache::EvaluatorSymbol EvaluatorVariable;
+
+/** @brief Run-time Expression Evaluation
  * 
  * Uses muParser to evaluate string defined expressions,
  * while variables are resolved with platform symbols
@@ -28,12 +56,6 @@ unique_ptr<mu::Parser> createMuParserInstance();
  * Compatible -- can handle Vector and Scalar expressions
  * Threadsafe -- nope
  */
-
-typedef EvaluatorCache::EvaluatorSymbol EvaluatorVariable;
-// {
-// 	string symbol;
-// 	enum Type { DOUBLE, VECTOR } type;
-// };
 
 template <class T>
 class ExpressionEvaluator {
@@ -154,7 +176,7 @@ typedef std::mutex GlobalMutex;
 template <class T>
 class ThreadedExpressionEvaluator {
 public:
-	ThreadedExpressionEvaluator(string expression, const Scope* scope, bool partial_spec = false) { evaluators.push_back( unique_ptr<ExpressionEvaluator<T> >(new ExpressionEvaluator<T>(expression, scope, partial_spec)) );};
+	ThreadedExpressionEvaluator(string expression, const Scope* scope, bool partial_spec = false) { evaluators.push_back( make_unique<ExpressionEvaluator<T> >(expression, scope, partial_spec) );};
 	
 	void setLocalsTable(const vector<EvaluatorVariable>& locals) { for (auto& evaluator : evaluators) evaluator->setLocalsTable(locals); }
 	void setLocals(const double* data) const { getEvaluator()->setLocals(data); }

@@ -5,7 +5,7 @@ Morpheus Licensing
 Morpheus is released under the terms of the 3-clause BSD license and under the copyright of Technische Universität Dresden. The software was primarily authored by Jörn Starruß and Walter de Back.
 
 
-Copyright (c) 2016, Technische Universität Dresden
+Copyright (c) 2018, Technische Universität Dresden
 
 All rights reserved.
 

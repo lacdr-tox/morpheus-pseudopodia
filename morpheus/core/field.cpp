@@ -1055,6 +1055,7 @@ VectorField_Layer::VectorField_Layer(shared_ptr<const Lattice> lattice, double n
 {
 	initial_expression = "";
 	init_by_restore = false;
+	useBuffer(true);
 }
 
 void VectorField_Layer::loadFromXML(XMLNode node, Scope* scope)

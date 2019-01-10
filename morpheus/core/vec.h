@@ -17,6 +17,7 @@
 #include "config.h"
 #include "traits.h"
 #include <cmath>
+#include <array>
 #include <iostream>
 #include <functional>
 #include "cpp_future.h"

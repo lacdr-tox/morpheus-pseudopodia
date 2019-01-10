@@ -98,15 +98,15 @@ public:
 	/// Find a symbol @p name, without any data access
 	Symbol findSymbol(string name) const;
 	
-	/// Find a readable symbol @p name of type \<T\>. Throws an error if symbol cannot be found.
+	/// Find a readable symbol @p name of type \<T\>. Throws an \ref SymbolError if symbol cannot be found.
 	template<class T>
 	SymbolAccessor<T> findSymbol(string name, bool allow_partial = false) const;
 	
-	/// Find a symbol @p name of type \<T\>. Return a constant symbol of @p default_val, if the symbol cannot be found.
+	/// Find a symbol @p name of type \<T\>. If the symbol of @p name is only partially defined, @p default_val is assumed in the undefined scopes. Throws a \ref SymbolError if symbol cannot be found.
 	template<class T>
 	SymbolAccessor<T> findSymbol(string name, const T& default_val) const;
 	
-	/// Find a read-writable symbol @p name of type \<T\>. Throws an \ref SymbolError if symbol cannot be found.
+	/// Find a read-writable symbol @p name of type \<T\>. Throws a \ref SymbolError if symbol cannot be found.
 	template<class T>
 	SymbolRWAccessor<T> findRWSymbol(string name) const;
 	
@@ -365,7 +365,7 @@ SymbolAccessor<T> Scope::findSymbol(string name, bool allow_partial) const
 		return parent->findSymbol<T>(name, allow_partial);
 	}
 	else {
-		throw (string("Symbol \"")+name+"\" is not defined in Scope " + this->getName() );
+		throw SymbolError(SymbolError::Type::Undefined, string("Symbol \"")+name+"\" is not defined in Scope " + this->getName() );
 	}
 };
 
@@ -385,7 +385,7 @@ SymbolRWAccessor<T> Scope::findRWSymbol(string name) const
 template <class T>
 SymbolAccessor<T> Scope::findSymbol(string name, const T& default_val) const
 {
-	try {
+// 	try {
 		auto s = findSymbol<T>(name, true);
 		if (dynamic_pointer_cast<const CompositeSymbol<T> >(s) && s->flags().partially_defined) {
 			auto new_s = make_shared<CompositeSymbol<T> >(*dynamic_pointer_cast<const CompositeSymbol<T> >(s));
@@ -394,12 +394,12 @@ SymbolAccessor<T> Scope::findSymbol(string name, const T& default_val) const
 		}
 		return s;
 		
-	}
-	catch (...) {
-		// create a default accessor
-		auto c = SymbolAccessorBase<T>::createConstant(name, name, default_val);
-		return c;
-	}
+// 	}
+// 	catch (...) {
+// 		// create a default accessor
+// 		auto c = SymbolAccessorBase<T>::createConstant(name, name, default_val);
+// 		return c;
+// 	}
 };
 
 template <class T>

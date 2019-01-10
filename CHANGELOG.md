@@ -1,6 +1,10 @@
 # ChangeLog
 
-## Unreleased
+## Patch 2.0.1
+  * Fixed VectorRules not working
+  * Fixed broken image table for parameter sweeps
+
+## Release 2.0
 
 ### MorpheusML
   * The generalized **Mapper** now takes care to map information between spatial contexts, replaces the CellReporter
@@ -12,28 +16,33 @@
   * Multiple **Population** per CellType are now supported
   * **GnuPlotter** layout adjustments to efficiently support large lattices
   * Binary **VTK** export (performance)
-  * Full support for **snapshoting** simulation states
+  * Full support for **snapshotting** simulation states
   * Removed any remains of time / space units
 
 ### GUI
-  * Largely Improved inApp Documentation
-  * Adaptive size editor for expressions in attributes
+  * Largely improved inApp documentation
+  * Adaptive multiline editor panel for expressions in attributes
   * Reenabled SBML import
-  * Option to preset random seeds for parameter sweeps
+  * Allow Copy/Paste & Drag/Drop of external XML model snippets 
+  * Optionally preset random seeds for parameter sweeps
 
 ### Simulator
-  * Many fixes to cell pattern initializers
-  * Rewrite of the **Symbolic Linking** infrastructure, allows extensibility
-  * Scheduling fixes for **Functions** and **DelayProperties**
+  * Many fixes to cell population initializers
+  * **Symbolic Linking** infrastructure rewritten to enable extensibility
+  * Scheduling fixes for **DelayProperties**
   * **Gnuplotter** and **Logger** now deal better with sub and superscript in symbol names or descriptions
-  * Parallelize diffusion for **Fields** in domains
   * **Field boundaries** can be expressions
-  * Add **GoogleTest** as testing framework
+  * Added **GoogleTest** as testing framework
+  * Performance improvements, i.e.
+    * Added dynamic EdgeTracker defragmentation
+    * Parallelized diffusion in domain Fields
+    * Precalculating constant expressions at initialisation
+    * ...
 
 ### others
   * Tons of compiler compatibility fixes
   * Doxygen issue workarounds
   
-## 1.9.2 
+## 1.9.3 
   * Initial import
 

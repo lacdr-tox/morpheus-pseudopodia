@@ -30,6 +30,7 @@ config::config() : QObject(), helpEngine(NULL) {
 
 
     settings.beginGroup("preferences");
+		app.preference_allow_feedback = settings.value("allow_feedback", false).toBool();
         app.preference_stdout_limit = settings.value("stdout_limit", 10).toInt();
         app.preference_max_recent_files = settings.value("max_recent_files", 10).toInt();
         app.preference_jobqueue_interval = settings.value("jobqueue_interval", 2500).toInt();
@@ -213,6 +214,9 @@ config::config() : QObject(), helpEngine(NULL) {
 	connect( job_queue_thread, SIGNAL(finished()), job_queue_thread, SLOT(deleteLater()) );
 
 	job_queue_thread->start();
+	
+	// Attaching to Clipboard
+	connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(ClipBoardChanged()));
 }
 
 //------------------------------------------------------------------------------
@@ -300,6 +304,7 @@ int config::openModel(QString filepath) {
 	QString xmlFile = QFileInfo(filepath).absoluteFilePath();
 	for (int i=0; i<conf->openModels.size(); i++) {
 		if (xmlFile==conf->openModels[i]->xml_file.path) {
+			emit conf->modelSelectionChanged(i);
 			return i;
 		}
 	}
@@ -480,6 +485,7 @@ void config::setApplication(application a) {
     settings.endGroup();
 
     settings.beginGroup("preferences");
+		settings.setValue("allow_feedback",a.preference_allow_feedback);
         settings.setValue("stdout_limit", a.preference_stdout_limit);
         settings.setValue("max_recent_files", a.preference_max_recent_files);
         settings.setValue("jobqueue_interval", a.preference_jobqueue_interval);
@@ -523,6 +529,17 @@ void config::receiveNodeCopy(QDomNode nodeCopy) {
     while(xmlNodeCopies.size() > MaxNodeCopies) {
         xmlNodeCopies.pop_back();
     }
+}
+
+void config::ClipBoardChanged() {
+	auto mimeData = QApplication::clipboard()->mimeData();
+	
+	if (mimeData->hasText()) {
+		clipBoard_Document.setContent(mimeData->text());
+		if (!clipBoard_Document.firstChildElement().isNull()) {
+			receiveNodeCopy(clipBoard_Document.firstChildElement());
+		}
+	}
 }
 
 //------------------------------------------------------------------------------

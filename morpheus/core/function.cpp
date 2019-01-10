@@ -20,7 +20,6 @@ void FunctionPlugin::loadFromXML ( const XMLNode Node, Scope* scope)
 	registerPluginParameter(symbol);
 	raw_expression.setXMLPath("Expression/text");
 	registerPluginParameter(raw_expression);
-	
 	for (int i=0; i<Node.nChildNode(); i++) {
 		
 		// Right now, the order in the XML determines the parameter syntax of the function
@@ -28,8 +27,8 @@ void FunctionPlugin::loadFromXML ( const XMLNode Node, Scope* scope)
 		if (string(child.getName()) == "Parameter") {
 			FunParameter p;
 			p.type = EvaluatorVariable::DOUBLE;
-			p.symbol->setXMLPath(string("Parameter[") +to_str(i) + "]/symbol");
-			p.name->setXMLPath(string("Parameter[") +to_str(i) + "]/name");
+			p.symbol->setXMLPath(string("Parameter[") +to_str(parameters.size()) + "]/symbol");
+			p.name->setXMLPath(string("Parameter[") +to_str(parameters.size()) + "]/name");
 			registerPluginParameter(p.symbol);
 			registerPluginParameter(p.name);
 			parameters.emplace_back(p);

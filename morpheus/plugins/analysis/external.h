@@ -30,7 +30,7 @@ Stdout and sdterr are written to the file "external_output.txt" and "external_er
 - \b detach: Run the process in the background while continuing simulation. Note that **timeout** is the maximum time the command may run after the simulation finished.
 - \b timeout: Timeout for running the external process. Defaults to 30 seconds. (Only applicable with \b detach enabled)
 - \b Command: Executable shell command, e.g. "tail -n 1 logger.txt" or "python analysis.py"
-- \b Environment: variable/value, e.g. PATH=\usr\local\bin
+- \b Environment: variable/value, e.g. PATH='\\usr\\local\\bin'
 
 \section Example
 Say hi at the end of simulation
@@ -75,6 +75,7 @@ Execute script along the simulation in a background process.
 #include <core/plugin_parameter.h>
 #include "tiny-process/process.hpp"
 #include <thread>
+#include <cstdlib>
 
 struct DetachedProcess {
 	enum { RUNNING, KILLED, FINISHED } state;

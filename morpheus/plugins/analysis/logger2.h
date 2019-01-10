@@ -512,7 +512,7 @@ protected:
 	map<Terminal, string> terminal_name;
 	PluginParameter2<Terminal, XMLNamedValueReader, DefaultValPolicy> terminal;
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> logcommands;
-	PluginParameter2<double, XMLValueReader, OptionalPolicy> time_step;
+	PluginParameter2<double, XMLValueReader, DefaultValPolicy> time_step;
 	PluginParameter2<string, XMLValueReader, OptionalPolicy> title;
 	double last_plot_time;
 	uint plot_num;

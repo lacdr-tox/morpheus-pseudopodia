@@ -53,7 +53,8 @@
  * For convenience, a specialised template exists for identifying a celltype via a celltype name 
  *    PluginParameterCellType\<RequirementPolicy\>
  * 
-
+ * \subpage Examples
+ * 
  * \subsubsection Example1 Example 1: Reading a double value and assuming 0 for the case it is ommited
  * \verbatim  PluginParameter2<double,XMLValueReader,DefaultValPolicy> my_value;\endverbatim
  * 

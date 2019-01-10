@@ -266,6 +266,23 @@ void MainWindow::createMenuBar()
 	
     examplesMenu->setStatusTip(tr("Open Morpheus example model"));
 
+	QMenu *windowMenu = menubar->addMenu(tr("&Window"));
+	QAction* aDocsDock = documentsDock->toggleViewAction();
+	aDocsDock->setText(tr("Show Documents"));
+	windowMenu->addAction(aDocsDock);
+	
+	QAction* aJobsDock = jobQueueDock->toggleViewAction();
+	aJobsDock->setText(tr("Show Job Queue"));
+	windowMenu->addAction(aJobsDock);
+	
+	QAction* aDocuDock = docuDock->toggleViewAction();
+	aDocuDock->setText(tr("Show Documentation"));
+	windowMenu->addAction(aDocuDock);
+	
+	QAction* aFixesDock = dwid_fixBoard->toggleViewAction();
+	aFixesDock->setText(tr("Show FixBoard"));
+	windowMenu->addAction(aFixesDock);
+	
     QMenu *aboutMenu = menubar->addMenu(tr("&About"));
 	QAction* aboutModel = new QAction(tr("&Model"),menubar);
 	aboutModel->setStatusTip(tr("Show information about current model."));
@@ -454,7 +471,12 @@ void MainWindow::createMainWidgets()
 	
 	announcer = new AnnouncementDialog(this);
 	QTimer::singleShot(500, announcer, SLOT(showAnnouncements()));
+	QTimer* announcementTimer = new QTimer(this);
+	announcementTimer->setInterval(24*60*60*1000);
+	connect(announcementTimer, SIGNAL(timeout()), announcer, SLOT(showAnnouncements()));
+	announcementTimer->start();
 	
+#ifdef MORPHEUS_FEEDBACK
 	auto feedback = new FeedbackRequestWindow(this);
 	QTimer::singleShot(1000, feedback, SLOT(sendFeedBack()));
 
@@ -462,6 +484,7 @@ void MainWindow::createMainWidgets()
 	feedbackTimer->setInterval(24*60*60*1000);
 	connect(feedbackTimer, SIGNAL(timeout()), feedback, SLOT(sendFeedBack()));
 	feedbackTimer->start();
+#endif
 }
 
 //------------------------------------------------------------------------------

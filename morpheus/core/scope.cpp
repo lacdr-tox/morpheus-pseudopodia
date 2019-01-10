@@ -225,7 +225,7 @@ Symbol Scope::findSymbol(string name) const {
 		return parent->findSymbol(name);
 	}
 	else {
-		throw string("Unknown symbol '") + name + string("' in findSymbol.");
+		throw SymbolError(SymbolError::Type::Undefined, string("Unknown symbol '") + name + string("' in findSymbol."));
 	}
 }
 
