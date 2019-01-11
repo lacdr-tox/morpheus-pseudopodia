@@ -48,12 +48,13 @@ class CellDeath : public InstantaneousProcessPlugin
 private: 
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> condition;
 	PluginParameter2<double, XMLReadWriteSymbol, OptionalPolicy> target_volume;
-	
+    PluginParameter2<double, XMLEvaluator, OptionalPolicy> remove_volume;
+
 	CellType* celltype;
 	enum Mode{LYSIS, SHRINKAGE};
 	Mode mode;
 	set<uint> dying;
-	
+
 public:
 	DECLARE_PLUGIN("CellDeath");
 	CellDeath();

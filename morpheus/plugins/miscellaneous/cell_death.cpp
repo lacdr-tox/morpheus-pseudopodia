@@ -7,6 +7,8 @@ CellDeath::CellDeath() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::
 	registerPluginParameter(condition);
 	target_volume.setXMLPath("Shrinkage/target-volume");
 	registerPluginParameter(target_volume);
+    remove_volume.setXMLPath("Shrinkage/remove-volume");
+    registerPluginParameter(remove_volume);
 }
 
 void CellDeath::init(const Scope* scope)
@@ -15,7 +17,6 @@ void CellDeath::init(const Scope* scope)
 	
 	setTimeStep( CPM::getMCSDuration() );
 	is_adjustable = false;
-
 	celltype = scope->getCellType();
 	if ( target_volume.isDefined() ) {
 		mode = SHRINKAGE;
@@ -23,6 +24,7 @@ void CellDeath::init(const Scope* scope)
 		if ( target_volume.accessor()->granularity() != Granularity::Cell ){
 			throw MorpheusException("CellDeath expects the target-volume symbol to be a cell property!", stored_node);
 		}
+
 	}
 	else {
 		mode = LYSIS;
@@ -44,7 +46,8 @@ void CellDeath::executeTimeStep()
 		CPM::CELL_ID cell_id = cells[i];
 		
 		if (dying.find(cell_id) != dying.end()) {
-			if (CPM::getCell(cell_id).nNodes() <= 3) 
+
+			if (CPM::getCell(cell_id).nNodes() <= remove_volume( SymbolFocus(cell_id) ))
 				remove_cell = true;
 		}
 		else {
