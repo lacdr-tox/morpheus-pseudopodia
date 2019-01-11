@@ -97,6 +97,7 @@ ENDIF(NOT CMAKE_BUILD_TYPE)
 SET(MORPHEUS_EXEC_NAME ${PROJECT_NAME} CACHE STRING "Base name of the simulator executable and the GUI exexcutable")
 OPTION(MORPHEUS_GUI "Build the graphical user interface." ON)
 
+OPTION(EXTERNAL_BOOST "Use boost as external project" OFF)
 INCLUDE_DIRECTORIES( 3rdparty)
 ADD_SUBDIRECTORY( 3rdparty )
 

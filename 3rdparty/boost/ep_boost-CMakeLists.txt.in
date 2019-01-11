@@ -1,0 +1,30 @@
+cmake_minimum_required(VERSION 3.10)
+
+project(Boost NONE)
+
+#set(Boost_version "1.69.0")
+#string(REPLACE "." "_" Boost_version_ "${Boost_version}")
+
+IF(UNIX)
+    set(Boost_url https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz)
+    set(Boost_sha256 9a2c2819310839ea373f42d69e733c339b4e9a19deab6bfec448281554aa4dbb)
+    set(Boost_Bootstrap_Command ./bootstrap.sh)
+    set(Boost_b2_Command ./b2)
+ELSEIF(WIN32)
+    set(Boost_url https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.zip)
+    set(Boost_sha256 d074bcbcc0501c4917b965fc890e303ee70d8b01ff5712bae4a6c54f2b6b4e52)
+    set(Boost_Bootstrap_Command cmd /C bootstrap.bat msvc)
+    set(Boost_b2_Command b2.exe)
+ENDIF()
+
+include(ExternalProject)
+ExternalProject_Add(Boost
+        BUILD_IN_SOURCE 1
+        URL ${Boost_url}
+        URL_HASH SHA256=${Boost_sha256}
+        UPDATE_COMMAND ""
+        CONFIGURE_COMMAND ${Boost_Bootstrap_Command} --prefix=${CMAKE_CURRENT_BINARY_DIR}/../boost-build
+        BUILD_COMMAND ${Boost_b2_Command} install --with-filesystem
+        INSTALL_COMMAND ""
+        )
+
