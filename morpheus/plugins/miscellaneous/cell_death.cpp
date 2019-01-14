@@ -75,11 +75,21 @@ void CellDeath::executeTimeStep()
               to_medium = true;
             }
             else{
+              double p = getRandom01()*CPM::getCell(cell_id).getInterfaceLength();
+              double p_run = 0;
               for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
-                if (nb->second >= fusion_interface_length){
+                if ((p > p_run) && (p < (p_run+nb->second))) {
                   fusion_partner_id = nb->first;
+                  break;
                 }
+                p_run += nb->second;
               }
+
+//              for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
+//                if (nb->second >= fusion_interface_length){
+//                  fusion_partner_id = nb->first;
+//                }
+//              }
               if (fusion_partner_id == CPM::getEmptyCelltypeID()){
                 to_medium = true;
               }
