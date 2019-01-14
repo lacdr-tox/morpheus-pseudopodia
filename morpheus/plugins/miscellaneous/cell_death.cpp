@@ -65,10 +65,27 @@ void CellDeath::executeTimeStep()
 		}
 		
 		if (remove_cell) {
-			//cout << "Removing cell " << cell_id << " at " << currentTime() << endl;
-			CPM::setCellType(cell_id, CPM::getEmptyCelltypeID());
-			if (dying.find(cell_id) != dying.end()) 
-				dying.erase(cell_id);
+			cout << "Removing cell " << cell_id << " at " << currentTime() << endl;
+            SymbolFocus cell_focus(cell_id);
+            const auto& interfaces = CPM::getCell(cell_id).getInterfaceLengths();
+            if (interfaces.size() == 0) {
+              cout << "no neighbors\n";
+            }
+
+            //out << CPM::getCell(cell_id).getInterfaceLength() << "\t" << CPM::getCell(cell_id).getSurface() << endl;
+            for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
+              cout << "interface between with " << nb->first << " = ";
+              cout << nb->second << " of " << CPM::getCell(cell_id).getInterfaceLength() << endl;
+            }
+            // randomly select neighbor or select longest interface
+            // new cell type could also include ECM!
+            // if new cell != ECM
+            //  add cell nodes to new cell (steal from fusion.cpp)
+            // else
+            //  use default method (below)
+            CPM::setCellType(cell_id, CPM::getEmptyCelltypeID());
+			  if (dying.find(cell_id) != dying.end())
+			  	dying.erase(cell_id);
 		}
 	}
 }
