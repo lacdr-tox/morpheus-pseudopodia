@@ -68,24 +68,47 @@ void CellDeath::executeTimeStep()
 			cout << "Removing cell " << cell_id << " at " << currentTime() << endl;
             SymbolFocus cell_focus(cell_id);
             const auto& interfaces = CPM::getCell(cell_id).getInterfaceLengths();
+            bool to_medium = false;
+            CPM::CELL_ID fusion_partner_id;
+            double fusion_interface_length = 0;
             if (interfaces.size() == 0) {
-              cout << "no neighbors\n";
+              to_medium = true;
+            }
+            else{
+              for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
+                if (nb->second >= fusion_interface_length){
+                  fusion_partner_id = nb->first;
+                }
+              }
+              if (fusion_partner_id == CPM::getEmptyCelltypeID()){
+                to_medium = true;
+              }
+            }
+            // randomly select neighbor: nb->second/CPM::getCell(cell_id).getInterfaceLength()
+            // or select longest interface
+            if (to_medium){
+              cout << "add dying pixels to medium\n";
+              CPM::setCellType(cell_id, CPM::getEmptyCelltypeID());
+              if (dying.find(cell_id) != dying.end())
+                dying.erase(cell_id);
+            }
+            else{
+              cout << "add dying pixels to cell\n";
+              const Cell::Nodes& dying_nodes = CPM::getCell(cell_id).getNodes();
+              while (!dying_nodes.empty())
+              {
+                CPM::setNode( *(dying_nodes.begin()), fusion_partner_id );
+              }
+              CPM::setCellType( cell_id, CPM::getEmptyCelltypeID() );
             }
 
-            //out << CPM::getCell(cell_id).getInterfaceLength() << "\t" << CPM::getCell(cell_id).getSurface() << endl;
-            for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
-              cout << "interface between with " << nb->first << " = ";
-              cout << nb->second << " of " << CPM::getCell(cell_id).getInterfaceLength() << endl;
-            }
-            // randomly select neighbor or select longest interface
+
             // new cell type could also include ECM!
             // if new cell != ECM
             //  add cell nodes to new cell (steal from fusion.cpp)
             // else
             //  use default method (below)
-            CPM::setCellType(cell_id, CPM::getEmptyCelltypeID());
-			  if (dying.find(cell_id) != dying.end())
-			  	dying.erase(cell_id);
+
 		}
 	}
 }
