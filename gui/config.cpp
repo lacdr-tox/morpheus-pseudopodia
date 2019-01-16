@@ -216,7 +216,7 @@ config::config() : QObject(), helpEngine(NULL) {
 	job_queue_thread->start();
 	
 	// Attaching to Clipboard
-	connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(ClipBoardChanged()));
+	//connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(ClipBoardChanged()));
 }
 
 //------------------------------------------------------------------------------
@@ -224,6 +224,7 @@ config::config() : QObject(), helpEngine(NULL) {
 config* config::getInstance() {
     if ( ! config::instance ) {
         config::instance = new config();
+	connect(QApplication::clipboard(), SIGNAL(dataChanged()), config::instance, SLOT(ClipBoardChanged()));
     }
     return config::instance;
 }
