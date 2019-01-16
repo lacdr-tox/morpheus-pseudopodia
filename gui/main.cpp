@@ -1,3 +1,4 @@
+#include <QtCore/QCoreApplication>
 #include <QtGui/QApplication>
 #include <QTextCodec>
 #include "qtsingleapp/qtsingleapplication.h"
@@ -9,6 +10,7 @@ int main(int argc, char *argv[])
 {
 	//QApplication a(argc, argv);
 	
+        QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 	//only allow a single instance of Morpheus
 	QtSingleApplication a(argc, argv);
 	
