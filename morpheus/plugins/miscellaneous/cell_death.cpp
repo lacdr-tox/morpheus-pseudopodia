@@ -9,6 +9,15 @@ CellDeath::CellDeath() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::
 	registerPluginParameter(target_volume);
     remove_volume.setXMLPath("Shrinkage/remove-volume");
     registerPluginParameter(remove_volume);
+    replace_mode.setXMLPath("Shrinkage/replace-with");
+    map<string, ReplaceMode> modeMap;
+    modeMap["random neighbor"]  = CellDeath::ReplaceMode::RANDOM_NB;
+    modeMap["longest interface"]  = CellDeath::ReplaceMode::LONGEST_IF;
+    modeMap["medium"] = CellDeath::ReplaceMode::MEDIUM;
+
+    //    replace_mode.setDefault("medium");
+    replace_mode.setConversionMap(modeMap);
+    registerPluginParameter(replace_mode);
 }
 
 void CellDeath::init(const Scope* scope)
@@ -70,26 +79,33 @@ void CellDeath::executeTimeStep()
             const auto& interfaces = CPM::getCell(cell_id).getInterfaceLengths();
             bool to_medium = false;
             CPM::CELL_ID fusion_partner_id;
-            double fusion_interface_length = 0;
-            if (interfaces.size() == 0) {
+            if (replace_mode() == CellDeath::ReplaceMode::MEDIUM) {
               to_medium = true;
             }
-            else{
-              double p = getRandom01()*CPM::getCell(cell_id).getInterfaceLength();
-              double p_run = 0;
-              for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
-                if ((p > p_run) && (p < (p_run+nb->second))) {
-                  fusion_partner_id = nb->first;
-                  break;
+            else if (interfaces.size() == 0) {
+              to_medium = true;
+            }
+            else {
+              double fusion_interface_length = 0;
+              // change to purely random (?)
+              if (replace_mode() == CellDeath::ReplaceMode::RANDOM_NB) {
+                double p = getRandom01() * CPM::getCell(cell_id).getInterfaceLength();
+                double p_run = 0;
+                for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
+                  if ((p > p_run) && (p < (p_run + nb->second))) {
+                    fusion_partner_id = nb->first;
+                    break;
+                  }
+                  p_run += nb->second;
                 }
-                p_run += nb->second;
               }
-
-//              for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
-//                if (nb->second >= fusion_interface_length){
-//                  fusion_partner_id = nb->first;
-//                }
-//              }
+              else if (replace_mode() == CellDeath::ReplaceMode::LONGEST_IF) {
+                for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
+                  if (nb->second >= fusion_interface_length) {
+                    fusion_partner_id = nb->first;
+                  }
+                }
+              }
               if (fusion_partner_id == CPM::getEmptyCelltypeID()){
                 to_medium = true;
               }
@@ -97,13 +113,11 @@ void CellDeath::executeTimeStep()
             // randomly select neighbor: nb->second/CPM::getCell(cell_id).getInterfaceLength()
             // or select longest interface
             if (to_medium){
-              cout << "add dying pixels to medium\n";
               CPM::setCellType(cell_id, CPM::getEmptyCelltypeID());
               if (dying.find(cell_id) != dying.end())
                 dying.erase(cell_id);
             }
             else{
-              cout << "add dying pixels to cell\n";
               const Cell::Nodes& dying_nodes = CPM::getCell(cell_id).getNodes();
               while (!dying_nodes.empty())
               {
@@ -111,14 +125,7 @@ void CellDeath::executeTimeStep()
               }
               CPM::setCellType( cell_id, CPM::getEmptyCelltypeID() );
             }
-
-
-            // new cell type could also include ECM!
-            // if new cell != ECM
-            //  add cell nodes to new cell (steal from fusion.cpp)
-            // else
-            //  use default method (below)
-
+            
 		}
 	}
 }

@@ -45,14 +45,17 @@ Stochastically removing cells through shrinkage (removal after cell has shrunk t
 
 class CellDeath : public InstantaneousProcessPlugin
 {
-private: 
+private:
+    enum Mode{LYSIS, SHRINKAGE};
+    enum class ReplaceMode { RANDOM_NB, LONGEST_IF, MEDIUM };
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> condition;
 	PluginParameter2<double, XMLReadWriteSymbol, OptionalPolicy> target_volume;
     PluginParameter2<double, XMLEvaluator, OptionalPolicy> remove_volume;
+    PluginParameter2<ReplaceMode, XMLNamedValueReader, RequiredPolicy> replace_mode;
 
 	CellType* celltype;
-	enum Mode{LYSIS, SHRINKAGE};
 	Mode mode;
+	ReplaceMode replace;
 	set<uint> dying;
 
 public:
