@@ -39,8 +39,8 @@ public:
 	double getDelay() const { return delay(SymbolFocus::global);}
 	double getInitValue(const SymbolFocus f, double time);
 	
+	void prepareTimeStep(double step_size) override {};
 	void executeTimeStep() override {};
-	void prepareTimeStep() override {};
 	
 	void loadFromXML(XMLNode node, Scope* scope) override;
 	void init(const Scope* scope) override;
@@ -64,21 +64,26 @@ public:
 		auto& history = getCellProperty(f)->value;
 		auto delay = parent->getDelay();
 		clearHistory(history, time);
-		if (history[0].time > time-delay) {
-			if (time-delay<SIM::getStartTime()) 
-				history.push_front({time-delay,parent->getInitValue(f,time-delay)});
-			else 
-				history.push_front({time-delay, history[0].value});
+		if (time-delay<=SIM::getStartTime()) {
+// 			cout << "Delay ini " << this->name() << " -> {" << time-delay << "," <<  parent->getInitValue(f,time-delay) <<"}";
+			return parent->getInitValue(f,time-delay);
 		}
-		cout << "Delay " << this->name() << "={"; 
-		for (const auto& h: history) {
-			cout << h.time << "->" << h.value << ", ";
+		else if (history[0].time > time-delay) {
+			history.push_front({time-delay, history[0].value});
 		}
-		cout << "}" << endl;
-// 		if (history.size() == 1) return history[0].value;
-		const auto& h0 = history[0]; const auto& h1 = history[1];
-		auto fraction = ((time - delay) - h0.time) / (h1.time - h0.time + 1e-25);
-		return h0.value * (1-fraction) + h1.value * fraction;
+		
+		double r;
+		if (history.size() == 1) {
+			r=history[0].value;
+		}
+		else {
+			int i=0;
+			while ((history.size()>i+1) and history[i+1].time<time-delay) i++;
+			auto fraction = ((time - delay) - history[i].time) / (history[i+1].time - history[i].time + 1e-25);
+			r =  history[i].value * (1-fraction) + history[i+1].value * fraction;
+		}
+// 		cout << "Delay " << this->name() << " -> {" << time-delay << "," <<  r <<"}" << endl;
+		return r;
 	}
 	double safe_get(const SymbolFocus& f) const override {
 		auto p=getCellProperty(f); 
@@ -111,7 +116,7 @@ private:
 	}
 	void clearHistory(DelayBuffer& history, double time) const {
 		// auto cleanup
-		while (history.size()>1 && history[1].time - 1e-25 <= time-parent->getDelay()) history.pop_front();
+		while (history.size()>1 && (history[1].time + max(1.0,0.1*time-parent->getDelay()))<=time-parent->getDelay()) history.pop_front();
 	}
 	DelayPropertyPlugin* parent;
 	const CellType* celltype;
@@ -134,21 +139,25 @@ public:
 		clearHistory(time);
 		auto& history = property.value;
 		
-		if (history[0].time > time-delay) {
-			if (time-delay < SIM::getStartTime())
-				history.push_front({time-delay,parent->getInitValue(f,time-delay)});
-			else
-				history.push_front({time-delay,history[0].value});
+		if (time-delay<=SIM::getStartTime()) {
+// 			cout << "Delay ini " << this->name() << " -> {" << time-delay << "," <<  parent->getInitValue(f,time-delay) <<"}" << endl;
+			return parent->getInitValue(f,time-delay);
 		}
-		cout << "Delay " << this->name() << "={"; 
-		for (const auto& h: history) {
-			cout << h.time << "->" << h.value << ", ";
+		else if (history[0].time > time-delay) {
+			history.push_front({time-delay, history[0].value});
 		}
-		cout << "}" << endl;
-		
-		if (history.size() == 1) return history[0].value;
-		auto fraction = ((time - delay) - history[0].time) / (history[1].time - history[0].time + 1e-25);
-		return history[0].value * (1-fraction) + history[1].value * fraction;
+		double r;
+		if (history.size() == 1) {
+			r=history[0].value;
+		}
+		else {
+			int i=0;
+			while ((history.size()>i+1) and history[i+1].time<time-delay) i++;
+			auto fraction = ((time - delay) - history[i].time) / (history[i+1].time - history[i].time + 1e-25);
+			r =  history[i].value * (1-fraction) + history[i+1].value * fraction;
+		}
+// 		cout << "Delay " << this->name() << " -> {" << time-delay << "," <<  r <<"}" << endl;
+		return r;
 		
 	}
 	double safe_get(const SymbolFocus& f) const override {
@@ -163,6 +172,7 @@ public:
 	}
 	void set(const SymbolFocus&, double time, double value) const {
 		auto& history = property.value;
+		clearHistory(time-parent->getDelay());
 		if (history.full()) history.set_capacity((history.size() * 4)/3);
 		history.push_back({time,value});
 	};
@@ -174,7 +184,7 @@ private:
 	mutable DelayProperty property;
 	void clearHistory(double time) const {
 		// auto cleanup
-		while (property.value.size()>1 && property.value[1].time - 1e-25<=time-parent->getDelay()) property.value.pop_front();
+		while (property.value.size()>1 && (property.value[1].time + max(1.0,0.1*time-parent->getDelay()))<=time-parent->getDelay()) property.value.pop_front();
 	}
 	friend class DelayPropertyPlugin;
 };

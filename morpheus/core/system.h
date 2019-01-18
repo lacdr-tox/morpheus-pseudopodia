@@ -182,7 +182,7 @@ class SystemSolver{
 		void Euler(const SymbolFocus& f, double ht);
 		void Heun(const SymbolFocus& f, double ht);
 		void Discrete(const SymbolFocus& f);
-		void EquationHooks(const SymbolFocus& f);
+		void EquationHooks(const SymbolFocus& f, bool write_extern = false);
 }; 
 
 /** @brief System class takes care to solve numerical interpolation of [ODE/Discret Equation/Triggered] Systems
@@ -257,7 +257,7 @@ public:
 	/// Compute and Apply the state after time step @p step_size.
 	void loadFromXML(const XMLNode node, Scope* scope) override;
 	void init(const Scope* scope) override;
-	void prepareTimeStep() override { System::computeContextToBuffer(); };
+	void prepareTimeStep(double step_size) override { System::setTimeStep(step_size);  System::computeContextToBuffer(); };
 	void executeTimeStep() override { System::applyContextBuffer(); };
 	void setTimeStep(double t) override { ContinuousProcessPlugin::setTimeStep(t); System::setTimeStep(t); };
 	void setSubStepHooks(const vector<ReporterPlugin*> hooks) { System::setSubStepHooks(hooks); }
@@ -308,6 +308,8 @@ protected:
 	PluginParameter<bool,XMLNamedValueReader,DefaultValPolicy> delay_compute;  /// Also delay the computation of the assignments
 	PluginParameter<double,XMLEvaluator, DefaultValPolicy> delay;  /// Duration of the delay
 	PluginParameter<bool,XMLNamedValueReader,DefaultValPolicy> trigger_on_change;
+	PluginParameter<bool,XMLValueReader,DefaultValPolicy> xml_condition_history;
+	PluginParameter<bool,XMLValueReader,DefaultValPolicy> persistent;
 	map<SymbolFocus,double> condition_history;
 	struct DelayedAssignment {
 		const SymbolFocus focus;

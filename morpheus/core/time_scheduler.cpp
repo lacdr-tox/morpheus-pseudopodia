@@ -81,11 +81,12 @@ void TimeScheduler::init()
 		if ( dynamic_cast<ContinuousSystem*>(tsl)) {
 			vector<ReporterPlugin*> hooks;
 			for (auto eqn : equations) {
-				auto a = eqn->getLeafOutputSymbols();
-				auto b = tsl->getDependSymbols();
+// 				auto a = eqn->getLeafOutputSymbols();
+// 				auto b = tsl->getDependSymbols();
 // 				if (set_disjoint(a,b)) continue;
-				a = eqn->getLeafDependSymbols();
-				b = tsl->getOutputSymbols();
+				auto a = eqn->getLeafDependSymbols();
+				auto b = tsl->getOutputSymbols();
+				b.insert(SIM::getGlobalScope()->findSymbol(SymbolBase::Time_symbol));
 				if (set_disjoint(a,b)) continue;
 				
 				hooks.push_back(eqn);
@@ -193,9 +194,11 @@ void TimeScheduler::init()
 	// Iteratively sort out the all_instant instances with no unresolved output symbols left
 	// and remove their output symbols from the unresolved_symbols list
 	bool ignore_delays = false;
+	bool finished_reporter_duplication = false;
 	for (uint i=0;i<ts.all_phase2.size();) {
 		uint j;
-		// Schedule ONE instance
+		
+		// Schedule ONE instance at ONCE
 		for (j=0; j<ts.all_phase2.size();j++) {
 			if ( scheduled_inst[j] ) 
 				continue;
@@ -216,10 +219,8 @@ void TimeScheduler::init()
 						unresolved_symbols.erase(sym->name());
 					}
 				}
-				
 			}
-			
-			// 
+			 
 			if (unresolved_symbols.empty()) {
 				// Remove the output symbols from beeing unresolved
 				set<SymbolDependency> out_syms = ts.all_phase2[j]->getOutputSymbols();
@@ -241,10 +242,51 @@ void TimeScheduler::init()
 		
 		// Exit if no instance that can be scheduled is found ...
 		if (j==ts.all_phase2.size()) {
+			// Try to duplicate reporters in order to resolve dependencies.
+			if ( ! finished_reporter_duplication) {
+				set<string> unresolved_symbols ;
+				for (j=0; j<ts.all_phase2.size();j++) {
+					if (! scheduled_inst[j] ) {
+						for (const auto& sym: ts.all_phase2[j]->getDependSymbols() ){
+							if (const_cast<Scope*>(sym->scope())->isUnresolved(sym->name())) {
+								unresolved_symbols.insert(sym->name());
+								
+							}
+						}
+					}
+				}
+				
+				finished_reporter_duplication = true;
+				for (j=0; j<ts.reporter.size();j++) {
+					if (! scheduled_inst[j] ) {
+						bool resolves = false;
+						/*someone in the cycle requires the reporter */
+						for (const auto& sym : ts.reporter[j]->getOutputSymbols()) {
+							if (unresolved_symbols.count(sym->name())) {
+								resolves = true;
+								const_cast<Scope*>(sym->scope())->removeUnresolvedSymbol(sym->name());
+							}
+						}
+						if (resolves) {
+							ordered_phase2.push_back(ts.reporter[j]);
+							ordered_reporters.push_back(dynamic_cast<ReporterPlugin*>(ts.reporter[j]));
+							// We don't remove the reporter from the todo list !!
+							finished_reporter_duplication = false;
+							break;
+						}
+					}
+				}
+			}
+			if (!finished_reporter_duplication)
+				continue;
+			
+			// Try to ignore delayed symbols, as they break direct dependencies (if the delay is >0)
 			if (!ignore_delays) {
 				ignore_delays = true;
 				continue;
 			}
+			
+			// Go into loop dependency error
 			cerr << "TimeScheduler detected loop dependencies in Reporters / Instantaneous Processes :" << endl;
 			for (j=0; j<ts.all_phase2.size();j++) {
 				if ( ! scheduled_inst[j]) {
@@ -266,7 +308,7 @@ void TimeScheduler::init()
 	if (ts.minimal_time_step != unset_time)
 		ts.time_precision_patch = ts.minimal_time_step * 1e-3;
 	else 
-		ts.time_precision_patch = 1e-3;
+		ts.time_precision_patch = 1e-6;
 	
 	
 	cout << " \n";
@@ -343,9 +385,9 @@ void TimeScheduler::compute()
 	try {
 		if (! ts.is_state_valid ) {
 			// Now run all Reporters, Equations to obtain a valid data state
-			for (uint i=0; i<ts.reporter.size(); i++) {
-				current_plugin = ts.reporter[i];
-				ts.reporter[i]->executeTimeStep_internal();
+			for (uint i=0; i<ts.all_phase2.size(); i++) {
+				current_plugin = ts.all_phase2[i];
+				ts.all_phase2[i]->executeTimeStep_internal();
 			}
 
 			// Now run all analysers
@@ -366,14 +408,14 @@ void TimeScheduler::compute()
 			
 		double stop_time = ts.getStopTime();
 		
-		while (ts.current_time + ts.time_precision_patch < stop_time) {
+		while (ts.current_time < stop_time) {
 
 			// compute the maximum time we may travel to fullfill output requirements 
 			double min_current_time = stop_time;
 			
 			for (const auto& output : ts.analysers) {
 				if (output->currentTime() /*+ output->timeStep()*/ < min_current_time /*&& !output->endState()*/)
-					min_current_time = output->currentTime() /*+ output->timeStep()*/;
+					min_current_time = output->currentTime() /*+ ts.time_precision_patch*/ /*+ output->timeStep()*/;
 			}
 			
 			// We provide a time schedule for time CONTINUOUS processes, where X(t) just depends on X(t-1)
@@ -389,7 +431,7 @@ void TimeScheduler::compute()
 			for (uint i=0; i<ts.continuous.size(); i++) {
 				if (ts.continuous[i]->currentTime() <= ts.current_time + ts.time_precision_patch) {
 					current_plugin = ts.continuous[i];
-					ts.continuous[i]->prepareTimeStep_internal();
+					ts.continuous[i]->prepareTimeStep_internal(min_current_time);
 				}
 			}
 			
@@ -409,7 +451,8 @@ void TimeScheduler::compute()
 			
 			// That's how far we are able to travel within one step, still keeping all processes in a valid state.
 			ts.current_time = min_current_time;
-			
+			if (ts.current_time + ts.time_precision_patch >= stop_time)
+				ts.current_time = stop_time;
 			////////////////////////////////////////////////////////////////////////////////
 			// PHASE II -- INSTANTANEOUS, sequentially sorted (Equations, Events, Reporters)
 			////////////////////////////////////////////////////////////////////////////////
@@ -436,7 +479,7 @@ void TimeScheduler::compute()
 			// Progress notification
 			if (ts.last_progress_notification + ts.progress_notify_interval <= ts.current_time + ts.time_precision_patch) {
 				cout << setprecision(2) << setiosflags(ios::fixed)
-					<< "Time: " << ts.current_time / ts.stop_time.getTimeScaleUnitFactor() << " "
+					<< "Time: " << to_str(ts.current_time / ts.stop_time.getTimeScaleUnitFactor()) << " "
 	// 				 << SIM::sim_stop_time.getTimeScaleUnit()
 					<< endl;
 				ts.last_progress_notification = ts.current_time;
@@ -461,7 +504,7 @@ void TimeScheduler::compute()
 		if (ts.last_progress_notification < ts.current_time)
 			cout << setprecision(2) << setiosflags(ios::fixed)
 				<< "Time: " << ts.current_time / ts.stop_time.getTimeScaleUnitFactor() << " "
-	// 			 << SIM::sim_stop_time.getTimeScaleUnit()
+// 	// 			 << SIM::sim_stop_time.getTimeScaleUnit()
 				<< endl;
 		// Now run all Reporters, Equations, that did not run during the last time step
 		for (uint i=0; i<ts.reporter.size(); i++) {

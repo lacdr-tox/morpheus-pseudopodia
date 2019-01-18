@@ -117,6 +117,15 @@ Solver for differential equations:
 		</xs:choice>
 		<xs:attribute name="name" type="cpmString" use="optional" />
 	</xs:complexType>
+	
+	<xs:complexType name="cpmEventCondition">
+		<xs:simpleContent>
+			<xs:extension base="cpmMathExpression">
+				<xs:attribute name="history" use="optional" type="cpmBoolean" default="false" />
+<!-- 				<xs:attribute name="persistent" use="optional" type="cpmBoolean" default="true" /> -->
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
 
 	<xs:complexType name="Event">
 		<xs:annotation>
@@ -127,7 +136,7 @@ Solver for differential equations:
 			</xs:documentation>
 		</xs:annotation>
 		<xs:choice minOccurs="0" maxOccurs="unbounded">
-			<xs:element name="Condition" type="cpmMathExpression" minOccurs="1" maxOccurs="1" />
+			<xs:element name="Condition" type="cpmEventCondition" minOccurs="1" maxOccurs="1" />
 			<xs:group ref="DiscreteSystemPlugins" />
 		</xs:choice>
 		<xs:attribute name="name" type="cpmString" use="optional" />
@@ -139,9 +148,11 @@ Solver for differential equations:
 				</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
+<!-- 		<xs:attribute name="condition-history" type="cpmBoolean" use="optional" default="false" /> -->
 		<xs:attribute name="trigger" type="cpmEventTriggerMode" use="optional" default="on change" />
 		<xs:attribute name="compute-time" type="cpmEventDelayMode" use="optional" default="on-trigger" />
 		<xs:attribute name="delay" type="cpmMathExpression" use="optional" default="0" />
+		<xs:attribute name="persistent" type="cpmBoolean" use="optional" default="true" />
 		- \b delay: time by which the execution of the assignments of the event are delayed.
 - \b compute-time: time at which the values of the assignments are computes on-trigger/on-execution.
 	</xs:complexType>

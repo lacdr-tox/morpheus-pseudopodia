@@ -94,13 +94,14 @@ void DelayProperty::init(const SymbolFocus& f) {
 	auto real_parent = static_cast<DelayPropertyPlugin*>(parent);
 	real_parent->assert_initialized();
 	auto delay = real_parent->getDelay();
-	const int intervals = 30;
+	const int intervals = 10;
 	if (this->value.capacity()<intervals+1) this->value.set_capacity(intervals+1);
 	this->value.clear();
-	for (int i=0; i<=intervals; i++) {
-		double t = time - (1-i/double(intervals)) * delay;
-		this->value.push_back( { t, real_parent->getInitValue(f, t)} );
-	}
+	this->value.push_back( { time, real_parent->getInitValue(f, time)});
+// 	for (int i=0; i<=intervals; i++) {
+// 		double t = time - (1-i/double(intervals)) * delay;
+// 		this->value.push_back( { t, real_parent->getInitValue(f, t)} );
+// 	}
 	initialized = true;
 	cout << "Initialized Delay " << to_str(this->value) << endl;
 };

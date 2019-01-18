@@ -9,6 +9,7 @@
      * Add support for multiple compartments and variable size compartments
      * Support delays by via DelayProperties
      * Support Events with delays
+     * Support HMC (comp)
   * Fix MacOS crash on double-clicking symbol list
   * Fix Windows SBML support (suitible library build)
 
