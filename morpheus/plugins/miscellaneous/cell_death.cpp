@@ -13,6 +13,7 @@ CellDeath::CellDeath() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::
     replace_mode.setXMLPath("Shrinkage/replace-with");
     map<string, ReplaceMode> modeMap;
     modeMap["random neighbor"]  = CellDeath::ReplaceMode::RANDOM_NB;
+    modeMap["random neighbor weighted by interface"]  = CellDeath::ReplaceMode::RANDOM_NBW;
     modeMap["longest interface"]  = CellDeath::ReplaceMode::LONGEST_IF;
     modeMap["medium"] = CellDeath::ReplaceMode::MEDIUM;
 
@@ -76,7 +77,6 @@ void CellDeath::executeTimeStep()
 		else {
 			bool about_to_die = condition(SymbolFocus(cell_id, VINT(CPM::getCell( cell_id ).getCenterL())) ) >= 1.0;
 			if (about_to_die) {
-				//cout << "Triggered cell death for cell " << cell_id << " at " << currentTime() << " due to condition" << endl;
 				if (mode == LYSIS) {
 					remove_cell = true;
 				}
@@ -88,7 +88,6 @@ void CellDeath::executeTimeStep()
 		}
 		
 		if (remove_cell) {
-			cout << "Removing cell " << cell_id << " at " << currentTime() << endl;
             SymbolFocus cell_focus(cell_id);
             const auto& interfaces = CPM::getCell(cell_id).getInterfaceLengths();
             bool to_medium = false;
@@ -103,6 +102,13 @@ void CellDeath::executeTimeStep()
               double fusion_interface_length = 0;
               // change to purely random (?)
               if (replace_mode() == CellDeath::ReplaceMode::RANDOM_NB) {
+                std::map<CPM::CELL_ID, double> p_map;
+                for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
+                  p_map.insert(std::pair<CPM::CELL_ID, double>(nb->first, 1. / ((double) interfaces.size())));
+                }
+                fusion_partner_id = getRandomFusionPartner(p_map);
+              }
+              else if (replace_mode() == CellDeath::ReplaceMode::RANDOM_NBW) {
                 std::map<CPM::CELL_ID, double> p_map;
                 for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
                   p_map.insert(std::pair<CPM::CELL_ID, double>(nb->first,
@@ -142,13 +148,11 @@ void CellDeath::executeTimeStep()
             // randomly select neighbor: nb->second/CPM::getCell(cell_id).getInterfaceLength()
             // or select longest interface
             if (to_medium){
-              cout << "Dead pixels to medium\n";
               CPM::setCellType(cell_id, CPM::getEmptyCelltypeID());
               if (dying.find(cell_id) != dying.end())
                 dying.erase(cell_id);
             }
             else{
-              cout << "Dead pixels to " << CPM::getCell(fusion_partner_id).getCellType()->getName() << endl;
               const Cell::Nodes& dying_nodes = CPM::getCell(cell_id).getNodes();
               while (!dying_nodes.empty())
               {
