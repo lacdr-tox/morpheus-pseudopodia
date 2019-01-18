@@ -63,6 +63,7 @@ public:
 	CellDeath();
 	void init(const Scope* scope) override;
 	void executeTimeStep() override;
+    CPM::CELL_ID getRandomFusionPartner(std::map<CPM::CELL_ID,double> p_map);
 };
 
 #endif // APOPTOSIS_H

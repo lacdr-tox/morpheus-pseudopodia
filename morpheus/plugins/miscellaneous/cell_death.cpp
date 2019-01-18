@@ -1,4 +1,5 @@
 #include "cell_death.h"
+#include <map>
 
 REGISTER_PLUGIN(CellDeath);
 
@@ -45,6 +46,19 @@ void CellDeath::init(const Scope* scope)
 }
 
 
+CPM::CELL_ID CellDeath::getRandomFusionPartner(std::map<CPM::CELL_ID,double> p_map){
+  CPM::CELL_ID fusion_partner_id;
+  double p = getRandom01();
+  double p_cum = 0;
+  for (auto item : p_map){
+    if ((p >= p_cum) && (p <= (p_cum + item.second))) {
+      fusion_partner_id = item.first;
+      break;
+    }
+    p_cum += item.second;
+  }
+  return fusion_partner_id;
+}
 
 
 void CellDeath::executeTimeStep()
@@ -89,21 +103,36 @@ void CellDeath::executeTimeStep()
               double fusion_interface_length = 0;
               // change to purely random (?)
               if (replace_mode() == CellDeath::ReplaceMode::RANDOM_NB) {
-                double p = getRandom01() * CPM::getCell(cell_id).getInterfaceLength();
-                double p_run = 0;
+                std::map<CPM::CELL_ID, double> p_map;
                 for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
-                  if ((p > p_run) && (p < (p_run + nb->second))) {
-                    fusion_partner_id = nb->first;
-                    break;
-                  }
-                  p_run += nb->second;
+                  p_map.insert(std::pair<CPM::CELL_ID, double>(nb->first,
+                                                               nb->second
+                                                                   / CPM::getCell(cell_id).getInterfaceLength()));
                 }
+                fusion_partner_id = getRandomFusionPartner(p_map);
               }
               else if (replace_mode() == CellDeath::ReplaceMode::LONGEST_IF) {
+                // find longest interface
+                double longest_interface = 0;
                 for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
-                  if (nb->second >= fusion_interface_length) {
-                    fusion_partner_id = nb->first;
+                  if (nb->second >= longest_interface) {longest_interface = nb->second;}
+                }
+                // find all cells that have this interface length
+                std::vector<CPM::CELL_ID> longest;
+                for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
+                  if (nb->second == longest_interface){longest.push_back(nb->first);}
+                }
+                // if there is only one longest
+                if (longest.size() == 1){
+                  fusion_partner_id = longest[0];
+                }
+                // if there are multiple longest interfaces, choose one at random
+                else if(longest.size() > 1){
+                  std::map<CPM::CELL_ID, double> p_map;
+                  for (auto cell_id : longest){
+                    p_map.insert(std::pair<CPM::CELL_ID, double>(cell_id,1./((double)longest.size())));
                   }
+                  fusion_partner_id = getRandomFusionPartner(p_map);
                 }
               }
               if (fusion_partner_id == CPM::getEmptyCelltypeID()){
@@ -113,11 +142,13 @@ void CellDeath::executeTimeStep()
             // randomly select neighbor: nb->second/CPM::getCell(cell_id).getInterfaceLength()
             // or select longest interface
             if (to_medium){
+              cout << "Dead pixels to medium\n";
               CPM::setCellType(cell_id, CPM::getEmptyCelltypeID());
               if (dying.find(cell_id) != dying.end())
                 dying.erase(cell_id);
             }
             else{
+              cout << "Dead pixels to " << CPM::getCell(fusion_partner_id).getCellType()->getName() << endl;
               const Cell::Nodes& dying_nodes = CPM::getCell(cell_id).getNodes();
               while (!dying_nodes.empty())
               {
