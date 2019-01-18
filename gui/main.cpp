@@ -7,6 +7,7 @@
 
 int main(int argc, char *argv[])
 {
+	QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 	//only allow a single instance of Morpheus
 	QtSingleApplication a(argc, argv);
 	//QApplication a(argc, argv);
