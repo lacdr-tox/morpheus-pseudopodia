@@ -131,7 +131,9 @@ class FunctionPlugin : public Plugin {
 					if (!callback) {
 						if (!evaluator)
 							parent->init();
-						callback = make_unique<CallBack>(evaluator);
+						if (!callback) {
+							callback = make_unique<CallBack>(evaluator);
+						}
 					}
 					return callback.get();
 				}

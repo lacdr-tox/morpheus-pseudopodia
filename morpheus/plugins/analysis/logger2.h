@@ -461,6 +461,7 @@ private:
 	set<string> files_opened;
 	
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> header;
+	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> header_guarding;
 	PluginParameter2<string, XMLNamedValueReader, DefaultValPolicy> separator;
 	PluginParameter2<string, XMLValueReader, DefaultValPolicy> filename;
 	

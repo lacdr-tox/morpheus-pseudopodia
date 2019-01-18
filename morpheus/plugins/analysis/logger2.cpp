@@ -3,7 +3,7 @@ int Logger::instances=0;
 
 REGISTER_PLUGIN(Logger);
 	
-Logger::Logger(){
+Logger::Logger() : AnalysisPlugin() {
 	Logger::instances++; 
     instance_id = Logger::instances;
 };
@@ -274,9 +274,14 @@ vector<CPM::CELL_ID> Logger::parseCellIDs(string cell_ids_string){
 LoggerTextWriter::LoggerTextWriter(Logger& logger, string xml_base_path) : LoggerWriterBase(logger)
 { 
 	output_scope=nullptr;
+	
 	header.setXMLPath(xml_base_path+"/header");
 	header.setDefault("true");
 	logger.registerPluginParameter(header);
+	
+	header_guarding.setXMLPath(xml_base_path+"/header-guarding");
+	header_guarding.setDefault("true");
+	logger.registerPluginParameter(header_guarding);
 	
 	map<string, string> separator_convmap;
 	separator_convmap["tab"]="\t";
@@ -414,7 +419,7 @@ void LoggerTextWriter::init() {
 			file_separation = FileSeparation::TIME;
 	}
 	
-	if (file_format == OutputFormat::CSV) {
+	if (file_format == OutputFormat::CSV ) {
 // 		if (file_separation != FileSeparation::TIME && file_separation != FileSeparation::TIME_CELL) {
 		output_symbols.push_back( output_scope->findSymbol<double>(SymbolBase::Time_symbol) );
 		csv_header.push_back(SymbolBase::Time_symbol);
@@ -463,6 +468,7 @@ void LoggerTextWriter::init() {
 					break;
 			}
 		}
+		
 		auto& symbols = logger.getInputs();
 		for (auto& s : symbols) {
 			csv_header.push_back( s->name() );
@@ -543,20 +549,25 @@ unique_ptr<ofstream> LoggerTextWriter::getOutFile(const SymbolFocus& focus, stri
 	
 	// if we already had the file just open it
 	bool file_was_opened = files_opened.find(filename) != files_opened.end();
-	if (file_was_opened)
-		return make_unique<ofstream>(filename, ofstream::out | ofstream::app);
+	if (file_was_opened) {
+		auto out = make_unique<ofstream>(filename, ofstream::out | ofstream::app);
+		*out  << setprecision(10);
+		return out;
+	}
 	
 	// first time opened : truncate and write header
 	auto out = make_unique<ofstream>(filename, ofstream::out | ofstream::trunc);
 	if (file_format == OutputFormat::CSV && header() ) {
 		//out << "#";
+		string guard =  header_guarding() ? "\"" : "";
 		bool first = true;
 		for (auto& h : csv_header) {
-			*out << (first ? "" : separator())<< "\"" << h << "\"";
+			*out << (first ? "" : separator()) << guard << h << guard;
 			first = false;
 		}
 		*out << "\n";
 	}
+	*out  << setprecision(10);
 	if (file_format == OutputFormat::MATRIX && header() ) {
 		// write header
 		// TODO Matrix header missing ...

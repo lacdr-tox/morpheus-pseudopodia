@@ -42,10 +42,11 @@ private:
 	static double membrane_length_3d(double volume);
 	double (*membrane_length)(double);
 	string symbol_name;
+	double current_step_size;
 public:
 	Diffusion(Symbol field);
 	void init(const Scope* scope) override;
-	void prepareTimeStep()  override {};
+	void prepareTimeStep(double step_size)  override { current_step_size = step_size; };
 	void executeTimeStep() override;
 	std::string XMLName() const override;
     XMLNode saveToXML() const override;

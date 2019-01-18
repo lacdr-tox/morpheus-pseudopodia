@@ -134,9 +134,11 @@ private:
 	
 	set< SymbolDependency > depend_symbols;
 	
+	friend class EventSystem;
 	friend class SystemSolver; // Allow the SystemSolver to rewire the parser's function definitions to thread-local instances
 	template <class S>
 	friend class SystemFunc;
+	
 };
 
 #ifdef HAVE_OPENMP

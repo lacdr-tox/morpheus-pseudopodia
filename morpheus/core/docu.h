@@ -294,10 +294,12 @@ An IntermediateVector Symbol is available to all expressions within a System. In
 Environment for conditionally executed set of assignments.
 
 - \b time-step: if specified, Condition is evulated in regular intervals (\b time-step). If not specified, if no time-step is provided, the minimal time-step of the input symbols is used.
-- \b trigger: whether assigments are executed when the Condition turns from false to true (trigger = "on change", as in SBML) or whenever the condition is found true (trigger="when true").
+- \b Condition: expression that must evaluate true to trigger assignments.
+- \b Condition/history: initial value of the condition. Used to determine whether an initially true condition may trigger if @trigger="on-change".
+- \b trigger: whether assigments are executed when the Condition turns from false to true (trigger = "on-change", as in SBML) or whenever the condition is found true (trigger="when-true").
 - \b delay: time by which the execution of the assignments of the event are delayed.
+- \b persistent: a delayed event who's condition fell false meanwhile does only execute if @persistent = true. (default true)
 - \b compute-time: time at which the values of the assignments are computes on-trigger/on-execution.
-- \b Condition: expression to evaluate to trigger assignments.
 
 \section Example
 Set symbol "c" (e.g. assume it's a CellProperty) to 1 after 1000 simulation time units

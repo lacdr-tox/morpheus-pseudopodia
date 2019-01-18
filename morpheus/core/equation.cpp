@@ -31,4 +31,7 @@ void Equation::report()
 			symbol.set(f,expression(f));
 		}
 	}
+	// Make equations always run
+	prepared_time_step = SIM::getTime() - valid_time;
+	if (prepared_time_step<0) prepared_time_step = 0;
 }

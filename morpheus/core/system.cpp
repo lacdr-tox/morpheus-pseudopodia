@@ -71,7 +71,7 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 		solver_spec.time_scaling = 1.0;
 		getXMLAttribute(node,"time-scaling",solver_spec.time_scaling);
 		solver_spec.epsilon = 1e-4;
-		getXMLAttribute(node,"solver-eps",solver_spec.epsilon);
+		getXMLAttribute(node,"solver-eps",solver_spec.epsilon,true);
 	}
 	else {
 		solver_spec.method = SystemSolver::Method::Discrete;
@@ -259,6 +259,11 @@ void System::init() {
 	//        Creating blueprint solver for thread 1
 	/////////////////////////////////////////
 	solvers.clear();
+	if (!target_defined) {
+		setTimeStep(-1);
+// 		return;
+	}
+		
 	solvers.push_back(make_shared<SystemSolver>(local_scope, evals, vec_evals, solver_spec));
 
 }
@@ -468,6 +473,7 @@ SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFun
 					cout << "System: Adding scaling to noise function in SystemSolver: " << eval->expression << endl;
 				break;
 			case SystemFunc<double>::EQN:
+				cout << "SystemSolver::  Registering equation hook  " << eval->symbol_name << "=" << eval->expression << endl;
 				equations.push_back(eval);
 				if (!eval->global_symbol) eval->global_symbol = scope->findRWSymbol<double>(eval->symbol_name);
 				eval->cache_idx = cache->addLocal(eval->symbol_name,0.0);
@@ -727,7 +733,8 @@ void SystemSolver::fetchSymbols(const SymbolFocus& f)
 		}
 	}
 	for (const auto& eval : vec_rules) {
-		cache->setLocal(eval->cache_idx, eval->global_symbol->get(f));
+		if (eval->type == SystemFunc<VDOUBLE>::RULE || eval->type == SystemFunc<VDOUBLE>::EQN)
+			cache->setLocal(eval->cache_idx, eval->global_symbol->get(f));
 	}
 	
 	// adjust time for time scaling
@@ -755,10 +762,10 @@ void SystemSolver::writeSymbolsToBuffer(const SymbolFocus& f)
 		if (eval->type == SystemFunc<double>::ODE || eval->type == SystemFunc<double>::RULE /*|| eval->type == SystemFunc<double>::EQN */) {
 			eval->global_symbol->setBuffer(f,cache->getLocalD(eval->cache_idx ));
 		}
-		
 	}
 	for (const auto& eval : vec_rules) {
-		eval->global_symbol->setBuffer(f,cache->getLocalV(eval->cache_idx ));
+		if (eval->type == SystemFunc<VDOUBLE>::RULE)
+			eval->global_symbol->setBuffer(f,cache->getLocalV(eval->cache_idx ));
 	}
 }
 
@@ -777,10 +784,10 @@ void SystemSolver::writeSymbolsToExtBuffer(vector<double>* ext_buffer) {
 }
 
 void SystemSolver::updateLocalVars(const SymbolFocus& f) {
-	if (var_initializers.empty()) return;
 	for (uint i =0; i<var_initializers.size(); i++) {
 		cache->setLocal(var_initializers[i]->cache_idx, var_initializers[i]->evaluator->get(f));
 	}
+	EquationHooks(f,false);
 }
 
 
@@ -812,7 +819,7 @@ void SystemSolver::check_result(const VDOUBLE& value , const SystemFunc<VDOUBLE>
 	}
 }
 
-void SystemSolver::EquationHooks(const SymbolFocus& f) {
+void SystemSolver::EquationHooks(const SymbolFocus& f, bool write_extern) {
 	// equations is not what it appears to be ....
 	if (equations.empty() && vec_equations.empty())
 		return;
@@ -825,14 +832,14 @@ void SystemSolver::EquationHooks(const SymbolFocus& f) {
 			if (e.global_symbol->granularity() == Granularity::Cell) {
 				auto delay = static_pointer_cast<const DelayPropertySymbol>(e.global_symbol);
 				auto global_time = cache->getLocalD(local_time_idx) / spec.time_scaling;
-				delay->set(f, global_time, e.k0);
+				if (write_extern) delay->set(f, global_time, e.k0);
 				this->cache->setLocal(e.cache_idx, delay->get(f, global_time));
 // 				cout << "Setting " << delay->name() << " = {"<< global_time << "->" << e.k0<< "}" << endl;
 			}
 			else if (e.global_symbol->granularity() == Granularity::Global) {
 				auto delay = static_pointer_cast<const DelayVariableSymbol>(e.global_symbol);
 				auto global_time = cache->getLocalD(local_time_idx) / spec.time_scaling;
-				delay->set(f, global_time, e.k0);
+				if (write_extern) delay->set(f, global_time, e.k0);
 				this->cache->setLocal(e.cache_idx, delay->get(f, global_time));
 // 				cout << "Setting " << delay->name() << " = {"<< global_time << "->" << e.k0<< "}" << endl;
 			}
@@ -840,7 +847,7 @@ void SystemSolver::EquationHooks(const SymbolFocus& f) {
 				throw string("Unsupported granularity for delayed Symbol ") + e.global_symbol->name() + " of type " + e.global_symbol->linkType();
 		}
 		else {
-			
+// 			cout << "Setting " << e.symbol_name << " = {"<< cache->getLocalD(local_time_idx) << "->" << e.k0<< "}" << endl;
 			this->cache->setLocal(e.cache_idx, e.k0);
 		}
 	}
@@ -849,8 +856,6 @@ void SystemSolver::EquationHooks(const SymbolFocus& f) {
 		e.k0 = e.evaluator->get(f); check_result(e.k0,e);
 		this->cache->setLocal(e.cache_idx, e.k0);
 	}
-	
-	EquationHooks(f);
 }
 
 void SystemSolver::Discrete(const SymbolFocus& f) {
@@ -1062,10 +1067,10 @@ void SystemSolver::RungeKutta_adaptive(const SymbolFocus& f, double ht) {
 		}
 		total_ht += local_ht;
 		cache->setLocal(local_time_idx, starttime + total_ht);
+		EquationHooks(f,true);
 		
 		if (total_ht >= ht) break;
 
-		EquationHooks(f);
 		
 		if (max_err < 0.75) {
 			local_ht = safety * local_ht * pow(max_err, -0.20);
@@ -1306,11 +1311,18 @@ EventSystem::EventSystem() : System(DISCRETE_SYS), InstantaneousProcessPlugin( T
 	trigger_on_change.setXMLPath("trigger");
 	trigger_on_change.setConversionMap({{"when true",false},{"on change",true}});
 	registerPluginParameter(trigger_on_change);
+	xml_condition_history.setXMLPath("Condition/history");
+	xml_condition_history.setDefault("false");
+	registerPluginParameter(xml_condition_history);
+	persistent.setXMLPath("persistent");
+	persistent.setDefault("true");
+	registerPluginParameter(persistent);
 };
 
 void EventSystem::loadFromXML ( const XMLNode node, Scope* scope )
 {
     TimeStepListener::loadFromXML ( node, scope );
+	registerInputSymbol(SIM::findGlobalSymbol<double>(SymbolBase::Time_symbol));
 
 	// Allow manual adjustment that cannot be overridden
 	if (timeStep()>0)
@@ -1331,6 +1343,7 @@ void EventSystem::loadFromXML ( const XMLNode node, Scope* scope )
 	else {
 		System::loadFromXML(node, scope);
 	}
+	
 }
 
 void EventSystem::init ( const Scope* scope)
@@ -1358,9 +1371,12 @@ void EventSystem::executeTimeStep()
 			
 			double cond = condition->get(focus);
 			auto history_val = condition_history.find(focus);
-			double trigger = ( history_val != condition_history.end()? history_val->second <= 0.0 : true) && cond;
+			
+			double trigger = ( history_val != condition_history.end()? history_val->second <= 0.0 :  ! xml_condition_history()) && cond;
+			
 			if (trigger) {
 				double d = delay(focus);
+// 				cout << "Delay " << d << " at " << to_str(time) << endl;
 				if (d == 0) {
 					compute(focus);
 				}
@@ -1391,14 +1407,19 @@ void EventSystem::executeTimeStep()
 	
 	if (!delayed_assignments.empty()) {
 		auto last = delayed_assignments.upper_bound(time);
-		if (last == delayed_assignments.begin()) return;
+		if (last == delayed_assignments.begin())  {
+			return;
+		}
 		
 		for (auto assignment = delayed_assignments.begin(); assignment!=last;) {
-			if (delay_compute()) {
-				compute(assignment->second.focus);
-			}
-			else {
-				applyBuffer(assignment->second.focus, assignment->second.value_cache);
+			if (persistent() || (condition->get(assignment->second.focus) > 0) ) {
+// 				cout << "Delay exec at " << to_str(time) << endl;
+				if (delay_compute()) {
+					compute(assignment->second.focus);
+				}
+				else {
+					applyBuffer(assignment->second.focus, assignment->second.value_cache);
+				}
 			}
 			delayed_assignments.erase(assignment++);
 		}

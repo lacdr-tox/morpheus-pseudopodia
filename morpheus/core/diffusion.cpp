@@ -48,7 +48,7 @@ double Diffusion::membrane_length_3d(double volume)
 void Diffusion::executeTimeStep()
 {
 	if (pde_field) {
-		pde_field->getField()->doDiffusion(timeStep());
+		pde_field->getField()->doDiffusion(current_step_size);
 	}
 	else if (mem_field) {
 		
@@ -63,7 +63,7 @@ void Diffusion::executeTimeStep()
 					continue;
 				auto field = mem_field->getField(*f);
 				field->updateNodeLength( node_length_along_equator );
-				field->doDiffusion(timeStep());
+				field->doDiffusion(current_step_size);
 		}
 	}
 }

@@ -232,6 +232,7 @@ bool AbstractAttribute::set(QString att)
 	else
 	{
 		cout << "Value: '" << value.toStdString() << "' for attribute: '" << this->name.toStdString() << "' from Node: '" << parentNode.nodeName().toStdString() << "', isn't valid!" << endl;
+		cout << "PAttern is " << this->getPattern().toStdString() << endl;
 		return false;
 	}
 }

@@ -122,12 +122,12 @@ class ConstantSymbol : public PrimitiveConstantSymbol<T> {
 	public:
 		ConstantSymbol( Container<T>* parent ) : PrimitiveConstantSymbol<T>(parent->getSymbol(), "", T()), parent(parent), initialized(false) { };
 		std::string linkType() const override { return "ConstantLink"; }
-		void init() const { this->value = parent->getInitValue(SymbolFocus::global); }
+		void init() const { this->value = parent->getInitValue(SymbolFocus::global);  initialized = true;}
 		const string& description() const override { return parent->getName(); }
 		typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const override { if ( !initialized) init(); return this->get(f); }
 	private:
 		Container<T>* parent;
-		bool initialized;
+		mutable bool initialized;
 		friend class Container<T>;
 };
 
@@ -144,12 +144,12 @@ class VariableSymbol : public PrimitiveVariableSymbol<T> {
 	public:
 		VariableSymbol(Container<T>* parent ) : PrimitiveVariableSymbol<T>(parent->getSymbol(), "", T()), parent(parent), initialized(false) { };
 		std::string linkType() const override { return "VariableLink"; }
-		void init() const { this->value = parent->getInitValue(SymbolFocus::global); }
+		void init() const { this->value = parent->getInitValue(SymbolFocus::global); initialized = true; cout << "set init value " << this->name() << "=" << this->value << endl; }
 		const string& description() const override { return parent->getName(); }
 		typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const override { if ( !initialized) init();  return this->get(f); }
 	private:
 		Container<T>* parent;
-		bool initialized;
+		mutable bool initialized;
 		friend class Container<T>;
 };
 
@@ -169,8 +169,10 @@ class PropertySymbol : public PrimitivePropertySymbol<T> {
 // 		typename TypeInfo<T>::SReturn get(const SymbolFocus& f) const override { return getCellProperty(f)->value; }
 		typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const override {
 			auto p=getCellProperty(f); 
-			if (!p->initialized) 
+			if (!p->initialized)  {
 				p->value = parent->getInitValue(f);
+				p->initialized = true;
+			}
 			return p->value;
 		}
 		void init() const { 
@@ -178,7 +180,8 @@ class PropertySymbol : public PrimitivePropertySymbol<T> {
 			auto p = dynamic_pointer_cast<Property<T,T>>(this->celltype->default_properties[this->property_id]);
 			assert(p);
 			try { 
-				static_cast<Property<T,T>*>(this->celltype->default_properties[this->property_id].get())->value = parent->getInitValue(SymbolFocus::global); 
+				static_cast<Property<T,T>*>(this->celltype->default_properties[this->property_id].get())->value = parent->getInitValue(SymbolFocus::global);
+				static_cast<Property<T,T>*>(this->celltype->default_properties[this->property_id].get())->initialized = true;
 			} catch (...) { cout << "Warning: Could not initialize default property "<<  this->name() << " of celltype " << this->celltype->getName() << "." << endl; }
 			
 		}

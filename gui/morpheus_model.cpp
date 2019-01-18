@@ -37,7 +37,6 @@ MorphModel::MorphModel(QObject *parent) :
 		// Now we clear the history of changes ...
 		rootNodeContr->saved();
 		rootNodeContr->clearTrackedChanges();
-		
 		initModel();
 	}
 	catch (QString& error) {
@@ -624,7 +623,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		}
 	}
 	
-	document.documentElement().setAttribute( "version",QString::number(fix_version) );
+	document.documentElement().setAttribute( "version", QString::number(fix_version) );
 	if (fix_version != morpheus_ml_version) {
 		auto new_edits = applyAutoFixes(document);
 		edits.append(new_edits);
