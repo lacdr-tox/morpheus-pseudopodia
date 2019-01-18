@@ -140,6 +140,20 @@ bool containsNaryRelational(ASTNode* m) {
 	return false;
 }
 
+void replaceNaryRelational(ASTNode* m) {
+	switch (m->getType()) {
+		case AST_RELATIONAL_EQ:  m->setType(AST_FUNCTION); m->setName("eq"); break;
+		case AST_RELATIONAL_LEQ: m->setType(AST_FUNCTION); m->setName("leq"); break;
+		case AST_RELATIONAL_GEQ: m->setType(AST_FUNCTION); m->setName("geq"); break;
+		case AST_RELATIONAL_LT:  m->setType(AST_FUNCTION); m->setName("lt"); break;
+		case AST_RELATIONAL_GT:  m->setType(AST_FUNCTION); m->setName("gt"); break;
+		default: break;
+	}
+	for (uint i=0; i<m->getNumChildren(); i++) {
+		(replaceNaryRelational(m->getChild(i)));
+	}
+}
+
 }
 
 QString s2q(const std::string& s) { return QString::fromStdString(s); }
@@ -1025,15 +1039,10 @@ QString SBMLImporter::formulaToString(const ASTNode* math, bool make_concentrati
 	replaceDelays(m.get());
 	
 	ASTTool::replaceRateOf(m.get());
+	ASTTool::replaceNaryRelational(m.get());
 	std::unique_ptr<char[]> c;
 #if LIBSBML_VERSION >= LIBSBML_L3PARSER_VERSION
-	if (ASTTool::containsNaryRelational(m.get())) {
-		// TODO: Better manually convert nary relational functions into regular functions and use the L3 version afterwards.
-		c = std::unique_ptr<char[]>(SBML_formulaToString(m.get()));
-	}
-	else {
-		c = std::unique_ptr<char[]>(SBML_formulaToL3String(m.get()));
-	}
+	c = std::unique_ptr<char[]>(SBML_formulaToL3String(m.get()));
 	
 #else
 	c = std::unique_ptr<char[]>(SBML_formulaToString(m.get()));
