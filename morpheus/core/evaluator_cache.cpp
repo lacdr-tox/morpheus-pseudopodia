@@ -1,6 +1,6 @@
 #include "evaluator_cache.h"
 
-EvaluatorCache::NS::NS(std::__cxx11::string name, const Scope* scope) :
+EvaluatorCache::NS::NS(string name, const Scope* scope) :
  scope(scope), ns_name(name) {}
 
 set<Symbol> EvaluatorCache::NS::getUsedSymbols() const
