@@ -34,6 +34,7 @@ private:
     unsigned int maxGrowthTime_;
     unsigned int timeNoExtension_;
     static constexpr auto timeNoExtensionLimit_ = 20;
+    unsigned int timeBetweenExtensions_;
     RetractionMethod paramRetractionMethod_;
     RetractionMethod currRetractionMethod_;
     VDOUBLE polarisationDirection_;
@@ -42,7 +43,6 @@ private:
     static constexpr auto retractprob_ = .3;
     static constexpr auto extendprob_ = .3;
     static constexpr auto touch_retractprob = 1./50;
-    static constexpr auto time_between_extensions = 1./100;
     State state_;
     CPM::CELL_ID cellId;
     const CPM::LAYER *_cpm_layer;
@@ -62,7 +62,7 @@ public:
     Pseudopod(unsigned int maxGrowthTime, const CPM::LAYER *cpm_layer, CPM::CELL_ID cellId,
               PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> *movingDirection,
               PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field, RetractionMethod retractionMethod,
-              double kappaInit, double kappaCont, TouchBehavior touchBehavior);
+              double kappaInit, double kappaCont, TouchBehavior touchBehavior, unsigned int timeBetweenExtensions);
 
     State state() const;
     void timeStep();

@@ -33,6 +33,10 @@ Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpe
     maxPseudopods.setDefault("1");
     registerPluginParameter(maxPseudopods);
 
+    timeBetweenExtensions.setXMLPath("time-between-extensions");
+    timeBetweenExtensions.setDefault("1");
+    registerPluginParameter(timeBetweenExtensions);
+
     field.setXMLPath("field");
     field.setGlobalScope();
     registerPluginParameter(field);
@@ -86,7 +90,7 @@ void Pseudopodia::executeTimeStep() {
         for (auto &cellId : cells) {
             auto pseudopod = Pseudopod((unsigned int) maxGrowthTime(), cpmLayer.get(),
                                        cellId, &movingDirection, &field, retractionMethod(), directionalStrengthInit(),
-                                       directionalStrengthCont(), touchBehavior());
+                                       directionalStrengthCont(), touchBehavior(), timeBetweenExtensions());
             pseudopods.insert(make_pair(cellId, vector<Pseudopod>((size_t) maxPseudopods(), pseudopod)));
         }
     });

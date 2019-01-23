@@ -19,11 +19,11 @@ static VDOUBLE RandomVonMisesPoint(VDOUBLE mu, double kappa) {
 Pseudopod::Pseudopod(unsigned int maxGrowthTime, const CPM::LAYER *cpm_layer, CPM::CELL_ID cellId,
           PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> *movingDirection,
           PluginParameter2<double, XMLReadWriteSymbol, RequiredPolicy> *field, RetractionMethod retractionMethod,
-          double kappaInit, double kappaCont, TouchBehavior touchBehavior) :
+          double kappaInit, double kappaCont, TouchBehavior touchBehavior, unsigned int timeBetweenExtensions) :
         maxGrowthTime_(maxGrowthTime), _cpm_layer(cpm_layer), cellId(cellId),
         movingDirection_(movingDirection), state_(State::INACTIVE), field_(field),
         timeLeftForGrowth_(0), timeNoExtension_(0), paramRetractionMethod_(retractionMethod), currRetractionMethod_(retractionMethod), kappaInit_(kappaInit),
-        kappaCont_(kappaCont), touchBehavior_(touchBehavior) {
+        kappaCont_(kappaCont), touchBehavior_(touchBehavior), timeBetweenExtensions_(timeBetweenExtensions){
     bundlePositions_.reserve(maxGrowthTime);
 }
 
@@ -74,6 +74,7 @@ void Pseudopod::growBundle() {
         // No extension this time
         timeNoExtension_++;
         if (timeNoExtension_ > timeNoExtensionLimit_) {
+            cout << "long time without extension" << endl;
             setRetracting(paramRetractionMethod_);
         }
         return;
@@ -164,7 +165,7 @@ void Pseudopod::timeStep() {
             retractBundle();
             break;
         case State::INACTIVE:
-            if(getRandom01() < time_between_extensions) {
+            if(getRandom01() < 1.0 / timeBetweenExtensions_) {
                 state_ = State::INIT;
             }
             break;
