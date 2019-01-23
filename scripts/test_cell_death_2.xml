@@ -15,7 +15,7 @@
     </Space>
     <Time>
         <StartTime value="0"/>
-        <StopTime value="1"/>
+        <StopTime value="200"/>
         <TimeSymbol symbol="time"/>
     </Time>
     <CPM>
@@ -43,7 +43,7 @@
             <VolumeConstraint target="target_volume" strength="lambdav"/>
             <CellDeath>
                 <Condition>time > t_death</Condition>
-                <Shrinkage remove-volume="50" target-volume="target_volume" replace-with="longest interface"/>
+                <Shrinkage remove-volume="3" target-volume="target_volume" replace-with="medium"/>
             </CellDeath>
             <Property symbol="target_volume" value="100"/>
         </CellType>

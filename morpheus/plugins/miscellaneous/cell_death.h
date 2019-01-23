@@ -71,7 +71,7 @@ private:
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> condition;
 	PluginParameter2<double, XMLReadWriteSymbol, OptionalPolicy> target_volume;
     PluginParameter2<double, XMLEvaluator, OptionalPolicy> remove_volume;
-    PluginParameter2<ReplaceMode, XMLNamedValueReader, RequiredPolicy> replace_mode;
+    PluginParameter2<ReplaceMode, XMLNamedValueReader, DefaultValPolicy> replace_mode;
 
 	CellType* celltype;
 	Mode mode;

@@ -10,15 +10,14 @@ CellDeath::CellDeath() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::
 	registerPluginParameter(target_volume);
     remove_volume.setXMLPath("Shrinkage/remove-volume");
     registerPluginParameter(remove_volume);
-    replace_mode.setXMLPath("Shrinkage/replace-with");
     map<string, ReplaceMode> modeMap;
     modeMap["random neighbor"]  = CellDeath::ReplaceMode::RANDOM_NB;
     modeMap["random neighbor weighted by interface"]  = CellDeath::ReplaceMode::RANDOM_NBW;
     modeMap["longest interface"]  = CellDeath::ReplaceMode::LONGEST_IF;
     modeMap["medium"] = CellDeath::ReplaceMode::MEDIUM;
-
-    //    replace_mode.setDefault("medium");
     replace_mode.setConversionMap(modeMap);
+    replace_mode.setXMLPath("replace-with/text" );
+    replace_mode.setDefault("medium");
     registerPluginParameter(replace_mode);
 }
 
@@ -100,7 +99,6 @@ void CellDeath::executeTimeStep()
             }
             else {
               double fusion_interface_length = 0;
-              // change to purely random (?)
               if (replace_mode() == CellDeath::ReplaceMode::RANDOM_NB) {
                 std::map<CPM::CELL_ID, double> p_map;
                 for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
@@ -141,7 +139,7 @@ void CellDeath::executeTimeStep()
                   fusion_partner_id = getRandomFusionPartner(p_map);
                 }
               }
-              if (fusion_partner_id == CPM::getEmptyCelltypeID()){
+              if (CPM::getCell(fusion_partner_id).getCellType()->getID() == CPM::getEmptyCelltypeID()){
                 to_medium = true;
               }
             }
