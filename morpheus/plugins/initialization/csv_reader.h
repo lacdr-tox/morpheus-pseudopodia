@@ -8,6 +8,7 @@ class CSVReader : public Population_Initializer
 {
 private:
 	PluginParameter2<string, XMLValueReader, RequiredPolicy> filename;
+    PluginParameter2<VDOUBLE, XMLEvaluator, DefaultValPolicy > scaling;
 
 	CellType* cell_type;
 

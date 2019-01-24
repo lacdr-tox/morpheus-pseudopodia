@@ -20,25 +20,33 @@ CPM::CELL_ID createCell(CellType* ct, VINT newPos, CPM::CELL_ID cellID = CPM::NO
 CSVReader::CSVReader() {
     filename.setXMLPath("filename");
     registerPluginParameter(filename);
+
+    scaling.setXMLPath("scaling");
+    scaling.setDefault("1,1,1");
+    registerPluginParameter(scaling);
+
 }
 
 vector<CPM::CELL_ID> CSVReader::run(CellType *ct) {
     cell_type = ct;
     vector<CPM::CELL_ID> cells;
 
+    auto scaler = scaling(SymbolFocus());
     auto file_content = readTextFile(filename());
 
     boost::char_separator<char> sep("\n");
     boost::tokenizer<boost::char_separator<char> > lines(file_content, sep);
     boost::escaped_list_separator<char> els('\\', ',','\"');
+
     for(auto& l: lines ) {
-        if(l.front() == '#') continue;
+        if(l.front() == '#') continue; //skip comment lines
         //TODO make header detection
         boost::tokenizer<boost::escaped_list_separator<char>> tok(l, els);
         vector<string> tokens;
         copy(tok.begin(), tok.end(), back_inserter<vector<string> >(tokens));
         if(tokens.size() < 3) throw MorpheusException(string("Expecting at least 3 fields on line ") + l, getXMLNode());
-        VINT newPos{stoi(tokens[1]), stoi(tokens[2]), tokens.size() == 4 ? stoi(tokens[3]) : 0};
+        VINT csvPos{stoi(tokens[1]), stoi(tokens[2]), tokens.size() == 4 ? stoi(tokens[3]) : 0};
+        auto newPos = VINT(csvPos * scaler);
         auto new_cell = createCell(cell_type, newPos, (CPM::CELL_ID) stoul(tokens[0]));
         if (new_cell != CPM::NO_CELL) cells.push_back(new_cell);
     }

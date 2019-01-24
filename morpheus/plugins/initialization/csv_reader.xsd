@@ -12,6 +12,7 @@
 			<xs:appinfo>Initialization</xs:appinfo>
 		</xs:annotation>
 		<xs:attribute name="filename" use="required" type="cpmSystemFile" />
+		<xs:attribute name="scaling" type="cpmVectorMathExpression" default="1.0, 1.0, 1.0"/>
 	</xs:complexType>
 
 </xs:schema>
