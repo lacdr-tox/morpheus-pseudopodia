@@ -93,11 +93,11 @@ void replaceFunction(ASTNode* node, FunctionDefinition* function)
 		if (node->getName() == function->getId()) {
 // 			cout << "Found function to replace " << node->getName() << endl;
 			if (function->getNumArguments() != node->getNumChildren())
-				throw SBMLConverterException(SBMLConverterException::SBML_INVALID, std::string("Number function arguments does not match its definition."));
+				throw SBMLConverterException(SBMLConverterException::SBML_INVALID, string("Number function arguments does not match its definition."));
 			ASTNode* inline_function = function->getMath()->deepCopy();
 			for (uint i=0; i<node->getNumChildren(); i++ ) {
 // 				cout << "Child " << i << " " << function->getArgument(i)->getName() << "->" << node->getChild(i)->getName() << endl;
-				ASTTool::renameSymbol(inline_function, std::string(function->getArgument(i)->getName()), std::string(node->getChild(i)->getName()));
+				ASTTool::renameSymbol(inline_function, string(function->getArgument(i)->getName()), string(node->getChild(i)->getName()));
 			}
 			*node = *(inline_function->getChild(inline_function->getNumChildren()-1));
 // 			node->swapChildren(inline_function);
@@ -156,7 +156,7 @@ void replaceNaryRelational(ASTNode* m) {
 
 }
 
-QString s2q(const std::string& s) { return QString::fromStdString(s); }
+QString s2q(const string& s) { return QString::fromStdString(s); }
 
 
 void  SBMLImporter::replaceDelays(ASTNode* math) {
@@ -186,7 +186,7 @@ void  SBMLImporter::replaceDelays(ASTNode* math) {
 		math->removeChild(1);
 		math->removeChild(0);
 		math->setType(AST_NAME);
-		math->setDefinitionURL("");
+		math->getDefinitionURL()->clear();
 		math->setName(d.delayed_symbol.toLatin1());
 	}
 	
@@ -689,7 +689,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 			title = sbml_model->getId();
 		description->firstActiveChild("Title")->setText(s2q(title));
 
-		std::string details = sbml_doc->getNotesString();
+		string details = sbml_doc->getNotesString();
 		description->firstActiveChild("Details")->setText(s2q(details));
 	}
 	
@@ -708,7 +708,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 			comp.name = s2q(sbml_model->getCompartment(i)->getId());
 
 			comp.init_value = sbml_model->getCompartment(i)->getSize();
-			if (std::isnan(comp.init_value)) comp.init_value=1;
+			if (isnan(comp.init_value)) comp.init_value=1;
 
 			auto init = sbml_model->getInitialAssignment(comp.name.toStdString());
 			auto rule=sbml_model->getAssignmentRuleByVariable(comp.name.toStdString());
@@ -929,6 +929,8 @@ void SBMLImporter::addSBMLSpecies(Model* sbml_model)
 		concentration_map[desc.name] = QString("c") + desc.name;
 		auto cFun = target_scope->insertChild("Function");
 		cFun->attribute("symbol")->set(concentration_map[desc.name]);
+		cFun->attribute("name")->setActive(true);
+		cFun->attribute("name")->set(desc.name);
 		if (desc.quantity == Quantity::Amount)
 			cFun->firstActiveChild("Expression")->setText(desc.name + "/" + desc.compartment);
 		else
@@ -1022,7 +1024,7 @@ void SBMLImporter::addSBMLFunctions(Model* sbml_model)
 
 QString SBMLImporter::formulaToString(const ASTNode* math, bool make_concentration)
 {
-	auto m = std::unique_ptr<ASTNode>(math->deepCopy());
+	auto m = unique_ptr<ASTNode>(math->deepCopy());
 // 	XMLOutputStream xos(cout);
 // 	m->write(xos); 
 	ASTTool::removeUnits(m.get());
@@ -1040,12 +1042,12 @@ QString SBMLImporter::formulaToString(const ASTNode* math, bool make_concentrati
 	
 	ASTTool::replaceRateOf(m.get());
 	ASTTool::replaceNaryRelational(m.get());
-	std::unique_ptr<char[]> c;
+	unique_ptr<char[]> c;
 #if LIBSBML_VERSION >= LIBSBML_L3PARSER_VERSION
-	c = std::unique_ptr<char[]>(SBML_formulaToL3String(m.get()));
+	c = unique_ptr<char[]>(SBML_formulaToL3String(m.get()));
 	
 #else
-	c = std::unique_ptr<char[]>(SBML_formulaToString(m.get()));
+	c = unique_ptr<char[]>(SBML_formulaToString(m.get()));
 #endif
 // 	m->write(xos); 
 // 	cout << "\n" << c.get() << endl;;

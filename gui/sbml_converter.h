@@ -66,10 +66,10 @@ public:
 		SBML_INTERNAL_ERROR
 	};
 
-	SBMLConverterException(SBMLConverterException::ExceptionType type, std::string reason = "") : d_type(type), d_reason(reason), std::runtime_error("SBMLConverterException") {};
+	SBMLConverterException(SBMLConverterException::ExceptionType type, string reason = "") : d_type(type), d_reason(reason), std::runtime_error("SBMLConverterException") {};
 	~SBMLConverterException() throw() {};
 	ExceptionType type() { return d_type; }
-	std::string type2name() {
+	string type2name() {
 		switch (d_type) {
 			case FILE_READ_ERROR : return "FILE_READ_ERROR";
 			case SBML_LEVEL_GREATER_2: return "SBML_LEVEL_GREATER_2";
@@ -83,7 +83,7 @@ public:
 				return "Unknown SBMLConverterException";
 		}
 	};
-	std::string what() {
+	string what() {
 		return d_reason;
 	}
 // 	const char* what() override {
@@ -91,7 +91,7 @@ public:
 // 	}
 private:
 	ExceptionType d_type;
-	std::string d_reason;
+	string d_reason;
 };
 
 
