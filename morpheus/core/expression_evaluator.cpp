@@ -290,6 +290,7 @@ unique_ptr< mu::Parser > createMuParserInstance()
 		string name_chars = "0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZαβγδεζηθικλμνξοπρσςτυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ.";
 		parser->DefineNameChars(name_chars.c_str());
 
+		// These constants might also move to a super-global scope, such that they may be overridden.
 		parser->DefineConst("false",		0);
 		parser->DefineConst("true",			1);
 		parser->DefineConst("pi",			M_PI);
@@ -297,6 +298,7 @@ unique_ptr< mu::Parser > createMuParserInstance()
 		parser->DefineConst("avogadro",		6.02214179e23);
 		
 		parser->DefineInfixOprt("+",		&unary_plus);
+		
 		parser->DefineFun( "plus",			&getPlusMulti,  true);
 		parser->DefineFun( "times",			&getTimesMulti,  true);
 		
@@ -309,7 +311,12 @@ unique_ptr< mu::Parser > createMuParserInstance()
 
 // logicals
 		parser->DefineFun( "if",			&getIf, true);
+		parser->DefineFun("piecewise", 		&piecewiseMulti, true);
 		parser->DefineInfixOprt("!",		&getNOT, mu::prINFIX, true);
+		parser->DefineOprt("and",			&getAND, mu::prLAND, mu::oaLEFT, true);
+		parser->DefineOprt("or",			&getOR, mu::prLOR, mu::oaLEFT, true);
+		parser->DefineOprt("xor",			&getXOR, mu::prLOR, mu::oaLEFT, true);
+
 		parser->DefineFun("leq",			&getLEQmulti, true);
 		parser->DefineFun("geq",			&getGEQmulti, true);
 		parser->DefineFun("lt",				&getLTmulti, true);
@@ -317,19 +324,13 @@ unique_ptr< mu::Parser > createMuParserInstance()
 		parser->DefineFun("eq",				&getEQ, true);
 		parser->DefineFun("neq",			&getNEQ, true);
 		
-		parser->DefineFun("and",			&getANDmulti, true);
-		parser->DefineFun("or",				&getORmulti, true);
-		parser->DefineFun("xor",			&getXORmulti, true);
+		parser->DefineFun("and_f",		&getANDmulti, true);
+		parser->DefineFun("or_f",			&getORmulti, true);
+		parser->DefineFun("xor_f",		&getXORmulti, true);
+		parser->DefineFun("not_f",		&getNOT, true);
 		parser->DefineFun("implies",		&getImplies, true);
 		
-// 		parser->DefineOprt("and",			&getAND, mu::prLAND, mu::oaLEFT, true);
-// 		parser->DefineOprt("or",			&getOR, mu::prLOR, mu::oaLEFT, true);
-// 		parser->DefineOprt("xor",			&getXOR, mu::prLOR, mu::oaLEFT, true);
-		
-		// SBML Import compatibility (from MathML <piecewise> construct)
-// 		parser->DefineFun("piecewise", 		&piecewise_3_function, true);
-// 		parser->DefineFun("piecewise", 		&piecewise_5_function, true);
-		parser->DefineFun("piecewise", 		&piecewiseMulti, true);
+// SBML Import compatibility (from MathML <piecewise> construct)
 		parser->DefineFun("ceil",			&getCeil, true);
 		parser->DefineFun("floor",			&getFloor, true);
 		parser->DefineFun("factorial",		&getFactorial, true);

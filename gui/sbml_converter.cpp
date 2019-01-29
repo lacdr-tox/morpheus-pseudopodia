@@ -87,6 +87,7 @@ void replaceSymbolByValue(ASTNode* node, const string& name, double value)
 		replaceSymbolByValue(node->getChild(i), name, value);
 	}
 }
+
 void replaceFunction(ASTNode* node, FunctionDefinition* function)
 {
 	if (node->getType() == AST_FUNCTION) {
@@ -151,6 +152,19 @@ void replaceNaryRelational(ASTNode* m) {
 	}
 	for (uint i=0; i<m->getNumChildren(); i++) {
 		(replaceNaryRelational(m->getChild(i)));
+	}
+}
+
+void replaceNaryLogical(ASTNode* m) {
+		switch (m->getType()) {
+		case AST_LOGICAL_AND:  m->setType(AST_FUNCTION); m->setName("and_f"); break;
+		case AST_LOGICAL_OR:   m->setType(AST_FUNCTION); m->setName("or_f"); break;
+		case AST_LOGICAL_XOR:  m->setType(AST_FUNCTION); m->setName("xor_f"); break;
+		case AST_LOGICAL_NOT:  m->setType(AST_FUNCTION); m->setName("not_f"); break;
+		default: break;
+	}
+	for (uint i=0; i<m->getNumChildren(); i++) {
+		(replaceNaryLogical(m->getChild(i)));
 	}
 }
 
@@ -1042,6 +1056,7 @@ QString SBMLImporter::formulaToString(const ASTNode* math, bool make_concentrati
 	
 	ASTTool::replaceRateOf(m.get());
 	ASTTool::replaceNaryRelational(m.get());
+	ASTTool::replaceNaryLogical(m.get());
 	unique_ptr<char[]> c;
 #if LIBSBML_VERSION >= LIBSBML_L3PARSER_VERSION
 	c = unique_ptr<char[]>(SBML_formulaToL3String(m.get()));
