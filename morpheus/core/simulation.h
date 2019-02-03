@@ -106,7 +106,13 @@ private:
 
 namespace SIM {
 	/// Simulation title as defined by XML
-	const string getTitle();
+	const string& getTitle();
+	
+	/// Input directory, i.e. directory of the model file
+	const string& getInputDirectory();
+	
+	/// Output directory as defined by command line or cwd
+	const string& getOutputDirectory();
 	
 	/// Just create the dependency graph
 	bool dependencyGraphMode();

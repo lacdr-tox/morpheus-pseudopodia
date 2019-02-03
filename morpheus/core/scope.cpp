@@ -15,6 +15,13 @@ Scope::Scope(Scope* parent, string name, CellType * celltype) : parent(parent), 
 	max_scope_id++;
 };
 
+Scope::~Scope()  { 
+// 	cout << "Deleting scope " << name << endl;
+	for (auto& sym : symbols) {
+		sym.second->setScope(nullptr);
+	}
+} 
+
 
 Scope* Scope::createSubScope(string name, CellType* ct)
 {
@@ -254,7 +261,7 @@ void Scope::propagateSinkTimeStep(string symbol, double time_step)
 {
 	auto range = symbol_writers.equal_range(symbol);
 	for (auto it = range.first; it != range.second; it++) {
-		cout << "Scope " << name << ": Propagate up to " << it->second->XMLName() << endl;
+// 		cout << "Scope " << name << ": Propagate up to " << it->second->XMLName() << endl;
 		it->second->updateSinkTS(time_step);
 	}
 	if ( !component_scopes.empty()) {
@@ -268,7 +275,7 @@ void Scope::propagateSourceTimeStep(string symbol, double time_step)
 {
 	auto range = symbol_readers.equal_range(symbol);
 	for (auto it = range.first; it != range.second; it++) {
-		cout << "Scope " << name << ": Propagate down to " << it->second->XMLName() << endl;
+// 		cout << "Scope " << name << ": Propagate down to " << it->second->XMLName() << endl;
 		it->second->updateSourceTS(time_step);
 	}
 	if (ct_component)

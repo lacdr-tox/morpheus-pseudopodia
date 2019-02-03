@@ -3,7 +3,7 @@
 ## Release 2.1
 
 ### GUI
-  * Reworked DelayProperty/Variable that allows varying delay times, expression initialisation
+  * Reworked DelayProperty/Variable that allows varying delay times and history initialisation from expression
   * Largely improve SBML import
      * Provide more import target options
      * Add support for multiple compartments and variable size compartments
@@ -21,6 +21,7 @@
 ### Simulator
   * Add an adaptive step size ODE solver (RK45)
   * Renewed implementation of Poissonian Disc Population Initializer
+  * Command line option for setting the output directory added
   * Fix rare misplacement in box object initializer
 
 ## Patch 2.0.1

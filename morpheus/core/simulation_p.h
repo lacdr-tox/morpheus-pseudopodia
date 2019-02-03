@@ -75,6 +75,10 @@ namespace SIM {
 	
 	uint random_seed = time(NULL);
 	string fileTitle="SnapShot";
+	/// directory to read data from
+	string input_directory = ".";
+	/// directory to write data to
+	string output_directory = ".";
 
 	/// Get the base name 
 // 	inline string getSymbolBaseName(string name) { return getGlobalScope()->getSymbolBaseName(name); };

@@ -126,7 +126,7 @@ void TimeScheduler::init()
 				ts.minimal_time_step = time_step;
 			
 			cout << "\n TimeStepListener \"" << tsl->XMLName() << "\" propagates its time step " << time_step << endl;
-			cout << " Upstream: " << endl;
+// 			cout << " Upstream: " << endl;
 			
 			tsl->propagateSinkTS(time_step);
 // 			set<SymbolDependency> dep_sym = tsl->getLeafDependSymbols();
@@ -134,7 +134,7 @@ void TimeScheduler::init()
 // 				cout << " -> " << sym->name()  << endl;
 // 				const_cast<Scope*>(sym->scope())->propagateSinkTimeStep(sym->name(), time_step);
 // 			}
-			cout << " Downstream: " << endl;
+// 			cout << " Downstream: " << endl;
 			tsl->propagateSourceTS(time_step);
 // 			set<SymbolDependency> out_sym = tsl->getLeafOutputSymbols();
 // 			for (const auto& sym : out_sym) {
