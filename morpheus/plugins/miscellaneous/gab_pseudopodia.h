@@ -42,6 +42,7 @@ private:
     PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> movingDirection;
     PluginParameter2<Pseudopod::RetractionMethod, XMLNamedValueReader, DefaultValPolicy> retractionMethod;
     PluginParameter2<Pseudopod::TouchBehavior, XMLNamedValueReader, DefaultValPolicy> touchBehavior;
+    bool persistenceBonus = true;
 
     once_flag initPseudopods;
 
@@ -76,6 +77,8 @@ private:
     vector<Pseudopod> getPseudopodsForCell(const CPM::CELL_ID &cell_id) const;
 
     double minDistanceToPseudopodTip(VINT pos, const CPM::CELL_ID &cellId) const;
+
+    double calcPersistenceBonus(const SymbolFocus &cell_focus, const CPM::Update &update) const;
 };
 
 #endif

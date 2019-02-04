@@ -120,6 +120,9 @@ double Pseudopodia::delta(const SymbolFocus &cell_focus, const CPM::Update &upda
         change += calcNeighboringActinBonus(update);
         change += calcPseudopodTipBonus(cell_focus, update);
     }
+    if(persistenceBonus) {
+        change += calcPersistenceBonus(cell_focus, update);
+    }
     return change;
 }
 
@@ -233,5 +236,29 @@ bool Pseudopodia::update_check(CPM::CELL_ID cell_id, const CPM::Update &update) 
 vector<Pseudopod> Pseudopodia::getPseudopodsForCell(const CPM::CELL_ID &cell_id) const {
     auto it = pseudopods.find(cell_id);
     return it != pseudopods.end() ? it->second : vector<Pseudopod>();
+}
+
+double Pseudopodia::calcPersistenceBonus(const SymbolFocus &cell_focus, const CPM::Update &update) const {
+    auto strength = 1.0;
+    auto cellID = cell_focus.cellID();
+    auto pseudopods = getPseudopodsForCell(cellID);
+    pseudopods.erase(
+            std::remove_if(
+                    pseudopods.begin(),
+                    pseudopods.end(),
+                    [](const Pseudopod& pseudopod) { return !pseudopod.hasBundleTip(); }
+            ),
+            pseudopods.end()
+    );
+    if(pseudopods.empty()) return 0.0;
+    const auto &cell = cell_focus.cell();
+    auto cell_center = cell.getCenter();
+    auto force_vector = std::accumulate(pseudopods.begin(), pseudopods.end(), VDOUBLE(0.0,0.0,0.0),
+            [&](VDOUBLE acc, Pseudopod &pseudopod) -> VDOUBLE {
+        return acc + (pseudopod.getBundleTip() - cell_center);
+    });
+    auto update_direction = cell.getUpdatedCenter() - cell.getCenter();
+    auto cell_size = cell.nNodes();
+    return -strength * dot(update_direction.norm(), force_vector) / cell_size;
 }
 
