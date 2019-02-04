@@ -30,6 +30,8 @@
         <xs:attribute name="cont-dir-strength" type="cpmDouble" use="optional" default="16.0"/>
         <xs:attribute name="retraction-mode" type="cpmPPRetractMode" default="backward"/>
         <xs:attribute name="touch-behavior" type="cpmPPTouchBehavior" default="nothing"/>
+        <xs:attribute name="pull-strength" type="cpmDouble" use="optional" default="300.0"/>
+        <xs:attribute name="pull" type="cpmBoolean" default="false"/>
     </xs:complexType>
 
     <xs:simpleType name="cpmPPTouchBehavior">

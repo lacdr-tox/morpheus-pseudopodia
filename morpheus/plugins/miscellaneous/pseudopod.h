@@ -15,7 +15,8 @@ public:
         GROWING,
         TOUCHING,
         RETRACTING,
-        INACTIVE
+        INACTIVE,
+        PULLING,
     };
     enum class RetractionMethod {
         FORWARD,

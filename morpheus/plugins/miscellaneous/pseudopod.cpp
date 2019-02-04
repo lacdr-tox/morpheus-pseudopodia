@@ -75,7 +75,8 @@ void Pseudopod::growBundle() {
         timeNoExtension_++;
         if (timeNoExtension_ > timeNoExtensionLimit_) {
             cout << "long time without extension" << endl;
-            setRetracting(paramRetractionMethod_);
+            setRetracting(RetractionMethod::FORWARD);
+            //state_ = State::PULLING;
         }
         return;
     }
@@ -110,7 +111,8 @@ void Pseudopod::growBundle() {
     timeNoExtension_ = 0;
     timeLeftForGrowth_--;
     if (timeLeftForGrowth_ == 0) {
-        setRetracting(paramRetractionMethod_);
+        setRetracting(RetractionMethod::FORWARD);
+        //state_ = State::PULLING;
     }
 }
 
@@ -167,6 +169,11 @@ void Pseudopod::timeStep() {
         case State::INACTIVE:
             if(getRandom01() < 1.0 / timeBetweenExtensions_) {
                 state_ = State::INIT;
+            }
+            break;
+        case State::PULLING:
+            if(getRandom01() < 1.0 / 100.0) {
+                setRetracting(RetractionMethod::FORWARD);
             }
             break;
     }

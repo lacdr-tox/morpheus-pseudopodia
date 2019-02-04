@@ -42,7 +42,8 @@ private:
     PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> movingDirection;
     PluginParameter2<Pseudopod::RetractionMethod, XMLNamedValueReader, DefaultValPolicy> retractionMethod;
     PluginParameter2<Pseudopod::TouchBehavior, XMLNamedValueReader, DefaultValPolicy> touchBehavior;
-    bool persistenceBonus = true;
+    PluginParameter2<bool, XMLValueReader, DefaultValPolicy> persistenceBonus;
+    PluginParameter2<double, XMLValueReader, DefaultValPolicy> pullStrength;
 
     once_flag initPseudopods;
 

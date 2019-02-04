@@ -61,6 +61,14 @@ Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpe
     touchBehaviorMap["retract"] = Pseudopod::TouchBehavior::RETRACT;
     touchBehavior.setConversionMap(touchBehaviorMap);
     registerPluginParameter(touchBehavior);
+
+    pullStrength.setXMLPath("pull-strength");
+    pullStrength.setDefault("300.0");
+    registerPluginParameter(pullStrength);
+
+    persistenceBonus.setXMLPath("pull");
+    persistenceBonus.setDefault("false");
+    registerPluginParameter(persistenceBonus);
 }
 
 // called during initialization
@@ -120,7 +128,7 @@ double Pseudopodia::delta(const SymbolFocus &cell_focus, const CPM::Update &upda
         change += calcNeighboringActinBonus(update);
         change += calcPseudopodTipBonus(cell_focus, update);
     }
-    if(persistenceBonus) {
+    if(persistenceBonus()) {
         change += calcPersistenceBonus(cell_focus, update);
     }
     return change;
@@ -239,14 +247,16 @@ vector<Pseudopod> Pseudopodia::getPseudopodsForCell(const CPM::CELL_ID &cell_id)
 }
 
 double Pseudopodia::calcPersistenceBonus(const SymbolFocus &cell_focus, const CPM::Update &update) const {
-    auto strength = 1.0;
     auto cellID = cell_focus.cellID();
     auto pseudopods = getPseudopodsForCell(cellID);
     pseudopods.erase(
             std::remove_if(
                     pseudopods.begin(),
                     pseudopods.end(),
-                    [](const Pseudopod& pseudopod) { return !pseudopod.hasBundleTip(); }
+                    [](const Pseudopod& pseudopod) { return !pseudopod.hasBundleTip() |
+                    //(pseudopod.state() != Pseudopod::State::PULLING && pseudopod.state() != Pseudopod::State::TOUCHING);
+                        (pseudopod.state() != Pseudopod::State::RETRACTING && pseudopod.state() != Pseudopod::State::TOUCHING);
+                    }
             ),
             pseudopods.end()
     );
@@ -259,6 +269,6 @@ double Pseudopodia::calcPersistenceBonus(const SymbolFocus &cell_focus, const CP
     });
     auto update_direction = cell.getUpdatedCenter() - cell.getCenter();
     auto cell_size = cell.nNodes();
-    return -strength * dot(update_direction.norm(), force_vector) / cell_size;
+    return -pullStrength() * dot(update_direction.norm(), force_vector) / cell_size;
 }
 
