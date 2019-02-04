@@ -62,8 +62,8 @@ EvaluatorCache::EvaluatorCache(const EvaluatorCache& other)
 	locals_cache = other.locals_cache;
 	
 	// External variable storage
-	map<string, SymbolDesc> externals = other.externals;
-	vector< NS > externals_namespaces = other.externals_namespaces;
+	externals = other.externals;
+	externals_namespaces = other.externals_namespaces;
 	
 	// infrastructure for vector symbol expansion
 	scalar_expansion_permitted  = other.scalar_expansion_permitted;
@@ -318,7 +318,7 @@ void EvaluatorCache::attach(mu::Parser *parser) {
 		if (parser_symbols.count(sym.first))
 			continue;
 
-		throw string("EvaluatorCache::attach:  Symbol ") + sym.first + " not registered.";
+		throw string("EvaluatorCache::attach:  Symbol ") + sym.first + " not registered.\n" + toString();
 	}
 	initialized = true;   // No more registration of local symbols are allowed to keep the cache positions.
 }

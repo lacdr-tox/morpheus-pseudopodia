@@ -306,11 +306,15 @@ void System::computeToTarget(const SymbolFocus& f, bool use_buffer, vector<doubl
 		// Accomodate the solver
 		if (solv_num>=solvers.size())
 			solvers.resize(solv_num+1);
-		// Create and place the solver
-		if (! solvers[solv_num]) {
-			if (!solvers[0]) return;
-			solvers[solv_num] = make_shared<SystemSolver>(*solvers[0]);
+		try {
+			// Create and place the solver
+			if (! solvers[solv_num]) {
+				if (!solvers[0]) return;
+				solvers[solv_num] = make_shared<SystemSolver>(*solvers[0]);
+			}
 		}
+		catch (const string& e){ cerr << "Could not clone solver!\n" << e << endl; exit(-1); }
+		catch (...){ cerr << "Could not clone solver!\n"<< endl; exit(-1); }
 		mutex.unlock();
 	}
 	solvers[solv_num]->solve(f, use_buffer, buffer);

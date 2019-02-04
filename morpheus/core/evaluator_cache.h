@@ -33,6 +33,8 @@ public:
 	
 	EvaluatorCache(const EvaluatorCache& other) ; // We need to adjust the cache links of expansions and namespace symbols.
 	
+	const EvaluatorCache& operator=(const EvaluatorCache& other) = delete;
+	
 	const Scope* getScope() { return local_scope; }
 
 	/// Symbol factory to be used with muParser
