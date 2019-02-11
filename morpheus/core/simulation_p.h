@@ -50,8 +50,7 @@
 namespace SIM {
 	const string dep_graph_format = "svg";
 	bool generate_symbol_graph_and_exit = false;
-	
-	int numthreads = 1;
+	int numthreads = omp_get_max_threads();
 	shared_ptr<Lattice> global_lattice;
 	Length_Scale node_length("NodeLength",1);
 	string lattice_size_symbol;
