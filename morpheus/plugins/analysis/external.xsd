@@ -12,7 +12,7 @@
 			<xs:appinfo>Data analysis</xs:appinfo>
 		</xs:annotation>
 		<xs:all>
-			<xs:element name="Command" type="cpmString"  minOccurs="1" maxOccurs="1" />
+			<xs:element name="Command" type="cpmMathExpression"  minOccurs="1" maxOccurs="1" />
 			<xs:element name="Environment" type="ExternalEnvVarCommand" minOccurs="0" maxOccurs="unbounded" />
 		</xs:all>
 		<xs:attribute name="name" type="cpmString" use="optional"/>
