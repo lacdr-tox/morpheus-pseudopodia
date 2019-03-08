@@ -43,7 +43,7 @@ void External::init(const Scope* scope)
 	AnalysisPlugin::init(scope);
 	replace_symbols = false;
 	// find Global symbols in command
-	vector<string> tokens = tokenize(command_orig());
+	vector<string> tokens = tokenize(command_orig(), " =:{}");
 	for(string& token : tokens){
 		string symbol_name;
 		if( *(token.begin()) == '%' ){
@@ -155,7 +155,7 @@ string External::update_command(string command){
 	}
 	
 	// find Global symbols in command
-	vector<string> tokens = tokenize(command);
+	vector<string> tokens = tokenize(command, " =:{}");
 	for(string& token : tokens){
 		string symbol_name;
 		if( *(token.begin()) == '%' ){
