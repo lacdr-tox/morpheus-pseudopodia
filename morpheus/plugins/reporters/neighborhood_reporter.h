@@ -65,9 +65,7 @@ Spatially resolved distribution of a (membrane) concentration into a CellMembran
 (Consider cMemProt to be a concentration of a membrane Protein)
 \verbatim
 <NeighborhoodReporter>
-	<Input value="min(cMemProt,myMemProt)">
-		<ExposeLocal symbol-ref="cMemProt" symbol="myMemProt" />
-	</Input>
+	<Input value="min(cMemProt,local.cMemProt)" />
 	<Output symbol-ref="B" />
 </NeighborhoodReporter>
 \endverbatim
