@@ -134,6 +134,7 @@ class SystemSolver{
 			Euler,
 			Heun,
 			Runge_Kutta4,
+			Runge_Kutta_AdaptiveBS,
 			Runge_Kutta_AdaptiveCK,
 			Runge_Kutta_AdaptiveDP
 		};
@@ -177,6 +178,7 @@ class SystemSolver{
 		
 		void RungeKutta(const SymbolFocus& f, double ht);
 		void RungeKutta_adaptive(const SymbolFocus& f, double ht);
+		void RungeKutta_23BogackiShampine(const SymbolFocus& f, double ht);
 		void RungeKutta_45CashKarp(const SymbolFocus& f, double ht);
 		void RungeKutta_45DormandPrince(const SymbolFocus& f, double ht);
 		void Euler(const SymbolFocus& f, double ht);
@@ -253,7 +255,7 @@ class ContinuousSystem: public System, public ContinuousProcessPlugin {
 public:
 	DECLARE_PLUGIN("System");
 
-    ContinuousSystem() : System(CONTINUOUS_SYS), ContinuousProcessPlugin(ContinuousProcessPlugin::CONTI,TimeStepListener::XMLSpec::XML_REQUIRED) {};
+    ContinuousSystem() : System(CONTINUOUS_SYS), ContinuousProcessPlugin(ContinuousProcessPlugin::CONTI,TimeStepListener::XMLSpec::XML_OPTIONAL) {};
 	/// Compute and Apply the state after time step @p step_size.
 	void loadFromXML(const XMLNode node, Scope* scope) override;
 	void init(const Scope* scope) override;

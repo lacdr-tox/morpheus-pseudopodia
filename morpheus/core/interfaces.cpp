@@ -206,6 +206,7 @@ void TimeStepListener::loadFromXML(const XMLNode node, Scope* scope)
 			else {
 				xml_spec = XMLSpec::XML_NONE;
 				is_adjustable = true;
+				time_step = -1;
 			}
 			break;
 		case XMLSpec::XML_REQUIRED:

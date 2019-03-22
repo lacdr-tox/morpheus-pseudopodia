@@ -52,18 +52,21 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 			else if (str_solver =="runge-kutta" || str_solver =="4") {
 				solver_spec.method = SystemSolver::Method::Runge_Kutta4;
 			}
-			else if (str_solver == "runge-kutta-adaptive" || str_solver == "45") {
+			else if (str_solver == "runge-kutta-adaptive" ) {
+				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveBS;
+			}
+			else if (str_solver == "runge-kutta-adaptive-CK") {
 				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveCK;
 			}
-			else if (str_solver == "runge-kutta-adaptiveCK") {
-				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveCK;
-			}
-			else if (str_solver == "runge-kutta-adaptiveDP") {
+			else if (str_solver == "runge-kutta-adaptive-DP" || str_solver == "45") {
 				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveDP;
+			}
+			else if (str_solver == "runge-kutta-adaptive-BS" || str_solver == "23") {
+				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveBS;
 			}
 			else {
 				cout << "Unknown solver \"" << str_solver << "\" for System!\nSelecting Runge-Kutta adaptive." << endl;
-				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveCK;
+				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveBS;
 			}
 		}
 		else
@@ -268,7 +271,7 @@ void System::init() {
 
 }
 
-bool System::adaptive() const { return solver_spec.method == SystemSolver::Method::Runge_Kutta_AdaptiveCK || solver_spec.method == SystemSolver::Method::Runge_Kutta_AdaptiveDP; };
+bool System::adaptive() const { return solver_spec.method == SystemSolver::Method::Runge_Kutta_AdaptiveCK || solver_spec.method == SystemSolver::Method::Runge_Kutta_AdaptiveDP || solver_spec.method == SystemSolver::Method::Runge_Kutta_AdaptiveBS;};
 
 void System::computeToBuffer(const SymbolFocus& f)
 {
@@ -714,7 +717,10 @@ void SystemSolver::solve(const SymbolFocus& f, bool use_buffer, vector<double>* 
 		case Method::Discrete : Discrete(f); break;
 		case Method::Runge_Kutta_AdaptiveCK :
 		case Method::Runge_Kutta_AdaptiveDP :
+		case Method::Runge_Kutta_AdaptiveBS :
 			RungeKutta_adaptive(f,spec.time_step); break;
+		default:
+			throw MorpheusException("Solver method not implemented in solve().");
 	}
 	// Write back
 	if (use_buffer) {
@@ -1023,8 +1029,10 @@ void SystemSolver::RungeKutta_adaptive(const SymbolFocus& f, double ht) {
 		try {
 			if (spec.method==Method::Runge_Kutta_AdaptiveCK)
 				RungeKutta_45CashKarp(f,local_ht);
-			else 
+			else if (spec.method==Method::Runge_Kutta_AdaptiveDP)
 				RungeKutta_45DormandPrince(f,local_ht);
+			else 
+				RungeKutta_23BogackiShampine(f,local_ht);
 			// compute maximum scaled error
 			
 			for (uint i=0; i < odes.size(); i++) {
@@ -1086,6 +1094,79 @@ void SystemSolver::RungeKutta_adaptive(const SymbolFocus& f, double ht) {
 	}
 // 	cout << "Time " << starttime << " dt " << to_str(total_ht)<< endl;
 	this->Discrete(f); // Execute rule based paradigms with the fixed external time step.
+}
+
+void SystemSolver::RungeKutta_23BogackiShampine(const SymbolFocus& f, double ht) {
+	// constants of the butcher tableau of Runge-Kutta-45, the Cash-Karp parameterization
+	// time steps
+	const double c1=0.0, c2=0.5, c3=0.75, c4=1;
+	// interpolation coefficients
+	const double a21=0.5;
+	const double a31=0, a32=0.75;
+	const double a41=2.0/9, a42=1.0/3, a43=4.0/9;
+	// solution coeffitients
+	const double b3_1=2.0/9, b3_2=1.0/3, b3_3=4.0/9, b3_4=0;
+	const double b2_1=7.0/24, b2_2=1.0/4, b2_3=1.0/3, b2_4=1.0/8;
+	// solution error coefficients
+	const double berr_1=b3_1-b2_1, berr_2=b3_2-b2_2, berr_3=b3_3-b2_3, berr_4=b3_4-b2_4;
+
+
+	const double starttime = cache->getLocalD(local_time_idx);
+	// First Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k0 = cache->getLocalD(e.cache_idx);
+		e.k1 = e.evaluator->plain_get(f); check_result(e.k1,e);
+	}
+
+	// Second Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		cache->setLocal(e.cache_idx, e.k0 + a21 * ht * e.k1);
+	}
+	cache->setLocal(local_time_idx, starttime + c2*ht);
+	updateLocalVars(f);
+	
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k2 = e.evaluator->plain_get(f); check_result(e.k2,e);
+	}
+	
+	// Third Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		cache->setLocal(e.cache_idx, e.k0 + a31 * ht * e.k1 + a32 * ht * e.k2);
+	}
+	cache->setLocal(local_time_idx, starttime + c3*ht);
+	updateLocalVars(f);
+	
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k3 = e.evaluator->plain_get(f); check_result(e.k3,e);
+	}
+
+	// Fourth Step interpolation
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.dy = a41*e.k1 + a42*e.k2 + a43*e.k3;
+		cache->setLocal(e.cache_idx,  e.k0 + ht*e.dy);
+	}
+	cache->setLocal(local_time_idx,  starttime + c4*ht);
+	updateLocalVars(f);
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.k4 = e.evaluator->plain_get(f); check_result(e.k4,e);
+	}
+	
+	// Estimate dy and err and reset the cache
+	for(uint i=0; i < odes.size(); i++) {
+		SystemFunc<double> &e = *odes[i];
+		e.err = abs(ht *( berr_1*e.k1 + berr_2*e.k2 + berr_3*e.k3 + berr_4*e.k4));
+		//  e.dy = ( b3_1*e.k1 + b3_2*e.k2 + b3_3*e.k3 + b3_4*e.k4 );
+		cache->setLocal(e.rate_cache_idx, e.dy);
+		cache->setLocal(e.cache_idx, e.k0); // + ht * e.dy is added by the adaptive gouverner 
+	}
+	cache->setLocal(local_time_idx, starttime);
 }
 
 void SystemSolver::RungeKutta_45CashKarp(const SymbolFocus& f, double ht) {
@@ -1198,7 +1279,7 @@ void SystemSolver::RungeKutta_45DormandPrince(const SymbolFocus& f, double ht) {
 	const double a61=9017.0/3168, a62= -355.0/33, a63=46732.0/5247, a64=49.0/176, a65=-5103.0/18656;
 	const double a71=35.0/384, a72=0, a73=500.0/1113, a74=125.0/192, a75=-2187.0/6784,a76=11.0/84;
 	// solution coeffitients
-	const double b5_1=37.0/378, b5_2=0, b5_3=500.0/1113, b5_4=125.0/192, b5_5=-2187.0/6784, b5_6=11.0/84, b5_7=0;
+	const double b5_1=35.0/384, b5_2=0, b5_3=500.0/1113, b5_4=125.0/192, b5_5=-2187.0/6784, b5_6=11.0/84, b5_7=0;
 	const double b4_1=5179.0/57600, b4_2=0, b4_3=7571.0/16695, b4_4=393.0/640, b4_5=-92097.0/339200 , b4_6=187.0/2100, b4_7=1.0/40;
 	// solution error coefficients
 	const double berr_1=b5_1-b4_1, berr_2=b5_2-b4_2, berr_3=b5_3-b4_3, berr_4=b5_4-b4_4, berr_5=b5_5-b4_5, berr_6=b5_6-b4_6, berr_7=b5_7-b4_7;
@@ -1275,7 +1356,8 @@ void SystemSolver::RungeKutta_45DormandPrince(const SymbolFocus& f, double ht) {
 	// Seventh Step interpolation
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
-		cache->setLocal(e.cache_idx,  e.k0 + ht* (a71*e.k1 + a72*e.k2 + a73*e.k3 + a74*e.k4 + a75*e.k5 + a76*e.k6));
+		e.dy = (a71*e.k1 + a72*e.k2 + a73*e.k3 + a74*e.k4 + a75*e.k5 + a76*e.k6);
+		cache->setLocal(e.cache_idx,  e.k0 + ht*e.dy);
 	}
 	cache->setLocal(local_time_idx, starttime + c7*ht);
 	updateLocalVars(f);
@@ -1288,9 +1370,9 @@ void SystemSolver::RungeKutta_45DormandPrince(const SymbolFocus& f, double ht) {
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
 		e.err = abs(ht *( berr_1*e.k1 + berr_2*e.k2 + berr_3*e.k3 + berr_4*e.k4 +  berr_5*e.k5 + berr_6*e.k6+ berr_7*e.k7));
-		e.dy = ( b5_1*e.k1 + b5_2*e.k2 + b5_3*e.k3 + b5_4*e.k4 +  b5_5*e.k5 + b5_6*e.k6 + b5_7*e.k7);
+		// e.dy = ( b5_1*e.k1 + b5_2*e.k2 + b5_3*e.k3 + b5_4*e.k4 +  b5_5*e.k5 + b5_6*e.k6 + b5_7*e.k7);
 		cache->setLocal(e.rate_cache_idx, e.dy);
-		cache->setLocal(e.cache_idx,e.k0); // + ht * e.dy is added by the adaptive gouverner 
+		cache->setLocal(e.cache_idx,e.k0); // reset the cache value, ht * e.dy is added by the adaptive gouverner 
 	}
 	cache->setLocal(local_time_idx, starttime);
 }
@@ -1446,8 +1528,16 @@ void ContinuousSystem::init(const Scope* scope) {
 void ContinuousSystem::loadFromXML(const XMLNode node, Scope* scope) {
 	ContinuousProcessPlugin::loadFromXML(node, scope);
 	System::loadFromXML(node, scope);
-	// The TimeStepListener was reading the internal timeStep, thus has to be readjusted to the global time !!
-	ContinuousProcessPlugin::setTimeStep(ContinuousProcessPlugin::timeStep() / solver_spec.time_scaling);
+	// The TimeStepListener was reading the timeStep in system time, thus has to be readjusted to the global time !!
+	if (ContinuousProcessPlugin::timeStep()>0) {
+		ContinuousProcessPlugin::setTimeStep(ContinuousProcessPlugin::timeStep() / solver_spec.time_scaling);
+	}
+	else {
+		if ( ! System::adaptive() ) {
+			throw MorpheusException("Selected Solver requires a time-step definition", node);
+		}
+		ContinuousProcessPlugin::setTimeStep(SIM::getStopTime());
+	}
 };
 
 

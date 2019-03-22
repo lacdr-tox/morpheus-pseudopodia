@@ -262,10 +262,15 @@ DiffEqn are only allowed within \ref ML_System
 
 Environment for tightly coupled \ref ML_Rule and \ref ML_DiffEqn. Expressions with a System are synchronously updated and may contain recurrence relations.
 
-- \b solver: numerical solver for DiffEqn: Euler (1st order), Heun (aka explicit trapezoid rule, 2nd order), Runge-Kutta (4th order), Runge-Kutta adaptive with Cash/Karp parametrization.
+- \b solver: numerical solver for DiffEqn:
+  - \b Adaptive time step: Runge-Kutta parametrizations: (i) DP - Dormand-Prince 4/5th order, default; (ii)  Cash-Karp 4/5th order;
+  - \b Fixed time step: Euler (1st order), Heun (aka explicit trapezoid rule, 2nd order), Runge-Kutta (4th order)
+  - \b Stochastic fixed time step: Euler Maruyama 
+  - \b Stiff/non-stiff adaptive : Cash-Karp + Rosenbrock (planned)
+  
 - \b time-step:
-  - \b Fixed schemes: integration step size.
-  - \b Adaptive schemes: Coupling interval, i.e. maximum step size without coupling to other processes.
+  - \b Fixed schemes: integration step size, given in system time.
+  - \b Adaptive schemes: Coupling interval given in system time, i.e. maximum step size without coupling to other processes.
 - \b time-scaling (optional): scales the dynamics of \b ML_System to the simulation time. Equivalent to multiplying all \b ML_DiffEqn in the \b ML_System with a scalar.
 
 Note: Systems define their own \ref Scope. This implies that values of symbols defined within a System are not accessible outside of the System.
