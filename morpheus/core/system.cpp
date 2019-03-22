@@ -1515,6 +1515,19 @@ void EventSystem::executeTimeStep()
 void ContinuousSystem::init(const Scope* scope) {
 	ContinuousProcessPlugin::init(scope);
 	System::init();
+	// The TimeStepListener was reading the timeStep in system time, thus has to be readjusted to the global time !!
+	if (ContinuousProcessPlugin::timeStep()>0) {
+	ContinuousProcessPlugin::setTimeStep(ContinuousProcessPlugin::timeStep() / solver_spec.time_scaling);
+	}
+	else {
+		if ( ! System::adaptive() ) {
+			throw MorpheusException(string("Selected Solver requires a time-step definition ") + to_str(ContinuousProcessPlugin::timeStep()),stored_node);
+		}
+		ContinuousProcessPlugin::setTimeStep(SIM::getStopTime());
+	}
+	
+	
+	
 	if (System::adaptive()) {
 		is_adjustable = true;
 	}
@@ -1528,16 +1541,6 @@ void ContinuousSystem::init(const Scope* scope) {
 void ContinuousSystem::loadFromXML(const XMLNode node, Scope* scope) {
 	ContinuousProcessPlugin::loadFromXML(node, scope);
 	System::loadFromXML(node, scope);
-	// The TimeStepListener was reading the timeStep in system time, thus has to be readjusted to the global time !!
-	if (ContinuousProcessPlugin::timeStep()>0) {
-		ContinuousProcessPlugin::setTimeStep(ContinuousProcessPlugin::timeStep() / solver_spec.time_scaling);
-	}
-	else {
-		if ( ! System::adaptive() ) {
-			throw MorpheusException("Selected Solver requires a time-step definition", node);
-		}
-		ContinuousProcessPlugin::setTimeStep(SIM::getStopTime());
-	}
 };
 
 
