@@ -436,6 +436,9 @@ SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFun
 	for (uint i=0; i<fun.size(); i++) {
 		auto& eval =fun[i];
 		switch (eval->type) {
+			case SystemFunc<double>::FUN :
+				// also offer non-parametric functions like initialized locals
+				if (!eval->fun_params_names.empty()) break;
 			case SystemFunc<double>::VAR_INIT :
 				eval->cache_idx = cache->getLocalIdx(eval->symbol_name);
 				if (eval->cache_idx==-1)
@@ -465,6 +468,7 @@ SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFun
 				functions.push_back(eval);
 				// register the Functions parameters
 				eval->initFunction();
+				if (eval->fun_params_names.empty()) var_initializers.push_back(eval);
 				break;
 			case SystemFunc<double>::RULE :
 				rules.push_back(eval);
@@ -545,7 +549,7 @@ SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFun
 		}
 		
 // 		cout << eval->symbol_name << " at cache pos " << eval->cache_idx << endl;
-	}
+ 	}
 	for (auto& eval :vec_evals) {
 		// register local functions
 		for (const auto& fun : functions) {
@@ -652,6 +656,7 @@ SystemSolver::SystemSolver(const SystemSolver& other)
 			case SystemFunc<double>::FUN :
 				e->initFunction();
 				functions.push_back(e);
+				if (e->fun_params_names.empty()) var_initializers.push_back(e);
 				break;
 			case SystemFunc<double>::RULE :
 				rules.push_back(e);
@@ -794,8 +799,11 @@ void SystemSolver::writeSymbolsToExtBuffer(vector<double>* ext_buffer) {
 }
 
 void SystemSolver::updateLocalVars(const SymbolFocus& f) {
-	for (uint i =0; i<var_initializers.size(); i++) {
-		cache->setLocal(var_initializers[i]->cache_idx, var_initializers[i]->evaluator->get(f));
+	for (const auto& ini : var_initializers) {
+		cache->setLocal(ini->cache_idx, ini->evaluator->get(f));
+	}
+	for (const auto& ini : vec_var_initializers) {
+		cache->setLocal(ini->cache_idx, ini->evaluator->get(f));
 	}
 	EquationHooks(f,false);
 }
