@@ -58,7 +58,9 @@ void CPMSampler::init(const Scope* scope)
     ContinuousProcessPlugin::init(scope);
 	cell_layer = CPM::getLayer();
 	registerCellPositionOutput();
-	
+	registerOutputSymbol(scope->findSymbol<double>(SymbolBase::CellVolume_symbol,true));
+	registerOutputSymbol(scope->findSymbol<double>(SymbolBase::CellSurface_symbol,true));
+	registerOutputSymbol(scope->findSymbol<double>(SymbolBase::CellLength_symbol,true));
 	if (stepper_type() == StepperType::EDGELIST) {
 		CPM::enableEgdeTracking();
 	}
