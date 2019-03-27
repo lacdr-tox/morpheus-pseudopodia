@@ -26,7 +26,7 @@ AnnouncementDialog::AnnouncementDialog(QWidget* parent)
 	auto nam = config::getNetwork();
 	
 #ifdef MORPHEUS_NO_QTWEBKIT
-	web_view = new TextBrowser(this);
+	web_view = new QTextBrowser(this);
 	web_view->setOpenLinks(false);
 	connect(web_view, SIGNAL(anchorClicked(const QUrl&)), this, SLOT(openLink(const QUrl&)));
 #else
