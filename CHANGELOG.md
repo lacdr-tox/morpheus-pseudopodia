@@ -19,7 +19,7 @@
   * MorpheusML version bump 4.0
 
 ### Simulator
-  * Add an adaptive step size ODE solver (RK45)
+  * Add an adaptive step size ODE solver (RK45-DormandPrince, RK45-CashKarp, RK23-BogackiShampine)
   * Renewed implementation of Poissonian Disc Population Initializer
   * Command line option for setting the output directory added
   * Fix rare misplacement in box object initializer

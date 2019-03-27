@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 	}
 	catch (MorpheusException e) {
 		exception = true;
-		cerr << "\n" << e.what()<< "\n";
+		cerr << e.what()<< "\n";
 		cerr << "\nXMLPath: " << e.where() << endl;
 	}
 	catch (string e) {
@@ -77,6 +77,10 @@ int main(int argc, char *argv[]) {
 // 		}
 		exception = true;
 		cerr << "\n" << e.what()<< "\n";
+	}
+	catch (std::runtime_error& e) {
+		exception = true;
+		cerr << e.what() << endl; 
 	}
 	catch (...) {
 		cerr << "Unknown error while creating the simulation";

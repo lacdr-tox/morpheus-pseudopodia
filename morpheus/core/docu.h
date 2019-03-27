@@ -263,7 +263,7 @@ DiffEqn are only allowed within \ref ML_System
 Environment for tightly coupled \ref ML_Rule and \ref ML_DiffEqn. Expressions with a System are synchronously updated and may contain recurrence relations.
 
 - \b solver: numerical solver for DiffEqn:
-  - \b Adaptive time step: Runge-Kutta parametrizations: (i) DP - Dormand-Prince 4/5th order, default; (ii)  Cash-Karp 4/5th order;
+  - \b Adaptive time step: Runge-Kutta parametrizations: DP - Dormand-Prince 4/5th order, default; Cash-Karp 4/5th order; BS - Bogacki-Shampine 2/3rd order
   - \b Fixed time step: Euler (1st order), Heun (aka explicit trapezoid rule, 2nd order), Runge-Kutta (4th order)
   - \b Stochastic fixed time step: Euler Maruyama 
   - \b Stiff/non-stiff adaptive : Cash-Karp + Rosenbrock (planned)
