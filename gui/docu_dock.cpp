@@ -121,7 +121,11 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 
 void DocuDock::openHelpLink(const QUrl& url) {
 	if (url.scheme() == "qthelp") {
+#ifdef MORPHEUS_NO_QTWEBKIT
+		web_view->setSource(url);
+#else
 		help_view->setUrl(url);
+#endif
 	}
 	else 
 		QDesktopServices::openUrl(url);
