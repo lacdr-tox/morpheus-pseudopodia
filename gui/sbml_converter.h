@@ -28,6 +28,7 @@
 #include "config.h"
 #include <stdexcept>
 #include <cstdio>
+#include <memory>
 
 #include <sbml/SBMLTypes.h>
 #include <sbml/common/libsbml-namespace.h>

@@ -54,7 +54,7 @@ ENDIF()
 IF(CMAKE_VERSION VERSION_GREATER "3.1" OR CMAKE_VERSION VERSION_EQUAL "3.1")
 	set(CMAKE_CXX_STANDARD 11)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
-	set(CMAKE_CXX_EXTENSIONS OFF)
+	set(CMAKE_CXX_EXTENSIONS ON)
 ELSE()
 	SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++11" )
 ENDIF()
@@ -157,17 +157,17 @@ SET(CPACK_STRIP_FILES "${M_EXECUTABLES}")
 IF( "${MORPHEUS_OS}" STREQUAL "UNIX" AND  NOT "${MORPHEUS_OS}" STREQUAL "APPLE" )
   
   SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Modeling environment for Multi-Cellular
-  Systems Biology
-  Modeling and simulation environment for multi-cellular systems biology.
-  Includes simulators for ODEs, PDEs and cellular Potts models. 
-  Facilitates model integration into multiscale models.
-  .
+ Modeling and simulation environment for multi-cellular systems biology.
+ Includes simulators for ODEs, PDEs and cellular Potts models. 
+ .
+ Facilitates 
   - Modeling without programming.
+  - Model integration into multiscale models by symbolic linking.
+  - Import of SBML models.
   - Runtime parsing of math expressions.
-  - Multiscale integration by symbolic linking.
   - Parameter exploration through (parallel) batch processing.
-  - Multi-core concurrency support using openMP multithreading.
-  - Support for use of remote high performance computing resources.")
+  - Multi-core concurrency support using openMP multithreading")
+
   SET(CPACK_DEBIAN_PACKAGE_SECTION "science")
   SET(CPACK_DEBIAN_PACKAGE_MAINTAINTER ${M_MAINTAINTER})
   

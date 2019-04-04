@@ -722,7 +722,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 			comp.name = s2q(sbml_model->getCompartment(i)->getId());
 
 			comp.init_value = sbml_model->getCompartment(i)->getSize();
-			if (isnan(comp.init_value)) comp.init_value=1;
+			if (std::isnan(comp.init_value)) comp.init_value=1;
 
 			auto init = sbml_model->getInitialAssignment(comp.name.toStdString());
 			auto rule=sbml_model->getAssignmentRuleByVariable(comp.name.toStdString());
