@@ -183,7 +183,13 @@ void DependencyGraph::parse_scope(const Scope* scope)
 			set<SymbolDependency> inter_dep = dynamic_cast<CPMSampler*>(tsl)->getInteractionDependencies();
 			
 			// Global CPM TSL Box
-			info.definitions << cpm_name << " [shape=record, label=\"{ "<< tsl->XMLName() << (tsl->getFullName().empty()  || reduced() ? string("") : string("\\n\\\"") + tsl->getFullName() + "\\\"")<< " | " <<  tsl->timeStep() <<" } \" ]\n" ;
+			info.definitions << cpm_name 
+				<< " ["
+				<< "shape=record"
+				<< ", label=\"{ " << tsl->XMLName()
+				<< (tsl->getFullName().empty()  || reduced() ? string() : string("\\n\\\"") + tsl->getFullName() + "\\\"")
+				<< " | " <<  tsl->timeStep() << " }\""
+				<< " ]\n" ;
 			
 			for (auto ct_scope : scope->getComponentSubScopes()) {
 				assert(ct_scope->getCellType());
@@ -235,7 +241,14 @@ void DependencyGraph::parse_scope(const Scope* scope)
 			// TSL Box
 			if (reduced() && dynamic_cast<AnalysisPlugin*>(tsl))
 				continue;
-			info.definitions << tslDotName(tsl) << " [shape=record, label=\"{ "<< tsl->XMLName() << (tsl->getFullName().empty() || reduced()  ? string("") : string("\\n\\\"") + tsl->getFullName() + "\\\"")<< " | " <<  tsl->timeStep() <<" } \" ]\n" ;
+			info.definitions << tslDotName(tsl)
+				<< "[ "
+				<< "shape=record"
+				<< ", label=\"{ "<< tsl->XMLName()
+			    << ((tsl->getFullName().empty()  || reduced()) ? string() :  string("\\n\\\"") + tsl->getFullName() + "\\\" ")
+				<< " | " << tsl->timeStep() << " }\""
+				<< (tsl->getXMLNode().isEmpty() ?  string() : string(", URL=\"morph://MorpheusModel/") + getXMLPath(tsl->getXMLNode()) + "\"")
+				<< " ]\n" ;
 			
 			// Readers
 			auto dependencies = reduced() ? tsl->getLeafDependSymbols() : tsl->getDependSymbols();
@@ -285,8 +298,14 @@ void DependencyGraph::parse_scope(const Scope* scope)
 				plugin_node_name = pluginDotName(dep.first);
 				if (plugin_node_name != current_plugin) {
 					current_plugin = plugin_node_name;
-					info.definitions << plugin_node_name << "[shape=record, label=\"" << dep.first->XMLName() << (dep.first->getFullName().empty() || reduced() ? string("") : string("\\n\\\"") + dep.first->getFullName() + "\\\"") << "\"];\n";
-					
+					info.definitions << plugin_node_name
+						<< "["
+						<< "shape=record"
+						<< ", label=\"" << dep.first->XMLName()
+						<< (dep.first->getFullName().empty() || reduced() ?  string("") : string("\\n\\\"") + dep.first->getFullName() + "\\\"")
+						<< "\""
+						<< (dep.first->getXMLNode().isEmpty() ?  string() : string(", URL=\"morph://MorpheusModel/") + getXMLPath(dep.first->getXMLNode()) + "\"")
+						<< "];\n";
 				}
 				auto symbols = parse_symbol(dep.second);
 				for (auto symbol : symbols) {
@@ -322,7 +341,12 @@ void DependencyGraph::parse_scope(const Scope* scope)
 			link_style = graphstyle.at("arrow_connect");
 		}
 		
-		info.definitions << dotName(sym.first) << "_" << scope->getID() <<"[label=" << "\""<< sym.first<<"\"," << label_style << "]\n";
+		info.definitions << dotName(sym.first) << "_" << scope->getID() 
+			<< "["
+			<< "label=" << "\""<< sym.first<<"\"" 
+			<< ", " << label_style 
+// 			<< ", URL=\"morph://MorpheusModel/" << getXMLPath(sym.second->) << "\""
+			<< "]\n";
 
 		auto dependencies = sym.second->dependencies();
 		for (auto dep : dependencies ) {
