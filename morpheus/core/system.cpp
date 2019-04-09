@@ -39,38 +39,32 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 	}
 
 // 	addLocalSymbol(SystemSolver::noise_scaling_symbol, 1 );
-	
 	if (system_type == CONTINUOUS_SYS) {
-		string str_solver;
-		if (getXMLAttribute(node,"solver",str_solver)) {
-			if (str_solver =="euler" || str_solver =="1") {
-				solver_spec.method = SystemSolver::Method::Euler;
-			}
-			else if (str_solver =="heun" || str_solver =="2") {
-				solver_spec.method = SystemSolver::Method::Heun;
-			}
-			else if (str_solver =="runge-kutta" || str_solver =="4") {
-				solver_spec.method = SystemSolver::Method::Runge_Kutta4;
-			}
-			else if (str_solver == "runge-kutta-adaptive" ) {
-				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveBS;
-			}
-			else if (str_solver == "runge-kutta-adaptive-CK") {
-				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveCK;
-			}
-			else if (str_solver == "runge-kutta-adaptive-DP" || str_solver == "45") {
-				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveDP;
-			}
-			else if (str_solver == "runge-kutta-adaptive-BS" || str_solver == "23") {
-				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveBS;
-			}
-			else {
-				cout << "Unknown solver \"" << str_solver << "\" for System!\nSelecting Runge-Kutta adaptive." << endl;
-				solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveBS;
-			}
-		}
-		else
-			solver_spec.method = SystemSolver::Method::Runge_Kutta_AdaptiveCK;
+		PluginParameter<SystemSolver::Method, XMLNamedValueReader, DefaultValPolicy> method;
+		method.setXMLPath("solver");
+		map<string,SystemSolver::Method> solver_map;
+		solver_map["euler"]            = SystemSolver::Method::Euler;
+		solver_map["fixed1"]           = SystemSolver::Method::Euler;
+		solver_map["heun"]             = SystemSolver::Method::Heun;
+		solver_map["fixed2"]           = SystemSolver::Method::Heun;
+		solver_map["runge-kutta"]      = SystemSolver::Method::Runge_Kutta4;
+		solver_map["fixed4"]           = SystemSolver::Method::Runge_Kutta4;
+		solver_map["dormand-prince"]   = SystemSolver::Method::AdaptiveDP;
+		solver_map["adaptive45"]       = SystemSolver::Method::AdaptiveDP;
+		solver_map["adaptive45-dp"]    = SystemSolver::Method::AdaptiveDP;
+		solver_map["runge-kutta-adaptive"] = SystemSolver::Method::AdaptiveDP;
+		solver_map["runge-kutta-adaptive-DP"] = SystemSolver::Method::AdaptiveDP;
+		solver_map["cash-karp"]        = SystemSolver::Method::AdaptiveCK;
+		solver_map["adaptive45-ck"]    = SystemSolver::Method::AdaptiveCK;
+		solver_map["runge-kutta-adaptive-CK"] = SystemSolver::Method::AdaptiveCK;
+		solver_map["bogacki-shampine"] = SystemSolver::Method::AdaptiveBS;
+		solver_map["adaptive23"]       = SystemSolver::Method::AdaptiveBS;
+		solver_map["runge-kutta-adaptive-BS"] = SystemSolver::Method::AdaptiveBS;
+		method.setValueMap(solver_map);
+		method.setDefault("adaptive45");
+		method.loadFromXML(node, scope);
+		solver_spec.method = method();
+	
 		solver_spec.time_scaling = 1.0;
 		getXMLAttribute(node,"time-scaling",solver_spec.time_scaling);
 		solver_spec.epsilon = 1e-4;
@@ -271,7 +265,7 @@ void System::init() {
 
 }
 
-bool System::adaptive() const { return solver_spec.method == SystemSolver::Method::Runge_Kutta_AdaptiveCK || solver_spec.method == SystemSolver::Method::Runge_Kutta_AdaptiveDP || solver_spec.method == SystemSolver::Method::Runge_Kutta_AdaptiveBS;};
+bool System::adaptive() const { return solver_spec.method == SystemSolver::Method::AdaptiveCK || solver_spec.method == SystemSolver::Method::AdaptiveDP || solver_spec.method == SystemSolver::Method::AdaptiveBS;};
 
 void System::computeToBuffer(const SymbolFocus& f)
 {
@@ -720,9 +714,9 @@ void SystemSolver::solve(const SymbolFocus& f, bool use_buffer, vector<double>* 
 		case Method::Heun : Heun(f, spec.time_step); break;
 		case Method::Runge_Kutta4 : RungeKutta(f, spec.time_step); break;
 		case Method::Discrete : Discrete(f); break;
-		case Method::Runge_Kutta_AdaptiveCK :
-		case Method::Runge_Kutta_AdaptiveDP :
-		case Method::Runge_Kutta_AdaptiveBS :
+		case Method::AdaptiveCK :
+		case Method::AdaptiveDP :
+		case Method::AdaptiveBS :
 			RungeKutta_adaptive(f,spec.time_step); break;
 		default:
 			throw MorpheusException("Solver method not implemented in solve().");
@@ -1035,9 +1029,9 @@ void SystemSolver::RungeKutta_adaptive(const SymbolFocus& f, double ht) {
 		double max_err;
 		max_err=0;
 		try {
-			if (spec.method==Method::Runge_Kutta_AdaptiveCK)
+			if (spec.method==Method::AdaptiveCK)
 				RungeKutta_45CashKarp(f,local_ht);
-			else if (spec.method==Method::Runge_Kutta_AdaptiveDP)
+			else if (spec.method==Method::AdaptiveDP)
 				RungeKutta_45DormandPrince(f,local_ht);
 			else 
 				RungeKutta_23BogackiShampine(f,local_ht);

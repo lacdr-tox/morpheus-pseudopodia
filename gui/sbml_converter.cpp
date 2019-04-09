@@ -678,7 +678,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 	// Setup target system 
 	
 	target_system = target_scope->insertChild("System");
-	target_system->attribute("solver")->set("runge-kutta-adaptive-DP");
+	target_system->attribute("solver")->set("adaptive45");
 	auto stop_symbol_attr = morph_model->rootNodeContr->firstActiveChild("Time")->firstActiveChild("StopTime")->attribute("symbol");
 	QString stop_symbol;
 	if (stop_symbol_attr->isActive()) {

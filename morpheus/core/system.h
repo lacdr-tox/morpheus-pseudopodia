@@ -134,9 +134,9 @@ class SystemSolver{
 			Euler,
 			Heun,
 			Runge_Kutta4,
-			Runge_Kutta_AdaptiveBS,
-			Runge_Kutta_AdaptiveCK,
-			Runge_Kutta_AdaptiveDP
+			AdaptiveBS,
+			AdaptiveCK,
+			AdaptiveDP
 		};
 		struct Spec {
 			SystemSolver::Method method;

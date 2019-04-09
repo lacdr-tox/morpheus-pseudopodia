@@ -25,24 +25,6 @@
 		<xs:annotation>
 			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
 			<xs:appinfo>Math</xs:appinfo>
-
-   <xs:documentation>
-System of differential or recurrence equations that are solved synchronously.
-
-Solver for differential equations:
-- Euler: 1st order
-- Heun (aka midpoint): 2nd order 
-- Runga-Kutta: 4th order
-
-The 'time-step' sets the (fixed) numerical integration step. Should be small enough to prevent numerical instabilities and achieve sufficiently accurate solutions.
-
-The 'time-scaling' attribute can be used to scale the dynamics relative to the simulation time. This is useful to vary dynamics between submodels in a multiscale model.
-
-Note:
-- Algebraic loops are allowed, since the state of the System at time t depends only on state t-1.
-- When a random number, i.e. rand_norm(0,1), is used in an expression, Euler-Maruyama is automatically used (not supported for runge-kutta).
-
-</xs:documentation>
 		</xs:annotation>
 
 		<xs:choice minOccurs="0" maxOccurs="unbounded">
@@ -68,7 +50,7 @@ Given in units of system time, i.e. simulation time scaled by the systems time-s
 				</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
-		<xs:attribute name="solver" type="cpmSolver" use="required"/>
+		<xs:attribute name="solver" type="cpmSolver" use="required" default="adaptive45"/>
 		<xs:attribute name="solver-eps" type="cpmDouble" use="optional" default="1e-4"/>
 	</xs:complexType>
 
@@ -82,13 +64,15 @@ Solver for differential equations:
 			</xs:documentation>
 		</xs:annotation>
 		<xs:restriction base="xs:string">
-			<xs:enumeration value="runge-kutta-adaptive"/>
+			<xs:enumeration value="adaptive45"/>
+			<xs:enumeration value="adaptive45-ck"/>
+			<xs:enumeration value="adaptive23"/>
+			<xs:enumeration value="fixed4"/>
+			<xs:enumeration value="fixed2"/>
+			<xs:enumeration value="fixed1"/>
+			<xs:enumeration value="runge-kutta"/>
 			<xs:enumeration value="heun"/>
 			<xs:enumeration value="euler"/>
-			<xs:enumeration value="runge-kutta"/>
-			<xs:enumeration value="runge-kutta-adaptive-CK"/>
-			<xs:enumeration value="runge-kutta-adaptive-DP"/>
-			<xs:enumeration value="runge-kutta-adaptive-BS"/>
 		</xs:restriction>
 	</xs:simpleType>
 	
