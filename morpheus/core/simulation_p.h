@@ -48,7 +48,7 @@
 
 
 namespace SIM {
-	const string dep_graph_format = "svg";
+	const string dep_graph_format = "dot";
 	bool generate_symbol_graph_and_exit = false;
 	int numthreads = omp_get_max_threads();
 	shared_ptr<Lattice> global_lattice;

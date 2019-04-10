@@ -160,6 +160,10 @@ QString MorphModel::getDependencyGraph()
 		if (temp_folder.exists(graph_file)) {
 			return temp_folder.absoluteFilePath(graph_file);
 		}
+		graph_file = "dependency_graph.dot";
+		if (temp_folder.exists(graph_file)) {
+			return temp_folder.absoluteFilePath(graph_file);
+		}
 	}
 	
 	QString model_file = temp_folder.absoluteFilePath("model.xml");
@@ -231,6 +235,11 @@ QString MorphModel::getDependencyGraph()
 		return temp_folder.absoluteFilePath(graph_file);
 	}
 	graph_file = "dependency_graph.png";
+	if (temp_folder.exists(graph_file)) {
+		dep_graph_model_edit_stamp =  rootNodeContr->getModelDescr().edits;
+		return temp_folder.absoluteFilePath(graph_file);
+	}
+	graph_file = "dependency_graph.dot";
 	if (temp_folder.exists(graph_file)) {
 		dep_graph_model_edit_stamp =  rootNodeContr->getModelDescr().edits;
 		return temp_folder.absoluteFilePath(graph_file);

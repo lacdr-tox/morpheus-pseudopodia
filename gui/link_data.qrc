@@ -2,6 +2,7 @@
     <qresource prefix="/">
         <file>data/processProxy.sh</file>
         <file>data/autofix_rules.txt</file>
+        <file alias="template.html">data/template.html</file>
 		<file alias="feedback_request.html">data/feedback_request.html</file>
 		<file alias="no_announcement.html">data/no_announcement.html</file>
 		<file alias="morpheusgui.gif">data/morpheusgui.gif</file>

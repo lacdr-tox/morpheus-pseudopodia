@@ -27,6 +27,9 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	dep_graph = new QGraphicsView(this);
 	dep_graph->setScene(new QGraphicsScene(dep_graph));
 	central->addWidget(dep_graph,4);
+	
+	webGraph = new QWebEngineView(dep_graph);
+	central->addWidget(webGraph);
 };
 
 void AboutModel::update()
@@ -49,19 +52,33 @@ void AboutModel::update_graph()
 	if (!graph.isEmpty()) {
 		qDebug() << "showing dep_graph: Filename: " << QString(graph);
 		if (graph.endsWith("png")) {
-			dep_graph->scene()->clear();
-			QGraphicsPixmapItem* item = new QGraphicsPixmapItem(QPixmap::fromImage(QImage(graph)));
-			item->setTransformationMode(Qt::SmoothTransformation);
-			dep_graph->scene()->addItem(item);
-			dep_graph->fitInView(item,Qt::KeepAspectRatio);
-			dep_graph->scene()->setSceneRect(item->boundingRect());
+			url = (QString("file://") + graph);
+			webGraph->setUrl(url);
 		} else if (graph.endsWith("svg")) {
-			dep_graph->scene()->clear();
-			QGraphicsSvgItem *item = new QGraphicsSvgItem(graph);
-			dep_graph->scene()->addItem(item);
-			dep_graph->fitInView(item,Qt::KeepAspectRatio);
-			dep_graph->scene()->setSceneRect(item->boundingRect());
+			url = (QString("file://") + graph);
+			webGraph->setUrl(url);
+		} else if (graph.endsWith("dot")){
+			QFile dotgraph(":/template.html");
+			QFile dotsource(graph);
+// 			QWebView qwv_tmp(dep_graph);
+			QByteArray dotHTML;
+			if (dotgraph.open(QIODevice::ReadOnly))
+			{
+				QByteArray dotContent = dotgraph.readAll();
+				dotsource.open(QIODevice::ReadOnly);
+				dotContent.replace("@@template@@",dotsource.readAll().replace("\n","\\\n"));
+				//dotContent.replace("\\\"","\"");
+				std::cout << dotContent.toStdString();
+				dotHTML = dotContent;
+				dotsource.close();
+				dotgraph.close();
+			}
+			else {
+				qDebug() << "Cannot open graph template";
+			}
+			webGraph->setHtml(dotHTML);
 		}
+		//webGraph->show();
 	}
 	
 	// run morpsi on it

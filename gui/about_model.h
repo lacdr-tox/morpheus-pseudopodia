@@ -16,6 +16,7 @@
 #include <QWidget>
 #include <QGraphicsScene>
 #include <QtSvg/QGraphicsSvgItem>
+#include <QtWebEngineWidgets/QWebEngineView>
 #include "config.h"
 
 class AboutModel : public QWidget {
@@ -24,7 +25,8 @@ class AboutModel : public QWidget {
 	SharedMorphModel model;
 	QLineEdit* title;
 	QTextEdit* description;
-	
+	QWebEngineView* webGraph;
+	QUrl url;
 	QGraphicsView* dep_graph;
 public:
 	AboutModel(SharedMorphModel model, QWidget* parent = NULL);
