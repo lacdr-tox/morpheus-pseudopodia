@@ -129,7 +129,7 @@ The \b name attribute is used for descriptive purposes only. In particular, grap
 **/
 
 /**
-  \defgroup MathExpressions
+\defgroup MathExpressions
   
 Mathematical expressions to be evaluated during run-time. The vector version uses the component-wise 'x,y,z' notation, or -- if available -- the spherical notation 'phi,theta,radius'. 
 
@@ -258,7 +258,7 @@ DiffEqn are only allowed within \ref ML_System
 \defgroup ML_System System
 \ingroup ML_Global
 \ingroup ML_CellType
-\ingroup MathExpressions
+\ingroup MathExpressions ContinuousProcessPlugins
 
 Environment for tightly coupled \ref ML_Rule and \ref ML_DiffEqn. Expressions with a System are synchronously updated and may contain recurrence relations.
 
@@ -302,23 +302,25 @@ An IntermediateVector Symbol is available to all expressions within a System. In
 
 /**
 \defgroup ML_Event Event
-\ingroup MathExpressions
+\ingroup MathExpressions InstantaneousProcessPlugins
+\ingroup ML_Global
+\ingroup ML_CellType
 
 Environment for conditionally executed set of assignments.
 
-- \b time-step: if specified, Condition is evulated in regular intervals (\b time-step). If not specified, if no time-step is provided, the minimal time-step of the input symbols is used.
+- \b time-step: if specified, Condition is evulated in regular intervals (\e time-step). If not specified the minimal time-step of the input symbols is used.
 - \b Condition: expression that must evaluate true to trigger assignments.
-- \b Condition/history: initial value of the condition. Used to determine whether an initially true condition may trigger if @trigger="on-change".
-- \b trigger: whether assigments are executed when the Condition turns from false to true (trigger = "on-change", as in SBML) or whenever the condition is found true (trigger="when-true").
+- \b Condition/history: initial value of the condition. Used to determine whether an initially true condition may trigger if \e trigger="on-change".
+- \b trigger: whether assigments are executed when the Condition turns from false to true (\e trigger="on-change", as in SBML) or whenever the condition is found true (\e trigger="when-true").
 - \b delay: time by which the execution of the assignments of the event are delayed.
-- \b persistent: a delayed event who's condition fell false meanwhile does only execute if @persistent = true. (default true)
-- \b compute-time: time at which the values of the assignments are computes on-trigger/on-execution.
+- \b persistent: a delayed event who's condition \e fell false meanwhile a delay does only execute if \e persistent="true". (default \e true)
+- \b compute-time: time at which the values of the assignments are computes \e on-trigger / \e on-execution.
 
 \section Example
 Set symbol "c" (e.g. assume it's a CellProperty) to 1 after 1000 simulation time units
 \verbatim
 <Event trigger="on change" time-step="1">
-    <Condition>a > 10</Condition>
+    <Condition> time > 1000 </Condition>
     <Rule symbol-ref="c">
         <Expression>1</Expression>
     </Rule>
@@ -332,6 +334,7 @@ Set symbol "c" (e.g. assume it's a CellProperty) to 1 after 1000 simulation time
 \ingroup MorpheusML
 
 The \ref ML_Space element specifies the size, structure and boundary conditions of the spatial lattice. 
+The types of boundary conditions are homogeneous amoung all model parts, while the exact values can be specified through \b BoundaryValue in a \ref ML_Field or in \ref ML_CellPopulations for the cell layer.
 
 A \ref ML_SpaceSymbol can be used to create a symbol to the current (x,y,z) location. 
 
@@ -681,20 +684,21 @@ Specification of a batch process for parameter exploration or sensitivity analys
 \defgroup Scope
 \ingroup Concepts
 
-\b Scopes are the symbol governors of (nested) sections of the model, where symbols can be defined and retrieved. Symbols defined in a scope are invalid outside of this scope, and available in all sub-scoped, i.e. nested sections. This is analogous to the local variable scoping in most programming languages.
+\b Scopes manage the symbol of the (nested) the model sections, allow symbols registration by model components and symbol retrieval by others. Symbols defined in a scope are invalid outside of this scope, but available in all sub-scopes, i.e. nested sections. This is analogous to the local variable scoping in most programming languages.
 
 The top-most scope is \ref ML_Global.
 The following model elements define their own sub-scopes:
 - \ref ML_CellType
-- \ref ML_System (including \ref ML_CellDivision triggers, \ref ML_Event)
+- \ref ML_System (including \b Triggers of  \ref ML_Event and \ref ML_CellDivision)
 - \ref ML_Function 
 
-Symbols are inherited from the parental to the local scopes, but may be overridden, even to differ in constness and granularity (e.g. Global/Constant may be overwritten by a System/Variable). 
+Ss stated above, symbols are inherited from the parental scope, but may be overridden, even to differ in constness and granularity (e.g. Global/ref \ML_Constant may be overwritten in a System by a \ref ML_Variable). 
 The type of the symbol (scalar / vector), however, has to be conserved. In this way, global symbols can be used as default values.
 
-Unlike the other scopes, the \ref ML_CellType scope also represents a spatial compartment. In order to adhere to intuitive modelling logics, we apply \b spatial \b scoping, such that symbols defined in the CellType scope can override parental, i.e. global, symbols in the dynamic spatial region the celltype occupies. Therefore, a global symbol can be effectively composed of a global value and celltype specific values defined within the celltypes themself.
+Unlike the other scopes, the \ref ML_CellType scopes also represent spatial compartments. In order to adhere to intuitive modelling logics, we apply \b spatial \b scoping, such that symbols defined in a \ref ML_CellType scope can override parental, i.e. global, symbols in the (dynamic) spatial region the celltype occupies. Therefore, a global symbol can be effectively composed of a global value and celltype specific values defined within the celltypes themself. 
+Forwarding the global access to a symbol at a specific position to through such a spatially structured symbols is what we call <b>spatial scoping</b>.
 
-When a symbol is declared in \b all CellType scopes (e.g. in all CellTypes), it also becomes available in the global scope. (Known as a virtual composite symbol.)
+When a symbol is declared in \b all CellType scopes (e.g. in all CellTypes), it also becomes available in the global scope (known as a virtual composite symbol.)
 
 \section Examples
 In the following example, 'a=1' is declared in the Global scope, and 'b=2' is declared in the System scope. The global variable 'result' will yield '3'.
@@ -769,9 +773,11 @@ Because 'p' is defined in all CellTypes, it is automatically also available in t
 
 \section Schedule
 
-Morpheus currently applies a static scheduling scheme, which means that the schedule is constructed before the simulation starts and remains unchanged until the end of the simulation.
+Morpheus currently applies a static scheduling scheme, which means that the schedule is constructed before the simulation starts and remains unchanged until the end of the simulation. Numerical schemes, however, may subdivide the stepping provided by the static scheduling, as done by adaptive solvers and the stability criterion of fwd. euler diffusion.
 
-In the initialization phase, all symbols are registered, the plugins and their interdependencies are analysed and a ** dependency tree** is constructed. Using the dependency tree, a schedule is constructed along the following guidelines. 
+The final scheme can be found in a simulation log.
+
+In the initialization phase, all symbols are registered, the plugins and their interdependencies are analysed and a <b>dependency tree</b> is constructed. Using the dependency tree, a schedule is constructed along the following guidelines. 
 
 - \b Correctness: Update time steps must be fine-grained enough.
 - \b Order: Sequential order must obey the order in the directed acyclic dependency graph (DAG), which is constructed by opening up potential closed loops.

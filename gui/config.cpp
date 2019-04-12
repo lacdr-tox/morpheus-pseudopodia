@@ -202,7 +202,7 @@ config::config() : QObject(), helpEngine(NULL) {
 	db.close();
 
 	// Creating a Job Queue that runs in a separate thread ..
-	qDebug() << "Main thread " << QThread::currentThreadId();
+// 	qDebug() << "Main thread " << QThread::currentThreadId();
 	job_queue_thread = new QThread();
 	job_queue = new JobQueue();
 	job_queue->moveToThread(job_queue_thread);

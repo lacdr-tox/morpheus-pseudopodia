@@ -26,7 +26,7 @@ private:
 
 QVariant HelpBrowser::loadResource(int type, const QUrl & name) {
 	QNetworkRequest request(name);
-	qDebug() << "Requesting " << name;
+// 	qDebug() << "Requesting " << name;
 	auto reply = nam->get(request);
 	return reply->readAll();
 }

@@ -18,7 +18,7 @@
 
 /** \defgroup CellDeath
 \ingroup ML_CellType
-\ingroup MiscellaneousPlugins
+\ingroup MiscellaneousPlugins InstantaneousProcessPlugins
 \brief Remove cell based on a condition
 
 Induces cell removal upon a predefined condition. 

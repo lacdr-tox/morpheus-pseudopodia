@@ -156,7 +156,7 @@ SET(CPACK_STRIP_FILES "${M_EXECUTABLES}")
 
 IF( "${MORPHEUS_OS}" STREQUAL "UNIX" AND  NOT "${MORPHEUS_OS}" STREQUAL "APPLE" )
   
-  SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Modeling environment for Multi-Cellular
+  SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Modeling environment for Multi-Cellular Systems Biology
  Modeling and simulation environment for multi-cellular systems biology.
  Includes simulators for ODEs, PDEs and cellular Potts models. 
  .
@@ -179,7 +179,7 @@ SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md ${CMAKE_CURRENT_SOURCE_DIR}/LIC
   INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/changelog.gz ${CMAKE_CURRENT_BINARY_DIR}/copyright
 DESTINATION "share/doc/${CPACK_PACKAGE_NAME}/")
   
-  FIND_PROGRAM(DPKG_PROGRAM dpkg DOC "dpkg program of Debian-based systems")
+  FIND_PROGRAM(DPKG_PROGRAM dpkg DOC "dpkg package manager of Debian-based systems")
   
   SET(DEBIAN_TIFF_PACKAGE "libtiff5")
   
@@ -194,7 +194,7 @@ DESTINATION "share/doc/${CPACK_PACKAGE_NAME}/")
   
   SET(CPACK_GENERATOR "DEB")
 
-  SET(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://imc.zih.tu-dresden.de/wiki/morpheus")
+  SET(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://morpheus.gitlab.io")
 
   STRING(TOLOWER "${CPACK_PACKAGE_NAME}" CPACK_PACKAGE_NAME_LOWERCASE)
  
@@ -234,6 +234,11 @@ ELSEIF("${MORPHEUS_OS}" STREQUAL "APPLE")
 	#${CMAKE_CURRENT_SOURCE_DIR}/build/src/morpheus-gui")
 
 ELSEIF("${MORPHEUS_OS}" STREQUAL "WIN32")
+  SET(CPACK_WIX_PRODUCT_GUID "D80BAC6B-539F-4384-AD1B-FCDD8091DE76")
+  SET(CPACK_WIX_UPGRADE_GUID ${CPACK_WIX_PRODUCT_GUID})
+  SET(CPACK_WIX_PRODUCT_ICON "${CMAKE_CURRENT_SOURCE_DIR}/gui/icons/win/morpheus.ico")
+  SET(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "http:\\\\morpheu.gitlab.io" )
+  
   SET(CPACK_GENERATOR "NSIS")
   SET(CPACK_MONOLITHIC_INSTALL 1)
   SET(CPACK_PACKAGE_EXECUTABLES "${GUI_EXEC_NAME};Morpheus")
@@ -244,7 +249,7 @@ ELSEIF("${MORPHEUS_OS}" STREQUAL "WIN32")
   # : Modeling environment for Multiscale Morphogenesis")
   SET(CPACK_NSIS_CONTACT "${MAINTAINTER}")
   #SET(CPACK_PACKAGE_EXECUTABLES "${M_EXEC_NAME}" "${EWS_APP_NAME}")
-  SET(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\imc.zih.tu-dresden.de\\\\wiki\\\\morpheus")
+  SET(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\morpheu.gitlab.io")
   
   # RTF update: pandoc -s -f markdown -t rtf LICENSE.md  > LICENSE.rtf
   SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.rtf")
@@ -254,7 +259,7 @@ ELSEIF("${MORPHEUS_OS}" STREQUAL "WIN32")
   # install/uninstall Desktop item
   
   SET(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
-    "CreateShortCut \\\"$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Morpheus Website.lnk\\\" \\\"http:\\\\\\\\imc.zih.tu-dresden.de\\\\wiki\\\\morpheus\\\" \n
+    "CreateShortCut \\\"$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Morpheus Website.lnk\\\" \\\"http:\\\\\\\\morpheus.gitlab.io\\\" \n
      WriteRegStr HKCU \\\"Software\\\\Morpheus\\\\Morpheus\\\\local\\\" \\\"executable\\\" \\\"$INSTDIR\\\\morpheus.exe\\\"
   ")
   # CreateShortCut \\\"$DESKTOP\\\\${M_APP_NAME}.lnk\\\" \\\"$INSTDIR\\\\${GUI_EXEC_NAME}\\\" \n
