@@ -22,14 +22,27 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	description->setReadOnly(false);
 	description->setText(model->rootNodeContr->getModelDescr().details);
 	connect(description,SIGNAL(textChanged()),this, SLOT(assignDescription()));
-	
 	central->addWidget(description);
-	dep_graph = new QGraphicsView(this);
-	dep_graph->setScene(new QGraphicsScene(dep_graph));
-	central->addWidget(dep_graph,4);
 	
-	webGraph = new QWebEngineView(dep_graph);
+	layset= new QGridLayout(this);
+	layset->addWidget(new QLabel("exclude-plugins"),0,0);
+	layset->addWidget(new QLabel("exclude-symbols"),1,0);
+	layset->addWidget(new QLabel("reduced"),2,0);
+	layset->addWidget(new QComboBox(),0,1);
+	layset->addWidget(new QComboBox(),1,1);
+	QComboBox* qcb1 = new QComboBox();
+	qcb1->addItems({"true","false"});
+	layset->addWidget(qcb1,2,1);
+	central->addLayout(layset);
+	
+	webGraph = new QWebView(this);
 	central->addWidget(webGraph);
+	
+	save_btn = new QPushButton(this);
+	central->addWidget(save_btn);
+	save_btn->setText("save");
+	connect(save_btn,SIGNAL(clicked()),this, SLOT(svgOut()));
+	save_btn->show();
 };
 
 void AboutModel::update()
@@ -76,29 +89,35 @@ void AboutModel::update_graph()
 			else {
 				qDebug() << "Cannot open graph template";
 			}
+			
 			webGraph->setHtml(dotHTML);
+			
 		}
-		//webGraph->show();
+		webGraph->show();
 	}
-	
 	// run morpsi on it
 	// reload the resulting dependency_graph.png/svg
 	// display an error, id something went wrong.
 	
 }
 
+void AboutModel::svgOut()
+{
+	QVariant qv;
+	QString fileName = QFileDialog::getSaveFileName(this,"/home","");
+	QFile qf(fileName);
+	qf.open(QIODevice::WriteOnly);
+	QTextStream out(&qf);
+	qv = webGraph->page()->mainFrame()->evaluateJavaScript("retSVG()");
+	out<<"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
+	out<<qv.toString().replace(QRegularExpression("</a>\\n"),"").replace(QRegularExpression("<a\\s.*?>"),"");
+	qf.close();
+}
+
+
 void AboutModel::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);
-	
-	if (!dep_graph->scene()) return;
-	if (dep_graph->scene()->items().isEmpty()) return;
-	QGraphicsItem* item = dep_graph->scene()->items().first();
-	if (item) {
-		dep_graph->fitInView(item,Qt::KeepAspectRatio);
-		dep_graph->scene()->setSceneRect(item->boundingRect());
-	}
-
 }
 
 

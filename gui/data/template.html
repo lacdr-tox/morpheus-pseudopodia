@@ -4,7 +4,6 @@
 <head>
 </head>
 <body>
-<button id="saveBtn">Download</button>
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script src="https://unpkg.com/viz.js@1.8.0/viz.js" type="javascript/worker"></script>
 <script src="https://unpkg.com/d3-graphviz@1.4.0/build/d3-graphviz.min.js"></script>	
@@ -16,18 +15,10 @@
 		.renderDot(dotSrc)
 		.on("end", connect);
 		
-	function save(){
-		var blob = new Blob([document.getElementById("graph").innerHTML], {type: 'image/svg+xml'});
-		var elem = window.document.createElement('a');
-		elem.href = window.URL.createObjectURL(blob);
-		elem.download = "test.svg";        
-		document.body.appendChild(elem);
-		elem.click();        
-		document.body.removeChild(elem);
-	}
-		
-	function connect(){
-		b1.setAttribute("onclick", "save()");
+	function retSVG()
+	{
+		var toRet = document.getElementById("graph").innerHTML;
+		return toRet;
 	}
 </script>
 </body>

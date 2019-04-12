@@ -16,7 +16,9 @@
 #include <QWidget>
 #include <QGraphicsScene>
 #include <QtSvg/QGraphicsSvgItem>
-#include <QtWebEngineWidgets/QWebEngineView>
+#include <QWebView>
+#include <QListView>
+#include <QWebFrame>
 #include "config.h"
 
 class AboutModel : public QWidget {
@@ -25,12 +27,14 @@ class AboutModel : public QWidget {
 	SharedMorphModel model;
 	QLineEdit* title;
 	QTextEdit* description;
-	QWebEngineView* webGraph;
+	QWebView* webGraph;
 	QUrl url;
-	QGraphicsView* dep_graph;
+	QFrame* webFrame;
+	QGridLayout* layset;
+	QPushButton* save_btn;
+	
 public:
 	AboutModel(SharedMorphModel model, QWidget* parent = NULL);
-	
 	void update();
     virtual void resizeEvent(QResizeEvent* event);
 	
@@ -38,6 +42,7 @@ private slots:
 	void update_graph();
 	void assignTitle(QString title);
 	void assignDescription();
+	void svgOut();
 };
 
 #endif
