@@ -586,14 +586,6 @@ void CellType::set_update(const CPM::Update& update) {
 // 				storage.cell(state.cell) . setUpdate(update_neigh);
 // 		}
 // 	}
-	if (update.opAdd()) {
-		auto cell_id = update.focusStateAfter().cell_id;
-		auto update_add = update.selectOp(CPM::Update::ADD);
-		storage.cell(cell_id) . setUpdate(update_add);
-		for (uint i=0; i<update_listener.size(); i++) {
-			update_listener[i]->set_update_notify(cell_id, update_add);
-		}
-	}
 	if (update.opRemove()) {
 		auto cell_id = update.focusStateBefore().cell_id;
 		auto update_remove = update.selectOp(CPM::Update::REMOVE);
@@ -602,23 +594,31 @@ void CellType::set_update(const CPM::Update& update) {
 			update_listener[i]->set_update_notify(cell_id, update_remove);
 		}
 	}
-}
-
-void CellType::apply_update(const CPM::Update& update) {
 	if (update.opAdd()) {
 		auto cell_id = update.focusStateAfter().cell_id;
 		auto update_add = update.selectOp(CPM::Update::ADD);
-		storage.cell(cell_id) . applyUpdate(update_add);
+		storage.cell(cell_id) . setUpdate(update_add);
 		for (uint i=0; i<update_listener.size(); i++) {
-			update_listener[i]->update_notify(cell_id, update_add);
+			update_listener[i]->set_update_notify(cell_id, update_add);
 		}
 	}
+}
+
+void CellType::apply_update(const CPM::Update& update) {
 	if (update.opRemove()) {
 		auto cell_id = update.focusStateBefore().cell_id;
 		auto update_remove = update.selectOp(CPM::Update::REMOVE);
 		storage.cell(cell_id) . applyUpdate(update_remove);
 		for (uint i=0; i<update_listener.size(); i++) {
 			update_listener[i]->update_notify(cell_id, update_remove);
+		}
+	}
+	if (update.opAdd()) {
+		auto cell_id = update.focusStateAfter().cell_id;
+		auto update_add = update.selectOp(CPM::Update::ADD);
+		storage.cell(cell_id) . applyUpdate(update_add);
+		for (uint i=0; i<update_listener.size(); i++) {
+			update_listener[i]->update_notify(cell_id, update_add);
 		}
 	}
 }
