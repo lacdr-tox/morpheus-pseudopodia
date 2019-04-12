@@ -149,7 +149,7 @@
 					<xs:attribute name="minimum" type="cpmMathExpression" use="optional" />
 					<xs:attribute name="maximum" type="cpmMathExpression" use="optional" />
 					<xs:attribute name="logarithmic" type="cpmBoolean" use="optional" />
-					<xs:all>
+					<xs:all maxOccurs="unbounded">
 						<xs:element name="Symbol" type="cpmLoggerPlotColumn" minOccurs="0"/>
 					</xs:all>
 				</xs:complexType>
