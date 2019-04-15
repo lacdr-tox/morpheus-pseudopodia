@@ -26,9 +26,8 @@ Induces cell removal upon a predefined condition.
 - \b condition: Expression describing the condition under which a cell will be removed.
 
 - \b target_volume: Symbol referring to the target volume as used in VolumeConstraint. 
-If no target volume is specified, the cell will removed immediately upon fulfilling of the specified condition, modeling lysis.
-When a target volume is specified, the target volume is set to zero upon fulfilling of the specified condition. 
-The cell will removed after its area (2D) or volume (3D) \f$ v_{\sigma, t} = 1 \f$.
+If no target volume is specified, the cell will be removed and replaced by medium immediately upon fulfilling the specified condition, modeling lysis.
+When a target volume is specified, the target volume is set to zero upon fulfilling of the specified condition and the cell will be removed as soon as it's volume shrunk to 1 node (\f$ v_{\sigma, t} = 1 \f$).
 
 
 \section Example

@@ -164,7 +164,7 @@ IF( "${MORPHEUS_OS}" STREQUAL "UNIX" AND  NOT "${MORPHEUS_OS}" STREQUAL "APPLE" 
   - Modeling without programming.
   - Model integration into multiscale models by symbolic linking.
   - Import of SBML models.
-  - Runtime parsing of math expressions.
+  - Simulating, sharing and archiving Models with ease.
   - Parameter exploration through (parallel) batch processing.
   - Multi-core concurrency support using openMP multithreading")
 

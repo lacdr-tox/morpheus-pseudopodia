@@ -22,17 +22,22 @@
 
 Change cell-contact energy by factor based on binding between two identical adhesives \f$ a_{\sigma} \f$ on adjacent cells (i.e. cadherins).
 
-If no equilibriumConstant is given (default), the maximum number of possible bonds is assumed by taking the minimum of adhesive in both cells:
-
-\f$ \Delta E = - min(a_{\sigma1},a_{\sigma2}) \cdot s_{\sigma} \f$
-
-If an equilibriumConstant is given, the number of bonds is calculated on the basis of binding / unbinding rate ratio.
-
-\f$ \Delta E = ???? \f$
-
 - \b adhesive: Expression describing amount of adhesive molecules. This may be a symbol representing a cell or membrane property (e.g. "c") or an expression (e.g. "10 * c").
 - \b strength (default="1"): Expression describing strength of adhesion. This may be a symbol representing a cell or membrane property (e.g. "s") or an expression (e.g. "10 * s").
 - \b equilibriumConstant (optional): Value describing ratio of binding/unbinding between adhesive molecules at cell membranes. 
+
+
+If no \e equilibriumConstant is given (default), the full bond saturation is assumed by taking the minimum of adhesive in both cells:
+
+\f$ E = - min(a_{\sigma1},a_{\sigma2}) \cdot s_{\sigma} \f$, with units energy per node length.
+
+
+If an \e equilibriumConstant is given, the equilibrium concentration of bonds is calculated on the basis of binding / unbinding rate ratio of reaction
+
+\f$ A_1 A_2 \overset{k_b}{\underset{k_{ub}}{\longleftrightarrow}} A_1 + A_2 \f$
+
+\f$ E = - \left[ \frac{a_1+a_2+k_{ub}/k_b}{2} + \sqrt{\frac{1}{4}(a_1+a_2+k_{ub}/k_b)^2 - a_1 a_2} \right] \f$, with units energy per node length.
+
 
 \section Examples
 
