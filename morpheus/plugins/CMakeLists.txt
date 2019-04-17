@@ -7,6 +7,7 @@ set(subdirs ${subdirs}
 	reporters
 	shape
 	#segmented_cell
+	examples
 )
 
 
