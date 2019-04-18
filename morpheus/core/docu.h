@@ -272,7 +272,7 @@ Environment for tightly coupled \ref ML_Rule and \ref ML_DiffEqn. Expressions wi
      - \b fixed2 aka \b heun - Heun 2nd order (aka explicit trapezoid rule)
      - \b fixes4 aka \b runge-kutta - Runge Kutta 4th order
   - \b Stochastic fixed time step: 
-    - use \b euler - Euler Maruyama method
+    - use \b stochastic - Euler Maruyama method (\b euler also autodetects stochasticity)
   - \b Stiff/non-stiff adaptive 
     - Cash-Karp + Rosenbrock (planned)
   

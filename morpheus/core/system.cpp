@@ -45,6 +45,7 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 		map<string,SystemSolver::Method> solver_map;
 		solver_map["euler"]            = SystemSolver::Method::Euler;
 		solver_map["fixed1"]           = SystemSolver::Method::Euler;
+		solver_map["stochastic"]       = SystemSolver::Method::Euler;
 		solver_map["heun"]             = SystemSolver::Method::Heun;
 		solver_map["fixed2"]           = SystemSolver::Method::Heun;
 		solver_map["runge-kutta"]      = SystemSolver::Method::Runge_Kutta4;
@@ -388,8 +389,8 @@ bool injectGaussionNoiseScaling(string& expression, SystemSolver::Method solver_
 		pos += sym_RandomNorm.size();
 
 		if (expression[pos] == '(') {
-			if ( solver_method != SystemSolver::Method::Heun && solver_method != SystemSolver::Method::Euler ) {
-				cerr << "System: ODE contains stochastic term, but no Runge-Kutta solver for stochastic differential equations is available (choose Euler or Heun method instead)."<< endl;
+			if ( solver_method != SystemSolver::Method::Euler ) {
+				cerr << "System: ODE contains stochastic term, but no Runge-Kutta solver for stochastic differential equations is available (choose stochastic method (Euler-Maruyama) instead)."<< endl;
 				// TODO Should throw
 				exit(-1);
 			}
@@ -537,7 +538,7 @@ SystemSolver::SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFun
 		// Noise requires proper time scaling
 		if ( eval->type == SystemFunc<double>::ODE) {
 			auto used_fun = eval->evaluator->parser->GetUsedFun();
-			if (used_fun.count(sym_RandomBool) || used_fun.count(sym_RandomGamma) || used_fun.count(sym_RandomUni) ) {
+			if (used_fun.count(sym_RandomBool) || used_fun.count(sym_RandomGamma) || used_fun.count(sym_RandomUni) || used_fun.count(sym_RandomInt) ) {
 				throw string("System: stochastic ODEs may only contain normal-distributed noise \"") + sym_RandomNorm + "()\".";
 			}
 		}

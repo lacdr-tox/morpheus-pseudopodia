@@ -70,6 +70,7 @@ Solver for differential equations:
 			<xs:enumeration value="fixed4"/>
 			<xs:enumeration value="fixed2"/>
 			<xs:enumeration value="fixed1"/>
+			<xs:enumeration value="stochastic"/>
 			<xs:enumeration value="runge-kutta"/>
 			<xs:enumeration value="heun"/>
 			<xs:enumeration value="euler"/>
