@@ -462,20 +462,21 @@ pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID mother_id, V
 		}
 	}
 
-	//cout << "Cell division: mother: " << mother.nNodes() << ", daughter1: " << daughter1.nNodes() << ", daughter2: " << daughter2.nNodes() << endl;	
-	
-	if( mother.nNodes() == 0 ){
-		removeCell( mother_id );
-	}
-	else{
-		cerr << "divideCell2: Mother cell ("<<  mother_id << ") is not empty after cell division (nodes: " <<  mother.nNodes() << " ) and cannot be removed!" << endl;
-		exit(-1);
-	}
+	//cout << "Cell division: mother: " << mother.nNodes() << ", daughter1: " << daughter1.nNodes() << ", daughter2: " << daughter2.nNodes() << endl;
 	
 	daughter1.init();
 	daughter1.assignMatchingProperties(mother.properties);
 	daughter2.init();
 	daughter2.assignMatchingProperties(mother.properties);
+	
+	if( mother.nNodes() == 0 ){
+		removeCell( mother_id );
+		storage.removeCell(mother_id);
+	}
+	else{
+		cerr << "divideCell2: Mother cell ("<<  mother_id << ") is not empty after cell division (nodes: " <<  mother.nNodes() << " ) and cannot be removed!" << endl;
+		exit(-1);
+	}
 	
 	return pair<CPM::CELL_ID, CPM::CELL_ID>(daughter1_id, daughter2_id);
 }
