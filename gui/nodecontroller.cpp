@@ -437,7 +437,7 @@ AbstractAttribute* nodeController::getAttributeByPath(QStringList path) {
 }
 
 
-nodeController* nodeController::find(QStringList path) {
+nodeController* nodeController::find(QStringList path, bool create) {
 	if (path.empty())
 		return this;
 	
@@ -455,9 +455,15 @@ nodeController* nodeController::find(QStringList path) {
 		for (int i=0; i<childs.size();i++) {
 			if (childs[i]->getName()=="Contact"){
 				if (childs[i]->attribute("type1")->get() == type1 && childs[i]->attribute("type2")->get() == type2) {
-					return childs[i]->find(path);
+					return childs[i]->find(path, create);
 				}
 			}
+		}
+		if (create && getAddableChilds(true).contains("Contact") ) {
+			auto contact = insertChild("Contact");
+			contact->attribute("type1")->set(type1);
+			contact->attribute("type2")->set(type2);
+			return contact->find(path, create);
 		}
 		qDebug() << "find[" << name << "]: Unable to find Contact with type1=" <<type1 << " & type2=" << type2;
 		return NULL;
@@ -479,10 +485,18 @@ nodeController* nodeController::find(QStringList path) {
 			for (int i=0; i<childs.size();i++) {
 				if (childs[i]->getName()==child_name) {
 					if (child_id == n_matching)
-						return childs[i]->find(path);
+						return childs[i]->find(path, create);
 					else
 						n_matching++;
 				}
+			}
+			
+			if (create && getAddableChilds(true).contains(child_name)) {
+				nodeController* child;
+				for (int i=n_matching; i<=child_id; i++) {
+					child = insertChild(child_name);
+				}
+				if (child) return child->find(path, create);
 			}
 			qDebug() << "find[" << name << "]: Unable to find " << child_id << "th node named " << child_name;
 			return NULL;
@@ -491,8 +505,17 @@ nodeController* nodeController::find(QStringList path) {
 			for (int i=0; i<childs.size();i++) {
 				if (childs[i]->getName()==child_name) {
 					if (childs[i]->attribute(attrib_name) && (childs[i]->attribute(attrib_name)->get() == attrib_value)) {
-						return childs[i]->find(path);
+						return childs[i]->find(path, create);
 					}
+				}
+			}
+			
+			if (create && getAddableChilds(true).contains(child_name)) {
+				nodeController* child = insertChild(child_name);
+				if (child->attribute(attrib_name)) {
+					child->attribute(attrib_name)->set(attrib_value);
+					child->attribute(attrib_name)->setActive(true);
+					return child->find(path, create);
 				}
 			}
 			qDebug() << "find[" << name << "]: Unable to find child " << child_name << " with Attribute " << attrib_name << "=" << attrib_value;
@@ -501,12 +524,14 @@ nodeController* nodeController::find(QStringList path) {
 		else {
 			nodeController* child = firstActiveChild(child_name);
 			if (child) {
-				return child->find(path);
+				return child->find(path, create);
 			}
-			else {
-				qDebug() << "find[" << name << "]: No child " << child_name;
-				return NULL;
+			if (create && getAddableChilds(true).contains(child_name)) {
+				nodeController* child = insertChild(child_name);
+				return child->find(path, create);
 			}
+			qDebug() << "find[" << name << "]: No child " << child_name;
+			return NULL;
 		}
 	}
 }
