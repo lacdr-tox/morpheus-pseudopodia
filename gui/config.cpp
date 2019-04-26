@@ -2,12 +2,12 @@
 #include "version.h"
 #include "job_queue.h"
 
+#ifdef USE_QWebEngine
+	#include "network_schemes.h"
+	#include <QWebEngineProfile>
+#endif
 
-//	#include <QtPlugin>
-	// Q_IMPORT_PLUGIN(qsqlite)
-	// Q_IMPORT_PLUGIN(qtiff)
 
-	
 config* config::instance = 0;
 
 //------------------------------------------------------------------------------
@@ -679,6 +679,12 @@ ExtendedNetworkAccessManager* config::getNetwork() {
 		conf->change_lock.lock();
 		if (!conf->network) {
 			conf->network = new ExtendedNetworkAccessManager(conf, getHelpEngine(false));
+#ifdef USE_QWebEngine
+			auto *help_handler = new HelpNetworkScheme(conf->network, conf);
+			QWebEngineProfile::defaultProfile()->installUrlSchemeHandler(HelpNetworkScheme::scheme().toUtf8(), help_handler);
+			auto *qrc_handler = new QtRessourceScheme(conf->network, conf);
+			QWebEngineProfile::defaultProfile()->installUrlSchemeHandler(QtRessourceScheme::scheme().toUtf8(), qrc_handler);
+#endif
 		}
 		conf->change_lock.unlock();
 	}

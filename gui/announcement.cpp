@@ -1,7 +1,9 @@
 #include "announcement.h"
 #include "config.h"
 #include "job_queue.h"
-
+#ifdef USE_QWebEngine
+#include "network_schemes.h"
+#endif
 
 
 
@@ -25,11 +27,11 @@ AnnouncementDialog::AnnouncementDialog(QWidget* parent)
 	
 	auto nam = config::getNetwork();
 	
-#ifdef MORPHEUS_NO_QTWEBKIT
+#ifdef USE_QTextBrowser
 	web_view = new QTextBrowser(this);
 	web_view->setOpenLinks(false);
 	connect(web_view, SIGNAL(anchorClicked(const QUrl&)), this, SLOT(openLink(const QUrl&)));
-#else
+#elif defined USE_QWebKit
 	web_view = new QWebView(this);
 	web_view->page()->setNetworkAccessManager(nam);
 	web_view->page()->settings()->setAttribute(QWebSettings::JavascriptEnabled, false);
@@ -38,6 +40,13 @@ AnnouncementDialog::AnnouncementDialog(QWidget* parent)
 	web_view->page()->settings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, false);
 	web_view->page()->setLinkDelegationPolicy(QWebPage::DelegateExternalLinks);
 	connect(web_view, SIGNAL(linkClicked(const QUrl&)),this, SLOT(openLink(const QUrl&)));
+#elif defined USE_QWebEngine
+	auto page = new AdaptiveWebPage(this);
+	page->delegateScheme("http");
+	page->delegateScheme("https");
+	web_view = new QWebEngineView(this);
+	web_view->setPage(page);
+	connect(page, SIGNAL(linkClicked(const QUrl&)),this, SLOT(openLink(const QUrl&)));
 #endif
 	central_layout->addWidget(web_view);
 	
@@ -86,6 +95,9 @@ void AnnouncementDialog::openLink(const QUrl& url)
 	QDesktopServices::openUrl(url);
 }
 
+void AnnouncementDialog::pageLoaded(bool success) {
+	qDebug() << "Page " << web_view->url() << " loaded." << success;
+}
 
 void AnnouncementDialog::last() {
 	setIndex(announce_idx-1);
@@ -97,12 +109,14 @@ void AnnouncementDialog::next() {
 
 void AnnouncementDialog::setIndex(int idx) {
 	if (announcements.count(idx)) {
-// 		qDebug() << "Setting announcement " << idx << " = " << announcements[idx];
+		qDebug() << "Setting announcement " << idx << " = " << announcements[idx];
 		announce_idx = idx;
-#ifdef MORPHEUS_NO_QTWEBKIT
+#ifdef USE_QTextBrowser
 		web_view->setSource(announcements[idx]);
-#else
+#elif defined USE_QWebKit
 		web_view->setUrl(announcements[idx]);
+#elif defined USE_QWebEngine
+		web_view->load(announcements[idx]);
 #endif
 
 		if (announce_idx > announcement_seen){
@@ -113,6 +127,9 @@ void AnnouncementDialog::setIndex(int idx) {
 			settings.setValue("announcement_seen",announcement_seen);
 			settings.endGroup();
 		}
+	}
+	else {
+		 qDebug() << "AnnouncementDialog::setIndex:  There is no index " << idx;
 	}
 	forth_button->setEnabled(announcements.count(announce_idx+1));
 	back_button->setEnabled(announcements.count(announce_idx-1));
@@ -155,10 +172,12 @@ void AnnouncementDialog::replyReceived()
 		} else {
 			auto it = announcements.lowerBound(announcement_seen);
 			if (it == announcements.end()) {
+				qDebug() << "All announcements seen";
 				have_new_announcements = false;
-				setIndex((it--).key());
+				setIndex(announcements.count()-1);
 			}
 			else if (it+1 == announcements.end()) {
+				qDebug() << "All but one announcements seen";
 				have_new_announcements = false;
 				setIndex(it.key());
 			}
@@ -168,6 +187,7 @@ void AnnouncementDialog::replyReceived()
 			}
 		}
 	}
+	
 	
 	if ( ! announcements.isEmpty() && (have_new_announcements || show_old_announcements)) {
 		this->exec();

@@ -1,11 +1,11 @@
 #include "docu_dock.h"
 
-#ifndef MORPHEUS_NO_QTWEBKIT
-// #include <QtWebHistory>
+// #include <QtNetwork/QNetworkAccessManager>
+// #include <QtNetwork/QNetworkReply>
+#ifdef USE_QWebEngine
+#include <network_schemes.h>
+#include <QWebEngineProfile>
 #endif
-
-#include <QtNetwork/QNetworkAccessManager>
-#include <QtNetwork/QNetworkReply>
 #include <QThread>    
 
 class Sleeper : public QThread
@@ -39,13 +39,12 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	
 	hnam = config::getNetwork();
 
-#ifdef MORPHEUS_NO_QTWEBKIT
+#ifdef USE_QTextBrowser
 	auto realViewer = new HelpBrowser();
 	realViewer->setNetworkAccessManager(hnam);
 	help_view = realViewer;
-#else
+#elif defined USE_QWebKit
 	help_view = new QWebView();
-	
 	help_view->page()->setNetworkAccessManager(hnam);
 // 	help_view->page()->settings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
 	help_view->page()->settings()->setAttribute(QWebSettings::JavascriptEnabled, true);
@@ -53,7 +52,16 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	help_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessFileUrls, true);
 	help_view->page()->setLinkDelegationPolicy(QWebPage::DelegateExternalLinks);
 	connect(help_view, SIGNAL(linkClicked(const QUrl&)),this, SLOT(openHelpLink(const QUrl&)));
+	
+#elif defined USE_QWebEngine
+	help_view = new QWebEngineView();
+	auto page = new AdaptiveWebPage(this);
+	page->delegateScheme("http");
+	page->delegateScheme("https");
+	connect(page, SIGNAL(linkClicked(const QUrl&)),this, SLOT(openHelpLink(const QUrl&)));
+	help_view->setPage(page);
 #endif
+	
 	
 	toc_widget = help_engine->contentWidget();
 	toc_widget->setRootIsDecorated(true);
@@ -100,7 +108,7 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	
 	help_view->show();
 
-#ifdef MORPHEUS_NO_QTWEBKIT
+#ifdef USE_QTextBrowser
 	connect(b_back, SIGNAL(triggered()), help_view, SLOT(backward()));
 	connect(b_forward, SIGNAL(triggered()), help_view, SLOT(forward()));
 	connect(help_view, SIGNAL(backwardAvailable(bool)), b_back, SLOT(setEnabled(bool)) );
@@ -121,7 +129,7 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 
 void DocuDock::openHelpLink(const QUrl& url) {
 	if (url.scheme() == "qthelp") {
-#ifdef MORPHEUS_NO_QTWEBKIT
+#ifdef USE_QTextBrowser
 		help_view->setSource(url);
 #else
 		help_view->setUrl(url);
@@ -178,7 +186,7 @@ void DocuDock::setCurrentIndex(const QModelIndex& idx)
 
 
 void DocuDock::setCurrentURL(const QUrl& url) {
-#ifdef MORPHEUS_NO_QTWEBKIT
+#ifdef USE_QTextBrowser
 	help_view->setSource(url);
 #else
 	if (help_view->url() != url) {
@@ -190,7 +198,7 @@ void DocuDock::setCurrentURL(const QUrl& url) {
 
 
 void DocuDock::resetStatus() {
-#ifdef MORPHEUS_NO_QTWEBKIT
+#ifdef USE_QTextBrowser
 	b_back->setEnabled(help_view->isBackwardAvailable());
 	b_back->setEnabled(help_view->isForwardAvailable());
 #else

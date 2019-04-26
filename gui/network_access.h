@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QHelpEngineCore>
 
+
 /// Helper Class to gain access to the HelpEngine Data
 class HelpNetworkReply : public QNetworkReply
 {

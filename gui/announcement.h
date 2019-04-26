@@ -7,11 +7,13 @@
 #include <QPushButton>
 #include <QNetworkReply>
 
-#ifdef MORPHEUS_NO_QTWEBKIT
+#ifdef USE_QTextBrowser
 #include <QTextBrowser>
 #warning Compiling without QtWebKit
-#else 
-#include <QtWebKitWidgets/QWebView>
+#elif defined USE_QWebKit
+#include <QWebView>
+#elif defined USE_QWebEngine
+#include <QWebEngineView>
 #endif
 
 
@@ -26,10 +28,12 @@ class AnnouncementDialog : public QDialog {
 	bool have_new_announcements = false;
 	bool show_old_announcements = false;
 	
-#ifdef MORPHEUS_NO_QTWEBKIT
+#ifdef USE_QTextBrowser
 	QTextBrowser* web_view;
-#else
+#elif defined USE_QWebKit
 	QWebView* web_view;
+#elif defined USE_QWebEngine
+	QWebEngineView* web_view;
 #endif
 	void setIndex(int idx);
 	void showAnnouncements(bool also_old);
@@ -46,8 +50,6 @@ class AnnouncementDialog : public QDialog {
 		void last();
 		void openLink(const QUrl & url);
 		void replyReceived();
-		
-		
 };
 
 #endif

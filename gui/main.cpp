@@ -3,10 +3,20 @@
 #include "qtsingleapp/qtsingleapplication.h"
 #include "mainwindow.h"
 #include "sbml_import.h"
+#ifdef USE_QWebEngine
+#include "network_schemes.h"
 
-
+#endif
 int main(int argc, char *argv[])
 {
+// #ifdef USE_QWebEngine
+// 	QWebEngineUrlScheme scheme(HelpNetworkScheme::scheme());
+// 	scheme.setSyntax(QWebEngineUrlScheme::Syntax::Host);
+// 	scheme.setDefaultPort(80);
+// 	scheme.setFlags(QWebEngineUrlScheme::SecureScheme);
+// 	QWebEngineUrlScheme::registerScheme(scheme);
+// #endif
+	
 	QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 	//only allow a single instance of Morpheus
 	QtSingleApplication a(argc, argv);

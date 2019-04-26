@@ -14,14 +14,16 @@
 
 #include "config.h"
 #include "nodecontroller.h"
-// #include <QtNetwork/QNetworkAccessManager>
 
-#ifdef MORPHEUS_NO_QTWEBKIT
+#ifdef USE_QWebEngine
+#include <QWebEngineView>
+#include <QWebEngineHistory>
+#elif defined USE_QWebKit
+#include <QWebView>
+#include <QWebHistory>
+#else
 #include <QTextBrowser>
 #warning Compiling without QtWebKit
-#else 
-#include <QtWebKitWidgets/QWebView>
-#include <QtWebKit/QWebHistory>
 #endif
 
 class DocuDock : public QDockWidget
@@ -52,10 +54,13 @@ private:
 	QAction *b_back, *b_forward;
     QHelpEngine* help_engine;
 	QSplitter* splitter;
-#ifdef MORPHEUS_NO_QTWEBKIT
+	
+#ifdef USE_QTextBrowser
 	QTextBrowser* help_view;
-#else
+#elif defined USE_QWebKit
 	QWebView* help_view;
+#elif defined USE_QWebEngine
+	QWebEngineView* help_view;
 #endif
 	QTimer *timer;
 	QTreeView* toc_widget;
