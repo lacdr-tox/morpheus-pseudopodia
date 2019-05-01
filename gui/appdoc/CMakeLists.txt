@@ -29,6 +29,9 @@ SET(DOXYGEN_SOURCES "" )
 foreach(source ${APP_DOC_HEADERS})
 	SET(DOXYGEN_SOURCES "${DOXYGEN_SOURCES} ${source}")
 endforeach()
+
+get_target_property(AppDoc SOURCE APP_DOC_HEADERS)
+SET(DOXYGEN_SOURCES "${DOXYGEN_SOURCES} ${APP_DOC_HEADERS}")
 #message(STATUS "AppDoc header files (${APP_DOC_HEADER_NUM}) are ${APP_DOC_HEADERS}")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/morpheus.doxy.in ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy @ONLY)
 
@@ -82,5 +85,5 @@ ADD_CUSTOM_COMMAND(
 	COMMENT "Assembling in-application documentation with qcollectiongenerator" VERBATIM
 )
 
-add_custom_target( AppDoc DEPENDS ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED} )
+add_dependencies(AppDoc ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED} )
 

@@ -11,9 +11,11 @@ OPTION(LIBSBML_STATIC "Link the libSBML Library statically." OFF)
 mark_as_advanced(LIBSBML_STATIC)
 
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
 ### Include Qt directories  *  Add Qt standard Defines  *  Create QT_LIBRARIES variable, including all required libs 
 
+######################################
+## Select the proper WebView        ##
+######################################
 
 FIND_PACKAGE(Qt5 COMPONENTS Widgets Sql Network Xml Svg Help)
 
@@ -39,11 +41,12 @@ ELSE()
 	SET(USE_QTextBrowser TRUE)
 ENDIF()
 
-FIND_PACKAGE(ZLIB REQUIRED)
+######################################
+## Find or Build SBML               ##
+######################################
 
 IF ( NOT BUILD_LIBSBML )
     # Find on platform
-    
     message(STATUS "Find libSBML on the platform.")
     If (LIBSBML_STATIC OR MORPHEUS_STATIC_BUILD)
         set(STD_LIB_SUFFIX ${CMAKE_FIND_LIBRARY_SUFFIXES})
@@ -86,6 +89,12 @@ IF(LIBSBML_FOUND AND MORPHEUS_SBML)
 	SET(SOURCES ${SOURCES} sbml_converter.cpp)
 	SET(HEADERS ${HEADERS} sbml_converter.h)
 ENDIF()
+
+##################################
+##  Other dependencies          ##
+##################################
+
+FIND_PACKAGE(ZLIB REQUIRED)
 
 
 SET(GUI_EXEC_NAME "${MORPHEUS_EXEC_NAME}-gui")
@@ -156,17 +165,29 @@ IF ( USE_QWebEngine )
 	SET( SOURCES ${SOURCES} network_schemes.cpp )
 ENDIF()
 
-## Prepare external ressources for inclusion
+
+#################################################
+## Prepare external ressources for inclusion   ##
+#################################################
+
 # Construct resource list from example files
 SET(EXAMPLES_FILES ${EXAMPLES_SRC})
-LIST(TRANSFORM EXAMPLES_FILES REPLACE "(.+)" "           <file alias=\"\\1\">${EXAMPLES_PATH}/\\1</file>")
-# configure examples and XSD intor ext_files.rc
-LIST(JOIN EXAMPLES_FILES "\n" EXAMPLES_RC_FILES)
+IF (CMAKE_VERSION VERSION_LESS "3.12")
+	SET(EXAMPLES_RC_FILES "")
+	FOREACH( EXAMPLE ${EXAMPLES_FILES} )
+		SET( EXAMPLES_RC_FILES "${EXAMPLES_RC_FILES}            <file alias=\"${EXAMPLE}\">${EXAMPLES_PATH}/${EXAMPLE}</file>\n" )
+	ENDFOREACH()
+ELSE()
+	LIST(TRANSFORM EXAMPLES_FILES REPLACE "(.+)" "           <file alias=\"\\1\">${EXAMPLES_PATH}/\\1</file>")
+	LIST(JOIN EXAMPLES_FILES "\n" EXAMPLES_RC_FILES)
+ENDIF()
+
 configure_file(ext_files.rc.in ext_files.rc @ONLY)
 
 # compile the resources
 SET( RESOURCES link_data.qrc ${CMAKE_CURRENT_BINARY_DIR}/ext_files.rc)
 QT5_ADD_RESOURCES( RESOURCES_RCC ${RESOURCES} )
+
 
 IF( MINGW )
 	SET( ICON_RESOURCE icons/win/morpheus.rc )

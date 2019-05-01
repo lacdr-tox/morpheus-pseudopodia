@@ -95,10 +95,6 @@ void AnnouncementDialog::openLink(const QUrl& url)
 	QDesktopServices::openUrl(url);
 }
 
-void AnnouncementDialog::pageLoaded(bool success) {
-	qDebug() << "Page " << web_view->url() << " loaded." << success;
-}
-
 void AnnouncementDialog::last() {
 	setIndex(announce_idx-1);
 }

@@ -1,5 +1,4 @@
-SET(tools_src
-)
+
 
 SET(morpheus_core_src
 	cell.cpp
@@ -48,17 +47,39 @@ SET(morpheus_src
 	parse_arg.cpp
 	rss_stat.cpp
 	simulation.cpp
-	${evaluator_src}
-# 	super_cell.cpp
-# 	super_celltype.cpp
 )
+
+
+list_prepend(morpheus_src "${CMAKE_CURRENT_SOURCE_DIR}/" morpheus_src)
+list_prepend(morpheus_core_src "${CMAKE_CURRENT_SOURCE_DIR}/" morpheus_core_src)
+target_sources(MorpheusCore PRIVATE ${morpheus_core_src}  )
+target_sources(MorpheusSIM PRIVATE ${morpheus_src})
+target_include_directories(MorpheusSIM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(MorpheusCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+
+SET(APP_DOC_SOURCES
+	interfaces.h
+	docu.h
+	equation.h
+	expression_evaluator.h
+	field.h
+	diffusion.h
+	vector_equation.h 
+	function.h 
+	membrane_property.h
+	property.h
+	delay.h
+	system.h
+	cpm_sampler.h
+)
+list_prepend( APP_DOC_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/" APP_DOC_SOURCES )
+target_sources(AppDoc ${APP_DOC_SOURCES})
+
 
 # Also link all the plugins from the plugin folder
 foreach(source ${plugin_src})
 	list(APPEND morpheus_src ../plugins/${source})
 endforeach(source)
-
-SET(morpheus_src ${morpheus_src} )
 
 # MESSAGE( "TIFF INCLUDE = " ${TIFF_INCLUDE_DIR})
 CONFIGURE_FILE(config.h.cmake config.h)
@@ -75,34 +96,9 @@ if (NOT(MORPHEUS_CORE_CATCH))
 		)
 ENDIF()
 
-SET(SIMULATOR_EXEC_NAME ${MORPHEUS_EXEC_NAME})
-
-IF (HAVE_OBJECT_LINKAGE)
-	ADD_LIBRARY(morpheusCore OBJECT ${morpheus_core_src}  )
-	ADD_EXECUTABLE(${SIMULATOR_EXEC_NAME} ${morpheus_src} $<TARGET_OBJECTS:muParser> $<TARGET_OBJECTS:morpheusCore>)
-ELSE()
-	ADD_LIBRARY(morpheusCore ${morpheus_core_src})
-	ADD_EXECUTABLE(${SIMULATOR_EXEC_NAME} ${morpheus_src})
-	target_link_libraries(${SIMULATOR_EXEC_NAME} muParser morpheusCore)
-ENDIF()
-
-IF (MORPHEUS_STATIC_BUILD)
-	SET_TARGET_PROPERTIES(${SIMULATOR_EXEC_NAME} PROPERTIES LINK_SEARCH_START_STATIC 1)
-	SET_TARGET_PROPERTIES(${SIMULATOR_EXEC_NAME} PROPERTIES LINK_SEARCH_END_STATIC 1)
-ENDIF()
-
-TARGET_LINK_LIBRARIES(${SIMULATOR_EXEC_NAME} ${ZLIB_LIBRARY} ${TIFF_LIBRARY} xmlParser gnuplot_interface tiny-process-library)
-
-IF (EXISTS "${GRAPHVIZ_GRAPH_LIBRARY}")
-	TARGET_LINK_LIBRARIES(${SIMULATOR_EXEC_NAME} ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_GRAPH_LIBRARY} )
-ELSE()
-	TARGET_LINK_LIBRARIES(${SIMULATOR_EXEC_NAME} ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_CGRAPH_LIBRARY} )
-ENDIF()
-
-
 
 IF  ("${MORPHEUS_OS}" STREQUAL "WIN32")
-	TARGET_LINK_LIBRARIES(${SIMULATOR_EXEC_NAME} pthread psapi)
+	TARGET_LINK_LIBRARIES(MorpheusSIM pthread psapi)
 
 # 	If (MORPHEUS_STATIC_BUILD)
 # 		set(STD_LIB_SUFFIX ${CMAKE_FIND_LIBRARY_SUFFIXES})

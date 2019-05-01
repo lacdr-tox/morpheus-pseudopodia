@@ -43,28 +43,50 @@ ELSE()
 ENDIF()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR} ${Boost_INCLUDE_DIR})
-IF (GRAPHVIZ_FOUND)
-	include_directories( ${GRAPHVIZ_INCLUDE_DIR} )
+
+
+IF (HAVE_OBJECT_LINKAGE)
+	ADD_LIBRARY(MorpheusCore OBJECT ""  )
+	ADD_EXECUTABLE(MorpheusSIM  $<TARGET_OBJECTS:muParser> $<TARGET_OBJECTS:MorpheusCore>)
+ELSE()
+	ADD_LIBRARY(MorpheusCore ""  )
+	ADD_EXECUTABLE(MorpheusSIM "" )
+	target_link_libraries(MorpheusSIM muParser MorpheusCore)
+ENDIF()
+set_target_properties(MorpheusSIM PROPERTIES  OUTPUT_NAME ${MORPHEUS_EXEC_NAME} )
+
+IF (MORPHEUS_STATIC_BUILD)
+	SET_TARGET_PROPERTIES(MorpheusSIM PROPERTIES LINK_SEARCH_START_STATIC 1)
+	SET_TARGET_PROPERTIES(MorpheusSIM PROPERTIES LINK_SEARCH_END_STATIC 1)
+ENDIF()
+
+TARGET_LINK_LIBRARIES(MorpheusSIM ${ZLIB_LIBRARY} ${TIFF_LIBRARY} xmlParser gnuplot_interface tiny-process-library)
+
+IF (EXISTS "${GRAPHVIZ_GRAPH_LIBRARY}")
+	TARGET_LINK_LIBRARIES(MorpheusSIM ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_GRAPH_LIBRARY} )
+ELSE()
+	TARGET_LINK_LIBRARIES(MorpheusSIM ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_CGRAPH_LIBRARY} )
 ENDIF()
 
 add_subdirectory(plugins)  # provides plugin_src variable as a list of Plugins
 add_subdirectory(core)
 
-SET (APP_DOC_HEADERS
-	${CMAKE_CURRENT_SOURCE_DIR}/core/interfaces.h
-	${CMAKE_CURRENT_SOURCE_DIR}/core/docu.h
-	${CMAKE_CURRENT_SOURCE_DIR}/core/equation.h
-	${CMAKE_CURRENT_SOURCE_DIR}/core/expression_evaluator.h
-	${CMAKE_CURRENT_SOURCE_DIR}/core/field.h
-	${CMAKE_CURRENT_SOURCE_DIR}/core/diffusion.h
-	${CMAKE_CURRENT_SOURCE_DIR}/core/vector_equation.h 
-	${CMAKE_CURRENT_SOURCE_DIR}/core/function.h 
-	${CMAKE_CURRENT_SOURCE_DIR}/core/membrane_property.h
-	${CMAKE_CURRENT_SOURCE_DIR}/core/property.h
-	${CMAKE_CURRENT_SOURCE_DIR}/core/delay.h
-	${CMAKE_CURRENT_SOURCE_DIR}/core/system.h
-	${CMAKE_CURRENT_SOURCE_DIR}/core/cpm_sampler.h
-)
+
+# SET (APP_DOC_HEADERS
+# 	${CMAKE_CURRENT_SOURCE_DIR}/core/interfaces.h
+# 	${CMAKE_CURRENT_SOURCE_DIR}/core/docu.h
+# 	${CMAKE_CURRENT_SOURCE_DIR}/core/equation.h
+# 	${CMAKE_CURRENT_SOURCE_DIR}/core/expression_evaluator.h
+# 	${CMAKE_CURRENT_SOURCE_DIR}/core/field.h
+# 	${CMAKE_CURRENT_SOURCE_DIR}/core/diffusion.h
+# 	${CMAKE_CURRENT_SOURCE_DIR}/core/vector_equation.h 
+# 	${CMAKE_CURRENT_SOURCE_DIR}/core/function.h 
+# 	${CMAKE_CURRENT_SOURCE_DIR}/core/membrane_property.h
+# 	${CMAKE_CURRENT_SOURCE_DIR}/core/property.h
+# 	${CMAKE_CURRENT_SOURCE_DIR}/core/delay.h
+# 	${CMAKE_CURRENT_SOURCE_DIR}/core/system.h
+# 	${CMAKE_CURRENT_SOURCE_DIR}/core/cpm_sampler.h
+# )
 
 SET(XSD_SOURCES 
 	core/base_types.xsd
