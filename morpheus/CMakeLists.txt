@@ -90,32 +90,26 @@ add_subdirectory(core)
 
 SET(XSD_SOURCES 
 	core/base_types.xsd
-	core/diff_eqn.xsd
-	core/equation.xsd
-	core/field.xsd
-	core/function.xsd
-	core/lattice.xsd
-	core/membrane_property.xsd
-	core/property.xsd
-	
 	core/simulation.xsd
-	core/system.xsd
 )
 
-IF (Boost_FOUND) 
-  LIST(APPEND XSD_SOURCES core/delay.xsd)
-  LIST(APPEND APP_DOC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/core/delay.h)
-ENDIF()
+get_target_property(core_sources MorpheusCore SOURCES)
+get_target_property(sources MorpheusSIM SOURCES)
+SET(sources ${sources} ${core_sources})
+
 
 foreach(source ${plugin_src})
 	STRING(REGEX REPLACE "\\.cpp" ".h" header ${source})
 	STRING(REGEX REPLACE "\\.cpp" ".xsd" xsd ${source})
-	list(APPEND APP_DOC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/plugins/${header})
-	if ( EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/plugins/${xsd} )
-		list(APPEND XSD_SOURCES plugins/${xsd})
-	else()
-		message(WARNING "no file plugins/${xsd}" )
-	endif()
+	file(STRINGS "${header}" lines REGEX "DECLARE_PLUGIN")
+	if (lines)
+		target_sources(AppDocLib ${header})
+		if ( EXISTS ${xsd} )
+			list(APPEND XSD_SOURCES ${xsd})
+		else()
+			message(WARNING "Missing plugin interface language description ${xsd}" )
+		endif()
+	ENDIF()
 endforeach(source)
 
 

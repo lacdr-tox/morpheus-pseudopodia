@@ -49,11 +49,8 @@ SET(morpheus_src
 	simulation.cpp
 )
 
-
-list_prepend(morpheus_src "${CMAKE_CURRENT_SOURCE_DIR}/" morpheus_src)
-list_prepend(morpheus_core_src "${CMAKE_CURRENT_SOURCE_DIR}/" morpheus_core_src)
-target_sources(MorpheusCore PRIVATE ${morpheus_core_src}  )
-target_sources(MorpheusSIM PRIVATE ${morpheus_src})
+target_sources_relpaths(MorpheusSIM PRIVATE morpheus_src)
+target_sources_relpaths(MorpheusCore PRIVATE morpheus_core_src)
 target_include_directories(MorpheusSIM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(MorpheusCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -72,8 +69,10 @@ SET(APP_DOC_SOURCES
 	system.h
 	cpm_sampler.h
 )
+
 list_prepend( APP_DOC_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/" APP_DOC_SOURCES )
-target_sources(AppDoc ${APP_DOC_SOURCES})
+SET_PROPERTY( TARGET AppDocLib PROPERTY SOURCES "${APP_DOC_SOURCES}" ) 
+# target_sources(AppDocLib PRIVATE ${APP_DOC_SOURCES})
 
 
 # Also link all the plugins from the plugin folder

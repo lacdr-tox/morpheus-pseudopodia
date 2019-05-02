@@ -1,8 +1,9 @@
 set(plugin_src 
 
-	volume_constraint.cpp
-	surface_constraint.cpp
-	length_constraint.cpp
-	connectivity_constraint.cpp
+	./volume_constraint.cpp
+	./surface_constraint.cpp
+	./length_constraint.cpp
+	./connectivity_constraint.cpp
+)
 
-PARENT_SCOPE)
+target_sources_relpaths(MorpheusSIM PRIVATE plugin_src)

@@ -15,7 +15,7 @@ foreach(subdir ${subdirs})
 set(plugin_src "")
 	add_subdirectory(${subdir})
 	foreach(sub_plugin_src ${plugin_src})
-		set(acc_plugin_src ${acc_plugin_src} ${subdir}/${sub_plugin_src})
+		list(APPEND acc_plugin_src ${subdir}/${sub_plugin_src})
 	endforeach(sub_plugin_src)
 endforeach(subdir)
 
