@@ -7,7 +7,7 @@ void AdaptiveWebPage::delegateScheme(QString scheme) {
 }
 
 bool AdaptiveWebPage::acceptNavigationRequest(const QUrl& url, QWebEnginePage::NavigationType type, bool isMainFrame) {
-	if (delegate_schemes.contains(url.scheme())) {
+	if (delegate_schemes.contains(url.scheme()) && type == QWebEnginePage::NavigationType::NavigationTypeLinkClicked) {
 		emit linkClicked(url);
 		return false;
 	}

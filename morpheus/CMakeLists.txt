@@ -169,8 +169,8 @@ ENDIF()
 
 SET(XSD_SOURCES 
 	${CMAKE_CURRENT_SOURCE_DIR}/core/base_types.xsd
-	${CMAKE_CURRENT_SOURCE_DIR}/core/lattice.xsd
 	${CMAKE_CURRENT_SOURCE_DIR}/core/simulation.xsd
+	${CMAKE_CURRENT_SOURCE_DIR}/core/lattice.xsd
 )
 
 SET(APP_DOC_HEADERS 
