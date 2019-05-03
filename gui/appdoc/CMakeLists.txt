@@ -18,11 +18,9 @@ ENDIF()
 
 OPTION(DOXYGEN_QHP_PATCH "Patch the QHP File created via doxygen to cure the \"Opening and ending tag mismatch.\" bug." OFF)
 mark_as_advanced(DOXYGEN_QHP_PATCH)
-#The conditions for which the doxygen qhp patch has to be applied is still unclear
-# IF (DOXYGEN_VERSION VERSION_LESS "1.8.9")
-# 	SET(DOXYGEN_QHP_PATCH ON)
-# ENDIF()
 
+
+# get_target_property(APP_DOC_HEADERS AppDocLib SOURCES)
 
 # Create a space separated file list for Doxygen
 SET(DOXYGEN_SOURCES "" )
@@ -30,11 +28,7 @@ foreach(source ${APP_DOC_HEADERS})
 	SET(DOXYGEN_SOURCES "${DOXYGEN_SOURCES} ${source}")
 endforeach()
 
-get_target_property(APP_DOC_HEADERS AppDocLib SOURCES)
-message(STATUS APP_DOC_HEADERS ${APP_DOC_HEADERS} )
-
-SET(DOXYGEN_SOURCES "${DOXYGEN_SOURCES} ${APP_DOC_HEADERS}")
-#message(STATUS "AppDoc header files (${APP_DOC_HEADER_NUM}) are ${APP_DOC_HEADERS}")
+message(STATUS "AppDoc header files (${APP_DOC_HEADER_NUM}) are ${APP_DOC_HEADERS}")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/morpheus.doxy.in ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy @ONLY)
 
 SET(DOXYGEN_EXTRA_FILES  "doxygen_header.html" "doxygen_footer.html" "morpheus_style.css" "dynsections.js" "jquery.js")
@@ -96,5 +90,5 @@ ADD_CUSTOM_TARGET(AppDoc
 	  COMMENT "Generating documentation with Doxygen" VERBATIM)
 	  
 	  
-add_dependencies(AppDoc ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED} )
+# add_dependencies(AppDoc ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED} )
 
