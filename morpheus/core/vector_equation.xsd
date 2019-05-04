@@ -3,35 +3,30 @@
 	  
 	<xs:group name="GlobalPlugins">
 		<xs:choice>
-			<xs:element name="Equation" 			type="Equation"/>
+			<xs:element name="VectorEquation" 		type="VectorEquation"/>
 		</xs:choice>
 	</xs:group>
 	
 	<xs:group name="CellTypePlugins">
 		<xs:choice>
-			<xs:element name="Equation" 			type="Equation"/>
-		</xs:choice>
-	</xs:group>
-  
-	<xs:group name="PDEPlugins">
-		<xs:choice>
-			<xs:element name="Equation" 			type="Equation"/>
+			<xs:element name="VectorEquation" 		type="VectorEquation"/>
 		</xs:choice>
 	</xs:group>
 	
 	<xs:group name="DiscreteSystemPlugins">
 		<xs:choice>
-			<xs:element name="Rule" 				type="Equation"/>
+			<xs:element name="VectorRule" 			type="VectorEquation"/>
 		</xs:choice>
 	</xs:group>
 
 	<xs:group name="SystemPlugins">
 		<xs:choice>
-			<xs:element name="Rule" 				type="Equation"/>
+			<xs:element name="VectorRule" 			type="VectorEquation"/>
 		</xs:choice>
 	</xs:group>
-
-	<xs:complexType name="Equation">
+	
+	
+	<xs:complexType name="VectorEquation">
 	
 		<xs:annotation>
 			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
@@ -40,12 +35,13 @@
 		</xs:annotation>
 		
 		<xs:all>
-			<xs:element name="Expression"	type="cpmMathExpression" />
+			<xs:element name="Expression"	type="cpmVectorMathExpression" />
 		</xs:all>
 
 		<xs:attribute name="name" type="cpmString" use="optional" />
 
-		<xs:attribute name="symbol-ref"	type="cpmDoubleSymbolRef"		use="required" />
+		<xs:attribute name="symbol-ref"	type="cpmVectorSymbolRef"		use="required" />
+		<xs:attribute name="spherical"	type="cpmBoolean"	default="false"	use="optional" />
 
 	</xs:complexType>
 

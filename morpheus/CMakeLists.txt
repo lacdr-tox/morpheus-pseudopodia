@@ -188,7 +188,7 @@ foreach(source ${sources})
 	STRING(REGEX REPLACE "\\.cpp" ".h" header ${source})
 	STRING(REGEX REPLACE "\\.cpp" ".xsd" xsd ${source})
 	#  check the header for the PLUGIN macro
-	file(STRINGS "${header}" lines REGEX "DECLARE_PLUGIN|type_registration")
+	file(STRINGS "${header}" lines REGEX "DECLARE_PLUGIN")
 	if (lines)
 		list(APPEND APP_DOC_HEADERS ${header})
 		if ( EXISTS ${xsd} )
@@ -197,7 +197,7 @@ foreach(source ${sources})
 			if ( header MATCHES "interfaces.h")
 				# just the macro definition
 			else()
-				message(WARNING "Missing plugin interface language description ${xsd}" )
+				message(WARNING "Missing plugin language description ${xsd}" )
 			endif()
 		endif()
 	ENDIF()
@@ -254,7 +254,7 @@ ELSE()
 ENDIF()
 
 ADD_CUSTOM_TARGET( 
-	xmlSchema ALL
+	xmlSchema
 	DEPENDS ${XSD_NAME} ${XSD_SOURCES}
 )
 

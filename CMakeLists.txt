@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 2.8.0)
 
 IF(CMAKE_VERSION VERSION_GREATER "3.1" OR CMAKE_VERSION VERSION_EQUAL "3.1")
 	CMAKE_POLICY(SET CMP0054 NEW)
+	CMAKE_POLICY(SET CMP0051 OLD)  # don't include object target generator expressions when reading SOURCES property
+	CMAKE_POLICY(SET CMP0043 OLD)  # support mode specific compile definitions via COMPILE_DEFINITIONS_<MODE>
 ENDIF()
  
 SET(VERSION_MAJOR "2")

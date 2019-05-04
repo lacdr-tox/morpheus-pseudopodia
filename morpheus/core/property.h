@@ -33,9 +33,14 @@ class Container : virtual public Plugin {
 	
 public:
 	enum class Mode { Constant, Variable, CellProperty };
+	// manual replacement for the DECLARE_PLUGIN macro
 	static string ConstantXMLName();
 	static string VariableXMLName();
 	static string CellPropertyXMLName();
+	
+	static  Plugin* createConstantInstance() { return new Container<T>(Mode::Constant); };
+	static  Plugin* createVariableInstance() { return new Container<T>(Mode::Variable); };
+	static  Plugin* createCellPropertyInstance() { return new Container<T>(Mode::CellProperty); };
 	
 	Container(Mode mode);
 	~Container() { if (_accessor && _accessor->scope()) const_cast<Scope*>(_accessor->scope())->removeSymbol(_accessor); }
@@ -49,9 +54,6 @@ public:
 	XMLNode saveToXML() const override;
 	void init(const Scope* scope) override;
 	
-	static  Plugin* createConstantInstance() { return new Container<T>(Mode::Constant); };
-	static  Plugin* createVariableInstance() { return new Container<T>(Mode::Variable); };
-	static  Plugin* createCellPropertyInstance() { return new Container<T>(Mode::CellProperty); };
 
 	void assert_initialized(const SymbolFocus& f = SymbolFocus::global);
 	

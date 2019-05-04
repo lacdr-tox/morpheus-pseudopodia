@@ -28,7 +28,7 @@ foreach(source ${APP_DOC_HEADERS})
 	SET(DOXYGEN_SOURCES "${DOXYGEN_SOURCES} ${source}")
 endforeach()
 
-message(STATUS "AppDoc header files (${APP_DOC_HEADER_NUM}) are ${APP_DOC_HEADERS}")
+# message(STATUS "AppDoc header files (${APP_DOC_HEADER_NUM}) are ${APP_DOC_HEADERS}")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/morpheus.doxy.in ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy @ONLY)
 
 SET(DOXYGEN_EXTRA_FILES  "doxygen_header.html" "doxygen_footer.html" "morpheus_style.css" "dynsections.js" "jquery.js")
