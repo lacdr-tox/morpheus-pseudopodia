@@ -18,7 +18,7 @@
 
 /** \defgroup ML_AddCell AddCell
 \ingroup ML_CellType
-\ingroup MiscellaneousPlugins
+\ingroup MiscellaneousPlugins InstantaneousProcessPlugins
 \brief Add a new cell based on a condition.
 
 Create a new cell during simulation, depending on a condition in a position depending on a probability distribution.

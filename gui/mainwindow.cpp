@@ -1033,6 +1033,8 @@ void MainWindow::removeModel(int index) {
     disconnect(model.data(),SIGNAL(modelPartRemoved(int)),this,SLOT(syncModelList()));
     editorStack->removeWidget(modelViewer[model]);
     modelViewer.remove(model);
+	editorStack->removeWidget(modelAbout[model]);
+	modelAbout.remove(model);
 
     modelList->takeTopLevelItem(index);
     if (model_index.model == index) {

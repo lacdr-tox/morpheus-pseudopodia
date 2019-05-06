@@ -28,7 +28,6 @@ foreach(source ${APP_DOC_HEADERS})
 	SET(DOXYGEN_SOURCES "${DOXYGEN_SOURCES} ${source}")
 endforeach()
 
-# message(STATUS "AppDoc header files (${APP_DOC_HEADER_NUM}) are ${APP_DOC_HEADERS}")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/morpheus.doxy.in ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy @ONLY)
 
 SET(DOXYGEN_EXTRA_FILES  "doxygen_header.html" "doxygen_footer.html" "morpheus_style.css" "dynsections.js" "jquery.js")
@@ -72,6 +71,11 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/morpheus.qhcp.in ${QT_HELP_COLLECTION
 ## File list generator for mathjax.qhp::  find * -type f -exec echo "<file>MathJax/{}</file>" \;
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mathjax.qhp.in ${QT_HELP_MATHJAX_PROJECT} @ONLY)
 
+IF(NOT QT_QCOLLECTIONGENERATOR_EXECUTABLE)
+	get_target_property(QT_QCOLLECTIONGENERATOR_EXECUTABLE Qt5::qcollectiongenerator IMPORTED_LOCATION)
+# 	message(STATUS "Collection generator " ${QT_QCOLLECTIONGENERATOR_EXECUTABLE})
+ENDIF()
+
 ADD_CUSTOM_COMMAND(
 	OUTPUT ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED}
 	COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/MathJax ${QT_DOC_FOLDER}/html/MathJax
@@ -84,11 +88,6 @@ ADD_CUSTOM_COMMAND(
 
 FIND_PACKAGE(Doxygen REQUIRED)
 ADD_CUSTOM_TARGET(AppDoc
-# 	COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile
-# 	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy ${APP_DOC_HEADERS}  ${DOXYGEN_EXTRA_FILES}
+	  DEPENDS ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED}
 	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	  COMMENT "Generating documentation with Doxygen" VERBATIM)
-	  
-	  
-# add_dependencies(AppDoc ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED} )
-

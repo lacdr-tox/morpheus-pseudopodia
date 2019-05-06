@@ -455,12 +455,13 @@ private:
 
 /** \defgroup InstantaneousProcessPlugins Instantaneous Process Plugins
 \ingroup PluginsByInterface
-*/
+The following plugins represent instantaneous processes, i.e. these processes do not take time to finish. 
+**/
 
 /** \brief Interface providing basic functionality and methods to develop plugins for instantaneous processes
  * 
  *  Scheduling and integration into the TimeScheduler is automatically accomplished.
- */
+ **/
 
 class InstantaneousProcessPlugin : public TimeStepListener {
 public:

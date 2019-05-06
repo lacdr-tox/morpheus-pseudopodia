@@ -692,7 +692,7 @@ The following model elements define their own sub-scopes:
 - \ref ML_System (including \b Triggers of  \ref ML_Event and \ref ML_CellDivision)
 - \ref ML_Function 
 
-Ss stated above, symbols are inherited from the parental scope, but may be overridden, even to differ in constness and granularity (e.g. Global/ref \ML_Constant may be overwritten in a System by a \ref ML_Variable). 
+Ss stated above, symbols are inherited from the parental scope, but may be overridden, even to differ in constness and granularity (e.g. Global/\ref ML_Constant may be overwritten in a System by a \ref ML_Variable). 
 The type of the symbol (scalar / vector), however, has to be conserved. In this way, global symbols can be used as default values.
 
 Unlike the other scopes, the \ref ML_CellType scopes also represent spatial compartments. In order to adhere to intuitive modelling logics, we apply \b spatial \b scoping, such that symbols defined in a \ref ML_CellType scope can override parental, i.e. global, symbols in the (dynamic) spatial region the celltype occupies. Therefore, a global symbol can be effectively composed of a global value and celltype specific values defined within the celltypes themself. 
