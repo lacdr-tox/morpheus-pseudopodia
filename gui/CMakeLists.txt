@@ -155,7 +155,8 @@ SET( SOURCES ${SOURCES}
     synchronizer.cpp 
     xmlhighlighter.cpp 
     xmlpreview.cpp 
-    xsd.cpp 
+    xsd.cpp
+    widgets/checkboxlist.cpp
    )
 
 IF ( USE_QWebEngine )

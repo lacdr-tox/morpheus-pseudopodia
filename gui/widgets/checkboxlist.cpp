@@ -1,4 +1,4 @@
-#include "CheckBoxList.h"
+#include "checkboxlist.h"
 
 //min-width:10em;
      CheckBoxList::CheckBoxList(QWidget *widget ) : QComboBox(widget),m_DisplayText("")
@@ -22,16 +22,7 @@ CheckBoxList::~CheckBoxList(){}
 void CheckBoxList::hidePopup()
 {
     QComboBox::hidePopup();
-    QStringList value;
-    for(int y = 0; y < model()->rowCount(); ++y)
-    {
-        if(model()->data(model()->index(y,0),Qt::UserRole).toBool())
-        {
-            value.append(model()->data(model()->index(y,0),Qt::DisplayRole).toString());
-        }
-    }
-    SetDisplayText(value.join(", "));
-    _current = value;
+    updateText();
 }
 
 bool CheckBoxList::eventFilter(QObject *object, QEvent *event)
@@ -65,14 +56,44 @@ void CheckBoxList::paintEvent(QPaintEvent *)
     painter.drawControl(QStyle::CE_ComboBoxLabel, opt);
 }
 
-void CheckBoxList::SetDisplayText(QString text)
+void CheckBoxList::setData(QStringList data)
 {
-    m_DisplayText = text;
+	for(auto& elem:data)
+	{
+		elem = elem.trimmed();
+	}
+	for(int y = 0; y < model()->rowCount(); ++y)
+    {
+		auto idx = model()->index(y,0);
+		if(data.contains(model()->data(idx,Qt::DisplayRole).toString()))
+		{
+			model()->setData(idx, true,Qt::UserRole);
+			data.removeAll(model()->data(idx,Qt::DisplayRole).toString());
+		}else{
+			model()->setData(idx, false,Qt::UserRole);
+		}
+    }
+    if(!data.empty())
+	{
+		qDebug()<<"CheckBoxList::SetData keys: "<<data<<" have not been found!";
+	}
+    updateText();
 }
 
-QString CheckBoxList::GetDisplayText() const
+void CheckBoxList::updateText()
 {
-    return m_DisplayText;
+	QStringList value;
+    for(int y = 0; y < model()->rowCount(); ++y)
+    {
+        if(model()->data(model()->index(y,0),Qt::UserRole).toBool())
+        {
+            value.append(model()->data(model()->index(y,0),Qt::DisplayRole).toString());
+        }
+    }
+    m_DisplayText = value.join(", ");
+    _current = value;
+	
+	emit currentTextChanged(_current);
 }
 
 QString	CheckBoxList::currentText() const
@@ -82,17 +103,15 @@ QString	CheckBoxList::currentText() const
 
 QVariant CheckBoxList::currentData(int role) const
 {
-    if(role == Qt::UserRole || role == Qt::DisplayRole || role == Qt::EditRole)
+    if(role == Qt::UserRole || role == Qt::EditRole)
     {
         return _current;
-    }
-    else
-    {
+    }else if(role == Qt::DisplayRole){
+		return m_DisplayText;
+	}else{
         return false;
     }
 }
-
-
 
 void CheckBoxListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,const QModelIndex &index) const
 {

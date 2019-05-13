@@ -2,24 +2,37 @@
 <meta charset="utf-8">
 <html>
 <head>
+	<script src="qrc:///d3.min.js"></script>
+	<script src="qrc:///viz.js"></script>
+	<script src="qrc:///d3-graphviz.min.js"></script>
 </head>
 <body>
-<script src="https://d3js.org/d3.v5.min.js"></script>
-<script src="https://unpkg.com/viz.js@1.8.0/viz.js" type="javascript/worker"></script>
-<script src="https://unpkg.com/d3-graphviz@1.4.0/build/d3-graphviz.min.js"></script>	
 <div id="graph" style="text-align: center;"></div>	
 <script type="text/javascript">
-	var dotSrc = '@@template@@';
-	var b1 = document.getElementById("saveBtn");
-	d3.select("#graph").graphviz()
-		.renderDot(dotSrc)
-		.on("end", connect);
-		
+
+	var graphviz;
+	
+	function transition(nextGraph)
+	{
+		graphviz.renderDot(nextGraph);
+	}
+	
 	function retSVG()
 	{
-		var toRet = document.getElementById("graph").innerHTML;
-		return toRet;
+		return document.getElementById("graph").innerHTML;
 	}
+	
+// 	window.addEventListener('load', function () {
+		
+		graphviz = d3.select("#graph").graphviz();
+		var d3trans = d3.select("#graph").graphviz().transition(function () {
+				return d3.transition("main")
+				.ease(d3.easeLinear)
+				.delay(0)
+				.duration(500);
+			});
+// 		transition('digraph { node[style=filled,fillcolor=\"#fffea3\"] no_grapgh[ shape=record, label=\"{ empty }\"]   } ');
+// 	});
 </script>
 </body>
 </html>

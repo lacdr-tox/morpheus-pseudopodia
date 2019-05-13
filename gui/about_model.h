@@ -20,6 +20,7 @@
 #include <QListView>
 #include <QWebFrame>
 #include "config.h"
+#include "widgets/checkboxlist.h"
 
 class AboutModel : public QWidget {
 	Q_OBJECT
@@ -30,8 +31,13 @@ class AboutModel : public QWidget {
 	QWebView* webGraph;
 	QUrl url;
 	QFrame* webFrame;
+	CheckBoxList* excludeP;
+	CheckBoxList* excludeS;
+	QCheckBox* reduced;
 	QGridLayout* layset;
 	QPushButton* save_btn;
+	QMetaObject::Connection onLoadConnect;
+	QString lastGraph;
 	
 public:
 	AboutModel(SharedMorphModel model, QWidget* parent = NULL);
@@ -43,6 +49,8 @@ private slots:
 	void assignTitle(QString title);
 	void assignDescription();
 	void svgOut();
+	void update_excludes(QStringList qsl);
+	void update_reduced(int);
 };
 
 #endif

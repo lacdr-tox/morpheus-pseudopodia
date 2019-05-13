@@ -12,13 +12,14 @@ public:
     virtual ~CheckBoxList() override;
     bool eventFilter(QObject *object, QEvent *event) override;
     virtual void paintEvent(QPaintEvent *) override;
-    void SetDisplayText(QString text);
-    QString GetDisplayText() const;
+    void setData(QStringList data);
     void hidePopup() override;
+	void updateText();
     QString	currentText() const;
     QVariant currentData(int role = Qt::UserRole) const;
-
-private:
+signals:
+	void currentTextChanged(QStringList newList); 
+private: 
     QStringList _current;
     QString m_DisplayText;
 };
