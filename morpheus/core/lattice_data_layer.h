@@ -108,9 +108,9 @@ protected:
 	uint shadow_size_size_xyz;  // number of data pints in the grid
 	VINT shadow_offset; /// index steps when moving in x,y or z direction 
 	VINT shadow_width;  /// shift between the lattice origin and the origin of the shadowed grid
-	gslice s_xmb, s_xm ,s_xp, s_xpb, s_xall;
-	gslice s_ymb, s_ym ,s_yp, s_ypb, s_yall;
-	gslice s_zmb, s_zm ,s_zp, s_zpb, s_zall;
+	gslice s_xmb, s_xm ,s_xp, s_xpb;
+	gslice s_ymb, s_ym ,s_yp, s_ypb;
+	gslice s_zmb, s_zm ,s_zp, s_zpb;
 	valarray<T> cache_xmb, cache_xpb,  cache_ymb, cache_ypb, cache_zmb, cache_zpb;
 	
 	gslice xslice(span a);

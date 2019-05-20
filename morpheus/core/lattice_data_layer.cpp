@@ -72,7 +72,6 @@ template <class T> void  Lattice_Data_Layer<T>::allocate() {
 	s_xm  = xslice(xmb + shadow_width.x);
 	s_xp  = xslice(xmb + l_size.x);
 	s_xpb = xslice(xmb + l_size.x + shadow_width.x);
-	s_xall= xslice(span(0,shadow_size.x-1));
 	
 	if (dimensions>1) {
 		span ymb = span(0,shadow_width.y-1);
@@ -80,7 +79,6 @@ template <class T> void  Lattice_Data_Layer<T>::allocate() {
 		s_ym  = yslice(ymb + shadow_width.y);
 		s_yp  = yslice(ymb + l_size.y);
 		s_ypb = yslice(ymb + l_size.y + shadow_width.y);
-		s_yall= yslice(span(0,shadow_size.y-1));
 	}
 	if (dimensions>2) {
 		span zmb = span(0,shadow_width.z-1);
@@ -88,7 +86,6 @@ template <class T> void  Lattice_Data_Layer<T>::allocate() {
 		s_zm  = zslice(zmb + shadow_width.z);
 		s_zp  = zslice(zmb + l_size.z);
 		s_zpb = zslice(zmb + l_size.z + shadow_width.z);
-		s_zall= zslice(span(0,shadow_size.z-1));
 	}
 };
 
