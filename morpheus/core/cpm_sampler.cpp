@@ -128,6 +128,7 @@ void CPMSampler::MonteCarloStep()
 	int success=0;
 	assert(edge_tracker != NULL);
 	uint nupdates = edge_tracker->updates_per_mcs();
+	bool is_random = dynamic_pointer_cast<const NoEdgeTracker>(edge_tracker) != nullptr;
 	cached_temp = metropolis_temperature.get(SymbolFocus::global);
 	
 	for (uint i=0; i < nupdates; ++i) {
@@ -136,6 +137,8 @@ void CPMSampler::MonteCarloStep()
 		VINT direction;
 		VINT source_pos(-1,-1,0);
 		edge_tracker->get_update(source_pos, direction);
+		if (is_random)
+			if (cell_layer->get(source_pos) == cell_layer->get(source_pos+direction)) continue;
 		const CPM::Update& current_update = CPM::createUpdate( source_pos, direction, CPM::Update::Operation::Extend);
 
 		if (current_update.focusStateBefore().cell_id == current_update.focusStateAfter().cell_id) continue;
