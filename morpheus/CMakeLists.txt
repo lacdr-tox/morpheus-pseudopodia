@@ -68,7 +68,7 @@ ELSE()
 	TARGET_LINK_LIBRARIES(MorpheusSIM ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_CGRAPH_LIBRARY} )
 ENDIF()
 
-add_subdirectory(plugins)  # provides plugin_src variable as a list of Plugins
+add_subdirectory(plugins)
 add_subdirectory(core)
 
 
