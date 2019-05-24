@@ -16,11 +16,10 @@
 #include <QWidget>
 #include <QGraphicsScene>
 #include <QtSvg/QGraphicsSvgItem>
-#include <QWebView>
 #include <QListView>
-#include <QWebFrame>
 #include "config.h"
 #include "widgets/checkboxlist.h"
+#include "widgets/webviewer.h"
 
 class AboutModel : public QWidget {
 	Q_OBJECT
@@ -28,7 +27,9 @@ class AboutModel : public QWidget {
 	SharedMorphModel model;
 	QLineEdit* title;
 	QTextEdit* description;
-	QWebView* webGraph;
+	
+	WebViewer* webGraph;
+
 	QUrl url;
 	QFrame* webFrame;
 	CheckBoxList* excludeP;
@@ -43,11 +44,15 @@ public:
 	AboutModel(SharedMorphModel model, QWidget* parent = NULL);
 	void update();
     virtual void resizeEvent(QResizeEvent* event);
+
+signals:
+	void nodeSelected(QString path);
 	
 private slots:
 	void update_graph();
 	void assignTitle(QString title);
 	void assignDescription();
+	void openLink(const QUrl&);
 	void svgOut();
 	void update_excludes(QStringList qsl);
 	void update_reduced(int);

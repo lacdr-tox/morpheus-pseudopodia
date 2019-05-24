@@ -16,8 +16,10 @@ int main(int argc, char *argv[])
 // 	scheme.setFlags(QWebEngineUrlScheme::SecureScheme);
 // 	QWebEngineUrlScheme::registerScheme(scheme);
 // #endif
-	
+	// Properly initialize X11 multithreading. Fixes problems when x-forwarding the gui to a remote computer.
 	QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
+	QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
+	
 	//only allow a single instance of Morpheus
 	QtSingleApplication a(argc, argv);
 	//QApplication a(argc, argv);

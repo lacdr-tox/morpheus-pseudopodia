@@ -2,24 +2,8 @@
 #define NETWORK_SCHEMES_H
 
 #include <QWebEngineUrlSchemeHandler>
-#include <QWebEnginePage>
+// #include <QWebEnginePage>
 #include "network_access.h"
-
-
-class AdaptiveWebPage : public QWebEnginePage {
-Q_OBJECT
-public:
-	AdaptiveWebPage(QObject* parent = nullptr) : QWebEnginePage(parent) {};
-	void delegateScheme(QString scheme);
-	signals:
-		void linkClicked(const QUrl&);
-
-protected:
-	bool acceptNavigationRequest(const QUrl &url, QWebEnginePage::NavigationType type, bool isMainFrame) override;
-private:
-	QStringList delegate_schemes;
-
-};
 
 /// Help scheme handler for the QWebEngine Browser
 class HelpNetworkScheme : public QWebEngineUrlSchemeHandler

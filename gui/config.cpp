@@ -344,7 +344,7 @@ int config::openModel(QString filepath) {
     return new_index;
 }
 
-int config::importModel(QSharedPointer< MorphModel > model)
+int config::importModel(SharedMorphModel model)
 {
 	config* conf = getInstance();
 	// substitude the last model if it was created from scratch and is still unchanged
@@ -354,7 +354,7 @@ int config::importModel(QSharedPointer< MorphModel > model)
 
 		conf->openModels.pop_back();
 	}
-
+	model->setParent(conf);
 	conf->openModels.push_back(model);
 	int new_index = conf->openModels.size()-1;
 	emit conf->modelAdded(new_index);

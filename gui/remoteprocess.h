@@ -30,7 +30,7 @@ class remoteProcess : public abstractProcess
 Q_OBJECT
 
 public:
-    remoteProcess(QSharedPointer<MorphModel> model, int pid, QString sub_dir="");
+    remoteProcess(SharedMorphModel model, int pid, QString sub_dir="");
     /*!<
       Creates a simulationprocess which will be started on an external machine.
       \param xml xml-files that describes the cpm-model which will be simulated

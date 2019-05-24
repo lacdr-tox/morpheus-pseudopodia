@@ -71,9 +71,16 @@ void DependencyGraph::analyse(double time)
 	dot << "labelloc=\"t\";";
 	dot << "label=\"Global\";";
 	dot << ""<< graphstyle.at("background") << "\n";
-	dot << "node["<< graphstyle.at("node") <<"]\n";
 	parse_scope(SIM::getGlobalScope());
-	write_scope(SIM::getGlobalScope(), dot);
+	if (scope_info[SIM::getGlobalScope()->getID()]->definitions.str().empty() 
+		&& SIM::getGlobalScope()->getSubScopes().empty())
+	{
+		dot << "empty \n";
+	}
+	else { 
+		dot << "node["<< graphstyle.at("node") <<"]\n";
+		write_scope(SIM::getGlobalScope(), dot);
+	}
 	dot << "}" << endl;
 	for (const auto& line : links )  {
 		dot << line << "\n";
@@ -247,7 +254,7 @@ void DependencyGraph::parse_scope(const Scope* scope)
 				<< ", label=\"{ "<< tsl->XMLName()
 			    << ((tsl->getFullName().empty()  || reduced()) ? string() :  string("\\n\\\"") + tsl->getFullName() + "\\\" ")
 				<< " | " << tsl->timeStep() << " }\""
-				<< (tsl->getXMLNode().isEmpty() ?  string() : string(", URL=\"morph://MorpheusModel/") + getXMLPath(tsl->getXMLNode()) + "\"")
+				<< (tsl->getXMLNode().isEmpty() ?  string() : string(", URL=\"morph://MorpheusModel/") + getXMLPath(tsl->getXMLNode()) + "\", tooltip=\"" + getXMLPath(tsl->getXMLNode()) +"\"" )
 				<< " ]\n" ;
 			
 			// Readers

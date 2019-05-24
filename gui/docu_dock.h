@@ -14,17 +14,8 @@
 
 #include "config.h"
 #include "nodecontroller.h"
+#include "widgets/webviewer.h"
 
-#ifdef USE_QWebEngine
-#include <QWebEngineView>
-#include <QWebEngineHistory>
-#elif defined USE_QWebKit
-#include <QWebView>
-#include <QWebHistory>
-#else
-#include <QTextBrowser>
-#warning Compiling without QtWebKit
-#endif
 
 class DocuDock : public QDockWidget
 {
@@ -55,13 +46,8 @@ private:
     QHelpEngine* help_engine;
 	QSplitter* splitter;
 	
-#ifdef USE_QTextBrowser
-	QTextBrowser* help_view;
-#elif defined USE_QWebKit
-	QWebView* help_view;
-#elif defined USE_QWebEngine
-	QWebEngineView* help_view;
-#endif
+	WebViewer* help_view;
+
 	QTimer *timer;
 	QTreeView* toc_widget;
 	QSortFilterProxyModel* toc_model;

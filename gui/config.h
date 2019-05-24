@@ -18,8 +18,6 @@
 #include <QtHelp/QHelpContentWidget>
 #include <QtHelp/QHelpEngine>
 #include <QtHelp/QtHelp>
-// #include <QtWebKit/QWebView>
-#include <QTextBrowser>
 
 #include <QtSql/QSqlDatabase>
 #include <QSqlDriverPlugin>
@@ -144,7 +142,7 @@ public:
     static void switchModel(int index);
 
     static int createModel(QString path = "");
-	static int importModel(QSharedPointer<MorphModel> model);
+	static int importModel(SharedMorphModel model);
     static int openModel(QString path = "");
     ///< Open the model file @param path. Returns the index of the new model or -1
 

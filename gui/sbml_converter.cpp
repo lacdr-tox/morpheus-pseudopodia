@@ -209,38 +209,38 @@ void  SBMLImporter::replaceDelays(ASTNode* math) {
 	}
 }
 
-QSharedPointer<MorphModel> SBMLImporter::importSBML() {
-	SBMLImporter* importer = new SBMLImporter(nullptr, config::getModel());
+SharedMorphModel SBMLImporter::importSBML() {
+	QScopedPointer<SBMLImporter> importer(new SBMLImporter(nullptr, config::getModel()));
 	
 	if (QDialog::Accepted == importer->exec()) {
 		if (importer->haveNewModel())
 			return importer->getMorpheusModel();
 		else
-			return QSharedPointer<MorphModel>();
+			return nullptr;
 	}
 	else
-		return QSharedPointer<MorphModel>();
+		return nullptr;
 }
 
-QSharedPointer<MorphModel> SBMLImporter::importSEDMLTest(QString file) {
-	SBMLImporter* importer = new SBMLImporter(nullptr, QSharedPointer<MorphModel>::create() );
+SharedMorphModel SBMLImporter::importSEDMLTest(QString file) {
+	QScopedPointer<SBMLImporter> importer(new SBMLImporter(nullptr, SharedMorphModel()));
 	
 	if (importer->readSEDML(file))
-		return importer->getMorpheusModel();
+		return nullptr;
 	else
-		return QSharedPointer<MorphModel>();
+		return nullptr;
 }
 
-QSharedPointer<MorphModel> SBMLImporter::importSBMLTest(QString file) {
-	SBMLImporter* importer = new SBMLImporter(nullptr, QSharedPointer<MorphModel>::create() );
+SharedMorphModel SBMLImporter::importSBMLTest(QString file) {
+	QScopedPointer<SBMLImporter> importer(new SBMLImporter(nullptr, SharedMorphModel() ));
 	
 	if (importer->readSBMLTest(file)) 
 		return importer->getMorpheusModel();
 	else
-		return QSharedPointer<MorphModel>();
+		return nullptr;
 }
 
-SBMLImporter::SBMLImporter(QWidget* parent, QSharedPointer< MorphModel > current_model) : QDialog(parent)
+SBMLImporter::SBMLImporter(QWidget* parent, SharedMorphModel current_model) : QDialog(parent)
 {
 	this->setMaximumWidth(500);
 	this->setMinimumHeight(250);
@@ -582,7 +582,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 
 	// Setup target model
 	
-	QSharedPointer<MorphModel> morph_model;
+	SharedMorphModel morph_model;
 	auto target = target_code.split(",");
 	
 	if (target[0] == "new") {
@@ -631,7 +631,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 
 		QDomDocument morph_doc;
 		morph_doc.setContent(plain_morpheus_model);
-		morph_model = QSharedPointer<MorphModel>(new MorphModel(morph_doc));
+		morph_model = new MorphModel(morph_doc);
 	}
 	else {
 		morph_model = model;

@@ -2,18 +2,6 @@
 #include <QWebEngineUrlRequestJob>
 #include <qmimedatabase.h>
 
-void AdaptiveWebPage::delegateScheme(QString scheme) {
-	delegate_schemes.append(scheme);
-}
-
-bool AdaptiveWebPage::acceptNavigationRequest(const QUrl& url, QWebEnginePage::NavigationType type, bool isMainFrame) {
-	if (delegate_schemes.contains(url.scheme()) && type == QWebEnginePage::NavigationType::NavigationTypeLinkClicked) {
-		emit linkClicked(url);
-		return false;
-	}
-	return QWebEnginePage::acceptNavigationRequest(url, type, isMainFrame);
-}
-
 
 HelpNetworkScheme::HelpNetworkScheme(ExtendedNetworkAccessManager* nam, QObject* parent) : QWebEngineUrlSchemeHandler(parent), nam(nam) {}
 

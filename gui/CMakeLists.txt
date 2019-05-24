@@ -157,6 +157,7 @@ SET( SOURCES ${SOURCES}
     xmlpreview.cpp 
     xsd.cpp
     widgets/checkboxlist.cpp
+    widgets/webviewer.cpp
    )
 
 IF ( USE_QWebEngine )
@@ -184,7 +185,7 @@ configure_file(ext_files.rc.in ext_files.rc @ONLY)
 
 # compile the resources
 SET( RESOURCES link_data.qrc ${CMAKE_CURRENT_BINARY_DIR}/ext_files.rc)
-QT5_ADD_RESOURCES( RESOURCES_RCC ${RESOURCES} )
+QT5_ADD_RESOURCES( RESOURCES_RCC ${RESOURCES} OPTIONS "--compress" "8" )
 
 
 IF( MINGW )

@@ -27,27 +27,27 @@ AnnouncementDialog::AnnouncementDialog(QWidget* parent)
 	
 	auto nam = config::getNetwork();
 	
-#ifdef USE_QTextBrowser
-	web_view = new QTextBrowser(this);
-	web_view->setOpenLinks(false);
-	connect(web_view, SIGNAL(anchorClicked(const QUrl&)), this, SLOT(openLink(const QUrl&)));
-#elif defined USE_QWebKit
-	web_view = new QWebView(this);
-	web_view->page()->setNetworkAccessManager(nam);
-	web_view->page()->settings()->setAttribute(QWebSettings::JavascriptEnabled, false);
-	web_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessRemoteUrls, false);
-	web_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessFileUrls, false);
-	web_view->page()->settings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, false);
-	web_view->page()->setLinkDelegationPolicy(QWebPage::DelegateExternalLinks);
-	connect(web_view, SIGNAL(linkClicked(const QUrl&)),this, SLOT(openLink(const QUrl&)));
-#elif defined USE_QWebEngine
-	auto page = new AdaptiveWebPage(this);
-	page->delegateScheme("http");
-	page->delegateScheme("https");
-	web_view = new QWebEngineView(this);
-	web_view->setPage(page);
-	connect(page, SIGNAL(linkClicked(const QUrl&)),this, SLOT(openLink(const QUrl&)));
-#endif
+	web_view = new WebViewer(this);
+	connect(web_view, SIGNAL(linkClicked(const QUrl&)), this, SLOT(openLink(const QUrl&)));
+// #ifdef USE_QTextBrowser
+// 	web_view->setOpenLinks(false);
+// #elif defined USE_QWebKit
+// 	web_view = new QWebView(this);
+// 	web_view->page()->setNetworkAccessManager(nam);
+// 	web_view->page()->settings()->setAttribute(QWebSettings::JavascriptEnabled, false);
+// 	web_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessRemoteUrls, false);
+// 	web_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessFileUrls, false);
+// 	web_view->page()->settings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, false);
+// 	web_view->page()->setLinkDelegationPolicy(QWebPage::DelegateExternalLinks);
+// 	connect(web_view, SIGNAL(linkClicked(const QUrl&)),this, SLOT(openLink(const QUrl&)));
+// #elif defined USE_QWebEngine
+// 	auto page = new AdaptiveWebPage(this);
+// 	page->delegateScheme("http");
+// 	page->delegateScheme("https");
+// 	web_view = new QWebEngineView(this);
+// 	web_view->setPage(page);
+// 	connect(page, SIGNAL(linkClicked(const QUrl&)),this, SLOT(openLink(const QUrl&)));
+// #endif
 	central_layout->addWidget(web_view);
 	
 	

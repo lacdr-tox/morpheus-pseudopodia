@@ -3,6 +3,7 @@
 
 parameterSweeper::parameterSweeper()
 {
+	model = nullptr;
 	QVBoxLayout *main_layout = new QVBoxLayout(this);
 	this->setLayout(main_layout);
 

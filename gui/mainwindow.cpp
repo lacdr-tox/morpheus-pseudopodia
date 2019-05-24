@@ -386,8 +386,8 @@ void MainWindow::createMainWidgets()
     modelList->setAutoExpandDelay(200);
 
     connect(modelList, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showModelListMenu(QPoint)));
-    connect(modelList, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(modelListChanged(QTreeWidgetItem*)));
-	connect(modelList, SIGNAL(clicked(QModelIndex)), this, SLOT(showCurrentModel()) );
+//     connect(modelList, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(modelListChanged(QTreeWidgetItem*)));
+	connect(modelList, &QTreeWidget::clicked, [=](const QModelIndex& /*index*/) { modelListChanged(modelList->currentItem());});
 	connect(modelList, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(activatePart(QModelIndex)) );
 
     modelMenu = new QMenu();
@@ -548,9 +548,9 @@ void MainWindow::selectModel(int index, int part)
 			}
 		}
     }
-
+    modelList->blockSignals(true);
 	modelList->setCurrentItem(modelList->topLevelItem(index)->child(model_index.part));
-	documentsDock->raise();
+	modelList->blockSignals(false);
 	showCurrentModel();
 	
     //qDebug() << current_model->xml_file.name << " " << current_model->parts[model_index.part].label;
@@ -630,7 +630,7 @@ void MainWindow::menuBarTriggered(QAction* act)
     }
     if (act->text() == "&Import SBML") {
 		if (current_model) {
-			QSharedPointer<MorphModel> sbml_import = SBMLImporter::importSBML();
+			SharedMorphModel sbml_import = SBMLImporter::importSBML();
 			if (sbml_import)
 				config::importModel(sbml_import);
 			modelViewer[current_model]->setModelPart("CellTypes");
@@ -883,7 +883,7 @@ void MainWindow::syncModelList (int m) {
 	if (m==-1) {
 		const QList<SharedMorphModel >&  models = config::getOpenModels();
 		foreach ( SharedMorphModel model, models) {
-			if (sender() == model.data()) {
+			if (sender() == model) {
 				m = models.indexOf(model);
 			}
 		}
@@ -997,8 +997,8 @@ void MainWindow::addModel(int index) {
 	c->setFont(0,f);
 	modelList->insertTopLevelItem(index,c);
 
-	connect(model.data(),SIGNAL(modelPartAdded(int)),this,SLOT(syncModelList()));
-	connect(model.data(),SIGNAL(modelPartRemoved(int)),this,SLOT(syncModelList()));
+	connect(model,SIGNAL(modelPartAdded(int)),this,SLOT(syncModelList()));
+	connect(model,SIGNAL(modelPartRemoved(int)),this,SLOT(syncModelList()));
 
 	domNodeViewer *viewer = new domNodeViewer(this);
 	viewer->setModel(model,0);
@@ -1010,6 +1010,7 @@ void MainWindow::addModel(int index) {
 	modelViewer[model] = viewer;
 	modelAbout[model] =  new AboutModel(model);
 	editorStack->addWidget(modelAbout[model]);
+	connect(modelAbout[model], &AboutModel::nodeSelected, this, [this](QString path) { selectXMLPath(path, this->model_index.model); });
 
 	syncModelList(index);
 
@@ -1029,11 +1030,13 @@ void MainWindow::addModel(int index) {
 
 void MainWindow::removeModel(int index) {
     SharedMorphModel model = config::getOpenModels()[index];
-    disconnect(model.data(),SIGNAL(modelPartAdded(int)),this,SLOT(syncModelList()));
-    disconnect(model.data(),SIGNAL(modelPartRemoved(int)),this,SLOT(syncModelList()));
+    disconnect(model,SIGNAL(modelPartAdded(int)),this,SLOT(syncModelList()));
+    disconnect(model,SIGNAL(modelPartRemoved(int)),this,SLOT(syncModelList()));
     editorStack->removeWidget(modelViewer[model]);
+	modelViewer[model]->deleteLater();
     modelViewer.remove(model);
 	editorStack->removeWidget(modelAbout[model]);
+	modelAbout[model]->deleteLater();
 	modelAbout.remove(model);
 
     modelList->takeTopLevelItem(index);
@@ -1044,14 +1047,15 @@ void MainWindow::removeModel(int index) {
 }
 
 void MainWindow::showCurrentModel() {
+// 	qDebug() << "showing current model from " << sender();
 	if (current_model->parts[model_index.part].label=="ParamSweep") {
         editorStack->setCurrentWidget(sweeper);
 		QWidget::setTabOrder(modelList,sweeper);
 		docuDock->setCurrentElement( "ParameterSweep" );
 	}
 	else if (model_index.part==0) {
-		editorStack->setCurrentWidget(modelAbout[current_model]);
 		modelAbout[current_model]->update();
+		editorStack->setCurrentWidget(modelAbout[current_model]);
 		docuDock->setCurrentElement(current_model->parts[model_index.part].element->getXPath() );
 // 		docuDock->setCurrentNode( current_model->parts[model_index.part].element);
 		QWidget::setTabOrder(modelList,modelAbout[current_model]);
@@ -1137,8 +1141,8 @@ void MainWindow::selectXMLPath(QString path, int model_id)
 	if (xml_path.size()<1) return; 
 	QString part_name = xml_path[0];
 	
+	if (model_id<0) return;
 	if (model_id>=0) {
-		selectModel(model_id);
 	}
 	
 	int part_id = -1;
@@ -1148,7 +1152,9 @@ void MainWindow::selectXMLPath(QString path, int model_id)
 			break;
 		}
 	}
-	
+
+	selectModel(model_id,part_id);
+
 	if ( part_id>=0) {
 		modelViewer[current_model]->selectNode(path);
 	}

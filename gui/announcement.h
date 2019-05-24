@@ -7,15 +7,7 @@
 #include <QPushButton>
 #include <QNetworkReply>
 
-#ifdef USE_QTextBrowser
-#include <QTextBrowser>
-#warning Compiling without QtWebKit
-#elif defined USE_QWebKit
-#include <QWebView>
-#elif defined USE_QWebEngine
-#include <QWebEngineView>
-#endif
-
+#include <widgets/webviewer.h>
 
 class AnnouncementDialog : public QDialog {
 	Q_OBJECT
@@ -28,13 +20,7 @@ class AnnouncementDialog : public QDialog {
 	bool have_new_announcements = false;
 	bool show_old_announcements = false;
 	
-#ifdef USE_QTextBrowser
-	QTextBrowser* web_view;
-#elif defined USE_QWebKit
-	QWebView* web_view;
-#elif defined USE_QWebEngine
-	QWebEngineView* web_view;
-#endif
+	WebViewer* web_view;
 	void setIndex(int idx);
 	void showAnnouncements(bool also_old);
 	void check();

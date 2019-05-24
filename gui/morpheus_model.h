@@ -133,6 +133,6 @@ signals:
 //     void sweeperAttributeRemoved(AbstractAttribute* attr);
 };
 
-typedef QSharedPointer< MorphModel > SharedMorphModel;
+typedef QPointer<MorphModel> SharedMorphModel;
 
 #endif // MODELDATA_H

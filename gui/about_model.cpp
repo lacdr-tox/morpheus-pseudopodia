@@ -30,10 +30,10 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	layset->addWidget(ql1,0,0);
 	QLabel* ql2 = new QLabel("exclude-symbols");
 	ql2->setAlignment(Qt::AlignRight);
-	layset->addWidget(ql2,1,0);
+	layset->addWidget(ql2,0,2);
 	QLabel* ql3 = new QLabel("reduced");
 	ql3->setAlignment(Qt::AlignRight);
-	layset->addWidget(ql3,2,0);
+	layset->addWidget(ql3,0,4);
 	excludeP = new CheckBoxList();
 	excludeS = new CheckBoxList();
 	//connect(excludeP, SIGNAL(currentTextChanged(QStringList)),this,SLOT());
@@ -45,8 +45,8 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 		update_graph();});
 	update_reduced(Qt::Unchecked);
 	layset->addWidget(excludeP,0,1);
-	layset->addWidget(excludeS,1,1);
-	layset->addWidget(reduced,2,1);
+	layset->addWidget(excludeS,0,3);
+	layset->addWidget(reduced,0,5);
 	central->addLayout(layset);
 
 // 	auto an = model->rootNodeContr->firstActiveChild("Analysis");
@@ -67,38 +67,40 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 			}
 		}
 	}
-	
-	webGraph = new QWebView(this);
-	webGraph->page()->setNetworkAccessManager(config::getNetwork());
-	webGraph->page()->settings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
-	webGraph->page()->settings()->setAttribute(QWebSettings::JavascriptEnabled, true);
-	central->addWidget(webGraph);
+	webGraph = new WebViewer(this);
+	connect(webGraph, &WebViewer::linkClicked, this, &AboutModel::openLink);
+	auto frame = new QFrame();
+	frame->setLayout(new QBoxLayout(QBoxLayout::Down));
+	frame->layout()->addWidget(webGraph);
+	frame->setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
+	frame->setLineWidth(0);
+	frame->setStyleSheet("background-color:white;");
+// 	style->setProperty(Style::S)
+	central->addWidget(frame,4);
+	webGraph->show();
 	
 	save_btn = new QPushButton(this);
 	central->addWidget(save_btn);
 	save_btn->setText("save");
-	connect(save_btn,SIGNAL(clicked(int)),this, SLOT(svgOut(int)));
+	connect(save_btn,SIGNAL(clicked()),this, SLOT(svgOut()));
 	save_btn->show();
 	lastGraph = "";
 };
 
 void AboutModel::update()
 {
-	qDebug()<<"UPDATE";
+	qDebug()<<"UPDATE" ;
+	
+	title->blockSignals(true);
+	description->blockSignals(true);
 	reduced->blockSignals(true);
 	excludeS->blockSignals(true);
-	title->blockSignals(true);
-	title->setText(model->rootNodeContr->getModelDescr().title);
-	title->blockSignals(false);
-	description->blockSignals(true);
-	description->setText(model->rootNodeContr->getModelDescr().details);
-	description->blockSignals(false);
 	
-	// at least delay the update until the widget shows up
-	QMetaObject::invokeMethod(this,"update_graph",Qt::QueuedConnection);
+	title->setText(model->rootNodeContr->getModelDescr().title);
+	description->setText(model->rootNodeContr->getModelDescr().details);
 	
 	auto dg = model->rootNodeContr->find(QStringList() << "Analysis" << "DependencyGraph",true);
-	QStringList qsl = dg->attribute("exclude-symbols")->get().split(",");
+	QStringList qsl = dg->attribute("exclude-symbols")->get().split(",", QString::SplitBehavior::SkipEmptyParts);
 	excludeS->setData(qsl);
 	if(dg->attribute("reduced")->get() == "true")
 	{
@@ -106,9 +108,14 @@ void AboutModel::update()
 	}else{
 		reduced->setCheckState(Qt::Unchecked);
 	}
+	
+	title->blockSignals(false);
+	description->blockSignals(false);
 	reduced->blockSignals(false);
 	excludeS->blockSignals(false);
-	update_graph();
+	// at least delay the update until the widget shows up
+	QMetaObject::invokeMethod(this,"update_graph",Qt::QueuedConnection);
+// 	update_graph();
 }
 
 void AboutModel::update_graph()
@@ -116,7 +123,7 @@ void AboutModel::update_graph()
 	// save file to tmp folder
 	
 	QString graph = model->getDependencyGraph();
-	if (!graph.isEmpty()) {
+// 	if (!graph.isEmpty()) {
 		//qDebug() << "showing dep_graph: Filename: " << QString(graph);
 		if (graph.endsWith("png")) {
 			url = (QString("file://") + graph);
@@ -124,49 +131,72 @@ void AboutModel::update_graph()
 		} else if (graph.endsWith("svg")) {
 			url = (QString("file://") + graph);
 			webGraph->setUrl(url);
-		} else if (graph.endsWith("dot")){
-
+		} else /*if (graph.endsWith("dot"))*/ {
+			QUrl dotgraph("qrc:///template.html");
 			QFile dotsource(graph);
-			dotsource.open(QIODevice::ReadOnly);
 			QString toR;
-			toR +=  "transition('" + dotsource.readAll().replace("\n"," ").replace("\t"," ") + "');";
+			if (dotsource.exists()) {
+				dotsource.open(QIODevice::ReadOnly);
+				toR  = dotsource.readAll().replace("\n"," ").replace("\t"," ").trimmed();
+			}
+			if (toR.isEmpty()) {
+				toR = "digraph { compound=true; subgraph cluster{ labelloc=\"t\";label=\"Global\";bgcolor=\"#2341782f\"; empty} }";
+// 				toR.replace("\"","\\\"");
+			}
+			qDebug() << "Updating graph from " << sender()  << "\ncurrent url is " <<webGraph->url().path() << "\n" << toR;
+			toR.prepend("transition('").append("');");
 			dotsource.close();
-			if(lastGraph != toR)
+			if(webGraph->url() != dotgraph || lastGraph != toR)
 			{
+				lastGraph= toR;
 				qDebug()<<"UPDATE GRAPH";
-				QUrl dotgraph("qrc:///template.html");
-				if (webGraph->url() != dotgraph) {
-					webGraph->load(dotgraph);
-					onLoadConnect = connect(webGraph, &QWebView::loadFinished, [=](bool){ 
-						webGraph->page()->mainFrame()->evaluateJavaScript(toR);
+				if (webGraph->page()->url() != dotgraph) {
+					onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [&](bool){ 
+						webGraph->evaluateJS(lastGraph, [](const QVariant& r){});
+						qDebug() << "Graph loading finished!";
 						disconnect(onLoadConnect);
 					});
+					webGraph->load(dotgraph);
 				}
 				else {
-					webGraph->page()->mainFrame()->evaluateJavaScript(toR);
+					webGraph->evaluateJS(toR, [](const QVariant& r){});
 				}
-				lastGraph = toR;
 				webGraph->show();
 			}
 		}
-	}
+// 	}
 	// run morpsi on it
 	// reload the resulting dependency_graph.png/svg
 	// display an error, id something went wrong.
 	
 }
 
+void AboutModel::openLink(const QUrl& url)
+{
+	if (url.scheme() == "morph") {
+		emit nodeSelected(url.path());
+	}
+}
+
+
 void AboutModel::svgOut()
 {
 	QVariant qv;
 	QString fileName = QFileDialog::getSaveFileName(this,tr("Save Image"), "/home", tr("Image Files (*.png *.jpg )"));
-	QFile qf(fileName);
-	qf.open(QIODevice::WriteOnly);
-	QTextStream out(&qf);
-	qv = webGraph->page()->mainFrame()->evaluateJavaScript("retSVG()");
-	out<<"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
-	out<<qv.toString().replace(QRegularExpression("</a>\\n"),"").replace(QRegularExpression("<a\\s.*?>"),"");
-	qf.close();
+	
+	webGraph->evaluateJS("retSVG()",  
+		[=](const QVariant& r){
+			qDebug() << "saving SVG";
+			QFile qf(fileName);
+			qf.open(QIODevice::WriteOnly);
+			QTextStream out(&qf);
+			out<<"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
+			out<< r.toString()
+			       .replace(QRegularExpression("</a>\\n"),"")
+			       .replace(QRegularExpression("<a\\s.*?>"),"");
+			qf.close();
+		} 
+	);
 }
 
 

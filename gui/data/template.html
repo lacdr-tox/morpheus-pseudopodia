@@ -11,9 +11,11 @@
 <script type="text/javascript">
 
 	var graphviz;
+	var current_graph;
 	
 	function transition(nextGraph)
 	{
+		current_graph = nextGraph;
 		graphviz.renderDot(nextGraph);
 	}
 	
@@ -22,17 +24,29 @@
 		return document.getElementById("graph").innerHTML;
 	}
 	
-// 	window.addEventListener('load', function () {
+	window.addEventListener('load', function () {
 		
 		graphviz = d3.select("#graph").graphviz();
+		graphviz.width(window.innerWidth - 20);
+		graphviz.height(window.innerHeight - 20);
+		
+// 		graphviz.renderDot('digraph { compound=true; subgraph cluster{ labelloc=\"t\";label=\"Global\";bgcolor=\"#2341782f\"; empty} }');
+		// 'digraph {   } ');
+		
 		var d3trans = d3.select("#graph").graphviz().transition(function () {
 				return d3.transition("main")
 				.ease(d3.easeLinear)
 				.delay(0)
 				.duration(500);
 			});
-// 		transition('digraph { node[style=filled,fillcolor=\"#fffea3\"] no_grapgh[ shape=record, label=\"{ empty }\"]   } ');
-// 	});
+	});
+	
+	window.onresize = function(event) {
+		graphviz.width(window.innerWidth - 20);
+		graphviz.height(window.innerHeight - 20);
+		graphviz.renderDot(current_graph);
+	};
+	
 </script>
 </body>
 </html>

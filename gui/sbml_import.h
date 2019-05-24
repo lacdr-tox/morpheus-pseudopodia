@@ -16,8 +16,8 @@
 #ifndef HAVE_LIBSBML
 namespace SBMLImporter {
 	const bool supported = false;
-	inline QSharedPointer<MorphModel> importSBML() { return QSharedPointer<MorphModel>(); };
-	inline QSharedPointer<MorphModel> importSBMLTest(QString file) { return QSharedPointer<MorphModel>(); };
+	inline SharedMorphModel importSBML() { return SharedMorphModel(); };
+	inline SharedMorphModel importSBMLTest(QString file) { SharedMorphModel(); };
 }
 #else // HAVE_LIBSBML
 #include "sbml_converter.h"
