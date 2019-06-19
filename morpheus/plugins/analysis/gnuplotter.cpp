@@ -44,11 +44,16 @@ VDOUBLE Gnuplotter::PlotSpec::view_oversize()
 ArrowPainter::ArrowPainter() {
 	arrow.setXMLPath("orientation");
 	arrow.allowPartialSpec();
+	map<string, bool> centering_map = {{"midpoint",true}, {"origin",false}};
+	centering.setConversionMap(centering_map);
+	centering.setXMLPath("center");
+	centering.setDefault("midpoint");
 }
 
 void ArrowPainter::loadFromXML(const XMLNode node, const Scope * scope)
 {
 	arrow.loadFromXML(node, scope);
+	centering.loadFromXML(node, scope);
 	style = 3;
 	getXMLAttribute(node,"style",style);
 }
@@ -58,6 +63,7 @@ int ArrowPainter::getStyle() { return style; }
 void ArrowPainter::init(const Scope* scope)
 {
 	arrow.init();
+	centering.init();
 }
 
 set< SymbolDependency > ArrowPainter::getInputSymbols() const
@@ -93,7 +99,7 @@ void ArrowPainter::plotData(ostream& out)
 				lattice.orth_resolve (center);
 				
 				if (! (a.x == 0 && a.y==0) ) {
-					out << center.x-0.5*a.x  << "\t" <<  center.y-0.5*a.y << "\t" << a.x << "\t" << a.y << endl;
+					out << center.x - (centering() ? 0.5*a.x : 0) << "\t" <<  center.y - (centering() ? 0.5*a.y : 0) << "\t" << a.x << "\t" << a.y << endl;
 				}
 			}
 			catch (const SymbolError &e) {
@@ -304,6 +310,11 @@ void VectorFieldPainter::loadFromXML(const XMLNode node, const Scope* scope)
 {
 	value.setXMLPath("value");
 	value.loadFromXML(node, scope);
+	map<string, bool> centering_map = {{"midpoint",true}, {"origin",false}};
+	centering.setConversionMap(centering_map);
+	centering.setXMLPath("center");
+	centering.setDefault("midpoint");
+	centering.loadFromXML(node, scope);
 	
 // 	if ( ! getXMLAttribute(node, "x-symbol-ref", x_symbol.name)) { cerr << "Undefined x-symbol-ref in GnuPlot -> VectorField"; exit(-1);}
 // 	if ( ! getXMLAttribute(node, "y-symbol-ref", y_symbol.name)) { cerr << "Undefined y-symbol-ref in GnuPlot -> VectorField"; exit(-1);};
@@ -322,6 +333,7 @@ void VectorFieldPainter::loadFromXML(const XMLNode node, const Scope* scope)
 void VectorFieldPainter::init(const Scope* scope)
 {
 	value.init();
+	centering.init();
 }
 
 set< SymbolDependency > VectorFieldPainter::getInputSymbols() const
@@ -342,7 +354,7 @@ void VectorFieldPainter::plotData(ostream& out)
 			if (lattice.getStructure() == Lattice::hexagonal) {
 				lattice.orth_resolve(opos);
 			}
-			out << opos.x - 0.5*arrow.x << "\t" << opos.y - 0.5*arrow.y << "\t" << arrow.x << "\t" << arrow.y << "\n";
+			out << opos.x - (centering() ? 0.5*arrow.x : 0) << "\t" << opos.y - (centering() ? 0.5*arrow.y : 0)  << "\t" << arrow.x << "\t" << arrow.y << "\n";
 		}
 	}
 }

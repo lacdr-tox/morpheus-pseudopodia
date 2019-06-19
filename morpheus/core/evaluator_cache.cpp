@@ -1,6 +1,6 @@
 #include "evaluator_cache.h"
 
-EvaluatorCache::NS::NS(std::__cxx11::string name, const Scope* scope) :
+EvaluatorCache::NS::NS(string name, const Scope* scope) :
  scope(scope), ns_name(name) {}
 
 set<Symbol> EvaluatorCache::NS::getUsedSymbols() const
@@ -62,8 +62,8 @@ EvaluatorCache::EvaluatorCache(const EvaluatorCache& other)
 	locals_cache = other.locals_cache;
 	
 	// External variable storage
-	map<string, SymbolDesc> externals = other.externals;
-	vector< NS > externals_namespaces = other.externals_namespaces;
+	externals = other.externals;
+	externals_namespaces = other.externals_namespaces;
 	
 	// infrastructure for vector symbol expansion
 	scalar_expansion_permitted  = other.scalar_expansion_permitted;
@@ -203,7 +203,7 @@ mu::value_type* EvaluatorCache::registerSymbol_internal(const mu::char_type* sym
 int EvaluatorCache::addLocal(string name, double value) {
 	if (initialized) throw string("Cannot add locals after initilization in EvaluatorCache!");
 	if (locals.count(name)) throw string("Cannot add local in EvaluatorCache! Symbol ") + name + " already exists";
-	uint pos = locals_cache.size();
+	int pos = locals_cache.size();
 	locals_cache.push_back(value);
 	locals[name] = pos;
 	locals_table.push_back( { name, LocalSymbolDesc::DOUBLE } );
@@ -214,7 +214,7 @@ int EvaluatorCache::addLocal(string name, double value) {
 int EvaluatorCache::addLocal(string name, VDOUBLE value) {
 	if (initialized) throw string("Cannot add locals after initilization in EvaluatorCache!");
 	if (locals.count(name)) throw string("Cannot add local in EvaluatorCache! Symbol ") + name + " already exists";
-	uint pos = locals_cache.size();
+	int pos = locals_cache.size();
 	locals_cache.push_back(value.x);
 	locals_cache.push_back(value.y);
 	locals_cache.push_back(value.z);
@@ -222,7 +222,7 @@ int EvaluatorCache::addLocal(string name, VDOUBLE value) {
 	locals_table.push_back( { name, LocalSymbolDesc::VECTOR } );
 	locals[name+".x"] = pos;
 	locals[name+".y"] = pos+1;
-	locals[name+".z"] = pos+1;
+	locals[name+".z"] = pos+2;
 	return pos;
 }
 
@@ -318,7 +318,7 @@ void EvaluatorCache::attach(mu::Parser *parser) {
 		if (parser_symbols.count(sym.first))
 			continue;
 
-		throw string("EvaluatorCache::attach:  Symbol ") + sym.first + " not registered.";
+		throw string("EvaluatorCache::attach:  Symbol ") + sym.first + " not registered.\n" + toString();
 	}
 	initialized = true;   // No more registration of local symbols are allowed to keep the cache positions.
 }

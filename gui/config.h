@@ -18,7 +18,7 @@
 #include <QtHelp/QHelpContentWidget>
 #include <QtHelp/QHelpEngine>
 #include <QtHelp/QtHelp>
-#include <QtWebKit/QWebView>
+// #include <QtWebKit/QWebView>
 #include <QTextBrowser>
 
 #include <QtSql/QSqlDatabase>

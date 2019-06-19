@@ -129,18 +129,25 @@ The \b name attribute is used for descriptive purposes only. In particular, grap
 **/
 
 /**
-  \defgroup MathExpressions
+\defgroup MathExpressions
   
-Mathematical expressions to be evaluated during run-time. The vector version uses the 'x,y,z' notation, or -- if available -- the spherical notation 'phi,theta,radius'.
+Mathematical expressions to be evaluated during run-time. The vector version uses the component-wise 'x,y,z' notation, or -- if available -- the spherical notation 'phi,theta,radius'. 
 
 \section Available Operators:
-+, -, *, /, ^, =, >=, !=, ==, <, >
++, -, *, /, ^, =, >=, <=, !=, ==, <, >
+and, or, xor, !
 
 \section Functions
   - Logical:  if([condition], [then], [else]), and, or, xor
   - Trigonometric: sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh
   - Exponential: log2, log10, ln, exp, pow, sqrt,
   - others: sign, rint, abs, min, max, sum, avg, mod
+  
+
+**MathML compatibility Functions**:
+  - piecewise, lt, leq, eq, neq, geq, gt, arcsin, arccos, arctan, arcsinh, arccosh, arctanh
+
+Additional functions can be defined using \ref ML_Function.
 
 \section Random Random number generators
   - rand_uni([min], [max])
@@ -161,7 +168,7 @@ Mathematical expressions to be evaluated during run-time. The vector version use
 \ingroup ML_Analysis
 \ingroup Symbols
 
-Symbol with a fixed scalar value.
+Symbol with a fixed scalar value given by a \ref MathExpressions.
 **/
 /**
 \defgroup ML_ConstantVector ConstantVector
@@ -182,7 +189,7 @@ Syntax is comma-separated: x,y,z
 \ingroup ML_CellType
 \ingroup Symbols
 
-Symbol with a variable scalar value.
+Symbol with a variable scalar value. The initial value is given by a  given by a \ref MathExpressions.
 **/
 /**
 \defgroup ML_VariableVector VariableVector
@@ -190,17 +197,26 @@ Symbol with a variable scalar value.
 \ingroup ML_CellType
 \ingroup Symbols
 
-Symbol with a variable 3D vector value.
+Symbol with a variable 3D vector value. The initial value is given by a  given by a \ref MathExpressions.
 
 Syntax is comma-separated: x,y,z
 **/
+
+/**
+\defgroup ML_DelayVariable DelayVariable
+\ingroup ML_Global
+\ingroup Symbols
+
+Symbol with a scalar value and a \b delay time before an assigned values become current. The initial value and history is given by a  given by a \ref MathExpressions.
+**/
+
 /**
 \defgroup ML_Property Property
 \ingroup ML_CellType
 \ingroup Symbols
 
 
-Symbol with a cell-bound variable scalar value.
+Symbol with a cell-bound variable scalar value. The initial value is given by a  given by a \ref MathExpressions and may contain stochasticity to create diversity.
 **/
 
 /**
@@ -209,7 +225,7 @@ Symbol with a cell-bound variable scalar value.
 \ingroup Symbols
 
 
-Symbol with a cell-bound scalar value and a \b delay time before values become current.
+Symbol with a cell-bound scalar value and a \b delay time before values become current. The initial value and history is given by a  given by a \ref MathExpressions
 **/
 
 /**
@@ -217,7 +233,7 @@ Symbol with a cell-bound scalar value and a \b delay time before values become c
 \ingroup ML_CellType
 \ingroup Symbols
 
-Symbol with cell-bound, variable 3D vector value.
+Symbol with cell-bound, variable 3D vector value. The initial value and history is given by a  given by a \ref MathExpressions.
 
 Syntax is comma-separated: x,y,z
 **/
@@ -228,7 +244,7 @@ Syntax is comma-separated: x,y,z
 \ingroup MathExpressions
 \ingroup ML_System
 
-Assignment of an equation containing derivatives to a symbol.
+Assignment of a rate equation to a symbol.
 
 Ordinary differential equation \f$ \frac{dX}{dt}=a \f$ if \f$ X \f$ is a \ref ML_Variable or a \ref ML_Property
 
@@ -242,14 +258,27 @@ DiffEqn are only allowed within \ref ML_System
 \defgroup ML_System System
 \ingroup ML_Global
 \ingroup ML_CellType
-\ingroup MathExpressions
+\ingroup MathExpressions ContinuousProcessPlugins
 
 Environment for tightly coupled \ref ML_Rule and \ref ML_DiffEqn. Expressions with a System are synchronously updated and may contain recurrence relations.
 
-- \b solver: numerical solver for DiffEqn: Euler (1st order), Heun (aka explicit trapezoid rule, 2nd order), Runge-Kutta (4th order), Runge-Kutta adaptive with Cash/Karp parametrization.
+- \b solver: numerical solver for DiffEqn:
+  - Adaptive time step solvers: 
+    - \b adaptive45 - Dormand-Prince 4/5th order, \b default
+    - \b adaptice45-ck - Cash-Karp 4/5th order
+    - \b adaptive23 - Bogacki-Shampine 2/3rd order
+  - Fixed time step solvers
+     - \b fixed1 aka \b euler - Euler 1st order
+     - \b fixed2 aka \b heun - Heun 2nd order (aka explicit trapezoid rule)
+     - \b fixes4 aka \b runge-kutta - Runge Kutta 4th order
+  - \b Stochastic fixed time step: 
+    - use \b stochastic - Euler Maruyama method (\b euler also autodetects stochasticity)
+  - \b Stiff/non-stiff adaptive 
+    - Cash-Karp + Rosenbrock (planned)
+  
 - \b time-step:
-  - \b Fixed schemes: integration step size.
-  - \b Adaptive schemes: Coupling interval, i.e. maximum step size without coupling to other processes.
+  - \b Fixed schemes: integration step size, given in system time.
+  - \b Adaptive schemes: Coupling interval given in system time, i.e. maximum step size without coupling to other processes.
 - \b time-scaling (optional): scales the dynamics of \b ML_System to the simulation time. Equivalent to multiplying all \b ML_DiffEqn in the \b ML_System with a scalar.
 
 Note: Systems define their own \ref Scope. This implies that values of symbols defined within a System are not accessible outside of the System.
@@ -273,20 +302,25 @@ An IntermediateVector Symbol is available to all expressions within a System. In
 
 /**
 \defgroup ML_Event Event
-\ingroup MathExpressions
+\ingroup MathExpressions InstantaneousProcessPlugins
+\ingroup ML_Global
+\ingroup ML_CellType
 
 Environment for conditionally executed set of assignments.
 
-- \b time-step: if specified, Condition is evulated in regular intervals (\b time-step). If not specified, if no time-step is provided, the minimal time-step of the input symbols is used.
-- \b trigger: whether assigments are executed when the Condition turns from false to true (trigger = "on change", as in SBML) or whenever the condition is found true (trigger="when true").
-
-\b Condition: expression to evaluate to trigger assignments.
+- \b time-step: if specified, Condition is evulated in regular intervals (\e time-step). If not specified the minimal time-step of the input symbols is used.
+- \b Condition: expression that must evaluate true to trigger assignments.
+- \b Condition/history: initial value of the condition. Used to determine whether an initially true condition may trigger if \e trigger="on-change".
+- \b trigger: whether assigments are executed when the Condition turns from false to true (\e trigger="on-change", as in SBML) or whenever the condition is found true (\e trigger="when-true").
+- \b delay: time by which the execution of the assignments of the event are delayed.
+- \b persistent: a delayed event who's condition \e fell false meanwhile a delay does only execute if \e persistent="true". (default \e true)
+- \b compute-time: time at which the values of the assignments are computes \e on-trigger / \e on-execution.
 
 \section Example
 Set symbol "c" (e.g. assume it's a CellProperty) to 1 after 1000 simulation time units
 \verbatim
 <Event trigger="on change" time-step="1">
-    <Condition>a > 10</Condition>
+    <Condition> time > 1000 </Condition>
     <Rule symbol-ref="c">
         <Expression>1</Expression>
     </Rule>
@@ -300,6 +334,7 @@ Set symbol "c" (e.g. assume it's a CellProperty) to 1 after 1000 simulation time
 \ingroup MorpheusML
 
 The \ref ML_Space element specifies the size, structure and boundary conditions of the spatial lattice. 
+The types of boundary conditions are homogeneous amoung all model parts, while the exact values can be specified through \b BoundaryValue in a \ref ML_Field or in \ref ML_CellPopulations for the cell layer.
 
 A \ref ML_SpaceSymbol can be used to create a symbol to the current (x,y,z) location. 
 
@@ -649,20 +684,21 @@ Specification of a batch process for parameter exploration or sensitivity analys
 \defgroup Scope
 \ingroup Concepts
 
-\b Scopes are the symbol governors of (nested) sections of the model, where symbols can be defined and retrieved. Symbols defined in a scope are invalid outside of this scope, and available in all sub-scoped, i.e. nested sections. This is analogous to the local variable scoping in most programming languages.
+\b Scopes manage the symbol of the (nested) the model sections, allow symbols registration by model components and symbol retrieval by others. Symbols defined in a scope are invalid outside of this scope, but available in all sub-scopes, i.e. nested sections. This is analogous to the local variable scoping in most programming languages.
 
 The top-most scope is \ref ML_Global.
 The following model elements define their own sub-scopes:
 - \ref ML_CellType
-- \ref ML_System (including Trigger environments)
+- \ref ML_System (including \b Triggers of  \ref ML_Event and \ref ML_CellDivision)
 - \ref ML_Function 
 
-Symbols are inherited from the parental to the local scopes, but may be overwritten, even to differ in constness and granularity (e.g. Global/Constant may be overwritten by a System/Variable). 
+Ss stated above, symbols are inherited from the parental scope, but may be overridden, even to differ in constness and granularity (e.g. Global/ref \ML_Constant may be overwritten in a System by a \ref ML_Variable). 
 The type of the symbol (scalar / vector), however, has to be conserved. In this way, global symbols can be used as default values.
 
-Unlike the other scopes, the \ref ML_CellType scope also represents a spatial compartment. In order to adhere to intuitive modelling logics, we apply \b spatial \b scoping, such that symbols defined in the CellType scope can override parental, i.e. global, symbols in the dynamic spatial region the celltype occupies. Therefore, a global symbol can be effectively composed of a global value and celltype specific values defined within the celltypes themself.
+Unlike the other scopes, the \ref ML_CellType scopes also represent spatial compartments. In order to adhere to intuitive modelling logics, we apply \b spatial \b scoping, such that symbols defined in a \ref ML_CellType scope can override parental, i.e. global, symbols in the (dynamic) spatial region the celltype occupies. Therefore, a global symbol can be effectively composed of a global value and celltype specific values defined within the celltypes themself. 
+Forwarding the global access to a symbol at a specific position to through such a spatially structured symbols is what we call <b>spatial scoping</b>.
 
-As a special case, when a symbol is declared in all CellType scopes (e.g. in all CellTypes), it also becomes available in the global scope. (Known as a virtual composite symbol.)
+When a symbol is declared in \b all CellType scopes (e.g. in all CellTypes), it also becomes available in the global scope (known as a virtual composite symbol.)
 
 \section Examples
 In the following example, 'a=1' is declared in the Global scope, and 'b=2' is declared in the System scope. The global variable 'result' will yield '3'.
@@ -737,9 +773,11 @@ Because 'p' is defined in all CellTypes, it is automatically also available in t
 
 \section Schedule
 
-Morpheus currently applies a static scheduling scheme, which means that the schedule is constructed before the simulation starts and remains unchanged until the end of the simulation.
+Morpheus currently applies a static scheduling scheme, which means that the schedule is constructed before the simulation starts and remains unchanged until the end of the simulation. Numerical schemes, however, may subdivide the stepping provided by the static scheduling, as done by adaptive solvers and the stability criterion of fwd. euler diffusion.
 
-In the initialization phase, all symbols are registered, the plugins and their interdependencies are analysed and a ** dependency tree** is constructed. Using the dependency tree, a schedule is constructed along the following guidelines. 
+The final scheme can be found in a simulation log.
+
+In the initialization phase, all symbols are registered, the plugins and their interdependencies are analysed and a <b>dependency tree</b> is constructed. Using the dependency tree, a schedule is constructed along the following guidelines. 
 
 - \b Correctness: Update time steps must be fine-grained enough.
 - \b Order: Sequential order must obey the order in the directed acyclic dependency graph (DAG), which is constructed by opening up potential closed loops.

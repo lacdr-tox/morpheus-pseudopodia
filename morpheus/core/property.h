@@ -15,6 +15,7 @@
 #include "interfaces.h"
 #include "cell.h"
 #include "celltype.h"
+#include <boost/circular_buffer.hpp>
 #include <functional>
 #include <assert.h>
 
@@ -72,7 +73,7 @@ protected:
  * XML-interface class. A Data tag name for snapshoting/loading of the value is derived from the 
  * Container XML tag name by appending 'Data'.
  * 
- * T ist the interfactial type of the Symbol attached to the property
+ * T ist the interfacial type of the Symbol attached to the property
  * V is the actual value type of the property
  */
 template <class T, class V = T>
@@ -121,12 +122,12 @@ class ConstantSymbol : public PrimitiveConstantSymbol<T> {
 	public:
 		ConstantSymbol( Container<T>* parent ) : PrimitiveConstantSymbol<T>(parent->getSymbol(), "", T()), parent(parent), initialized(false) { };
 		std::string linkType() const override { return "ConstantLink"; }
-		void init() const { this->value = parent->getInitValue(SymbolFocus::global); }
+		void init() const { this->value = parent->getInitValue(SymbolFocus::global);  initialized = true;}
 		const string& description() const override { return parent->getName(); }
 		typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const override { if ( !initialized) init(); return this->get(f); }
 	private:
 		Container<T>* parent;
-		bool initialized;
+		mutable bool initialized;
 		friend class Container<T>;
 };
 
@@ -143,12 +144,12 @@ class VariableSymbol : public PrimitiveVariableSymbol<T> {
 	public:
 		VariableSymbol(Container<T>* parent ) : PrimitiveVariableSymbol<T>(parent->getSymbol(), "", T()), parent(parent), initialized(false) { };
 		std::string linkType() const override { return "VariableLink"; }
-		void init() const { this->value = parent->getInitValue(SymbolFocus::global); }
+		void init() const { this->value = parent->getInitValue(SymbolFocus::global); initialized = true; cout << "set init value " << this->name() << "=" << this->value << endl; }
 		const string& description() const override { return parent->getName(); }
 		typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const override { if ( !initialized) init();  return this->get(f); }
 	private:
 		Container<T>* parent;
-		bool initialized;
+		mutable bool initialized;
 		friend class Container<T>;
 };
 
@@ -168,8 +169,10 @@ class PropertySymbol : public PrimitivePropertySymbol<T> {
 // 		typename TypeInfo<T>::SReturn get(const SymbolFocus& f) const override { return getCellProperty(f)->value; }
 		typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const override {
 			auto p=getCellProperty(f); 
-			if (!p->initialized) 
+			if (!p->initialized)  {
 				p->value = parent->getInitValue(f);
+				p->initialized = true;
+			}
 			return p->value;
 		}
 		void init() const { 
@@ -177,15 +180,11 @@ class PropertySymbol : public PrimitivePropertySymbol<T> {
 			auto p = dynamic_pointer_cast<Property<T,T>>(this->celltype->default_properties[this->property_id]);
 			assert(p);
 			try { 
-				static_cast<Property<T,T>*>(this->celltype->default_properties[this->property_id].get())->value = parent->getInitValue(SymbolFocus::global); 
-			} catch (...) { cout << "Warning: Could not intialize default property "<<  this->name() << " of celltype " << this->celltype->getName() << "." << endl; }
+				static_cast<Property<T,T>*>(this->celltype->default_properties[this->property_id].get())->value = parent->getInitValue(SymbolFocus::global);
+				static_cast<Property<T,T>*>(this->celltype->default_properties[this->property_id].get())->initialized = true;
+			} catch (...) { cout << "Warning: Could not initialize default property "<<  this->name() << " of celltype " << this->celltype->getName() << "." << endl; }
 			
 		}
-		// These are all inherited by PrimitivePropertySymbol
-// 		void set(const SymbolFocus& f, typename TypeInfo<T>::Parameter value) const override { getCellProperty(f)->value = value; };
-// 		void setBuffer(const SymbolFocus& f, typename TypeInfo<T>::Parameter value) const override { getCellProperty(f)->buffer = value; };
-// 		void applyBuffer() const override;
-// 		void applyBuffer(const SymbolFocus& f) const override {  getCellProperty(f)->value =  getCellProperty(f)->buffer; };
 	protected:
 		/// Provide a Property<T,T> associated with the SymbolFocus @p f
 		Property<T,T>* getCellProperty(const SymbolFocus& f) const { 
@@ -195,99 +194,6 @@ class PropertySymbol : public PrimitivePropertySymbol<T> {
 		Container<T>* parent;
 // 		friend class Container<T>;
 };
-
-typedef Property<double,deque<double>> DelayProperty;
-template <>
-void DelayProperty::init(const SymbolFocus& f) ;
-
-class DelayPropertyPlugin : public Container<double>, public ContinuousProcessPlugin
-{
-protected:
-	DelayPropertyPlugin(Mode mode);
-	static bool type_registration;
-	static const string CellPropertyXMLName() { return "DelayProperty"; };
-	static const string VariableXMLName() { return "DelayVariable"; };
-	static Plugin* createVariableInstance();
-	static Plugin* createCellPropertyInstance();
-
-	double delay;
-	bool tsl_initialized;
-
-public:
-	string XMLName() const override { if (mode==Mode::Variable) return VariableXMLName(); else return  CellPropertyXMLName(); }
-
-	void setTimeStep(double t) override;
-	void prepareTimeStep() override {};
-	void executeTimeStep() override;
-	
-	void loadFromXML(XMLNode node, Scope* scope) override;
-	void init(const Scope* scope) override;
-};
-
-class DelayPropertySymbol : public SymbolRWAccessorBase<double> {
-public:
-	DelayPropertySymbol(DelayPropertyPlugin* parent, const CellType* ct, uint pid) : 
-		SymbolRWAccessorBase<double>(parent->getSymbol()), parent(parent), celltype(ct), property_id(pid)
-	{ 
-		this->flags().delayed = true;
-		this->flags().granularity = Granularity::Cell;
-	};
-	std::string linkType() const override { return "DelayPropertyLink"; }
-	const string& description() const override { if (parent) return parent->getName();  return this->name();}
-	double get(const SymbolFocus& f) const override { return getCellProperty(f)->value.front(); }
-	double safe_get(const SymbolFocus& f) const override {
-		auto p=getCellProperty(f); 
-		if (!p->initialized)
-			p->init(f);
-		return p->value.front();
-	}
-	void init() { 
-		DelayProperty* p = static_cast<DelayProperty*>(celltype->default_properties[property_id].get());
-		if (!p->initialized) 
-			try {
-				p->init(SymbolFocus::global);
-			} catch (...) { cout << "Warning: Could not initialize default property " << this->name() << " of CellType " << celltype->getName() << "." << endl;}
-	}
-	void set(const SymbolFocus& f, double value) const override { getCellProperty(f)->value.back() = value; };
-	void setBuffer(const SymbolFocus& f, double value) const override { getCellProperty(f)->value.back() = value; };
-	void applyBuffer() const override {};
-	void applyBuffer(const SymbolFocus&) const override {};
-private:
-	DelayProperty* getCellProperty(const SymbolFocus& f) const { 
-		return static_cast<DelayProperty*>(f.cell().properties[property_id].get()); 
-	}
-	DelayPropertyPlugin* parent;
-	const CellType* celltype;
-	uint property_id;
-	friend class DelayPropertyPlugin;
-};
-
-class DelayVariableSymbol : public SymbolRWAccessorBase<double>  {
-public:
-	DelayVariableSymbol(DelayPropertyPlugin* parent) : SymbolRWAccessorBase<double>(parent->getSymbol()), parent(parent), property(parent, deque<double>()) {
-		this->flags().delayed = true;
-	};
-	std::string linkType() const override { return "DelayVariableLink"; }
-	const string& description() const override { if (parent) return parent->getName();  return this->name();}
-	double get(const SymbolFocus&) const override { return property.value.front(); }
-	double safe_get(const SymbolFocus&) const override {
-		if (!property.initialized) {
-			property.init(SymbolFocus::global);
-		}
-		return property.value.front();
-	}
-	void init() { if (!property.initialized) property.init(SymbolFocus::global); }
-	void set(const SymbolFocus&, double value) const override { property.value.back() = value; };
-	void setBuffer(const SymbolFocus&, double value) const override { property.value.back() = value; };
-	void applyBuffer() const override {};
-	void applyBuffer(const SymbolFocus&) const override {};
-private:
-	DelayPropertyPlugin* parent;
-	mutable DelayProperty property;
-	friend class DelayPropertyPlugin;
-};
-
-
 
 
 //-------------------------------------------------------------------------
@@ -376,7 +282,7 @@ void Container<T>::loadFromXML(XMLNode node, Scope* scope)
 template <class T>
 XMLNode Container<T>::saveToXML() const {
 	if (mode == Mode::Variable) {
-		stored_node.updateAttribute("value",TypeInfo<T>::toString(static_pointer_cast<VariableSymbol<T>>(_accessor)->value).c_str());
+		stored_node.addAttribute("value",TypeInfo<T>::toString(static_pointer_cast<SymbolAccessorBase<T>>(_accessor)->get(SymbolFocus::global)).c_str());
 	}
 	return stored_node;
 };

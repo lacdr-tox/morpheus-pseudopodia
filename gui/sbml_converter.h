@@ -28,6 +28,7 @@
 #include "config.h"
 #include <stdexcept>
 #include <cstdio>
+#include <memory>
 
 #include <sbml/SBMLTypes.h>
 #include <sbml/common/libsbml-namespace.h>
@@ -36,9 +37,11 @@
 	using namespace libsbml;
 #endif
 
-//LIBSBML_CPP_NAMESPACE
+#define LIBSBML_MIN_VERSION 50000
+#define LIBSBML_L3PARSER_VERSION 51200
+#define LIBSBML_L3V2_VERSION 51500
 
-struct DelayDef { string symbol; string delayed_symbol; double delay; };
+//LIBSBML_CPP_NAMESPACE
 
 namespace ASTTool {
 	void renameSymbol(ASTNode* node, const QString& old_name, const QString& new_name );
@@ -46,8 +49,6 @@ namespace ASTTool {
 	void renameTimeSymbol(ASTNode* node, const QString& time_symbol);
 	void replaceSymbolByValue(ASTNode* node, const string& name, double value );
 	void replaceFunction(ASTNode* node, FunctionDefinition* function);
-	
-	void replaceDelays(ASTNode* math, QList<DelayDef>& delays);
 }
 
 //LIBSBML_CPP_NAMESPACE
@@ -66,10 +67,10 @@ public:
 		SBML_INTERNAL_ERROR
 	};
 
-	SBMLConverterException(SBMLConverterException::ExceptionType type, std::string reason = "") : d_type(type), d_reason(reason), std::runtime_error("SBMLConverterException") {};
+	SBMLConverterException(SBMLConverterException::ExceptionType type, string reason = "") : d_type(type), d_reason(reason), std::runtime_error("SBMLConverterException") {};
 	~SBMLConverterException() throw() {};
 	ExceptionType type() { return d_type; }
-	std::string type2name() {
+	string type2name() {
 		switch (d_type) {
 			case FILE_READ_ERROR : return "FILE_READ_ERROR";
 			case SBML_LEVEL_GREATER_2: return "SBML_LEVEL_GREATER_2";
@@ -83,12 +84,15 @@ public:
 				return "Unknown SBMLConverterException";
 		}
 	};
-	std::string what() {
+	string what() {
 		return d_reason;
 	}
+// 	const char* what() override {
+// 		return d_reason.c_str();
+// 	}
 private:
 	ExceptionType d_type;
-	std::string d_reason;
+	string d_reason;
 };
 
 
@@ -97,15 +101,21 @@ class SBMLImporter: public QDialog {
 public:
 	SBMLImporter(QWidget* parent, QSharedPointer< MorphModel > current_model);
 	QSharedPointer<MorphModel> getMorpheusModel() { return model;};
+	bool haveNewModel() { return model_created; };
 // the interface for making this feature puggable
 	static const bool supported = true;
  	static QSharedPointer<MorphModel> importSBML();
+	static QSharedPointer<MorphModel> importSEDMLTest(QString file);
+	static QSharedPointer<MorphModel> importSBMLTest(QString file);
 private:
 	QLineEdit* path;
 	QComboBox* into_celltype;
 
 	QSharedPointer<MorphModel> model;
+	bool model_created = false;
 	QList<QString> conversion_messages;
+	
+	enum class Quantity { Conc, Amount };
 	
 	struct CompartmendDesc {
 		QString name;
@@ -119,20 +129,54 @@ private:
 	
 	struct SpeciesDesc {
 		QString name;
+		QString formula_symbol;
 		QString compartment;
+		QString conversion_factor;
 		bool is_const;
+		bool is_boundary;
+		Quantity quantity;
+		bool uses_as_amount;
+		nodeController* node;
+		
 	};
+	
+	struct DelayDef {
+		QString formula_string;
+		const ASTNode* formula;
+		QString delayed_symbol;
+		QString delay;
+		bool operator ==(const DelayDef& b) { return formula_string == b.formula_string && delay == b.delay; }
+	};
+	
+	struct RateDesc {
+		Quantity rate_quantity;
+		AbstractAttribute* expression;
+	};
+	
+	QString model_conversion_factor;
+	bool useL3formulas;
 	QMap<QString, SpeciesDesc> species;
 	QMap<QString, FunctionDefinition*> functions;
 	QSet<QString> constants;
 	QSet<QString> variables;
 	QSet<QString> vars_with_assignments;
 	QList<DelayDef> delays;
-	QMap<QString, AbstractAttribute*> diffeqn_map;
+	
+	QMap<QString, RateDesc> diffeqn_map;
+	QMap<QString,QString> concentration_map, amount_map;
+	bool have_events = false;
 
+	/** Read an SBML file and convert it using the @target_code
+	 *  The @p target_code is a comma separated string: (new|current),(global|celltype){,celltype name}
+	 */
 	bool readSBML(QString sbml_file, QString target_code);
+	/// Read an SBML test model from the suite and use the settings file.
+	bool readSBMLTest(QString file);
+	/// Read an SBML test from the suite via a SEDML file.
+	bool readSEDML(QString file);
+	
     void addSBMLFunctions(Model* sbml_model);
-	void sanitizeAST(ASTNode* math);
+	QString formulaToString(const ASTNode* math, bool make_concentration = true);
     void addSBMLSpecies(Model* sbml_model);
     void addSBMLParameters(Model* sbml_model);
     void addSBMLRules(Model* sbml_model);
@@ -140,6 +184,7 @@ private:
 	void addSBMLInitialAssignments(Model* sbml_model);
     void translateSBMLReactions(Model* sbml_model);
     void parseMissingFeatures(Model* sbml_model);
+	void replaceDelays(ASTNode* math);
 
 private slots:
 	void import();

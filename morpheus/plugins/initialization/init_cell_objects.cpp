@@ -232,40 +232,38 @@ public:
 	enum class Orientation  { X, Y, Z };
 
 	Cylinder(XMLNode node, const Scope * scope) : displacement(0,0,0)  {
-		p_center->setXMLPath("center"); p_center->loadFromXML(node, scope);
+		p_origin->setXMLPath("origin"); p_origin->loadFromXML(node, scope);
+		p_length->setXMLPath("length"); p_length->loadFromXML(node, scope);
 		p_radius->setXMLPath("radius"); p_radius->loadFromXML(node, scope);
-		p_center2->setXMLPath("center2"); p_center2->loadFromXML(node, scope);
-		p_orientation->setXMLPath("orientation"); 
-		map<string, Orientation> omap = { {"x", Orientation::X},  {"y", Orientation::Y}, {"z", Orientation::Z} };
-		p_orientation->setValueMap(omap);
-		p_orientation->loadFromXML(node, scope);
-		
+		p_radius2->setXMLPath("radius2"); p_radius2->loadFromXML(node, scope);
 	};
 	Cylinder(const Cylinder&) = default;
 	void init() override { 
-		p_center->init(); 
-		_center  = p_center->get(SymbolFocus::global) + displacement;
-		p_center2->init();
-		if (p_center2->isDefined()) {
-			center2 = p_center2->get(SymbolFocus::global)+ displacement;
-			oblique = center2 != _center;
-		}
-		else {
-			center2 = _center;
-			oblique = true;
-		}
+		p_origin->init(); 
+		p_length->init();
 		p_radius->init();
-		radius = p_radius->get( SIM::lattice().from_orth(_center) );
-		p_orientation->init();
-		orientation = p_orientation->get();
-		
+		origin = p_origin(SymbolFocus::global) + displacement;
+		length = p_length(SIM::lattice().from_orth(origin));
+		radius = p_radius(SIM::lattice().from_orth(origin));
 	}
 	string name() const override  { return "Cylinder"; }
 	unique_ptr<CellObject> clone() const override { return make_unique<Cylinder>(*this); }
-	VDOUBLE center() const override { return _center; }
-	bool inside(const VDOUBLE& pos) const override { return false;}
-	double distance(const VDOUBLE& pos) const { return 0; };
-	double affinity(const VDOUBLE& pos) const override { return 0; };
+	VDOUBLE center() const override { 
+		return origin + 0.5 * length;
+	}
+	bool inside(const VDOUBLE& pos) const override {
+		auto dp = SIM::lattice().orth_distance( pos, center());
+		auto d = cross(dp,length).abs() / length.abs();
+		double t = dot(dp,length) / length.abs_sqr();
+		return d<=radius && t>=-0.5 && t<=0.5;
+	}
+	double affinity(const VDOUBLE& pos) const override {
+		auto dp = SIM::lattice().orth_distance( pos, center());
+		auto d = cross(dp,length).abs() / length.abs();
+		double t = dot(dp,length)/length.abs_sqr();
+		if (d>radius || t<-0.5 || t>0.5) return 0.0;
+		return 1.0-d/radius;
+	};
 	void displace(VDOUBLE distance) override { displacement +=distance; }
 	
 /*								// for 3D cylinders objects, fill in the 3rd dimension
@@ -310,15 +308,14 @@ public:
 */
 	
 private:
-	PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> p_center ;
-	PluginParameter_Shared<VDOUBLE, XMLEvaluator, OptionalPolicy> p_center2;
+	PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> p_origin ;
+	PluginParameter_Shared<VDOUBLE, XMLEvaluator, RequiredPolicy> p_length;
 	PluginParameter_Shared<double, XMLEvaluator, RequiredPolicy> p_radius;
-	PluginParameter_Shared<Orientation, XMLNamedValueReader, RequiredPolicy> p_orientation;
-	VDOUBLE displacement;
-	VDOUBLE _center, center2;
-	Orientation orientation;
-	bool oblique;
+	PluginParameter_Shared<double, XMLEvaluator, OptionalPolicy> p_radius2;
+	// actual values of the cylinder instance
+	VDOUBLE origin, length;
 	double radius;
+	VDOUBLE displacement;
 };
 
 
@@ -375,6 +372,8 @@ void InitCellObjects::loadFromXML(const XMLNode node, Scope* scope)
 				c = make_unique<Ellipsoid>(oNode, scope);
 			else if (tag_name == "Box")
 				c = make_unique<Box>(oNode, scope);
+			else if (tag_name == "Cylinder")
+				c = make_unique<Cylinder>(oNode, scope);
 			else
 				throw MorpheusException(string("Unknown Object type ") + tag_name, oNode);
 			

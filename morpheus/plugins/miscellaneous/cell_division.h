@@ -16,9 +16,9 @@
 #include "core/celltype.h"
 #include "core/system.h" // TriggeredSystem
 
-/** \defgroup CellDivision
+/** \defgroup ML_CellDivision
 \ingroup ML_CellType
-\ingroup MiscellaneousPlugins
+\ingroup MiscellaneousPlugins InstantaneousProcessPlugins
 \brief Divide cell based on condition
 
 Triggers cell division when condition is satisfied.

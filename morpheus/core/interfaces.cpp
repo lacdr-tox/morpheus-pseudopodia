@@ -143,6 +143,7 @@ void TimeStepListener::setTimeStep(double t)
 {
 // 	assert(t>0);
 	time_step = t;
+	prepared_time_step = t;
 	if (time_step<0) {
 		valid_time = numeric_limits< double >::max();
 		latest_time_step = numeric_limits< double >::max();
@@ -205,6 +206,7 @@ void TimeStepListener::loadFromXML(const XMLNode node, Scope* scope)
 			else {
 				xml_spec = XMLSpec::XML_NONE;
 				is_adjustable = true;
+				time_step = -1;
 			}
 			break;
 		case XMLSpec::XML_REQUIRED:
@@ -240,10 +242,11 @@ void TimeStepListener::init(const Scope* scope)
 	TimeScheduler::reg(this);
 }
 
-void TimeStepListener::prepareTimeStep_internal()
+void TimeStepListener::prepareTimeStep_internal(double max_time)
 {
 	auto start = highc.now();
-	prepareTimeStep_impl();
+	prepared_time_step = min(time_step>0 ? time_step : SIM::getStopTime() - valid_time , max_time-valid_time);
+	prepareTimeStep_impl(prepared_time_step);
 	execute_systemtime += chrono::duration_cast<chrono::microseconds>(highc.now()-start).count();
 }
 
@@ -254,9 +257,11 @@ void TimeStepListener::executeTimeStep_internal()
 	execute_systemtime += chrono::duration_cast<chrono::microseconds>(highc.now()-start).count();
 	
 	latest_time_step = SIM::getTime();
-	if (time_step>0) {
-		valid_time += time_step;
+	if (prepared_time_step>=0) {
+		valid_time += prepared_time_step;
 	}
+	else 
+		valid_time = SIM::getStopTime();
 }
 
 
@@ -297,7 +302,7 @@ InstantaneousProcessPlugin::InstantaneousProcessPlugin(TimeStepListener::XMLSpec
 void InstantaneousProcessPlugin::setTimeStep(double ts)
 {
 	TimeStepListener::setTimeStep(ts);
-	valid_time = SIM::getTime() + timeStep();
+	valid_time = SIM::getTime()/* + timeStep()*/;
 	
 }
 

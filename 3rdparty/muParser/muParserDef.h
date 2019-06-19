@@ -290,7 +290,8 @@ namespace mu
   class fun_class_generic {
   public:
 	  /// Callback, arguments are in @p args, @p provides pass through data
-	  virtual value_type operator ()(const value_type*, void* data) const =0;
+	  virtual value_type operator ()(const value_type* args, void* data) const =0;
+	  value_type get(const value_type* args, void* data) { return operator ()(args,data);} 
 	  /// return the number of arguments
 	  virtual int argc() const =0; 
   };

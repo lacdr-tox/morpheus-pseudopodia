@@ -26,7 +26,7 @@ AnnouncementDialog::AnnouncementDialog(QWidget* parent)
 	auto nam = config::getNetwork();
 	
 #ifdef MORPHEUS_NO_QTWEBKIT
-	web_view = new TextBrowser(this);
+	web_view = new QTextBrowser(this);
 	web_view->setOpenLinks(false);
 	connect(web_view, SIGNAL(anchorClicked(const QUrl&)), this, SLOT(openLink(const QUrl&)));
 #else
@@ -99,7 +99,11 @@ void AnnouncementDialog::setIndex(int idx) {
 	if (announcements.count(idx)) {
 // 		qDebug() << "Setting announcement " << idx << " = " << announcements[idx];
 		announce_idx = idx;
+#ifdef MORPHEUS_NO_QTWEBKIT
+		web_view->setSource(announcements[idx]);
+#else
 		web_view->setUrl(announcements[idx]);
+#endif
 
 		if (announce_idx > announcement_seen){
 			announcement_seen = announce_idx;

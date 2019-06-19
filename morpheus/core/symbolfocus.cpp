@@ -77,10 +77,16 @@ void SymbolFocus::setCell(CPM::CELL_ID cell_id) {
 };
 
 void SymbolFocus::setCell(CPM::CELL_ID cell_id, const VINT& pos) {
-	unset(); d_cell = &CPM::getCell(cell_id);
-	has_cell=true;
+	if (! has_cell || d_cell->getID() != cell_id) {
+		unset();
+		d_cell = &CPM::getCell(cell_id);
+		has_cell = true;
+	}
+	else {
+		has_membrane=false;
+	}
 	d_pos = pos;
-	has_pos=true;
+	has_pos = true;
 };
 
 void SymbolFocus::setPosition(const VINT& pos) {
@@ -139,7 +145,7 @@ bool SymbolFocus::operator<(const SymbolFocus& rhs) const {
 				return has_membrane;
 			}
 			else {
-				return true;
+				return false;
 			}
 		}
 		else
@@ -148,7 +154,7 @@ bool SymbolFocus::operator<(const SymbolFocus& rhs) const {
 	else if (has_cell || rhs.has_cell)
 		return has_cell;
 	else
-		return true;
+		return false;
 }
 
 bool SymbolFocus::operator==(const SymbolFocus& rhs) const {

@@ -44,7 +44,7 @@
 template <class T>
 class SystemFunc {
 public:
-	enum Type { ODE, EQU, FUN, VAR_INIT};
+	enum Type { ODE, RULE, FUN, VAR_INIT, EQN};
 
 	shared_ptr<SystemFunc<T>> clone(shared_ptr<EvaluatorCache> cache) const {
 		auto s = make_shared<SystemFunc<T>>(*this);
@@ -76,6 +76,7 @@ public:
 	
 	SymbolRWAccessor<T> global_symbol;
 	int cache_idx;
+	int rate_cache_idx;
 	
 	string symbol_name, expression;
 	bool vec_spherical;
@@ -133,8 +134,9 @@ class SystemSolver{
 			Euler,
 			Heun,
 			Runge_Kutta4,
-			Runge_Kutta_AdaptiveCK,
-			Runge_Kutta_AdaptiveDP
+			AdaptiveBS,
+			AdaptiveCK,
+			AdaptiveDP
 		};
 		struct Spec {
 			SystemSolver::Method method;
@@ -146,7 +148,7 @@ class SystemSolver{
 		SystemSolver(Scope* scope, const std::vector< shared_ptr<SystemFunc< double >> >& fun, const std::vector< shared_ptr<SystemFunc< VDOUBLE >> >& vfun, SystemSolver::Spec spec);
 		SystemSolver(const SystemSolver& p);
 		const SystemSolver& operator=(const SystemSolver& p)= delete;
-		void solve(const SymbolFocus& f, bool use_buffer);
+		void solve(const SymbolFocus& f, bool use_buffer, vector<double>* ext_buffer=nullptr);
 // 		valarray<double> cache;
 		void setTimeStep(double ht);
 		set<Symbol> getExternalDependencies() { return cache->getExternalSymbols(); };
@@ -157,9 +159,8 @@ class SystemSolver{
 // 		vector<struct timeval> sstart, send;
 // 		vector<long> smtime, sseconds, suseconds, stotal;
 
-		vector<shared_ptr<SystemFunc<double>>> evals, odes, equations, functions, var_initializers;
-		vector<shared_ptr<SystemFunc<VDOUBLE>>> vec_evals, vec_equations, vec_var_initializers;
-		
+		vector<shared_ptr<SystemFunc<double>>> evals, odes, rules, functions, var_initializers, equations;
+		vector<shared_ptr<SystemFunc<VDOUBLE>>> vec_evals, vec_rules, vec_var_initializers, vec_equations;
 
 		shared_ptr<EvaluatorCache> cache;
 		uint local_time_idx, noise_scaling_idx;
@@ -169,6 +170,7 @@ class SystemSolver{
 		void fetchSymbols(const SymbolFocus& f);
 		void writeSymbols(const SymbolFocus& f);
 		void writeSymbolsToBuffer(const SymbolFocus& f);
+		void writeSymbolsToExtBuffer(vector<double>* ext_buffer);
 		void updateLocalVars(const SymbolFocus& f);
 		
 		void check_result(double value , const SystemFunc<double>& e) const;
@@ -176,11 +178,13 @@ class SystemSolver{
 		
 		void RungeKutta(const SymbolFocus& f, double ht);
 		void RungeKutta_adaptive(const SymbolFocus& f, double ht);
+		void RungeKutta_23BogackiShampine(const SymbolFocus& f, double ht);
 		void RungeKutta_45CashKarp(const SymbolFocus& f, double ht);
 		void RungeKutta_45DormandPrince(const SymbolFocus& f, double ht);
 		void Euler(const SymbolFocus& f, double ht);
 		void Heun(const SymbolFocus& f, double ht);
 		void Discrete(const SymbolFocus& f);
+		void EquationHooks(const SymbolFocus& f, bool write_extern = false);
 }; 
 
 /** @brief System class takes care to solve numerical interpolation of [ODE/Discret Equation/Triggered] Systems
@@ -203,10 +207,11 @@ public:
 	set< SymbolDependency > getOutputSymbols();
 	bool adaptive() const;
 	void setTimeStep(double ht);
+	void setSubStepHooks(const vector<ReporterPlugin*> hooks) { assert(sub_step_hooks.empty()); sub_step_hooks = hooks; this->init(); };
 	
 protected:
 	/// Compute Interface 
-	void computeToTarget(const SymbolFocus& f, bool use_buffer);
+	void computeToTarget(const SymbolFocus& f, bool use_buffer, vector<double>* buffer=nullptr);
 	void compute(const SymbolFocus& f);
 
 	void computeContextToBuffer();
@@ -214,6 +219,7 @@ protected:
 
 	void computeToBuffer(const SymbolFocus& f);
 	void applyBuffer(const SymbolFocus& f);
+	void applyBuffer(const SymbolFocus& f, const vector<double>& buffer);
 	
 	bool target_defined;
 	const Scope *target_scope;
@@ -237,7 +243,7 @@ protected:
 	vector< shared_ptr<SystemFunc<double>> > evals, equations;
 	shared_ptr<EvaluatorCache> cache;
 	vector< shared_ptr<SystemSolver> > solvers;
-	
+	vector<ReporterPlugin*> sub_step_hooks;
 	
 };
 
@@ -249,13 +255,14 @@ class ContinuousSystem: public System, public ContinuousProcessPlugin {
 public:
 	DECLARE_PLUGIN("System");
 
-    ContinuousSystem() : System(CONTINUOUS_SYS), ContinuousProcessPlugin(ContinuousProcessPlugin::CONTI,TimeStepListener::XMLSpec::XML_REQUIRED) {};
+    ContinuousSystem() : System(CONTINUOUS_SYS), ContinuousProcessPlugin(ContinuousProcessPlugin::CONTI,TimeStepListener::XMLSpec::XML_OPTIONAL) {};
 	/// Compute and Apply the state after time step @p step_size.
 	void loadFromXML(const XMLNode node, Scope* scope) override;
 	void init(const Scope* scope) override;
-	void prepareTimeStep() override { System::computeContextToBuffer(); };
+	void prepareTimeStep(double step_size) override { System::setTimeStep(step_size);  System::computeContextToBuffer(); };
 	void executeTimeStep() override { System::applyContextBuffer(); };
 	void setTimeStep(double t) override { ContinuousProcessPlugin::setTimeStep(t); System::setTimeStep(t); };
+	void setSubStepHooks(const vector<ReporterPlugin*> hooks) { System::setSubStepHooks(hooks); }
 	const Scope* scope()  override{ return System::getLocalScope(); };
 };
 
@@ -283,39 +290,12 @@ public:
 };
 
 
-/** \defgroup ML_Event Event
-\ingroup ML_Global
-\ingroup ML_CellType
-\ingroup InstantaneousProcessPlugins
-
-\section Description
-An Event is a conditionally executed set of assignemnts. A provided Condition
-is tested in regular intervals (time-step) for all different contexts in the current scope.
-If no time-step is provided, the minimal time-step of the input symbols is used. 
-
-The set of assignments is executed when the conditions turns from false to true (trigger = "on change")
-or whenever the condition is found true (trigger="when true").
-
-\section Examples
-
-Set symbol "candivide" (e.g. assume its a CellProperty) to 1 after 1000 simulation time units
-
-\verbatim
-	<Event trigger="on change" time-step="1000">
-		<Condition>time >= 1000</Condition>
-		<Rule symbol-ref="candivide">
-			<Expression>1</Expression>
-		</Rule>
-	</Event>
-\endverbatim
-*/
-
 /** @brief EventSystem checks regularly a condition for each individual in a context and applies a System if the condition holds.
  */
 class EventSystem: public System, public InstantaneousProcessPlugin {
 public:
 	DECLARE_PLUGIN("Event");
-    EventSystem() : System(DISCRETE_SYS), InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_OPTIONAL ) {};
+    EventSystem();
     void loadFromXML ( const XMLNode node, Scope* scope) override;
     void init (const Scope* scope) override;
 	/// Compute and Apply the state after time step @p step_size.
@@ -325,10 +305,20 @@ public:
 
 protected:
 	// TODO We have to store the state of the event with respect to the context !! map<SymbolFocus, bool> old_value ?? that is a map lookup per context !!!
-	// Alternatively, we can also create a hidden cell-property --> maybe a wse way to store the state
+	// Alternatively, we can also create a hidden cell-property --> maybe a wise way to store the state
 	shared_ptr<ExpressionEvaluator<double> > condition;
+	PluginParameter<bool,XMLNamedValueReader,DefaultValPolicy> delay_compute;  /// Also delay the computation of the assignments
+	PluginParameter<double,XMLEvaluator, DefaultValPolicy> delay;  /// Duration of the delay
+	PluginParameter<bool,XMLNamedValueReader,DefaultValPolicy> trigger_on_change;
+	PluginParameter<bool,XMLValueReader,DefaultValPolicy> xml_condition_history;
+	PluginParameter<bool,XMLValueReader,DefaultValPolicy> persistent;
 	map<SymbolFocus,double> condition_history;
-	bool trigger_on_change;
+	struct DelayedAssignment {
+		const SymbolFocus focus;
+		vector<double> value_cache;
+	};
+	multimap<double, DelayedAssignment> delayed_assignments;
+	
 	Granularity condition_granularity;
 	vector<SymbolFocus> contexts_with_buffered_data;
 };

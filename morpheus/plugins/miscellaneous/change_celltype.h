@@ -18,7 +18,7 @@
 
 /** \defgroup ChangeCellType
 \ingroup ML_CellType
-\ingroup MiscellaneousPlugins
+\ingroup MiscellaneousPlugins InstantaneousProcessPlugins
 \brief Conditionally alters CellType of cell
 
 ChangeCelltype alters CellType of cell upon a predefined Condition.

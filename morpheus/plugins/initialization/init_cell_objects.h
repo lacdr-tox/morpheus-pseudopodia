@@ -47,10 +47,9 @@ Supported shapes (2D/3D) are: square / box, circle / sphere, ellipse / ellipsoid
   + center: center of initial object
   + axes: length of semi-principle axes along x, y, z directions
 - \b Cylinder: 
-  + center: center of cylinder
+  + origin: Origin of cylinder, ie. one end
+  + length: Vector to the other cylinder end
   + radius: radius of cylinder
-  + orientation: orient cylinder along x, y, or z directions
-  + center2 (optional): for oblique cylinders, a second center can be specified
 
 \section Examples
 

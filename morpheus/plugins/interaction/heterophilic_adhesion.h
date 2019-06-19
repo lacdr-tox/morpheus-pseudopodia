@@ -26,8 +26,16 @@ Increases adhesion (i.e. decreases cell-contact energy) between neighboring CPM 
 - \b strength (default="1"): Expression describing strength of adhesive bonds.
 - \b equilibriumConstant (optional): Value describing ratio of binding/unbinding rates between adhesive molecules at cell membranes. If omitted, defaults to saturated binding.
 
-Saturated binding equation:
-\f$ \Delta E = s \cdot \big( min( a_{\sigma1}^{1}, a_{\sigma2}^{2} ) + min( a_{\sigma1}^{2}, a_{\sigma2}^{1} )  \big) \f$
+If no \e equilibriumConstant is provided, saturated binding is assumed usind equation:
+\f$ E = - s \cdot \big( min( a_{\sigma1}^{1}, a_{\sigma2}^{2} ) + min( a_{\sigma1}^{2}, a_{\sigma2}^{1} )  \big) \f$, with units energy per node length.
+
+If an \e equilibriumConstant is provided, the equilibrium concentration of bonds is calculated on the basis of binding / unbinding rate ratio of the following reaction in a symmetric fashion:
+
+\f$ A B \overset{k_b}{\underset{k_{ub}}{\longleftrightarrow}} A + B \f$
+
+\f$ E = \text{some lengthy expression} \f$
+
+See HeterophilicAdhesion::interaction() for details.
 
 */
 

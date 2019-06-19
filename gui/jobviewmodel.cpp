@@ -3,7 +3,7 @@
 JobViewModel::JobViewModel(JobQueue* jobs, QObject *parent) :
     QAbstractItemModel(parent)
 {
-	qDebug() << "JobViewModel thread " << QThread::currentThreadId();
+// 	qDebug() << "JobViewModel thread " << QThread::currentThreadId();
     this->jobs =jobs;
     connect(jobs,SIGNAL(processChanged(int)),this,SLOT(changeJob(int)));
     connect(jobs,SIGNAL(processAdded(int)),this,SLOT(addJob(int)));

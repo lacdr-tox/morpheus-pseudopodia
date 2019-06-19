@@ -233,7 +233,8 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 				for ( auto const & i :halo_nodes) {
 					if ( using_local_ns && local_ns_granularity == Granularity::MembraneNode) {
 						// Expose local symbols to input
-						cell_focus.setPosition(i);
+						cell_focus.setCell(cell_id,i);
+// 						cout << "Setting focus for local ns " << local_ns_id << " to " << cell_focus.pos() << "; " << cell_focus.cellID()  << endl;
 						input.setNameSpaceFocus(local_ns_id, cell_focus);
 					}
 					double value = input(SymbolFocus(i));

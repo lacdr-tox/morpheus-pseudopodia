@@ -26,7 +26,7 @@ JobQueue::JobQueue(QObject* parent) : QObject(parent)
 void JobQueue::run() {
     timer = new QTimer();
     connect(timer, SIGNAL(timeout()), this, SLOT(processQueue()));
-	qDebug() << "JobQueue thread " << QThread::currentThreadId();
+// 	qDebug() << "JobQueue thread " << QThread::currentThreadId();
     timer->start(100);
 }
 

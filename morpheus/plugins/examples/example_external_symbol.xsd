@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	<!-- Add the Plugin to the supported groups in the schema -->
+	<!-- These snippets will be merged into the respective groups -->
+	
+<!-- XMLPath /MorpheusML/Global -->
+	<xs:group name="GlobalPlugins">
+		<xs:choice>
+			<xs:element name="ExtSymbol"	type="ExtSymbolPlugin"/>
+		</xs:choice>
+	</xs:group>
+
+<!-- XMLPath /MorpheusML/CellTypes/CellType -->
+<!--	<xs:group name="CellTypePlugins">
+		<xs:choice>
+		</xs:choice>
+	</xs:group>-->
+  
+<!--  /MorpheusML/Analysis -->
+<!--	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+		</xs:choice>
+	</xs:group>-->
+
+<!-- XMLPath  */System -->
+<!--	<xs:group name="SystemPlugins">
+		<xs:choice>
+		</xs:choice>
+	</xs:group>-->
+	
+	<!-- Define the description language piece of the Plugin -->
+	<xs:complexType name="ExtSymbolPlugin">
+		<xs:annotation>
+			<xs:appinfo>Math</xs:appinfo>
+		</xs:annotation>
+		<!-- time step attribute to be read by the inherited ContiuousProcessPlugin -->
+		<xs:attribute name="time-step" type="cpmDouble" use="required" default="1.0" />
+		
+		<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required" />
+		<xs:attribute name="any-xml-attribute" type="cpmDouble" use="optional" />
+	</xs:complexType>
+</xs:schema>

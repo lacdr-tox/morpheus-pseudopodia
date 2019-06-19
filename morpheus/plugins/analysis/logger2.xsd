@@ -23,7 +23,7 @@
 
 	<xs:complexType name="cpmLoggerInput">
 		<xs:all>
-			<xs:element name="Symbol" 	type="cpmLoggerSymbol"	minOccurs="1" maxOccurs="unbounded" />
+			<xs:element name="Symbol" 	type="cpmLoggerSymbol"	minOccurs="0" maxOccurs="unbounded" />
 		</xs:all>
 		<xs:attribute name="force-node-granularity" type="cpmBoolean" use="optional" default="true" />
 	</xs:complexType>
@@ -55,6 +55,7 @@
 	<xs:complexType name="cpmLoggerTextOutput">
 		<xs:attribute name="file-format" type="cpmLoggerOutputFormats" use="optional" default="csv" />
 		<xs:attribute name="header" type="cpmBoolean" use="optional" default="true" />
+		<xs:attribute name="header-guarding" type="cpmBoolean" use="optional" default="true" />
         <xs:attribute name="separator" type="cpmLoggerOutputSeparator" use="optional" default="tab" />
 		<xs:attribute name="file-name" type="cpmString" use="optional" default="automatic" />
 		<xs:attribute name="file-numbering" type="cpmFileNumbering" use="optional" default="time" /> 
@@ -148,8 +149,8 @@
 					<xs:attribute name="minimum" type="cpmMathExpression" use="optional" />
 					<xs:attribute name="maximum" type="cpmMathExpression" use="optional" />
 					<xs:attribute name="logarithmic" type="cpmBoolean" use="optional" />
-					<xs:all>
-						<xs:element name="Symbol" type="cpmLoggerPlotColumn" minOccurs="1" maxOccurs="25" />
+					<xs:all maxOccurs="unbounded">
+						<xs:element name="Symbol" type="cpmLoggerPlotColumn" minOccurs="0"/>
 					</xs:all>
 				</xs:complexType>
 			</xs:element>

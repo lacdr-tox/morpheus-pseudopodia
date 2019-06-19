@@ -279,6 +279,7 @@ Gnuplot::Gnuplot()
 	// if gnuplot not available
 	if (!Gnuplot::get_program_path())
 	{
+		cerr << "Can't find gnuplot. Please install gnuplot and adjust the PATH accordingly.";
 		throw GnuplotException("Can't find gnuplot");
 	}
 

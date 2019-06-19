@@ -221,6 +221,7 @@ void DependencyGraph::parse_scope(const Scope* scope)
 			auto dependencies = reduced() ? tsl->getLeafOutputSymbols() : tsl->getOutputSymbols();
 			
 			for (auto dep : dependencies) {
+				if (dep->name() == SymbolBase::CellSurface_symbol || dep->name() == SymbolBase::CellLength_symbol || dep->name() == SymbolBase::CellVolume_symbol) continue;
 				auto link_symbols = parse_symbol(dep);
 				for (auto symbol : link_symbols) {
 					// create a link

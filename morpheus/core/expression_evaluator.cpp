@@ -1,5 +1,6 @@
 #include "expression_evaluator.h"
 #include "simulation.h"
+#include "boost/math/special_functions/factorials.hpp"
 
 template <>
 int ExpressionEvaluator<double>::expectedNumResults() const { return 1; }
@@ -125,6 +126,19 @@ VDOUBLE ExpressionEvaluator<VDOUBLE>::plain_get(const SymbolFocus& focus) const
 double unary_plus(double val) {
 	return val;
 }
+
+double getPlusMulti(const double *a, int cnt) {
+	double b=0; int i=0;
+	while (i<cnt) { b+=a[i]; ++i; }
+	return b;
+}
+
+double getTimesMulti(const double *a, int cnt) {
+	double b=1; int i=0;
+	while (i<cnt) { b*=a[i]; ++i; }
+	return b;
+}
+
 double getRandomUniValue(double min, double max) {
         return getRandom01()*(max-min)+min;
 }
@@ -156,40 +170,72 @@ double getAND(double left, double right) {
 	return left && right;
 }
 
+double getANDmulti(const double *d, int cnt) {
+	if (!cnt) return 1;
+	uint i=0;
+	bool r = d[i];
+	while (++i<cnt) r&= d[i]>0;
+	return r;
+}
+
 double getOR(double left, double right) {
 	return left || right;
+}
+
+double getORmulti(const double *d, int cnt) {
+	bool r=0; uint i=0;
+	while (i<cnt) { r|= d[i]>0; ++i; }
+	return r;
 }
 
 double getXOR(double left, double right) {
 	return !left xor !right;
 }
 
+double getXORmulti(const double *d, int cnt) {
+	bool r=0; int i=0;
+	while (i<cnt) { r= r xor (d[i]>0); i++; }
+	return r;
+}
+
 double getNOT(double val) {
 	return val<=0;
 }
 
-double getLEQ(double left, double right) {
-	return left <= right;
+double getLEQmulti(const double* a, int cnt) {
+	bool r = true; int i=1;
+	while (i<cnt) { r &= a[i-1]<=a[i]; i++; }
+	return r;
 }
 
-double getGEQ(double left, double right) {
-	return left >= right;
+double getGEQmulti(const double* a, int cnt) {
+	bool r = true; int i=1;
+	while (i<cnt) { r &= a[i-1]>=a[i]; i++; }
+	return r;
 }
 
-double getLT(double left, double right) {
-	return left < right;
+double getLTmulti(const double* a, int cnt) {
+	bool r = true; int i=1;
+	while (i<cnt) { r &= a[i-1]<a[i]; i++; }
+	return r;
 }
 
-double getGT(double left, double right) {
-	return left > right;
+double getGTmulti(const double* a, int cnt) {
+	bool r = true; int i=1;
+	while (i<cnt) { r &= a[i-1]>a[i]; i++; }
+	return r;
 }
 
-double getEQ(double left, double right) {
-	return left == right;
+double getEQ(const double* a, int cnt) {
+	bool r = true; int i=1;
+	while (i<cnt) { r &= a[i-1]==a[i]; i++; }
+	return r;
 }
 
-double getNEQ(double left, double right) {
-	return left != right;
+double getNEQ(const double* a, int cnt) {
+	bool r = true; int i=1;
+	while (i<cnt) { r &= a[i-1]!=a[i]; i++; }
+	return r;
 }
 
 double piecewise_3_function(double v0, double c0, double velse) {
@@ -200,43 +246,129 @@ double piecewise_5_function(double v0, double c0, double v1, double c1,double ve
 	return c0 ? v0 : (c1 ? v1 :velse);
 }
 
+double piecewiseMulti(const double* a, int cnt) {
+	int i=1;
+	while (cnt>i && (a[i]<=0)) i+=2;
+	if (i>=cnt) {
+		// Pick otherwise
+		if (i==cnt) return a[i-1];
+		// Return default for missing otherwise
+		else return 0;
+	}
+	else
+		// Condition at i is true
+		return a[i-1];
+}
+
+double getImplies(double a, double b) {
+	return !bool(a) || bool(b);
+}
+
+double getLog(double a) { return log(a); }
+double getCeil(double a) { return ceil(a); } 
+double getFloor(double a) { return  floor(a + 1e-12); }
+double getRem(double a, double b) { return (a-floor(a/b + 1e-12)*b);}
+double getQuotient(double a, double b) { return floor(a/b + 1e-12);}
+double getFactorial(double a) { return boost::math::factorial<double>(uint(a)); }
+double getCot(double a) { return 1.0/tan(a); }
+double getACot(double a) { return atan(1.0/a); }
+double getCotH(double a) { return 1.0/tanh(a); }
+double getACotH(double a) { return atanh(1.0/a); }
+double getSec(double a) { return 1.0/cos(a); }
+double getASec(double a) { return acos(1.0/a); }
+double getSecH(double a) { return 1.0/cosh(a); }
+double getASecH(double a) { return acosh(1.0/a); }
+double getCsc(double a) { return 1.0/sin(a); }
+double getACsc(double a) { return asin(1.0/a); }
+double getCscH(double a) { return 1.0/sinh(a); }
+double getACscH(double a) {return asinh(1.0/a); }
+
 unique_ptr< mu::Parser > createMuParserInstance()
 {
 	unique_ptr<mu::Parser> parser(new mu::Parser());
 	try {
 		string name_chars = "0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZαβγδεζηθικλμνξοπρσςτυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ.";
 		parser->DefineNameChars(name_chars.c_str());
-		parser->DefineConst("pi",M_PI);
+
+		// These constants might also move to a super-global scope, such that they may be overridden.
+		parser->DefineConst("false",		0);
+		parser->DefineConst("true",			1);
+		parser->DefineConst("pi",			M_PI);
+		parser->DefineConst("exponentiale", M_E );
+		parser->DefineConst("avogadro",		6.02214179e23);
+		
 		parser->DefineInfixOprt("+",		&unary_plus);
+		
+		parser->DefineFun( "plus",			&getPlusMulti,  true);
+		parser->DefineFun( "times",			&getTimesMulti,  true);
+		
 		parser->DefineFun( sym_RandomUni,	&getRandomUniValue,  false);
 		parser->DefineFun( sym_RandomInt,	&getRandomIntValue,  false);
 		parser->DefineFun( sym_RandomNorm,	&getRandomNormValue, false);
 		parser->DefineFun( sym_RandomBool,	&getRandomBoolValue, false);
 		parser->DefineFun( sym_RandomGamma, &getRandomGammaValue, false);
 		parser->DefineFun( sym_Modulo, 		&getModulo, true);
-		parser->DefineFun( "pow",			&getPow, true);
+
+// logicals
 		parser->DefineFun( "if",			&getIf, true);
+		parser->DefineFun("piecewise", 		&piecewiseMulti, true);
 		parser->DefineInfixOprt("!",		&getNOT, mu::prINFIX, true);
 		parser->DefineOprt("and",			&getAND, mu::prLAND, mu::oaLEFT, true);
 		parser->DefineOprt("or",			&getOR, mu::prLOR, mu::oaLEFT, true);
 		parser->DefineOprt("xor",			&getXOR, mu::prLOR, mu::oaLEFT, true);
-		
-		// SBML Import compatibility (from MathML <piecewise> construct)
-		parser->DefineFun("piecewise", 		&piecewise_3_function, true);
-		parser->DefineFun("piecewise", 		&piecewise_5_function, true);
-		parser->DefineFun("leq",			&getLEQ, true);
-		parser->DefineFun("geq",			&getGEQ, true);
-		parser->DefineFun("lt",				&getLT, true);
-		parser->DefineFun("gt",				&getGT, true);
+
+		parser->DefineFun("leq",			&getLEQmulti, true);
+		parser->DefineFun("geq",			&getGEQmulti, true);
+		parser->DefineFun("lt",				&getLTmulti, true);
+		parser->DefineFun("gt",				&getGTmulti, true);
 		parser->DefineFun("eq",				&getEQ, true);
 		parser->DefineFun("neq",			&getNEQ, true);
+		
+		parser->DefineFun("and_f",		&getANDmulti, true);
+		parser->DefineFun("or_f",			&getORmulti, true);
+		parser->DefineFun("xor_f",		&getXORmulti, true);
+		parser->DefineFun("not_f",		&getNOT, true);
+		parser->DefineFun("implies",		&getImplies, true);
+		
+// SBML Import compatibility (from MathML <piecewise> construct)
+		parser->DefineFun("ceil",			&getCeil, true);
+		parser->DefineFun("floor",			&getFloor, true);
+		parser->DefineFun("factorial",		&getFactorial, true);
+		parser->DefineFun("rem",			&getRem, true);
+		parser->DefineFun("quotient",		&getQuotient, true);
+		parser->DefineFun("root",			&mu::MathImpl<double>::Sqrt, true);
+		
+		parser->DefineFun("pow",			&getPow, true);
+		parser->DefineFun("log",			&getLog, true);
+		
+		parser->DefineFun("cot", 			getCot, true);
+		parser->DefineFun("acot", 			getACot, true);
+		parser->DefineFun("arccot", 		getACot, true);
+		parser->DefineFun("coth", 			getCot, true);
+		parser->DefineFun("acoth", 			getACotH, true);
+		parser->DefineFun("arccoth", 		getACotH, true);
+		parser->DefineFun("sec", 			getSec, true);
+		parser->DefineFun("asec", 			getASec, true);
+		parser->DefineFun("arcsec", 		getASec, true);
+		parser->DefineFun("sech", 			getSecH, true);
+		parser->DefineFun("asech", 			getASecH, true);
+		parser->DefineFun("arcsech", 		getASecH, true);
+		parser->DefineFun("csc", 			getCsc, true);
+		parser->DefineFun("acsc", 			getACsc, true);
+		parser->DefineFun("arccsc",			getACsc, true);
+		parser->DefineFun("csch", 			getCscH, true);
+		parser->DefineFun("acsch", 			getACscH, true);
+		parser->DefineFun("arccsch", 		getACscH, true);
 		parser->DefineFun("arcsin",			&mu::MathImpl<double>::ASin, true);
 		parser->DefineFun("arccos",			&mu::MathImpl<double>::ACos, true);
 		parser->DefineFun("arctan",			&mu::MathImpl<double>::ATan, true);
 		parser->DefineFun("arcsinh",		&mu::MathImpl<double>::ASinh, true);
 		parser->DefineFun("arccosh",		&mu::MathImpl<double>::ACosh, true);
 		parser->DefineFun("arctanh",		&mu::MathImpl<double>::ATanh, true);
+		
+		
 	}
+		
 	catch (mu::ParserError& e) {
 		throw e.GetMsg() + " in muParser instance creation.";
 	}

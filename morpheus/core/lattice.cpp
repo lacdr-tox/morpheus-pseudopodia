@@ -254,7 +254,7 @@ Neighborhood Lattice::getNeighborhood(const XMLNode node) const {
 		}
 		return getNeighborhoodByOrder( order );
 	}
-	else if ( node.nChildNode("Name") ){
+	else if ( node.nChildNode("Name") &&  node.getChildNode("Name").getText()) {
 		return getNeighborhood( string(node.getChildNode("Name").getText()) );
 	}
 	else {
