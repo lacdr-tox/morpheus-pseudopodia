@@ -12,6 +12,7 @@
      * Support HMC (comp)
   * Fix MacOS crash on double-clicking symbol list
   * Fix Windows SBML support (suitible library build)
+  * Fix Windows Job removal to also remove all related files
 
 ### MorpheusML
   * Expose local symbols to the input of the Neighborhood(Vector)Reporter
@@ -23,6 +24,7 @@
   * Renewed implementation of Poissonian Disc Population Initializer
   * Command line option for setting the output directory added
   * Fix rare misplacement in box object initializer
+  * Reduce memory footprint
 
 ## Patch 2.0.1
   * Fixed VectorRules not working
