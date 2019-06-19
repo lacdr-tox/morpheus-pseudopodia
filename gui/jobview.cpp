@@ -8,9 +8,11 @@ JobQueueView::JobQueueView ( QWidget* parent) : QSplitter ( parent )
 	connect(this,SIGNAL(removeJob(int,bool)),job_queue,SLOT(removeProcess(int,bool)));
 	connect(job_queue,SIGNAL(criticalMessage(QString,int)),this,SLOT(addCriticalMessage(QString,int)));
 	connect(job_queue,SIGNAL(statusMessage(QString,int)),this,SLOT(addMessage(QString,int)));
+	
 
 	job_view_model = new JobViewModel(job_queue,this);
 	connect(job_view_model,SIGNAL(rowsInserted(const QModelIndex&,int,int)),this,SLOT(addJob(const QModelIndex& ,int)));
+	connect( job_view_model, SIGNAL(rowsAboutToBeRemoved(const QModelIndex&,int,int)), this, SLOT(unselectJobs(const QModelIndex&,int,int)) );
 
 	jobQueueTreeView->setModel(job_view_model);
 // 	connect(jobQueueTreeView->selectionModel(),SIGNAL(currentChanged(const QModelIndex&, const QModelIndex&)), this, SLOT(selectJob(const QModelIndex&)));
@@ -141,7 +143,7 @@ void JobQueueView::addJob(const QModelIndex & parent, int child) {
 				jobQueueTreeView->setExpanded(parent,true);
 				jobQueueTreeView->setCurrentIndex(f_index);
 			}
-			jobSelected(job_ids.first());
+			emit jobSelected(job_ids.first());
 		}
 		else {
 //            qDebug() << "Received MainWindow::jobAdded but job " <<  process->info().job_id << " is " << process->getStateString();
@@ -189,7 +191,14 @@ void JobQueueView::showJobQueueMenu ( QPoint p )
 
 void JobQueueView::selectJob ( const QModelIndex& index)
 {
+	if (jobQueueTreeView->currentIndex()!= index) {
+		jobQueueTreeView->blockSignals(true);
+		jobQueueTreeView->setCurrentIndex(index);
+		jobQueueTreeView->blockSignals(false);
+	}
 	QList<int> job_ids = job_view_model->getJobIds(index);
+	if (job_ids.isEmpty())
+		emit jobSelected(-1);
 	if (job_view_model->isGroup(index) && job_view_model->getGroupBy() == JobViewModel::SWEEP) {
 		emit sweepSelected(job_ids);
 	}
@@ -197,6 +206,61 @@ void JobQueueView::selectJob ( const QModelIndex& index)
 		emit jobSelected(job_ids.last());
 	}
 }
+
+void JobQueueView::unselectJobs(const QModelIndex& parent, int min_row, int max_row)
+{
+	const auto & current_idx = jobQueueTreeView->currentIndex();
+	if (parent == jobQueueTreeView->rootIndex()) {
+		
+		int current_row = current_idx.parent() == parent ? 
+						  current_idx.row() :
+						  current_idx.parent().row();
+	
+		if (min_row <= current_row && current_row <= max_row) {
+			if (job_view_model->rowCount(parent)>max_row+1) {
+				selectJob(parent.child(max_row+1,0));
+			}
+			else if (min_row>0) {
+				selectJob(parent.child(min_row-1,0));
+			}
+			else {
+				selectJob(QModelIndex());
+			}
+		}
+	}
+	else if (parent == current_idx) { // A model section is selected
+		int current_row = 0;
+		
+		if (min_row <= current_row && current_row <= max_row) {
+			if (job_view_model->rowCount(parent)>max_row+1) {
+				selectJob(parent.child(max_row+1,0));
+			}
+			else if (min_row>0) {
+				selectJob(parent.child(min_row-1,0));
+			}
+			else {
+				selectJob(QModelIndex());
+			}
+		}
+	}
+	else if (current_idx.parent() == parent) {
+		
+		int current_row = current_idx.row();
+		
+		if (min_row <= current_row && current_row <= max_row) {
+			if (job_view_model->rowCount(parent)>max_row+1) {
+				selectJob(parent.child(max_row+1,0));
+			}
+			else if (min_row>0) {
+				selectJob(parent.child(min_row-1,0));
+			}
+			else {
+				selectJob(QModelIndex());
+			}
+		}
+	}
+}
+
 
 void JobQueueView::jobQueueMenuTriggered(QAction * a ) {
 
@@ -295,7 +359,6 @@ void JobQueueView::jobQueueMenuTriggered(QAction * a ) {
 		for (int i=0; i<job_ids.size(); i++) {
 			pBar->setValue(i);
 			pBar->update();
-
 			emit removeJob(job_ids[i], remove_data);
 		}
 		remove_dialog->close();

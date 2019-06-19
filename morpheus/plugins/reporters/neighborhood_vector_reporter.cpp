@@ -12,9 +12,9 @@ NeighborhoodVectorReporter::NeighborhoodVectorReporter() : ReporterPlugin() {
 	map<string,InputModes> value_map;
 	value_map["cell"] = CELLS;
 	value_map["length"] = INTERFACES;
-	scaling.setConversionMap(value_map);
-	scaling.setXMLPath("Input/scaling");
-	scaling.setDefault("length");
+	   scaling.setConversionMap(value_map);
+	   scaling.setXMLPath("Input/scaling");
+	   scaling.setDefault("length");
 	registerPluginParameter(scaling);
 	
 	exclude_medium.setDefault("false");
@@ -33,13 +33,25 @@ NeighborhoodVectorReporter::NeighborhoodVectorReporter() : ReporterPlugin() {
 }
 
 void NeighborhoodVectorReporter::loadFromXML(const XMLNode xNode, Scope* scope)
-{    
+{   
 	ReporterPlugin::loadFromXML(xNode, scope);
 }
 
 void NeighborhoodVectorReporter::init(const Scope* scope)
 {
+	// Add a callback to automativally exposed symbols from the local cell
+	input.addNameSpaceScope("local",scope);
+	
 	ReporterPlugin::init(scope);
+	
+	local_ns_id = input.getNameSpaceId("local");
+	
+	local_ns_granularity = Granularity::Global;
+	using_local_ns = false;
+	for (auto & local : input.getNameSpaceUsedSymbols(local_ns_id)) {
+		local_ns_granularity += local->granularity();
+		using_local_ns = true;
+	}
 	
 	// Reporter input depends on cell position
 	registerCellPositionDependency();
@@ -49,6 +61,59 @@ void NeighborhoodVectorReporter::init(const Scope* scope)
 }
 
 void NeighborhoodVectorReporter::report() {
+	if (celltype) {
+		reportCelltype(celltype);
+	}
+	else {
+		reportGlobal();
+	}
+}
+
+void NeighborhoodVectorReporter::reportGlobal() {
+	FocusRange range(Granularity::Node, SIM::getGlobalScope());
+	auto neighbors = SIM::lattice().getDefaultNeighborhood().neighbors();
+#pragma omp parallel
+	{
+#pragma omp for schedule(static)
+		for (auto i_node = range.begin(); i_node<range.end(); ++i_node) {
+			const auto& node = *i_node;
+			
+			// Expose local symbols to input
+			if (using_local_ns) {
+				input.setNameSpaceFocus(local_ns_id, node);
+			}
+			
+			double total_interface = 0; // interface-based: number all cell-cell interfaces; cell-based: number of neighboring cells
+			VDOUBLE total_signal(0.0,0.0,0.0);
+	// 	for (auto node : range) { // syntax cannot be used with openMP
+			// loop through its neighbors
+			for ( int i_nei = 0; i_nei < neighbors.size(); ++i_nei ) {
+				VINT nb_pos = node.pos() + neighbors[i_nei];
+				total_interface += 1;
+				// get value at neighbor node
+				total_signal += input(nb_pos);
+			}
+			
+			// final signal stats calculation
+			VDOUBLE signal;
+			switch (output_mode()) {
+				case NeighborhoodVectorReporter::AVERAGE :
+					if ( total_interface > 0.0)
+						signal = total_signal / total_interface;
+					else
+						signal = VDOUBLE(0.0,0.0,0.0);
+					break;
+				case NeighborhoodVectorReporter::SUM:
+					signal = total_signal;
+					break;
+			}
+
+			output.set( node, signal );
+		}
+	}
+}
+
+void NeighborhoodVectorReporter::reportCelltype(CellType* celltype) {
 
     auto celltypes = CPM::getCellTypes();
 	vector<bool> is_medium_type;
@@ -56,12 +121,17 @@ void NeighborhoodVectorReporter::report() {
 	
     vector<CPM::CELL_ID> cells = celltype->getCellIDs();
     for (auto cell_id : cells) {
-		SymbolFocus focus(cell_id);
+		SymbolFocus cell_focus(cell_id);
 
-        double total_interface = 0; // interface-based: number all cell-cell interfaces; cell-based: number of neighboring cells (excluding medium)
-        VDOUBLE total_signal(0.0,0.0,0.0);
-//         uint numneighbors = 0;
-		const map <CPM::CELL_ID, double >& interfaces = focus.cell().getInterfaceLengths();
+		// Expose local symbols to input
+		if (using_local_ns) {
+			input.setNameSpaceFocus(local_ns_id, cell_focus);
+		}
+		
+		double total_interface = 0; // interface-based: number all cell-cell interfaces; cell-based: number of neighboring cells
+		VDOUBLE total_signal(0.0,0.0,0.0);
+
+		const map <CPM::CELL_ID, double >& interfaces = cell_focus.cell().getInterfaceLengths();
 		for (map<CPM::CELL_ID,double>::const_iterator nb = interfaces.begin(); nb != interfaces.end(); nb++) {
 
 			CPM::CELL_ID nei_cell_id = nb->first;
@@ -92,6 +162,6 @@ void NeighborhoodVectorReporter::report() {
 				break;
 		}
 
-		output.set( focus, signal );
+		output.set( cell_focus, signal );
     }
 }

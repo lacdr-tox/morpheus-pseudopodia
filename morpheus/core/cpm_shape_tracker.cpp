@@ -56,7 +56,7 @@ const CPMShape::Nodes& AdaptiveCPMShapeTracker::surfaceNodes() const
 		return surface_nodes;
 	}
 	else  if (n_updates - last_surface_update < 3 * (10 + _nodes.size()) ) { 
-		tracking.surface = true;
+// 		tracking.surface = true;
 	}
 	
 	initSurfaceNodes();

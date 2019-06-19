@@ -381,6 +381,7 @@ class TimeStepListener : virtual public Plugin
 		
 		/// time until which the TSL is valid
 		double valid_time;
+		double prepared_time_step =0;
 		double latest_time_step;
 
 		
@@ -391,12 +392,12 @@ class TimeStepListener : virtual public Plugin
 
 		/// update the time step depending on input and output timesteps and the Listener type and flags
 		/// Override callbacks for actually performing some operation, exclusively used for buffered synchronous processes
-		virtual void prepareTimeStep_impl() {};
+		virtual void prepareTimeStep_impl(double step_size) {};
 		/// Override callbacks for actually performing some operation
 		virtual void executeTimeStep_impl() =0;
 		
 		/// Slot to be called by the Time Scheduler
-		void prepareTimeStep_internal();
+		void prepareTimeStep_internal(double max_time);
 		/// Slot to be called by the Time Scheduler
 		void executeTimeStep_internal();
 		
@@ -408,6 +409,7 @@ class TimeStepListener : virtual public Plugin
 		
 private:
 		/// time step duration
+		PluginParameter2<double, XMLEvaluator, OptionalPolicy> xml_time_step;
 		double time_step;
 		/// time needed for execution (measured in milliseconds)
 		double execute_systemtime;
@@ -437,14 +439,14 @@ public:
 	enum Rank { MCS = 0, DELAY = 1, CONTI=2, INDEPEND=3 };
 	
     ContinuousProcessPlugin(Rank phase1_rank, TimeStepListener::XMLSpec xml_spec = TimeStepListener::XMLSpec::XML_REQUIRED) : TimeStepListener(xml_spec), phase1_rank(phase1_rank) {};
-	virtual void prepareTimeStep() = 0;
+	virtual void prepareTimeStep(double step_size) = 0;
 	virtual void executeTimeStep() = 0;
 	
     virtual void updateSinkTS(double ts);
 	Rank getRank() {return phase1_rank;};
 
 private:
-	void prepareTimeStep_impl() final { prepareTimeStep(); };
+	void prepareTimeStep_impl(double step_size) final { prepareTimeStep(step_size); };
 	void executeTimeStep_impl() final { executeTimeStep(); };
 
 	Rank phase1_rank;
@@ -482,7 +484,7 @@ private:
 
 class ReporterPlugin : public TimeStepListener {
 public:
-    ReporterPlugin();
+    ReporterPlugin(TimeStepListener::XMLSpec spec = TimeStepListener::XMLSpec::XML_NONE);
 	virtual void report() = 0;
 protected:
 	void updateSourceTS(double ts) override;

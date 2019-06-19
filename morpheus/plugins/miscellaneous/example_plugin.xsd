@@ -11,6 +11,7 @@
 			<xs:element name="ExamplePlugin" type="ExamplePluginType"/>
 		</xs:choice>
 	</xs:group>
+	
 
 	<!-- Specification of XML element, its subelements and its attributes -->
 	<xs:complexType name="ExamplePluginType">

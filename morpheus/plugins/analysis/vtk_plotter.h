@@ -79,6 +79,9 @@ class VtkPlotter : public AnalysisPlugin
 	enum Mode { ASCII, BINARY };
 
 private:
+	static int instances;
+	int instance_id;
+	
 	PluginParameter2<Mode, XMLNamedValueReader, DefaultValPolicy> mode;
 	
 	struct Channel{
@@ -119,7 +122,6 @@ private:
   
 public:
 	DECLARE_PLUGIN("VtkPlotter");
-	
 	virtual void loadFromXML(const XMLNode, Scope* scope) override;
 	virtual void init(const Scope* scope) override;
 	virtual void analyse(double time) override;

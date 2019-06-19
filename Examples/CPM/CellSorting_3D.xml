@@ -1,6 +1,6 @@
 <MorpheusModel version="3">
     <Description>
-        <Title>Example-CellSorting-2D</Title>
+        <Title>Example-CellSorting-3D</Title>
         <Details>Reference:
 Graner and Glazier, Simulation of biological cell sorting using a two-dimensional extended Potts model, Phys. Rev. Lett. 69, 2013–2016 (1992) </Details>
     </Description>

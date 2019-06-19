@@ -12,7 +12,7 @@
 			<xs:element name="Column" type="cpmHistogramColumn"	minOccurs="1" maxOccurs="unbounded"/>
 			<xs:element name="Plot" type="cpmHistogramPlot"	minOccurs="0" maxOccurs="1"/>		
 		</xs:all>
-		<xs:attribute name="time-step" use="required" type="cpmDouble" default="1"/>
+		<xs:attribute name="time-step" use="required" type="cpmMathExpression" default="1"/>
 		<xs:attribute name="number-of-bins" use="required" type="cpmUnsignedInteger" default="10"/>
 		<xs:attribute name="normalized" use="required" type="cpmBoolean" />
 		<xs:attribute name="minimum" use="optional" type="cpmDouble" />

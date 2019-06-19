@@ -41,6 +41,7 @@ public slots:
 
 private slots:
 	void selectJob(const QModelIndex&);
+	void unselectJobs(const QModelIndex& parent, int min_row, int max_row);
 	void selectStatus(QListWidgetItem *);
 	void showJobQueueMenu(QPoint p);
 	void jobQueueMenuTriggered(QAction*);

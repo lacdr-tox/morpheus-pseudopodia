@@ -28,7 +28,7 @@
 		<xs:choice minOccurs="1" default="Sphere" >
 			<xs:element name="Sphere"   	type="cpmSphere" />
 			<xs:element name="Ellipsoid"   	type="cpmEllipsoid" />
-<!--             <xs:element name="Cylinder" 	type="cpmCylinder" /> -->
+            <xs:element name="Cylinder" 	type="cpmCylinder" />
 			<xs:element name="Box" 			type="cpmBoxObject" />
 			<xs:element name="Point" 		type="cpmPointObject" />
 		</xs:choice>
@@ -57,18 +57,9 @@
 	</xs:complexType>
 
 	<xs:complexType name="cpmCylinder">
-		<xs:attribute name="center"		type="cpmVectorMathExpression" use="required" />
-		<xs:attribute name="center2"	type="cpmVectorMathExpression" use="optional" />
+		<xs:attribute name="origin"		type="cpmVectorMathExpression" use="required" />
+		<xs:attribute name="length"	type="cpmVectorMathExpression" use="required" />
 		<xs:attribute name="radius"	 	type="cpmMathExpression" use="required" />
-		<xs:attribute name="orientation" type="cpmCylinderOrientation" use="required" />
 	</xs:complexType>
-
-	<xs:simpleType name="cpmCylinderOrientation">
-		<xs:restriction base="cpmString">
-			<xs:enumeration value="x" />
-			<xs:enumeration value="y" />
-			<xs:enumeration value="z" />
-		</xs:restriction>
-	</xs:simpleType>
 	
 </xs:schema>

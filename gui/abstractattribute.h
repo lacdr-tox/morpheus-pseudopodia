@@ -44,6 +44,7 @@ struct ModelDescriptor {
     QList<MorphModelEdit> edit_operations;
     QList<AbstractAttribute*> terminal_names;
 	QList<AbstractAttribute*> sys_file_refs;
+	AbstractAttribute* time_symbol = nullptr;
     QString title;
     QString details;
     int edits;
@@ -109,6 +110,7 @@ public:
 	bool set(const std::string& s) { return this->set(QString::fromStdString(s)); } /*!< Sets the value of parameter.*/
 	bool set(const char* s) { return this->set(QString::fromUtf8(s)); } /*!< Sets the value of parameter.*/
 	bool set(double d) { return this->set(QString::number(d)); } /*!< Sets the value of parameter.*/
+	bool append(QString s); /*!< Append @p s to the attribute's value. */
     void setActive(bool ); /*!< Sets the state of parameter (if it is active or not). */
 	void inheritDisabled(bool ); /*!< Notify the attribut that the parent was disabled */
     QStringList getEnumValues();

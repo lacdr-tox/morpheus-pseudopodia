@@ -9,13 +9,13 @@
 getDependencies(){
 	TARGET=$1
 	if [ -f "$TARGET" ] && [ ! -d "$TARGET" ]
-	then 
-		otool -L $TARGET | awk 'NR>1{ print $1 }' 
+	then
+		otool -L $TARGET | awk 'NR>1{ print $1 }'
 	fi
 }
 
 
-# Read command line argument (if DMG is present, create disk image) 
+# Read command line argument (if DMG is present, create disk image)
 CREATE_DMG=0
 if [ -z "$1" ]
   then
@@ -26,7 +26,7 @@ if [ -z "$1" ]
 	    echo "Create DMG"
 	    CREATE_DMG=1
 	else
-		echo "Unknown argument: " $1 
+		echo "Unknown argument: " $1
 	fi
 fi
 
@@ -41,7 +41,7 @@ MORPHEUS_ROOT_DIR="../.."
 DATA_DIR="./data"
 MACPORTS_DIR="/opt/local"
 # MacPorts on 10.11
-QT_DIR="$MACPORTS_DIR/libexec/qt4/Library/Frameworks" 
+QT_DIR="$MACPORTS_DIR/libexec/qt4/Library/Frameworks"
 QT_PLUGIN_DIR="$MACPORTS_DIR/libexec/qt4/share/plugins"
 # MacPorts on 10.6.8
 #QT_DIR="$MACPORTS_DIR/Library/Frameworks"
@@ -120,9 +120,9 @@ cp -Lp $MACPORTS_DIR/lib/libsqlite3.0.dylib $LIBRARY_DIR
 # Copy Qt Frameworks into bundle
 #
 ######
-echo 
+echo
 echo "== Copying Qt Frameworks into bundle and Update IDs =="
-echo 
+echo
 
 QT_FRAMEWORKS="QtCore QtGui QtSql QtXml QtNetwork QtHelp QtWebKit QtCLucene QtXmlPatterns QtSvg"
 
@@ -131,7 +131,7 @@ do
 	echo "cp -R $QT_DIR/${QT_FW}.framework $LIBRARY_DIR"
 	cp -R $QT_DIR/${QT_FW}.framework $LIBRARY_DIR
 	QT_FRAMEWORK_LIBS="$QT_FRAMEWORK_LIBS $QT_DIR/${QT_FW}.framework/Versions/4/${QT_FW}"
-	
+
 	echo "Update ID $LIB"
     	install_name_tool \
         	-id @executable_path/../../Frameworks/${QT_FW}/$QT_FW \
@@ -139,7 +139,7 @@ do
         	#-id @executable_path/../../Frameworks/${QT_FW}/Versions/4/$QT_FW \
     		#$LIBRARY_DIR/${QT_FW}.framework/Versions/4/${QT_FW}
 		# used to be the wrong path: $QT_DIR/${QT_FW}.framework/Versions/4/${QT_FW}
- 
+
 
 done
 
@@ -156,9 +156,9 @@ echo
 
 POSSIBLE_PATHS=" $MACPORTS_DIR/lib $MACPORTS_DIR/lib/libgcc /usr/local/lib /usr/lib"
 
-LIBRARIES=" libz.1.dylib libtiff.5.dylib libjpeg.9.dylib libpng16.16.dylib libssl.1.0.0.dylib 
+LIBRARIES=" libz.1.dylib libtiff.5.dylib libjpeg.9.dylib libpng16.16.dylib libssl.1.0.0.dylib
 		   libcrypto.1.0.0.dylib libssh.dylib liblzma.5.dylib libbz2.1.0.dylib libexpat.1.dylib
-			libgvc.6.dylib libltdl.7.dylib libcgraph.6.dylib libstdc++.6.dylib libgcc_s.1.dylib libgomp.1.dylib 
+			libgvc.6.dylib libltdl.7.dylib libcgraph.6.dylib libstdc++.6.dylib libgcc_s.1.dylib libgomp.1.dylib
 			libxdot.4.dylib libcdt.5.dylib libpathplan.4.dylib" # GraphViz
 
 
@@ -171,7 +171,7 @@ do
 		if [ -f $PPATH/$LIB ]; then
 			echo "cp -Lp $PPATH/$LIB $LIBRARY_DIR"
 			cp -Lp $PPATH/$LIB $LIBRARY_DIR
-	
+
 			echo "Update ID $LIB"
 			install_name_tool \
 				-id @executable_path/../../Frameworks/$LIB \
@@ -184,11 +184,73 @@ do
 	done
 done
 
+echo
+echo "== Copy GraphViz plugin =="
+echo "cp -a $MACPORTS_DIR/lib/graphviz $LIBRARY_DIR/graphviz"
+cp -a $MACPORTS_DIR/lib/graphviz $LIBRARY_DIR/graphviz
+
+for LIB in $LIBRARY_DIR/graphviz/*.dylib
+do
+	DEPS=$(getDependencies $LIB)
+	for DEP in $DEPS;
+	do
+		echo $DEP
+		DEP_BASE=${DEP##*/} #basename
+		if [[ $DEP_BASE == "libSystem.B.dylib" ]] || [[ $DEP == "/System/"* ]];
+		then
+			echo "Skipping system lib: $DEP_BASE"
+			continue
+		fi
+
+		if [ -f $LIBRARY_DIR/graphviz/$DEP_BASE ];
+		then
+			echo "Update ID $DEP"
+			install_name_tool \
+				-id @executable_path/../../Frameworks/graphviz/$LIB \
+				$LIBRARY_DIR/graphviz/$DEP_BASE
+				continue
+
+		elif [ ! -f $LIBRARY_DIR/$DEP_BASE ];
+		then
+			echo '-> Copying '$DEP' to '$LIBRARY_DIR
+			cp -Lp $DEP $LIBRARY_DIR
+			echo "-> Update ID $DEP_BASE"
+			install_name_tool \
+				-id @executable_path/../../Frameworks/$DEP_BASE \
+				$LIBRARY_DIR/$DEP_BASE
+		fi
+
+		if [ -f $LIBRARY_DIR/$DEP_BASE ];
+		then
+			echo "-> Update reference: "
+			echo "   OLD: $DEP"
+			echo "   NEW: @executable_path/../../Frameworks/$DEP_BASE"
+			echo "   INPUT: $LIB"
+			install_name_tool \
+				-change $DEP \
+				@executable_path/../../Frameworks/$DEP_BASE \
+				$LIB
+
+		fi
+	done
+done
+
+echo
+echo
+echo
+echo
+echo
+echo
+echo
+
+
+echo
+
 echo "== Copying and updating IDs of libssl and libcrypto requires sudo =="
 
-LIBRARIES2="libssl.1.0.0.dylib libcrypto.1.0.0.dylib 
+LIBRARIES2="libssl.1.0.0.dylib libcrypto.1.0.0.dylib
 			libgssapi_krb5.2.2.dylib libkrb5.3.3.dylib
-			libk5crypto.3.1.dylib libcom_err.1.1.dylib 
+			libk5crypto.3.1.dylib libcom_err.1.1.dylib
 			libkrb5support.1.1.dylib libintl.8.dylib libiconv.2.dylib"
 
 for LIB in $LIBRARIES2
@@ -200,7 +262,7 @@ do
 		if [ -f $PPATH/$LIB ]; then
 			echo "sudo cp -Lp $PPATH/$LIB $LIBRARY_DIR"
 			sudo cp -Lp $PPATH/$LIB $LIBRARY_DIR
-	
+
 			echo "Update ID $LIB"
 			sudo install_name_tool \
 				-id @executable_path/../../Frameworks/$LIB \
@@ -216,7 +278,7 @@ done
 
 echo
 echo "== Copying SBML libraries (from /usr/local/lib/, /usr/lib and /opt/local/lib/libgcc) to bundle and Update IDs =="
-echo 
+echo
 
 LIBSBML1="libsbml.5.dylib"
 
@@ -224,7 +286,7 @@ if [ ! -f /usr/local/lib/$LIBSBML1 ]; then
 	echo "Skipping SBML support because libSBML not found."
 else
 	echo "cp -Lp /usr/local/lib/$LIBSBML1 $LIBRARY_DIR"
-	cp -Lp /usr/local/lib/$LIBSBML1 $LIBRARY_DIR	
+	cp -Lp /usr/local/lib/$LIBSBML1 $LIBRARY_DIR
 	echo "Update ID $LIBSBML1"
 	install_name_tool \
 		-id @executable_path/../../Frameworks/$LIBSBML1 \
@@ -235,13 +297,13 @@ else
 	for LIB in $LIBSBML3
 	do
 		echo "cp -Lp $MACPORTS_DIR/lib/libgcc/$LIB $LIBRARY_DIR"
-		cp -Lp $MACPORTS_DIR/lib/libgcc/$LIB $LIBRARY_DIR	
-		
+		cp -Lp $MACPORTS_DIR/lib/libgcc/$LIB $LIBRARY_DIR
+
 		echo "Update ID $LIB"
 		install_name_tool \
 			-id @executable_path/../../Frameworks/$LIB \
     			$LIBRARY_DIR/$LIB
-    	
+
 	done
 
 	LIBRARIES="$LIBRARIES $LIBRARIES2 $LIBSBML1 $LIBSBML2 $LIBSBML3"
@@ -266,8 +328,8 @@ do
 	#echo $OLDREFS
 	for REF in $OLDREFS
 	do
-		echo $(basename $QT_FW) depends on $(basename $REF): $REF 
-	
+		echo $(basename $QT_FW) depends on $(basename $REF): $REF
+
 		if [ -d "$LIBRARY_DIR/$(basename $REF).framework" ]
 		then
 			echo "Updating internal link from $REF"
@@ -290,9 +352,9 @@ do
 				# used to be: $QT_FW
 		else
 			echo "Not updating reference: $(basename $QT_FW) -> $(basename $REF)"
-		fi    
+		fi
 	done
-	
+
 done
 
 
@@ -315,7 +377,7 @@ do
 	#echo $LIB: $OLDREFS
 	for REF in $OLDREFS
 	do
-		#echo $(basename $LIB) depends on $(basename $REF): $REF 
+		#echo $(basename $LIB) depends on $(basename $REF): $REF
 		if [ -f "$LIBRARY_DIR/$(basename $REF)" ]
 		then
 			echo "Update reference: $(basename $LIB) -> $(basename $REF)"
@@ -346,11 +408,11 @@ install_name_tool \
 install_name_tool \
 	-id @executable_path/../../plugins/sqldrivers/libqsqlite.dylib \
 	$PLUGIN_DIR/libqsqlite.dylib
-	
+
 
 echo
 echo "-- libqsqlite.dylib (SQLite plugin) --"
-echo 
+echo
 
 QT_FWS="QtCore QtSql"
 
@@ -370,7 +432,7 @@ echo "Update reference: libqsqlite.dylib -> libsqlite3.0.dylib"
 install_name_tool \
 	-change $MACPORTS_DIR/lib/libsqlite3.0.dylib \
 	@executable_path/../../Frameworks/libsqlite3.0.dylib \
-	$PLUGIN_DIR/libqsqlite.dylib 
+	$PLUGIN_DIR/libqsqlite.dylib
 
 #echo "Update reference: libqsqlite.dylib -> libqsqlite.dylib"
 install_name_tool \
@@ -381,7 +443,7 @@ install_name_tool \
 #install_name_tool \
 #	-change
 #	 @executable_path/../../plugins/sqldrivers/libqsqlite.dylib  \
-#	libqsqlite.dylib 
+#	libqsqlite.dylib
 #	$PLUGIN_DIR/libqsqlite.dylib
 
 ######
@@ -410,7 +472,7 @@ do
        	 		$BINARY_DIR/morpheus
 	else
 		echo "Not updating reference: morpheus -> $(basename $DEP)"
-	fi 
+	fi
 done
 
 
@@ -424,7 +486,7 @@ for QT_FW in $QT_FRAMEWORKS
 do
 	#QT_FRAMEWORK_LIBS="$QT_FRAMEWORK_LIBS $LIBRARY_DIR/$FW.framework/Versions/4/$FW"
 	if [ -d $LIBRARY_DIR/${QT_FW}.framework ]
-	then 
+	then
 		echo "Update reference: morpheus-gui -> $QT_FW"
 		install_name_tool \
    	 		-change $QT_DIR/${QT_FW}.framework/Versions/4/$QT_FW \
@@ -455,7 +517,7 @@ do
        	 	$BINARY_DIR/morpheus-gui
 	else
 		echo "Not updating reference: morpheus-gui -> $(basename $DEP)"
-	fi 
+	fi
 done
 
 otool -L $BINARY_DIR/morpheus-gui
@@ -463,12 +525,12 @@ otool -L $BINARY_DIR/morpheus-gui
 
 ######
 #
-# Set executable flag of binaries and scripts 
+# Set executable flag of binaries and scripts
 #
 ######
 
 
-# Make binaries executable 
+# Make binaries executable
 chmod 755 $SCRIPT_DIR/Morpheus
 #chmod 755 $BINARY_DIR/morphSweepData.py
 #chmod 755 $BINARY_DIR/morphImageTable.py
@@ -485,6 +547,7 @@ echo
 tree -d Morpheus.app
 
 
+
 ######
 #
 # Create disk image
@@ -497,6 +560,28 @@ echo
 
 DATE=$(date +%y%m%d)
 BUNDLE_NAME="Morpheus_${DATE}.dmg"
+
+
+if [ $CREATE_DMG == 0 ]
+then
+	echo "Do you wish to build a Disk Image bundle (Morpheus.dmg)?"
+	options=("Y" "N")
+	select yn in "${options[@]}"
+	do
+		case $yn in
+			"y"|"yes"|"Y"|"Yes" )
+				CREATE_DMG=1
+				echo "Build DMG"
+				break
+				;;
+			"n"|"no"|"N"|"No" )
+				CREATE_DMG=0
+				echo "Not building DMG"
+				break
+				;;
+		esac
+	done
+fi
 
 if [ $CREATE_DMG == 1 ]
 then
@@ -515,13 +600,15 @@ then
 	chown -R $USER:$(id -g -n $USER) $BUNDLE_NAME
 	rm -rf $imagedir
 	echo "$BUNDLE_NAME created"
-	echo $USER
 else
-	echo "NOTE: No DMG created!" 
+	echo "NOTE: No DMG created!"
 	echo
-	echo "To create a Disk Image bundle (DMG), type:" 
+	echo "To create a Disk Image bundle (DMG), type:"
 	echo "sudo ./make_bundle.sh dmg"
 fi
+
+echo "To check the linking paths, do:"
+echo " find Morpheus.app -name '*.dylib' -exec otool -L '{}' \; | grep -v '@executable_path' | grep -v 'libSystem.B.dylib'"
 
 exit
 

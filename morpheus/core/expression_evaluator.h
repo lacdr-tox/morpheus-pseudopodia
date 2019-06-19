@@ -24,29 +24,11 @@ unique_ptr<mu::Parser> createMuParserInstance();
 \defgroup MuParser Evaluating math expressions
 \ingroup Concepts
 
-Mathematical expressions are evaluated at run-time using [MuParser](http://beltoforion.de/article.php?a=muparser), while all variables are resolved using Morpheus' \ref Symbols system.
-
-**Operators**:
-+, -, *, /, ^, =, >=, <=, !=, ==, <, >
-and, or, xor, !
-
-**Predefined Functions**:
-if([condition], [then], [else]), and, or, xor, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh, log2, log10, ln, exp, pow, sqrt, sign, rint, abs, min, max, sum, avg, mod
-
-**SBML compatibility Functions**:
-piecewise, lt, leq, eq, neq, geq, gt, arcsin, arccos, arctan, arcsinh, arccosh, arctanh
-
-**Random number** generators:
-rand_uni([min], [max])
-rand_int([min], [max])
-rand_norm([mean], [stdev])
-rand_gamma([shape], [scale])
-rand_bool()
-
+Mathematical expressions are evaluated  at run-time using [MuParser](http://beltoforion.de/article.php?a=muparser), while all variables are resolved using Morpheus' \ref Symbols system. Vector expression evaluation is performed component-wise.  see \ref MathExpressions
 
 **/
 
-typedef EvaluatorCache::EvaluatorSymbol EvaluatorVariable;
+typedef EvaluatorCache::LocalSymbolDesc EvaluatorVariable;
 
 /** @brief Run-time Expression Evaluation
  * 
@@ -70,18 +52,31 @@ public:
 	
 	
 	/**  \brief Set the list of local variables to be used for expression evaluation. 
+	 * 
 	 *   These local variables must be set separately and override symbols from the scope.
 	 *   The order in the vector is also decisive for the expected data order in setLocals().
 	 */
 	void setLocalsTable(const vector<EvaluatorVariable>& locals) { evaluator_cache->setLocalsTable(locals); };
 	
+	/*! \brief Add a foreign Scope @p scope as namespace @p ns_name to the local variable scope.
+	 * 
+	 * Returns the name space reference @return id.
+	 */
+	uint addNameSpaceScope(const string& ns_name, const Scope* scope) { return evaluator_cache->addNameSpaceScope(ns_name,scope); };
+	/// Get all symbols used from name space @p ns_id. The namespace prefix is not contained in the symbols returned.
+	set<Symbol> getNameSpaceUsedSymbols(uint ns_id) const { return evaluator_cache->getNameSpaceUsedSymbols(ns_id); } 
+	/// Set the focus of name space @p ns_id
+	void setNameSpaceFocus(uint ns_id, const SymbolFocus& f) const{ evaluator_cache->setNameSpaceFocus(ns_id, f); } ;
+	
 	/** \brief Set the evaluator's local variables
+	 * 
 	 *  @p data is a contiguous array of doubles values, where a VECTOR type parameter
 	 *  is composed of three entries representing x, y and z component.
 	 */
 	void setLocals(const double* data) const { evaluator_cache->setLocals(data);/*(&symbol_values[l_sym_cache_offset], data, sizeof(double) * local_symbols.size()); */};
 	
 	/** \brief Initialize expression evaluator.
+	 * 
 	 *  In particular, all dependent symbols, functions and parameters must be declared prior
 	 *  to initalisation. Symbols are retrieved form the scope.
 	 */
@@ -105,7 +100,7 @@ public:
 	/// Description used for graphical visualization and reporting
 	const string& getDescription() const;
 	/// Raw expression
-	string getExpression() const { return expression; }
+	const string& getExpression() const { return expression; }
 	
 	/// get the value for spatial element @p focus
 	typename TypeInfo<T>::SReturn get(const SymbolFocus& focus, bool safe=false) const;
@@ -139,9 +134,11 @@ private:
 	
 	set< SymbolDependency > depend_symbols;
 	
+	friend class EventSystem;
 	friend class SystemSolver; // Allow the SystemSolver to rewire the parser's function definitions to thread-local instances
 	template <class S>
 	friend class SystemFunc;
+	
 };
 
 #ifdef HAVE_OPENMP
@@ -176,9 +173,14 @@ typedef std::mutex GlobalMutex;
 template <class T>
 class ThreadedExpressionEvaluator {
 public:
-	ThreadedExpressionEvaluator(string expression, const Scope* scope, bool partial_spec = false) { evaluators.push_back( make_unique<ExpressionEvaluator<T> >(expression, scope, partial_spec) );};
+	ThreadedExpressionEvaluator(const string& expression, const Scope* scope, bool partial_spec = false) { evaluators.push_back( make_unique<ExpressionEvaluator<T> >(expression, scope, partial_spec) );};
 	
 	void setLocalsTable(const vector<EvaluatorVariable>& locals) { for (auto& evaluator : evaluators) evaluator->setLocalsTable(locals); }
+
+	uint addNameSpaceScope(const string& ns_name, const Scope* scope) { uint id=0; for (auto& evaluator : evaluators) id = evaluator->addNameSpaceScope(ns_name, scope); return id; }
+	set<Symbol> getNameSpaceUsedSymbols(uint ns_id) const { return evaluators[0]->getNameSpaceUsedSymbols(ns_id); }
+	void setNameSpaceFocus(uint ns_id, const SymbolFocus& f) const { getEvaluator()->setNameSpaceFocus(ns_id, f); }
+	
 	void setLocals(const double* data) const { getEvaluator()->setLocals(data); }
 	int getLocalsCount() const { return evaluators[0]->getLocalsCount(); } 
 	
@@ -186,7 +188,7 @@ public:
 	const string& getDescription() const { return evaluators[0]->getDescription(); };
 	const SymbolBase::Flags& flags() const { return evaluators[0]->flags(); }
 	Granularity getGranularity() const { return evaluators[0]->getGranularity(); };
-	string getExpression() const { return evaluators[0]->getExpression(); };
+	const string& getExpression() const { return evaluators[0]->getExpression(); };
 
 	typename TypeInfo<T>::SReturn get(const SymbolFocus& focus) const { return getEvaluator()->get(focus); };
 	typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& focus) const { return getEvaluator()->safe_get(focus); };
@@ -429,9 +431,11 @@ void ExpressionEvaluator<T>::init()
 		expr_is_const = false;
 		const_val = safe_get(SymbolFocus::global);
 		expr_is_const = true;
-		cout << "Expression " << this->getExpression() << " is const (";
-		for (auto const& dep: depend_symbols ) { cout << dep->name() << ", " ; }
-		cout << ")" << endl;
+		if (depend_symbols.size()>0) {
+			cout << "Expression " << this->getExpression() << " is const (";
+			for (auto const& dep: depend_symbols ) { cout << dep->name() << ", " ; }
+			cout << ")" << endl;
+		}
 	}
 	
 	// Check for direct symbol

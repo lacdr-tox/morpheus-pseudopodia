@@ -26,7 +26,7 @@ private:
 
 QVariant HelpBrowser::loadResource(int type, const QUrl & name) {
 	QNetworkRequest request(name);
-	qDebug() << "Requesting " << name;
+// 	qDebug() << "Requesting " << name;
 	auto reply = nam->get(request);
 	return reply->readAll();
 }
@@ -35,9 +35,7 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 {
 	timer = NULL;
 	help_engine = config::getHelpEngine();
-	
 	connect(help_engine,SIGNAL(setupFinished()),this,SLOT(setRootOfHelpIndex()));
-	help_engine->setupData();
 	
 	hnam = config::getNetwork();
 
@@ -66,7 +64,7 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	toc_widget->sortByColumn(0,Qt::AscendingOrder);
 	
 	root_reset = false;
-
+	
 	auto tb = new QToolBar();
 
 	b_back = new QAction(QThemedIcon("go-previous", style()->standardIcon(QStyle::SP_ArrowLeft)),"Back",this);
@@ -83,7 +81,7 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	auto l_icon = new QLabel();
 	l_icon->setPixmap(pm.scaled(25,25,Qt::KeepAspectRatio,Qt::SmoothTransformation));
 	tb->addWidget(l_icon);
-	auto l_doc = new QLineEdit(" Morpheus 2.0 Documentation");
+	auto l_doc = new QLineEdit(" Morpheus 2.1 Documentation");
 	l_doc->setEnabled(false);
 	tb->addWidget(l_doc);
 	
@@ -116,12 +114,18 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	connect(toc_widget, SIGNAL(clicked(const QModelIndex&)), this, SLOT(setCurrentIndex(const QModelIndex&)) );
 	
 	this->setWidget(splitter);
+	
+	help_engine->setupData();
 	resetStatus();
 }
 
 void DocuDock::openHelpLink(const QUrl& url) {
 	if (url.scheme() == "qthelp") {
+#ifdef MORPHEUS_NO_QTWEBKIT
+		help_view->setSource(url);
+#else
 		help_view->setUrl(url);
+#endif
 	}
 	else 
 		QDesktopServices::openUrl(url);

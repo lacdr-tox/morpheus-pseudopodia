@@ -13,38 +13,46 @@
 #define INITPOISSONDISK_H
 
 #include "core/interfaces.h"
-#include "core/plugin_parameter.h"
+#include "core/celltype.h"
 
-/** \defgroup InitPoissonDisk
+#define POISSON_PROGRESS_INDICATOR 1
+#include "../3rdparty/poisson-disc-generator/PoissonGenerator.h"
+
+/** \defgroup InitPoissonDisc
 \ingroup ML_Population
 \ingroup InitializerPlugins
 \brief Arranges cells approximately equidistantly according to Poisson Disk Sampling
 
 \section Description
-Arranges approximately equidistance cells according to Poisson Disk Sampling
+Arranges approximately equidistance cells according to Poisson Disk Sampling using Robert Bridson’s algorithm.
+Attempts to arrange \b number-of-cells but will generate less cells.
 
-If \b mode is 'regular'. Cells are seeded randomly, or in a regular structure. 
-In case of a regular structure, deviations from this regularity can be induced by using a uniform random offset.
+Only applicable to 2D lattices with square structure.
 
-The \b Dimensions tag determines the origin of the left lower corner and the size of the region.
-
-
+Implementation from: https://github.com/corporateshark/poisson-disk-generator
 \section Example
-\verbatim
 
+Try to initialize 500 cells in the given lattice:
+\verbatim
+<InitPoissonDisc number-of-cells="500"/>
 \endverbatim
 */
 
-class InitPoissonDisk : public Population_Initializer
+class InitPoissonDisc : public Population_Initializer
 {
 private:
-	
-	PluginParameter2<double, XMLEvaluator, RequiredPolicy> min_dist;
+
+	PluginParameter2<double, XMLEvaluator, RequiredPolicy> num_cells;
+	CellType* celltype;
+	CPM::CELL_ID createCell(VINT newPos);
+	shared_ptr<const Lattice> lattice;
+
+/*
 	PluginParameter2<double, XMLEvaluator, OptionalPolicy> max_dist;
 	PluginParameter2<int, XMLValueReader, DefaultValPolicy> new_points_count;
-	
+
 	CellType* celltype;
-	vector<VINT> nbh;
+	Neighborhood nbh;
     double cellSize;
     bool cubic;
 	shared_ptr<const Lattice> lattice;
@@ -53,19 +61,20 @@ private:
     shared_ptr< Lattice_Data_Layer< double > > grid_z;
 
     bool addPointToGrid(VDOUBLE point);
-	bool createCell(VINT newPos);
+	CPM::CELL_ID createCell(VINT newPos);
     VINT imageToGrid(VDOUBLE p);
 	//shared_ptr< Lattice_Data_Layer< double > > createGrid(shared_ptr<const Lattice> lattice, double default_value);
     shared_ptr< Lattice_Data_Layer< double > > createGrid( VINT boxsize, Lattice::Structure structure, double default_value);
-	
+
     VDOUBLE generateRandomPointAround(VDOUBLE point, double min_dist, double maxdist);
 	bool inRectangle(VDOUBLE point, VINT latticeSize);
     bool noNeighbors(VDOUBLE point, double mindist);
+*/
 
 public:
-	InitPoissonDisk();
-	DECLARE_PLUGIN("InitPoissonDisk");
-	bool run(CellType* ct) override;
+	InitPoissonDisc();
+	DECLARE_PLUGIN("InitPoissonDisc");
+	vector<CPM::CELL_ID> run(CellType* ct) override;
 };
 
 #endif

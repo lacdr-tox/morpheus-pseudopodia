@@ -7,6 +7,7 @@ set(subdirs ${subdirs}
 	reporters
 	shape
 	#segmented_cell
+# 	examples
 )
 
 
@@ -19,5 +20,3 @@ set(plugin_src "")
 endforeach(subdir)
 
 SET(plugin_src ${acc_plugin_src} PARENT_SCOPE)
-
-

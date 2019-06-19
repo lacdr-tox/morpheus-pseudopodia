@@ -243,6 +243,36 @@ public:
 	
 	void setScope(const Scope * scope) { assert(scope); local_scope = scope; }
 	void setGlobalScope() { require_global_scope=true; };
+	
+		/*! \brief Add a foreign Scope @p scope as namespace @p ns_name to the local variable scope.
+	 * 
+	 * Returns the name space reference @return id.
+	 */
+	void addNameSpaceScope(const string& ns_name, const Scope* scope) { 
+		if (is_initialized) throw string("too late to add symbol namspaces -- expression initialized");
+		namespaces.insert({ns_name, {scope, ns_name, 0} });
+	}
+	// Get the corresponding namespace id
+	uint getNameSpaceId(const string& ns_name) {
+		if (!is_initialized) throw string("getNameSpaceId(): Expression not initialized");
+		return namespaces[ns_name].ns_id;
+	}
+	
+	/// Get all symbols used from name space @p ns_id. The namespace prefix is not contained in the symbols returned.
+	set<Symbol> getNameSpaceUsedSymbols(uint ns_id) const {
+		if (!is_initialized) throw string("getNameSpaceUsedSymbols(): Expression not initialized");
+		return evaluator->getNameSpaceUsedSymbols(ns_id);
+	}
+	
+	/// Set the focus of name space @p ns_id
+	void setNameSpaceFocus(uint ns_id, const SymbolFocus& f) const {
+		if (!is_initialized) throw string("expression not initialized");
+		evaluator->setNameSpaceFocus(ns_id, f);
+	};
+	
+	
+	void setLocalsTable(const vector<EvaluatorVariable>& table) { if (is_initialized) throw string("too late to modify the locals table -- expression initialized"); locals_table = table; }
+	void setLocals(const double* data) { if (!is_initialized) throw string("setLocals(): xpression not initialized"); evaluator->setLocals(data); }
 	void allowPartialSpec(bool allow=true) { allow_partial_spec=allow; }
 	
 	void init()
@@ -254,11 +284,20 @@ public:
 				local_scope = SIM::getGlobalScope();
 			if (! local_scope)
 				throw string("PluginParameter missing scope");
-			
+
 			evaluator = make_unique<Evaluator<ValType> >(string_val, local_scope, allow_partial_spec);
+			
+			if (!locals_table.empty())
+				evaluator->setLocalsTable(locals_table);
+			if (!namespaces.empty()) {
+				for (auto& ns : namespaces) {
+					ns.second.ns_id = evaluator->addNameSpaceScope(ns.second.name,ns.second.scope);
+				}
+			}
+			
 			evaluator->init();
 			
-			if (evaluator->flags().space_const && evaluator->flags().time_const) { 
+			if (evaluator->flags().space_const && evaluator->flags().time_const && locals_table.empty()) { 
 				is_const =  true;
 				const_expr = evaluator->safe_get(SymbolFocus::global);
 			}
@@ -284,7 +323,7 @@ public:
 	set<SymbolDependency> getOutputSymbols() const { return set<SymbolDependency>(); };
 	
 protected:
-	XMLEvaluatorBase() : is_const(false), is_initialized(false), local_scope(NULL), require_global_scope(false), allow_partial_spec(false) {};
+	XMLEvaluatorBase() : is_const(false), is_initialized(false), local_scope(nullptr), require_global_scope(false), allow_partial_spec(false) {};
 	// TODO Clearify  whether a Copy constructor is required to deal with the unique_ptr evaluator
 	// An assignment will leave the rhs object uninitialized !!!
 	
@@ -306,6 +345,14 @@ private:
 	bool allow_partial_spec;
 	ValType const_expr;
 	string string_val;
+	vector<EvaluatorVariable> locals_table;
+	
+	struct NS_Desc {
+		const Scope* scope; 
+		string name;
+		uint ns_id;
+	};
+	map<string,NS_Desc> namespaces;
 	unique_ptr< Evaluator<ValType> > evaluator;
 };
 
@@ -797,6 +844,8 @@ public:
 };
 
 
+template <class T, template <class S, class R> class XMLValueInterpreter, class RequirementPolicy>
+using PluginParameter = PluginParameter2<T, XMLValueInterpreter, RequirementPolicy>;
 
 template < class RequirementPolicy >
 using PluginParameterCellType = PluginParameter2< shared_ptr<const CellType>, XMLNamedValueReader, RequirementPolicy >;

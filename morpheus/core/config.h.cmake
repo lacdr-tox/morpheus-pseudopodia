@@ -6,6 +6,7 @@
 
 #cmakedefine HAVE_GNU_SYSLIB_H
 #cmakedefine HAVE_OPENMP
+#cmakedefine HAVE_BOOST
 
 #ifdef HAVE_OPENMP
     #include <omp.h>

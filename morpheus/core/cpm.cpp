@@ -441,8 +441,8 @@ bool executeCPMUpdate(const CPM::Update& update) {
 				celltypes[update.focus().celltype()] -> apply_update(update.selectOp(Update::ADD_AND_REMOVE));
 			}
 			else {
-				celltypes[update.focusUpdated().celltype()] -> apply_update(update.selectOp(Update::ADD));
 				celltypes[update.focus().celltype()] -> apply_update(update.selectOp(Update::REMOVE));
+				celltypes[update.focusUpdated().celltype()] -> apply_update(update.selectOp(Update::ADD));
 			}
 			
 			// Notify all the cells that are adajcent to the focal node wrt. the boundary neighborhood

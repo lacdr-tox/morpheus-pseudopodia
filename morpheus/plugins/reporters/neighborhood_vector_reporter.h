@@ -10,24 +10,37 @@
 //////
 
 /** \defgroup NeighborhoodVectorReporter
+\ingroup ML_Global
 \ingroup ML_CellType
 \ingroup ReporterPlugins
+
 \brief Reports data about the cell's neighborhood or 'microenvironment' using Vector input. 
 
-\section Description
+\section Description for ML_Global
+
+NeighborhoodVectorReporter reports about the adjacent Neighborhood of a node, i.e. the node's 'microenvironment' and writes it to a Field.
+
+The neighorhood size is retrieved from the \ref ML_Lattice definition of the default neighborhood.
+
+\section Description for CellType
 
 NeighborhoodVectorReporter reports about the adjacent Neighborhood of a cell, i.e. the cell's 'microenvironment' using Vector input.
 
 Information can be retrieved from all contexts within the neighborhood and, if necessary, mapped to a single value.
 
-The neighorhood size is retrieved from the \ref ML_Lattice definition of the boundary neighborhood (Space/Lattice/Neighborhood). 
+The neighorhood size is retrieved from the \ref ML_CPM definition of the ShapeSurface neighborhood (CPM/). 
+
+\section Parameters
 
 A single \b Input element must be specified:
-- \b value: input variable (e.g. VectorProperty). May contain expression.
+- \b value: input expression (e.g. VectorProperty), which is evaluated at global scope in the  whole neighborhood. The local cell's/node's scope is available under namespace 'local', i.e. a cell's id is 'local.cell.id'.
 - \b scaling: setting scaling to \b per_cell will aquire information per neighboring cell (entity), \b per_length will scale the information with the interface length, i.e. the input value is considered to
 be a rate per node length.
 
-If input variable is a Vector, use \ref NeighborhoodVectorReporter.
+Accessing the local cell's/node's properties in the input expression is directly possible through the symbol namespace 'local'.
+
+
+If input variable is a scalar, use \ref NeighborhoodReporter.
 
 Several Output tags can be specified, each referring to an individual property of the aquired information.
 If the information is written to a MembraneProperty, no mapping is required, since their granularity is sufficient.
@@ -51,6 +64,7 @@ Multiple \b Output elements can be specified:
 
 #include "core/interfaces.h"
 #include "core/celltype.h"
+#include "core/focusrange.h"
 
 class NeighborhoodVectorReporter : public ReporterPlugin
 {
@@ -63,11 +77,17 @@ class NeighborhoodVectorReporter : public ReporterPlugin
 		PluginParameter2<VDOUBLE,XMLEvaluator> input;
 		PluginParameter2<InputModes, XMLNamedValueReader,DefaultValPolicy> scaling;
 		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> exclude_medium;
+
+		Granularity local_ns_granularity;
+		uint local_ns_id;
+		bool using_local_ns;
+		
 		
 		PluginParameter2<VDOUBLE,XMLWritableSymbol, RequiredPolicy> output;
 		PluginParameter2<OutputMode,XMLNamedValueReader, RequiredPolicy> output_mode;
 
-
+		void reportCelltype(CellType* celltype);
+		void reportGlobal();
 		
 	public:
 		DECLARE_PLUGIN("NeighborhoodVectorReporter");
@@ -76,8 +96,6 @@ class NeighborhoodVectorReporter : public ReporterPlugin
 		void init(const Scope* scope) override;
 		void loadFromXML(const XMLNode, Scope* scope) override;
 		void report() override;
-		
-		int getNeighborCells(const Cell& cell);
 };
 
 #endif

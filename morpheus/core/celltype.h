@@ -227,7 +227,10 @@ public:
 	}
 	
 	template <class T>
-	shared_ptr<PrimitivePropertySymbol<T>> addProperty(string symbol, T value)  {
+	using PropertyAccessor = shared_ptr<PrimitivePropertySymbol<T>>;
+	
+	template <class T>
+	PropertyAccessor<T> addProperty(string symbol, T value)  {
 		uint pid = _default_properties.size();
 		_default_properties.push_back( make_shared< PrimitiveProperty<T> >(symbol,value));
 		return make_shared<PrimitivePropertySymbol<T> >(symbol,this,pid);
