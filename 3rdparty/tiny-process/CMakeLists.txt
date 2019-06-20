@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
-
-project(tiny-process-library)
+CMAKE_POLICY(SET CMP0048 NEW)
+project(tiny-process-library VERSION 0.9.0)
 
 if(MSVC)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
