@@ -310,6 +310,9 @@ bool init(int argc, char *argv[]) {
 
 	if (cmd_line.find("symbol-graph") != cmd_line.end()) {
 		generate_symbol_graph_and_exit = true;
+		if ( ! cmd_line["symbol-graph"].empty()) {
+			dep_graph_format = cmd_line["symbol-graph"];
+		}
 		cmd_line.erase(cmd_line.find("symbol-graph"));
 	}
 	else {

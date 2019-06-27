@@ -29,6 +29,7 @@ class AboutModel : public QWidget {
 	QTextEdit* description;
 	
 	WebViewer* webGraph;
+	bool web_render;
 
 	QUrl url;
 	QFrame* webFrame;

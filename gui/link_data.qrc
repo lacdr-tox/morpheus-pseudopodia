@@ -2,10 +2,6 @@
     <qresource prefix="/">
         <file>data/processProxy.sh</file>
         <file>data/autofix_rules.txt</file>
-        <file alias="template.html">data/template.html</file>
-		<file alias="viz.js">data/js/viz_1.8.2.js</file>
-		<file alias="d3.min.js">data/js/d3.v5.min.js</file>
-		<file alias="d3-graphviz.min.js">data/js/d3-graphviz.min_2.6.1.js</file>
 		<file alias="feedback_request.html">data/feedback_request.html</file>
 		<file alias="no_announcement.html">data/no_announcement.html</file>
 		<file alias="morpheusgui.gif">data/morpheusgui.gif</file>

@@ -141,7 +141,7 @@ bool MorphModel::removeDir(QString dir_path)
 	return result;
 }
 
-QString MorphModel::getDependencyGraph()
+QString MorphModel::getDependencyGraph(GRAPH_TYPE type)
 {
 	if (!temp_folder.exists()) {
 		temp_folder.mkpath(temp_folder.absolutePath());
@@ -150,17 +150,17 @@ QString MorphModel::getDependencyGraph()
 			return "";
 		}
 	}
+	
+	QString ext_string;
+	switch (type) {
+		case PNG: ext_string="png"; break;
+		case SVG: ext_string="svg"; break;
+		case DOT: ext_string="dot"; break;
+	}
+	QString graph_file = "dependency_graph."+ext_string;
+	
 	// If the model did not change the model since the last rendering, just take the old rendering.
 	if (dep_graph_model_edit_stamp == rootNodeContr->getModelDescr().edits) {
-		QString graph_file = "dependency_graph.svg";
-		if (temp_folder.exists(graph_file)) {
-			return temp_folder.absoluteFilePath(graph_file);
-		}
-		graph_file = "dependency_graph.png";
-		if (temp_folder.exists(graph_file)) {
-			return temp_folder.absoluteFilePath(graph_file);
-		}
-		graph_file = "dependency_graph.dot";
 		if (temp_folder.exists(graph_file)) {
 			return temp_folder.absoluteFilePath(graph_file);
 		}
@@ -217,7 +217,7 @@ QString MorphModel::getDependencyGraph()
 		arguments << "-gnuplot-path" << config::getPathToExecutable("gnuplot");
 #endif
 	
-    arguments << "-symbol-graph" << " " << model_file;
+	arguments << "-symbol-graph" << ext_string << model_file;
 
     process.setWorkingDirectory(temp_folder.absolutePath());
 	process.setStandardOutputFile(temp_folder.absoluteFilePath("model.out"));
@@ -229,21 +229,15 @@ QString MorphModel::getDependencyGraph()
 		process.kill();
 	}
 	
-	QString graph_file = "dependency_graph.svg";
 	if (temp_folder.exists(graph_file)) {
-		dep_graph_model_edit_stamp =  rootNodeContr->getModelDescr().edits;
+		dep_graph_model_edit_stamp = rootNodeContr->getModelDescr().edits;
 		return temp_folder.absoluteFilePath(graph_file);
 	}
-	graph_file = "dependency_graph.png";
-	if (temp_folder.exists(graph_file)) {
-		dep_graph_model_edit_stamp =  rootNodeContr->getModelDescr().edits;
-		return temp_folder.absoluteFilePath(graph_file);
+	else if (temp_folder.exists("dependency_graph.dot")){  // Fallback in case there is no graphviz lib available
+		dep_graph_model_edit_stamp = rootNodeContr->getModelDescr().edits;
+		return temp_folder.absoluteFilePath("dependency_graph.dot");
 	}
-	graph_file = "dependency_graph.dot";
-	if (temp_folder.exists(graph_file)) {
-		dep_graph_model_edit_stamp =  rootNodeContr->getModelDescr().edits;
-		return temp_folder.absoluteFilePath(graph_file);
-	}
+	qDebug() << "Expectd graph file does not exist " << temp_folder.absoluteFilePath(graph_file);
 	return "";
 }
 

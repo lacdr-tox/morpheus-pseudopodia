@@ -87,14 +87,23 @@ void DependencyGraph::analyse(double time)
 	}
 	dot << "}" << endl;
 	
-	 if (format() ==OutFormat::DOT ){
+	if (format() ==OutFormat::DOT) {
 		//cout << "Rendering Dependency Graph as DOT" << endl;
+	
 		ofstream out("dependency_graph.dot");
 		out << dot.str();
 		out.close();
 		return;
-	 }
-	
+	}
+
+#ifndef HAVE_GRAPHVIZ
+	cout << "No support for graph rendering. Falling back to dot output." << endl;
+	ofstream out("dependency_graph.dot");
+	out << dot.str();
+	out.close();
+	return;
+#else 
+
 	GVC_t *gvc = gvContext();
 	if (!gvc) {
 		cout << "DependencyGraph: Unable to create rendering context"<< endl;
@@ -108,7 +117,7 @@ void DependencyGraph::analyse(double time)
 	}
 
 	gvLayout(gvc, g, "dot");
-
+	
 	switch (format()) {
 		case OutFormat::PNG :
 			// cout << "Rendering Dependency Graph as PNG" << endl;
@@ -134,6 +143,7 @@ void DependencyGraph::analyse(double time)
 #endif
 	agclose(g);
 	gvFreeContext(gvc);
+#endif
 }
 
 string DependencyGraph::tslDotName(TimeStepListener* tsl)

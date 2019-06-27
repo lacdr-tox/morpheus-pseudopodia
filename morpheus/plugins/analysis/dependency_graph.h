@@ -11,7 +11,12 @@
 
 #include "core/interfaces.h"
 #include "core/plugin_parameter.h"
+#ifdef HAVE_GRAPHVIZ
 #include <graphviz/gvc.h>
+#warning Building with graphviz support
+#else
+#warning Building without graphviz support
+#endif
 #include <regex>
 
 /** 

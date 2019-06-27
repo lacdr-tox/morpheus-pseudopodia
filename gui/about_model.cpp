@@ -69,6 +69,8 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	}
 	webGraph = new WebViewer(this);
 	connect(webGraph, &WebViewer::linkClicked, this, &AboutModel::openLink);
+	web_render = QFile(":/d3-graphviz.min.js").exists();
+	
 	auto frame = new QFrame();
 	frame->setLayout(new QBoxLayout(QBoxLayout::Down));
 	frame->layout()->addWidget(webGraph);
@@ -122,15 +124,28 @@ void AboutModel::update_graph()
 {
 	// save file to tmp folder
 	
-	QString graph = model->getDependencyGraph();
-// 	if (!graph.isEmpty()) {
-		//qDebug() << "showing dep_graph: Filename: " << QString(graph);
+	MorphModel::GRAPH_TYPE type;
+	if ( web_render ) {
+		type= MorphModel::DOT;
+	}
+	else {
+		type= MorphModel::SVG;
+	}
+	QString graph = model->getDependencyGraph(type);
+	if (!graph.isEmpty()) {
+		qDebug() << "showing dep_graph: Filename: " << QString(graph);
 		if (graph.endsWith("png")) {
 			url = (QString("file://") + graph);
 			webGraph->setUrl(url);
 		} else if (graph.endsWith("svg")) {
 			url = (QString("file://") + graph);
+			onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [&](bool){ 
+				webGraph->evaluateJS(" document.getElementsByTagName('svg')[0].setAttribute('style', 'margin: auto auto');", [](const QVariant& r){});
+				qDebug() << "Graph loading finished!";
+				disconnect(onLoadConnect);
+			});
 			webGraph->setUrl(url);
+// 					webGraph->load(dotgraph);
 		} else /*if (graph.endsWith("dot"))*/ {
 			QUrl dotgraph("qrc:///template.html");
 			QFile dotsource(graph);
@@ -164,7 +179,10 @@ void AboutModel::update_graph()
 				webGraph->show();
 			}
 		}
-// 	}
+	}
+	else {
+		qDebug() << "Morpheus did not provide a dependency graph rendering!!";
+	}
 	// run morpsi on it
 	// reload the resulting dependency_graph.png/svg
 	// display an error, id something went wrong.
@@ -181,22 +199,26 @@ void AboutModel::openLink(const QUrl& url)
 
 void AboutModel::svgOut()
 {
-	QVariant qv;
 	QString fileName = QFileDialog::getSaveFileName(this,tr("Save Image"), "/home", tr("Image Files (*.png *.jpg )"));
 	
-	webGraph->evaluateJS("retSVG()",  
-		[=](const QVariant& r){
-			qDebug() << "saving SVG";
-			QFile qf(fileName);
-			qf.open(QIODevice::WriteOnly);
-			QTextStream out(&qf);
-			out<<"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
-			out<< r.toString()
-			       .replace(QRegularExpression("</a>\\n"),"")
-			       .replace(QRegularExpression("<a\\s.*?>"),"");
-			qf.close();
-		} 
-	);
+	if (web_render) {
+		webGraph->evaluateJS("retSVG()",  
+			[=](const QVariant& r){
+				qDebug() << "saving SVG";
+				QFile qf(fileName);
+				qf.open(QIODevice::WriteOnly);
+				QTextStream out(&qf);
+				out<<"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
+				out<< r.toString()
+					.replace(QRegularExpression("</a>\\n"),"")
+					.replace(QRegularExpression("<a\\s.*?>"),"");
+				qf.close();
+			} 
+		);
+	}
+	else {
+		QFile::copy(url.path(), fileName);
+	}
 }
 
 

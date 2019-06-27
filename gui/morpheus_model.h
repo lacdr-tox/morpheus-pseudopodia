@@ -86,7 +86,9 @@ public:
     bool isEmpty() const;
 
 	MorpheusXML xml_file;
-	QString getDependencyGraph();
+	
+	enum GRAPH_TYPE { SVG, PNG, DOT };
+	QString getDependencyGraph(GRAPH_TYPE type);
     nodeController* rootNodeContr; /*!< root nodeController, which handels the root xml-node. */
     bool sweep_lock;
 	
