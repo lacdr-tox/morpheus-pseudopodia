@@ -1,12 +1,7 @@
-cmake_minimum_required(VERSION 2.8.0)
-CMAKE_POLICY(SET CMP0048 NEW)
-
+cmake_minimum_required(VERSION 3.1.0)
 PROJECT(morpheus VERSION 2.1.0)
 
-IF(CMAKE_VERSION VERSION_GREATER "3.1" OR CMAKE_VERSION VERSION_EQUAL "3.1")
-	CMAKE_POLICY(SET CMP0054 NEW)
-	CMAKE_POLICY(SET CMP0051 NEW)  # don't include object target generator expressions when reading SOURCES property
-	CMAKE_POLICY(SET CMP0043 NEW)  # support mode specific compile definitions via COMPILE_DEFINITIONS_<MODE>
+IF(POLICY CMP0076)
 	CMAKE_POLICY(SET CMP0076 NEW)
 ENDIF()
  
