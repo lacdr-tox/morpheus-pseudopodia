@@ -61,6 +61,8 @@ unique_ptr<Lattice> Lattice::createLattice(const Lattice::LatticeDesc& desc)
 			return make_unique<Square_Lattice>(desc);
 		case linear:
 			return make_unique<Linear_Lattice>(desc);
+		default:
+			return unique_ptr<Lattice>();
 	}
 }
 
@@ -71,16 +73,6 @@ void Lattice::loadFromXML(const XMLNode xnode) {
 	stored_node = xnode;
 
 	getXMLAttribute(xnode, "Size/value", _size);
-	
-	if (xnode.nChildNode("Domain")) {
-		domain.loadFromXML(xnode.getChildNode("Domain"),_size);
-		cout << "Domain: overriding lattice size with domain size " << domain.domainSize() << endl;
-		_size = domain.domainSize();
-
-	} 
-	if (_size.abs() == 0) {
-		throw string("undefined lattice size");
-	}
 	
 	// set default boundary conditions
 	// relevant boudaries are set to 'periodic'
@@ -128,6 +120,13 @@ void Lattice::loadFromXML(const XMLNode xnode) {
 				}
 			}
 		}
+	}
+	
+	if (xnode.nChildNode("Domain")) {
+		domain.loadFromXML(xnode.getChildNode("Domain"), this);
+	} 
+	if (_size.abs() == 0) {
+		throw string("undefined lattice size");
 	}
 	
 	if (xnode.nChildNode("Neighborhood")) {

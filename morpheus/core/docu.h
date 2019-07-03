@@ -410,9 +410,7 @@ The \b class attribute determines the structure of the regular lattice:
 - Distance: Maximal distance to take into account, in units of lattice nodes.
 - Order: Order of the neighborhood. E.g. in a 2D lattice, 1st order=4-members (von Neumann), 2nd order=8-members (Moore), etc.
 
-\ref ML_Domain specifies a non-regular geometry to restrict the simulation to a domain within the lattice
-This can be imported from a 8-bit TIFF image, loaded from file (By convention, non-zero pixels are foreground, zero pixels are background).
-Circular domains may be defined via the \b CircularDomain tag.
+\ref ML_Domain specifies a non-regular geometry to restrict the simulation to a domain within the lattice.
 **/
 
 // ============================================================
@@ -462,9 +460,11 @@ Here, using a sine wave, scaled between 0 and 1 by just referring to the x part 
 
 A \b Domain specifies a non-regular geometry that restricts the simulation to a domain within the lattice. Boundary condititions can be chosen to be either constant or no-flux, but are required to be homogeneous. 
 
+The \b Image tag allows to import a domain shape from a 8-bit TIFF image. By convention, non-zero pixels are foreground, zero pixels are background.
 
-The domain shape can be imported from a 8-bit TIFF image, loaded from file (By convention, non-zero pixels are foreground, zero pixels are background).
-Circular domains may be defined via the \b Circle tag.
+The \b Circle tag allows to define circular domain shapes.
+
+The \b Hexagon tag allows to define hexagonal domain shapes.
 
 **/
 // ============================================================

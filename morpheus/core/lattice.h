@@ -116,6 +116,7 @@ public:
 	Neighborhood getNeighborhood(const XMLNode node) const ;
 	Neighborhood getNeighborhoodByDistance(const double dist_max) const;
 	Neighborhood getNeighborhoodByOrder(const uint order) const;
+	
 protected:
 	const double sin_60 = 0.86602540378443864676;
 	uint dimensions;
@@ -132,6 +133,8 @@ protected:
 	virtual vector<int> get_all_neighbors_per_order() const =0;
 	Neighborhood default_neighborhood;
 	void setNeighborhood(const XMLNode node);
+	
+	friend class Domain;
 	
 };
 

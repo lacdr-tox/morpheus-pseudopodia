@@ -84,7 +84,11 @@ Defines a symbol with accessible x, y and z coordinates.</xs:documentation>
 					<xs:attribute name="diameter" use="required" type="cpmDouble"/>
 				</xs:complexType>
 			</xs:element>
-				
+			<xs:element name="Hexagon">
+				<xs:complexType>
+					<xs:attribute name="diameter" use="required" type="cpmDouble"/>
+				</xs:complexType>
+			</xs:element>
 			<xs:element name="Image">
 				<xs:complexType>
 					<xs:attribute name="path" use="required" type="cpmSystemFile"/>
