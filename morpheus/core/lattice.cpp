@@ -71,8 +71,10 @@ void Lattice::loadFromXML(const XMLNode xnode) {
 // 	VINT xml_size, domain_size;
 	
 	stored_node = xnode;
-
-	getXMLAttribute(xnode, "Size/value", _size);
+	
+	VINT s;
+	getXMLAttribute(xnode, "Size/value", s);
+	setSize(s);
 	
 	// set default boundary conditions
 	// relevant boudaries are set to 'periodic'

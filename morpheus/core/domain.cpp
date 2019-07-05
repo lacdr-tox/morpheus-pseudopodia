@@ -100,6 +100,8 @@ void Domain::loadFromXML(const XMLNode xNode, Lattice* l)
 		type = circle;
 		getXMLAttribute(xNode, "Circle/diameter", diameter);
 		domain_size = VDOUBLE(diameter,diameter,1);
+		if (lattice->structure == Lattice::Structure::hexagonal)
+			domain_size.x*=sqrt(3);
 		
 		VINT lattice_size = max(lattice->from_orth(domain_size), lattice->size());
 		if (lattice_size != lattice->size()) {
@@ -178,10 +180,12 @@ bool Domain::insideImageDomain(const VINT& a) const
 
 void Domain::createEnumerationMap() {
 	VINT pos;
-	for (pos.z=0; pos.z<this->domain_size.z; pos.z++)
-		for (pos.y=0; pos.y<this->domain_size.y; pos.y++)
-			for (pos.x=0; pos.x<this->domain_size.x; pos.x++) {
-				if (inside(pos))
+	VINT size = lattice->size();
+	cout << "L_Size " << size;
+	for (pos.z=0; pos.z<size.z; pos.z++)
+		for (pos.y=0; pos.y<size.y; pos.y++)
+			for (pos.x=0; pos.x<size.x; pos.x++) {
+				if (inside(pos)) 
 					domain_enumeration.push_back(pos);
 			}
 }
