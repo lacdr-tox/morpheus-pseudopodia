@@ -1,5 +1,6 @@
 ### CREATE IN APP DOCUMENTATION ###
 # uses doxygen and qcollectiongenerator
+FIND_PACKAGE(Doxygen REQUIRED)
 
 SET(QT_DOC_FOLDER ${CMAKE_CURRENT_BINARY_DIR})
 
