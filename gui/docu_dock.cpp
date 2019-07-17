@@ -224,22 +224,23 @@ void DocuDock::resizeEvent(QResizeEvent* event)
 void DocuDock::setRootOfHelpIndex()
 {
 	auto help_model =  help_engine->contentModel();
-	if (help_model->isCreatingContents()) {
+	if (help_model->isCreatingContents() || ! timer) {
 		if ( ! timer) {
 			timer = new QTimer(this);
 			timer->setSingleShot(true);
 			connect(timer,SIGNAL(timeout()),this, SLOT(setRootOfHelpIndex()));
 		}
 		timer->start(500);
+		qDebug() << "Deferring Help setup ...";
 		return;
 	}
 	
 	QModelIndex root = toc_model->index(0,0);
 	int rows = toc_model->rowCount(root);
-// 	qDebug() << "I am getting the Docu " <<root_rows ;
+// 	qDebug() << "I am getting the Docu " << rows ;
 	int modules_row = -1;
 	for (uint row=0; row<rows; row++) {
-// 		qDebug() << row <<  model->data(model->index(row,0,root),0);
+// 		qDebug() << "Checking help section " << row <<  root.child(row,0).data(Qt::DisplayRole);
 		 if ( root.child(row,0).data(Qt::DisplayRole) == "Modules" ) {
 			 modules_index =  root.child(row,0);
 			 modules_row = row;
