@@ -51,6 +51,14 @@ OPTION(MORPHEUS_TESTS "Enable testing" OFF)
 
 OPTION(MORPHEUS_STATIC_BUILD "Create a statically linked binary." OFF)
 
+SET(MORPHEUS_GRAPHVIZ "Library" CACHE STRING "Select Graph rendering backend")
+SET_PROPERTY(CACHE MORPHEUS_GRAPHVIZ PROPERTY STRINGS None WebRenderer Library)
+IF ( NOT (MORPHEUS_GRAPHVIZ STREQUAL "None" OR MORPHEUS_GRAPHVIZ STREQUAL "WebRenderer" OR MORPHEUS_GRAPHVIZ STREQUAL "Library") )
+# ELSE()
+	SET(MORPHEUS_GRAPHVIZ "Library" CACHE STRING "Select Graph rendering backend" FORCE)
+ENDIF()
+
+
 # Configuration file for the uninstall target
 CONFIGURE_FILE( "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
 	"${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"

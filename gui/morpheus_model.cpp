@@ -233,7 +233,9 @@ QString MorphModel::getDependencyGraph(GRAPH_TYPE type)
 		dep_graph_model_edit_stamp = rootNodeContr->getModelDescr().edits;
 		return temp_folder.absoluteFilePath(graph_file);
 	}
-	else if (temp_folder.exists("dependency_graph.dot")){  // Fallback in case there is no graphviz lib available
+	else if (temp_folder.exists("dependency_graph.dot")){
+		
+		// Fallback in case there is no graphviz lib available
 		dep_graph_model_edit_stamp = rootNodeContr->getModelDescr().edits;
 		return temp_folder.absoluteFilePath("dependency_graph.dot");
 	}
@@ -1154,6 +1156,25 @@ bool MorphModel::dropMimeData( const QMimeData * data, Qt::DropAction action, in
 }
 
 //------------------------------------------------------------------------------
+
+nodeController* MorphModel::find(QStringList path, bool create) {
+	// Check whether the part exists
+	if (path.first() == "MorpheusModel") path.takeFirst();
+	auto part = path.first();
+	
+	if (!MorphModelPart::all_parts_index.contains(part))
+		return nullptr;
+	int idx = MorphModelPart::all_parts_index.value(part);
+	if (! parts[idx].enabled) {
+		if (create)
+			activatePart(idx);
+		else
+			return nullptr;
+	}
+	
+	return rootNodeContr->find(path,create);
+}
+
 
 bool MorphModel::addPart(QString name) {
 	if (!MorphModelPart::all_parts_index.contains(name))

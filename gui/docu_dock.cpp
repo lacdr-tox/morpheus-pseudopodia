@@ -110,18 +110,7 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	
 	help_view->show();
 
-// #ifdef USE_QTextBrowser
-// 	connect(b_back, SIGNAL(triggered()), help_view, SLOT(backward()));
-// 	connect(b_forward, SIGNAL(triggered()), help_view, SLOT(forward()));
-// 	connect(help_view, SIGNAL(backwardAvailable(bool)), b_back, SLOT(setEnabled(bool)) );
-// 	connect(help_view, SIGNAL(forwardAvailable(bool)), b_forward, SLOT(setEnabled(bool)) );
-// // 	connect(help_view, SIGNAL(historyChanged(const QUrl&)), this, SLOT(resetStatus()) );
-// #else
-// 	connect(b_back, SIGNAL(triggered()), help_view, SLOT(back()));
-// 	connect(b_forward, SIGNAL(triggered()), help_view, SLOT(forward()));
-// 	connect(help_view, SIGNAL(urlChanged(const QUrl&)), this, SLOT(resetStatus()) );
-// #endif
-	connect(b_back, SIGNAL(triggered()), help_view, SLOT(backward()));
+	connect(b_back, SIGNAL(triggered()), help_view, SLOT(back()));
 	connect(b_forward, SIGNAL(triggered()), help_view, SLOT(forward()));
 	connect(help_view, SIGNAL(urlChanged(const QUrl&)), this, SLOT(resetStatus()) );
 	

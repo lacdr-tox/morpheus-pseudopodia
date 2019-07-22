@@ -7,6 +7,7 @@
 #ifdef USE_QTextBrowser
 
 #include <QTextBrowser>
+#include <QNetworkAccessManager>
 	
 class WebViewer : public QTextBrowser {
 
@@ -14,9 +15,12 @@ Q_OBJECT
 
 public:
 	WebViewer(QWidget* parent = nullptr);
-	setURL(QUrl url) { setSource(url); }
+	void setUrl(const QUrl& url) { setSource(url); }
+	QUrl url() { return source(); }
 	bool supportsJS() const { return false;}
+	bool supportsSVG() const { return false;}
 	
+	void reset() {};
 	template <class F>
 	void evaluateJS(QString code, F callable) {
 		/* drop */ 
@@ -28,6 +32,8 @@ public:
 	bool canGoForward() const { return this->isForwardAvailable(); };
 	
 	bool debug(bool state) { return false; };
+	
+	QVariant loadResource(int type, const QUrl &name) override;
 
 signals:
 	void linkClicked(const QUrl& url);
@@ -35,8 +41,11 @@ signals:
 	void loadFinished(bool ok);
 
 public slots:
-	void forward() { back(); };
-	void backward() { back(); };
+	void back() { backward(); };
+	
+private:
+	QUrl current_url;
+	QNetworkAccessManager* nam;
 	
 };
 	
@@ -53,14 +62,16 @@ Q_OBJECT
 public:
 	WebViewer(QWidget* parent = nullptr);
 	bool supportsJS() const { return true;}
+	bool supportsSVG() const { return true;}
 	
+	void reset() {};
 	template <class F>
 	void evaluateJS(QString code, F callable) {
 		auto ret = page()->mainFrame()->evaluateJavaScript(code);
 		callable(ret);
 	}
 	
-	void setURL(const QUrl& url) {
+	void setUrl(const QUrl& url) {
 		QWebView::setUrl(url);
 		emit loadFinished(true);
 	}
@@ -79,7 +90,6 @@ signals:
 #include <QWebEngineHistory>
 #include <QWebEnginePage>
 #include "../network_schemes.h"
-
 
 class AdaptiveWebPage : public QWebEnginePage {
 Q_OBJECT
@@ -103,7 +113,9 @@ Q_OBJECT
 public: 
 	WebViewer(QWidget* parent = nullptr);
 	bool supportsJS() const { return true;}
+	bool supportsSVG() const { return true;}
 	
+	void reset();
 	template <class F>
 	void evaluateJS(QString code, F callable) {
 		page()->runJavaScript(code, callable);
@@ -118,14 +130,28 @@ signals:
 	void linkClicked(const QUrl& url);
 	
 public slots:
-	void backward() { back(); };
+// 	void backward() { back(); };
 private slots:
 // 	void reset() {if (adaptive_page) setPage(adaptive_page);}
+protected:
+	void wheelEvent(QWheelEvent *event) override;
 private:
 	AdaptiveWebPage* adaptive_page = nullptr;
 	
 };
 #endif // USE_QTextBrowser
+
+
+// class ZoomFilter: public QObject
+// {
+//     Q_OBJECT
+//     ZoomFilter(WebViewer* view);
+// 
+// protected:
+//     bool eventFilter(QObject *obj, QEvent *event) override;
+// private:
+// 	WebViewer* view;
+// };
 
 
 #endif // WEBVIEWER_H

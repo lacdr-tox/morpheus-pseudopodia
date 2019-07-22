@@ -361,9 +361,10 @@ void DependencyGraph::parse_scope(const Scope* scope)
 		info.definitions << dotName(sym.first) << "_" << scope->getID() 
 			<< "["
 			<< "label=" << "\""<< sym.first<<"\"" 
-			<< ", " << label_style 
-// 			<< ", URL=\"morph://MorpheusModel/" << getXMLPath(sym.second->) << "\""
-			<< "]\n";
+			<< ", " << label_style;
+		if (!sym.second->XMLPath().empty())
+			info. definitions << ", URL=\"morph://MorpheusModel/" << sym.second->XMLPath() << "\"";
+		info. definitions << "]\n";
 
 		auto dependencies = sym.second->dependencies();
 		for (auto dep : dependencies ) {
@@ -379,8 +380,14 @@ void DependencyGraph::parse_scope(const Scope* scope)
 }
 
 vector<Symbol> DependencyGraph::parse_symbol(Symbol symbol) {
-	if (exclude_symbols.count(symbol->name()))
-		return {};
+// 	if (exclude_symbols.count(symbol->name()))
+// 		return {};
+	for (const auto& excl :exclude_symbols ) {
+		if (symbol->name().size() >= excl.size()) {
+			if (symbol->name().substr(0,excl.size()) == excl)
+				return {};
+		}
+	}
 	if (!symbol->scope())
 		return {};
 	if (symbol->scope()->ct_component && symbol->scope()->ct_component->isMedium()) {

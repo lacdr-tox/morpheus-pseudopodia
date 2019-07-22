@@ -192,6 +192,9 @@ QObject(parent)
 // 		if (attribute("symbol"))
 			model_descr->time_symbol = attribute("symbol");
 	}
+	
+	if ( node_type->is_scheduled )
+		model_descr->pluginNames[name]+=1;
 }
 
 //------------------------------------------------------------------------------
@@ -233,6 +236,13 @@ nodeController::~nodeController()
 		delete adapters[i];
 	}
 	adapters.clear();
+	
+	if ( node_type->is_scheduled ) {
+		model_descr->pluginNames[name]-=1;
+		if (model_descr->pluginNames[name]<=0) {
+			model_descr->pluginNames.remove(name);
+		}
+	}
 
 	auto i = attributes.begin();
 	while (i != attributes.end()) {

@@ -318,6 +318,7 @@ void loadCellTypes(XMLNode xCellTypesNode) {
 			auto celltype_name = SymbolAccessorBase<double>::createConstant(string("celltype.") + name+ ".id", "CellType ID", double(celltype_names[name]));
 			scope->registerSymbol(celltype_name);
  			auto celltype_size = make_shared<CellPopulationSizeSymbol>(string("celltype.") + name + ".size", celltypes.back().get());
+			celltype_size->setXMLPath(getXMLPath(xCTNode));
 			scope->registerSymbol(celltype_size);
 		}
 		catch (string e) {

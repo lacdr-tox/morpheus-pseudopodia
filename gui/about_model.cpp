@@ -10,7 +10,7 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	central->addWidget(l_title);
 	
 	title = new QLineEdit(this);
-	title->setText(model->rootNodeContr->getModelDescr().title);
+	title->setText(model->getModelDescr().title);
 	connect(title,SIGNAL(textChanged(QString)),this, SLOT(assignTitle(QString)));
 	central->addWidget(title);
 	
@@ -20,56 +20,55 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	
 	description = new QTextEdit(this);
 	description->setReadOnly(false);
-	description->setText(model->rootNodeContr->getModelDescr().details);
+	description->setText(model->getModelDescr().details);
 	connect(description,SIGNAL(textChanged()),this, SLOT(assignDescription()));
 	central->addWidget(description);
 	
-	layset= new QGridLayout(this);
-	QLabel* ql1 = new QLabel("exclude-plugins");
-	ql1->setAlignment(Qt::AlignRight);
-	layset->addWidget(ql1,0,0);
-	QLabel* ql2 = new QLabel("exclude-symbols");
-	ql2->setAlignment(Qt::AlignRight);
-	layset->addWidget(ql2,0,2);
-	QLabel* ql3 = new QLabel("reduced");
-	ql3->setAlignment(Qt::AlignRight);
-	layset->addWidget(ql3,0,4);
+	auto layset= new QBoxLayout(QBoxLayout::Direction::LeftToRight);
+	auto ql_plugins = new QLabel("exclude-plugins");
+	ql_plugins->setAlignment(Qt::AlignRight);
+	auto ql_symbols = new QLabel("exclude-symbols");
+	ql_symbols->setAlignment(Qt::AlignRight);
+	auto ql_reduced = new QLabel("&reduced");
+	ql_reduced->setAlignment(Qt::AlignLeft);
+
 	excludeP = new CheckBoxList();
+	connect(excludeP, &CheckBoxList::currentTextChanged,[=](QStringList excludes){update_plugin_excludes(excludes);update_graph();});
+
 	excludeS = new CheckBoxList();
-	//connect(excludeP, SIGNAL(currentTextChanged(QStringList)),this,SLOT());
-	connect(excludeS, &CheckBoxList::currentTextChanged,[=](QStringList excludes){update_excludes(excludes);
-		update_graph();});
+	connect(excludeS, &CheckBoxList::currentTextChanged, [=](QStringList excludes){update_excludes(excludes);update_graph();} );
+
 	reduced = new QCheckBox();
-	connect(reduced, &QCheckBox::stateChanged, [=](int state){update_reduced(state);
-		qDebug()<<"REDUCED CHECKBOX CHANGED";
-		update_graph();});
+	connect(reduced, &QCheckBox::stateChanged, [=](int state){update_reduced(state);update_graph();} );
 	update_reduced(Qt::Unchecked);
-	layset->addWidget(excludeP,0,1);
-	layset->addWidget(excludeS,0,3);
-	layset->addWidget(reduced,0,5);
+	ql_reduced->setBuddy(reduced);
+
+	save_btn = new QPushButton(this);
+	save_btn->setText("save");
+	connect(save_btn,SIGNAL(clicked()),this, SLOT(svgOut()));
+	
+	layset->addWidget(reduced,0,Qt::AlignRight);
+	layset->addWidget(ql_reduced,0,Qt::AlignLeft);
+	layset->addStretch(1);
+	layset->addWidget(ql_plugins);
+	layset->addWidget(excludeP,3);
+	layset->addStretch(1);
+	layset->addWidget(ql_symbols);
+	layset->addWidget(excludeS,3);
+	layset->addStretch(2);
+	layset->addWidget(save_btn);
+	
 	central->addLayout(layset);
 
-// 	auto an = model->rootNodeContr->firstActiveChild("Analysis");
-// 	if (!an) an = model->rootNodeContr->insertChild("Analysis");
-// 	nodeController* dg = an->firstActiveChild("DependencyGraph");
-	auto dg = model->rootNodeContr->find(QStringList() << "Analysis" << "DependencyGraph",true);
-	QStringList qsl = dg->attribute("exclude-symbols")->get().split(", ");
-	QMap<QString,QString> qm1 = model->rootNodeContr->getModelDescr().getSymbolNames("cpmDoubleSymbolRef");
-	qm1.unite(model->rootNodeContr->getModelDescr().getSymbolNames("cpmVectorSymbolRef"));
-	for(auto& plug:qm1.keys())
-	{
-		if(plug != "")
-		{
-			if(qsl.contains(plug)){
-				excludeS->addItem(plug,true);
-			}else{
-				excludeS->addItem(plug,false);
-			}
-		}
-	}
 	webGraph = new WebViewer(this);
 	connect(webGraph, &WebViewer::linkClicked, this, &AboutModel::openLink);
-	web_render = QFile(":/d3-graphviz.min.js").exists();
+#ifdef GRAPHVIZ_WEB_RENDERER
+	web_render = true;
+	qDebug() << "Using Web Graph renderer.";
+#else
+	web_render = false;
+	qDebug() << "Using GraphViz renderer.";
+#endif
 	
 	auto frame = new QFrame();
 	frame->setLayout(new QBoxLayout(QBoxLayout::Down));
@@ -81,35 +80,52 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	central->addWidget(frame,4);
 	webGraph->show();
 	
-	save_btn = new QPushButton(this);
-	central->addWidget(save_btn);
-	save_btn->setText("save");
-	connect(save_btn,SIGNAL(clicked()),this, SLOT(svgOut()));
-	save_btn->show();
 	lastGraph = "";
 };
 
 void AboutModel::update()
 {
-	qDebug()<<"UPDATE" ;
+// 	qDebug()<<"UPDATE" ;
 	
 	title->blockSignals(true);
 	description->blockSignals(true);
 	reduced->blockSignals(true);
 	excludeS->blockSignals(true);
 	
-	title->setText(model->rootNodeContr->getModelDescr().title);
-	description->setText(model->rootNodeContr->getModelDescr().details);
+	title->setText(model->getModelDescr().title);
+	description->setText(model->getModelDescr().details);
 	
-	auto dg = model->rootNodeContr->find(QStringList() << "Analysis" << "DependencyGraph",true);
+// 	auto e = model->getRoot()->getModelDescr().edits;
+	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
 	QStringList qsl = dg->attribute("exclude-symbols")->get().split(",", QString::SplitBehavior::SkipEmptyParts);
-	excludeS->setData(qsl);
-	if(dg->attribute("reduced")->get() == "true")
-	{
+	for (auto& key : qsl) key = key.trimmed();
+	QStringList qpl = dg->attribute("exclude-plugins")->get().split(",", QString::SplitBehavior::SkipEmptyParts);
+	for (auto& key : qpl) key = key.trimmed();
+	
+	excludeS->clear();
+	QMap<QString,QString> qsm = model->getModelDescr().getSymbolNames("cpmDoubleSymbolRef");
+	qsm.unite(model->getModelDescr().getSymbolNames("cpmVectorSymbolRef"));
+	QRegExp sub_syms ("\\.(x|y|z|abs|phi|theta)$");
+	
+	for(auto& plug:qsm.keys()) {
+		if (sub_syms.indexIn(plug)>=0)
+			continue;
+		excludeS->addItem(plug,qsl.contains(plug));
+	}
+	
+	excludeP->clear();
+	auto qpm = model->getModelDescr().pluginNames;
+	for(auto& plug:qpm.keys()) {
+		excludeP->addItem(plug,qpl.contains(plug));
+	}
+	
+	if(dg->attribute("reduced")->get() == "true") {
 		reduced->setCheckState(Qt::Checked);
-	}else{
+	}
+	else {
 		reduced->setCheckState(Qt::Unchecked);
 	}
+	excludeP->setData(qpl);
 	
 	title->blockSignals(false);
 	description->blockSignals(false);
@@ -123,7 +139,7 @@ void AboutModel::update()
 void AboutModel::update_graph()
 {
 	// save file to tmp folder
-	
+	if (!isVisible()) return;
 	MorphModel::GRAPH_TYPE type;
 	if ( web_render ) {
 		type= MorphModel::DOT;
@@ -133,21 +149,36 @@ void AboutModel::update_graph()
 	}
 	QString graph = model->getDependencyGraph(type);
 	if (!graph.isEmpty()) {
-		qDebug() << "showing dep_graph: Filename: " << QString(graph);
+		qDebug() << "Showing dependency graph: " << QString(graph);
+		
+		// Workaround for crashing chrome page on external links
+		if (webGraph->url().scheme() == "chrome-error") {
+			webGraph->reset();
+		}
+			
 		if (graph.endsWith("png")) {
 			url = (QString("file://") + graph);
 			webGraph->setUrl(url);
 		} else if (graph.endsWith("svg")) {
+			QFile data(graph);
+			if (data.open(QFile::ReadWrite)) {
+				QDomDocument svg("svg-graph");
+				svg.setContent(&data,true);
+				auto svg_el = svg.elementsByTagName("svg").at(0).toElement();
+				svg_el.setAttribute("style","margin: auto auto");
+				svg_el.attribute("width").toInt();
+				
+				data.resize(0);
+				QTextStream out(&data);
+				out << svg.toString();
+				data.close();
+			}
+			
 			url = (QString("file://") + graph);
-			onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [&](bool){ 
-				webGraph->evaluateJS(" document.getElementsByTagName('svg')[0].setAttribute('style', 'margin: auto auto');", [](const QVariant& r){});
-				qDebug() << "Graph loading finished!";
-				disconnect(onLoadConnect);
-			});
 			webGraph->setUrl(url);
-// 					webGraph->load(dotgraph);
+
 		} else /*if (graph.endsWith("dot"))*/ {
-			QUrl dotgraph("qrc:///template.html");
+			url = "qrc:///template.html";
 			QFile dotsource(graph);
 			QString toR;
 			if (dotsource.exists()) {
@@ -158,24 +189,25 @@ void AboutModel::update_graph()
 				toR = "digraph { compound=true; subgraph cluster{ labelloc=\"t\";label=\"Global\";bgcolor=\"#2341782f\"; empty} }";
 // 				toR.replace("\"","\\\"");
 			}
-			qDebug() << "Updating graph from " << sender()  << "\ncurrent url is " <<webGraph->url().path() << "\n" << toR;
+
+			auto dot = toR;
 			toR.prepend("transition('").append("');");
 			dotsource.close();
-			if(webGraph->url() != dotgraph || lastGraph != toR)
+			if(/*webGraph->url() != dotgraph || */lastGraph != toR)
 			{
-				lastGraph= toR;
-				qDebug()<<"UPDATE GRAPH";
-				if (webGraph->page()->url() != dotgraph) {
+// 				qDebug()<<"UPDATE GRAPH";
+				if (lastGraph.isEmpty()) {
 					onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [&](bool){ 
 						webGraph->evaluateJS(lastGraph, [](const QVariant& r){});
 						qDebug() << "Graph loading finished!";
 						disconnect(onLoadConnect);
 					});
-					webGraph->load(dotgraph);
+					webGraph->setUrl(url);
 				}
 				else {
 					webGraph->evaluateJS(toR, [](const QVariant& r){});
 				}
+				lastGraph= toR;
 				webGraph->show();
 			}
 		}
@@ -199,7 +231,21 @@ void AboutModel::openLink(const QUrl& url)
 
 void AboutModel::svgOut()
 {
-	QString fileName = QFileDialog::getSaveFileName(this,tr("Save Image"), "/home", tr("Image Files (*.png *.jpg )"));
+	QString fileName = webGraph->url().path().split("/").last();
+	if (web_render) fileName="dependency-graph.svg";
+	fileName.prepend(QDir::currentPath()+"/");
+	QString format;
+	if (fileName.endsWith("svg")) {
+		format = "Scalable Vector Graphics (*.svg)";
+	}
+	else if (fileName.endsWith("png")) {
+		format = "Portable Network Graphics (*.png)";
+	}
+	else if (fileName.endsWith("dot")) {
+		format = "Graphiz dot Graph (*.dot)";
+	}
+	
+	fileName = QFileDialog::getSaveFileName(this,tr("Save Image"), fileName , format);
 	
 	if (web_render) {
 		webGraph->evaluateJS("retSVG()",  
@@ -217,6 +263,9 @@ void AboutModel::svgOut()
 		);
 	}
 	else {
+		if (QFile::exists(fileName))
+			QFile::remove(fileName);
+		
 		QFile::copy(url.path(), fileName);
 	}
 }
@@ -230,28 +279,37 @@ void AboutModel::resizeEvent(QResizeEvent* event)
 
 void AboutModel::assignTitle(QString title)
 {
-	nodeController *node = model->rootNodeContr->find(QStringList() << "Description" << "Title");
+	nodeController *node = model->find(QStringList() << "Description" << "Title");
 	if (node)
 		node->setText(title);
 }
 
 void AboutModel::assignDescription()
 {
-	nodeController *node = model->rootNodeContr->find(QStringList() << "Description" << "Details");
+	nodeController *node = model->find(QStringList() << "Description" << "Details");
 	if (node)
 		node->setText(description->toPlainText());
 }
 
 void AboutModel::update_excludes(QStringList qsl)
 {
-	auto dg = model->rootNodeContr->find(QStringList() << "Analysis" << "DependencyGraph",true);
+	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
 	dg->attribute("exclude-symbols")->setActive(true);
 	dg->attribute("exclude-symbols")->set(qsl.join(","));
 }
 
+void AboutModel::update_plugin_excludes(QStringList qsl)
+{
+	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
+	
+	dg->attribute("exclude-plugins")->setActive(true);
+	dg->attribute("exclude-plugins")->set(qsl.join(","));
+}
+
+
 void AboutModel::update_reduced(int state)
 {
-	auto dg = model->rootNodeContr->find(QStringList() << "Analysis" << "DependencyGraph",true);
+	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
 	dg->attribute("reduced")->setActive(true);
 	if (reduced->checkState() != state)
 		reduced->setCheckState(static_cast<Qt::CheckState>(state));

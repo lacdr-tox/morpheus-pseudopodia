@@ -185,8 +185,9 @@ configure_file(ext_files.rc.in ext_files.rc @ONLY)
 
 # compile the resources
 SET( RESOURCES link_data.qrc ${CMAKE_CURRENT_BINARY_DIR}/ext_files.rc)
-IF(GRAPHVIZ_WEB_RENDERER)
-	LIST(APPEND RESOURCES data/graphviz_renderer.qrc)
+IF(MORPHEUS_GRAPHVIZ STREQUAL "WebRenderer")
+	LIST(APPEND RESOURCES graphviz_renderer.qrc)
+	set_property(SOURCE about_model.cpp APPEND PROPERTY COMPILE_DEFINITIONS GRAPHVIZ_WEB_RENDERER=1 )
 ENDIF()
 
 QT5_ADD_RESOURCES( RESOURCES_RCC ${RESOURCES} OPTIONS "--compress" "8" )

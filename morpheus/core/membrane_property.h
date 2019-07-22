@@ -143,6 +143,7 @@ public:
 		this->flags().granularity = Granularity::MembraneNode;
 	}
 	const string&  description() const override { return parent->getDescription(); }
+	const string XMLPath() const override { return getXMLPath(parent->saveToXML()); } 
 	
 	typename TypeInfo<double>::SReturn get(const SymbolFocus & f) const override { return getProperty(f)->membrane_pde->get(f.membrane_pos()); };
 	

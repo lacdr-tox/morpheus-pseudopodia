@@ -36,7 +36,6 @@ class AboutModel : public QWidget {
 	CheckBoxList* excludeP;
 	CheckBoxList* excludeS;
 	QCheckBox* reduced;
-	QGridLayout* layset;
 	QPushButton* save_btn;
 	QMetaObject::Connection onLoadConnect;
 	QString lastGraph;
@@ -56,6 +55,7 @@ private slots:
 	void openLink(const QUrl&);
 	void svgOut();
 	void update_excludes(QStringList qsl);
+	void update_plugin_excludes(QStringList qsl);
 	void update_reduced(int);
 };
 

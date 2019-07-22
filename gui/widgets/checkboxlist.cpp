@@ -90,9 +90,11 @@ void CheckBoxList::updateText()
             value.append(model()->data(model()->index(y,0),Qt::DisplayRole).toString());
         }
     }
-    m_DisplayText = value.join(", ");
-    _current = value;
+    
+	if (_current == value) return;
 	
+	_current = value;
+	m_DisplayText = _current.join(", ");
 	emit currentTextChanged(_current);
 }
 
