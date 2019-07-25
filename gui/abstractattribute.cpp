@@ -86,7 +86,7 @@ AbstractAttribute::AbstractAttribute( QObject* parent, QSharedPointer<XSD::Simpl
 		ed.name = name;
 
 		set(default_value);
-		model_descr->auto_fixes.append(ed);
+		if (!model_descr->stealth) model_descr->auto_fixes.append(ed);
 	}
 	
 	orig_active = is_active;
@@ -169,7 +169,7 @@ AbstractAttribute::AbstractAttribute( QObject* parent, QDomNode xsdAttrNode, QDo
 		ed.name = name;
 
 		set(default_value);
-		model_descr->auto_fixes.append(ed);
+		if (!model_descr->stealth) model_descr->auto_fixes.append(ed);
 	}
 }
 
@@ -333,16 +333,16 @@ void AbstractAttribute::setActive(bool a)
 	if (is_changed) {
 		if ((is_active == orig_active) && ( ! is_active || (orig_value == value))) {
 			is_changed = false;
-			model_descr->change_count--;
+			if (!model_descr->stealth) model_descr->change_count--;
 		}
 	}
 	else {
 		if ((is_active != orig_active) || ( is_active && (orig_value != value))) {
 			is_changed = true;
-			model_descr->change_count++;
+			if (!model_descr->stealth) model_descr->change_count++;
 		}
 	}
-	model_descr->edits++;
+	if (!model_descr->stealth) model_descr->edits++;
 	emit changed(this);
 }
 
@@ -442,7 +442,7 @@ AbstractAttribute::~AbstractAttribute()
 {
 	emit deleted(this);
 	setActive(false);
-	if (is_changed)
+	if (is_changed )
 		model_descr->change_count--;
 }
 

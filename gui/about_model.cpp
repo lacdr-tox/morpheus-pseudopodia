@@ -25,9 +25,9 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	central->addWidget(description);
 	
 	auto layset= new QBoxLayout(QBoxLayout::Direction::LeftToRight);
-	auto ql_plugins = new QLabel("exclude-plugins");
+	auto ql_plugins = new QLabel("excluded Plugins");
 	ql_plugins->setAlignment(Qt::AlignRight);
-	auto ql_symbols = new QLabel("exclude-symbols");
+	auto ql_symbols = new QLabel("excluded Symbols");
 	ql_symbols->setAlignment(Qt::AlignRight);
 	auto ql_reduced = new QLabel("&reduced");
 	ql_reduced->setAlignment(Qt::AlignLeft);
@@ -44,7 +44,8 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	ql_reduced->setBuddy(reduced);
 
 	save_btn = new QPushButton(this);
-	save_btn->setText("save");
+// 	save_btn->setText("save");
+	save_btn->setIcon(QIcon::fromTheme("document-save"));
 	connect(save_btn,SIGNAL(clicked()),this, SLOT(svgOut()));
 	
 	layset->addWidget(reduced,0,Qt::AlignRight);
@@ -95,8 +96,10 @@ void AboutModel::update()
 	title->setText(model->getModelDescr().title);
 	description->setText(model->getModelDescr().details);
 	
-// 	auto e = model->getRoot()->getModelDescr().edits;
+	model->getRoot()->setStealth(true);
 	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
+	model->getRoot()->setStealth(false);
+	
 	QStringList qsl = dg->attribute("exclude-symbols")->get().split(",", QString::SplitBehavior::SkipEmptyParts);
 	for (auto& key : qsl) key = key.trimmed();
 	QStringList qpl = dg->attribute("exclude-plugins")->get().split(",", QString::SplitBehavior::SkipEmptyParts);
@@ -293,22 +296,26 @@ void AboutModel::assignDescription()
 
 void AboutModel::update_excludes(QStringList qsl)
 {
+	model->getRoot()->setStealth(true);
 	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
 	dg->attribute("exclude-symbols")->setActive(true);
 	dg->attribute("exclude-symbols")->set(qsl.join(","));
+	model->getRoot()->setStealth(false);
 }
 
 void AboutModel::update_plugin_excludes(QStringList qsl)
 {
+	model->getRoot()->setStealth(true);
 	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
-	
 	dg->attribute("exclude-plugins")->setActive(true);
 	dg->attribute("exclude-plugins")->set(qsl.join(","));
+	model->getRoot()->setStealth(false);
 }
 
 
 void AboutModel::update_reduced(int state)
 {
+	model->getRoot()->setStealth(true);
 	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
 	dg->attribute("reduced")->setActive(true);
 	if (reduced->checkState() != state)
@@ -320,4 +327,5 @@ void AboutModel::update_reduced(int state)
 	}else{
 		dg->attribute("reduced")->set("false");
 	}
+	model->getRoot()->setStealth(false);
 }

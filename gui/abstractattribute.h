@@ -40,6 +40,7 @@ struct ModelDescriptor {
 	AttributeMap symbolNames;
 	XSD xsd;
 	bool track_next_change;
+	bool stealth;
 	QList<MorphModelEdit> auto_fixes;
 	QList<MorphModelEdit> edit_operations;
 	QList<AbstractAttribute*> terminal_names;

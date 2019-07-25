@@ -83,6 +83,8 @@ public:
 	void trackInformation(QString info);
 	/// Removes all tracked Changes from the ModelDescriptor
 	void clearTrackedChanges();
+	
+	void setStealth(bool enabled = true);
 	/// Broadcast to that the model was saved. Resets all edit trackers.
 	void saved();
 	/// Return whether the xmlNode can have normal textblocks.

@@ -161,7 +161,7 @@ QObject(parent)
 					e.name = child.nodeName();
 					QTextStream s(&e.value);
 					child.save(s,4);
-					model_descr->auto_fixes.append(e);
+					if (!model_descr->stealth) model_descr->auto_fixes.append(e);
 					xmlDataNode.removeChild(child);
 					i--;
 				}
@@ -222,7 +222,7 @@ void nodeController::parseAttributes()
 			e.name = a_name;
 			e.value = a_name + "=\""  + xml_attributes.namedItem(a_name).nodeValue() + "\"";
 			xml_attributes.removeNamedItem( a_name);
-			model_descr->auto_fixes.append(e);
+			if (!model_descr->stealth) model_descr->auto_fixes.append(e);
 			i--;
 		}
 	}
@@ -722,8 +722,8 @@ nodeController* nodeController::insertChild(QDomNode xml_node, int pos)
 		childs.insert(pos,contr);
 	}
 	
-	model_descr->edits++;
-	model_descr->change_count++;
+	if (!model_descr->stealth) model_descr->edits++;
+	if (!model_descr->stealth) model_descr->change_count++;
 	return contr;
 }
 
@@ -741,7 +741,7 @@ void nodeController::setRequiredElements()
 			e.info = QString("Required Attribute '%1' added to Node '%2'.").arg(attr->getName(), name);
 			e.xml_parent = xmlDataNode;
 			e.name = attr->getName();
-			model_descr->auto_fixes.append(e);
+			if (!model_descr->stealth) model_descr->auto_fixes.append(e);
 		}
 	}
 
@@ -771,7 +771,7 @@ void nodeController::setRequiredElements()
 				e.info = QString("Required Node '%1' added to Node '%2'.").arg(child_def.name, name);
 				e.xml_parent = xmlDataNode;
 				e.name = child_def.name;
-				model_descr->auto_fixes.append(e);
+				if (!model_descr->stealth) model_descr->auto_fixes.append(e);
 
 				int message_pos = this->model_descr->auto_fixes.size();
 				for (int i=child_count; i<min; i++)
@@ -797,8 +797,8 @@ void nodeController::moveChild(int from, int to) {
 	// Here we use the index the child will have after move ...
 	childs.move(from,to);
 
-	model_descr->edits++;
-	model_descr->change_count++;
+	if (!model_descr->stealth) model_descr->edits++;
+	if (!model_descr->stealth) model_descr->change_count++;
 }
 
 //------------------------------------------------------------------------------
@@ -916,12 +916,14 @@ bool nodeController::setDisabled(bool b) {
 		xmlDisabledNode.save(s,4);
 		xmlNode.setNodeValue(dis_node_text);
 
-		if (orig_disabled)
-			model_descr->change_count--;
-		else
-			model_descr->change_count++;
+		if (!model_descr->stealth) {
+			if (orig_disabled)
+				model_descr->change_count--;
+			else
+				model_descr->change_count++;
 
-		model_descr->edits++;
+			model_descr->edits++;
+		}
     }
     else {
 		disabled = false;
@@ -933,12 +935,13 @@ bool nodeController::setDisabled(bool b) {
 		for (auto a=attributes.begin(); a!=attributes.end(); a++) {
 			a.value()->inheritDisabled(false);
 		}
-		if (orig_disabled)
-			model_descr->change_count++;
-		else
-			model_descr->change_count--;
-
-		model_descr->edits++;
+		if (!model_descr->stealth) {
+			if (orig_disabled)
+				model_descr->change_count++;
+			else
+				model_descr->change_count--;
+			model_descr->edits++;
+		}
 	}
 	return true;
 }
@@ -974,6 +977,10 @@ void nodeController::inheritDisabled(bool inherit) {
 
 //------------------------------------------------------------------------------
 
+void nodeController::setStealth(bool enabled) {
+	model_descr->stealth = enabled;
+}
+
 void nodeController::clearTrackedChanges()
 {
 	model_descr->auto_fixes.clear();
@@ -990,7 +997,7 @@ void nodeController::trackInformation(QString info)
 {
 	MorphModelEdit e;
 	e.info = info;
-	model_descr->auto_fixes.append(e);
+	if (!model_descr->stealth) model_descr->auto_fixes.append(e);
 }
 
 void nodeController::saved() {

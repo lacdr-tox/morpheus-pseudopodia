@@ -401,7 +401,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		search_path.remove(QRegExp("^/|/$| "));
 		// replace multiple slashes with single slash
 		search_path.replace(QRegExp("/{2,}"),"/");
-		qDebug() << "Match path is " << search_path;
+// 		qDebug() << "Match path is " << search_path;
 
 		QStringList search_tags = search_path.split("/");
 		
@@ -414,7 +414,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 			QList<QDomNode> new_matches;
 			if (search_tags_copy.front().startsWith("@")) {
 				if (search_tags_copy.front() == "@text") {
-					qDebug() << "looking for text ";
+// 					qDebug() << "looking for text ";
 					for (int j=0; j<matches.size();j++) {
 						Q_ASSERT(matches[j].isElement());
 						QDomNode parent = matches[j];
@@ -428,7 +428,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 					}
 				}
 				else {
-					qDebug() << "looking for attr " << search_tags_copy.front().replace("@","");
+// 					qDebug() << "looking for attr " << search_tags_copy.front().replace("@","");
 					QString attr_name = search_tags_copy.front().replace("@","");
 					for (int j=0; j<matches.size();j++) {
 						Q_ASSERT(matches[j].isElement());
@@ -446,7 +446,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 					while ( ! child.isNull() ) {
 						if (child.nodeName() == search_tags_copy.front()) {
 							new_matches.append(child);
-							qDebug() << "Matched " << search_tags_copy.front();
+// 							qDebug() << "Matched " << search_tags_copy.front();
 						}
 						child = child.nextSibling();
 					}
