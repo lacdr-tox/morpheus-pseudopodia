@@ -373,7 +373,6 @@ private:
 	FocusRange range;
 
 	// Restrictions
-	//multimap<FocusRangeAxis, int> restrictions;
 	multimap<FocusRangeAxis, int> restrictions;
 	// Celltype
 	PluginParameterCellType< OptionalPolicy > celltype;
@@ -385,6 +384,9 @@ private:
 	bool slice;
 	PluginParameter2<double, XMLEvaluator, OptionalPolicy> slice_value;
 	PluginParameter2<FocusRangeAxis, XMLNamedValueReader, OptionalPolicy> slice_axis;
+	// Conditional Restriction
+	PluginParameter<double, XMLEvaluator, OptionalPolicy> restriction_condition;
+	
 	// Domain only
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> domain_only;
 	// Node granularity
@@ -411,6 +413,7 @@ public:
 
 	Granularity getGranularity() { return logger_granularity; }
 	const multimap<FocusRangeAxis, int>& getRestrictions() { return restrictions; }
+	const PluginParameter<double,XMLEvaluator,OptionalPolicy>&  getRestrictionCondition() { return restriction_condition; };
 	bool permitIncompleteSymbols() { return permit_incomplete_symbols; }
 	bool getDomainOnly() { return domain_only(); };
 };

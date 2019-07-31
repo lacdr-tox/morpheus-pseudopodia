@@ -50,6 +50,10 @@ void Logger::loadFromXML(const XMLNode xNode, Scope* scope){
 	domain_only.setDefault("false");
 	registerPluginParameter(domain_only);
 	
+	//Condition
+	restriction_condition.setXMLPath("Restriction/condition");
+	registerPluginParameter(restriction_condition);
+	
 	// Force node granularity
 	//  By default, the granularity is determined automatically by checking the symbol with the smallest granularity
 	//  This can be overridden by specifying force-node-granularity="true"
@@ -92,6 +96,17 @@ void Logger::loadFromXML(const XMLNode xNode, Scope* scope){
 void Logger::init(const Scope* scope){
 // 	cout << "Logger::init" << endl;
 
+	celltype.init();
+	if ( celltype.isDefined() && celltype() ) {
+		auto logging_scope = celltype()->getScope();
+		restriction_condition.setScope(logging_scope);
+		for (auto &c : inputs) {
+			c->setScope(logging_scope);
+			permit_incomplete_symbols = false;
+			c->unsetPartialSpecDefault();
+		}
+	}
+	
    AnalysisPlugin::init(scope);
 
 	try{
@@ -594,6 +609,7 @@ void LoggerTextWriter::writeCSV() {
 	
 	Granularity granularity = logger.getGranularity();
 	FocusRange range(granularity, logger.getRestrictions(), logger.getDomainOnly());
+	const auto& condition = logger.getRestrictionCondition();
 // 	auto& symbols = logger.getInputs();
 	
 	stringstream time;
@@ -609,11 +625,17 @@ void LoggerTextWriter::writeCSV() {
 		plain_restrictions.erase(celltype_restr.first, celltype_restr.second);
 		
 		for (auto cell : cells) {
+			if (condition.isDefined() && condition.granularity() <= Granularity::Cell) {
+				if (!condition(SymbolFocus(cell))) continue;
+			}
 			multimap<FocusRangeAxis,int> restrictions = plain_restrictions;
 			restrictions.insert(make_pair(FocusRangeAxis::CELL, cell) );
 			FocusRange cell_range(granularity, restrictions, logger.getDomainOnly());
 			auto out = getOutFile( *(cell_range.begin()) );
 			for (const SymbolFocus& focus : cell_range) {
+				if (condition.isDefined() && condition.granularity() > Granularity::Cell) {
+					if (!condition(focus)) continue;
+				}
 				// write point of data row
 				for (uint i=0; i<output_symbols.size(); i++ ) {
 					if (i!=0) *out << separator();
@@ -627,6 +649,7 @@ void LoggerTextWriter::writeCSV() {
 	else {
 		auto out = getOutFile( *(range.begin()) );
 		for (const SymbolFocus& focus : range) {
+			if (condition.isDefined() && !condition(focus)) continue;
 			// write point of data row header
 			for (uint i=0; i<output_symbols.size(); i++ ) {
 				if (i!=0) *out << separator();
@@ -674,6 +697,8 @@ void LoggerTextWriter::writeMatrix() {
 				
 #pragma omp parallel for
 				for (uint c=0; c<cells.size(); c++) {
+					const auto& cond = logger.getRestrictionCondition();
+					if (cond.isDefined() && cond.granularity() <= Granularity::Cell && ! cond(SymbolFocus(cells[c]))) continue;
 					multimap<FocusRangeAxis,int> restrictions = plain_restrictions;
 					restrictions.insert( make_pair(FocusRangeAxis::CELL,cells[c]) );
 					FocusRange range(granularity,restrictions);
