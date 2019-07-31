@@ -34,8 +34,8 @@ To find out more about Morpheus, please take a look at the home page:
 # Install
 
 build tools required:
-  - g++ (>= 4.6)
-  - cmake (>= 2.8)
+  - g++ (>= 5.0)
+  - cmake (>= 3.1)
   - cmake-curses-gui (for ccmake, optional)
   - xsltproc
   - xmllint (optional)
@@ -65,21 +65,13 @@ Runtime dependencies:
 
 To install all dependencies on Ubuntu 16.04 and 18.04 run:
 ```  
-sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libboost-dev libtiff5-dev libsbml5-dev qttools5-dev libqt5-svg-dev qtwebengine5-dev libqt5sql5-sqlite gnuplot  
+sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libboost-dev libtiff5-dev libsbml5-dev qttools5-dev libqt5svg5-dev qtwebengine5-dev libqt5sql5-sqlite gnuplot  
 ```
 
-To install all dependencies on Ubuntu 14.04 and other Debian based systems run:
-```  
-sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libtiff-dev libgraphviz-dev libqt4-dev libqt4-sql-sqlite libqt4-network libqt4-webkit libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools libboost-dev gnuplot
-``` 
+## Building/Installing on other systems
 
-## Building/Installing on Arch/Manjaro
+On other distributions package names vary slightly. Consult the respective repositories to find corresponding package names that provide the libraries and their headers.
 
-Morpheus has been added to AUR (https://aur.archlinux.org/packages/morpheus-modeling/) so to install the dependencies and build from source simply run
-
-```
-yaourt morpheus-modeling
-```
 
 # How to cite Morpheus
 
@@ -105,22 +97,3 @@ Include the version number or commit hash for reproducability. Valid examples ar
 - Margriet Palm, Leiden University, the Netherlands
 - Emanuel Cura Costa, IFLySiB, La Plata, Argentina
 - Osvaldo Chara, IFLySiB, La Plata, Argentina
-
-
-<!--  StatCounter -->
-<script type="text/javascript">
-var sc_project=10858269; 
-var sc_invisible=1; 
-var sc_security="392b0df5"; 
-var scJsHost = (("https:" == document.location.protocol) ?
-"https://secure." : "http://www.");
-document.write("<sc"+"ript type='text/javascript' src='" +
-scJsHost+
-"statcounter.com/counter/counter.js'></"+"script>");
-</script>
-<noscript><div class="statcounter"><a title=""
-href="http://statcounter.com/shopify/" target="_blank"><img
-class="statcounter"
-src="http://c.statcounter.com/10858269/0/392b0df5/1/"
-alt=""></a></div></noscript>
-<!-- End of StatCounter Code -->
