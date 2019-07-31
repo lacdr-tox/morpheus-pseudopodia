@@ -83,6 +83,9 @@ public:
 
 signals:
 	void loadFinished(bool ok);
+	
+protected:
+	void wheelEvent(QWheelEvent *event) override;
 };
 #elif defined USE_QWebEngine
 

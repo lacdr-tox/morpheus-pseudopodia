@@ -2,6 +2,7 @@
 
 #include "../config.h"
 
+
 #ifdef USE_QTextBrowser
 
 WebViewer::WebViewer(QWidget* parent): QTextBrowser(parent) {
@@ -31,10 +32,21 @@ bool WebViewer::debug(bool state) {
 	return state;
 }
 
+void WebViewer::wheelEvent(QWheelEvent *event) {
+	if (event->modifiers() == Qt::ControlModifier) {
+		double factor = 0.002;
+		setZoomFactor(zoomFactor() * (1 + event->angleDelta().y() * factor));
+		event->accept();
+		
+	}
+	else
+		QWebView::wheelEvent(event);
+}
 
 #elif defined USE_QWebEngine
 #include <QWebEngineSettings>
 #include <QWheelEvent>
+#include <QPalette>
 
 void AdaptiveWebPage::delegateScheme(QString scheme) {
 	delegate_schemes.append(scheme);
@@ -52,6 +64,9 @@ bool AdaptiveWebPage::acceptNavigationRequest(const QUrl& url, QWebEnginePage::N
 
 WebViewer::WebViewer(QWidget* parent): QWebEngineView(parent) {
 	reset();
+	auto pal = QPalette(this->palette());/*palette().color(QPalette::Foreground)*/
+	pal.setColor(/*QPalette::Active, */QPalette::ToolTipText, QColor("black"));
+	setPalette(pal);
 }
 
 void WebViewer::reset() {

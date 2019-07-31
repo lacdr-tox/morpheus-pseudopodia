@@ -1,5 +1,12 @@
 # ChangeLog
 
+## Unreleased
+
+### GUI
+  * Introduced Interactive Model Graphs
+  * Switched to Qt5
+
+
 ## Release 2.1
 
 ### GUI

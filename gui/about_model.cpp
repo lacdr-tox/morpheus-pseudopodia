@@ -170,7 +170,11 @@ void AboutModel::update_graph()
 				auto svg_el = svg.elementsByTagName("svg").at(0).toElement();
 				svg_el.setAttribute("style","margin: auto auto");
 				svg_el.attribute("width").toInt();
-				
+				auto titles = svg.elementsByTagName("title");
+				for (int i=0; i<=titles.size(); i++) {
+					const auto& title = titles.at(i).toElement();
+					title.parentNode().removeChild(title);
+				}
 				data.resize(0);
 				QTextStream out(&data);
 				out << svg.toString();
