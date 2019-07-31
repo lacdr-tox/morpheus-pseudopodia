@@ -17,7 +17,8 @@
 
 /** \defgroup InsertMedium
 \ingroup ML_CellType
-\ingroup MiscellaneousPlugins
+\ingroup MiscellaneousPlugins 
+\ingroup InstantaneousProcessPlugins
 \brief Inserts medium nodes randomly along a cell membrane.
 
 Inserts medium nodes randomly along a cell membrane.

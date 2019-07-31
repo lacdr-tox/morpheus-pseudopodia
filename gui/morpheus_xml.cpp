@@ -99,7 +99,7 @@ bool MorpheusXML::saveAsDialog()
     if ( QSettings().contains("FileDialog/path") ) {
         directory = QSettings().value("FileDialog/path").toString();
     }
-    QString fileName = QFileDialog::getSaveFileName(qApp->activeWindow(), "Select xml-file to save configuration!", directory, "Configuration Files (*.xml)");
+    QString fileName = QFileDialog::getSaveFileName(nullptr, "Select xml-file to save configuration!", directory, "Configuration Files (*.xml)");
 	if (fileName.isEmpty())
 		return false;
     // pull the focus, such that all edit operations finish

@@ -5,4 +5,6 @@ set(plugin_src
 	heterophilic_adhesion.cpp
 	
 	#anisotropic_adhesion.cpp
-PARENT_SCOPE)
+)
+
+target_sources_relpaths(MorpheusSIM PRIVATE plugin_src)

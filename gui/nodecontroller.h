@@ -83,6 +83,8 @@ public:
 	void trackInformation(QString info);
 	/// Removes all tracked Changes from the ModelDescriptor
 	void clearTrackedChanges();
+	
+	void setStealth(bool enabled = true);
 	/// Broadcast to that the model was saved. Resets all edit trackers.
 	void saved();
 	/// Return whether the xmlNode can have normal textblocks.
@@ -104,8 +106,8 @@ public:
 	const QList< nodeController* >& getChilds() { return childs; } 
 	/// Find the nodeController of the XML node @p xml_node in the document
     nodeController* find(QDomNode xml_node);
-	/// Find the nodeController addressed by @p path in the document
-    nodeController* find(QStringList path);
+	/// Find the nodeController addressed by @p path in the document. if @p create is true, try to create the path of not present.
+    nodeController* find(QStringList path, bool create = false);
 	///< Insert a child with name @p childName. Appends the child if no position is provided.
 	nodeController* insertChild(QString childName, int pos=-1);
 	///< Insert the given XML node @p xml_node. Appends the child if no position is provided.

@@ -1,6 +1,5 @@
 # build directories
-build
-build_clang
+build*
 
 *~
 # kdevelop files

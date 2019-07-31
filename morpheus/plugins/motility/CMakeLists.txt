@@ -11,5 +11,6 @@ set(plugin_src
  # non-CPM motility
 	flipcell_motion.cpp
 	margolus_diffusion.cpp
+)
 
-  PARENT_SCOPE)
+target_sources_relpaths(MorpheusSIM PRIVATE plugin_src)

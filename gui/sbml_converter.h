@@ -99,19 +99,19 @@ private:
 class SBMLImporter: public QDialog {
 	Q_OBJECT
 public:
-	SBMLImporter(QWidget* parent, QSharedPointer< MorphModel > current_model);
-	QSharedPointer<MorphModel> getMorpheusModel() { return model;};
+	SBMLImporter(QWidget* parent, SharedMorphModel current_model);
+	SharedMorphModel getMorpheusModel() { return model;};
 	bool haveNewModel() { return model_created; };
 // the interface for making this feature puggable
 	static const bool supported = true;
- 	static QSharedPointer<MorphModel> importSBML();
-	static QSharedPointer<MorphModel> importSEDMLTest(QString file);
-	static QSharedPointer<MorphModel> importSBMLTest(QString file);
+ 	static SharedMorphModel importSBML();
+	static SharedMorphModel importSEDMLTest(QString file);
+	static SharedMorphModel importSBMLTest(QString file);
 private:
 	QLineEdit* path;
 	QComboBox* into_celltype;
 
-	QSharedPointer<MorphModel> model;
+	SharedMorphModel model;
 	bool model_created = false;
 	QList<QString> conversion_messages;
 	

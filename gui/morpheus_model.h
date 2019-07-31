@@ -49,23 +49,24 @@ public:
 	static const int morpheus_ml_version = 4;
 
 // The interface for QAbstractItemModel ...
-    virtual QModelIndex index( int row, int column, const QModelIndex &parent) const;
+    virtual QModelIndex index( int row, int column, const QModelIndex &parent) const override;
     QModelIndex itemToIndex(nodeController* p_node) const;
     nodeController* indexToItem(const QModelIndex& idx) const;
 
-    virtual QModelIndex parent( const QModelIndex &child ) const;
-    virtual Qt::ItemFlags flags( const QModelIndex & index ) const;
+    virtual QModelIndex parent( const QModelIndex &child ) const override;
+    virtual Qt::ItemFlags flags( const QModelIndex & index ) const override;
 
-    virtual int rowCount( const QModelIndex &parent ) const;
-    virtual int columnCount ( const QModelIndex & parent = QModelIndex() ) const;
+    virtual int rowCount( const QModelIndex &parent ) const override;
+    virtual int columnCount ( const QModelIndex & parent = QModelIndex() ) const override;
 
-    virtual QVariant data( const QModelIndex &index, int role ) const;
-    virtual QVariant headerData( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
+    virtual QVariant data( const QModelIndex &index, int role ) const override;
+    virtual QVariant headerData( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const override;
 
-    Qt::DropActions supportedDropActions () const;
-    QStringList mimeTypes () const;
-    QMimeData* mimeData(const QModelIndexList &indexes) const;
-    bool dropMimeData( const QMimeData * data, Qt::DropAction action, int row, int column, const QModelIndex & parent );
+    Qt::DropActions supportedDropActions () const override { return Qt::CopyAction | Qt::MoveAction;};
+	 Qt::DropActions supportedDragActions() const override { return Qt::CopyAction | Qt::MoveAction; } 
+    QStringList mimeTypes () const override;
+    QMimeData* mimeData(const QModelIndexList &indexes) const override;
+    bool dropMimeData( const QMimeData * data, Qt::DropAction action, int row, int column, const QModelIndex & parent ) override;
 
     QModelIndex insertNode(const QModelIndex& parent, QDomNode child, int pos = -1);
     QModelIndex insertNode(const QModelIndex& parent, QString child, int pos = -1);
@@ -80,12 +81,19 @@ public:
     void removePart(QString name);
 	void removePart(int idx);
     QList<MorphModelPart> parts; /*!< Keeps the model parts for the editor */
+    
+    /// Find the node given by @p path. If the node does not exist, create it if @p create.
+    nodeController* find(QStringList path, bool create=false);
+	nodeController* getRoot() { return rootNodeContr;};
+	const ModelDescriptor& getModelDescr() const { return rootNodeContr->getModelDescr(); }
 
     bool isSweeperAttribute(AbstractAttribute* attr) const;
     bool isEmpty() const;
 
 	MorpheusXML xml_file;
-	QString getDependencyGraph();
+	
+	enum GRAPH_TYPE { SVG, PNG, DOT };
+	QString getDependencyGraph(GRAPH_TYPE type);
     nodeController* rootNodeContr; /*!< root nodeController, which handels the root xml-node. */
     bool sweep_lock;
 	
@@ -132,6 +140,6 @@ signals:
 //     void sweeperAttributeRemoved(AbstractAttribute* attr);
 };
 
-typedef QSharedPointer< MorphModel > SharedMorphModel;
+typedef QPointer<MorphModel> SharedMorphModel;
 
 #endif // MODELDATA_H

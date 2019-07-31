@@ -104,6 +104,7 @@ public:
 	};
 
 	void loadFromXML(const XMLNode xnode, Scope* scope);
+	const string getXMLPath();
 	XMLNode saveToXML() const;
 	
 	bool restoreData(const XMLNode xnode);
@@ -219,6 +220,7 @@ public:
 			this->flags().granularity = Granularity::Node;
 		};
 		const string&  description() const override { return descr; }
+		const string XMLPath() const override { return field->getXMLPath(); } 
 		std::string linkType() const override { return "FieldLink"; }
 		
 		TypeInfo<double>::SReturn get(const SymbolFocus & f) const override { return field->get(f.pos()); }

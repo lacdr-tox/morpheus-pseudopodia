@@ -152,6 +152,8 @@ void PDE_Layer::loadFromXML(const XMLNode xNode, Scope* scope)
 	}
 }
 
+const string PDE_Layer::getXMLPath() { return ::getXMLPath(stored_node); }
+
 void PDE_Layer::init(const SymbolFocus& focus)
 {
 	if (initialized) return;

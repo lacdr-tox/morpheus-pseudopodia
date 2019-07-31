@@ -33,13 +33,15 @@ struct Boundary {
 std::ostream& operator << (std::ostream& os, const Boundary::Type& a) ;
 std::istream& operator >> (std::istream& is, Boundary::Type& a);
 
+class Lattice;
+
 class Domain {
 public:
 	Domain() : type(none) {};
-	void loadFromXML(const XMLNode xNode, VINT size_hint);
-	enum Type {none ,image, circular};
+	void loadFromXML(const XMLNode xNode, Lattice* l);
+	enum Type {none ,image, circle, hexagon};
 
-	VINT domainSize() const { return domain_size; };
+// 	VINT domainSize() const { return domain_size; };
 	const vector<VINT>& enumerated() const {return domain_enumeration; };
 	Boundary::Type boundaryType() const { return boundary_type; }
 	bool inside(const VINT& a) const;
@@ -48,9 +50,11 @@ public:
 private:
 	Boundary::Type boundary_type;
 	Type type;
-	VINT domain_size;
-    double circle_diameter;
-	VINT circle_center;
+	Lattice* lattice;
+	VDOUBLE domain_size;
+    double diameter;
+	VINT center;
+	
 	
 	string image_path;
 	VINT image_size;
@@ -60,6 +64,7 @@ private:
     void createEnumerationMap();
 	bool insideImageDomain(const VINT& a) const;
 	bool insideCircularDomain(const VINT& a) const;
+	bool insideHexagonalDomain(const VINT& a) const;
 	int image_index(const VINT& a) const;
 	valarray<bool> image_map;
 	vector<VINT> domain_enumeration;

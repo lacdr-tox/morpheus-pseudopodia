@@ -72,14 +72,13 @@ specifies interaction energies \f$ J_{\sigma, \sigma} \f$ for different inter-ce
 
 class CPMSampler : public ContinuousProcessPlugin {
 public:
+	DECLARE_PLUGIN("CPM");
 	CPMSampler();
-	~CPMSampler() { cout << "Deleting the CPM sampler" << endl; };
 	
     virtual void loadFromXML(const XMLNode node, Scope* scope) override;
 	double MCSDuration() { return mcs_duration(); }
 	virtual void prepareTimeStep(double /*step_size*/) override {};
 	virtual void executeTimeStep() override ;
-	virtual string XMLName() const override { return string("CPM"); };
 	
     virtual void init(const Scope* scope) override;
 	const Neighborhood& getInteractionNeighborhood();

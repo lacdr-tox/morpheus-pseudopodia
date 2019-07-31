@@ -137,12 +137,12 @@ void domNodeViewer::setModelPart(int part) {
 
 void domNodeViewer::setModel(SharedMorphModel mod, int part) {
     model = mod;
-    model_tree_view->setModel(model.data());
+    model_tree_view->setModel(model);
 // 	QObject::connect(model_tree_view, SIGNAL(), this, SLOT());
 	
 	QObject::connect(model_tree_view->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(setTreeItem( const QModelIndex& )));
-	QObject::connect(model.data(), SIGNAL(rowsMoved ( const QModelIndex & , int , int , const QModelIndex & , int  )), this, SLOT(selectMovedItem(const QModelIndex & , int , int , const QModelIndex & , int )),Qt::QueuedConnection);
-	QObject::connect(model.data(), SIGNAL(rowsInserted( const QModelIndex & , int , int)), this, SLOT(selectInsertedItem(const QModelIndex & , int , int )),Qt::QueuedConnection);
+	QObject::connect(model, SIGNAL(rowsMoved ( const QModelIndex & , int , int , const QModelIndex & , int  )), this, SLOT(selectMovedItem(const QModelIndex & , int , int , const QModelIndex & , int )),Qt::QueuedConnection);
+	QObject::connect(model, SIGNAL(rowsInserted( const QModelIndex & , int , int)), this, SLOT(selectInsertedItem(const QModelIndex & , int , int )),Qt::QueuedConnection);
 	setModelPart(part);
 }
 

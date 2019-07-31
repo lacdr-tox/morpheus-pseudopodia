@@ -13,6 +13,7 @@
 #define MYTEXTEDIT_H
 
 #include <QtGui>
+#include <QScrollBar>
 #include "equationhighlighter.h"
 // #include <iostream>
 

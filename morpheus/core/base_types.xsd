@@ -34,8 +34,8 @@
 	<xs:simpleType name="cpmDoubleSymbolRef">
 		<xs:restriction base="xs:token">
 			<xs:enumeration value="cell.id"/>
-			<xs:enumeration value="cell.super_id"/>
-			<xs:enumeration value="cell.sub_id"/>
+<!-- 			<xs:enumeration value="cell.super_id"/> -->
+<!-- 			<xs:enumeration value="cell.sub_id"/> -->
 			<xs:enumeration value="cell.type"/>
 			<xs:enumeration value="cell.volume"/>
 			<xs:enumeration value="cell.length"/>

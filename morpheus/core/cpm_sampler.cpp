@@ -1,6 +1,7 @@
 #include "cpm_sampler.h"
 #include "interaction_energy.h"
 
+REGISTER_PLUGIN(CPMSampler);
 
 CPMSampler::CPMSampler() :
 	ContinuousProcessPlugin(MCS,XMLSpec::XML_NONE)

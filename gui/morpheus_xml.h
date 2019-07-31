@@ -13,6 +13,7 @@
 #define MOPRHEUS_XML_H
 
 #include <QDomDocument>
+#include <QFileDialog>
 #include "xsd.h"
 #include "zlib.h"
 

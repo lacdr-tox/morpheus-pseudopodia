@@ -134,9 +134,6 @@ public slots:
 	void handleMessage(const QString& message);
 
 private slots:
-    void menuBarTriggered(QAction *); /*!< This slot calls for any selected action from the menubar, the right function to transform the action. */
-    void toolBarTriggered(QAction *); /*!< This slot calls for any selected action from the toolbar, the right function to transform the action. */
-    void statusBarTriggered(); /*!< This slot updates the statusmessage of the opened tab. */
     void copyNodeAction(QDomNode);
 
     void setPermanentStatus(QString message); /*!< Sets the given message as permanent status. */

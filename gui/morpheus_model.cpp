@@ -141,7 +141,7 @@ bool MorphModel::removeDir(QString dir_path)
 	return result;
 }
 
-QString MorphModel::getDependencyGraph()
+QString MorphModel::getDependencyGraph(GRAPH_TYPE type)
 {
 	if (!temp_folder.exists()) {
 		temp_folder.mkpath(temp_folder.absolutePath());
@@ -150,13 +150,17 @@ QString MorphModel::getDependencyGraph()
 			return "";
 		}
 	}
+	
+	QString ext_string;
+	switch (type) {
+		case PNG: ext_string="png"; break;
+		case SVG: ext_string="svg"; break;
+		case DOT: ext_string="dot"; break;
+	}
+	QString graph_file = "dependency_graph."+ext_string;
+	
 	// If the model did not change the model since the last rendering, just take the old rendering.
 	if (dep_graph_model_edit_stamp == rootNodeContr->getModelDescr().edits) {
-		QString graph_file = "dependency_graph.svg";
-		if (temp_folder.exists(graph_file)) {
-			return temp_folder.absoluteFilePath(graph_file);
-		}
-		graph_file = "dependency_graph.png";
 		if (temp_folder.exists(graph_file)) {
 			return temp_folder.absoluteFilePath(graph_file);
 		}
@@ -213,7 +217,7 @@ QString MorphModel::getDependencyGraph()
 		arguments << "-gnuplot-path" << config::getPathToExecutable("gnuplot");
 #endif
 	
-    arguments << "-symbol-graph" << " " << model_file;
+	arguments << "-symbol-graph" << ext_string << model_file;
 
     process.setWorkingDirectory(temp_folder.absolutePath());
 	process.setStandardOutputFile(temp_folder.absoluteFilePath("model.out"));
@@ -225,16 +229,17 @@ QString MorphModel::getDependencyGraph()
 		process.kill();
 	}
 	
-	QString graph_file = "dependency_graph.svg";
 	if (temp_folder.exists(graph_file)) {
-		dep_graph_model_edit_stamp =  rootNodeContr->getModelDescr().edits;
+		dep_graph_model_edit_stamp = rootNodeContr->getModelDescr().edits;
 		return temp_folder.absoluteFilePath(graph_file);
 	}
-	graph_file = "dependency_graph.png";
-	if (temp_folder.exists(graph_file)) {
-		dep_graph_model_edit_stamp =  rootNodeContr->getModelDescr().edits;
-		return temp_folder.absoluteFilePath(graph_file);
+	else if (temp_folder.exists("dependency_graph.dot")){
+		
+		// Fallback in case there is no graphviz lib available
+		dep_graph_model_edit_stamp = rootNodeContr->getModelDescr().edits;
+		return temp_folder.absoluteFilePath("dependency_graph.dot");
 	}
+	qDebug() << "Expectd graph file does not exist " << temp_folder.absoluteFilePath(graph_file);
 	return "";
 }
 
@@ -258,7 +263,6 @@ void MorphModel::initModel()
 	temp_folder.cd(name);
 	
 	loadModelParts();
-	setSupportedDragActions(Qt::CopyAction | Qt::MoveAction);
 }
 
 
@@ -397,7 +401,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		search_path.remove(QRegExp("^/|/$| "));
 		// replace multiple slashes with single slash
 		search_path.replace(QRegExp("/{2,}"),"/");
-		qDebug() << "Match path is " << search_path;
+// 		qDebug() << "Match path is " << search_path;
 
 		QStringList search_tags = search_path.split("/");
 		
@@ -410,7 +414,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 			QList<QDomNode> new_matches;
 			if (search_tags_copy.front().startsWith("@")) {
 				if (search_tags_copy.front() == "@text") {
-					qDebug() << "looking for text ";
+// 					qDebug() << "looking for text ";
 					for (int j=0; j<matches.size();j++) {
 						Q_ASSERT(matches[j].isElement());
 						QDomNode parent = matches[j];
@@ -424,7 +428,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 					}
 				}
 				else {
-					qDebug() << "looking for attr " << search_tags_copy.front().replace("@","");
+// 					qDebug() << "looking for attr " << search_tags_copy.front().replace("@","");
 					QString attr_name = search_tags_copy.front().replace("@","");
 					for (int j=0; j<matches.size();j++) {
 						Q_ASSERT(matches[j].isElement());
@@ -442,7 +446,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 					while ( ! child.isNull() ) {
 						if (child.nodeName() == search_tags_copy.front()) {
 							new_matches.append(child);
-							qDebug() << "Matched " << search_tags_copy.front();
+// 							qDebug() << "Matched " << search_tags_copy.front();
 						}
 						child = child.nextSibling();
 					}
@@ -1025,12 +1029,6 @@ void MorphModel::setDisabled(const QModelIndex &node_index, bool disable) {
 	}
 }
 
-//------------------------------------------------------------------------------
-
-Qt::DropActions MorphModel::supportedDropActions () const {
-    return Qt::CopyAction | Qt::MoveAction;
-}
-
 // ------------------------------------------------------------------------------
 
 QStringList MorphModel::mimeTypes () const {
@@ -1158,6 +1156,25 @@ bool MorphModel::dropMimeData( const QMimeData * data, Qt::DropAction action, in
 }
 
 //------------------------------------------------------------------------------
+
+nodeController* MorphModel::find(QStringList path, bool create) {
+	// Check whether the part exists
+	if (path.first() == "MorpheusModel") path.takeFirst();
+	auto part = path.first();
+	
+	if (!MorphModelPart::all_parts_index.contains(part))
+		return nullptr;
+	int idx = MorphModelPart::all_parts_index.value(part);
+	if (! parts[idx].enabled) {
+		if (create)
+			activatePart(idx);
+		else
+			return nullptr;
+	}
+	
+	return rootNodeContr->find(path,create);
+}
+
 
 bool MorphModel::addPart(QString name) {
 	if (!MorphModelPart::all_parts_index.contains(name))

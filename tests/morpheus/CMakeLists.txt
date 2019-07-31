@@ -28,7 +28,7 @@ add_executable(runMopheusTests
 	evaluator/test_evaluator.cpp
 	evaluator/stub_simulator.cpp
 	$<TARGET_OBJECTS:muParser>
-	$<TARGET_OBJECTS:morpheusCore>
+	$<TARGET_OBJECTS:MorpheusCore>
 )
 # Link test executable against gtest & gtest_main
 target_link_libraries(runMopheusTests gtest gtest_main xmlParser z tiff)

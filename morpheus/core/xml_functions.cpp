@@ -54,7 +54,7 @@ XMLNode getXMLNode(const XMLNode XML_base, const string& path) {
 string getXMLPath(const XMLNode node) {
 	const XMLNode parent = node.getParentNode();
 	if (parent.isEmpty())
-		return  node.getName();
+		return node.getName() ? node.getName() : string();
 
 	string path;
 	path = getXMLPath(parent);

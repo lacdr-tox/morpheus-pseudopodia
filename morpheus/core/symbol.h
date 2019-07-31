@@ -58,6 +58,7 @@ public:
 	struct Flags;
 	virtual const std::string& name() const =0;  ///  Symbol identifier
 	virtual const std::string& description() const =0;  ///  Descriptive name
+	virtual const std::string XMLPath() const =0;  /// Path to XML declaration
 	virtual const Scope* scope() const =0; /// The scope the symbol is defined in
 	virtual Granularity granularity() const =0;
 	virtual void setScope(const Scope* scope) =0;
@@ -133,6 +134,9 @@ public:
 	const std::string& type() const final { return TypeInfo<T>::name(); }
 	/// Name of the symbol
 	const std::string& name() const override { return symbol_name; }
+	/// Path to XML declaration
+	const std::string XMLPath() const override { return xml_path; };
+	void setXMLPath(const string& path)  { xml_path = path; } 
 	/// Granularity of the symbol
 	Granularity granularity() const final { return flags().granularity; }
 	/// Scope the Symbol is registered in
@@ -165,7 +169,7 @@ protected:
 	friend class Scope;
 	
 private:
-	
+	std::string xml_path;
 	std::string symbol_name;
 	const Scope* _scope;
 	Flags _flags;

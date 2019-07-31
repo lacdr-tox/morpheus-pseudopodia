@@ -2,12 +2,12 @@
 #include "version.h"
 #include "job_queue.h"
 
+#ifdef USE_QWebEngine
+	#include "network_schemes.h"
+	#include <QWebEngineProfile>
+#endif
 
-//	#include <QtPlugin>
-	// Q_IMPORT_PLUGIN(qsqlite)
-	// Q_IMPORT_PLUGIN(qtiff)
 
-	
 config* config::instance = 0;
 
 //------------------------------------------------------------------------------
@@ -23,7 +23,7 @@ config::config() : QObject(), helpEngine(NULL) {
     /* Restore Configuration setting from QSettings file*/
     QSettings settings;
     settings.beginGroup("simulation");
-        QString oD_default = QDesktopServices::storageLocation(QDesktopServices::HomeLocation);
+        QString oD_default = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
         oD_default +="/morpheus";
         app.general_outputDir       = settings.value("outputDir", oD_default).toString();
     settings.endGroup();
@@ -86,7 +86,8 @@ config::config() : QObject(), helpEngine(NULL) {
 		if (!sqlPlugin ) throw;
 		db = QSqlDatabase::addDatabase(sqlPlugin->create("QSQLITE"));*/
 		
-		QDir job_db_path(QDesktopServices::storageLocation(QDesktopServices::DataLocation));
+		// The data location has been changed between qt4 and qt5, thus we have to manually retain the old behaviour here
+		QDir job_db_path(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)+"/data/Morpheus/Morpheus");
 		job_db_path.mkpath(job_db_path.path());
 		db.setDatabaseName(job_db_path.filePath("morpheus.db.sqlite"));
 		qDebug() << "SQLite database path: " << db.databaseName();
@@ -253,7 +254,7 @@ QString config::getPathToExecutable(QString exec_name) {
 	QFileInfo info;
 	info.setFile(exec_name);
 	if (info.exists() && info.isExecutable() && info.isFile()) {
-		qDebug() << "Found executable " << info.filePath();
+// 		qDebug() << "Found executable " << info.filePath();
 		return info.canonicalFilePath();
 	}
 	
@@ -261,7 +262,7 @@ QString config::getPathToExecutable(QString exec_name) {
 
 	info.setFile(QCoreApplication::applicationDirPath() + "/" + app_name);
 	if (info.exists() && info.isExecutable()  && info.isFile()) {
-		qDebug() << "Found executable " << info.filePath();
+// 		qDebug() << "Found executable " << info.filePath();
 		return info.canonicalFilePath();
 	}
 	
@@ -275,7 +276,7 @@ QString config::getPathToExecutable(QString exec_name) {
 	Q_FOREACH (const QString& path, env_paths) {
 		info.setFile(path + "/" + app_name);
 		if (info.exists() && info.isExecutable()  && info.isFile()) {
-			qDebug() << "Found executable " << info.filePath();
+// 			qDebug() << "Found executable " << info.filePath();
 			return info.canonicalFilePath();
 		}
 	}
@@ -343,7 +344,7 @@ int config::openModel(QString filepath) {
     return new_index;
 }
 
-int config::importModel(QSharedPointer< MorphModel > model)
+int config::importModel(SharedMorphModel model)
 {
 	config* conf = getInstance();
 	// substitude the last model if it was created from scratch and is still unchanged
@@ -353,7 +354,7 @@ int config::importModel(QSharedPointer< MorphModel > model)
 
 		conf->openModels.pop_back();
 	}
-
+	model->setParent(conf);
 	conf->openModels.push_back(model);
 	int new_index = conf->openModels.size()-1;
 	emit conf->modelAdded(new_index);
@@ -678,6 +679,12 @@ ExtendedNetworkAccessManager* config::getNetwork() {
 		conf->change_lock.lock();
 		if (!conf->network) {
 			conf->network = new ExtendedNetworkAccessManager(conf, getHelpEngine(false));
+#ifdef USE_QWebEngine
+			auto *help_handler = new HelpNetworkScheme(conf->network, conf);
+			QWebEngineProfile::defaultProfile()->installUrlSchemeHandler(HelpNetworkScheme::scheme().toUtf8(), help_handler);
+			auto *qrc_handler = new QtRessourceScheme(conf->network, conf);
+			QWebEngineProfile::defaultProfile()->installUrlSchemeHandler(QtRessourceScheme::scheme().toUtf8(), qrc_handler);
+#endif
 		}
 		conf->change_lock.unlock();
 	}

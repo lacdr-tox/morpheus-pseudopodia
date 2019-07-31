@@ -1,13 +1,25 @@
-#include <QtGui/QApplication>
+#include <QApplication>
 #include <QTextCodec>
 #include "qtsingleapp/qtsingleapplication.h"
 #include "mainwindow.h"
 #include "sbml_import.h"
+#ifdef USE_QWebEngine
+#include "network_schemes.h"
 
-
+#endif
 int main(int argc, char *argv[])
 {
+// #ifdef USE_QWebEngine
+// 	QWebEngineUrlScheme scheme(HelpNetworkScheme::scheme());
+// 	scheme.setSyntax(QWebEngineUrlScheme::Syntax::Host);
+// 	scheme.setDefaultPort(80);
+// 	scheme.setFlags(QWebEngineUrlScheme::SecureScheme);
+// 	QWebEngineUrlScheme::registerScheme(scheme);
+// #endif
+	// Properly initialize X11 multithreading. Fixes problems when x-forwarding the gui to a remote computer.
 	QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
+	QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
+	
 	//only allow a single instance of Morpheus
 	QtSingleApplication a(argc, argv);
 	//QApplication a(argc, argv);
@@ -45,8 +57,8 @@ int main(int argc, char *argv[])
 			return 0;
 	}
 	
-	QTextCodec::setCodecForCStrings( QTextCodec::codecForName("UTF-8") );
-
+// 	QTextCodec::setCodecForCStrings( QTextCodec::codecForName("UTF-8") );
+	
 	
 	//anlegen des hauptfensters
 	MainWindow w;

@@ -3,7 +3,7 @@
 using namespace std;
 
 
-//konstruktor der beim anlegen des hauptfenster aufgerufen wird
+
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)//, ui(new Ui::MainWindow)
 {
 
@@ -154,39 +154,90 @@ void MainWindow::createMenuBar()
     menubar = new QMenuBar();
     QMenu *fileMenu = menubar->addMenu(tr("&File"));
 
-    QAction *fileNew = new QAction(QThemedIcon("document-new", style()->standardIcon(QStyle::SP_FileDialogNewFolder)), tr("&New"), this);
+    QAction *fileNew = new QAction(QThemedIcon("document-new", style()->standardIcon(QStyle::SP_FileDialogNewFolder)), tr("New"), this);
     fileNew->setShortcut(QKeySequence::New);
     fileNew->setStatusTip(tr("Create a new model-file"));
+	connect(fileNew, &QAction::triggered, [](){config::createModel();} );
     fileMenu->addAction(fileNew);
 
     fileMenu->addSeparator();
 
-    QAction *fileOpen = new QAction( QThemedIcon("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), tr("&Open..."), this);
+    QAction *fileOpen = new QAction( QThemedIcon("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), tr("Open..."), this);
     fileOpen->setShortcut(QKeySequence::Open);
     fileOpen->setStatusTip(tr("Open existing model from file"));
+	connect(fileOpen, &QAction::triggered, [=](){loadXMLFile();} );
     fileMenu->addAction(fileOpen);
 
-    QAction *fileReload= new QAction(QThemedIcon("document-revert",QIcon(":/document-revert.png")),tr("&Reload"), this);
+    QAction *fileReload= new QAction(QThemedIcon("document-revert",QIcon(":/document-revert.png")),tr("Reload"), this);
     fileReload->setShortcut(QKeySequence(Qt::Key_F5));
     fileReload->setStatusTip(tr("Reload model from last file"));
+	connect(fileOpen, &QAction::triggered, [=](){
+		 if ( current_model &&  ! current_model->xml_file.path.isEmpty() ) {
+			QString path = current_model->xml_file.path;
+			if (config::closeModel(model_index.model,false)) {
+				config::openModel( path );
+			}
+		}
+	});
     fileMenu->addAction(fileReload);
 
 	if (SBMLImporter::supported) {
-		QAction *importSBML= new QAction(QThemedIcon("document-import",QIcon(":/document-import.png")),tr("&Import SBML"), this);
+		QAction *importSBML= new QAction(QThemedIcon("document-import",QIcon(":/document-import.png")),tr("Import SBML"), this);
 		importSBML->setStatusTip(tr("Import an SBML model into a new Celltype of the current model"));
+		connect(importSBML, &QAction::triggered, [=](){
+			if (current_model) {
+				SharedMorphModel sbml_import = SBMLImporter::importSBML();
+				if (sbml_import)
+					config::importModel(sbml_import);
+				modelViewer[current_model]->setModelPart("CellTypes");
+				showCurrentModel();
+			}
+		});
 		fileMenu->addAction(importSBML);
 	}
 
     fileMenu->addSeparator();
 
-    QAction *fileSaveAs = new QAction(QThemedIcon("document-save-as",style()->standardIcon(QStyle::SP_DialogSaveButton) ), tr("&Save As..."), this);
+    QAction *fileSaveAs = new QAction(QThemedIcon("document-save-as",style()->standardIcon(QStyle::SP_DialogSaveButton) ), tr("Save As..."), this);
     fileSaveAs->setShortcut(QKeySequence::SaveAs);
     fileSaveAs->setStatusTip(tr("Save model to file"));
+	connect(fileSaveAs, &QAction::triggered, [=](){
+		if ( current_model->xml_file.saveAsDialog() ) {
+			config::addRecentFile(current_model->xml_file.path);
+			current_model->rootNodeContr->saved();
+			modelList->topLevelItem(model_index.model)->setText(0, current_model->xml_file.name);
+			qDebug() << "Save As: " << current_model->xml_file.name << endl;
+			this->setWindowTitle(tr("Morpheus - %1").arg(  current_model->xml_file.name ) );
+		}
+	});
     fileMenu->addAction(fileSaveAs);
 
-    QAction *fileSave = new QAction(QThemedIcon("document-save",style()->standardIcon(QStyle::SP_DialogSaveButton) ), tr("&Save"), this);
+    QAction *fileSave = new QAction(QThemedIcon("document-save",style()->standardIcon(QStyle::SP_DialogSaveButton) ), tr("Save"), this);
     fileSave->setShortcut(QKeySequence::Save);
     fileSave->setStatusTip(tr("Save model to file"));
+	connect(fileSave, &QAction::triggered, [=](){
+		if (current_model) {
+			if (current_model &&  current_model->xml_file.path.isEmpty()) {
+				if ( current_model->xml_file.saveAsDialog() ) {
+					config::addRecentFile(current_model->xml_file.path);
+					current_model->rootNodeContr->saved();
+					modelList->topLevelItem(model_index.model)->setText(0, current_model->xml_file.name);
+				}
+				else {
+					QMessageBox::critical(this,"Error", "Failed to save the model.");
+				}
+			}
+			else {
+				if ( current_model->xml_file.save(current_model->xml_file.path) ) {
+					current_model->rootNodeContr->saved();
+					modelList->topLevelItem(model_index.model)->setText(0, current_model->xml_file.name);
+				}
+				else {
+					QMessageBox::critical(this,"Error", "Failed to save model to " + current_model->xml_file.path );
+				}
+			}
+		}
+	});
     fileMenu->addAction(fileSave);
 
     fileMenu->addSeparator();
@@ -202,29 +253,25 @@ void MainWindow::createMenuBar()
 
     fileMenu->addSeparator();
 
-    QAction *act_settings = fileMenu->addAction(QThemedIcon("document-properties", QIcon(":/settings.png")), tr("&Settings"));
-#if QT_VERSION < 0x040600
-    act_settings->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_K);
-#else
+    QAction *act_settings = fileMenu->addAction(QThemedIcon("document-properties", QIcon(":/settings.png")), "Settings");
     act_settings->setShortcut(QKeySequence::Preferences);
-#endif
     act_settings->setStatusTip(tr("Open settings dialog"));
+	connect(act_settings, &QAction::triggered, [&](){settingsDialog settingsDia; settingsDia.exec();} );
 
     fileMenu->addSeparator();
     
-    QAction *fileClose = fileMenu->addAction(QThemedIcon("document-close", QIcon(":/document-close.png")), tr("&Close"));
+    QAction *fileClose = fileMenu->addAction(QThemedIcon("document-close", QIcon(":/document-close.png")), tr("Close"));
     fileClose->setShortcut(QKeySequence::Close);
     fileClose->setStatusTip(tr("Close current model"));
+	connect(fileClose, &QAction::triggered, [=](){ config::closeModel(model_index.model); });
 
-    QAction *appQuit = fileMenu->addAction(QThemedIcon("application-exit", QIcon(":/application-exit.png")), tr("&Quit"));
-#if QT_VERSION < 0x040600
-    appQuit->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_Q);
-#else
+
+    QAction *appQuit = fileMenu->addAction(QThemedIcon("application-exit", QIcon(":/application-exit.png")), tr("Quit"));
     appQuit->setShortcut(QKeySequence::Quit);
-#endif
     appQuit->setStatusTip(tr("Quit Morpheus"));
+	connect(appQuit, &QAction::triggered, [=](){ config::getDatabase().close(); this->close(); });
 
-    QMenu *examplesMenu = menubar->addMenu(tr("&Examples"));
+    QMenu *examplesMenu = menubar->addMenu(tr("Examples"));
 
 // 	QMenu* examplesMenu = fileMenu->addMenu(QThemedIcon("applications-science",QIcon(":/applications-science.png")),tr("&Examples"));
 	QDir ex_dir(":/examples");
@@ -255,14 +302,13 @@ void MainWindow::createMenuBar()
 			if (example.endsWith(".xml")) {
 				QAction *openEx = ex_cat_menu->addAction(example);
 				QString ex_path = QString(":/examples/")+ex_cat_dir.dirName() + "/" + example;
-	// 			qDebug() << "added example " << ex_path;
-				example_files.insert(openEx,ex_path);
+				connect(openEx, &QAction::triggered, [=](){ config::openModel(ex_path); });
 			}
 		}
 	}
 	QAction* exInfoAction = examplesMenu->addAction(tr("&Examples website"));
 	exInfoAction->setStatusTip(tr("Open Morpheus examples website for documentation."));
-	connect(exInfoAction,SIGNAL(triggered()), config::getInstance(),SLOT(openExamplesWebsite()));
+	connect(exInfoAction, SIGNAL(triggered()), config::getInstance(),SLOT(openExamplesWebsite()));
 	
     examplesMenu->setStatusTip(tr("Open Morpheus example model"));
 
@@ -340,6 +386,7 @@ void MainWindow::createMenuBar()
     QAction *simStart = new QAction(QThemedIcon("media-playback-start" ,style()->standardIcon(QStyle::SP_MediaPlay)), tr("&Start"), toolbar);
     simStart->setShortcut(QKeySequence(Qt::Key_F8));
     simStart->setStatusTip(tr("Start morpheus simulation with current model"));
+	connect(simStart, &QAction::triggered, [=](){startSimulation();} );
     toolbar->addAction(simStart);
     tbutton = (QToolButton*) toolbar->widgetForAction(simStart);
     tbutton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -347,26 +394,16 @@ void MainWindow::createMenuBar()
     QAction *simStop = new QAction(QThemedIcon("media-playback-stop", style()->standardIcon(QStyle::SP_MediaStop) ), tr("&Stop"), toolbar);
     simStop->setShortcut(QKeySequence(Qt::Key_F9));
     simStop->setStatusTip(tr("Terminate current morpheus simulation"));
+	connect(simStop, &QAction::triggered, [=](){stopSimulation();} );
     toolbar->addAction(simStop);
     interactive_stop_button = (QToolButton*) toolbar->widgetForAction(simStop);
     interactive_stop_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     interactive_stop_button->setEnabled(false);
 
-    // toolbar->addSeparator();
-    // QAction *simGraph = new QAction(QThemedIcon("distribute-graph-directed", QIcon(":/graph.svg")), tr("&Graph"), toolbar);
-    // simGraph->setShortcut(QKeySequence(Qt::Key_F10));
-    // simGraph->setStatusTip(tr("Generate symbol dependency graph for current model"));
-    // simGraph->setToolTip(tr("Generate symbol dependency graph for current model"));
-    // toolbar->addAction(simGraph);
-    // graph_button = (QToolButton*) toolbar->widgetForAction(simGraph);
-    // graph_button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-
     setMenuBar(menubar);
     addToolBar(toolbar);
 
 	toolbar->setFocusPolicy(Qt::NoFocus);
-    connect(menubar, SIGNAL(triggered(QAction*)), this, SLOT(menuBarTriggered(QAction*)));
-    connect(toolbar, SIGNAL(actionTriggered(QAction*)), this, SLOT(toolBarTriggered(QAction*)));
 }
 
 //------------------------------------------------------------------------------
@@ -386,8 +423,8 @@ void MainWindow::createMainWidgets()
     modelList->setAutoExpandDelay(200);
 
     connect(modelList, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showModelListMenu(QPoint)));
-    connect(modelList, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(modelListChanged(QTreeWidgetItem*)));
-	connect(modelList, SIGNAL(clicked(QModelIndex)), this, SLOT(showCurrentModel()) );
+//     connect(modelList, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(modelListChanged(QTreeWidgetItem*)));
+	connect(modelList, &QTreeWidget::clicked, [=](const QModelIndex& /*index*/) { modelListChanged(modelList->currentItem());});
 	connect(modelList, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(activatePart(QModelIndex)) );
 
     modelMenu = new QMenu();
@@ -548,125 +585,11 @@ void MainWindow::selectModel(int index, int part)
 			}
 		}
     }
-
+    modelList->blockSignals(true);
 	modelList->setCurrentItem(modelList->topLevelItem(index)->child(model_index.part));
-	documentsDock->raise();
+	modelList->blockSignals(false);
 	showCurrentModel();
 	
-    //qDebug() << current_model->xml_file.name << " " << current_model->parts[model_index.part].label;
-
-	
-
-}
-
-//------------------------------------------------------------------------------
-
-void MainWindow::menuBarTriggered(QAction* act)
-{
-    if(act->text() == "&New")
-    {
-        int index = config::createModel();
-// 		if (index)
-// 			selectModel(index);
-        return;
-    }
-    if(act->text() == "&Open...")
-    {
-        loadXMLFile();
-        return;
-    }
-    if (act->text() == "&Close") {
-        config::closeModel(model_index.model);
-		return;
-    }
-    if(act->text() == "&Reload")
-    {
-        if ( current_model &&  ! current_model->xml_file.path.isEmpty() ) {
-            QString path = current_model->xml_file.path;
-            if (config::closeModel(model_index.model,false)) {
-                config::openModel( path );
-            }
-        }
-        return;
-    }
-    if(act->text() == "&Save As...")
-    {
-		if ( current_model->xml_file.saveAsDialog() ) {
-			config::addRecentFile(current_model->xml_file.path);
-			current_model->rootNodeContr->saved();
-			modelList->topLevelItem(model_index.model)->setText(0, current_model->xml_file.name);
-			qDebug() << "Save As: " << current_model->xml_file.name << endl;
-			this->setWindowTitle(tr("Morpheus - %1").arg(  current_model->xml_file.name ) );
-		}
-		else {
-			//QMessageBox::critical(this,"Error", "Failed to save model.");
-		}
-        return;
-    }
-    if(act->text() == "&Save")
-    {
-		if (current_model) {
-			if (current_model &&  current_model->xml_file.path.isEmpty()) {
-				if ( current_model->xml_file.saveAsDialog() ) {
-					config::addRecentFile(current_model->xml_file.path);
-					current_model->rootNodeContr->saved();
-					modelList->topLevelItem(model_index.model)->setText(0, current_model->xml_file.name);
-				}
-				else {
-					QMessageBox::critical(this,"Error", "Failed to save the model.");
-				}
-			}
-			else {
-				if ( current_model->xml_file.save(current_model->xml_file.path) ) {
-					current_model->rootNodeContr->saved();
-					modelList->topLevelItem(model_index.model)->setText(0, current_model->xml_file.name);
-				}
-				else {
-					QMessageBox::critical(this,"Error", "Failed to save model to " + current_model->xml_file.path );
-				}
-			}
-		}
-        return;
-    }
-    if (act->text() == "&Import SBML") {
-		if (current_model) {
-			QSharedPointer<MorphModel> sbml_import = SBMLImporter::importSBML();
-			if (sbml_import)
-				config::importModel(sbml_import);
-			modelViewer[current_model]->setModelPart("CellTypes");
-			showCurrentModel();
-		}
-	}
-    if(act->text() == "&Quit")
-    {
-        config::getDatabase().close();
-        this->close();
-        return;
-    }
-    if(act->text() == "&Settings")
-    {
-            settingsDialog settingsDia;
-            settingsDia.exec();
-    }
-    if (example_files.contains(act)) {
-		config::openModel(example_files[act]);
-	}
-}
-
-//------------------------------------------------------------------------------
-
-void MainWindow::toolBarTriggered(QAction* act)
-{
-    if(act->text() == "&Start")
-    {
-        startSimulation();
-        return;
-    }
-    if(act->text() == "&Stop")
-    {
-        stopSimulation();
-        return;
-    }
 }
 
 //------------------------------------------------------------------------------
@@ -674,20 +597,6 @@ void MainWindow::toolBarTriggered(QAction* act)
 void MainWindow::setPermanentStatus(QString message) {
     statusMsgSource = sender();
     permanentStatus->setText(message);
-}
-
-//------------------------------------------------------------------------------
-
-void MainWindow::statusBarTriggered() {
-//     if (statusMsgSource == jobQueueView) {
-// //        myJobController->selectMsgSource();
-// //        tabW_Main->setCurrentWidget(myJobController);
-//     }
-//     else if (statusMsgSource == editorStack) {
-//
-//     }
-//     else
-//         cout << "status msg from unknown source " << endl;
 }
 
 //------------------------------------------------------------------------------
@@ -883,7 +792,7 @@ void MainWindow::syncModelList (int m) {
 	if (m==-1) {
 		const QList<SharedMorphModel >&  models = config::getOpenModels();
 		foreach ( SharedMorphModel model, models) {
-			if (sender() == model.data()) {
+			if (sender() == model) {
 				m = models.indexOf(model);
 			}
 		}
@@ -997,8 +906,8 @@ void MainWindow::addModel(int index) {
 	c->setFont(0,f);
 	modelList->insertTopLevelItem(index,c);
 
-	connect(model.data(),SIGNAL(modelPartAdded(int)),this,SLOT(syncModelList()));
-	connect(model.data(),SIGNAL(modelPartRemoved(int)),this,SLOT(syncModelList()));
+	connect(model,SIGNAL(modelPartAdded(int)),this,SLOT(syncModelList()));
+	connect(model,SIGNAL(modelPartRemoved(int)),this,SLOT(syncModelList()));
 
 	domNodeViewer *viewer = new domNodeViewer(this);
 	viewer->setModel(model,0);
@@ -1010,6 +919,7 @@ void MainWindow::addModel(int index) {
 	modelViewer[model] = viewer;
 	modelAbout[model] =  new AboutModel(model);
 	editorStack->addWidget(modelAbout[model]);
+	connect(modelAbout[model], &AboutModel::nodeSelected, this, [this](QString path) { selectXMLPath(path, this->model_index.model); });
 
 	syncModelList(index);
 
@@ -1029,10 +939,14 @@ void MainWindow::addModel(int index) {
 
 void MainWindow::removeModel(int index) {
     SharedMorphModel model = config::getOpenModels()[index];
-    disconnect(model.data(),SIGNAL(modelPartAdded(int)),this,SLOT(syncModelList()));
-    disconnect(model.data(),SIGNAL(modelPartRemoved(int)),this,SLOT(syncModelList()));
+    disconnect(model,SIGNAL(modelPartAdded(int)),this,SLOT(syncModelList()));
+    disconnect(model,SIGNAL(modelPartRemoved(int)),this,SLOT(syncModelList()));
     editorStack->removeWidget(modelViewer[model]);
+	modelViewer[model]->deleteLater();
     modelViewer.remove(model);
+	editorStack->removeWidget(modelAbout[model]);
+	modelAbout[model]->deleteLater();
+	modelAbout.remove(model);
 
     modelList->takeTopLevelItem(index);
     if (model_index.model == index) {
@@ -1042,14 +956,15 @@ void MainWindow::removeModel(int index) {
 }
 
 void MainWindow::showCurrentModel() {
+// 	qDebug() << "showing current model from " << sender();
 	if (current_model->parts[model_index.part].label=="ParamSweep") {
         editorStack->setCurrentWidget(sweeper);
 		QWidget::setTabOrder(modelList,sweeper);
 		docuDock->setCurrentElement( "ParameterSweep" );
 	}
 	else if (model_index.part==0) {
-		editorStack->setCurrentWidget(modelAbout[current_model]);
 		modelAbout[current_model]->update();
+		editorStack->setCurrentWidget(modelAbout[current_model]);
 		docuDock->setCurrentElement(current_model->parts[model_index.part].element->getXPath() );
 // 		docuDock->setCurrentNode( current_model->parts[model_index.part].element);
 		QWidget::setTabOrder(modelList,modelAbout[current_model]);
@@ -1135,8 +1050,8 @@ void MainWindow::selectXMLPath(QString path, int model_id)
 	if (xml_path.size()<1) return; 
 	QString part_name = xml_path[0];
 	
+	if (model_id<0) return;
 	if (model_id>=0) {
-		selectModel(model_id);
 	}
 	
 	int part_id = -1;
@@ -1146,7 +1061,9 @@ void MainWindow::selectXMLPath(QString path, int model_id)
 			break;
 		}
 	}
-	
+
+	selectModel(model_id,part_id);
+
 	if ( part_id>=0) {
 		modelViewer[current_model]->selectNode(path);
 	}

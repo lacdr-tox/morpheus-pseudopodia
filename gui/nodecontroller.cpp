@@ -161,7 +161,7 @@ QObject(parent)
 					e.name = child.nodeName();
 					QTextStream s(&e.value);
 					child.save(s,4);
-					model_descr->auto_fixes.append(e);
+					if (!model_descr->stealth) model_descr->auto_fixes.append(e);
 					xmlDataNode.removeChild(child);
 					i--;
 				}
@@ -188,6 +188,13 @@ QObject(parent)
 		else
 			qDebug() << "Cannot register LatticeStructureAdapter! Attributes not found!";
 	}
+	if ( name=="TimeSymbol" ) {
+// 		if (attribute("symbol"))
+			model_descr->time_symbol = attribute("symbol");
+	}
+	
+	if ( node_type->is_scheduled )
+		model_descr->pluginNames[name]+=1;
 }
 
 //------------------------------------------------------------------------------
@@ -215,7 +222,7 @@ void nodeController::parseAttributes()
 			e.name = a_name;
 			e.value = a_name + "=\""  + xml_attributes.namedItem(a_name).nodeValue() + "\"";
 			xml_attributes.removeNamedItem( a_name);
-			model_descr->auto_fixes.append(e);
+			if (!model_descr->stealth) model_descr->auto_fixes.append(e);
 			i--;
 		}
 	}
@@ -229,6 +236,13 @@ nodeController::~nodeController()
 		delete adapters[i];
 	}
 	adapters.clear();
+	
+	if ( node_type->is_scheduled ) {
+		model_descr->pluginNames[name]-=1;
+		if (model_descr->pluginNames[name]<=0) {
+			model_descr->pluginNames.remove(name);
+		}
+	}
 
 	auto i = attributes.begin();
 	while (i != attributes.end()) {
@@ -433,7 +447,7 @@ AbstractAttribute* nodeController::getAttributeByPath(QStringList path) {
 }
 
 
-nodeController* nodeController::find(QStringList path) {
+nodeController* nodeController::find(QStringList path, bool create) {
 	if (path.empty())
 		return this;
 	
@@ -451,9 +465,15 @@ nodeController* nodeController::find(QStringList path) {
 		for (int i=0; i<childs.size();i++) {
 			if (childs[i]->getName()=="Contact"){
 				if (childs[i]->attribute("type1")->get() == type1 && childs[i]->attribute("type2")->get() == type2) {
-					return childs[i]->find(path);
+					return childs[i]->find(path, create);
 				}
 			}
+		}
+		if (create && getAddableChilds(true).contains("Contact") ) {
+			auto contact = insertChild("Contact");
+			contact->attribute("type1")->set(type1);
+			contact->attribute("type2")->set(type2);
+			return contact->find(path, create);
 		}
 		qDebug() << "find[" << name << "]: Unable to find Contact with type1=" <<type1 << " & type2=" << type2;
 		return NULL;
@@ -475,10 +495,18 @@ nodeController* nodeController::find(QStringList path) {
 			for (int i=0; i<childs.size();i++) {
 				if (childs[i]->getName()==child_name) {
 					if (child_id == n_matching)
-						return childs[i]->find(path);
+						return childs[i]->find(path, create);
 					else
 						n_matching++;
 				}
+			}
+			
+			if (create && getAddableChilds(true).contains(child_name)) {
+				nodeController* child;
+				for (int i=n_matching; i<=child_id; i++) {
+					child = insertChild(child_name);
+				}
+				if (child) return child->find(path, create);
 			}
 			qDebug() << "find[" << name << "]: Unable to find " << child_id << "th node named " << child_name;
 			return NULL;
@@ -487,8 +515,17 @@ nodeController* nodeController::find(QStringList path) {
 			for (int i=0; i<childs.size();i++) {
 				if (childs[i]->getName()==child_name) {
 					if (childs[i]->attribute(attrib_name) && (childs[i]->attribute(attrib_name)->get() == attrib_value)) {
-						return childs[i]->find(path);
+						return childs[i]->find(path, create);
 					}
+				}
+			}
+			
+			if (create && getAddableChilds(true).contains(child_name)) {
+				nodeController* child = insertChild(child_name);
+				if (child->attribute(attrib_name)) {
+					child->attribute(attrib_name)->set(attrib_value);
+					child->attribute(attrib_name)->setActive(true);
+					return child->find(path, create);
 				}
 			}
 			qDebug() << "find[" << name << "]: Unable to find child " << child_name << " with Attribute " << attrib_name << "=" << attrib_value;
@@ -497,12 +534,14 @@ nodeController* nodeController::find(QStringList path) {
 		else {
 			nodeController* child = firstActiveChild(child_name);
 			if (child) {
-				return child->find(path);
+				return child->find(path, create);
 			}
-			else {
-				qDebug() << "find[" << name << "]: No child " << child_name;
-				return NULL;
+			if (create && getAddableChilds(true).contains(child_name)) {
+				nodeController* child = insertChild(child_name);
+				return child->find(path, create);
 			}
+			qDebug() << "find[" << name << "]: No child " << child_name;
+			return NULL;
 		}
 	}
 }
@@ -683,8 +722,8 @@ nodeController* nodeController::insertChild(QDomNode xml_node, int pos)
 		childs.insert(pos,contr);
 	}
 	
-	model_descr->edits++;
-	model_descr->change_count++;
+	if (!model_descr->stealth) model_descr->edits++;
+	if (!model_descr->stealth) model_descr->change_count++;
 	return contr;
 }
 
@@ -702,7 +741,7 @@ void nodeController::setRequiredElements()
 			e.info = QString("Required Attribute '%1' added to Node '%2'.").arg(attr->getName(), name);
 			e.xml_parent = xmlDataNode;
 			e.name = attr->getName();
-			model_descr->auto_fixes.append(e);
+			if (!model_descr->stealth) model_descr->auto_fixes.append(e);
 		}
 	}
 
@@ -732,7 +771,7 @@ void nodeController::setRequiredElements()
 				e.info = QString("Required Node '%1' added to Node '%2'.").arg(child_def.name, name);
 				e.xml_parent = xmlDataNode;
 				e.name = child_def.name;
-				model_descr->auto_fixes.append(e);
+				if (!model_descr->stealth) model_descr->auto_fixes.append(e);
 
 				int message_pos = this->model_descr->auto_fixes.size();
 				for (int i=child_count; i<min; i++)
@@ -758,8 +797,8 @@ void nodeController::moveChild(int from, int to) {
 	// Here we use the index the child will have after move ...
 	childs.move(from,to);
 
-	model_descr->edits++;
-	model_descr->change_count++;
+	if (!model_descr->stealth) model_descr->edits++;
+	if (!model_descr->stealth) model_descr->change_count++;
 }
 
 //------------------------------------------------------------------------------
@@ -877,12 +916,14 @@ bool nodeController::setDisabled(bool b) {
 		xmlDisabledNode.save(s,4);
 		xmlNode.setNodeValue(dis_node_text);
 
-		if (orig_disabled)
-			model_descr->change_count--;
-		else
-			model_descr->change_count++;
+		if (!model_descr->stealth) {
+			if (orig_disabled)
+				model_descr->change_count--;
+			else
+				model_descr->change_count++;
 
-		model_descr->edits++;
+			model_descr->edits++;
+		}
     }
     else {
 		disabled = false;
@@ -894,12 +935,13 @@ bool nodeController::setDisabled(bool b) {
 		for (auto a=attributes.begin(); a!=attributes.end(); a++) {
 			a.value()->inheritDisabled(false);
 		}
-		if (orig_disabled)
-			model_descr->change_count++;
-		else
-			model_descr->change_count--;
-
-		model_descr->edits++;
+		if (!model_descr->stealth) {
+			if (orig_disabled)
+				model_descr->change_count++;
+			else
+				model_descr->change_count--;
+			model_descr->edits++;
+		}
 	}
 	return true;
 }
@@ -935,6 +977,10 @@ void nodeController::inheritDisabled(bool inherit) {
 
 //------------------------------------------------------------------------------
 
+void nodeController::setStealth(bool enabled) {
+	model_descr->stealth = enabled;
+}
+
 void nodeController::clearTrackedChanges()
 {
 	model_descr->auto_fixes.clear();
@@ -951,7 +997,7 @@ void nodeController::trackInformation(QString info)
 {
 	MorphModelEdit e;
 	e.info = info;
-	model_descr->auto_fixes.append(e);
+	if (!model_descr->stealth) model_descr->auto_fixes.append(e);
 }
 
 void nodeController::saved() {

@@ -110,16 +110,17 @@ void CellType::loadFromXML(const XMLNode xCTNode, Scope* scope) {
 	}
 	
 	local_scope = scope->createSubScope(string("CellType[")+name + "]",this);
-	auto cell_type_symbol =       SymbolAccessorBase<double>::createConstant("cell.type", "CellType ID", id);
-	cell_type_symbol->flags().integer = true;
-	local_scope->registerSymbol(  cell_type_symbol );
+	auto symbol =       SymbolAccessorBase<double>::createConstant("cell.type", "CellType ID", id);
+	symbol->flags().integer = true;
+	symbol->setXMLPath(getXMLPath(xCTNode));
+	local_scope->registerSymbol( symbol );
 	local_scope->registerSymbol(                   make_shared<CellIDSymbol>("cell.id") );
 	local_scope->registerSymbol(               make_shared<CellCenterSymbol>("cell.center") );
 	if (!isMedium()) {
-		local_scope->registerSymbol(            make_shared<CellVolumeSymbol>("cell.volume") );
-		local_scope->registerSymbol(            make_shared<CellLengthSymbol>("cell.length") );
-		local_scope->registerSymbol(   make_shared<CellInterfaceLengthSymbol>("cell.surface"));
-		local_scope->registerSymbol(       make_shared<CellOrientationSymbol>("cell.orientation"));
+		local_scope->registerSymbol(           make_shared<CellVolumeSymbol>("cell.volume") );
+		local_scope->registerSymbol(           make_shared<CellLengthSymbol>("cell.length") );
+		local_scope->registerSymbol(  make_shared<CellInterfaceLengthSymbol>("cell.surface"));
+		local_scope->registerSymbol(      make_shared<CellOrientationSymbol>("cell.orientation"));
 	}
 }
 

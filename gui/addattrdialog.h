@@ -14,6 +14,14 @@
 
 #include <QtGui>
 #include <QString>
+#include <QDialog>
+#include <QTreeWidget>
+#include <QHeaderView>
+#include <QTextEdit>
+#include <QLayout>
+#include <QSplitter>
+#include <QLabel>
+#include <QPushButton>
 #include <vector>
 #include "nodecontroller.h"
 

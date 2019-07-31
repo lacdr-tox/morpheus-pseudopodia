@@ -364,7 +364,7 @@ int JobQueue::addProcess(SharedMorphModel model)
         pending_interactive_jobs.append(freeID);
         processQueue();
     }
-    else Q_ASSERT(FALSE);
+    else Q_ASSERT(false);
 
     Q_ASSERT(freeID == process->jobID());
 

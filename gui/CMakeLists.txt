@@ -1,34 +1,52 @@
 MESSAGE(STATUS "BUILDING MORPHEUS GUI")
 
+cmake_policy(SET CMP0071 NEW)
 
-FIND_PACKAGE(Qt4 REQUIRED COMPONENTS QtCore QtGui QtSql QtNetwork QtXML QtHelp QtSvg OPTIONAL_COMPONENTS QtWebkit)
-OPTION(MORPHEUS_NO_QTWEBKIT "Don't use QtWebKit to show documentation. Fallback to QTextView" OFF)
-MARK_AS_ADVANCED(MORPHEUS_NO_QTWEBKIT)
+SET(MORPHEUS_WEBVIEW "Auto" CACHE STRING "Manually select the webview to be used (Auto,RTF,WebKit,WebEngine)")
+SET_PROPERTY(CACHE MORPHEUS_WEBVIEW PROPERTY STRINGS Auto RTF WebKit WebEngine)
 
-### Include Qt directories  *  Add Qt standard Defines  *  Create QT_LIBRARIES variable, including all required libs 
-
-FIND_PACKAGE(ZLIB REQUIRED)
-
-SET(GUI_EXEC_NAME "${MORPHEUS_EXEC_NAME}-gui")
-#OPTION(MORPHEUS_REMOTE "Enable support for remote computing resources. Depends on libSSH." OFF)
-
-INCLUDE(${QT_USE_FILE})
-ADD_DEFINITIONS(${QT_DEFINITIONS})
-
-#IF (MORPHEUS_REMOTE)
-#	FIND_PACKAGE(SSH)
-#	IF(NOT LIBSSH_FOUND)
-#		SET(MORPHEUS_REMOTE OFF FORCE)
-#		MESSAGE(STATUS "LIBSSH not found. Remote computing support disabled.")
-#	ENDIF()
-#ENDIF()
+OPTION(MORPHEUS_SBML "Build with SBML import support." ON)
 
 OPTION(LIBSBML_STATIC "Link the libSBML Library statically." OFF)
 mark_as_advanced(LIBSBML_STATIC)
 
+
+### Include Qt directories  *  Add Qt standard Defines  *  Create QT_LIBRARIES variable, including all required libs 
+
+######################################
+## Select the proper WebView        ##
+######################################
+
+FIND_PACKAGE(Qt5 COMPONENTS Widgets Sql Network Xml Svg Help)
+
+IF ( "${MORPHEUS_WEBVIEW}" STREQUAL "Auto" )
+	FIND_PACKAGE(Qt5 OPTIONAL_COMPONENTS WebEngineWidgets)
+	IF ( Qt5WebEngineWidgets_DIR )
+		SET(USE_QWebEngine TRUE)
+	ELSE()
+		FIND_PACKAGE(Qt5 OPTIONAL_COMPONENTS WebKitWidgets)
+		IF ( Qt5WebKitWidgets_DIR )
+			SET(USE_QWebKit TRUE)
+		ELSE()
+			SET(USE_QTextBrowser TRUE)
+		ENDIF()
+	ENDIF()
+ELSEIF ("${MORPHEUS_WEBVIEW}" STREQUAL "WebEngine")
+	FIND_PACKAGE(Qt5 COMPONENTS WebEngineWidgets)
+	SET(USE_QWebEngine TRUE)	
+ELSEIF ("${MORPHEUS_WEBVIEW}" STREQUAL "WebKit")
+	FIND_PACKAGE(Qt5 COMPONENTS WebKitWidgets)
+	SET(USE_QWebKit TRUE)
+ELSE()
+	SET(USE_QTextBrowser TRUE)
+ENDIF()
+
+######################################
+## Find or Build SBML               ##
+######################################
+
 IF ( NOT BUILD_LIBSBML )
     # Find on platform
-    
     message(STATUS "Find libSBML on the platform.")
     If (LIBSBML_STATIC OR MORPHEUS_STATIC_BUILD)
         set(STD_LIB_SUFFIX ${CMAKE_FIND_LIBRARY_SUFFIXES})
@@ -59,99 +77,46 @@ ELSE()
 ENDIF()
 
 
+#
+# ##  check whether the required sqlite plugin is available (if fails if the Variable ends eith NOTFOUND)
+# if( ( CMAKE_VERSION VERSION_GREATER "2.8.4") AND (NOT "${MORPHEUS_OS}" STREQUAL "WIN32") )
+# 	if (NOT QT_QSQLITE_PLUGIN_RELEASE)
+# 		message(FATAL_ERROR "QT SQLITE plugin not found. Install libqt4-sql-sqlite package .. ${MORPHEUS_OS}" )
+# 	ENDIF()
+#ENDIF()
+
+IF(LIBSBML_FOUND AND MORPHEUS_SBML)
+	SET(SOURCES ${SOURCES} sbml_converter.cpp)
+ENDIF()
+
+##################################
+##  Other dependencies          ##
+##################################
+
+FIND_PACKAGE(ZLIB REQUIRED)
+
+#OPTION(MORPHEUS_REMOTE "Enable support for remote computing resources. Depends on libSSH." OFF)
+
+
+#IF (MORPHEUS_REMOTE)
+#	FIND_PACKAGE(SSH)
+#	IF(NOT LIBSSH_FOUND)
+#		SET(MORPHEUS_REMOTE OFF FORCE)
+#		MESSAGE(STATUS "LIBSSH not found. Remote computing support disabled.")
+#	ENDIF()
+#ENDIF()
+
 ##  check whether the required sqlite plugin is available (if fails if the Variable ends eith NOTFOUND)
-if( ( CMAKE_VERSION VERSION_GREATER "2.8.4") AND (NOT "${MORPHEUS_OS}" STREQUAL "WIN32") )
-	if (NOT QT_QSQLITE_PLUGIN_RELEASE)
-		message(FATAL_ERROR "QT SQLITE plugin not found. Install libqt4-sql-sqlite package .. ${MORPHEUS_OS}" )
-	ENDIF()
-ENDIF()
-
-
-SET(QT_DOC_FOLDER ${CMAKE_CURRENT_BINARY_DIR}/doc)
-
-SET(QT_HELP_PROJECT "${QT_DOC_FOLDER}/html/index.qhp")
-SET(QT_HELP_COMPRESSED "${QT_DOC_FOLDER}/morpheus.qch")
-SET(QT_HELP_MATHJAX_PROJECT "${QT_DOC_FOLDER}/html/mathjax.qhp")
-SET(QT_HELP_MATHJAX_COMPRESSED "${QT_DOC_FOLDER}/mathjax.qch")
-SET(QT_HELP_COLLECTION_PROJECT "${QT_DOC_FOLDER}/morpheus.qhcp")
-SET(QT_HELP_COLLECTION "${QT_DOC_FOLDER}/morpheus.qhc")
-
-IF (CMAKE_VERBOSE_MAKEFILE) 
-	SET(CMAKE_QUIET_MAKEFILE NO)
-ELSE()
-	SET(CMAKE_QUIET_MAKEFILE YES)
-ENDIF()
-
-OPTION(DOXYGEN_QHP_PATCH "Patch the QHP File created via doxygen to cure the \"Opening and ending tag mismatch.\" bug." OFF)
-mark_as_advanced(DOXYGEN_QHP_PATCH)
-#The conditions for which the doxygen qhp patch has to be applied is still unclear
-# IF (DOXYGEN_VERSION VERSION_LESS "1.8.9")
-# 	SET(DOXYGEN_QHP_PATCH ON)
+# if( ( CMAKE_VERSION VERSION_GREATER "2.8.4") AND (NOT "${MORPHEUS_OS}" STREQUAL "WIN32") )
+# 	if (NOT QT_QSQLITE_PLUGIN_RELEASE)
+# 		message(FATAL_ERROR "QT SQLITE plugin not found. Install libqt4-sql-sqlite package .. ${MORPHEUS_OS}" )
+# 	ENDIF()
 # ENDIF()
 
 
-# Create a space separated file list for Doxygen
-SET(DOXYGEN_SOURCES "" )
-foreach(source ${APP_DOC_HEADERS})
-	SET(DOXYGEN_SOURCES "${DOXYGEN_SOURCES} ${source}")
-endforeach()
-#message(STATUS "AppDoc header files (${APP_DOC_HEADER_NUM}) are ${APP_DOC_HEADERS}")
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/appdoc/morpheus.doxy.in ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy @ONLY)
-
-SET(DOXYGEN_EXTRA_FILES  "appdoc/doxygen_header.html" "appdoc/doxygen_footer.html" "appdoc/morpheus_style.css" "appdoc/dynsections.js" "appdoc/jquery.js")
-
-
-IF (DOXYGEN_QHP_PATCH)
-  ## HERE we delete one line that is mistakenly inserted by doxygen into the QT_HELP_PROJECT
-  ## The line number has to be adjusted according to the structure of the Documentation !!
-  message(STATUS "Applying Doxygen QHP patch.")
-  ADD_CUSTOM_COMMAND(
-	  OUTPUT ${QT_HELP_PROJECT}
-	  COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy
-	  COMMAND ${CMAKE_COMMAND} -E rename ${QT_HELP_PROJECT} ${QT_HELP_PROJECT}.tmp
-	  COMMAND awk "BEGIN{lvl=0; occ=0;} { closing=0; if (/<section.+\\/>/) lvl+=0; else if (/<section/) lvl++; else  if (/<\\/section/) { closing=1; lvl--;} if ( !(lvl==0 && closing==1 && occ==0) ) {print \$0} else occ=1; }"  ${QT_HELP_PROJECT}.tmp > ${QT_HELP_PROJECT}
-	  COMMAND ${CMAKE_COMMAND} -E remove ${QT_HELP_PROJECT}.tmp
-	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy ${APP_DOC_HEADERS} ${DOXYGEN_EXTRA_FILES}
-	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	  COMMENT "Generating in-application documentation with Doxygen" VERBATIM
-  )
-ELSEIF( "${DOXYGEN_VERSION}" STREQUAL "1.8.11")
-  ADD_CUSTOM_COMMAND(
-	  OUTPUT ${QT_HELP_PROJECT}
-	  COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy
-	  COMMAND sed -itmp "s/<files>/<files><file>dynsections\\.js<\\/file> <file>morpheus\\.png<\\/file>/" ${QT_HELP_PROJECT} 
-	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy ${APP_DOC_HEADERS}  ${DOXYGEN_EXTRA_FILES}
-	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	  COMMENT "Generating in-application documentation with Doxygen" VERBATIM
-  )
-ELSE()  
-  ADD_CUSTOM_COMMAND(
-	  OUTPUT ${QT_HELP_PROJECT}
-	  COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy
-	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/morpheus.doxy ${APP_DOC_HEADERS}  ${DOXYGEN_EXTRA_FILES}
-	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	  COMMENT "Generating in-application documentation with Doxygen" VERBATIM
-  )
-ENDIF()
-
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/appdoc/morpheus.qhcp.in ${QT_HELP_COLLECTION_PROJECT} @ONLY)
-## File list generator for mathjax.qhp::  find * -type f -exec echo "<file>MathJax/{}</file>" \;
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/appdoc/mathjax.qhp.in ${QT_HELP_MATHJAX_PROJECT} @ONLY)
-
-ADD_CUSTOM_COMMAND(
-	OUTPUT ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED}
-	COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/appdoc/MathJax ${QT_DOC_FOLDER}/html/MathJax
-	COMMAND ${QT_QCOLLECTIONGENERATOR_EXECUTABLE} ${QT_HELP_COLLECTION_PROJECT} -o ${QT_HELP_COLLECTION}
-	DEPENDS ${QT_HELP_PROJECT} ${QT_HELP_COLLECTION_PROJECT}  ${QT_HELP_MATHJAX_PROJECT}
-	WORKING_DIRECTORY ${QT_DOC_FOLDER}
-	COMMENT "Assembling in-application documentation with qcollectiongenerator" VERBATIM
-)
-
-add_custom_target( AppDoc DEPENDS ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED} )
 
 ### set the source, headers and resources
-SET( SOURCES
+SET( SOURCES ${SOURCES}
     about_model.cpp
     abstractattribute.cpp 
     abstractprocess.cpp 
@@ -190,73 +155,43 @@ SET( SOURCES
     synchronizer.cpp 
     xmlhighlighter.cpp 
     xmlpreview.cpp 
-    xsd.cpp 
+    xsd.cpp
+    widgets/checkboxlist.cpp
+    widgets/webviewer.cpp
    )
 
-SET( HEADERS #headers that are commented out are not necessary for moc_* files (avoids compiler warnings)
-    abstractattribute.h 
-    attrcontroller.h
-    addattrdialog.h 
-    abstractprocess.h 
-    about_model.h
-    config.h 
-    docu_dock.h
-    domnodeeditor.h
-    domnodeviewer.h
-    equationhighlighter.h 
-    announcement.h
-    imagetable.h
-    infoaction.h 
-    jobcontroller.h 
-    job_progress_delegate.h
-    job_queue.h 
-    jobviewmodel.h
-    jobview.h
-    jobsummary.h
-    mainwindow.h 
-    mathtextedit.h 
-    morpheus_model.h
-    # morpheus_xml.h
-    model_index_mime_data.h
-    moviedialog.h 
-    network_access.h
-    nodeadapter.h
-    nodecontroller.h
-    localprocess.h 
-    parametersweeper.h
-    paramsweepmodel.h
-    remoteprocess.h 
-    settingsdialog.h 
-    # sshproxy.h
-    # synchronizer.h
-    # xmlpreview.h
-    # xmlhighlighter.h
-    # xsd.h
-   )
-
-OPTION(MORPHEUS_SBML "Build with SBML import support." ON)
-
-IF(LIBSBML_FOUND AND MORPHEUS_SBML)
-	SET(SOURCES ${SOURCES} sbml_converter.cpp)
-	SET(HEADERS ${HEADERS} sbml_converter.h)
+IF ( USE_QWebEngine )
+	SET( SOURCES ${SOURCES} network_schemes.cpp )
 ENDIF()
 
 
-## Prepare external ressources for inclusion
-# Construct resource list from example files
-SET(EXAMPLES_RC_FILES  "")
-SET(RESOURCE_DEPENDENCIES "")
-foreach(example ${EXAMPLES_SRC} )
-	SET(EXAMPLES_RC_FILES  ${EXAMPLES_RC_FILES} "		<file alias=\"${example}\">${EXAMPLES_PATH}/${example}</file>\n")
-# 	LIST( APPEND RESOURCE_DEPENDENCIES ${EXAMPLES_PATH}/${example} )
-endforeach()
-# LIST( APPEND RESOURCE_DEPENDENCIES ${MORPHEUS_XSD_FILE})
+#################################################
+## Prepare external ressources for inclusion   ##
+#################################################
 
-# configure examples and XSD intor ext_files.rc
+# Construct resource list from example files
+SET(EXAMPLES_FILES ${EXAMPLES_SRC})
+IF (CMAKE_VERSION VERSION_LESS "3.12")
+	SET(EXAMPLES_RC_FILES "")
+	FOREACH( EXAMPLE ${EXAMPLES_FILES} )
+		STRING(APPEND EXAMPLES_RC_FILES "              <file alias=\"${EXAMPLE}\">${EXAMPLES_PATH}/${EXAMPLE}</file>\n" )
+	ENDFOREACH()
+ELSE()
+	LIST(TRANSFORM EXAMPLES_FILES REPLACE "(.+)" "           <file alias=\"\\1\">${EXAMPLES_PATH}/\\1</file>")
+	LIST(JOIN EXAMPLES_FILES "\n" EXAMPLES_RC_FILES)
+ENDIF()
+
 configure_file(ext_files.rc.in ext_files.rc @ONLY)
+
 # compile the resources
 SET( RESOURCES link_data.qrc ${CMAKE_CURRENT_BINARY_DIR}/ext_files.rc)
-QT4_ADD_RESOURCES( RESOURCES_RCC ${RESOURCES} )
+IF(MORPHEUS_GRAPHVIZ STREQUAL "WebRenderer")
+	LIST(APPEND RESOURCES graphviz_renderer.qrc)
+	set_property(SOURCE about_model.cpp APPEND PROPERTY COMPILE_DEFINITIONS GRAPHVIZ_WEB_RENDERER=1 )
+ENDIF()
+
+QT5_ADD_RESOURCES( RESOURCES_RCC ${RESOURCES} OPTIONS "--compress" "8" )
+
 
 IF( MINGW )
 	SET( ICON_RESOURCE icons/win/morpheus.rc )
@@ -268,22 +203,27 @@ ENDIF( )
 
 
 ### run moc and rcc over the headers and resource files
-QT4_WRAP_CPP( HEADERS_MOC ${HEADERS} )
+SET(CMAKE_AUTOMOC ON)
+SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-ADD_EXECUTABLE( ${GUI_EXEC_NAME} WIN32 ${SOURCES} ${HEADERS_MOC} ${RESOURCES_RCC} )
-ADD_DEPENDENCIES(${GUI_EXEC_NAME} xmlSchema AppDoc)
 
-IF (MORPHEUS_STATIC_BUILD)
-	SET_TARGET_PROPERTIES(${GUI_EXEC_NAME} PROPERTIES LINK_SEARCH_START_STATIC 1)
-	SET_TARGET_PROPERTIES(${GUI_EXEC_NAME} PROPERTIES LINK_SEARCH_END_STATIC 1)
-ENDIF()
+ADD_EXECUTABLE( MorpheusGUI WIN32 MACOSX_BUNDLE ${SOURCES} ${RESOURCES_RCC} )
+set_target_properties(MorpheusGUI PROPERTIES RUNTIME_OUTPUT_NAME ${GUI_EXEC_NAME})
+add_subdirectory(appdoc)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR} ${ZLIB_INCLUDE_DIR}) 
+ADD_DEPENDENCIES(MorpheusGUI xmlSchema AppDoc)
+
+# IF (MORPHEUS_STATIC_BUILD)
+# 	SET_TARGET_PROPERTIES(${GUI_EXEC_NAME} PROPERTIES LINK_SEARCH_START_STATIC 1)
+# 	SET_TARGET_PROPERTIES(${GUI_EXEC_NAME} PROPERTIES LINK_SEARCH_END_STATIC 1)
+# ENDIF()
+
+INCLUDE_DIRECTORIES( ${ZLIB_INCLUDE_DIR}) 
+
 ### create executable and link to Qt libraries and external libraries
-# note: use the moc/rcc processed  headers/reources 
+qt5_use_modules(MorpheusGUI Widgets Xml Sql Svg Help Network)
 
-
-TARGET_LINK_LIBRARIES(${GUI_EXEC_NAME} qtsingleapp ${QT_LIBRARIES} ${ZLIB_LIBRARY} )
+TARGET_LINK_LIBRARIES(MorpheusGUI qtsingleapp ${ZLIB_LIBRARY} )
 
 IF( "${MORPHEUS_OS}" STREQUAL "WIN32")
 	IF( CMAKE_COMPILER_IS_GNUCXX )
@@ -291,33 +231,30 @@ IF( "${MORPHEUS_OS}" STREQUAL "WIN32")
 		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mconsole")
 	ENDIF()
 	IF(MORPHEUS_STATIC_BUILD)
-			TARGET_LINK_LIBRARIES(${GUI_EXEC_NAME} wsock32 ws2_32 )
+			TARGET_LINK_LIBRARIES(MorpheusGUI wsock32 ws2_32 )
 	ENDIF()
 ENDIF()
 
-IF(MORPHEUS_REMOTE)
-	INCLUDE_DIRECTORIES(${LIBSSH_INCLUDE_DIR})
-	ADD_DEFINITIONS("-DHAVE_LIBSSH")
-	TARGET_LINK_LIBRARIES(${GUI_EXEC_NAME} ${LIBSSH_LIBRARIES})
-	MESSAGE(STATUS "MORPHEUS GUI is build WITH remote computing support.")
-ELSE()
-	MESSAGE(STATUS "MORHPEUS GUI is build WITHOUT remote computing support.")
-ENDIF()
-
-IF( (NOT QT_QTWEBKIT_LIBRARY) OR MORPHEUS_NO_QTWEBKIT)
-	MESSAGE(STATUS "MORHPEUS GUI is build WITHOUT QtWebKit.")
-	ADD_DEFINITIONS(-DMORPHEUS_NO_QTWEBKIT)
-ELSE()
+IF ( USE_QWebEngine )
+	MESSAGE(STATUS "MORHPEUS GUI is build WITH QWebEngine.")
+	ADD_DEFINITIONS(-DUSE_QWebEngine)
+	qt5_use_modules(MorpheusGUI WebEngine WebEngineWidgets)
+ELSEIF( USE_QWebKit)
 	MESSAGE(STATUS "MORHPEUS GUI is build WITH QtWebKit.")
+	ADD_DEFINITIONS(-DUSE_QWebKit)
+	qt5_use_modules(MorpheusGUI WebKit WebKitWidgets)
+ELSE()
+	MESSAGE(STATUS "MORHPEUS GUI is build WITH QTextBrowser.")
+	ADD_DEFINITIONS(-DUSE_QTextBrowser)
 ENDIF()
 
 IF(LIBSBML_FOUND AND MORPHEUS_SBML)
 	INCLUDE_DIRECTORIES(${LIBSBML_INCLUDE_DIR})
 	ADD_DEFINITIONS(-DHAVE_LIBSBML)
     ADD_DEFINITIONS( ${LIBSBML_DEFINITIONS} )
-	TARGET_LINK_LIBRARIES(${GUI_EXEC_NAME} ${LIBSBML_LIBRARY})
+	TARGET_LINK_LIBRARIES(MorpheusGUI ${LIBSBML_LIBRARY})
 	IF(BUILD_LIBSBML)
-        ADD_DEPENDENCIES(${GUI_EXEC_NAME} libSBML)
+        ADD_DEPENDENCIES(MorpheusGUI libSBML)
 	ENDIF()
 	
 # 	IF (LIBSBML_STATIC OR MORPHEUS_STATIC_BUILD) 
@@ -341,17 +278,20 @@ ELSE()
 	MESSAGE(STATUS "MORPHEUS GUI is build WITHOUT SBML import support.")
 ENDIF()
 
+IF(MORPHEUS_REMOTE)
+	INCLUDE_DIRECTORIES(${LIBSSH_INCLUDE_DIR})
+	ADD_DEFINITIONS("-DHAVE_LIBSSH")
+	TARGET_LINK_LIBRARIES(MorpheusGUI ${LIBSSH_LIBRARIES})
+	MESSAGE(STATUS "MORPHEUS GUI is build WITH remote computing support.")
+ELSE()
+	MESSAGE(STATUS "MORHPEUS GUI is build WITHOUT remote computing support.")
+ENDIF()
+
 
 ### install the app and the icons
 IF( "${MORPHEUS_OS}" STREQUAL "UNIX")
-	INSTALL( TARGETS ${GUI_EXEC_NAME} RUNTIME 
+	INSTALL( TARGETS MorpheusGUI RUNTIME 
 			 DESTINATION bin )
-	INSTALL( FILES ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED} ${QT_HELP_MATHJAX_COMPRESSED}
-		DESTINATION share/morpheus
-	)
-# 	IF(LIBSBML_STATIC)
-#         INSTALL( FILES ${LIBSBML_STATIC_LIBRARIES} )
-# 	ENDIF()
 	
 	SET( ICONSIZES "16x16" "48x48" "64x64" "128x128")
 	SET( IMAGE_PATTERN "morpheus.*" )
@@ -371,12 +311,9 @@ IF( "${MORPHEUS_OS}" STREQUAL "UNIX")
 	)
 	
 ELSEIF("${MORPHEUS_OS}" STREQUAL "APPLE")
-	INSTALL( TARGETS ${GUI_EXEC_NAME} RUNTIME DESTINATION bin )
-	INSTALL( FILES ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED}
-		DESTINATION share/morpheus
-	)
+	INSTALL( TARGETS MorpheusGUI RUNTIME DESTINATION bin )
 ELSEIF("${MORPHEUS_OS}" STREQUAL "WIN32")
-	INSTALL( TARGETS ${GUI_EXEC_NAME} RUNTIME DESTINATION .)
+	INSTALL( TARGETS MorpheusGUI RUNTIME DESTINATION .)
 	find_library(LIB_WINPTHREAD "libwinpthread-1" PATHS ${QT_BINARY_DIR} )
 	INSTALL( FILES ${QT_BINARY_DIR}/QtCore4.dll ${QT_BINARY_DIR}/QtGui4.dll ${QT_BINARY_DIR}/QtCLucene4.dll ${QT_BINARY_DIR}/QtHelp4.dll ${QT_BINARY_DIR}/QtNetwork4.dll ${QT_BINARY_DIR}/QtWebKit4.dll ${QT_BINARY_DIR}/QtXml4.dll ${QT_BINARY_DIR}/QtSvg4.dll ${QT_BINARY_DIR}/QtSql4.dll ${LIB_WINPTHREAD} DESTINATION .)
 	if ( NOT ${LIBSBML_STATIC} ) 
@@ -384,8 +321,6 @@ ELSEIF("${MORPHEUS_OS}" STREQUAL "WIN32")
 		INSTALL( FILES ${LIBSBML_LIB_PATH}/../bin/libsbml.dll  ${LIBSBML_LIB_PATH}/../bin/libxml2.dll DESTINATION .)
 	ENDIF()
 	INSTALL (FILES ${QT_QSQLITE_PLUGIN_RELEASE} DESTINATION sqldrivers )
-	INSTALL( FILES ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED} ${QT_HELP_MATHJAX_COMPRESSED} DESTINATION . )
 ENDIF()
 
-SET(GUI_EXEC_NAME ${GUI_EXEC_NAME} PARENT_SCOPE)
 SET(LIBSBML_FOUND ${LIBSBML_FOUND} PARENT_SCOPE)

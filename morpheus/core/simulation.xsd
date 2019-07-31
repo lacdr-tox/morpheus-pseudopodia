@@ -17,6 +17,59 @@
 		<xs:attribute name="version" type="cpmInteger" use="optional" />
 	</xs:complexType>
 	
+	<xs:group name="GlobalPlugins">
+		<xs:choice>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+		</xs:choice>
+	</xs:group>
+  
+	<xs:group name="PDEPlugins">
+		<xs:choice>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="InteractionPlugins">
+		<xs:choice>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="ContactPlugins">
+		<xs:choice>
+		</xs:choice>
+	</xs:group>
+		
+	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+            <xs:element name="CellTracker" 			type="CellTracker"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="DiscreteSystemPlugins">
+		<xs:choice>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="SystemPlugins">
+		<xs:choice>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group name="PopulationInitPlugins">
+		<xs:choice>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:group  name="FieldInitPlugins">
+		<xs:choice>
+		</xs:choice>
+	</xs:group>
+
+	
+	
 	<xs:complexType name="morphGlobals">
 		<xs:choice minOccurs="0" maxOccurs="unbounded">
 			<xs:group ref="GlobalPlugins" />

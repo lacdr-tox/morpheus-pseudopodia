@@ -45,7 +45,8 @@ build tools required:
 
 Libraries required (debian package notation):
   - zlib1g-dev libtiff-dev graphviz-dev libboost-dev
-  - libqt4-dev libqt4-sql-sqlite libqt4-network libqt4-webkit libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools
+  - qttools5-dev libqt5sql5-sqlite libqt5svg5-dev (qtwebengine5-dev | libqt5webview5-dev)
+
  
 Runtime dependencies:
   - gnuplot
@@ -61,10 +62,12 @@ Runtime dependencies:
 
 ## Building on Debian based systems
 
+
 To install all dependencies on Ubuntu 16.04 and 18.04 run:
 ```  
-sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libtiff5-dev libgraphviz-dev libqt4-dev libqt4-sql-sqlite libqt4-network libqtwebkit-dev libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools libsbml5-dev libboost-dev gnuplot
-``` 
+sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libboost-dev libtiff5-dev libsbml5-dev qttools5-dev libqt5-svg-dev qtwebengine5-dev libqt5sql5-sqlite gnuplot  
+```
+
 To install all dependencies on Ubuntu 14.04 and other Debian based systems run:
 ```  
 sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libtiff-dev libgraphviz-dev libqt4-dev libqt4-sql-sqlite libqt4-network libqt4-webkit libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools libboost-dev gnuplot

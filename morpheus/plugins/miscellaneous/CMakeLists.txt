@@ -7,5 +7,6 @@ set(plugin_src
 	insert_medium.cpp
 	# distance_transform.cpp
 	# example_plugin.cpp
-	
-  PARENT_SCOPE)
+)
+
+target_sources_relpaths(MorpheusSIM PRIVATE plugin_src)

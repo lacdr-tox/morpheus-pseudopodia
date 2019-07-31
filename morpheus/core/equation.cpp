@@ -29,6 +29,7 @@ void Equation::report()
 	else {
 		for (const auto& f: fr) {
 			symbol.set(f,expression(f));
+			cout << "Setting " << symbol.stringVal() << "=" << expression(f) << endl;
 		}
 	}
 	// Make equations always run

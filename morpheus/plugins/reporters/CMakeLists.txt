@@ -6,5 +6,6 @@ set(plugin_src
 	motility_reporter.cpp
 
 #	population_reporter.cpp
+)
 
-  PARENT_SCOPE)
+target_sources_relpaths(MorpheusSIM PRIVATE plugin_src)

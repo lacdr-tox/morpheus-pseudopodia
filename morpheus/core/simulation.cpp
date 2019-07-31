@@ -310,6 +310,9 @@ bool init(int argc, char *argv[]) {
 
 	if (cmd_line.find("symbol-graph") != cmd_line.end()) {
 		generate_symbol_graph_and_exit = true;
+		if ( ! cmd_line["symbol-graph"].empty()) {
+			dep_graph_format = cmd_line["symbol-graph"];
+		}
 		cmd_line.erase(cmd_line.find("symbol-graph"));
 	}
 	else {
@@ -439,11 +442,15 @@ void loadFromXML(const XMLNode xNode) {
 	
 	
 	getXMLAttribute(xTime,"TimeSymbol/symbol",SymbolBase::Time_symbol);
-	global_scope->registerSymbol(make_shared<TimeSymbol>(SymbolBase::Time_symbol));
+	auto time_symbol = make_shared<TimeSymbol>(SymbolBase::Time_symbol);
+	time_symbol->setXMLPath(getXMLPath(xTime)+"/TimeSymbol");
+	global_scope->registerSymbol(time_symbol);
 	
 	xSpace = xNode.getChildNode("Space");
 	getXMLAttribute(xSpace,"SpaceSymbol/symbol",SymbolBase::Space_symbol);
-	global_scope->registerSymbol(make_shared<SpaceSymbol>(SymbolBase::Space_symbol));
+	auto space_symbol = make_shared<SpaceSymbol>(SymbolBase::Space_symbol);
+	space_symbol->setXMLPath(getXMLPath(xSpace)+"/SpaceSymbol");
+	global_scope->registerSymbol(space_symbol);
 	
 	setRandomSeeds(xTime.getChildNode("RandomSeed"));
 	

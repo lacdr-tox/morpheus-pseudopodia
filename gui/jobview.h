@@ -9,6 +9,8 @@
 //
 //////
 
+#ifndef JOBVIEW_H
+#define JOBVIEW_H
 
 #include <QtGui>
 #include "job_queue.h"
@@ -56,3 +58,5 @@ signals:
 	void stopJob(int job_id);
 	void debugJob(int job_id);
 };
+
+#endif

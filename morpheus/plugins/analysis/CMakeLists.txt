@@ -19,11 +19,11 @@ set(plugin_src
 #    nematicTensorLogger.cpp
 )
 
-IF (GRAPHVIZ_FOUND) 
-	set(plugin_src
-		${plugin_src}
-		dependency_graph.cpp
-	)
-ENDIF()
 
-SET(plugin_src ${plugin_src} PARENT_SCOPE)
+IF (GRAPHVIZ_FOUND) 
+	target_include_directories(MorpheusSIM PRIVATE ${GRAPHVIZ_INCLUDE_DIR} )
+ENDIF()
+list(APPEND plugin_src dependency_graph.cpp )
+
+target_sources_relpaths(MorpheusSIM PRIVATE plugin_src)
+

@@ -12,7 +12,7 @@
 #ifndef DOMNODEEDITOR_H
 #define DOMNODEEDITOR_H
 
-#include <QtGui/QWidget>
+#include <QWidget>
 #include "config.h"
 #include "nodecontroller.h"
 #include "mathtextedit.h"

@@ -23,6 +23,8 @@ class DelayPropertyPlugin : public Container<double>, public ContinuousProcessPl
 {
 protected:
 	DelayPropertyPlugin(Mode mode);
+	
+	// manual replacement for the DECLARE_PLUGIN macro
 	static bool type_registration;
 	static const string CellPropertyXMLName() { return "DelayProperty"; };
 	static const string VariableXMLName() { return "DelayVariable"; };

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+<head>
+</head>
+<body>
+<script src="viz_1.8.2.js" type="javascript/worker"></script>
+<script src="d3.v5.min.js"></script>
+<script src="d3-graphviz.min_2.6.1.js"></script>	
+<div id="graph" style="text-align: center">	
+<script type="text/javascript">	
+	var dotSrc; //= '@@template@@';
+	var b1 = document.getElementById("saveBtn");
+	var graphviz = d3.select("#graph").graphviz()
+	var d3trans = d3.select("#graph").graphviz()
+    	.transition(function () {
+        	return d3.transition("main")
+            	.ease(d3.easeLinear)
+            	.delay(0)
+            	.duration(500);
+    });
+	transition('digraph {compound=true;subgraph cluster{labelloc="t";label="Global";bgcolor="#2341782f"node[style=filled,fillcolor="#fffea3"]Logger_0_0_01[ shape=record, label="{ Logger | 0.01 }", URL="morph://MorpheusModel/MorpheusModel/Analysis/Logger"]APC_0[label="APC", fillcolor="#d3d247",peripheries=2]CDK1_0[label="CDK1", fillcolor="#d3d247",peripheries=2]Plk1_0[label="Plk1", fillcolor="#d3d247",peripheries=2]subgraph cluster_1 {label="CellType[cells]";APC_1[label="APC", fillcolor="#d3d247"]CDK1_1[label="CDK1", fillcolor="#d3d247"]Plk1_1[label="Plk1", fillcolor="#d3d247"]subgraph cluster_2 {label="System";System_2_0_01[ shape=record, label="{ System | 0.01 }", URL="morph://MorpheusModel/MorpheusModel/CellTypes/CellType/System" ]K_2[label="K", fillcolor="#d3d247"]n_2[label="n", fillcolor="#d3d247"]alpha1_2[label="α1", fillcolor="#d3d247"]alpha2_2[label="α2", fillcolor="#d3d247"]alpha3_2[label="α3", fillcolor="#d3d247"]beta1_2[label="β1", fillcolor="#d3d247"]beta2_2[label="β2", fillcolor="#d3d247"]beta3_2[label="β3", fillcolor="#d3d247"]}}subgraph cluster_3 {label="CellType[Medium]";}}APC_0 -> Logger_0_0_01 [penwidth=2, color="#112c5f"] APC_1 -> APC_0 [dir=none, style="dashed", penwidth=1, color="#38568c"] CDK1_0 -> Logger_0_0_01 [penwidth=2, color="#112c5f"] CDK1_1 -> CDK1_0 [dir=none, style="dashed", penwidth=1, color="#38568c"] K_2 -> System_2_0_01 [penwidth=2, color="#112c5f"] Plk1_0 -> Logger_0_0_01 [penwidth=2, color="#112c5f"] Plk1_1 -> Plk1_0 [dir=none, style="dashed", penwidth=1, color="#38568c"]System_2_0_01 -> APC_1 [penwidth=3, color=\"#8f100d\"] System_2_0_01 -> CDK1_1 [penwidth=3, color=\"#8f100d\"] System_2_0_01 -> Plk1_1 [penwidth=3, color="#8f100d"] alpha1_2 -> System_2_0_01 [penwidth=2, color="#112c5f"] alpha2_2 -> System_2_0_01 [penwidth=2, color="#112c5f"] alpha3_2 -> System_2_0_01 [penwidth=2, color="#112c5f"] beta1_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]beta2_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]beta3_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]n_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]}")');
+	
+    function transition(nextGraph)
+    {
+		dotSrc = nextGraph;
+		graphviz
+			.renderDot(dotSrc);
+	}
+		
+	function retSVG()
+	{
+		var toRet = document.getElementById("graph").innerHTML;
+		return toRet;
+	}
+</script>
+</div>
+</body>
+</html>
