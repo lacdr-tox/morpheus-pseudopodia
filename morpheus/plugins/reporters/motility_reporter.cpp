@@ -2,13 +2,11 @@
 
 REGISTER_PLUGIN(MotilityReporter);
 
-MotilityReporter::MotilityReporter() : ReporterPlugin() {
+MotilityReporter::MotilityReporter() : ReporterPlugin(TimeStepListener::XMLSpec::XML_OPTIONAL) {
 	velocity.setXMLPath("Velocity/symbol-ref");
 	registerPluginParameter(velocity);
 	displacement.setXMLPath("Displacement/symbol-ref");
 	registerPluginParameter(displacement);
-	interval.setXMLPath("time-step");
-	registerPluginParameter(interval);
 };
 
 void MotilityReporter::init (const Scope* scope)
@@ -16,11 +14,10 @@ void MotilityReporter::init (const Scope* scope)
 	ReporterPlugin::init (scope);
 	celltype = scope->getCellType();
 	registerCellPositionDependency();
-	
+
 	assert(celltype);
-	this->setTimeStep(interval());
 	is_adjustable=false;
-	
+
 }
 
 void MotilityReporter::report()
