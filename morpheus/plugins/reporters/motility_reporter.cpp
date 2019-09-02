@@ -7,6 +7,8 @@ MotilityReporter::MotilityReporter() : ReporterPlugin(TimeStepListener::XMLSpec:
 	registerPluginParameter(velocity);
 	displacement.setXMLPath("Displacement/symbol-ref");
 	registerPluginParameter(displacement);
+	interval.setXMLPath("time-step");
+	registerPluginParameter(interval);
 };
 
 void MotilityReporter::init (const Scope* scope)
