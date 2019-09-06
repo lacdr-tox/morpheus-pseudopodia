@@ -121,8 +121,9 @@ private:
 	bool allow_partial_spec;
 	
 	bool initialized = false;
-	bool expr_is_const;
-	T const_val;
+	mutable bool expr_is_const;
+	bool delay_const_expr_init = false;
+	mutable T const_val;
 	bool expr_is_symbol;
 	SymbolAccessor<T> symbol_val;
 	
@@ -428,13 +429,24 @@ void ExpressionEvaluator<T>::init()
 	
 	// update and collect data
 	if (expr_is_const) {
+		bool cache_is_const = true;
 		expr_is_const = false;
-		const_val = safe_get(SymbolFocus::global);
-		expr_is_const = true;
-		if (depend_symbols.size()>0) {
-			cout << "Expression " << this->getExpression() << " is const (";
-			for (auto const& dep: depend_symbols ) { cout << dep->name() << ", " ; }
-			cout << ")" << endl;
+		for (const auto& sym : evaluator_cache->getExternalSymbols()) {
+			if (!sym->flags().space_const) {
+				cache_is_const = false;
+			}
+		}
+		if (!cache_is_const) {
+			delay_const_expr_init = true;
+		}
+		else {
+			const_val = safe_get(SymbolFocus::global);
+			expr_is_const = true;
+			if (depend_symbols.size()>0) {
+				cout << "Expression " << this->getExpression() << " is const (";
+				for (auto const& dep: depend_symbols ) { cout << dep->name() << ", " ; }
+				cout << ")" << endl;
+			}
 		}
 	}
 	

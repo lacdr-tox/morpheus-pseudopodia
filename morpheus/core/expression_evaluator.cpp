@@ -16,6 +16,12 @@ double ExpressionEvaluator<double>::get(const SymbolFocus& focus, bool safe) con
 		return safe || allow_partial_spec ? symbol_val->safe_get(focus) : symbol_val->get(focus);
 	
 	evaluator_cache->fetch(focus, safe || allow_partial_spec);
+	
+	if (delay_const_expr_init) {
+		const_val = parser->Eval((void*)&focus);
+		expr_is_const = true;
+		return const_val;
+	}
 	return parser->Eval((void*)&focus);
 }
 
@@ -25,6 +31,11 @@ double ExpressionEvaluator<double>::plain_get(const SymbolFocus& focus) const
 	if (expr_is_const)
 		return const_val;
 	
+	if (delay_const_expr_init) {
+		const_val = parser->Eval((void*)&focus);
+		expr_is_const = true;
+		return const_val;
+	}
 	return parser->Eval((void*)&focus);
 }
 
@@ -44,6 +55,12 @@ float ExpressionEvaluator<float>::get(const SymbolFocus& focus, bool safe) const
 		return safe || allow_partial_spec ? symbol_val->safe_get(focus) : symbol_val->get(focus);
 	
 	evaluator_cache->fetch(focus, safe || allow_partial_spec);
+	
+	if (delay_const_expr_init) {
+		const_val = parser->Eval((void*)&focus);
+		expr_is_const = true;
+		return const_val;
+	}
 	return parser->Eval((void*)&focus);
 }
 
@@ -53,6 +70,11 @@ float ExpressionEvaluator<float>::plain_get(const SymbolFocus& focus) const
 	if (expr_is_const)
 		return const_val;
 	
+	if (delay_const_expr_init) {
+		const_val = parser->Eval((void*)&focus);
+		expr_is_const = true;
+		return const_val;
+	}
 	return parser->Eval((void*)&focus);
 }
 
@@ -91,6 +113,11 @@ VDOUBLE ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus, bool safe) c
 		}
 		result = VDOUBLE(results[0],results[1],results[2]);
 	}
+	if (delay_const_expr_init) {
+		const_val = result;
+		expr_is_const = true;
+		return const_val;
+	}
 	return result;
 }
 
@@ -119,6 +146,11 @@ VDOUBLE ExpressionEvaluator<VDOUBLE>::plain_get(const SymbolFocus& focus) const
 			throw string("Wrong number of expressions in VectorExpression ") + this->expression;
 		}
 		result = VDOUBLE(results[0],results[1],results[2]);
+	}
+	if (delay_const_expr_init) {
+		const_val = result;
+		expr_is_const = true;
+		return const_val;
 	}
 	return result;
 }
