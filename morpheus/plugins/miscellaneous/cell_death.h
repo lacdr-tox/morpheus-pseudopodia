@@ -25,15 +25,14 @@ Induces cell removal upon a predefined condition.
 
 - \b Condition: Expression describing the condition under which a cell will be removed.
 
-- \b ReplaceVolumeWith: Rules how to replace the cell's volume at death. The remaining nodes are replaced with either \b medium,
-the neighbor with the longest interface, or a random neighbor. For random neighbors, all neighbors may have
-the same probability, or the probabilities are scaled to the interfaces.
-
-- \b Shrinkage: If no shrinkage is specified, the cell will removed immediately upon fulfilling of the specified condition, modeling lysis.
-If \b Shrinkage is defined, the symbol specified by \b target-volume is set to zero upon fulfilling of the specified condition. The cell is then removed if it eventually reaches \b remove-volume.
+- \b Shrinkage: If <em>no shrinkage</em> is specified, the cell will removed immediately upon fulfilling of the specified condition, modeling lysis.
+If <em>shrinkage is defined</em>, the symbol specified by \b target-volume is set to zero upon fulfilling of the specified condition. The cell is then removed if it eventually reaches \b remove-volume.
 
   - \b target_volume: Symbol referring to the target volume as used in \ref ML_VolumeConstraint . 
   - \b remove-volume: cell area (2D) or volume (3D) at which the cell is removed
+  - \b replace-with: Rules how to replace the cell's volume left at death. The remaining nodes are replaced with either \b medium,
+the neighbor with the longest interface, or a random neighbor. For random neighbors, all neighbors may have
+the same probability, or the probabilities are scaled to the interfaces.
 
 
 \section Example
@@ -58,8 +57,7 @@ Stochastically removing cells through shrinkage and replacing the remaining pixe
 \verbatim
 <CellDeath>
   <Condition>rand_uni(0,1) < p_death</Condition>
-  <ReplaceVolumeWith>random neighbor</ReplaceVolumeWith>
-  <Shrinkage remove-volume="1" target-volume="target_volume" />
+  <Shrinkage remove-volume="1" target-volume="target_volume" replace-with="random neighbor"/>
 </CellDeath>
 \endverbatim
 
