@@ -90,9 +90,9 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	auto l_icon = new QLabel();
 	l_icon->setPixmap(pm.scaled(25,25,Qt::KeepAspectRatio,Qt::SmoothTransformation));
 	tb->addWidget(l_icon);
-	auto l_doc = new QLineEdit(" Morpheus 2.1 Documentation");
-	l_doc->setEnabled(false);
-	tb->addWidget(l_doc);
+	label_documentation = new QLineEdit(" Loading Documentation ...");
+	label_documentation->setEnabled(false);
+	tb->addWidget(label_documentation);
 	
 	auto vl = new QVBoxLayout();
 	vl->setSpacing(0);
@@ -218,6 +218,7 @@ void DocuDock::setRootOfHelpIndex()
 	}
 	
 	QModelIndex root = toc_model->index(0,0);
+	label_documentation->setText(root.data().toString() + " Documentation");
 	int rows = toc_model->rowCount(root);
 // 	qDebug() << "I am getting the Docu " << rows ;
 	int modules_row = -1;

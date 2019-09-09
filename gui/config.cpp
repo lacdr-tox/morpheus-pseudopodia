@@ -643,7 +643,7 @@ QHelpEngine* config::getHelpEngine(bool lock)
 			
 			QStringList doc_path;
 			doc_path <<  QApplication::applicationDirPath() + "/"
-						<< QApplication::applicationDirPath() + "/doc/"
+						<< QApplication::applicationDirPath() + "/appdoc/"
 						<< QApplication::applicationDirPath() + "/../share/morpheus/"
 						<< QApplication::applicationDirPath() + "/../../Resources/doc/"; // for Mac app bundle
 			QString path;
