@@ -13,11 +13,11 @@
 		</xs:annotation>
 		<xs:all>
 			<xs:element name="Condition" type="cpmMathExpression" />
-			<xs:element name="ReplaceVolume" type="cpmCellDeathMode" default="medium" />
 			<xs:element name="Shrinkage" minOccurs="0" >
 				<xs:complexType>
 					<xs:attribute name="target-volume" type="cpmDoubleSymbolRef" use="required" />
 					<xs:attribute name="remove-volume" type="cpmMathExpression" default="3"/>
+					<xs:attribute name="replace-with" type="cpmCellDeathMode" default="medium" />
 				</xs:complexType>
 			</xs:element>
 		</xs:all>

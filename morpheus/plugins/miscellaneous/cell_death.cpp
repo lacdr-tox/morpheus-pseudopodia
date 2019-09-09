@@ -16,7 +16,7 @@ CellDeath::CellDeath() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::
     modeMap["longest interface"]  = CellDeath::ReplaceMode::LONGEST_IF;
     modeMap["medium"] = CellDeath::ReplaceMode::MEDIUM;
     replace_mode.setConversionMap(modeMap);
-    replace_mode.setXMLPath("replace-with/text" );
+    replace_mode.setXMLPath("Shrinkage/replace-with" );
     replace_mode.setDefault("medium");
     registerPluginParameter(replace_mode);
 }
@@ -46,7 +46,7 @@ void CellDeath::init(const Scope* scope)
 }
 
 
-CPM::CELL_ID CellDeath::getRandomFusionPartner(std::map<CPM::CELL_ID,double> p_map){
+CPM::CELL_ID CellDeath::getRandomFusionPartner(const std::map<CPM::CELL_ID,double>& p_map){
   CPM::CELL_ID fusion_partner_id;
   double p = getRandom01();
   double p_cum = 0;
@@ -98,7 +98,7 @@ void CellDeath::executeTimeStep()
               to_medium = true;
             }
             else {
-              double fusion_interface_length = 0;
+//               double fusion_interface_length = 0;
               if (replace_mode() == CellDeath::ReplaceMode::RANDOM_NB) {
                 std::map<CPM::CELL_ID, double> p_map;
                 for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {

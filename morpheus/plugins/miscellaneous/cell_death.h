@@ -25,8 +25,7 @@ Induces cell removal upon a predefined condition.
 
 - \b Condition: Expression describing the condition under which a cell will be removed.
 
-- \b ReplaceVolume: Rules how to replace the cell's volume at death.
-the remaining nodes are replaced with either medium,
+- \b ReplaceVolumeWith: Rules how to replace the cell's volume at death. The remaining nodes are replaced with either \b medium,
 the neighbor with the longest interface, or a random neighbor. For random neighbors, all neighbors may have
 the same probability, or the probabilities are scaled to the interfaces.
 
@@ -56,10 +55,13 @@ Stochastically removing cells through shrinkage (removal after cell has shrunk t
 
 
 Stochastically removing cells through shrinkage and replacing the remaining pixel with a random neighbor
+\verbatim
 <CellDeath>
   <Condition>rand_uni(0,1) < p_death</Condition>
-  <Shrinkage remove-volume="1" target-volume="target_volume" replace-with="random neighbor"/>
+  <ReplaceVolumeWith>random neighbor</ReplaceVolumeWith>
+  <Shrinkage remove-volume="1" target-volume="target_volume" />
 </CellDeath>
+\endverbatim
 
 */
 
@@ -83,7 +85,7 @@ public:
 	CellDeath();
 	void init(const Scope* scope) override;
 	void executeTimeStep() override;
-    CPM::CELL_ID getRandomFusionPartner(std::map<CPM::CELL_ID,double> p_map);
+    CPM::CELL_ID getRandomFusionPartner(const std::map< CPM::CELL_ID, double >& p_map);
 };
 
 #endif // APOPTOSIS_H
