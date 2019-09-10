@@ -146,7 +146,14 @@ void CellType::loadPlugins()
 			plugins.push_back( p );
 		}
 		catch(string er) {
-			throw MorpheusException(er, stored_node);
+			string s("Error while loading Plugin ");
+			s+= string(xNode.getName()) + "\n" + er;
+			throw MorpheusException(s, stored_node);
+		}
+		catch(const SymbolError& e) {
+			string s("Error while loading Plugin ");
+			s+= string(xNode.getName()) + "\n" + e.what();
+			throw MorpheusException(s, stored_node);
 		}
 	}
 }
@@ -171,10 +178,14 @@ void CellType::init() {
 			plugins[i]->init(local_scope);
 		}
 		catch (string er) {
-			throw MorpheusException(er, plugins[i]->saveToXML());
+			string s("Error while initializing Plugin ");
+			s+= plugins[i]->XMLName() + "\n" + er;
+			throw MorpheusException(s, plugins[i]->saveToXML());
 		}
 		catch (SymbolError er) {
-			throw MorpheusException(er.what(), plugins[i]->saveToXML());
+			string s("Error while initializing Plugin ");
+			s+= plugins[i]->XMLName() + "\n" + er.what();
+			throw MorpheusException(s, plugins[i]->saveToXML());
 		}
 	}
 	

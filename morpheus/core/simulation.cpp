@@ -523,10 +523,16 @@ void loadFromXML(const XMLNode xNode) {
 			glob->init(SIM::getGlobalScope());
 		}
 		catch (string e) {
-			string s("Simulation Error in Plugin ");
+			string s("Error in Plugin ");
 			s+= glob->XMLName() + "\n" + e;
 			throw MorpheusException(s,glob->getXMLNode());
 		}
+		catch (const SymbolError& e) {
+			string s("Error in Plugin ");
+			s+= glob->XMLName() + "\n" + e.what();
+			throw MorpheusException(s,glob->getXMLNode());
+		}
+
 #endif
 	}
 

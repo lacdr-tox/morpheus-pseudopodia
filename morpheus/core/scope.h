@@ -223,10 +223,10 @@ public:
 	
 	void setDefaultValue(Symbol d) override {
 		if (default_val)
-			throw SymbolError(SymbolError::Type::InvalidDefinition, "Duplicate definition of symbol " + this->name());
+			throw SymbolError(SymbolError::Type::InvalidDefinition, "Duplicate definition of symbol '" + this->name()+"'");
 		
 		if ( ! dynamic_pointer_cast<const SymbolAccessorBase<T> >(d) )
-			throw SymbolError(SymbolError::Type::InvalidDefinition, "Incompatible types in definition of composite symbol " + this->name());
+			throw SymbolError(SymbolError::Type::InvalidDefinition, "Incompatible types in definition of composite symbol '" + this->name()+"'");
 		
 		default_val = dynamic_pointer_cast<const SymbolAccessorBase<T> >(d);
 		for (auto& s : celltype_accessors) if (!s) s = default_val;
@@ -242,7 +242,7 @@ public:
 		this->flags().partially_defined = false;
 		for (auto& ct : celltype_accessors) { if ( !ct ) this->flags().partially_defined=true; }
 		if (this->flags().partially_defined)
-			cout << "Symbol " << this->name()  << " is only partially defined " << endl;
+			cout << "Symbol '" << this->name()  << "' is only partially defined " << endl;
 	}
 	
 	typename TypeInfo<T>::SReturn get(const SymbolFocus & f) const override {
@@ -343,30 +343,30 @@ template <class T>
 SymbolAccessor<T> Scope::findSymbol(string name, bool allow_partial) const
 {
 	if(name.empty())
-		throw SymbolError(SymbolError::Type::Undefined, string("Requesting symbol without a name \"") + name + ("\""));
+		throw SymbolError(SymbolError::Type::Undefined, string("Requesting symbol without a name '") + name + ("'"));
 	auto it = symbols.find(name);
 	if ( it != symbols.end()) {
 		if (TypeInfo<T>::name() != it->second->type()) {
 			throw SymbolError(SymbolError::Type::WrongType, string("Cannot create an accessor of type ")
 				+ TypeInfo<T>::name() 
-				+ " for Symbol " + name
-				+ " of type " + it->second->type() );
+				+ " for Symbol '" + name
+				+ "' of type " + it->second->type() );
 		}
 		if (it->second->flags().partially_defined && ! allow_partial)
-			throw SymbolError(SymbolError::Type::InvalidPartialSpec, string("Composite symbol ") + name + " is not defined in all subscopes and has no global default.");
+			throw SymbolError(SymbolError::Type::InvalidPartialSpec, string("Composite symbol '") + name + "' is not defined in all subscopes and has no global default.");
 			
-		cout << "Scope: Creating Accessor for symbol " << name << " from Scope " << this->name << endl;
+		cout << "Scope: Creating Accessor for symbol '" << name << "' from Scope " << this->name << endl;
 		
 		auto s = dynamic_pointer_cast<const SymbolAccessorBase<T> >(it->second);
 		if (!s)
-			throw SymbolError(SymbolError::Type::Undefined, string("Unknown error while creating symbol accessor for symbol ") + name +".");
+			throw SymbolError(SymbolError::Type::Undefined, string("Unknown error while creating symbol accessor for symbol '") + name +"'.");
 		return s;
 	}
 	else if (parent) {
 		return parent->findSymbol<T>(name, allow_partial);
 	}
 	else {
-		throw SymbolError(SymbolError::Type::Undefined, string("Symbol \"")+name+"\" is not defined in Scope " + this->getName() );
+		throw SymbolError(SymbolError::Type::Undefined, string("Symbol '")+name+"' is not defined in Scope " + this->getName() );
 	}
 };
 
@@ -376,10 +376,10 @@ SymbolRWAccessor<T> Scope::findRWSymbol(string name) const
 {
 	auto sym = findSymbol<T>(name,false);;
 	if ( ! sym->flags().writable )
-		SymbolError(SymbolError::Type::WrongType, string("Symbol ") + name + " is not writable.");
+		throw SymbolError(SymbolError::Type::WrongType, string("Symbol '") + name + "' is not writable.");
 	auto r = dynamic_pointer_cast<const SymbolRWAccessorBase<T> >(sym);
 	if (!r)
-		throw SymbolError(SymbolError::Type::Undefined, string("Unknown error while creating writable symbol accessor for symbol ") + name +".");
+		throw SymbolError(SymbolError::Type::Undefined, string("Unknown error while creating writable symbol accessor for symbol '") + name +"'.");
 	return r;
 };
 
