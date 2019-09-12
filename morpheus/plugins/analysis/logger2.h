@@ -505,7 +505,7 @@ class LoggerPlotBase {
 public:
 	enum class Palette { DEFAULT, HOT, AFMHOT, GRAY, OCEAN, RAINBOW, GRV };
 	LoggerPlotBase(Logger& logger, string xml_base_path);
-	virtual void init() =0;
+	virtual void init();
 	void checkedPlot();
 	
 protected:

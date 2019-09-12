@@ -986,7 +986,7 @@ LoggerPlotBase::LoggerPlotBase(Logger& logger, string xml_base_path)
 	
 	terminal_file_extension[Terminal::PNG] = "png";
 	terminal_file_extension[Terminal::PDF] = "pdf";
-	terminal_file_extension[Terminal::JPG] = "jpeg";
+	terminal_file_extension[Terminal::JPG] = "jpg";
 	terminal_file_extension[Terminal::SVG] = "svg";
 	terminal_file_extension[Terminal::EPS] = "eps";
 	terminal_file_extension[Terminal::GIF] = "gif";
@@ -1014,6 +1014,20 @@ LoggerPlotBase::LoggerPlotBase(Logger& logger, string xml_base_path)
 	
 	last_plot_time = 0.0;
 	plot_num = 0; // for sequential file numbering
+}
+
+void LoggerPlotBase::init() {
+	// Check gnuplot has cairo available
+	auto gnu_terminals = Gnuplot::get_terminals();
+	if (gnu_terminals.count("pngcairo")==0 ) {
+		terminal_name[Terminal::PNG] = "png";
+	}
+	if (gnu_terminals.count("pdfcairo")==0 ) {
+		terminal_name[Terminal::PDF] = "pdf";
+	}
+	if (gnu_terminals.count("epscairo")==0 ) {
+		terminal_name[Terminal::EPS] = "postscript";
+	}
 }
 
 void LoggerPlotBase::checkedPlot()
@@ -1159,7 +1173,7 @@ LoggerLinePlot::LoggerLinePlot(Logger& logger, string xml_base_path) : LoggerPlo
 
 void LoggerLinePlot::init() {
 // 	cout << "LoggerLinePlot::init" << endl;
-
+	LoggerPlotBase::init();
 	// Check a suitable output is present
 	const auto& writers = logger.getWriters();
 	for (auto out : writers) {
@@ -1560,6 +1574,7 @@ LoggerMatrixPlot::LoggerMatrixPlot(Logger& logger, string xml_base_path): Logger
 
 void LoggerMatrixPlot::init()
 {
+	LoggerPlotBase::init();
 	// Check a suitable output is present
 	const auto& writers = logger.getWriters();
 	for (auto out : writers) {

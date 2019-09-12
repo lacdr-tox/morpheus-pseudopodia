@@ -135,7 +135,13 @@ std::set<std::string> Gnuplot::get_terminals()
 		// eat all the string left, if no further delimiter was found
 		if (lPos == std::string::npos) lPos = result.length();
 		// Add the token to the vector.
-		terminals.insert(result.substr(fPos, lPos - fPos));
+		auto token = result.substr(fPos, lPos - fPos);
+// 		// Manually remove all cairo terminals, for testing only
+// 		auto s = token.size();
+// 		if (s>5 and (token.substr(s-5,5) == "cairo" || token.substr(0,5) == "cairo")) {
+// 			continue;
+// 		}
+		terminals.insert(token);
 	} while (lPos != result.length());
 
 	return terminals;

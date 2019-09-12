@@ -997,6 +997,7 @@ Gnuplotter::Gnuplotter(): AnalysisPlugin(), gnuplot(NULL) {
 	
 	term.visual = false;
 	term.extension = "png";
+	
 	term.name = "pngcairo";
 	terminal_defaults[Terminal::PNG]  = term;
 	
@@ -1086,22 +1087,41 @@ void Gnuplotter::loadFromXML(const XMLNode xNode, Scope* scope)
 
 void Gnuplotter::init(const Scope* scope) {
 	AnalysisPlugin::init(scope);
-	if (terminal() == Terminal::SCREEN && terminal.stringVal() == "screen") {
-		terminal_defaults[Terminal::SCREEN].name = Gnuplot::get_screen_terminal();
+	
+	// Check gnuplot has cairo available
+	auto gnu_terminals = Gnuplot::get_terminals();
+	if (gnu_terminals.count("pngcairo")==0 ) {
+		terminal_defaults[Terminal::PNG].name = "png";
+		cout << "Gnuplot: Falling back to plain png terminal " << endl;
 	}
-	else {
-		auto gnu_terminals = Gnuplot::get_terminals();
-		if (gnu_terminals.find(terminal.stringVal()) != gnu_terminals.end() )
-			terminal_defaults[Terminal::SCREEN].name = terminal.stringVal();
-		else {
+	if (gnu_terminals.count("pdfcairo")==0 ) {
+		terminal_defaults[Terminal::PDF].name = "pdf";
+	}
+	if (gnu_terminals.count("epscairo")==0 ) {
+		terminal_defaults[Terminal::EPS].name = "postscript";
+	}
+	
+	// Replace the screen placeholder and non-available screen terminals
+	// with the default screen terminal
+	if (terminal() == Terminal::SCREEN) {
+		if (terminal.stringVal() == "screen") {
 			terminal_defaults[Terminal::SCREEN].name = Gnuplot::get_screen_terminal();
-			cout << "Gnuplotter: Requested terminal " << terminal.stringVal() <<
-			        " is not available. Switching to " << Gnuplot::get_screen_terminal() << endl;
+		}
+		else {
+			if (gnu_terminals.count(terminal.stringVal()))
+				terminal_defaults[Terminal::SCREEN].name = terminal.stringVal();
+			else {
+				terminal_defaults[Terminal::SCREEN].name = Gnuplot::get_screen_terminal();
+				cout << "Gnuplotter: Requested terminal " << terminal.stringVal() <<
+					" is not available. Switching to " << Gnuplot::get_screen_terminal() << endl;
+			}
 		}
 	}
+	
 
 	try {
 		gnuplot = new Gnuplot();
+		auto terminals = gnuplot->get_terminals();
     
 		for (uint i=0;i<plots.size();i++) {
 			if (plots[i].cells) {
