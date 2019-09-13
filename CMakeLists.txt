@@ -165,7 +165,10 @@ DESTINATION "share/doc/${CPACK_PACKAGE_NAME}/")
   
   SET(CMAKE_INSTALL_RPATH bin)
   SET(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "gnuplot (>= 4.4)" )
+  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "gnuplot (>= 4.4)")
+  IF (MORPHEUS_GRAPHVIZ STREQUAL "Library")
+     SET(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, graphviz")
+  ENDIF()
 #   SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.6), libgomp1, libgcc1 (>= 1:4.1), libssh-4, ${DEBIAN_TIFF_PACKAGE}, libqtcore4, libqtgui4, libqt4-xml, libqt4-help, libqt4-svg, libqt4-sql-sqlite, libqtwebkit4, gnuplot-qt (>= 4.4) | gnuplot-x11 (>=4.4), graphviz")
   
 #   IF(LIBSBML_FOUND AND MORPHEUS_SBML)
