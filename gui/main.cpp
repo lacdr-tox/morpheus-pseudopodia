@@ -9,13 +9,6 @@
 #endif
 int main(int argc, char *argv[])
 {
-// #ifdef USE_QWebEngine
-// 	QWebEngineUrlScheme scheme(HelpNetworkScheme::scheme());
-// 	scheme.setSyntax(QWebEngineUrlScheme::Syntax::Host);
-// 	scheme.setDefaultPort(80);
-// 	scheme.setFlags(QWebEngineUrlScheme::SecureScheme);
-// 	QWebEngineUrlScheme::registerScheme(scheme);
-// #endif
 	// Properly initialize X11 multithreading. Fixes problems when x-forwarding the gui to a remote computer.
 	QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 	QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
@@ -58,7 +51,6 @@ int main(int argc, char *argv[])
 	}
 	
 // 	QTextCodec::setCodecForCStrings( QTextCodec::codecForName("UTF-8") );
-	
 	
 	//anlegen des hauptfensters
 	MainWindow w;

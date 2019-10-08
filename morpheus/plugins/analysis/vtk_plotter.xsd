@@ -15,7 +15,7 @@
 			<xs:element name="Channel" type="cpmVTKChannel" minOccurs="1" maxOccurs="unbounded"/>
 		</xs:all>
 		<xs:attribute name="time-step" use="required" type="cpmMathExpression"/>
-		<xs:attribute name="mode" use="optional" type="cpmVtkMode" default="ascii"/>
+		<xs:attribute name="mode" use="optional" type="cpmVtkMode" default="binary"/>
 	</xs:complexType>
 	
 	<xs:complexType name="cpmVTKChannel">

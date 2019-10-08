@@ -11,7 +11,7 @@ class HelpNetworkScheme : public QWebEngineUrlSchemeHandler
 public:
 	HelpNetworkScheme(ExtendedNetworkAccessManager* nam, QObject* parent = nullptr);
 	void requestStarted(QWebEngineUrlRequestJob *) override;
-	static QString scheme() { return "qthelp"; };
+	static QByteArray scheme() { return "qthelp"; };
 private:
 	ExtendedNetworkAccessManager* nam;
 };
@@ -22,7 +22,7 @@ class QtRessourceScheme : public QWebEngineUrlSchemeHandler
 public:
 	QtRessourceScheme(ExtendedNetworkAccessManager* nam, QObject* parent = nullptr);
 	void requestStarted(QWebEngineUrlRequestJob *) override;
-	static QString scheme() { return "qrc"; };
+	static QByteArray scheme() { return "qrc"; };
 private:
 	ExtendedNetworkAccessManager* nam;
 };	void linkActivated(QUrl);

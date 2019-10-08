@@ -681,9 +681,9 @@ ExtendedNetworkAccessManager* config::getNetwork() {
 			conf->network = new ExtendedNetworkAccessManager(conf, getHelpEngine(false));
 #ifdef USE_QWebEngine
 			auto *help_handler = new HelpNetworkScheme(conf->network, conf);
-			QWebEngineProfile::defaultProfile()->installUrlSchemeHandler(HelpNetworkScheme::scheme().toUtf8(), help_handler);
-			auto *qrc_handler = new QtRessourceScheme(conf->network, conf);
-			QWebEngineProfile::defaultProfile()->installUrlSchemeHandler(QtRessourceScheme::scheme().toUtf8(), qrc_handler);
+			QWebEngineProfile::defaultProfile()->installUrlSchemeHandler(HelpNetworkScheme::scheme(), help_handler);
+// 			auto *qrc_handler = new QtRessourceScheme(conf->network, conf);
+// 			QWebEngineProfile::defaultProfile()->installUrlSchemeHandler(QtRessourceScheme::scheme(), qrc_handler);
 #endif
 		}
 		conf->change_lock.unlock();

@@ -1,6 +1,11 @@
 #include "mainwindow.h"
+#ifdef USE_QWebEngine
+	#include "network_schemes.h"
+	#include <QWebEngineUrlScheme>
+	#include <QWebEngineProfile>
+#endif
 
-using namespace std;
+// using namespace std;
 
 
 
@@ -31,6 +36,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)//, ui(new Ui::Main
     QWidget::setWindowTitle(tr("Morpheus"));
     QWidget::setAcceptDrops(true);
 
+#ifdef USE_QWebEngine
+	QWebEngineUrlScheme scheme(HelpNetworkScheme::scheme());
+	scheme.setSyntax(QWebEngineUrlScheme::Syntax::HostAndPort);
+	scheme.setDefaultPort(80);
+	scheme.setFlags(QWebEngineUrlScheme::LocalScheme | QWebEngineUrlScheme::LocalAccessAllowed);
+	QWebEngineUrlScheme::registerScheme(scheme);
+#endif
 
     createMainWidgets();
     createMenuBar();
