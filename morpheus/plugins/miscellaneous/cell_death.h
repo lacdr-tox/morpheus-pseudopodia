@@ -23,42 +23,67 @@
 
 Induces cell removal upon a predefined condition. 
 
-- \b condition: Expression describing the condition under which a cell will be removed.
+- \b Condition: Expression describing the condition under which a cell will be removed.
 
-- \b target_volume: Symbol referring to the target volume as used in VolumeConstraint. 
-If no target volume is specified, the cell will be removed and replaced by medium immediately upon fulfilling the specified condition, modeling lysis.
-When a target volume is specified, the target volume is set to zero upon fulfilling of the specified condition and the cell will be removed as soon as it's volume shrunk to 1 node (\f$ v_{\sigma, t} = 1 \f$).
+- \b Shrinkage: If <em>no shrinkage</em> is specified, the cell will removed immediately upon fulfilling of the specified condition, modeling lysis.
+If <em>shrinkage is defined</em>, the symbol specified by \b target-volume is set to zero upon fulfilling of the specified condition. The cell is then removed if it eventually reaches \b remove-volume.
+
+  - \b target_volume: Symbol referring to the target volume as used in \ref ML_VolumeConstraint . 
+  - \b remove-volume: cell area (2D) or volume (3D) at which the cell is removed
+  - \b replace-with: Rules how to replace the cell's volume left at death. The remaining nodes are replaced with either \b medium,
+the neighbor with the longest interface, or a random neighbor. For random neighbors, all neighbors may have
+the same probability, or the probabilities are scaled to the interfaces.
 
 
 \section Example
 Stochastically removing cells through lysis (immediate removal).
 \verbatim
-<CellDeath condition="rand_uni(0,1) < p_death" />
+<CellDeath>
+    <Condition>rand_uni(0,1) < p_death</Condition>
+</CellDeath>
 \endverbatim
 
 
-Stochastically removing cells through shrinkage (removal after cell has shrunk to volume = 1).
+Stochastically removing cells through shrinkage (removal after cell has shrunk to volume = 3).
 \verbatim
-<CellDeath condition="rand_uni(0,1) < p_death" target_volume="Vt" />
+ <CellDeath>
+    <Condition>rand_uni(0,1) < p_death</Condition>
+    <Shrinkage target-volume="Vt"/>
+</CellDeath>
 \endverbatim
+
+
+Stochastically removing cells through shrinkage and replacing the remaining pixel with a random neighbor
+\verbatim
+<CellDeath>
+  <Condition>rand_uni(0,1) < p_death</Condition>
+  <Shrinkage remove-volume="1" target-volume="target_volume" replace-with="random neighbor"/>
+</CellDeath>
+\endverbatim
+
 */
 
 class CellDeath : public InstantaneousProcessPlugin
 {
-private: 
+private:
+    enum Mode{LYSIS, SHRINKAGE};
+    enum class ReplaceMode { RANDOM_NB, RANDOM_NBW, LONGEST_IF, MEDIUM };
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> condition;
 	PluginParameter2<double, XMLReadWriteSymbol, OptionalPolicy> target_volume;
-	
+    PluginParameter2<double, XMLEvaluator, OptionalPolicy> remove_volume;
+    PluginParameter2<ReplaceMode, XMLNamedValueReader, DefaultValPolicy> replace_mode;
+
 	CellType* celltype;
-	enum Mode{LYSIS, SHRINKAGE};
 	Mode mode;
+	ReplaceMode replace;
 	set<uint> dying;
-	
+
 public:
 	DECLARE_PLUGIN("CellDeath");
 	CellDeath();
 	void init(const Scope* scope) override;
 	void executeTimeStep() override;
+    CPM::CELL_ID getRandomFusionPartner(const std::map< CPM::CELL_ID, double >& p_map);
 };
 
 #endif // APOPTOSIS_H

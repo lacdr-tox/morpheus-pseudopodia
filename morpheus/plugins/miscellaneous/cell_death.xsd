@@ -16,10 +16,22 @@
 			<xs:element name="Shrinkage" minOccurs="0" >
 				<xs:complexType>
 					<xs:attribute name="target-volume" type="cpmDoubleSymbolRef" use="required" />
+					<xs:attribute name="remove-volume" type="cpmMathExpression" default="3"/>
+					<xs:attribute name="replace-with" type="cpmCellDeathSelectionMode" default="medium" />
 				</xs:complexType>
 			</xs:element>
 		</xs:all>
 		<xs:attribute name="name" type="cpmString" use="optional" />
 		
 	</xs:complexType>
+
+    <xs:simpleType name="cpmCellDeathSelectionMode">
+        <xs:restriction base="cpmString">
+            <xs:enumeration value="medium"/>
+            <xs:enumeration value="longest interface"/>
+            <xs:enumeration value="random neighbor"/>
+			<xs:enumeration value="random neighbor weighted by interface"/>
+        </xs:restriction>
+    </xs:simpleType>
+
 </xs:schema>
