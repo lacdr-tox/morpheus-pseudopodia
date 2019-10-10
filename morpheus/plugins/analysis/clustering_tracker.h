@@ -25,7 +25,7 @@ A cell is considered part of a cluster if it at shares least 1 shares interface 
 
 The cluster ID of each cell can be written to a symbol (preferrably a cell property) to use in other postprocessing/visualisation steps.
 
-- \b ClusterID/symbol-ref: symbol (e.g. Property) to assign the current clusterID.
+- \b ClusterID/symbol-ref: symbol (e.g. \ref ML_Property) to assign the current clusterID.
 
 
 \section Example
