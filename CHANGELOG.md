@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Release 2.1.1
+
+### Bug fixes
+  * Fix a rare crash upon ChangeCellType 
+
+
 ## Release 2.1
 
 ### GUI

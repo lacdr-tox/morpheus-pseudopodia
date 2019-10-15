@@ -484,9 +484,9 @@ const CPM::Update& createUpdate(VINT source, VINT direction, CPM::Update::Operat
 	
 	VINT latt_pos = source + direction;
 	Update& global_update = getGlobalUpdate();
+	global_update.unset();
 	if ( ! layer->writable_resolve(latt_pos) ) {
 		cout << "Cannot write to constant node " << latt_pos << ". Rejecting update." << endl;
-		global_update.unset();
 	}
 	else {
 		global_update.set(source,direction, opx);
