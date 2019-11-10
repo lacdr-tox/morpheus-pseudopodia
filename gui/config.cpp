@@ -646,7 +646,7 @@ QHelpEngine* config::getHelpEngine(bool lock)
 						<< QApplication::applicationDirPath() + "/../share/morpheus/"
 						<< QApplication::applicationDirPath() + "/../../Resources/doc/"; // for Mac app bundle
 			QString path;
-			foreach(const QString& p, doc_path) {
+			for(const QString& p:  doc_path) {
 	// 			qDebug() << "Testing "  << p + "morpheus.qhc";
 				if (QFile::exists(p+"morpheus.qhc"))
 					path = p;
