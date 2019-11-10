@@ -3,27 +3,45 @@
 #include <QTextCodec>
 #include "qtsingleapp/qtsingleapplication.h"
 #include "mainwindow.h"
-using namespace std;
+#include "sbml_import.h"
 
-//hauptfunktion für das programm
+
 int main(int argc, char *argv[])
 {
-	//QApplication a(argc, argv);
-	
-        QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
+	QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 	//only allow a single instance of Morpheus
 	QtSingleApplication a(argc, argv);
+	//QApplication a(argc, argv);
+	
+	 QStringList args = QApplication::arguments();
+	 args.pop_front();
+	 
+	 if ( ! args.empty() && args[0] == "--convert" ) {
+		if (! SBMLImporter::supported) {
+			cout << "Cannot convert the SBML file. Morpheus GUI was compiled without SBML support";
+			return -1;
+		}
+		if (args.size()<2) {
+			cout << "Need an SBML file to be defined for conversion";
+		}
+		// No GUI conversion mode ...
+		auto morpheus_model = SBMLImporter::importSBMLTest(args[1]);
+		if ( ! morpheus_model) {
+			cerr << "Failed to convert the SBML model to Morpheus." << endl;
+			return -1;
+		}
+		if (args.size()<3)
+			morpheus_model->xml_file.save(args[1].left(5) + "-morpheus-v" + QString::number(morpheus_model->morpheus_ml_version) + ".xml");
+		else
+			morpheus_model->xml_file.save(args[2]);
+		return 0;
+	 }
 	
 	// if another instance of Morpheus is already running, 
 	//  send the arguments to that instance 
 	QString message;
 	if(a.isRunning()){
-		for (int i = 1; i < argc; ++i) {
-			message = QDir::currentPath() + " ";
-			message += argv[i];
-			if (i < argc-1)
-				message += " ";
-		}
+		message = QDir::currentPath() + " " + args.join(" ");
 		if (a.sendMessage(message))
 			return 0;
 	}

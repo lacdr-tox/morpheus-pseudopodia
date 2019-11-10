@@ -63,7 +63,7 @@ class VectorField_Layer;
 
 class MorpheusException {
 public:
-	MorpheusException(string what);
+	MorpheusException(string what) : _what(what) {};
 	MorpheusException(string what, XMLNode where) : _what(what),_where(getXMLPath(where)) {}
 	MorpheusException(string what, string where) : _what(what),_where(where) {}
 	string where() const { return _where; }
@@ -75,11 +75,30 @@ protected:
 
 class ExpressionException : public MorpheusException {
 public:
-	enum class ErrorType {INF, DIVZERO, UNDEF };
-    ExpressionException(string expression, ErrorType error, XMLNode where) : MorpheusException(string("Error in Expression \"") + expression + "\"",where) {} ;
+	enum class ErrorType {INF, NaN, DIVZERO, UNDEF };
+	ExpressionException(string expression, ErrorType error) : _error(error), MorpheusException(string("Error \"") + getErrorName(error) + ("\" in Expression \"") + expression + "\"") {} ;
+    ExpressionException(string expression, ErrorType error, XMLNode where) :  _error(error), MorpheusException(string("Error \"") + getErrorName(error) + ("\" in Expression \"") + expression + "\"",where) {} ;
 	string getExpression() { return _expression; };
 	ErrorType getError() { return _error; };
+	string getErrorName() {
+		
+		switch (_error) {
+			case ErrorType::INF: return "Infinity";
+			case ErrorType::NaN: return "Not a number";
+			case ErrorType::DIVZERO: return "Division by zero";
+			default: return "Undefined ";
+		}
+	}
 private:
+	string getErrorName(ErrorType error) {
+		
+		switch (error) {
+			case ErrorType::INF: return "Infinity";
+			case ErrorType::NaN: return "Not a number";
+			case ErrorType::DIVZERO: return "Division by zero";
+			default: return "Undefined ";
+		}
+	}
 	string _expression;
 	ErrorType _error;
 };
@@ -87,7 +106,13 @@ private:
 
 namespace SIM {
 	/// Simulation title as defined by XML
-	const string getTitle();
+	const string& getTitle();
+	
+	/// Input directory, i.e. directory of the model file
+	const string& getInputDirectory();
+	
+	/// Output directory as defined by command line or cwd
+	const string& getOutputDirectory();
 	
 	/// Just create the dependency graph
 	bool dependencyGraphMode();

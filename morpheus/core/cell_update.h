@@ -75,7 +75,7 @@ namespace CPM {
 		/// Set the update to place a certain @p cell at position @p dest
 		void set(VINT dest, CELL_ID cell);
 		
-		void unset() { operation=NONE; };
+		void unset() { operation=NONE; d->source.unset();  d->focus.unset();  d->focus_updated.unset(); };
 		
 	private:
 		UpdateData* d;

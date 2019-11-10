@@ -11,7 +11,7 @@
 		<xs:annotation>
 			<xs:appinfo>Data Export</xs:appinfo>
 		</xs:annotation>
-		<xs:attribute name="time-step" use="required" type="cpmDouble" />
+		<xs:attribute name="time-step" use="required" type="cpmMathExpression" />
 		<xs:attribute name="celltype-from" type="cpmCellTypeRef" use="optional" />
 		<xs:attribute name="celltype-to" type="cpmCellTypeRef" use="optional" />
 		<xs:attribute name="ignore-medium" type="cpmBoolean" use="optional" default="true"/>

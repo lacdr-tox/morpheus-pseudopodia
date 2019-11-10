@@ -186,7 +186,8 @@ bool abstractProcess::internal_readOutput() {
 			output = QString("Error: Can't open file: '%1'!\nReading the output of simulation not possible!\n").arg(output_file.fileName());
 			return false;
 		}
-		output.clear();
+		output_file.seek(output_read);
+// 		output.clear();
 	}
 
 	pending_read = false;
@@ -195,7 +196,9 @@ bool abstractProcess::internal_readOutput() {
 
 		QTextStream in(&output_file);
 		while (!in.atEnd() && output.size() < max_output_size) {
-			output += in.readLine() + "\n"; 
+			output += in.readLine();
+			if (in.atEnd()) break;
+			output += "\n"; 
 			if (output.size() >= max_output_size) {
 				output+= "Output exceeded maximum. Skipping whatever remains of the file\n";
 			}
@@ -214,8 +217,7 @@ bool abstractProcess::internal_readOutput() {
 		}
 	}
 	
-	if (this->state() == ProcessInfo::RUN)
-		output_file.close();
+	output_file.close();
 	
 	return true;
 }
@@ -226,6 +228,7 @@ void abstractProcess::remove(bool force) {
 //     qDebug() << "abstractProcess::removing job " <<_info.job_id ;
 
      // remove job from SQL database
+	
     QSqlQuery q(config::getDatabase());
     q.prepare(" DELETE FROM jobs WHERE id == :id ;");
     q.bindValue(":id", _info.job_id);
@@ -233,6 +236,9 @@ void abstractProcess::remove(bool force) {
     if(!ok) qDebug() << "Error deleting from SQL table: " << q.lastError();
     q.finish();
     // remove simulation data
+	if (output_file.isOpen())
+		output_file.close();
+
     if (force)
         removeDir(outputDir);
 

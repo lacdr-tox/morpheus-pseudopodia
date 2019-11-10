@@ -11,25 +11,21 @@
 
 /**
 \defgroup ML_Function Function
-\ingroup ML_Global
-\ingroup ML_CellType
-\ingroup ML_System
-\ingroup ML_Event
-\ingroup ML_Contact
-\ingroup ML_Analysis
-\ingroup MathExpressions
-\ingroup Symbols
+\ingroup ML_Global ML_CellType
+\ingroup ML_System ML_Event
+\ingroup ML_Contact ML_Analysis
+\ingroup MathExpressions Symbols
 
 \brief Parametric Function declaration.
 
-Functions define an expression that relate Parameters, \ref Symbols from the \ref Scope of the Function definition and other *Function*s to a scalar result. A Function captures the scope of it's definition, thus applying a Function in a sub-scope will not make the sub-scope's symbol definitions available.
+Functions define an expression that relate Parameters, \ref Symbols from the \ref Scope of the Function definition and other \b Functions to a scalar result. A Function captures the scope of it's definition, thus applying a Function in a sub-scope will not make the sub-scope's symbol definitions available.
 
 A kind of exception is spatial scoping, where sub-scope symbols of spatial regions (celltype symbols) are promoted top the parental scopes. 
 
 
-Function definitions are available within the local \ref Scope and all sub-scopes therein.
+Function definitions are available within the their local \ref Scope and all sub-scopes therein.
 
-For convenience, a parameter-free Function definition is also available as a plain Symbol, thus you may call it without the paretheses. 
+For convenience, a parameter-free Function definition is also available as a plain Symbol, thus you may call it without parentheses. 
 
 Functions are not explicitly scheduled. Instead they are evaluated 'on-the-fly' whenever their output requested.
 
@@ -78,13 +74,10 @@ Scalar or dot product of two vector parameters
 */
 /**
 \defgroup ML_VectorFunction VectorFunction
-\ingroup ML_Global
-\ingroup ML_CellType
-\ingroup ML_System
-\ingroup ML_Event
+\ingroup ML_Global ML_CellType
+\ingroup ML_System ML_Event
 \ingroup ML_Analysis
-\ingroup MathExpressions
-\ingroup Symbols
+\ingroup MathExpressions Symbols
 
 Symbol that defines a relation between vector \ref Symbols from the \ref Scope of the VectorFunction definition and other *Function*s to a scalar result.
 **/
@@ -131,7 +124,9 @@ class FunctionPlugin : public Plugin {
 					if (!callback) {
 						if (!evaluator)
 							parent->init();
-						callback = make_unique<CallBack>(evaluator);
+						if (!callback) {
+							callback = make_unique<CallBack>(evaluator);
+						}
 					}
 					return callback.get();
 				}

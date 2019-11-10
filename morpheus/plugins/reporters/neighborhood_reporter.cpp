@@ -5,29 +5,28 @@ using namespace SIM;
 
 REGISTER_PLUGIN(NeighborhoodReporter);
 
-NeighborhoodReporter::NeighborhoodReporter() {
-	input_mode.setXMLPath("Input/scaling");
+NeighborhoodReporter::NeighborhoodReporter() : ReporterPlugin(TimeStepListener::XMLSpec::XML_OPTIONAL) {
+	scaling.setXMLPath("Input/scaling");
 	map<string, InputModes> value_map;
 	value_map["cell"] = CELLS;
 	value_map["length"] = INTERFACES;
-	input_mode.setConversionMap(value_map);
-	registerPluginParameter(input_mode);
+	scaling.setConversionMap(value_map);
+	registerPluginParameter(scaling);
 	
 	input.setXMLPath("Input/value");
 	// Input is required to be valid on global scope
 	input.setGlobalScope();
 	registerPluginParameter(input);
 	
-	noflux_cell_medium_interface.setXMLPath("Input/noflux-cell-medium");
-	noflux_cell_medium_interface.setDefault("false");
-	registerPluginParameter(noflux_cell_medium_interface);
+	   exclude_medium.setXMLPath("Input/noflux-cell-medium");
+	   exclude_medium.setDefault("false");
+	registerPluginParameter(exclude_medium);
 	
 }
 
 void NeighborhoodReporter::loadFromXML(const XMLNode xNode, Scope* scope)
 {    
 	map<string, DataMapper::Mode> output_mode_map = DataMapper::getModeNames();
-	
 	// Define PluginParameters for all defined Output tags
 	for (uint i=0; i<xNode.nChildNode("Output"); i++) {
 		shared_ptr<OutputSpec> out(new OutputSpec());
@@ -46,17 +45,27 @@ void NeighborhoodReporter::loadFromXML(const XMLNode xNode, Scope* scope)
 
 void NeighborhoodReporter::init(const Scope* scope)
 {
+	input.addNameSpaceScope("local",scope);
+
     ReporterPlugin::init(scope);
+	
+	local_ns_id = input.getNameSpaceId("local");
+	
+	local_ns_granularity = Granularity::Global;
+	using_local_ns = false;
+	for (auto & local : input.getNameSpaceUsedSymbols(local_ns_id)) {
+		local_ns_granularity += local->granularity();
+		using_local_ns = true;
+	}
+	
     celltype = scope->getCellType();
 	if (celltype) {
 		
-		cpm_layer = CPM::getLayer();
-
 		// Reporter output value depends on cell position
 		registerCellPositionDependency();
 		
 		bool input_is_halo = input.granularity() == Granularity::MembraneNode || input.granularity() == Granularity::Node;
-		if (input_mode.isDefined() && input_is_halo) {
+		if (scaling.isDefined() && input_is_halo) {
 			cout << "NeighborhoodReporter: Input has (membrane) node granularity. Ignoring defined input mode." << endl;
 		}
 		
@@ -92,11 +101,9 @@ void NeighborhoodReporter::init(const Scope* scope)
 			CPM::enableEgdeTracking();
 		}
 		
-		noflux_cell_medium = false;
-		if (noflux_cell_medium_interface.isDefined() ){
+		if (exclude_medium.isDefined() ){
 			cout << "noflux_cell_medium_interface.isDefined()" << endl;
-			if (noflux_cell_medium_interface() == true){
-				noflux_cell_medium = true;
+			if (exclude_medium() == true){
 				cout << "noflux_cell_medium_interface() == true!" << endl;
 			}
 		}
@@ -139,7 +146,12 @@ void NeighborhoodReporter::reportGlobal() {
 #pragma omp for schedule(static)
 		for (auto i_node = range.begin(); i_node<range.end(); ++i_node) {
 			const auto& node = *i_node;
-		
+			
+			// Expose local symbols to input
+			if (using_local_ns) {
+				input.setNameSpaceFocus(local_ns_id, node);
+			}
+			
 	// 	for (auto node : range) { // syntax cannot be used with openMP
 			// loop through its neighbors
 			for ( int i_nei = 0; i_nei < neighbors.size(); ++i_nei ) {
@@ -159,7 +171,6 @@ void NeighborhoodReporter::reportGlobal() {
 		}
 	}
 }
-
 
 void NeighborhoodReporter::reportCelltype(CellType* celltype) {
     vector<CPM::CELL_ID> cells = celltype->getCellIDs();
@@ -183,18 +194,24 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 			// Create halo of nodes surrounding the cell
 			auto cell_id = *i_cell_id;
 			SymbolFocus cell_focus(cell_id);
+			
+			if ( using_local_ns && local_ns_granularity != Granularity::MembraneNode) {
+				// Expose local symbols to input
+				input.setNameSpaceFocus(local_ns_id, cell_focus);
+			}
+			
 			Cell::Nodes halo_nodes; // holds nodes of neighbors of membrane nodes. Used for <concentration>
 			const Cell::Nodes& surface_nodes = CPM::getCell (cell_id).getSurface();
 			for ( Cell::Nodes::const_iterator m = surface_nodes.begin(); m != surface_nodes.end(); ++m ) {
-				// check the curren boundary neighborhood
+				// check the current boundary neighborhood
 				for ( int i_nei = 0; i_nei < neighbor_offsets.size(); ++i_nei ) {
 					VINT neighbor_position = ( *m ) + neighbor_offsets[i_nei];
-					const CPM::STATE& nb_spin = cpm_layer->get ( neighbor_position );
+					const CPM::STATE& nb_spin = CPM::getNode( neighbor_position );
 
 					if ( cell_id != nb_spin.cell_id ) { // if neighbor is different from me
 						// HACK: NOFLUX BOUNDARY CONDITIONS when halo is in MEDIUM
 						//cout << CPM::getCellIndex( nb_spin.cell_id ).celltype << " != " << CPM::getEmptyCelltypeID() << endl;
-						if( noflux_cell_medium ) {
+						if ( exclude_medium() ) {
 							// if neighbor is medium, add own node in halo 
 							if (CPM::getCellIndex( nb_spin.cell_id ).celltype == CPM::getEmptyCelltypeID() )
 								halo_nodes.insert ( *m );
@@ -210,11 +227,16 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 				continue;
 			}
 			
-			if (input_mode() == INTERFACES) {
+			if (scaling() == INTERFACES) {
 				// Report halo input into membrane mapper, coordinating the transfer into an intermediate membrane property
 				mapper.attachToCell(cell_id);
 				for ( auto const & i :halo_nodes) {
-					SymbolFocus f(i);
+					if ( using_local_ns && local_ns_granularity == Granularity::MembraneNode) {
+						// Expose local symbols to input
+						cell_focus.setCell(cell_id,i);
+// 						cout << "Setting focus for local ns " << local_ns_id << " to " << cell_focus.pos() << "; " << cell_focus.cellID()  << endl;
+						input.setNameSpaceFocus(local_ns_id, cell_focus);
+					}
 					double value = input(SymbolFocus(i));
 					mapper.map(i, std::isnan(value) ? 0 : value );
 				}
@@ -247,11 +269,17 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 					}
 				}
 			}
-			else if (input_mode() == CELLS) {
+			else if (scaling() == CELLS) {
 				
 				cell_mapper.clear();
 				for ( auto const & i :halo_nodes) {
 					SymbolFocus f(i);
+					
+					if (using_local_ns) {
+						// Expose local symbols to input
+						input.setNameSpaceFocus(local_ns_id, cell_focus);
+					}
+					
 					double value = input(SymbolFocus(i));
 					cell_mapper[f.cellID()].val += std::isnan(value) ? 0 : value ;
 					cell_mapper[f.cellID()].count ++;
@@ -281,9 +309,15 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 	
 	if ( !interf_output.empty()) {
 		// Assume cell granularity
-		
 		for (int c=0; c<cells.size(); c++) {
 			SymbolFocus cell_focus(cells[c]);
+			
+			// Expose local symbols to input
+			if (using_local_ns) {
+				// Expose local symbols to input
+				input.setNameSpaceFocus(local_ns_id, cell_focus);
+			}
+			
 			const auto& interfaces = CPM::getCell(cells[c]).getInterfaceLengths();
 			
 			// Special case cell has no interfaces ...
@@ -301,12 +335,12 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 				
 				double value = 0.0;
 				// HACK: NO-FLUX BOUNDARIES for cell-medium interface
-				if( noflux_cell_medium && CPM::getCellIndex( cell_id ).celltype == CPM::getEmptyCelltypeID() ){ // if neighbor is medium, add own value 
-					value = input.get( cell_focus ); // value of own cell 
+				if ( exclude_medium() && CPM::getCellIndex( cell_id ).celltype == CPM::getEmptyCelltypeID() ){ // if neighbor is medium, add own value 
+					value = input.get( cell_focus ); // value of own cell
 				}
 				else
 					value = input.get(SymbolFocus(cell_id)); // value of neighboring cell
-				double interfacelength = (input_mode() == INTERFACES) ? nb->second : 1;
+				double interfacelength = (scaling() == INTERFACES) ? nb->second : 1;
 				
 				for (auto & out : interf_output) {
 					out->mapper->addVal(value, interfacelength);

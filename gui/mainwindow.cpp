@@ -491,61 +491,67 @@ void MainWindow::createMainWidgets()
 
 void MainWindow::selectModel(int index, int part)
 {
-    config::modelIndex selected = modelListIndex(modelList->currentItem());
+	config::modelIndex selected = modelListIndex(modelList->currentItem());
+	if (index<0) return;
+	if (model_index.model != index) {
+		qDebug() << "Switching model";
+		model_index.model = index;
+		current_model = config::getOpenModels()[model_index.model];
+		if (selected.model == model_index.model)
+			part = selected.part;
+		model_index.part = part>=0 ? part : 0;
 
-    if (model_index.model != index) {
-        model_index.model = index;
-        current_model = config::getOpenModels()[model_index.model];
-        if (selected.model == model_index.model)
-            part = selected.part;
-
-        model_index.part = part>=0 ? part : 0;
-
-        setWindowTitle(tr("Morpheus - %1").arg(  current_model->xml_file.name ) );
-        //setWindowIcon( QIcon(":/logo.png") );
 		modelViewer[current_model]->updateConfig();
-//         editorStack->setCurrentWidget(modelViewer[current_model]);
-// 		QWidget::setTabOrder(modelList,modelViewer[current_model]);
-        modelList->topLevelItem(index)->setExpanded(true);
+		modelList->topLevelItem(index)->setExpanded(true);
 
-        modelList->setCurrentItem(modelList->topLevelItem(index)->child(model_index.part));
-        fixBoard->clear();
-        QList<MorphModelEdit> fixes = current_model->rootNodeContr->getModelDescr().auto_fixes;
-        for (int i=0; i<fixes.size(); i++) {
-            QString info = fixes[i].info;
-            // introduce line breaks
-            int space = 0;
-            int j=40;
-            while (info.size()>j)
-            {
-                int next_space = info.indexOf(" ",space+1);
-                while (next_space>0 && next_space<=j ) {
-                    space = next_space;
-                    next_space = info.indexOf(" ",space+1);
-                }
-                info.replace(space,1,"\n");
-                j = max(j,space) + 40;
+		setWindowTitle(tr("Morpheus - %1").arg(  current_model->xml_file.name ) );
 
-            }
-            fixBoard->addItem(info);
-            if ( ! fixes[i].value.isEmpty()) {
+		fixBoard->clear();
+		QList<MorphModelEdit> fixes = current_model->rootNodeContr->getModelDescr().auto_fixes;
+		for (int i=0; i<fixes.size(); i++) {
+			QString info = fixes[i].info;
+			// introduce line breaks
+			int space = 0;
+			int j=40;
+			while (info.size()>j)
+			{
+				int next_space = info.indexOf(" ",space+1);
+				while (next_space>0 && next_space<=j ) {
+					space = next_space;
+					next_space = info.indexOf(" ",space+1);
+				}
+				info.replace(space,1,"\n");
+				j = max(j,space) + 40;
+
+			}
+			fixBoard->addItem(info);
+			if ( ! fixes[i].value.isEmpty()) {
 				QListWidgetItem* item = fixBoard->item(fixBoard->count()-1);
 				item->setToolTip(fixes[i].value);
 			}
-        }
-        modelList->setCurrentItem(modelList->topLevelItem(index)->child(model_index.part));
-		documentsDock->raise();
+		}
+		
+		config::switchModel(model_index.model);
     }
     else {
+		qDebug() << "Switching model part";
 		if (part<0 || part>=current_model->parts.size()) {
 			model_index.part = selected.part;
 		}
 		else if (current_model->parts[part].enabled) {
 			model_index.part = part;
 		}
-		showCurrentModel();
+		else {
+			// Select a new part to show ...
+			while (model_index.part && !current_model->parts[model_index.part].enabled) {
+				model_index.part--;
+			}
+		}
     }
 
+	modelList->setCurrentItem(modelList->topLevelItem(index)->child(model_index.part));
+	documentsDock->raise();
+	showCurrentModel();
 	
     //qDebug() << current_model->xml_file.name << " " << current_model->parts[model_index.part].label;
 
@@ -861,13 +867,9 @@ void MainWindow::modelActionTriggerd (QAction *act)
         {
             popup_model->removePart(model_popup_index.part);
 			QTreeWidgetItem* model_item = modelList->invisibleRootItem()->child(model_popup_index.model);
-			QTreeWidgetItem* item = model_item->child(model_index.part);
-			item->setDisabled(true);
-			item->setForeground(0,QBrush(Qt::gray));
-			while (model_index.part && model_item->child(model_index.part)->isDisabled()) {
-				model_index.part--;
-			}
-			modelList->setCurrentItem(model_item->child(model_index.part));
+		
+// 			modelList->setCurrentItem(model_item->child(model_index.part));
+			selectModel(model_popup_index.model,model_popup_index.part);
         }
     }
 
@@ -877,7 +879,7 @@ void MainWindow::modelActionTriggerd (QAction *act)
     }
 }
 
-void MainWindow::reloadModelParts(int m) {
+void MainWindow::syncModelList (int m) {
 	if (m==-1) {
 		const QList<SharedMorphModel >&  models = config::getOpenModels();
 		foreach ( SharedMorphModel model, models) {
@@ -886,23 +888,30 @@ void MainWindow::reloadModelParts(int m) {
 			}
 		}
 	}
-	qDebug() << "Reload model parts for idx " << m;
-	modelList->topLevelItem(m)->takeChildren();
+	qDebug() << "Sync model list for model " << m;
+	// In fact we just need to enable/disable on the basis of parts data.
+// 	modelList->topLevelItem(m)->takeChildren();
 	SharedMorphModel model = config::getOpenModels()[m];
 
-
 	for (int part=0; part < model->parts.size(); part++) {
-		QTreeWidgetItem* part_item = new QTreeWidgetItem(QStringList(model->parts[part].label));
-		if (! model->parts[part].enabled) {
-			part_item->setDisabled(true);
-			part_item->setForeground(0,QBrush(Qt::gray));
+		QTreeWidgetItem* part_item = modelList->topLevelItem(m)->child(part);
+		if ( ! part_item ) {
+			part_item = new QTreeWidgetItem(QStringList(model->parts[part].label));
+			modelList->topLevelItem(m)->addChild(part_item );
 		}
-		modelList->topLevelItem(m)->addChild(part_item);
+		if ( model->parts[part].enabled) {
+			part_item->setDisabled(false);
+			part_item->setForeground(0,style()->standardPalette().brush(QPalette::WindowText));
+		}
+		else {
+			part_item->setDisabled(true);
+			part_item->setForeground(0,style()->standardPalette().brush(QPalette::Disabled,QPalette::WindowText));
+		}
 	}
 
-	if (model_index.model == m) {
-		selectModel(m, model_index.part);
-	}
+// 	if (model_index.model == m) {
+// 		selectModel(m, model_index.part);
+// 	}
 }
 
 //------------------------------------------------------------------------------
@@ -988,8 +997,8 @@ void MainWindow::addModel(int index) {
 	c->setFont(0,f);
 	modelList->insertTopLevelItem(index,c);
 
-// 	connect(model.data(),SIGNAL(modelPartAdded(int)),this,SLOT(reloadModelParts()));
-// 	connect(model.data(),SIGNAL(modelPartRemoved(int)),this,SLOT(reloadModelParts()));
+	connect(model.data(),SIGNAL(modelPartAdded(int)),this,SLOT(syncModelList()));
+	connect(model.data(),SIGNAL(modelPartRemoved(int)),this,SLOT(syncModelList()));
 
 	domNodeViewer *viewer = new domNodeViewer(this);
 	viewer->setModel(model,0);
@@ -1002,7 +1011,7 @@ void MainWindow::addModel(int index) {
 	modelAbout[model] =  new AboutModel(model);
 	editorStack->addWidget(modelAbout[model]);
 
-	reloadModelParts(index);
+	syncModelList(index);
 
 	documentsDock->raise();
 	config::switchModel(index);
@@ -1020,15 +1029,15 @@ void MainWindow::addModel(int index) {
 
 void MainWindow::removeModel(int index) {
     SharedMorphModel model = config::getOpenModels()[index];
-//     disconnect(model.data(),SIGNAL(modelPartAdded(int)),this,SLOT(reloadModelParts()));
-//     disconnect(model.data(),SIGNAL(modelPartRemoved(int)),this,SLOT(reloadModelParts()));
+    disconnect(model.data(),SIGNAL(modelPartAdded(int)),this,SLOT(syncModelList()));
+    disconnect(model.data(),SIGNAL(modelPartRemoved(int)),this,SLOT(syncModelList()));
     editorStack->removeWidget(modelViewer[model]);
     modelViewer.remove(model);
 
     modelList->takeTopLevelItem(index);
     if (model_index.model == index) {
         model_index.model = -1;
-		config::switchModel(model_index.model) ;
+		config::switchModel(model_index.model);
     }
 }
 
@@ -1058,11 +1067,11 @@ void MainWindow::showCurrentModel() {
 void MainWindow::modelListChanged(QTreeWidgetItem * item) {
 
     config::modelIndex selection = modelListIndex(item);
-    if (model_index.model != selection.model)
-        config::switchModel(selection.model);
-    else {
+//     if (model_index.model != selection.model)
+//         config::switchModel(selection.model);
+//     else {
         selectModel(selection.model, selection.part);
-	}
+// 	}
  }
  
 void MainWindow::activatePart(QModelIndex idx)
@@ -1073,14 +1082,18 @@ void MainWindow::activatePart(QModelIndex idx)
 		selection.model = idx.parent().row();
 		selection.part = idx.row();
 		auto model = config::getOpenModels()[selection.model];
-		if ( !model->parts[selection.part].enabled ) {
-			if (model->activatePart(selection.part)) {
-				QTreeWidgetItem* item = modelList->invisibleRootItem()->child(selection.model)->child(selection.part);
-				item->setForeground(0,QBrush(Qt::black));
-				item->setDisabled(false);
-				modelList->setCurrentItem(item);
-			}
-		}
+		model->activatePart(selection.part);
+		
+		modelList->setCurrentItem(modelList->invisibleRootItem()->child(selection.model)->child(selection.part));
+		selectModel(selection.model,selection.part);
+// 		if ( !model->parts[selection.part].enabled ) {
+// 			if (model->activatePart(selection.part)) {
+// 				QTreeWidgetItem* item = modelList->invisibleRootItem()->child(selection.model)->child(selection.part);
+// 				item->setForeground(0,QBrush(Qt::black));
+// 				item->setDisabled(false);
+// 				modelList->setCurrentItem(item);
+// 			}
+// 		}
 		
 	}
 }
@@ -1154,6 +1167,7 @@ void MainWindow::selectAttribute(AbstractAttribute* attr)
 
 void MainWindow::fixBoardClicked(QModelIndex item) {
     int row = item.row();
+	if (current_model->rootNodeContr->getModelDescr().auto_fixes.size()<= row) return;
     const MorphModelEdit& e = current_model->rootNodeContr->getModelDescr().auto_fixes[row];
 
 	QDomNode node = e.xml_parent;

@@ -77,7 +77,7 @@ public:
 	
     virtual void loadFromXML(const XMLNode node, Scope* scope) override;
 	double MCSDuration() { return mcs_duration(); }
-	virtual void prepareTimeStep() override {};
+	virtual void prepareTimeStep(double /*step_size*/) override {};
 	virtual void executeTimeStep() override ;
 	virtual string XMLName() const override { return string("CPM"); };
 	

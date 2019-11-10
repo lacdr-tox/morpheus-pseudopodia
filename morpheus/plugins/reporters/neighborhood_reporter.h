@@ -18,24 +18,29 @@
 
 \section Description for Global
 
-Collects statistic of the local environment of a node and writes it to a Field. 
+NeighborhoodReporter reports about the adjacent Neighborhood of a node, i.e. the node's 'microenvironment' and writes it to a Field.
 
+The neighorhood size is retrieved from the \ref ML_Lattice definition of the default neighborhood.
 
 \section Description for CellType
 
-NeighborhoodReporter reports about the adjacent Neighborhood of a cell, i.e. the cell's 'microenvironment'. 
+NeighborhoodReporter reports about the adjacent Neighborhood of a cell, i.e. the cell's 'microenvironment', or the Neighborhood of a node. 
 
 Information can be retrieved from all contexts within the neighborhood (i.e. Property or MembraneProperty of neighboring cells, Field concentrations) and, if necessary, mapped to a single value.
 
 The neighorhood size is retrieved from the \ref ML_CPM definition of the ShapeSurface neighborhood (CPM/). 
 
+\section Parameters
+
 A single \b Input element must be specified:
-- \b value: input variable (e.g. Property, MembraneProperty or Field). May contain expression.
+- \b value: input expression (e.g. Property, MembraneProperty or Field), which is evaluated at global scope in the  whole neighborhood. The local cell's/node's scope is available under namespace 'local', i.e. a cell's id is 'local.cell.id'.
 - \b scaling: setting scaling to \b per_cell will aquire information per neighboring cell (entity), \b per_length will scale the information with the interface length, i.e. the input value is considered to
 be a rate per node length.
 - \b noflux-cell-medium: if true, the cell-medium interfaces are treated as no-flux boundaries. That is, at these interfaces, the value will be taken from the cell itself instead of the (empty) neighborhood.
 
-If input variable is a Vector, use \ref NeighborhoodVectorReporter.
+Accessing the local cell's/node's properties in the input expression is directly possible through the symbol namespace 'local'.
+
+If input is a Vector, use \ref NeighborhoodVectorReporter.
 
 Several Output tags can be specified, each referring to an individual property of the aquired information.
 If the information is written to a MembraneProperty, no mapping is required, since their granularity is sufficient.
@@ -60,7 +65,7 @@ Spatially resolved distribution of a (membrane) concentration into a CellMembran
 (Consider cMemProt to be a concentration of a membrane Protein)
 \verbatim
 <NeighborhoodReporter>
-	<Input value="cMemProt"/>
+	<Input value="min(cMemProt,local.cMemProt)" />
 	<Output symbol-ref="B" />
 </NeighborhoodReporter>
 \endverbatim
@@ -101,13 +106,15 @@ class NeighborhoodReporter : public ReporterPlugin
 		enum InputModes{ INTERFACES, CELLS };
 		
 		CellType* celltype;
-		shared_ptr <const CPM::LAYER > cpm_layer;
 		
 		PluginParameter2<double, XMLThreadsaveEvaluator, RequiredPolicy> input;
-		PluginParameter2<InputModes, XMLNamedValueReader, OptionalPolicy> input_mode;
-		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> noflux_cell_medium_interface;
-		bool noflux_cell_medium;
+		PluginParameter2<InputModes, XMLNamedValueReader, OptionalPolicy> scaling;
+		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> exclude_medium;
 
+		Granularity local_ns_granularity;
+		uint local_ns_id;
+		bool using_local_ns;
+		
 		struct OutputSpec {
 			PluginParameter2<DataMapper::Mode, XMLNamedValueReader, OptionalPolicy> mapping;
 			shared_ptr<DataMapper> mapper;
@@ -128,7 +135,7 @@ class NeighborhoodReporter : public ReporterPlugin
 	
 		void init(const Scope* scope) override;
 		void loadFromXML(const XMLNode, Scope* scope) override;
-		virtual void report() override;
+		void report() override;
 };
 
 #endif

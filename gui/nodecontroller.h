@@ -35,62 +35,97 @@ class nodeController : public QObject
 	Q_OBJECT
 public:
 	nodeController( QDomNode xml_node ) : nodeController( nullptr, XSD::ChildInfo(), xml_node) {};
-    nodeController(nodeController* parent, XSD::ChildInfo info, QDomNode xml_node);
     /**
-      Creates an object that describes a given xml-node and provides interfaces to manipulate this node.
-      \param node XML-Node which should be represented by this nodeController
-      \param xsd_element_node
-      \param parent nodeController which represents the parent of this xml-node
-    */
+     * Creates an object that describes a given xml-node and provides interfaces to manipulate this node.
+     * \param node XML-Node which should be represented by this nodeController
+     * \param xsd_element_node
+     * \param parent nodeController which represents the parent of this xml-node
+     */
+    nodeController(nodeController* parent, XSD::ChildInfo info, QDomNode xml_node);
     ~nodeController();
+	
+	/// Node tag name
     QString getName() const { return name; }
+    /// Get a non-qualified XPath to the node.
     QStringList getXPath() const { if (!parent) return QStringList() << name; else return parent->getXPath() << name; };
-	 QStringList getQualifiedXPath() const;
+	/// Get a qualified, i.e. unique, XPath to the node.
+	QStringList getQualifiedXPath() const;
+	/// Get the node's parent. The root node returns a nullptr.
     nodeController* getParent() const { return parent; }
+    /// Get a copy of the nodes xml including all subnodes.
     QDomNode cloneXML() const;
-
-	QList<QString> getAddableChilds(bool unfiltered=false);  /// Returns a list of childs allowed to be added to the current state of the nodeController.*/
+	/// Returns a list of childs allowed to be added to the current state of the nodeController.*/
+	QList<QString> getAddableChilds(bool unfiltered=false);
+	
 	const XSD::GroupInfo& childInformation() { return node_type->child_info; };
-	XSD::ChildInfo childInformation(QString n);                    /// Returns information about the named child. */
+	
+	/// Returns information about the named child. */
+	XSD::ChildInfo childInformation(QString n);
+	
+	/// Get the attribute named @p name or nullptr if the attribute is not valid. */
+	AbstractAttribute* attribute(QString name);
+	/// Get the attribute identified by the relative @p path or nullptr if the attribute is not present. */
+	AbstractAttribute* getAttributeByPath(QStringList path);
+	/// Get a list of required attributes.
+    QList<AbstractAttribute*> getRequiredAttributes();
+	/// Get a list of optional attributes.
+    QList<AbstractAttribute*> getOptionalAttributes();
 
-	AbstractAttribute* attribute(QString name);              /// Get the attribute named @p name or Null if the attribute is not valid. */
-	AbstractAttribute* getAttributeByPath(QStringList path); /// Get the attribute identified by the relative @p path or Null if the attribute is not present. */
-    QList<AbstractAttribute*> getRequiredAttributes();       /// Get a list of required attributes.
-    QList<AbstractAttribute*> getOptionalAttributes();       /// Get a list of optional attributes.
+	/// Node is deletable, i.e. not required.
+	bool isDeletable();
 
-    bool isDeletable();                           /// Returns whether the node is deletable, i.e. not required.
-
-    QString getNodeInfo();                            /// Information about the node extracted from Schema.
-    const ModelDescriptor& getModelDescr() const { return *model_descr;}
-    void trackNextChange();
+	/// Information about the node extracted from Schema
+	QString getNodeInfo();
+	const ModelDescriptor& getModelDescr() const { return *model_descr;}
+	/// Track next change to the node the ModelDescriptor
+	void trackNextChange();
+	/// Track an information to the ModelDescriptor
 	void trackInformation(QString info);
-	void clearTrackedChanges();                   /// Removes all tracked Changes from the ModelDescriptor
-    void saved();                                 /// Broadcast to all Nodes that the model was saved, resets all edit trackers.
-
-    bool hasText();                               /// Return whether the xmlNode can have normal textblocks. */
-    QString getText();                            /// Text of xml-node.
-    bool setText(QString txt);                    /// Set the text of the node to @p txt.
+	/// Removes all tracked Changes from the ModelDescriptor
+	void clearTrackedChanges();
+	/// Broadcast to that the model was saved. Resets all edit trackers.
+	void saved();
+	/// Return whether the xmlNode can have normal textblocks.
+	bool hasText();
+	/// Text of the node.
+	QString getText();
+	/// Set the text of the node to @p txt.
+    bool setText(QString txt);
+	/// Get the xsd type descriptor for the node text.
     QSharedPointer<XSD::SimpleTypeInfo> textType();
-    AbstractAttribute* textAttribute();           /// Return the attribut which represents the text of the xml-node.
+	/// Return the attribut which represents the text of the xml-node.
+    AbstractAttribute* textAttribute();
+	
+	/// Find all active child nodes named @p childName. If name is omitted, all active childs are returned.
+	QList<nodeController*> activeChilds(QString childName = "");
+	/// Find the first active child named @p childName. If name is omitted, the node's first active child is returned.
+	nodeController* firstActiveChild(QString childName = "");  
 
-	int activeChilds(QString childName = "");
-	nodeController* firstActiveChild(QString childName = "");  /// Find the first child named @p childName
-// 	nodeController* findGroupChild(QString group); /// Returns the child of the group @p group. Returns NULL if none exists.
 	const QList< nodeController* >& getChilds() { return childs; } 
-    nodeController* find(QDomNode xml_node);      /// Find the nodeController of the XML node @p xml_node in the document
-    nodeController* find(QStringList path);           /// Find the nodeController addressed by @p path in the document
-
-	nodeController* insertChild(QString childName, int pos=-1); /// Insert a child with name @p childName. Appends the child if no position is provided.
-	nodeController* insertChild(QDomNode xml_node, int pos=-1); /// Insert the given XML node @p xml_node. Appends the child if no position is provided.
-	nodeController* removeChild(int pos);      /// Remove child at position @p pos. Returns a SmartPointer to removed nodeController, which is destroyed if not stored somewhere else.
+	/// Find the nodeController of the XML node @p xml_node in the document
+    nodeController* find(QDomNode xml_node);
+	/// Find the nodeController addressed by @p path in the document
+    nodeController* find(QStringList path);
+	///< Insert a child with name @p childName. Appends the child if no position is provided.
+	nodeController* insertChild(QString childName, int pos=-1);
+	///< Insert the given XML node @p xml_node. Appends the child if no position is provided.
+	nodeController* insertChild(QDomNode xml_node, int pos=-1);
+	///< Remove child at position @p pos. Returns a SmartPointer to removed nodeController, which is destroyed if not stored somewhere else.
+	nodeController* removeChild(int pos);
 
 	bool isChildRequired(nodeController*);
-	void moveChild(int from, int to);             /// Move the child at position @p from to position @p to+
-	bool canInsertChild(QString child, int dest_pos);   /// Test whether the foreign child @p child can be inserted to this node at @p dest_pos
-	bool canInsertChild(nodeController* child, int dest_pos);   /// Test whether the foreign child @p child can be inserted to this node at @p dest_pos
-	bool insertChild(nodeController* child, int dest_pos);   /// Move the foreign child @p child to this node at @p dest_pos
+	/// Move the child at position @p from to position @p to
+	void moveChild(int from, int to);                       
+	/// Test whether the foreign child @p child can be inserted to this node at @p dest_pos
+	bool canInsertChild(QString child, int dest_pos);
+	/// Test whether the foreign child @p child can be inserted to this node at @p dest_pos
+	bool canInsertChild(nodeController* child, int dest_pos);
+	/// Move the foreign child @p child to this node at @p dest_pos
+	bool insertChild(nodeController* child, int dest_pos);
 
-	bool isDisabled();                            /// Returns whether the nodeController is disabled or not.
+	/// Returns whether the nodeController is disabled or not.
+	bool isDisabled();
+	/// Returns whether the nodeController is disabled or indirectly disabled by a parental node.
 	bool isInheritedDisabled();
 	
 	/**
@@ -106,6 +141,7 @@ signals:
 
 private:
     friend class MorphModel;
+	
     QString name; /*!< Name of the xmlNode (nodeController).*/
     nodeController* parent; /*!< Parent-nodeController.*/
     QDomNode xmlNode; /*!<  Reference to the XML-Node in the Document the Controller takes care of.

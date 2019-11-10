@@ -22,17 +22,18 @@ PersistentMotion::PersistentMotion() {
 void PersistentMotion::init(const Scope* scope) {
 	ReporterPlugin::init(scope);
 	CPM_Energy::init(scope);
-	// add "cell.center" as output(!) symbol  (not depend symbol)
-// 	registerCellPositionOutput();
-	// The CPM_Energy implementation requires our reported displacement in time steps of MCSDuration 
-	ReporterPlugin::updateSinkTS(CPM::getMCSDuration());
-	registerCellPositionDependency();
 	
 	celltype = scope->getCellType();
-	uint property_id = celltype->default_properties.size();
-	
 	cell_position_memory= celltype->addProperty<VDOUBLE> ( "stored_center", /*"internally stored cell position",*/  VINT(0,0,0) );
 	cell_direction 		= celltype->addProperty<VDOUBLE> ( "stored_direction", /*"internally stored cell direction",*/ VINT(0,0,0) );
+	const_cast<Scope*>(scope)->registerSymbol(cell_direction);
+	const_cast<Scope*>(scope)->registerSymbol(cell_position_memory);
+
+	ReporterPlugin::registerCellPositionDependency();
+	ReporterPlugin::registerOutputSymbol(cell_direction);
+	ReporterPlugin::registerOutputSymbol(cell_position_memory);
+	CPM_Energy::registerInputSymbol(cell_position_memory);
+	CPM_Energy::registerInputSymbol(cell_direction);
 	
 	if( !protrusion() && !retraction() ) 
 	{

@@ -5,8 +5,8 @@ IF(CMAKE_VERSION VERSION_GREATER "3.1" OR CMAKE_VERSION VERSION_EQUAL "3.1")
 ENDIF()
  
 SET(VERSION_MAJOR "2")
-SET(VERSION_MINOR "0")
-SET(VERSION_PATCH "1")
+SET(VERSION_MINOR "1")
+SET(VERSION_PATCH "0")
 SET(MORPHEUS_VERSION_STRING "\"${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}\"")
 
 IF(CMAKE_VERSION VERSION_LESS "2.8.10")
@@ -53,7 +53,7 @@ ENDIF()
 IF(CMAKE_VERSION VERSION_GREATER "3.1" OR CMAKE_VERSION VERSION_EQUAL "3.1")
 	set(CMAKE_CXX_STANDARD 11)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
-	set(CMAKE_CXX_EXTENSIONS OFF)
+	set(CMAKE_CXX_EXTENSIONS ON)
 ELSE()
 	SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++11" )
 ENDIF()
@@ -156,18 +156,18 @@ SET(CPACK_STRIP_FILES "${M_EXECUTABLES}")
 
 IF( "${MORPHEUS_OS}" STREQUAL "UNIX" AND  NOT "${MORPHEUS_OS}" STREQUAL "APPLE" )
   
-  SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Modeling environment for Multi-Cellular
-  Systems Biology
-  Modeling and simulation environment for multi-cellular systems biology.
-  Includes simulators for ODEs, PDEs and cellular Potts models. 
-  Facilitates model integration into multiscale models.
-  .
+  SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Modeling environment for Multi-Cellular Systems Biology
+ Modeling and simulation environment for multi-cellular systems biology.
+ Includes simulators for ODEs, PDEs and cellular Potts models. 
+ .
+ Facilitates 
   - Modeling without programming.
-  - Runtime parsing of math expressions.
-  - Multiscale integration by symbolic linking.
+  - Model integration into multiscale models by symbolic linking.
+  - Import of SBML models.
+  - Simulating, sharing and archiving Models with ease.
   - Parameter exploration through (parallel) batch processing.
-  - Multi-core concurrency support using openMP multithreading.
-  - Support for use of remote high performance computing resources.")
+  - Multi-core concurrency support using openMP multithreading")
+
   SET(CPACK_DEBIAN_PACKAGE_SECTION "science")
   SET(CPACK_DEBIAN_PACKAGE_MAINTAINTER ${M_MAINTAINTER})
   
@@ -179,19 +179,22 @@ SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md ${CMAKE_CURRENT_SOURCE_DIR}/LIC
   INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/changelog.gz ${CMAKE_CURRENT_BINARY_DIR}/copyright
 DESTINATION "share/doc/${CPACK_PACKAGE_NAME}/")
   
-  FIND_PROGRAM(DPKG_PROGRAM dpkg DOC "dpkg program of Debian-based systems")
+  FIND_PROGRAM(DPKG_PROGRAM dpkg DOC "dpkg package manager of Debian-based systems")
   
   SET(DEBIAN_TIFF_PACKAGE "libtiff5")
   
-  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.6), libgomp1, libgcc1 (>= 1:4.1), libssh-4, ${DEBIAN_TIFF_PACKAGE}, libqtcore4, libqtgui4, libqt4-xml, libqt4-help, libqt4-svg, libqt4-sql-sqlite, libqtwebkit4, gnuplot-qt (>= 4.4) | gnuplot-x11 (>=4.4), graphviz")
+  SET(CMAKE_INSTALL_RPATH bin)
+  SET(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "gnuplot-qt (>= 4.4) | gnuplot-x11 (>=4.4)" )
+#   SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.6), libgomp1, libgcc1 (>= 1:4.1), libssh-4, ${DEBIAN_TIFF_PACKAGE}, libqtcore4, libqtgui4, libqt4-xml, libqt4-help, libqt4-svg, libqt4-sql-sqlite, libqtwebkit4, gnuplot-qt (>= 4.4) | gnuplot-x11 (>=4.4), graphviz")
   
-  IF(LIBSBML_FOUND AND MORPHEUS_SBML)
-    SET(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libsbml5")
-  ENDIF()
+#   IF(LIBSBML_FOUND AND MORPHEUS_SBML)
+#     SET(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libsbml5")
+#   ENDIF()
   
   SET(CPACK_GENERATOR "DEB")
 
-  SET(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://imc.zih.tu-dresden.de/wiki/morpheus")
+  SET(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://morpheus.gitlab.io")
 
   STRING(TOLOWER "${CPACK_PACKAGE_NAME}" CPACK_PACKAGE_NAME_LOWERCASE)
  
@@ -231,6 +234,11 @@ ELSEIF("${MORPHEUS_OS}" STREQUAL "APPLE")
 	#${CMAKE_CURRENT_SOURCE_DIR}/build/src/morpheus-gui")
 
 ELSEIF("${MORPHEUS_OS}" STREQUAL "WIN32")
+  SET(CPACK_WIX_PRODUCT_GUID "D80BAC6B-539F-4384-AD1B-FCDD8091DE76")
+  SET(CPACK_WIX_UPGRADE_GUID ${CPACK_WIX_PRODUCT_GUID})
+  SET(CPACK_WIX_PRODUCT_ICON "${CMAKE_CURRENT_SOURCE_DIR}/gui/icons/win/morpheus.ico")
+  SET(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "http:\\\\morpheu.gitlab.io" )
+  
   SET(CPACK_GENERATOR "NSIS")
   SET(CPACK_MONOLITHIC_INSTALL 1)
   SET(CPACK_PACKAGE_EXECUTABLES "${GUI_EXEC_NAME};Morpheus")
@@ -241,14 +249,17 @@ ELSEIF("${MORPHEUS_OS}" STREQUAL "WIN32")
   # : Modeling environment for Multiscale Morphogenesis")
   SET(CPACK_NSIS_CONTACT "${MAINTAINTER}")
   #SET(CPACK_PACKAGE_EXECUTABLES "${M_EXEC_NAME}" "${EWS_APP_NAME}")
-  SET(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\imc.zih.tu-dresden.de\\\\wiki\\\\morpheus")
+  SET(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\morpheu.gitlab.io")
+  
+  # RTF update: pandoc -s -f markdown -t rtf LICENSE.md  > LICENSE.rtf
+  SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.rtf")
 
   # create Start Menu links (application, uninstaller and website)
   SET(CPACK_NSIS_MENU_LINKS "${GUI_EXEC_NAME}" "${M_APP_NAME}")
   # install/uninstall Desktop item
   
   SET(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
-    "CreateShortCut \\\"$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Morpheus Website.lnk\\\" \\\"http:\\\\\\\\imc.zih.tu-dresden.de\\\\wiki\\\\morpheus\\\" \n
+    "CreateShortCut \\\"$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Morpheus Website.lnk\\\" \\\"http:\\\\\\\\morpheus.gitlab.io\\\" \n
      WriteRegStr HKCU \\\"Software\\\\Morpheus\\\\Morpheus\\\\local\\\" \\\"executable\\\" \\\"$INSTDIR\\\\morpheus.exe\\\"
   ")
   # CreateShortCut \\\"$DESKTOP\\\\${M_APP_NAME}.lnk\\\" \\\"$INSTDIR\\\\${GUI_EXEC_NAME}\\\" \n

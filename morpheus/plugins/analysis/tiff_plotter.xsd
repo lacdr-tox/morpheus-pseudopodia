@@ -11,7 +11,7 @@
 		<xs:annotation>
 			<xs:appinfo>Visualization</xs:appinfo>
 		</xs:annotation>
-		<xs:attribute name="time-step" use="required" type="cpmDouble"/>
+		<xs:attribute name="time-step" use="required" type="cpmMathExpression"/>
 <!-- 		<xs:attribute name="endstate" use="optional" type="cpmBoolean"/> -->
 		<xs:attribute name="format" use="required" type="cpmTIFFFormatEnum" default="guess" />
 		<xs:attribute name="compression" use="optional" type="cpmBoolean" default="true" />

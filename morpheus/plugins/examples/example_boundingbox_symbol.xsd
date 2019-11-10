@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	<!-- Add the Plugin to the supported groups in the schema -->
+	<!-- These snippets will be merged into the respective groups -->
+	
+<!-- XMLPath /MorpheusML/Global -->
+<!--	<xs:group name="GlobalPlugins">
+		<xs:choice>
+		</xs:choice>
+	</xs:group>-->
+	
+<!-- XMLPath /MorpheusML/CellTypes/CellType -->
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="BBox"	type="BBoxPlugin"/>
+		</xs:choice>
+	</xs:group>
+  
+<!--  /MorpheusML/Analysis -->
+<!--	<xs:group name="AnalysisPlugins">
+        <xs:choice>
+		</xs:choice>
+	</xs:group>-->
+
+<!-- XMLPath  */System -->
+<!--	<xs:group name="SystemPlugins">
+		<xs:choice>
+		</xs:choice>
+	</xs:group>-->
+	
+	<!-- Define the description language piece of the Plugin -->
+	<xs:complexType name="BBoxPlugin">
+		<xs:annotation>
+			<xs:appinfo>Math</xs:appinfo>
+		</xs:annotation>
+		<xs:attribute name="min-symbol" type="cpmVectorSymbolDef" use="required" default="cell.bbmin"/>
+		<xs:attribute name="max-symbol" type="cpmVectorSymbolDef" use="required" default="cell.bbmax"/>
+	</xs:complexType>
+
+</xs:schema>

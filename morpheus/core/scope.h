@@ -51,7 +51,8 @@ public:
 class Scope {
 public:
 	Scope();
-	~Scope()  { cout << "Deleting scope " << name << endl;} 
+	~Scope();
+	
 	/// Scope name
 	string getName() const { return name; };
 	/// Unique scope ID

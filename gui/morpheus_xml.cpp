@@ -131,10 +131,7 @@ bool MorpheusXML::saveAsDialog()
 //------------------------------------------------------------------------------
 
 QString MorpheusXML::domDocToText() {
-    QDomDocument doc("");
-    doc.appendChild(xmlDocument);
-
-    return doc.toString(4); // subelements are indented with 6 whitespaces
+    return xmlDocument.toString(4); // subelements are indented with 6 whitespaces
 }
 
 //------------------------------------------------------------------------------

@@ -177,6 +177,9 @@ QObject(parent)
 	if ( name=="Details" ) {
 		model_descr->details = getText() ;
 	}
+	if ( name=="TimeSymbol") {
+		model_descr->time_symbol = attribute("symbol");
+	}
 	if ( name=="Lattice" ) {
 		if (attributes.contains("class") && firstActiveChild("Size")->attributes.contains("value")) {
 			QObject* adapter = new LatticeStructureAdapter(this, attributes["class"], firstActiveChild("Size")->attributes["value"]);
@@ -262,7 +265,7 @@ QList<QString> nodeController::getAddableChilds(bool unfiltered)
 			addableChilds.push_back(child.name);
 	}
 	else if (node_type->child_info.is_choice) {
-		if (node_type->child_info.max_occurs == "unbounded" || activeChilds() < node_type->child_info.max_occurs.toInt() ) {
+		if (node_type->child_info.max_occurs == "unbounded" || activeChilds().size() < node_type->child_info.max_occurs.toInt() ) {
 			for (const auto& child : node_type->child_info.children )
 				addableChilds.push_back(child.name);
 		}
@@ -578,12 +581,14 @@ bool nodeController::hasText()
 
 //------------------------------------------------------------------------------
 
-int nodeController::activeChilds(QString childName) {
-	int count=0;
+QList<nodeController*> nodeController::activeChilds(QString childName) {
+	QList<nodeController*> active_childs;
 	for (const auto& child : childs) {
-		count += (! child->isDisabled()) && (childName.isEmpty() || childName == child->getName());
+		if ( (! child->isDisabled()) && (childName.isEmpty() || childName == child->getName()) )  {
+			active_childs.append(child);
+		}
 	}
-	return count;
+	return active_childs;
 }
 
 //------------------------------------------------------------------------------
@@ -825,10 +830,10 @@ bool nodeController::isChildRequired(nodeController* node)
 		return false;
 	
 	if (node_type->child_info.is_choice) {
-		return (node_type->child_info.min_occurs.toInt() >= activeChilds());
+		return (node_type->child_info.min_occurs.toInt() >= activeChilds().size());
 	}
 	else {
-		return (node_type->child_info.min_occurs.toInt()*node_type->child_info.children[node->name].min_occurs.toInt() >= activeChilds(node->name));
+		return (node_type->child_info.min_occurs.toInt()*node_type->child_info.children[node->name].min_occurs.toInt() >= activeChilds(node->name).size());
 	}
 }
 

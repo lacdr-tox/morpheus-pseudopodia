@@ -202,7 +202,7 @@ config::config() : QObject(), helpEngine(NULL) {
 	db.close();
 
 	// Creating a Job Queue that runs in a separate thread ..
-	qDebug() << "Main thread " << QThread::currentThreadId();
+// 	qDebug() << "Main thread " << QThread::currentThreadId();
 	job_queue_thread = new QThread();
 	job_queue = new JobQueue();
 	job_queue->moveToThread(job_queue_thread);
@@ -214,9 +214,6 @@ config::config() : QObject(), helpEngine(NULL) {
 	connect( job_queue_thread, SIGNAL(finished()), job_queue_thread, SLOT(deleteLater()) );
 
 	job_queue_thread->start();
-	
-	// Attaching to Clipboard
-	//connect(QApplication::clipboard(), SIGNAL(dataChanged()), this, SLOT(ClipBoardChanged()));
 }
 
 //------------------------------------------------------------------------------
@@ -224,7 +221,8 @@ config::config() : QObject(), helpEngine(NULL) {
 config* config::getInstance() {
     if ( ! config::instance ) {
         config::instance = new config();
-	connect(QApplication::clipboard(), SIGNAL(dataChanged()), config::instance, SLOT(ClipBoardChanged()));
+		// Attaching to Clipboard
+		connect(QApplication::clipboard(), SIGNAL(dataChanged()), config::instance, SLOT(ClipBoardChanged()));
     }
     return config::instance;
 }
@@ -236,8 +234,10 @@ SharedMorphModel config::getModel() {
 //    qDebug() << getInstance()->current_model << " " << getInstance()->openModels.size();
 	if (getInstance()->openModels.empty())
 		return SharedMorphModel();
-    if (getInstance()->current_model > getInstance()->openModels.size() -1)
-        getInstance()->current_model = getInstance()->openModels.size() -1;
+	
+    if (getInstance()->current_model > getInstance()->openModels.size() -1 || getInstance()->current_model < 0)
+		return SharedMorphModel();
+//         getInstance()->current_model = getInstance()->openModels.size() -1;
     return getInstance()->openModels[getInstance()->current_model];
 }
 
@@ -434,6 +434,7 @@ bool config::closeModel(int index, bool create_model)
 void config::switchModel(int index) {
     config* conf = config::getInstance();
     if (index == conf->current_model) return;
+	qDebug() << "Switch to model " << index;
     conf->current_model = index;
     if (index>=0)
         emit conf->modelSelectionChanged(conf->current_model);

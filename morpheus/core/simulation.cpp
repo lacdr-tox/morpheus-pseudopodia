@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 	}
 	catch (MorpheusException e) {
 		exception = true;
-		cerr << "\n" << e.what()<< "\n";
+		cerr << e.what()<< "\n";
 		cerr << "\nXMLPath: " << e.where() << endl;
 	}
 	catch (string e) {
@@ -78,13 +78,9 @@ int main(int argc, char *argv[]) {
 		exception = true;
 		cerr << "\n" << e.what()<< "\n";
 	}
-	catch (const std::runtime_error& e) {
+	catch (std::runtime_error& e) {
 		exception = true;
-		std::cerr << e.what() << std::endl;
-	}
-	catch (const std::exception &e) {
-		exception = true;
-		std::cerr << e.what() << std::endl;
+		cerr << e.what() << endl; 
 	}
 	catch (...) {
 		cerr << "Unknown error while creating the simulation" << endl;
@@ -157,9 +153,11 @@ string prettyFormattingBytes(uint bytes)
 	return ss.str();
 }
 
-const string getTitle() {
-	return fileTitle;
-}
+const string& getTitle() { return fileTitle; }
+
+const string& getInputDirectory() { return input_directory; }
+
+const string& getOutputDirectory() { return output_directory; }
 
 bool dependencyGraphMode() {
 	return SIM::generate_symbol_graph_and_exit;
@@ -255,7 +253,8 @@ void splash(bool show_usage) {
     cout << "  morpheus [OPTIONS] " << endl << endl;
     cout << " Options:  " << endl;
     cout << " -file [XML-FILE]      Run simulator with XML configuration file" << endl;
-	cout << " -[KEY]=[VALUE]  		Override the value of Constant symbol" << endl;
+	cout << " -outdir [PATH]        Set the output directory" << endl;
+	cout << " -[KEY]=[VALUE]        Override the value of Constant symbols from the Global section" << endl;
     cout << " -version              Show release version" << endl;
     cout << " -revision             Show SVN revision number" << endl;
 	cout << " -gnuplot-version      Show version of GnuPlot used" << endl;
@@ -317,6 +316,16 @@ bool init(int argc, char *argv[]) {
 		generate_symbol_graph_and_exit = false;
 	}
 
+	struct stat filestatus;
+	if (cmd_line.find("outdir") != cmd_line.end()) {
+		output_directory = cmd_line["outdir"];
+		if ( access( output_directory.c_str(), R_OK | W_OK) != 0) {
+			throw  string("Error: output directory '") + output_directory + "' does not exist or is not writable.";
+		}
+		cout << "Setting output directory " << output_directory << endl;
+		cmd_line.erase(cmd_line.find("outdir"));
+	}
+
 	if ( argc  == 1 ) {
         splash( true );
         cout << "No arguments specified." << endl;
@@ -329,7 +338,6 @@ bool init(int argc, char *argv[]) {
 	string filename = cmd_line["file"];
 	cmd_line.erase(cmd_line.find("file"));
 
-	struct stat filestatus;
 	int filenotexists = stat( filename.c_str(), &filestatus );
 	if ( filenotexists > 0 || filename.empty() ) {
 		throw  string("Error: file '") + filename + "' does not exist.";
@@ -363,7 +371,7 @@ bool init(int argc, char *argv[]) {
 	// try to match cmd line options with symbol names and adjust values accordingly
 	// check that global overrides have been used
 	for ( const auto& override: global_scope->value_overrides() ) {
-		cout << "Unknown cmd line override " << override.first << "=" << override.second << endl;
+		cout << "Warning: Command line override " << override.first << "=" << override.second << " not used!" << endl;
 	}
 
 	cout.flush();
@@ -542,6 +550,9 @@ void loadFromXML(const XMLNode xNode) {
 	}
 
 	// before loading all the Analysis tools that might create some files we should switch the cwd
+	if (chdir(output_directory.c_str()) != 0) 
+		throw(string("Could not change to output directory \"") + output_directory + "\"");
+	
 	for (uint i=0;i<analysers.size();i++) {
 		analysers[i]->init(global_scope.get());
 	}

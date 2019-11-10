@@ -246,16 +246,16 @@ void domNodeEditor::paste(QString a)
 {
 	QWidget * widget = focusWidget();
 	if (widget) {
-		if (dynamic_cast<QLineEdit*>(widget)) {
-			dynamic_cast<QLineEdit*>(widget)->insert(a);
+		if (auto ed = qobject_cast<QLineEdit*>(widget)) {
+			ed->insert(a);
 		}
-		else if (dynamic_cast<QTextEdit*>(widget)) {
-			dynamic_cast<QTextEdit*>(widget)->insertPlainText(a);
+		else if (auto ed = qobject_cast<QTextEdit*>(widget)) {
+			ed->insertPlainText(a);
 		}
-		else if (dynamic_cast<QComboBox*>(widget)) {
-			int idx = dynamic_cast<QComboBox*>(widget)->findData(a);
+		else if (auto ed = qobject_cast<QComboBox*>(widget)) {
+			int idx = ed->findData(a);
 			if (idx>=0) {
-				dynamic_cast<QComboBox*>(widget)->setCurrentIndex(idx);
+				ed->setCurrentIndex(idx);
 			}
 		}
 	}

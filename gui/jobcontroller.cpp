@@ -228,6 +228,9 @@ void JobView::setJob(int job_id) {
 	b_restore_sweep->setEnabled(false);
 	b_make_table->setEnabled(false);
 	gr_preview->hide();
+	gr_params->hide();
+	te_output->clear();
+	text_shown = 0;
 	
 	if (! current_job) {
 		title->setText("none");
@@ -240,8 +243,6 @@ void JobView::setJob(int job_id) {
 	connect(current_job.data(),SIGNAL(outputChanged(abstractProcess*)),this, SLOT(updateJobData()));
 	updateJobState();
 	 
-	te_output->clear();
-	text_shown = 0;
 	updateJobData();
 	
 	const ProcessInfo& info = current_job->info();
@@ -281,9 +282,6 @@ void JobView::setJob(int job_id) {
 		}
 		
 		gr_params->show();
-    }
-    else {
-		gr_params->hide();
     }
 }
 

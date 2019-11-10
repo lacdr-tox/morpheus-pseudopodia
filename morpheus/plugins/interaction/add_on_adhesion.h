@@ -24,7 +24,7 @@ Increases adhesion (i.e. decreases cell-contact energy) between neighboring CPM 
 
 Changes cell-contact energy depending on the amount of adhesive \f$ a_{\sigma} \f$ present in one of the cells (additive).
 
-\f$ \Delta E = -a_{\sigma} \cdot s_{\sigma} \f$
+\f$ E = -a_{\sigma} \cdot s_{\sigma} \f$ with units energy per node length.
 
 - \b adhesive: Expression describing amount of adhesive molecules. This may be a symbol representing a cell or membrane property (e.g. "c") or an expression (e.g. "10 * c").
 - \b strength: (default=1): Expression describing strength of adhesion. This may be a symbol representing a cell or membrane property (e.g. "s") or an expression (e.g. "10 * s").

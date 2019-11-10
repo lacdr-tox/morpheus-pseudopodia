@@ -79,7 +79,7 @@ http://dx.doi.org/10.1098/rsif.2012.0766
     </CellPopulations>
     <Analysis>
         <Gnuplotter time-step="5">
-            <Terminal size="400 400 0" persist="true" name="png"/>
+            <Terminal size="800 400 0" persist="true" name="png"/>
             <Plot>
                 <Cells value="X" min="0.0" max="1">
                     <ColorMap>

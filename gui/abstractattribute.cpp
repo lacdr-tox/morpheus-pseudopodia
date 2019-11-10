@@ -232,10 +232,61 @@ bool AbstractAttribute::set(QString att)
 	else
 	{
 		cout << "Value: '" << value.toStdString() << "' for attribute: '" << this->name.toStdString() << "' from Node: '" << parentNode.nodeName().toStdString() << "', isn't valid!" << endl;
+		cout << "PAttern is " << this->getPattern().toStdString() << endl;
 		return false;
 	}
 }
 
+bool AbstractAttribute::append(QString s) {
+	if ( ! this->isValid(value + s))
+		return false;
+		
+	QString old_value = this->value;
+	this->value += s;
+	
+	// Inactive attributes may not interact with the XSD types
+	if (! is_active)
+		return true;
+	
+	if ( XSD::dynamicTypeDefs.contains(type->name) ) {
+		int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
+		model_descr->xsd.removeEnumValue(XSD::dynamicTypeRefs[type_index], old_value);
+		model_descr->xsd.registerEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
+	}
+
+	if (is_text) {
+		textNode.setNodeValue(value);
+		if (model_descr->track_next_change) {
+			MorphModelEdit e;
+			e.edit_type = MorphModelEdit::TextChange;
+			e.info = QString("Text of node %1 was set to %2").arg(this->parentNode.nodeName(),this->value);
+			e.xml_parent = this->parentNode;
+			e.name = this->name;
+			e.value = this->value;
+			model_descr->auto_fixes.append(e);
+			model_descr->track_next_change = false;
+		}
+	}
+	else {
+		parentNode.toElement().setAttribute(this->name, value);
+		if (model_descr->track_next_change) {
+
+			MorphModelEdit e;
+			e.edit_type = MorphModelEdit::AttribChange;
+			e.info = QString("Attribute \"%1\" of node %2 was set to %3").arg(this->name,this->parentNode.nodeName(),this->value);
+			e.xml_parent = this->parentNode;
+			e.name = "";
+			e.value = this->value;
+			model_descr->auto_fixes.append(e);
+			model_descr->track_next_change = false;
+		}
+	}
+	model_descr->edits++;
+	
+	emit changed(this);
+
+	return true;
+}
 
 void AbstractAttribute::inheritDisabled(bool disable) {
 	if (is_disabled == disable) return;

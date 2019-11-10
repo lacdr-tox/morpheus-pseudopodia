@@ -13,7 +13,7 @@
 		</xs:annotation>
 		
 		<xs:attribute name="name" type="cpmString" use="optional"/>
-		<xs:attribute name="time-step" type="cpmDouble" use="required"/>
+		<xs:attribute name="time-step" type="cpmMathExpression" use="required"/>
 		<xs:attribute name="celltype" use="required" type="cpmCellTypeRef">
 			<xs:annotation>
 				<xs:documentation>Name of celltype to track displacement of.</xs:documentation>

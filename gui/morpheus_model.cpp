@@ -37,7 +37,6 @@ MorphModel::MorphModel(QObject *parent) :
 		// Now we clear the history of changes ...
 		rootNodeContr->saved();
 		rootNodeContr->clearTrackedChanges();
-		
 		initModel();
 	}
 	catch (QString& error) {
@@ -275,6 +274,23 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 	
 	if (morpheus_file_version == morpheus_ml_version) {
 		// nothing to do ...
+		fix_version=morpheus_ml_version;
+	}
+	else if (morpheus_file_version == 3) {
+		fix_version=4;
+		MorphModel::AutoFix a;
+		a.match_path = "MorpheusModel/CellTypes/CellType/CellReporter"; a.target_path = "MorpheusModel/CellTypes/CellType/Mapper"; fixes.append(a);
+		a.match_path = "MorpheusModel/CPM/ShapeBoundary"; a.target_path = "MorpheusModel/CPM/ShapeSurface"; fixes.append(a);
+		a.match_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@symbol-ref";a.target_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@value"; fixes.append(a);
+		a.match_path = "MorpheusModel/Analysis/Logger/Restriction/@force-node-granularity";a.target_path = "MorpheusModel/Analysis/Logger/Input/@force-node-granularity"; fixes.append(a);
+		
+		a.operation = AutoFix::COPY; a.replace_existing = false; a.match_path  = "MorpheusModel/CellPopulations/Population/Cell/@name"; a.target_path = "MorpheusModel/CellPopulations/Population/Cell/@id"; fixes.append(a);
+		
+		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Point"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Point"; fixes.append(a);
+		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Box"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Box"; fixes.append(a);
+		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Sphere"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Sphere"; fixes.append(a);
+		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Ellipsoid"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Ellipsoid"; fixes.append(a);
+		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Cylinder"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Cylinder"; fixes.append(a);
 	}
 	else if (morpheus_file_version == 2) {
 		// return edits;
@@ -363,23 +379,10 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 	else {
 		throw  ModelException(ModelException::InvalidVersion, QString("Incompatible MorpheusML version %1").arg(morpheus_file_version) );
 	}
-	// Current language patches, will become ml_version 4
+	
+	// Current language patches
 	if (morpheus_file_version == morpheus_ml_version || fix_version == morpheus_ml_version ) {
 // 		return edits;
-		fix_version=3;
-		MorphModel::AutoFix a;
-		a.match_path = "MorpheusModel/CellTypes/CellType/CellReporter"; a.target_path = "MorpheusModel/CellTypes/CellType/Mapper"; fixes.append(a);
-		a.match_path = "MorpheusModel/CPM/ShapeBoundary"; a.target_path = "MorpheusModel/CPM/ShapeSurface"; fixes.append(a);
-		a.match_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@symbol-ref";a.target_path = "MorpheusModel/Analysis/Gnuplotter/Plot/CellLabels/@value"; fixes.append(a);
-		a.match_path = "MorpheusModel/Analysis/Logger/Restriction/@force-node-granularity";a.target_path = "MorpheusModel/Analysis/Logger/Input/@force-node-granularity"; fixes.append(a);
-		
-		a.operation = AutoFix::COPY; a.replace_existing = false; a.match_path  = "MorpheusModel/CellPopulations/Population/Cell/@name"; a.target_path = "MorpheusModel/CellPopulations/Population/Cell/@id"; fixes.append(a);
-		
-		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Point"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Point"; fixes.append(a);
-		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Box"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Box"; fixes.append(a);
-		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Sphere"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Sphere"; fixes.append(a);
-		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Ellipsoid"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Ellipsoid"; fixes.append(a);
-		a.operation = AutoFix::MOVE; a.match_path  = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Object/Cylinder"; a.target_path = "MorpheusModel/CellPopulations/Population/InitCellObjects/Arrangement/Cylinder"; fixes.append(a);
 		// TODO Allow to specify a target path, finished by / to keep the node name!
 	}
 
@@ -620,7 +623,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		}
 	}
 	
-	document.documentElement().setAttribute( "version",QString::number(fix_version) );
+	document.documentElement().setAttribute( "version", QString::number(fix_version) );
 	if (fix_version != morpheus_ml_version) {
 		auto new_edits = applyAutoFixes(document);
 		edits.append(new_edits);
@@ -914,7 +917,7 @@ void MorphModel::prepareActivationOrInsert(nodeController* node, QString name) {
 	auto childInfo = node->childInformation();
 	
 	if (childInfo.is_choice) {
-		while (childInfo.max_occurs != "unbounded" && node->activeChilds() >= childInfo.max_occurs.toInt()) {
+		while (childInfo.max_occurs != "unbounded" && node->activeChilds().size() >= childInfo.max_occurs.toInt()) {
 			qDebug() << "Enabled node is exchanging";
 			auto other = node->firstActiveChild();
 			other->setDisabled(true);
@@ -923,7 +926,7 @@ void MorphModel::prepareActivationOrInsert(nodeController* node, QString name) {
 		}
 	}
 	else if (childInfo.max_occurs != "unbounded" && childInfo.children[name].max_occurs != "unbounded") {
-		while (childInfo.max_occurs.toInt() * childInfo.children[name].max_occurs.toInt() <= node->activeChilds(name) ) {
+		while (childInfo.max_occurs.toInt() * childInfo.children[name].max_occurs.toInt() <= node->activeChilds(name).size() ) {
 			nodeController* other =  node->firstActiveChild(name);
 			other->setDisabled(true);
 			emit dataChanged(itemToIndex(other),itemToIndex(other));

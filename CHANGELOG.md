@@ -1,5 +1,37 @@
 # ChangeLog
 
+## Release 2.1.1
+
+### Bug fixes
+  * Fix a rare crash upon ChangeCellType 
+
+
+## Release 2.1
+
+### GUI
+  * Reworked DelayProperty/Variable that allows varying delay times and history initialisation from expression
+  * Largely improve SBML import
+     * Provide more import target options
+     * Add support for multiple compartments and variable size compartments
+     * Support delays by via DelayProperties
+     * Support Events with delays
+     * Support HMC (comp)
+  * Fix MacOS crash on double-clicking symbol list
+  * Fix Windows SBML support (suitible library build)
+  * Fix Windows Job removal to also remove all related files
+
+### MorpheusML
+  * Expose local symbols to the input of the Neighborhood(Vector)Reporter
+  * Allow constant expressions in time-step specifications
+  * MorpheusML version bump 4.0
+
+### Simulator
+  * Add adaptive step size ODE solvers: adaptive45 (Dormand-Prince), adaptive45_ck (Cash-Karp), adaptive_23 (Bogacki-Shampine)
+  * Renewed implementation of Poissonian Disc Population Initializer
+  * Command line option for setting the output directory added
+  * Fix rare misplacement in box object initializer
+  * Reduce memory footprint
+
 ## Patch 2.0.1
   * Fixed VectorRules not working
   * Fixed broken image table for parameter sweeps
