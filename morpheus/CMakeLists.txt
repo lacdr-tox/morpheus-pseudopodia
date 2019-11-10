@@ -1,15 +1,15 @@
 
 FIND_PACKAGE(ZLIB REQUIRED)
-FIND_PACKAGE(Boost REQUIRED COMPONENTS filesystem)
 
 SET(GRAPHVIZ_ROOT "" CACHE PATH "Set root directory to search for GraphViz" )
 MARK_AS_ADVANCED(GRAPHVIZ_ROOT)
 FIND_PACKAGE(Graphviz)
 
-FIND_PACKAGE(Boost REQUIRED)
-IF (Boost_FOUND) 
+FIND_PACKAGE(Boost COMPONENTS filesystem REQUIRED)
+IF (Boost_FOUND)
 	SET(HAVE_BOOST 1)
 ELSE()
+	# FIXME this code will never be reached since BOOST is required
 	MESSAGE(STATUS "Unable to detect Boost library. Turning off Delay support.")
 ENDIF()
 
