@@ -98,7 +98,7 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 	if( event->mimeData()->hasFormat("text/plain") ||
 		event->mimeData()->hasFormat("text/uri-list") ){
 	
-		foreach (QUrl url, event->mimeData()->urls()) {
+        for (const QUrl& url: event->mimeData()->urls()) {
 			QString fileName = url.toLocalFile();
 			QFileInfo file(fileName);
 			qDebug() << "Filename = " << fileName << endl;
@@ -118,7 +118,7 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 
 void MainWindow::dropEvent(QDropEvent *event)
 {
-	foreach (QUrl url, event->mimeData()->urls()) {
+	for (const QUrl& url: event->mimeData()->urls()) {
 		QString fileName = url.toLocalFile();
 		QFile file(fileName);
 		if(file.exists()){
@@ -230,7 +230,7 @@ void MainWindow::createMenuBar()
 	QDir ex_dir(":/examples");
 	QStringList ex_categories_sl = ex_dir.entryList();
 	QMap<int, QString> ex_categories;
-	foreach( QString ex_cat, ex_categories_sl ) {
+	for(const QString& ex_cat: ex_categories_sl ) {
 		if( ex_cat == "ODE" )
 			ex_categories.insert(1,ex_cat);
 		if( ex_cat == "PDE" )
@@ -245,13 +245,11 @@ void MainWindow::createMenuBar()
             ex_categories.insert(6,ex_cat);
     }
 	
-	//foreach( QString ex_cat, ex_categories ) {
-	for( QMap<int,QString>::iterator it = ex_categories.begin(); it != ex_categories.end(); it++){
-		QString ex_cat = it.value();
+	for( const QString& ex_cat: ex_categories ) {
 		QDir ex_cat_dir(ex_dir); ex_cat_dir.cd(ex_cat);
 		QMenu * ex_cat_menu = examplesMenu->addMenu(ex_cat);
 		QStringList examples = ex_cat_dir.entryList();
-		foreach( QString example, examples ) {
+		for(const QString& example: examples ) {
 			if (example.endsWith(".xml")) {
 				QAction *openEx = ex_cat_menu->addAction(example);
 				QString ex_path = QString(":/examples/")+ex_cat_dir.dirName() + "/" + example;
@@ -882,7 +880,7 @@ void MainWindow::modelActionTriggerd (QAction *act)
 void MainWindow::syncModelList (int m) {
 	if (m==-1) {
 		const QList<SharedMorphModel >&  models = config::getOpenModels();
-		foreach ( SharedMorphModel model, models) {
+		for(const SharedMorphModel& model: models) {
 			if (sender() == model.data()) {
 				m = models.indexOf(model);
 			}
