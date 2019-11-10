@@ -854,7 +854,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 		nodeController* logger_log  = logger->firstActiveChild("Input");
 		nodeController* logger_plot = logger->firstActiveChild("Plots")->firstActiveChild("Plot")->firstActiveChild("Y-axis");
 
-		foreach (const QString& var, variables){
+		for(const QString& var: variables){
 			nodeController* symbol_log = logger_log->insertChild("Symbol");			
 			symbol_log->attribute("symbol-ref")->set(var);
 			nodeController* symbol_plot = logger_plot->insertChild("Symbol");
