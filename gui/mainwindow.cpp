@@ -1,8 +1,10 @@
 #include "mainwindow.h"
 #ifdef USE_QWebEngine
 	#include "network_schemes.h"
-	#include <QWebEngineUrlScheme>
 	#include <QWebEngineProfile>
+	#if QTCORE_VERSION >= 0x051200
+		#include <QWebEngineUrlScheme>
+	#endif
 #endif
 
 // using namespace std;
@@ -36,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)//, ui(new Ui::Main
     QWidget::setWindowTitle(tr("Morpheus"));
     QWidget::setAcceptDrops(true);
 
-#ifdef USE_QWebEngine
+#if defined USE_QWebEngine  && QTCORE_VERSION >= 0x051200
 	QWebEngineUrlScheme scheme(HelpNetworkScheme::scheme());
 	scheme.setSyntax(QWebEngineUrlScheme::Syntax::HostAndPort);
 	scheme.setDefaultPort(80);
