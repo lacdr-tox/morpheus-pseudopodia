@@ -163,17 +163,31 @@ namespace SIM {
 		string linkType() const override { return "TimeLink"; }
 	};
 	/// Global symbol providing the position
-	class SpaceSymbol : public SymbolAccessorBase<VDOUBLE> {
+	class LocationSymbol : public SymbolAccessorBase<VDOUBLE> {
 	public:
 		SpaceSymbol(string symbol) : SymbolAccessorBase<VDOUBLE>(symbol) {
 			flags().granularity = Granularity::Node;
 			flags().time_const = true;
 		}
 		VDOUBLE get(const SymbolFocus& f) const override {
-			return f.pos();
+			return f.global_pos();
 		}
-		const string&  description() const override { static const string descr = "Space" ; return descr; }
-		string linkType() const override { return "SpaceLink"; }
+		const string&  description() const override { static const string descr = "Location" ; return descr; }
+		string linkType() const override { return "LocationLink"; }
+	};
+	
+	/// Global symbol providing the position
+	class LatticeLocationSymbol : public SymbolAccessorBase<VDOUBLE> {
+	public:
+		SpaceSymbol(string symbol) : SymbolAccessorBase<VDOUBLE>(symbol) {
+			flags().granularity = Granularity::Node;
+			flags().time_const = true;
+		}
+		VDOUBLE get(const SymbolFocus& f) const override {
+			return f.lattice_pos();
+		}
+		const string&  description() const override { static const string descr = "LatticeLocation" ; return descr; }
+		string linkType() const override { return "LatticeLocationLink"; }
 	};
 	
 }

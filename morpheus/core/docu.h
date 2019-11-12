@@ -334,11 +334,11 @@ Set symbol "c" (e.g. assume it's a CellProperty) to 1 after 1000 simulation time
 \ingroup MorpheusML
 
 The \ref ML_Space element specifies the size, structure and boundary conditions of the spatial lattice. 
-The types of boundary conditions are homogeneous amoung all model parts, while the exact values can be specified through \b BoundaryValue in a \ref ML_Field or in \ref ML_CellPopulations for the cell layer.
+The types of boundary conditions are homogeneous among all model parts, while the exact values can be specified through \b BoundaryValue in a \ref ML_Field or in \ref ML_CellPopulations for the cell layer.
 
-A \ref ML_SpaceSymbol can be used to create a symbol to the current (x,y,z) location. 
+A \ref ML_SpaceSymbol can be used to create a symbol representing the current (x,y,z) location. The symbol always provides the location in orthogonal coordinates. It is not (yet) scaled by the defined node length.
 
-\ref ML_MembraneLattice specifies the resolution of membrane-bound Fields. 
+\ref ML_MembraneLattice specifies the resolution of membrane-bound Fields. These fields are represented by a sphere-wrapped periodic lattice (0..resolution-1, 0..resolution/2-1, 0). The \b SpaceSymbol refers to the index position of within the lattice.
 
 \section Examples
 Linear lattice with periodic boundary conditions. See ShellCA example.

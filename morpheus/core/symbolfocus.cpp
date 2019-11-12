@@ -4,41 +4,33 @@
 
 
 SymbolFocus::SymbolFocus () :
-	has_pos(false), has_membrane(false), has_cell(false), has_cell_index(false), d_cell(NULL)
+	has_pos(false), has_global_pos(false), has_membrane(false), has_cell(false), has_cell_index(false), d_cell(NULL)
 	{};
 
 SymbolFocus::SymbolFocus ( const VINT& pos ) :
-	has_pos(true),  has_membrane(false), has_cell(false), has_cell_index(false), d_cell(NULL), d_pos(pos)
+	has_pos(true), has_global_pos(false),  has_membrane(false), has_cell(false), has_cell_index(false), d_cell(NULL), d_pos(pos)
 	{};
 
 SymbolFocus::SymbolFocus ( CPM::CELL_ID cell_id ) :
-	has_pos(false), has_membrane(false), has_cell(true),  has_cell_index(false), d_cell(& CPM::getCell(cell_id))
+	has_pos(false), has_global_pos(false), has_membrane(false), has_cell(true),  has_cell_index(false), d_cell(& CPM::getCell(cell_id))
 	{};
 
 SymbolFocus::SymbolFocus ( CPM::CELL_ID cell_id, const VINT& pos ) :
-	has_pos(true),  has_membrane(false), has_cell(true),  has_cell_index(false), d_cell(& CPM::getCell(cell_id)), d_pos(pos)
+	has_pos(true), has_global_pos(false),  has_membrane(false), has_cell(true),  has_cell_index(false), d_cell(& CPM::getCell(cell_id)), d_pos(pos)
 	{};
 
 SymbolFocus::SymbolFocus ( CPM::CELL_ID cell_id, double phi, double theta) :
-	has_pos(false), has_membrane(true),  has_cell(true),  has_cell_index(false), d_cell(& CPM::getCell(cell_id)), d_membrane_pos(VINT(phi,theta,0))
+	has_pos(false), has_global_pos(false), has_membrane(true),  has_cell(true),  has_cell_index(false), d_cell(& CPM::getCell(cell_id)), d_membrane_pos(VINT(phi,theta,0))
 	{};
 
 const VINT&  SymbolFocus::membrane_pos() const {
 	if (!has_membrane) {
 		VDOUBLE from_center = SIM::lattice().orth_distance(SIM::lattice().to_orth(pos()),cell().getCenter());
 		d_membrane_pos = MembraneProperty::orientationToMemPos(from_center);
-// 		if( MembraneProperty::size.y <= 1){ // assume linear PDE
-// 			double angle = (from_center).angle_xy();
-// 			d_membrane_pos.x = (int) (angle * (((0.5*(double)MembraneProperty::size.x)/M_PI)))  ;
-// 		}
-// 		else{ // 3D simulation: assume spherical PDE
-// 			VDOUBLE radials = from_center.to_radial();
-// 			d_membrane_pos.x = (int) (radials.x * (((0.5*(double)MembraneProperty::size.x)/M_PI)))  ;
-// 			d_membrane_pos.y    = (int) (radials.y * ((((double)MembraneProperty::size.y)/M_PI)))  ;
-// 		}
 	}
 	return d_membrane_pos;
 };
+
 const VINT& SymbolFocus::pos() const {
 	if (has_pos) return d_pos;
 	else { 
@@ -46,6 +38,18 @@ const VINT& SymbolFocus::pos() const {
 		return d_pos;
 	}
 };
+
+const VDOUBLE& SymbolFocus::global_pos() const
+{
+	if (has_global_pos) 
+		return d_global_pos;
+	
+	d_global_pos = SIM::lattice().to_orth(pos());
+	SIM::lattice().orth_resolve(d_global_pos);
+	has_global_pos = true;
+	return d_global_pos;
+}
+
 
 const Cell& SymbolFocus::cell() const {
 	if (!has_cell) {
@@ -87,6 +91,7 @@ void SymbolFocus::setCell(CPM::CELL_ID cell_id, const VINT& pos) {
 	}
 	d_pos = pos;
 	has_pos = true;
+	has_global_pos = false;
 };
 
 void SymbolFocus::setPosition(const VINT& pos) {
@@ -103,6 +108,7 @@ void SymbolFocus::setMembrane(CPM::CELL_ID cell_id, const VINT& pos ) {
 	d_membrane_pos = pos;
 	has_membrane=true;
 	has_pos=false;
+	has_global_pos = false;
 };
 
 int SymbolFocus::get(FocusRangeAxis axis) const {
@@ -123,6 +129,7 @@ int SymbolFocus::get(FocusRangeAxis axis) const {
 
 void SymbolFocus::unset() {
 	has_pos=false;
+	has_global_pos=false;
 	has_membrane=false;
 	has_cell=false;
 	has_cell_index=false;

@@ -33,10 +33,15 @@ public:
 	uint celltype() const { return cell_index().celltype; };
 	/// Retrieve id of the cell at the current position
 	const CPM::CELL_ID cellID() const;
-	/// Retrive a membrane position in spherical coordinates. Throws an error if membrane position is not set. 
-	const VINT& membrane_pos() const;
+	/// Retrieve position in lattice coordinates
 	const VINT& pos() const;
-	int get(FocusRangeAxis) const;
+	/// Retrieve position in lattice coordinates
+	const VINT& lattice_pos() const { return pos(); };
+	/// Retrieve position in global coordinates, i.e. global scale and orthogonal coordinates
+	const VDOUBLE& global_pos() const;
+	/// Retrieve a membrane position in spherical coordinates. Throws an error if membrane position is not set. 
+	const VINT& membrane_pos() const;
+	int get(FocusRangeAxis axis) const;
 	const CPM::INDEX& cell_index() const;
 	void setCell(CPM::CELL_ID cell_id);
 	void setCell(CPM::CELL_ID cell_id, const VINT& pos);
@@ -50,8 +55,9 @@ public:
 	static const SymbolFocus global;
 	
 private:
-	mutable bool has_pos, has_membrane, has_cell, has_cell_index;
+	mutable bool has_pos, has_global_pos, has_membrane, has_cell, has_cell_index;
 	mutable VINT d_pos, d_membrane_pos;
+	mutable VDOUBLE d_global_pos;
 	mutable const Cell* d_cell;
 	mutable CPM::INDEX d_cell_index;
 };

@@ -166,6 +166,18 @@ template <class T> void Lattice_Data_Layer<T>::setDomain()
 	domain[s_ypb] = boundary_types[Boundary::py];
 	domain[s_zmb] = boundary_types[Boundary::mz];
 	domain[s_zpb] = boundary_types[Boundary::pz];
+	if (boundary_types[Boundary::mx] == Boundary::periodic) {
+		domain[s_xmb] = domain[s_xp];
+		domain[s_xpb] = domain[s_xm];
+	}
+	if (boundary_types[Boundary::my] == Boundary::periodic) {
+		domain[s_ymb] = domain[s_yp];
+		domain[s_ypb] = domain[s_ym];
+	}
+	if (boundary_types[Boundary::mz] == Boundary::periodic) {
+		domain[s_zmb] = domain[s_zp];
+		domain[s_zpb] = domain[s_zm];
+	}
 }
 
 //save lattice to XML-file

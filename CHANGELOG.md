@@ -6,6 +6,8 @@
   * Introduced Interactive Model Graphs
   * Switched to Qt5
 
+### MorpheusML
+  * The space symbol (Space/SpaceSymbol) now always provides the position in orthogonal coordinates, also on hexagonal lattices.
 
 ## Release 2.1.1
 
