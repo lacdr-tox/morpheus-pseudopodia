@@ -99,8 +99,8 @@ private:
 			default: return "Undefined ";
 		}
 	}
-	string _expression;
 	ErrorType _error;
+	string _expression;
 };
 
 
@@ -162,10 +162,11 @@ namespace SIM {
 		const string& description() const override { static const string descr = "Time" ; return descr; }
 		string linkType() const override { return "TimeLink"; }
 	};
+	
 	/// Global symbol providing the position
 	class LocationSymbol : public SymbolAccessorBase<VDOUBLE> {
 	public:
-		SpaceSymbol(string symbol) : SymbolAccessorBase<VDOUBLE>(symbol) {
+		LocationSymbol(string symbol) : SymbolAccessorBase<VDOUBLE>(symbol) {
 			flags().granularity = Granularity::Node;
 			flags().time_const = true;
 		}
@@ -179,7 +180,7 @@ namespace SIM {
 	/// Global symbol providing the position
 	class LatticeLocationSymbol : public SymbolAccessorBase<VDOUBLE> {
 	public:
-		SpaceSymbol(string symbol) : SymbolAccessorBase<VDOUBLE>(symbol) {
+		LatticeLocationSymbol(string symbol) : SymbolAccessorBase<VDOUBLE>(symbol) {
 			flags().granularity = Granularity::Node;
 			flags().time_const = true;
 		}

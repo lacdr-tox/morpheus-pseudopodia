@@ -448,7 +448,7 @@ void loadFromXML(const XMLNode xNode) {
 	
 	xSpace = xNode.getChildNode("Space");
 	getXMLAttribute(xSpace,"SpaceSymbol/symbol",SymbolBase::Space_symbol);
-	auto space_symbol = make_shared<SpaceSymbol>(SymbolBase::Space_symbol);
+	auto space_symbol = make_shared<LocationSymbol>(SymbolBase::Space_symbol);
 	space_symbol->setXMLPath(getXMLPath(xSpace)+"/SpaceSymbol");
 	global_scope->registerSymbol(space_symbol);
 	

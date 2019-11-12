@@ -3,11 +3,11 @@
 ## Unreleased
 
 ### GUI
-  * Introduced Interactive Model Graphs
+  * Introduced Interactive Model Graph
   * Switched to Qt5
 
 ### MorpheusML
-  * The space symbol (Space/SpaceSymbol) now always provides the position in orthogonal coordinates, also on hexagonal lattices.
+  * The space symbol (Space/SpaceSymbol) now always provides the location in orthogonal coordinates, also on hexagonal lattices.
 
 ## Release 2.1.1
 
