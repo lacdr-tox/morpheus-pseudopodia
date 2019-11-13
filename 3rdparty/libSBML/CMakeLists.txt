@@ -37,6 +37,8 @@ ExternalProject_Add( libSBML
   CMAKE_ARGS ${sbml_cmake_args}
   # Import depenency definitions into project cache
   CMAKE_CACHE_ARGS ${sbml_cache_args}
+  #
+#   INSTALL_COMMAND ""
 )
 
 SET(LIBSBML_STATIC_DEPENDENCY_LIBRARIES ${LIBXML2_LIBRARIES} ${ZLIB_LIBRARY})
