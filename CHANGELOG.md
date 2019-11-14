@@ -4,7 +4,7 @@
 
 ### Bug fixes
   * Fix a rare crash upon ChangeCellType 
-
+  * Fix reading numeric html encoded utf8 characters
 
 ## Release 2.1
 

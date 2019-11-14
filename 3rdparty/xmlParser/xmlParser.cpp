@@ -772,10 +772,37 @@ XMLSTR fromXMLString(XMLCSTR s, int lo, XML *pXML)
                         ss++;
                     }
                 }
+				if (characterEncoding==XMLNode::char_encoding_UTF8) {
+					if (j<128) { // 2^6
+						(*d++)=(XMLCHAR)j;
+					}
+					else if (j<2048) { // 2^(6+5) 
+						auto j_raw = (char*)&j;
+						// grep 6 bit
+						d[1] = (j_raw[0] & 0x3F) + 0x80; j = j >> 6;
+						// grep last 5 bit 
+						d[0] = j_raw[0] & 0x1F + 0xC0;
+						d+=2;
+					}
+					else if (j<65536) { // 2^(6+6+4) 
+						auto j_raw = (char*)&j;
+						// grep 6 bit
+						d[2] = (j_raw[0] & 0x3F) + 0x80; j = j >> 6;
+						// grep another 6 bit
+						d[1] = (j_raw[0] & 0x3F) + 0x80; j = j >> 6;
+						// grep last 4 bit 
+						d[0] = (j_raw[0] & 0x0F) + 0xE0;
+						d+=3;
+					}
+				}
+				else {
 #ifndef _XMLWIDECHAR
-                if (j>255) { free((void*)s); pXML->error=eXMLErrorCharacterCodeAbove255;return NULL;}
+					if (j>255) { free((void*)s); pXML->error=eXMLErrorCharacterCodeAbove255;return NULL;}
 #endif
-                (*d++)=(XMLCHAR)j; ss++;
+					(*d++)=(XMLCHAR)j;
+				}
+
+				ss++;
             } else
             {
                 entity=XMLEntities;
