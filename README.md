@@ -75,7 +75,7 @@ sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen g
 Morpheus has been added to AUR (https://aur.archlinux.org/packages/morpheus-modeling/) so to install the dependencies and build from source simply run
 
 ```
-yaourt morpheus-modeling
+yay -S morpheus-modeling
 ```
 
 # How to cite Morpheus
