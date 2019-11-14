@@ -1,30 +1,32 @@
 #include "xml_functions.h"
 
-XMLNode parseXMLFile(string filename) {
+XMLNode parseXMLFile(string filename, XMLResults *pResults) {
 	gzFile file=gzopen(filename.c_str(), "rb");
 	if (file==NULL) { cerr << "unable to open file " << filename << endl; exit(-1); }
 	cout << "Initializing from file " << filename << endl;
 	string stringbuff;	int error;
-	void* buff= malloc(16384*sizeof(char));
-	char* c=(char*)buff;	int i;
+	char* buff= (char*)malloc(16384*sizeof(char));
+	int i;
 	while ((i=gzread(file,buff,sizeof(buff)))>0) {
-		c[i]='\0';
-		stringbuff+=c;
+		buff[i]='\0';
+		stringbuff+=buff;
 	}
 	free(buff);
 	gzerror(file,&error);
 	gzclose(file); 
 	if (!(error==Z_STREAM_END or error==Z_OK)) {
-		cerr << "error in " << error << " " << filename << ": "<< gzerror(file,&error); getchar();exit(-1);
+		cerr << "Error " << error << " while reading " << filename << ": "<< gzerror(file,&error);
+		if (pResults) {
+			pResults->error = eXMLErrorEmpty;
+			pResults->nLine = 0;
+			pResults->nColumn = 0;
+		};
+		return XMLNode::emptyNode();
 	}
 	
 // and parse the file
 	cout << "parsing ..." << endl;
-
-	XMLNode xml_root=XMLNode::parseString(stringbuff.c_str(),"MorpheusModel");
-	if( xml_root.isEmpty() )
-		xml_root=XMLNode::parseString(stringbuff.c_str(),"CellularPottsModel");
-	
+	XMLNode xml_root=XMLNode::parseString(stringbuff.c_str(),"MorpheusModel", pResults);
 	
 	return xml_root;
 }

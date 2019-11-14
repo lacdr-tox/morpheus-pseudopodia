@@ -349,11 +349,18 @@ bool init(int argc, char *argv[]) {
 		throw  string("Error: file '") + filename + "' is empty.";
 	}
 
-	if (filename.size() > 3 and filename.substr(filename.size()-4,3) == ".gz") {
-		throw  string("You must unzip the model file before using it");
-	} 
+// 	if (filename.size() > 3 and filename.substr(filename.size()-4,3) == ".gz") {
+// 		throw  string("You must unzip the model file before using it");
+// 	} 
 	
-	XMLNode xMorpheusRoot = parseXMLFile(filename);
+	XMLResults results;
+	XMLNode xMorpheusRoot = parseXMLFile(filename, &results);
+	if (results.error!=eXMLErrorNone) {
+		cerr << "Unable to read model" << std::endl; 
+		cerr << XMLNode::getError(results.error) <<  " at line " << results.nLine << " col " << results.nColumn << "!" << std::endl; 
+		return false;
+	}
+	
 	global_scope = unique_ptr<Scope>(new Scope());
 	// Attach global overrides to the global scope
 	for (map<string,string>::const_iterator it = cmd_line.begin(); it != cmd_line.end(); it++ ) {

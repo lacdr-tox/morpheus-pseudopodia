@@ -9,6 +9,9 @@
 ### MorpheusML
   * The space symbol (Space/SpaceSymbol) now always provides the location in orthogonal coordinates, also on hexagonal lattices.
 
+### Simulator
+  * Support reading (gz) compressed models
+  
 ## Release 2.1.1
 
 ### Bug fixes

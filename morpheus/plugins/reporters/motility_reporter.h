@@ -48,7 +48,6 @@ public:
 
 private:
 	const CellType* celltype;
-	PluginParameter2<double, XMLThreadsaveEvaluator, RequiredPolicy> interval;
 	PluginParameter2<VDOUBLE, XMLWritableSymbol, OptionalPolicy> velocity;
 	PluginParameter2<VDOUBLE, XMLWritableSymbol, OptionalPolicy> displacement;
 
