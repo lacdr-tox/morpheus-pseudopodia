@@ -873,7 +873,7 @@ void SystemSolver::EquationHooks(const SymbolFocus& f, bool write_extern) {
 
 void SystemSolver::Discrete(const SymbolFocus& f) {
 	
-	if (rules.empty() && vec_rules.empty()==0)
+	if (rules.empty() && vec_rules.empty())
 		return;
 	
 	for (uint i=0; i < rules.size(); i++){
