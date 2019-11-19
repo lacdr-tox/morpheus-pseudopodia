@@ -216,7 +216,8 @@ void domNodeEditor::setAttributeEditor(nodeController* node)
 
 		tmp_item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsEditable | Qt::ItemIsSelectable);
 
-		tmp_header->setBackgroundColor(QColor(239, 235, 231, 255));
+// 		tmp_header->setBackgroundColor(QStyle:: QColor(239, 235, 231, 255));
+		tmp_header->setBackgroundColor(this->palette().alternateBase().color());
 		
 		if (tmp_attr->isRequired()) {
 			tmp_header->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
