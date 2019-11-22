@@ -10,7 +10,7 @@ JobView::JobView()
     te_output->setFont( font );
 
     QPalette pal;
-    pal.setColor(QPalette::Base, QColor(239, 235, 231, 255));
+    pal.setColor(QPalette::Base, pal.color(QPalette::AlternateBase) );
     te_output->setPalette(pal);
 
     output_files = new QTreeView();

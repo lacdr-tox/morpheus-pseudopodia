@@ -1,5 +1,12 @@
 # ChangeLog
 
+## Release 2.1.1
+
+### Bug fixes
+  * Fix a bug in scheduling systems consisting of VectorRules only
+  * Fix a rare crash upon ChangeCellType 
+  * Fix reading numeric html encoded utf8 characters
+
 ## Release 2.1
 
 ### GUI
