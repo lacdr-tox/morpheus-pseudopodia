@@ -3,6 +3,25 @@
 
 #include "property.h"
 
+/**
+\defgroup ML_DelayVariable DelayVariable
+\ingroup ML_Global
+\ingroup Symbols
+
+Symbol with a scalar value and a \b delay time before assigned values become current. The initial value and history is given by a \ref MathExpressions.
+**/
+
+/**
+\defgroup ML_DelayProperty DelayProperty
+\ingroup ML_CellType
+\ingroup Symbols
+
+
+Symbol with a cell-bound scalar value and a \b delay time before assigned values become current. The initial value and history is given by a \ref MathExpressions
+**/
+
+
+
 struct DelayData {
 	double time;
 	double value;

@@ -5,38 +5,42 @@
 	
 <!-- XMLPath /MorpheusML/Global -->
 	<xs:group name="GlobalPlugins">
-		<xs:choice>
-			<xs:element name="TimeAvg"	type="TimeAvgPlugin"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="TimeAvg"	type="TimeAvgPlugin"  	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 <!-- XMLPath /MorpheusML/CellTypes/CellType -->
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="TimeAvg"	type="TimeAvgPlugin"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="TimeAvg"	type="TimeAvgPlugin" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
   
 <!--  /MorpheusML/Analysis -->
 <!--	<xs:group name="AnalysisPlugins">
-        <xs:choice>
-		</xs:choice>
+        <xs:all>
+		</xs:all>
 	</xs:group>-->
 
 <!-- XMLPath  */System -->
 <!--	<xs:group name="SystemPlugins">
-		<xs:choice>
-		</xs:choice>
+		<xs:all>
+		</xs:all>
 	</xs:group>-->
 	
 	<!-- Define the description language piece of the Plugin -->
 	<xs:complexType name="TimeAvgPlugin">
-		<xs:annotation>
-			<xs:appinfo>Math</xs:appinfo>
-		</xs:annotation>
-		<xs:attribute name="duration" type="cpmDouble" use="required" default="1.0" />
-		<xs:attribute name="input" type="cpmMathExpression" use="required" />
-		<xs:attribute name="output" type="cpmDoubleSymbolRef" use="required" />
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Math</xs:appinfo>
+				</xs:annotation>
+				<xs:attribute name="duration" type="cpmDouble" use="required" default="1.0" />
+				<xs:attribute name="input" type="cpmMathExpression" use="required" />
+				<xs:attribute name="output" type="cpmDoubleSymbolRef" use="required" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 </xs:schema>

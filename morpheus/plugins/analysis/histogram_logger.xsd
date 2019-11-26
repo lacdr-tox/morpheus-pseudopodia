@@ -2,23 +2,26 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="AnalysisPlugins">
-        <xs:choice>
-			<xs:element name="HistogramLogger" 			type="HistogramLogger"/>
-		</xs:choice>
+        <xs:all>
+			<xs:element name="HistogramLogger" 			type="HistogramLogger"	minOccurs="0"	maxOccurs="unbounded" />
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="HistogramLogger">
-		<xs:all>
-			<xs:element name="Column" type="cpmHistogramColumn"	minOccurs="1" maxOccurs="unbounded"/>
-			<xs:element name="Plot" type="cpmHistogramPlot"	minOccurs="0" maxOccurs="1"/>		
-		</xs:all>
-		<xs:attribute name="time-step" use="required" type="cpmMathExpression" default="1"/>
-		<xs:attribute name="number-of-bins" use="required" type="cpmUnsignedInteger" default="10"/>
-		<xs:attribute name="normalized" use="required" type="cpmBoolean" />
-		<xs:attribute name="minimum" use="optional" type="cpmDouble" />
-		<xs:attribute name="maximum" use="optional" type="cpmDouble" />
-		<xs:attribute name="logarithmic-bins" use="optional" type="cpmBoolean" />
-		<xs:attribute name="logarithmic-freq" use="optional" type="cpmBoolean" />
+		<xs:complexContent>
+			<xs:extension base="morphAnalysisPlugin">
+				<xs:all>
+					<xs:element name="Column" type="cpmHistogramColumn"	minOccurs="1" maxOccurs="unbounded"/>
+					<xs:element name="Plot" type="cpmHistogramPlot"	minOccurs="0" maxOccurs="1"/>		
+				</xs:all>
+				<xs:attribute name="number-of-bins" use="required" type="cpmUnsignedInteger" default="10"/>
+				<xs:attribute name="normalized" use="required" type="cpmBoolean" />
+				<xs:attribute name="minimum" use="optional" type="cpmDouble" />
+				<xs:attribute name="maximum" use="optional" type="cpmDouble" />
+				<xs:attribute name="logarithmic-bins" use="optional" type="cpmBoolean" />
+				<xs:attribute name="logarithmic-freq" use="optional" type="cpmBoolean" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 	<xs:complexType name="cpmHistogramColumn">	

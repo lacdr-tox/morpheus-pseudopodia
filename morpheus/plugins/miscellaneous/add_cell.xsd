@@ -2,23 +2,26 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="AddCell"	type="AddCell"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="AddCell"	type="AddCell" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="AddCell">
-		<xs:annotation>
-			<xs:appinfo>Population</xs:appinfo>
-		</xs:annotation>
-		<xs:all>
-<!-- 			<xs:element name="Condition" type="cpmMathExpression" /> -->
-			<xs:element name="Count" type="cpmMathExpression" />
-			<xs:element name="Distribution" type="cpmMathExpression" />
-			<xs:element name="Triggers" type="TriggeredSystem" />
-		</xs:all>
-		<xs:attribute name="name" type="cpmString" use="optional" />
-		<xs:attribute name="overwrite" type="cpmBoolean" use="optional" default="false" />
+
+		<xs:complexContent>
+			<xs:annotation>
+				<xs:appinfo>Population</xs:appinfo>
+			</xs:annotation>
+			<xs:all>
+				<xs:element name="Count" type="cpmMathExpression" />
+				<xs:element name="Distribution" type="cpmMathExpression" />
+				<xs:element name="Triggers" type="TriggeredSystem" />
+			</xs:all>
+			<xs:attribute name="name" type="cpmString" use="optional" />
+			<xs:attribute name="overwrite" type="cpmBoolean" use="optional" default="false" />
+		</xs:complexContent>
+
 	</xs:complexType>
 	
 	<xs:simpleType name="cpmAddCellMode">

@@ -31,7 +31,7 @@
 
 
 	<xs:complexType name="MonteCarloSampler">
-		
+
 		<xs:all>
 			<xs:element name="MetropolisKinetics">
 				<xs:complexType>

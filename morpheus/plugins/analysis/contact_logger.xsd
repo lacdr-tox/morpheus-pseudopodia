@@ -2,21 +2,22 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="AnalysisPlugins">
-        <xs:choice>
-			<xs:element name="ContactLogger" type="ContactLogger"/>
-		</xs:choice>
+        <xs:all>
+			<xs:element name="ContactLogger" type="ContactLogger"	minOccurs="0"	maxOccurs="unbounded" />
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="ContactLogger">
-		<xs:annotation>
-			<xs:appinfo>Data Export</xs:appinfo>
-		</xs:annotation>
-		<xs:attribute name="time-step" use="required" type="cpmMathExpression" />
-		<xs:attribute name="celltype-from" type="cpmCellTypeRef" use="optional" />
-		<xs:attribute name="celltype-to" type="cpmCellTypeRef" use="optional" />
-		<xs:attribute name="ignore-medium" type="cpmBoolean" use="optional" default="true"/>
-		<xs:attribute name="log-duration" type="cpmBoolean" use="optional" default="false"/>
-<!--		<xs:attribute name="separator" type="cpmCellTypeRef" use="required" />
-		<xs:attribute name="position" type="cpmCellTypeRef" use="required" />-->
+		<xs:complexContent>
+			<xs:extension base="morphAnalysisPlugin">
+				<xs:annotation>
+					<xs:appinfo>Data Export</xs:appinfo>
+				</xs:annotation>
+				<xs:attribute name="celltype-from" type="cpmCellTypeRef" use="optional" />
+				<xs:attribute name="celltype-to" type="cpmCellTypeRef" use="optional" />
+				<xs:attribute name="ignore-medium" type="cpmBoolean" use="optional" default="true" />
+				<xs:attribute name="log-duration" type="cpmBoolean" use="optional" default="false" />
+			</xs:extension>
+		</xs:complexContent>
    </xs:complexType>
 </xs:schema>

@@ -2,19 +2,23 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="PopulationInitPlugins">
-		<xs:choice>
-			<xs:element name="InitCellObjects" 		type="InitCellObjects"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="InitCellObjects" 		type="InitCellObjects" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="InitCellObjects">
-		<xs:annotation>
-			<xs:appinfo>Initialization</xs:appinfo>
-		</xs:annotation>
-		<xs:choice maxOccurs="unbounded">
-			<xs:element name="Arrangement" type="cpmInitObjectArrangement" minOccurs="1" />
-		</xs:choice>
-		<xs:attribute name="mode" use="required" type="cpmInitializationMode"/>
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Initialization</xs:appinfo>
+				</xs:annotation>
+				<xs:all>
+					<xs:element name="Arrangement" type="cpmInitObjectArrangement" minOccurs="1"  maxOccurs="unbounded"/>
+				</xs:all>
+				<xs:attribute name="mode" use="required" type="cpmInitializationMode"/>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	
 	<xs:simpleType name="cpmInitializationMode">

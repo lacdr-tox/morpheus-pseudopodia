@@ -28,8 +28,9 @@ class PDE_Layer;
 
 
 
-
+/*
 enum SystemType { DISCRETE_SYS, CONTINUOUS_SYS};
+enum SystemContext { ELEMENT_CONTEXT, SCOPE_CONTEXT};*/
 
 using namespace std;
 /**

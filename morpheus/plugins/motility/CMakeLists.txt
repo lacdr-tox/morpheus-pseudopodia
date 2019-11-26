@@ -11,8 +11,8 @@ set(plugin_src
 	
 
  # non-CPM motility
-	flipcell_motion.cpp
-	margolus_diffusion.cpp
+# 	flipcell_motion.cpp
+# 	margolus_diffusion.cpp
 )
 
 target_sources_relpaths(MorpheusCore PRIVATE plugin_src)

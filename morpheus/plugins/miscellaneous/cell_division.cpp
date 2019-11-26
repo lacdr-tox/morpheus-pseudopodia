@@ -39,13 +39,12 @@ void CellDivision::loadFromXML(const XMLNode xNode, Scope* scope)
 {
 	InstantaneousProcessPlugin::loadFromXML( xNode, scope );
 	
-	if (xNode.nChildNode("Triggers")) {
+	if ( xNode.nChildNode("Triggers") ) {
 		XMLNode xTrigger = xNode.getChildNode("Triggers");
 		daughterID_symbol = "__daughterID";
 		getXMLAttribute(xNode,"daughterID", daughterID_symbol);
 		trigger_system = shared_ptr<TriggeredSystem>(new TriggeredSystem);
 		trigger_system->loadFromXML(xTrigger, scope);
-		
 		trigger_system->addLocalSymbol(daughterID_symbol,0);
 	}
 }

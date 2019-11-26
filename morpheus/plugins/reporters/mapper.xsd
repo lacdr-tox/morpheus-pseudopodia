@@ -2,40 +2,44 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="GlobalPlugins">
-		<xs:choice>
-			<xs:element name="Mapper"	type="Mapping_t"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="Mapper"	type="Mapping_t" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-<!-- 			<xs:element name="CellReporter"	type="Mapping_t"/> -->
-			<xs:element name="Mapper"	type="Mapping_t"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="Mapper"	type="Mapping_t"  	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
-	<xs:complexType name="Mapping_t">
-		<xs:annotation>
-			<xs:appinfo>Reporter</xs:appinfo>
-		</xs:annotation>
-		<xs:all>
-			<xs:element name="Input" minOccurs="1">
-				<xs:complexType>
-					<xs:attribute name="value" type="cpmMathExpression" use="required" />
-				</xs:complexType>
-			</xs:element>
-			
-			<xs:element name="Output" minOccurs="0"  maxOccurs="unbounded">
-				<xs:complexType>
-					<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required"/>
-					<xs:attribute name="mapping" type="cpmArrayStatistics" use="optional"/>
-				</xs:complexType>
-			</xs:element>
-			
-			<xs:element name="Polarity" type="cpmVectorPropertyRef" minOccurs="0" />
 
-		</xs:all>
-		<xs:attribute name="name" type="cpmString" use="optional" />
+	<xs:complexType name="Mapping_t">
+		<xs:complexContent>
+			<xs:extension base="morphReporterPlugin">
+				<xs:annotation>
+					<xs:appinfo>Reporter</xs:appinfo>
+				</xs:annotation>
+				<xs:all>
+					
+					<xs:element name="Input">
+						<xs:complexType>
+							<xs:attribute name="value" type="cpmMathExpression" use="required" />
+						</xs:complexType>
+					</xs:element>
+					
+					<xs:element name="Output" minOccurs="0"  maxOccurs="unbounded">
+						<xs:complexType>
+							<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required"/>
+							<xs:attribute name="mapping" type="cpmArrayStatistics" use="optional"/>
+						</xs:complexType>
+					</xs:element>
+					
+					<xs:element name="Polarity" type="cpmVectorPropertyRef" minOccurs="0" />
+				</xs:all>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
+
 </xs:schema>
 

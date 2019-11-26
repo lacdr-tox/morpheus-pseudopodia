@@ -19,7 +19,7 @@
 #include <QFile>
 #include <QSharedPointer>
 #include <iostream>
-#include <sstream>
+#include <sstream> 
 
 /*!
 This class reads the  MorpheusML language scheme, which describes the structure of all  morpheus modells.<br>
@@ -39,8 +39,12 @@ public:
 		QString documentation; /*!< Short informations about this attribute.*/
 		QString pattern; /*!< RegEx Pattern that can validate if a value conforms to the type */
 		QString base_type;
+		QString separator;
+		double num_min_value, num_max_value;
 		QList<QDomNode> attributes;
+		enum validation_mode { PATTERN, NUMERIC_CONSTRAINT, ENUM, CS_LIST };
 		bool is_enum; /*!< Describes if it is a enum or not */
+		validation_mode mode;
 		QStringList value_set; /*! All values allowed in a enum type */
 		
 		bool initialized;

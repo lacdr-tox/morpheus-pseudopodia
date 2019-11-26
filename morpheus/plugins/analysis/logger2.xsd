@@ -2,23 +2,25 @@
 	<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 
 	<xs:group name="AnalysisPlugins">
-		<xs:choice>
-			<xs:element name="Logger"	type="Logger"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="Logger"	type="Logger"	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 
 	<xs:complexType name="Logger">
-		<xs:annotation>
-			<xs:appinfo>Data analysis</xs:appinfo>
-		</xs:annotation>
-		<xs:all>
-			<xs:element name="Input" type="cpmLoggerInput" minOccurs="1" maxOccurs="1" />
-			<xs:element name="Output" type="cpmLoggerOutput" minOccurs="1" maxOccurs="1" />
-			<xs:element name="Plots" type="cpmLoggerPlots" minOccurs="0" maxOccurs="1" />
-			<xs:element name="Restriction"	type="cpmLoggerRestrictions"   minOccurs="0" maxOccurs="1" />
-		</xs:all>
-		<xs:attribute name="time-step"	type="cpmMathExpression" use="optional" default="1"/>
-		<xs:attribute name="name"	type="cpmString" use="optional" />
+		<xs:complexContent>
+			<xs:extension base="morphAnalysisPlugin">
+				<xs:annotation>
+					<xs:appinfo>Data analysis</xs:appinfo>
+				</xs:annotation>
+				<xs:all>
+					<xs:element name="Input" type="cpmLoggerInput" minOccurs="1" maxOccurs="1" />
+					<xs:element name="Output" type="cpmLoggerOutput" minOccurs="1" maxOccurs="1" />
+					<xs:element name="Plots" type="cpmLoggerPlots" minOccurs="0" maxOccurs="1" />
+					<xs:element name="Restriction"	type="cpmLoggerRestrictions"   minOccurs="0" maxOccurs="1" />
+				</xs:all>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 	<xs:complexType name="cpmLoggerInput">

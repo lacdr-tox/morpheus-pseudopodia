@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:simpleType name="morphTags">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="([\w-:]*)(?:\s*,\s*([\w-:]+))*" />
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:complexType name="morphPlugin">
+		<xs:attribute name="name" 	type="cpmString"			use="optional" />
+		<xs:attribute name="tags"	type="morphTags"			use="optional" />
+	</xs:complexType>
+
+	<xs:complexType name="morphProcessPlugin">
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:attribute name="time-step"	type="cpmMathExpression"	use="optional"  default="1.0" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="morphInstantProcessPlugin">
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:attribute name="time-step"	type="cpmMathExpression"	use="required"  default="1.0" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="morphReporterPlugin">
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:attribute name="time-step"	type="cpmMathExpression"	use="optional"  default="1.0" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+	<xs:complexType name="morphAnalysisPlugin">
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:attribute name="time-step"	type="cpmMathExpression"	use="required"  default="1.0" />
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	
+</xs:schema>

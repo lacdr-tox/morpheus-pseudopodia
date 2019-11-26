@@ -2,18 +2,21 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="Haptotaxis"	type="Haptotaxis"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="Haptotaxis"	type="Haptotaxis" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
-	<xs:complexType name="Haptotaxis">		
-		<xs:annotation>
-			<xs:appinfo>Motility</xs:appinfo>
-		</xs:annotation>
+	<xs:complexType name="Haptotaxis">
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Motility</xs:appinfo>
+				</xs:annotation>
 
-		<xs:attribute name="name" type="cpmString" use="optional" />
-		<xs:attribute name="attractant" type="cpmMathExpression" use="required" />
-		<xs:attribute name="strength" type="cpmMathExpression" use="required" />
+				<xs:attribute name="attractant" type="cpmMathExpression" use="required" />
+				<xs:attribute name="strength" type="cpmMathExpression" use="required" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 </xs:schema>

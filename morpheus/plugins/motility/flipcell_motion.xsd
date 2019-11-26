@@ -2,20 +2,23 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="FlipCellMotion"	type="FlipCellMotion"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="FlipCellMotion"	type="FlipCellMotion"  	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
-	<xs:complexType name="FlipCellMotion">		
-		<xs:annotation>
-			<xs:appinfo>Motility</xs:appinfo>
-		</xs:annotation>
-		<xs:all>
-			<xs:element name="Condition" type="cpmMathExpression" />
-		</xs:all>
-		<xs:attribute name="neighborhood" type="cpmUnsignedInteger" use="required" default="2"/>
-		<xs:attribute name="time-step" type="cpmDouble" use="required" />
+	<xs:complexType name="FlipCellMotion">
+		<xs:complexContent>
+			<xs:extension base="morphInstantProcessPlugin">
+				<xs:annotation>
+					<xs:appinfo>Motility</xs:appinfo>
+				</xs:annotation>
+				<xs:all>
+					<xs:element name="Condition" type="cpmMathExpression" />
+				</xs:all>
+				<xs:attribute name="neighborhood" type="cpmUnsignedInteger" use="required" default="2"/>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 </xs:schema>

@@ -193,10 +193,16 @@ class SystemSolver{
  *  represented by the same class with different configuration
  */
 
+
 class System
 {
 public:
-	System(SystemType type);
+	
+	enum SystemType { DISCRETE, CONTINUOUS};
+	enum SystemContext { ELEMENT_CONTEXT, SCOPE_CONTEXT};
+	
+	System(SystemType type, SystemContext context_req = SCOPE_CONTEXT);
+	
 	void loadFromXML(const XMLNode node, Scope* scope);
 	void init();
 
@@ -224,6 +230,7 @@ public:
 protected:
 	bool target_defined;
 	const Scope *target_scope;
+	SystemContext context_requirement;
 	Granularity target_granularity;
 	VINT lattice_size;
 	
@@ -256,7 +263,7 @@ class ContinuousSystem: protected System, public ContinuousProcessPlugin {
 public:
 	DECLARE_PLUGIN("System");
 
-    ContinuousSystem() : System(CONTINUOUS_SYS), ContinuousProcessPlugin(ContinuousProcessPlugin::CONTI,TimeStepListener::XMLSpec::XML_OPTIONAL) {};
+    ContinuousSystem() : System(CONTINUOUS), ContinuousProcessPlugin(ContinuousProcessPlugin::CONTI,TimeStepListener::XMLSpec::XML_OPTIONAL) {};
 	/// Compute and Apply the state after time step @p step_size.
 	void loadFromXML(const XMLNode node, Scope* scope) override;
 	void init(const Scope* scope) override;
@@ -278,7 +285,7 @@ public:
 class DiscreteSystem: public System, public InstantaneousProcessPlugin {
 public:
 	DECLARE_PLUGIN("DiscreteSystem");
-    DiscreteSystem() : System(DISCRETE_SYS), InstantaneousProcessPlugin(TimeStepListener::XMLSpec::XML_REQUIRED) {};
+    DiscreteSystem() : System(DISCRETE), InstantaneousProcessPlugin(TimeStepListener::XMLSpec::XML_REQUIRED) {};
 
 	/// Compute and Apply the state after time step @p step_size.
 	void loadFromXML(const XMLNode node, Scope* scope) override {  InstantaneousProcessPlugin::loadFromXML(node, scope); System::loadFromXML(node, scope); };
@@ -288,11 +295,13 @@ public:
 };
 
 
-/** @brief TriggeredSystem can be used to apply a System to an individual in a context and applies a System if it holds.
+/** @brief TriggeredSystem can be used to apply a System to an individual element of a context.
+ * 
+ *  The scopes of the assignments do not have to be identical, but the focus @f used in the trigger(const SymbolFocus& f)  method must define a single element in all scopes (i.e. must define the smallest granularity).
  */
 class TriggeredSystem: public System {
 public:
-	TriggeredSystem() : System(DISCRETE_SYS) {}
+	TriggeredSystem() : System(DISCRETE) {}
 	void trigger(const SymbolFocus& f) { System::compute(f); };
 };
 

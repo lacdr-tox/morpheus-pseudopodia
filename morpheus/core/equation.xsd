@@ -2,51 +2,52 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	  
 	<xs:group name="GlobalPlugins">
-		<xs:choice>
-			<xs:element name="Equation" 			type="Equation"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="Equation" 			type="Equation" 		minOccurs="0" 	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="Equation" 			type="Equation"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="Equation" 			type="Equation" 		minOccurs="0" 	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
   
 	<xs:group name="PDEPlugins">
-		<xs:choice>
-			<xs:element name="Equation" 			type="Equation"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="Equation" 			type="Equation" 		minOccurs="0" 	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:group name="DiscreteSystemPlugins">
-		<xs:choice>
-			<xs:element name="Rule" 				type="Equation"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="Rule" 				type="Equation" 		minOccurs="0" 	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 
 	<xs:group name="SystemPlugins">
-		<xs:choice>
-			<xs:element name="Rule" 				type="Equation"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="Rule" 				type="Equation" 		minOccurs="0" 	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 
 	<xs:complexType name="Equation">
-	
-		<xs:annotation>
-			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
-			<xs:appinfo>Math</xs:appinfo>
-			<xs:documentation>Defines an equation to apply on a cell property (referenced by symbol) at each time step.</xs:documentation>
-		</xs:annotation>
-		
-		<xs:all>
-			<xs:element name="Expression"	type="cpmMathExpression" />
-		</xs:all>
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+					<xs:appinfo>Math</xs:appinfo>
+					<xs:documentation>Defines an equation to apply on a cell property (referenced by symbol) at each time step.</xs:documentation>
+				</xs:annotation>
+				
+				<xs:all>
+					<xs:element name="Expression"	type="cpmMathExpression" />
+				</xs:all>
 
-		<xs:attribute name="name" type="cpmString" use="optional" />
+				<xs:attribute name="symbol-ref"	type="cpmDoubleSymbolRef"		use="required" />
 
-		<xs:attribute name="symbol-ref"	type="cpmDoubleSymbolRef"		use="required" />
-
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 </xs:schema>

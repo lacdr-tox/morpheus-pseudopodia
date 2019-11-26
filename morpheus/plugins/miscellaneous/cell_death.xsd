@@ -2,26 +2,29 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="CellDeath"	type="CellDeath"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="CellDeath"	type="CellDeath" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="CellDeath">
-		<xs:annotation>
-			<xs:appinfo>Population</xs:appinfo>
-		</xs:annotation>
-		<xs:all>
-			<xs:element name="Condition" type="cpmMathExpression" />
-			<xs:element name="Shrinkage" minOccurs="0" >
-				<xs:complexType>
-					<xs:attribute name="target-volume" type="cpmDoubleSymbolRef" use="required" />
-					<xs:attribute name="remove-volume" type="cpmMathExpression" default="3"/>
-					<xs:attribute name="replace-with" type="cpmCellDeathSelectionMode" default="medium" />
-				</xs:complexType>
-			</xs:element>
-		</xs:all>
-		<xs:attribute name="name" type="cpmString" use="optional" />
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Population</xs:appinfo>
+				</xs:annotation>
+				<xs:all>
+					<xs:element name="Condition" type="cpmMathExpression" />
+					<xs:element name="Shrinkage" minOccurs="0" >
+						<xs:complexType>
+							<xs:attribute name="target-volume" type="cpmDoubleSymbolRef" use="required" />
+							<xs:attribute name="remove-volume" type="cpmMathExpression" default="3"/>
+							<xs:attribute name="replace-with" type="cpmCellDeathSelectionMode" default="medium" />
+						</xs:complexType>
+					</xs:element>
+				</xs:all>
+			</xs:extension>
+		</xs:complexContent>
 		
 	</xs:complexType>
 

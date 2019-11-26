@@ -19,6 +19,93 @@
 #include <functional>
 #include <assert.h>
 
+/**
+\defgroup ML_Constant Constant
+\ingroup ML_Global
+\ingroup ML_CellType
+\ingroup ML_Contact
+\ingroup ML_System
+\ingroup ML_Event
+\ingroup ML_Analysis
+\ingroup Symbols
+
+Symbol with a fixed scalar value given by a \ref MathExpressions.
+**/
+/**
+\defgroup ML_ConstantVector ConstantVector
+\ingroup ML_Global
+\ingroup ML_CellType
+\ingroup ML_System
+\ingroup ML_Event
+\ingroup ML_Analysis
+\ingroup Symbols
+
+Symbol with a fixed 3D vector value, given by a \ref MathExpressions.
+
+Syntax is comma-separated: x,y,z  
+or in the \b spherical / radial case: φ,θ,r
+**/
+/**
+\defgroup ML_Variable Variable
+\ingroup ML_Global
+\ingroup ML_CellType
+\ingroup Symbols
+
+Symbol with a variable scalar value. The initial value is given by a \ref MathExpressions.
+**/
+/**
+\defgroup ML_VariableVector VariableVector
+\ingroup ML_Global
+\ingroup ML_CellType
+\ingroup Symbols
+
+Symbol with a variable 3D vector value. The initial value is given by a \ref MathExpressions.
+
+Syntax is comma-separated: x,y,z
+or in the \b spherical / radial case: φ,θ,r
+**/
+
+/**
+\defgroup ML_DelayVariable DelayVariable
+\ingroup ML_Global
+\ingroup Symbols
+
+Symbol with a scalar value and a \b delay time until an assigned values become current. The initial value and history is given by a \ref MathExpressions.
+**/
+
+/**
+\defgroup ML_Property Property
+\ingroup ML_CellType
+\ingroup Symbols
+
+
+Symbol with a cell-bound, variable scalar value. The initial value is given by a \ref MathExpressions and may contain stochasticity to create diversity.
+**/
+
+/**
+\defgroup ML_DelayProperty DelayProperty
+\ingroup ML_CellType
+\ingroup Symbols
+
+
+Symbol with a cell-bound scalar value and a \b delay time until values become current. The initial value and history is given by a \ref MathExpressions
+**/
+
+/**
+\defgroup  ML_PropertyVector PropertyVector
+\ingroup ML_CellType
+\ingroup Symbols
+
+Symbol with cell-bound, variable 3D vector value. The initial value and history is  given by a \ref MathExpressions.
+
+Syntax is comma-separated: x,y,z
+or in the \b spherical / radial case: φ,θ,r
+**/
+
+
+
+
+
 /** 
  * Plugin Frontend for the configuration of Properties
  * 

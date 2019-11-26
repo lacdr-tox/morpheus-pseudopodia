@@ -25,7 +25,7 @@ QObject(parent)
 				// This is an xml root element, and we create a descriptor,
 		// and an XSD, and derive the node type from the XSD's root element ...
 		try {
-			model_descr = QSharedPointer<ModelDescriptor>( new ModelDescriptor);
+			model_descr = QSharedPointer<ModelDescriptor>::create();
 			model_descr->change_count =0;
 			model_descr->edits =0;
 			model_descr->track_next_change = false;
@@ -278,32 +278,32 @@ QList<QString> nodeController::getAddableChilds(bool unfiltered)
 		for (const auto& child : node_type->child_info.children )
 			addableChilds.push_back(child.name);
 	}
-	else if (node_type->child_info.is_choice) {
-		if (node_type->child_info.max_occurs == "unbounded" || activeChilds().size() < node_type->child_info.max_occurs.toInt() ) {
-			for (const auto& child : node_type->child_info.children )
-				addableChilds.push_back(child.name);
-		}
-	}
 	else {
 		QMap<QString, int> child_count;
-		for(int h = 0; h < this->childs.size(); h++)
-		{
-			if (! childs[h]->isDisabled())
-				child_count[childs[h]->name] ++ ;
+		for ( auto child : this->childs) {
+			if (! child->isDisabled()) child_count[child->name] ++ ;
 		}
-		for (const auto& child : node_type->child_info.children )
-		{
-			if (child.max_occurs == "unbounded" || node_type->child_info.max_occurs == "unbounded") {
-				addableChilds.push_back(child.name);
-			}
-			else {
-				int count;
-				int max = child.max_occurs.toInt() * node_type->child_info.max_occurs.toInt();
-				QMap<QString, int>::const_iterator r = child_count.find(child.name);
-				count = ( r != child_count.end() ) ? r.value() : 0;
-				
-				if (count < max) {
+		if (node_type->child_info.is_choice) { // xs::choice
+			if (node_type->child_info.max_occurs == "unbounded" || activeChilds().size() < node_type->child_info.max_occurs.toInt() ) {
+				for (const auto& child : node_type->child_info.children )
 					addableChilds.push_back(child.name);
+			}
+		}
+		else { // xs:all
+			for (const auto& child : node_type->child_info.children )
+			{
+				if (child.max_occurs == "unbounded" || node_type->child_info.max_occurs == "unbounded") {
+					addableChilds.push_back(child.name);
+				}
+				else {
+					int count;
+					int max = child.max_occurs.toInt() * node_type->child_info.max_occurs.toInt();
+					QMap<QString, int>::const_iterator r = child_count.find(child.name);
+					count = ( r != child_count.end() ) ? r.value() : 0;
+					
+					if (count < max) {
+						addableChilds.push_back(child.name);
+					}
 				}
 			}
 		}

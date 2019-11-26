@@ -18,62 +18,61 @@
 	</xs:complexType>
 	
 	<xs:group name="GlobalPlugins">
-		<xs:choice>
-		</xs:choice>
+		<xs:all>
+		</xs:all>
 	</xs:group>
 	
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-		</xs:choice>
+		<xs:all>
+		</xs:all>
 	</xs:group>
   
 	<xs:group name="PDEPlugins">
-		<xs:choice>
-		</xs:choice>
+		<xs:all>
+		</xs:all>
 	</xs:group>
 	
 	<xs:group name="InteractionPlugins">
-		<xs:choice>
-		</xs:choice>
+		<xs:all>
+		</xs:all>
 	</xs:group>
 	
 	<xs:group name="ContactPlugins">
-		<xs:choice>
-		</xs:choice>
+		<xs:all>
+		</xs:all>
 	</xs:group>
 		
 	<xs:group name="AnalysisPlugins">
-        <xs:choice>
-            <xs:element name="CellTracker" 			type="CellTracker"/>
-		</xs:choice>
+        <xs:all>
+		</xs:all>
 	</xs:group>
 	
 	<xs:group name="DiscreteSystemPlugins">
-		<xs:choice>
-		</xs:choice>
+		<xs:all>
+		</xs:all>
 	</xs:group>
 	
 	<xs:group name="SystemPlugins">
-		<xs:choice>
-		</xs:choice>
+		<xs:all>
+		</xs:all>
 	</xs:group>
 	
 	<xs:group name="PopulationInitPlugins">
-		<xs:choice>
-		</xs:choice>
+		<xs:all>
+		</xs:all>
 	</xs:group>
 	
 	<xs:group  name="FieldInitPlugins">
-		<xs:choice>
-		</xs:choice>
+		<xs:all>
+		</xs:all>
 	</xs:group>
 
 	
 	
 	<xs:complexType name="morphGlobals">
-		<xs:choice minOccurs="0" maxOccurs="unbounded">
+		<xs:all>
 			<xs:group ref="GlobalPlugins" />
-		</xs:choice>
+		</xs:all>
 		<xs:annotation>
 			<xs:documentation>Define globally available Constants and Variables (Globals / Fields)
 			</xs:documentation>°
@@ -99,20 +98,20 @@
 	</xs:complexType>
 
 	<xs:complexType name="CellTypes">
-		<xs:choice minOccurs="1" maxOccurs="unbounded">
-			<xs:element name="CellType" type="CellType">
+		<xs:all>
+			<xs:element name="CellType" type="CellType" minOccurs="1" maxOccurs="unbounded">
 				<xs:annotation>
 					<xs:documentation>Specification of cell state and behaviors, for cell-based models.
 					</xs:documentation>
 				</xs:annotation>
 			</xs:element>
-		</xs:choice>
+		</xs:all>
 	</xs:complexType>
 	
 	<xs:complexType name="CellType">
-		<xs:choice minOccurs="0" maxOccurs="unbounded">
+		<xs:all>
 			<xs:group  ref="CellTypePlugins"/>
-		</xs:choice>
+		</xs:all>
 		<xs:attribute name="class" type="cpmCelltypeClass"  use="required" default="biological"/>
 		<xs:attribute name="name" type="cpmCellTypeDef"  use="required" />
 <!-- 		<xs:attribute name="subtype" type="cpmCellTypeRef"  use="optional" /> -->
@@ -122,24 +121,24 @@
         <xs:restriction base="cpmString">
 			<xs:enumeration value="biological"/>
 			<xs:enumeration value="medium"/>
-			<xs:enumeration value="supercell"/>
+<!-- 			<xs:enumeration value="supercell"/> -->
         </xs:restriction>
     </xs:simpleType>
 	
 	<xs:complexType name="CellPopulations">
-		<xs:choice minOccurs="1" maxOccurs="unbounded">
-			<xs:element name="Population" type="Population" minOccurs="1" />
+		<xs:all>
+			<xs:element name="Population" type="Population" maxOccurs="unbounded"/>
 			<xs:element name="BoundaryValue" type="cpmCPMBoundaryValue" minOccurs="0" maxOccurs="unbounded" />
-		</xs:choice>
+		</xs:all>
 	</xs:complexType>
 	
 	<xs:complexType name="Population">
-		<xs:choice minOccurs="0" maxOccurs="unbounded">
+		<xs:all minOccurs="0" maxOccurs="unbounded">
 			<xs:group ref="PopulationInitPlugins"/>
-			<xs:element name="Cell" type="cpmCell"/>
-			<xs:element name="InitProperty" type="cpmPopulationProperty" />
-			<xs:element name="InitVectorProperty" type="cpmPopulationVectorProperty" />
-		</xs:choice>
+			<xs:element name="Cell" type="cpmCell" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="InitProperty" type="cpmPopulationProperty"  minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="InitVectorProperty" type="cpmPopulationVectorProperty"  minOccurs="0" maxOccurs="unbounded"/>
+		</xs:all>
 		
 		<xs:attribute name="type" type="cpmCellTypeRef" use="required">
 			<xs:annotation>
@@ -188,21 +187,21 @@ This allows the user to create populations a heterogeneous initial population. T
 	</xs:complexType>
 	
 	<xs:complexType name="cpmCell">
-	  <xs:choice minOccurs="0" maxOccurs="unbounded">
+	  <xs:all>
 		<xs:group  ref="PropertyDataGroup"/>
-		<xs:element name="MembranePropertyData" type="MembranePropertyData">
+		<xs:element name="MembranePropertyData" type="MembranePropertyData" minOccurs="0" maxOccurs="unbounded">
 			<xs:annotation>
 				<xs:documentation>Sets values for MembraneProperty. Overrides initial values.</xs:documentation>
 			</xs:annotation>
 		</xs:element>
-		<xs:element name="Center" type="cpmDoubleVector"/>
+		<xs:element name="Center" type="cpmDoubleVector" minOccurs="0" />
 		<xs:element name="Nodes" type="cpmNodes"/>
-		<xs:element name="SubCell">
+<!--		<xs:element name="SubCell">
 			<xs:complexType>
 				<xs:attribute name="cell-id" type="cpmUnsignedInteger" />
 			</xs:complexType>
-		</xs:element>
-	  </xs:choice>	  
+		</xs:element>-->
+	  </xs:all>	  
 	  <!--<xs:attribute name="volume" type="cpmUnsignedInteger"/>-->
 	  <xs:attribute name="id" type="cpmUnsignedInteger" />
 	  <xs:attribute name="name" type="cpmString" use="optional"/>
@@ -214,17 +213,18 @@ This allows the user to create populations a heterogeneous initial population. T
 			NOTE: The regular expression is commented out to speed up loading of large populations (or large 3D cells).
 		  -->  
 <!-- 		  <xs:pattern value="(-?\d+\s-?\d+\s-?\d+;)*(-?\d+\s-?\d+\s-?\d+)"/> -->
+			<xs:pattern value=".*" />
 		</xs:restriction>
 	</xs:simpleType>
 
 	<xs:complexType name="Analysis">
-		<xs:choice minOccurs="0" maxOccurs="unbounded">
+		<xs:all>
 			<xs:group  ref="AnalysisPlugins"/>
-		</xs:choice>
+		</xs:all>
 	</xs:complexType>
 
 	<xs:complexType name="Description">
-		<xs:all minOccurs="1">
+		<xs:all>
 			<xs:element name="Details" type="xs:string" >
 				<xs:annotation>
 					<xs:documentation>Text to describe and annotate model, put references and track changes.</xs:documentation>
@@ -266,7 +266,7 @@ To exactly reproduce simulation results, choose the same random seed. Note that 
 				</xs:complexType>
 			</xs:element>
 			
-			<xs:element name="TimeSymbol" minOccurs="1">
+			<xs:element name="TimeSymbol">
 			
 				<xs:annotation>
 					<xs:documentation>Specifies the symbol used for simulation time.</xs:documentation>
@@ -369,4 +369,20 @@ Note:
 		</xs:all>
 	</xs:complexType>
 
+	<xs:complexType name="cpmCPMBoundaryConditions">
+		<xs:choice maxOccurs="unbounded">
+			<xs:element name="Condition">
+				<xs:complexType>
+					<xs:attribute name="boundary" use="required" type="cpmBoundary" />
+					<xs:attribute name="value" use="required" type="cpmCellTypeRef" />
+				</xs:complexType>
+			</xs:element>
+		</xs:choice>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmCPMBoundaryValue">
+		<xs:attribute name="boundary" use="required" type="cpmBoundaryRef"/>
+		<xs:attribute name="value" use="required" type="cpmCellTypeRef" />
+	</xs:complexType>
+	
 </xs:schema>
