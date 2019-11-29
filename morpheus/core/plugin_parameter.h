@@ -850,6 +850,8 @@ using PluginParameter = PluginParameter2<T, XMLValueInterpreter, RequirementPoli
 template < class RequirementPolicy >
 using PluginParameterCellType = PluginParameter2< shared_ptr<const CellType>, XMLNamedValueReader, RequirementPolicy >;
 
+template < class RequirementPolicy >
+using PluginParameterCellType_Shared = PluginParameter_Shared< shared_ptr<const CellType>, XMLNamedValueReader, RequirementPolicy >;
 
 
 ///  @}

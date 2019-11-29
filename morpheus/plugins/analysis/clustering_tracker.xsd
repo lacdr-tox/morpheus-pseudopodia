@@ -19,8 +19,16 @@
 			<xs:element name="ClusterID" type="cpmDoublePropertyRef" minOccurs="0"/>
 		</xs:all>
 		<xs:attribute name="name" type="cpmString" use="optional"/>
-		<xs:attribute name="celltype" type="cpmCellTypeRef" />
+		<xs:attribute name="celltype" type="cpmCellTypeRefList" />
 		<xs:attribute name="exclude" type="cpmMathExpression"  use="optional" default="0"/>
 		<xs:attribute name="time-step" type="cpmMathExpression" use="optional"/>
 	</xs:complexType>
+
+	
+	<xs:simpleType name="cpmCellTypeRefList">
+		<xs:restriction base="cpmString">
+			<xs:pattern value="\w+\s*(,\s*\w+\s*)"/>
+		</xs:restriction>
+	</xs:simpleType>
 </xs:schema>
+

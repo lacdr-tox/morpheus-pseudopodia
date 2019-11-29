@@ -20,7 +20,7 @@ ClusteringTracker identifies cell clusters within a single celltype and writes t
 A cell is considered part of a cluster if it at shares least 1 shares interface (side of a lattice node) with it.
 
 - \b time-step: interval in which analysis is executed
-- \b celltype: cell type for which to detect cell clusters 
+- \b celltype: comma separated list of cell types for which to detect cell clusters 
 - \b exclude (optional): expression determining which cells to exclude
 
 The cluster ID of each cell can be written to a symbol (preferrably a cell property) to use in other postprocessing/visualisation steps.
@@ -76,10 +76,15 @@ public:
 private:
 	fstream storage;
 	string filename;
-	bool is_supercelltype;
-	PluginParameter2<double,XMLEvaluator, DefaultValPolicy> exclude;
-	PluginParameterCellType<RequiredPolicy> celltype;
-	PluginParameter2<double,XMLWritableSymbol,OptionalPolicy> cluster_id;
+// 	PluginParameter2<double,XMLEvaluator, DefaultValPolicy> exclude;
+	PluginParameter<string, XMLValueReader, RequiredPolicy> celltype_list;
+	struct CTdata { 
+		PluginParameterCellType_Shared<RequiredPolicy> celltype; 
+		PluginParameter_Shared<double, XMLWritableSymbol, OptionalPolicy> cluster_id;  
+		PluginParameter_Shared<double, XMLEvaluator, DefaultValPolicy> exclude;
+	};
+	map<int, CTdata > celltypes;
+// 	PluginParameter2<string,XMLValueReader,OptionalPolicy> cluster_id;
 	string cluster_id_name;
 	list<Cluster> old_clustering;
 	uint max_cluster_id;

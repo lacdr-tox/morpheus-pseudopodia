@@ -8,6 +8,7 @@
 
 ### MorpheusML
   * The space symbol (Space/SpaceSymbol) now always provides the location in orthogonal coordinates, also on hexagonal lattices.
+  * ClusterTracker can cluster cells of multiple cell types.
 
 ### Simulator
   * Support reading (gz) compressed models

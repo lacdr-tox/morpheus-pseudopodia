@@ -97,7 +97,7 @@ string strip_last_token(string& str, const string& del="/");
 string remove_spaces(string& str);
 string replace_spaces(string& str, char replacement='_');
 bool replace_substring(std::string& str, const std::string& from, const std::string& to);
-vector<string> tokenize(const string& str, const string& delimiters = " ");
+vector<string> tokenize(const string& str, const string& delimiters = " ", bool drop_empty_tokens = false);
 string join(const vector<string>& strings, string delim);
 string join(const std::set<string>& strings, string delim);
 string join(const std::multiset<string>& strings, string delim);

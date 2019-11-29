@@ -110,7 +110,7 @@ bool replace_substring(std::string& str, const std::string& from, const std::str
 
 
 // vector<string> split_string(const string& str, const string& delimiters = " ");
-vector<string> tokenize(const string& str, const string& delimiters) {
+vector<string> tokenize(const string& str, const string& delimiters, bool drop_empty_tokens) {
 
 	vector<string> tokens;
 	string::size_type fPos=0,lPos=0;
@@ -124,7 +124,7 @@ vector<string> tokenize(const string& str, const string& delimiters) {
 		// eat all the string left, if no further delimiter was found
 		if (lPos == string::npos) lPos = str.length();
 		// Add the token to the vector.
-		tokens.push_back(str.substr(fPos, lPos - fPos));
+		if (!drop_empty_tokens || lPos>fPos) tokens.push_back(str.substr(fPos, lPos - fPos));
 	} while (lPos != str.length());
 
 	return tokens;

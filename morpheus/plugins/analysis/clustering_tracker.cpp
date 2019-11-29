@@ -8,34 +8,47 @@ REGISTER_PLUGIN(Clustering_Tracker);
 
 Clustering_Tracker::Clustering_Tracker() {
 	max_cluster_id=1;
-	exclude.setXMLPath("exclude");
-	exclude.setDefault("0");
-	registerPluginParameter(exclude);
-	
-	celltype.setXMLPath("celltype");
-	registerPluginParameter(celltype);
-	
-	cluster_id.setXMLPath("ClusterID/symbol-ref");
-	registerPluginParameter(cluster_id);
+	celltype_list.setXMLPath("celltype");
+	registerPluginParameter(celltype_list);
 }
 
 void Clustering_Tracker::loadFromXML(const XMLNode xNode, Scope* scope)
 {
+	celltype_list.loadFromXML(xNode,scope);
+	auto celltype_names = tokenize(celltype_list(), ", ", true);
+	
+	auto celltype_map = CPM::getCellTypesMap();
+	for (auto  name: celltype_names) {
+		CTdata ct;
+		ct.celltype->read(name);
+		ct.celltype->init();
+		ct.cluster_id->setXMLPath("ClusterID/symbol-ref");
+		registerPluginParameter(ct.cluster_id);
+		ct.exclude->setXMLPath("exclude");
+		ct.exclude->setDefault("0");
+		registerPluginParameter(ct.exclude);
+		celltypes[ct.celltype()->getID()] = ct;
+		
+		filename += ct.celltype()->getName() + "_";
+	}
+	
 	AnalysisPlugin::loadFromXML(xNode, scope);
+	
+	// Since loadFromXML propagates the local scope we have to override the Parameter scopes afterwards individually
+	for (auto& ct: celltypes) {
+		ct.second.cluster_id->setScope(ct.second.celltype()->getScope());
+		ct.second.exclude->setScope(ct.second.celltype()->getScope());
+	}
+	
+	
 }
 
 void Clustering_Tracker::init(const Scope* scope)
 {
-	cluster_id.setScope(celltype()->getScope());
 	
 	AnalysisPlugin::init(scope);
-	
-	is_supercelltype = false;
-#ifdef HAVE_SUPERCELLS
-	is_supercelltype = dynamic_pointer_cast<const SuperCT>(celltype());
-#endif
 
-	filename = celltype()->getName() + "_clustering" + ".dat";
+	filename += "clustering.dat";
 	storage.open(filename.c_str(), fstream::out | fstream::trunc);
 	if ( ! storage.is_open() ) { 
 		cerr << "Clustering_Tracker: unable to create " << filename << endl;
@@ -71,6 +84,8 @@ bool Clustering_Tracker::touching(CPM::CELL_ID arg1,CPM::CELL_ID  arg2) {
 
 void Clustering_Tracker::analyse(double time)
 {
+	if (celltypes.size() == 0 ) return;
+	
 	storage.open(filename.c_str(), fstream::out |fstream::app);
 	if ( ! storage.is_open() ) {
 		storage.open(filename.c_str(), fstream::out | fstream::trunc);
@@ -84,9 +99,13 @@ void Clustering_Tracker::analyse(double time)
 //  put each cell in an individual cluster
 	 
 	list< Cluster > clustering;
-	vector<CPM::CELL_ID> cells = celltype()->getCellIDs();
+	vector<CPM::CELL_ID> cells;
+	for (auto ct : celltypes) { 
+		auto ids=ct.second.celltype()->getCellIDs(); cells.insert(cells.end(), ids.begin(), ids.end()); 
+	}
 	for ( uint i = 0;  i < cells.size(); i++) {
-		if (exclude(cells[i]))
+		auto ct_id = CellType::storage.index(cells[i]).celltype;
+		if (celltypes[ct_id].exclude(cells[i]))
 			continue;
 		Cluster InitCluster; 
 		InitCluster.id=0;
@@ -143,17 +162,11 @@ void Clustering_Tracker::analyse(double time)
 	for ( cluster = clustering.begin(); cluster != clustering.end(); cluster++) {
 		if (cluster->id == 0) { cluster->id=max_cluster_id++; }
 		// assigning them to the cells.
-		if( cluster_id.isDefined() ){
+		if( celltypes.begin()->second.cluster_id->isDefined() ){
 			for (uint i=0; i< cluster->cell_ids.size(); i++) {
-				if (is_supercelltype) {
-					vector<CPM::CELL_ID> subcells = static_cast<const SuperCell&> (CPM::getCell(cluster->cell_ids[i])).getSubCells();
-					for (uint j=0; j<subcells.size(); j++) {
-						cluster_id.set(subcells[j],cluster->id);
-					}
-				}
-				else {
-					cluster_id.set(cluster->cell_ids[i],cluster->id);
-				}
+				auto cell_focus = SymbolFocus(cluster->cell_ids[i]);
+				assert(celltypes[cell_focus.cell_index().celltype].cluster_id->isDefined());
+				celltypes[cell_focus.cell_index().celltype].cluster_id->set(cell_focus,cluster->id);
 			}
 		}
 	}
