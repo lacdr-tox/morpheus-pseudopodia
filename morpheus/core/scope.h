@@ -363,7 +363,15 @@ SymbolAccessor<T> Scope::findSymbol(string name, bool allow_partial) const
 		return s;
 	}
 	else if (parent) {
-		return parent->findSymbol<T>(name, allow_partial);
+		try {
+			return parent->findSymbol<T>(name, allow_partial);
+		}
+		catch (SymbolError& e){
+			if (e.type() == SymbolError::Type::Undefined) {
+				throw SymbolError(SymbolError::Type::Undefined, string("Symbol '")+name+"' is not defined in Scope " + this->getName() );
+			}
+			throw e;
+		}
 	}
 	else {
 		throw SymbolError(SymbolError::Type::Undefined, string("Symbol '")+name+"' is not defined in Scope " + this->getName() );
