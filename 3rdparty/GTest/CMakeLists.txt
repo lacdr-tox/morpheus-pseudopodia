@@ -1,8 +1,8 @@
 # Download and unpack googletest at configure time
-SET(GTEST_BASE_PATH ${CMAKE_BINARY_DIR}/3rdparty/GTest)
+SET(GTEST_BASE_PATH ${CMAKE_CURRENT_BINARY_DIR})
 file(MAKE_DIRECTORY ${GTEST_BASE_PATH}/download)
 configure_file(CMakeLists_GTest.txt.in ${GTEST_BASE_PATH}/download/CMakeLists.txt)
-execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" -D BUILD_MOCK=OFF .
   RESULT_VARIABLE result
   WORKING_DIRECTORY ${GTEST_BASE_PATH}/download )
   

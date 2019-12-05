@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "3rdparty/muParser/muParser.h"
+#include "muParser/muParser.h"
 #include <memory>
 using std::make_shared;
 

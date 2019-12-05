@@ -2,28 +2,6 @@ IF(MORPHEUS_STATIC_BUILD)
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 ENDIF()
 
-FIND_PACKAGE(ZLIB REQUIRED)
-FIND_PACKAGE(TIFF REQUIRED)
-
-IF(MORPHEUS_GRAPHVIZ STREQUAL "Library")
-	SET(GRAPHVIZ_ROOT "" CACHE PATH "Set root directory to search for GraphViz" )
-	MARK_AS_ADVANCED(GRAPHVIZ_ROOT)
-	FIND_PACKAGE(Graphviz)
-ENDIF()
-
-
-
-FIND_PACKAGE(Boost REQUIRED)
-IF (Boost_FOUND) 
-	SET(HAVE_BOOST 1)
-ELSE()
-	MESSAGE(STATUS "Unable to detect Boost library. Turning off Delay support.")
-ENDIF()
-
-#IF( NOT GNUPLOT_FOUND )
-#	MESSAGE("Cannot find Gnuplot. To use the Gnuplotter visualization plugin, install a recent version (4.0+) of gnuplot.")
-#ENDIF ()
-
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckIncludeFileCXX)
 
@@ -50,37 +28,55 @@ ELSE()
 	SET(HAVE_OPENMP OFF)
 ENDIF()
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR} ${Boost_INCLUDE_DIR})
+###########################
+## Target definitions
+###########################
 
+ADD_EXECUTABLE(MorpheusSIM "")
+SET_TARGET_PROPERTIES(MorpheusSIM PROPERTIES  OUTPUT_NAME ${MORPHEUS_EXEC_NAME} )
+ADD_LIBRARY(MorpheusCore OBJECT ""  )
+TARGET_INCLUDE_DIRECTORIES(MorpheusCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/core)
 
-IF (HAVE_OBJECT_LINKAGE)
-	ADD_LIBRARY(MorpheusCore OBJECT ""  )
-	ADD_EXECUTABLE(MorpheusSIM "")
-	target_link_libraries(MorpheusSIM $<TARGET_OBJECTS:muParser> $<TARGET_OBJECTS:MorpheusCore>)
-	ADD_DEPENDENCIES(MorpheusSIM MorpheusCore muParser)
+###############################
+## Internal target dependencies
+###############################
+
+TARGET_LINK_LIBRARIES(MorpheusSIM MorpheusCore)
+TARGET_LINK_LIBRARIES(MorpheusCore PUBLIC muParser xmlParser gnuplot_interface tiny-process-library)
+
+################################
+## External Package dependencies
+################################
+
+FIND_PACKAGE(Boost REQUIRED)
+IF (Boost_FOUND) 
+	SET(HAVE_BOOST 1)
 ELSE()
-	ADD_LIBRARY(MorpheusCore ""  )
-	ADD_EXECUTABLE(MorpheusSIM "" )
-	target_link_libraries(MorpheusSIM muParser MorpheusCore)
+	MESSAGE(STATUS "Unable to detect Boost library. Turning off Delay support.")
 ENDIF()
-set_target_properties(MorpheusSIM PROPERTIES  OUTPUT_NAME ${MORPHEUS_EXEC_NAME} )
-IF (MORPHEUS_STATIC_BUILD)
-	SET_TARGET_PROPERTIES(MorpheusSIM PROPERTIES LINK_SEARCH_START_STATIC 1)
-	SET_TARGET_PROPERTIES(MorpheusSIM PROPERTIES LINK_SEARCH_END_STATIC 1)
-	SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++ ")
-# 	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-ENDIF()
+TARGET_INCLUDE_DIRECTORIES(MorpheusCore PUBLIC ${Boost_INCLUDE_DIR})
 
-TARGET_LINK_LIBRARIES(MorpheusSIM ${ZLIB_LIBRARY} ${TIFF_LIBRARY} xmlParser gnuplot_interface tiny-process-library)
+
+FIND_PACKAGE(ZLIB REQUIRED)
+FIND_PACKAGE(TIFF REQUIRED)
+TARGET_LINK_LIBRARIES(MorpheusCore PUBLIC ${ZLIB_LIBRARY} ${TIFF_LIBRARY})
+
+
+IF(MORPHEUS_GRAPHVIZ STREQUAL "Library")
+	SET(GRAPHVIZ_ROOT "" CACHE PATH "Set root directory to search for GraphViz" )
+	MARK_AS_ADVANCED(GRAPHVIZ_ROOT)
+	FIND_PACKAGE(Graphviz)
+ENDIF()
 
 IF(GRAPHVIZ_FOUND)
-	target_compile_definitions(MorpheusSIM PRIVATE HAVE_GRAPHVIZ=1)
+	target_compile_definitions(MorpheusCore PUBLIC HAVE_GRAPHVIZ=1)
 	IF (EXISTS "${GRAPHVIZ_GRAPH_LIBRARY}")
-		TARGET_LINK_LIBRARIES(MorpheusSIM ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_GRAPH_LIBRARY} )
+		TARGET_LINK_LIBRARIES(MorpheusCore PUBLIC ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_GRAPH_LIBRARY} )
 	ELSE()
-		TARGET_LINK_LIBRARIES(MorpheusSIM ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_CGRAPH_LIBRARY} )
+		TARGET_LINK_LIBRARIES(MorpheusCore PUBLIC ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_CGRAPH_LIBRARY} )
 	ENDIF()
 ENDIF()
+
 
 add_subdirectory(plugins)
 add_subdirectory(core)
@@ -192,11 +188,7 @@ SET(APP_DOC_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/core/expression_evaluator.h
 )
 
-get_target_property(core_sources MorpheusCore SOURCES)
-get_target_property(sources MorpheusSIM SOURCES)
-
-# string(GENEX_STRIP ${sources} sources)
-SET(sources ${sources} ${core_sources})
+get_target_property(sources MorpheusCore SOURCES)
 
 foreach(source ${sources})
 	STRING(REGEX REPLACE "\\.cpp" ".h" header ${source})

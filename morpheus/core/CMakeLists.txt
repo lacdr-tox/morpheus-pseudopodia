@@ -37,6 +37,9 @@ SET(morpheus_core_src
 	time_scheduler.cpp
 	vector_equation.cpp
 	xml_functions.cpp
+	parse_arg.cpp
+	rss_stat.cpp
+	simulation.cpp
 )
 
 IF (Boost_FOUND) 
@@ -44,9 +47,7 @@ IF (Boost_FOUND)
 ENDIF()
 
 SET(morpheus_src
-	parse_arg.cpp
-	rss_stat.cpp
-	simulation.cpp
+	main.cpp
 )
 
 target_sources_relpaths(MorpheusSIM PRIVATE morpheus_src)

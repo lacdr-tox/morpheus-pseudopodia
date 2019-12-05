@@ -1,5 +1,3 @@
-include(CMake_GTest.txt)
-
 FIND_PACKAGE(OpenMP)
 
 option(MORPHEUS_OPENMP "Switch off the usage of OPENMP" ON)
@@ -16,22 +14,33 @@ ELSE()
 	SET(HAVE_OPENMP OFF)
 ENDIF()
 
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR}/morpheus)
-INCLUDE_DIRECTORIES( ${PROJECT_SOURCE_DIR})
-INCLUDE_DIRECTORIES( ${PROJECT_BINARY_DIR}/morpheus/core)
-
 # Add test cpp file
-add_executable(runMopheusTests
+add_executable(runCoreTests
 	core/test_vec_h.cpp
 	core/test_serialization.cpp 
 	evaluator/test_muparser.cpp 
 	evaluator/test_evaluator.cpp
-	evaluator/stub_simulator.cpp
-	$<TARGET_OBJECTS:muParser>
-	$<TARGET_OBJECTS:MorpheusCore>
 )
+
 # Link test executable against gtest & gtest_main
-target_link_libraries(runMopheusTests gtest gtest_main xmlParser z tiff)
+target_link_libraries(runCoreTests MorpheusCore gtest gtest_main)
+#get_target_property(gtest_inc gtest INCLUDE_DIRECTORIES)
+#message(STATUS gtest INCLUDES "${gtest_inc}")
+#get_target_property(gtest_inc gtest_main INCLUDE_DIRECTORIES)
+#message(STATUS gtest_main INCLUDES "${gtest_inc}")
+
+# Register test to CTest infrastructure
+add_test( NAME CoreTests COMMAND runCoreTests )
+
+# Add test cpp file
+add_executable(runExpressionTests
+	evaluator/test_muparser.cpp 
+	evaluator/test_evaluator.cpp
+)
+
+# Link test executable against gtest & gtest_main
+target_link_libraries(runExpressionTests MorpheusCore gtest gtest_main)
+
 # Register test to CTest infrastructure
 add_test( NAME MorpheusTests COMMAND runMopheusTests )
 

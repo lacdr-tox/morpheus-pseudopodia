@@ -5,4 +5,7 @@ add_subdirectory(gnuplot_i)
 IF(MORPHEUS_GUI)
         add_subdirectory(qtsingleapp)
 ENDIF(MORPHEUS_GUI)
+IF(MORPHEUS_TESTS)
+	add_subdirectory(GTest)
+ENDIF()
 

@@ -9,9 +9,9 @@
 #include "cpm_p.h"
 #include "rss_stat.h"
 
-int main(int argc, char *argv[]) {
-    return SIM::main(argc,argv);
-}
+// int main(int argc, char *argv[]) {
+//     return SIM::main(argc,argv);
+// }
 
 namespace SIM {
 	
