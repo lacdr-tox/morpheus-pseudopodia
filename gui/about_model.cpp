@@ -184,7 +184,7 @@ void AboutModel::update_graph()
 			url = (QString("file://") + graph);
 			webGraph->setUrl(url);
 
-		} else /*if (graph.endsWith("dot"))*/ {
+		} else if (graph.endsWith("dot")) {
 			url = "qrc:///template.html";
 			QFile dotsource(graph);
 			QString toR;
@@ -220,7 +220,7 @@ void AboutModel::update_graph()
 		}
 	}
 	else {
-		qDebug() << "Morpheus did not provide a dependency graph rendering!!";
+		qDebug() << "Morpheus did not provide a dependency graph rendering!!" << graph;
 	}
 	// run morpsi on it
 	// reload the resulting dependency_graph.png/svg
