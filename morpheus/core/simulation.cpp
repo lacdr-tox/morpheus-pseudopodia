@@ -9,21 +9,45 @@
 #include "cpm_p.h"
 #include "rss_stat.h"
 
-// int main(int argc, char *argv[]) {
-//     return SIM::main(argc,argv);
-// }
-
 namespace SIM {
 	
+	string dep_graph_format = "dot";
+	bool generate_symbol_graph_and_exit = false;
+	int numthreads = omp_get_max_threads();
 	
-// #define NO_CORE_CATCH
+	unique_ptr<LatticePlugin> lattice_plugin = nullptr;
+	shared_ptr<Lattice> global_lattice;
+	
+	XMLNode xDescription,xGlobals,xSpace;
+	
+	
+	vector< shared_ptr<AnalysisPlugin> > analysers;
+	vector< shared_ptr<Plugin> > analysis_section_plugins;
+	vector< shared_ptr<Plugin> > global_section_plugins;
+
+	unique_ptr<Scope> global_scope;
+	Scope* current_scope;
+
+	string morpheus_file_version;
+	string prettyFormattingTime( double time_in_sec );
+	string prettyFormattingBytes(uint bytes);
+
+	
+	uint random_seed = time(NULL);
+	string fileTitle="SnapShot";
+	/// directory to read data from
+	string input_directory = ".";
+	/// directory to write data to
+	string output_directory = ".";
+	
+	
 int main(int argc, char *argv[]) {
 	bool exception = false;
 	
 #ifndef NO_CORE_CATCH
 	try {
 #endif
-		
+	
     double init0 = get_wall_time();
 	if (init(argc, argv)) {
 	
@@ -166,18 +190,18 @@ bool dependencyGraphMode() {
 
 
 double getNodeLength()  {
-    return node_length();
+    return lattice_plugin->getNodeLength()();
 };
 
 string getLengthScaleUnit() {
-	if (node_length.getLengthScaleUnit() == "alu")
+	if (lattice_plugin->getNodeLength().getLengthScaleUnit() == "alu")
 		return "alu";
 	else
 		return "meter";
 };
 
 double getLengthScaleValue() {
-	return node_length.getLengthScaleValue();
+	return lattice_plugin->getNodeLength().getLengthScaleValue();
 };
 
 
@@ -349,12 +373,32 @@ bool init(int argc, char *argv[]) {
 		throw  string("Error: file '") + filename + "' is empty.";
 	}
 
-// 	if (filename.size() > 3 and filename.substr(filename.size()-4,3) == ".gz") {
-// 		throw  string("You must unzip the model file before using it");
-// 	} 
+	map<string,string> overrides;
+	// Attach global overrides to the global scope
+	for (map<string,string>::const_iterator it = cmd_line.begin(); it != cmd_line.end(); it++ ) {
+		if (it->first == "file" ) continue;
+		overrides[it->first] = it->second;
+	}
+ 
+	if ( ! init(readFile(filename), overrides) ) {
+		cout << "Could not initialize model " << filename << endl;
+		return false;
+	}
+
 	
+	if (SIM::generate_symbol_graph_and_exit) {
+		createDepGraph();
+		cout << "Generated symbol dependency graph. Exiting." << endl;
+		return false;
+	}
+
+	cout.flush();
+	return true;
+};
+
+bool init(string model, map<string,string> overrides) {
 	XMLResults results;
-	XMLNode xMorpheusRoot = parseXMLFile(filename, &results);
+	auto xMorpheusRoot = XMLNode::parseString(model.c_str(),"MorpheusModel", &results);
 	if (results.error!=eXMLErrorNone) {
 		cerr << "Unable to read model" << std::endl; 
 		cerr << XMLNode::getError(results.error) <<  " at line " << results.nLine << " col " << results.nColumn << "!" << std::endl; 
@@ -363,39 +407,26 @@ bool init(int argc, char *argv[]) {
 	
 	global_scope = unique_ptr<Scope>(new Scope());
 	// Attach global overrides to the global scope
-	for (map<string,string>::const_iterator it = cmd_line.begin(); it != cmd_line.end(); it++ ) {
-		if (it->first == "file") continue;
-		global_scope->value_overrides()[it->first] = it->second;
+	for (const auto& param : overrides ) {
+		if (param.first == "file") continue;
+		getGlobalScope()->value_overrides()[param.first] = param.second;
 	}
 	current_scope = global_scope.get();
 	
 	loadFromXML(xMorpheusRoot);
 	
-	
-	if (SIM::generate_symbol_graph_and_exit) {
-		createDepGraph();
-		cout << "Generated symbol dependency graph. Exiting." << endl;
-		return false;
-	}
-
 	// try to match cmd line options with symbol names and adjust values accordingly
 	// check that global overrides have been used
 	for ( const auto& override: global_scope->value_overrides() ) {
 		cout << "Warning: Command line override " << override.first << "=" << override.second << " not used!" << endl;
 	}
 
-	cout.flush();
 	return true;
-};
+}
 
 void finalize() {
 	TimeScheduler::finish();
-	CPM::finish();
-	analysis_section_plugins.clear();
-	global_section_plugins.clear();
-	analysers.clear();
-	
-	
+	wipe();
 }
 
 void setRandomSeeds( const XMLNode xNode ){
@@ -453,46 +484,48 @@ void loadFromXML(const XMLNode xNode) {
 	time_symbol->setXMLPath(getXMLPath(xTime)+"/TimeSymbol");
 	global_scope->registerSymbol(time_symbol);
 	
+	setRandomSeeds(xTime.getChildNode("RandomSeed"));
+
 	xSpace = xNode.getChildNode("Space");
 	getXMLAttribute(xSpace,"SpaceSymbol/symbol",SymbolBase::Space_symbol);
 	auto space_symbol = make_shared<LocationSymbol>(SymbolBase::Space_symbol);
 	space_symbol->setXMLPath(getXMLPath(xSpace)+"/SpaceSymbol");
 	global_scope->registerSymbol(space_symbol);
 	
-	setRandomSeeds(xTime.getChildNode("RandomSeed"));
-	
 	// Loading and creating the underlying lattice
 	cout << "Creating lattice"<< endl;
 	XMLNode xLattice = xSpace.getChildNode("Lattice");
-	if (xLattice.isEmpty()) throw string("unable to read XML Lattice node");
 	
-	if (xLattice.nChildNode("NodeLength"))
-		node_length.loadFromXML(xLattice.getChildNode("NodeLength"), global_scope.get());
-	try {
-		string lattice_code="cubic";
-		getXMLAttribute(xLattice, "class", lattice_code);
-		if (lattice_code=="cubic") {
-			global_lattice =  shared_ptr<Lattice>(new Cubic_Lattice(xLattice));
-		} else if (lattice_code=="square") {
-			global_lattice =  shared_ptr<Lattice>(new Square_Lattice(xLattice));
-		} else if (lattice_code=="hexagonal") {
-			global_lattice =  shared_ptr<Lattice>(new Hex_Lattice(xLattice));
-		} else if (lattice_code=="linear") {
-			global_lattice =  shared_ptr<Lattice>(new Linear_Lattice(xLattice));
-		}
-		else throw string("unknown Lattice type " + lattice_code);
-		if (! global_lattice)
-				throw string("Error creating Lattice type " + lattice_code);
-	}
-	catch (string e) {
-		throw MorpheusException(e,xLattice);
-	}
+	lattice_plugin = make_unique<LatticePlugin>();
+	lattice_plugin->loadFromXML(xLattice, global_scope.get());
 	
-	lattice_size_symbol="";
-	if (getXMLAttribute(xLattice,"Size/symbol",lattice_size_symbol)) {
-		auto lattice_size = SymbolAccessorBase<VDOUBLE>::createConstant(lattice_size_symbol,"Lattice Size", global_lattice->size());
-		global_scope->registerSymbol( lattice_size );
-	}
+// 	if (xLattice.nChildNode("NodeLength"))
+// 		node_length.loadFromXML(xLattice.getChildNode("NodeLength"), global_scope.get());
+// 	try {
+// 		string lattice_code="cubic";
+// 		getXMLAttribute(xLattice, "class", lattice_code);
+// 		if (lattice_code=="cubic") {
+// 			global_lattice =  shared_ptr<Lattice>(new Cubic_Lattice(xLattice));
+// 		} else if (lattice_code=="square") {
+// 			global_lattice =  shared_ptr<Lattice>(new Square_Lattice(xLattice));
+// 		} else if (lattice_code=="hexagonal") {
+// 			global_lattice =  shared_ptr<Lattice>(new Hex_Lattice(xLattice));
+// 		} else if (lattice_code=="linear") {
+// 			global_lattice =  shared_ptr<Lattice>(new Linear_Lattice(xLattice));
+// 		}
+// 		else throw string("unknown Lattice type " + lattice_code);
+// 		if (! global_lattice)
+// 				throw string("Error creating Lattice type " + lattice_code);
+// 	}
+// 	catch (string e) {
+// 		throw MorpheusException(e,xLattice);
+// 	}
+// 	
+// 	lattice_size_symbol="";
+// 	if (getXMLAttribute(xLattice,"Size/symbol",lattice_size_symbol)) {
+// 		auto lattice_size = SymbolAccessorBase<VDOUBLE>::createConstant(lattice_size_symbol,"Lattice Size", global_lattice->size());
+// 		global_scope->registerSymbol( lattice_size );
+// 	}
 	
 	MembranePropertyPlugin::loadMembraneLattice(xSpace, global_scope.get());
 	
@@ -505,8 +538,10 @@ void loadFromXML(const XMLNode xNode) {
 			string xml_tag_name(xGlobalChild.getName());
 			shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
 			
-			if (! p.get())
+			if (! p.get()) {
+				Plugin::getFactory().printKeys();
 				throw MorpheusException(string("Unknown Global plugin ") + xml_tag_name, xGlobalChild);
+			}
 			
 			p->loadFromXML(xGlobalChild, global_scope.get());
 			global_section_plugins.push_back(p);
@@ -519,6 +554,10 @@ void loadFromXML(const XMLNode xNode) {
 	/*****************************************************/
 	/** CREATION AND INTERLINKING of the DATA STRUCTURE **/
 	/*****************************************************/
+	
+	lattice_plugin->init(global_scope.get());
+	
+	global_lattice = lattice_plugin->getLattice();
 	
 	// all model constituents are loaded. let's initialize them (i.e. interlink)
 	global_scope->init();
@@ -580,7 +619,7 @@ void loadFromXML(const XMLNode xNode) {
 		analysis_section_plugins[i]->init(global_scope.get());
 	}
 	
-	TimeScheduler::init();
+	TimeScheduler::init(global_scope.get());
 	cout << "model is up" <<endl;
 };
 
@@ -650,6 +689,26 @@ void saveToXML() {
 	free(xml_data);
 }
 
+void wipe()
+{ 
+	TimeScheduler::wipe();
+	
+	analysers.clear();
+	analysis_section_plugins.clear();
+	global_section_plugins.clear();
+	CPM::wipe();
+	
+	lattice_plugin.reset();
+	global_lattice.reset();
+	global_scope.reset();
+	
+	global_scope = unique_ptr<Scope>(new Scope());
+	current_scope = global_scope.get();
+}
+
+Lattice::Structure getLatticeStructure() {
+	return lattice_plugin->getStructure();
+}
 
 shared_ptr <const Lattice> getLattice() {
 	if (!global_lattice) {
@@ -658,11 +717,16 @@ shared_ptr <const Lattice> getLattice() {
 	return global_lattice;
 };
 
-const Lattice& lattice() { return *global_lattice; }
+const Lattice& lattice() {
+	if (!global_lattice) {
+		cerr << "Trying to access global lattice, while it's not defined yet!" << endl; assert(0); exit(-1);
+	}
+	return *global_lattice;
+}
 
 const Scope* getScope() { return current_scope; }
 
-const Scope* getGlobalScope() { return global_scope.get(); }
+Scope* getGlobalScope() { return global_scope.get(); }
 
 Scope* createSubScope(string name, CellType* ct) { if (! current_scope) throw string("Cannot create subscope from empty scope"); return current_scope->createSubScope(name,ct); }
 

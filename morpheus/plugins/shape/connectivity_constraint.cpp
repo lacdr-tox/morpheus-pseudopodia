@@ -26,7 +26,7 @@ void ConnectivityConstraint::init(const Scope* scope) {
 			cout << "ConnectivityConstraint: " << neighbors[i] << " a " << angle << " d" << distance << endl;
 		}
 		if ( lattice.getStructure() == Lattice::hexagonal ) {
-			neighbors = lattice.getNeighborhood(1).neighbors();
+			neighbors = lattice.getNeighborhoodByOrder(1).neighbors();
 			if (neighbors.size() > 12) {
 				cerr << "ConnectivityConstraint only available for 1st and 2nd order surface neighborhood in hexagonal lattices." << endl;
 				exit(-1);

@@ -180,6 +180,8 @@ private:
  * Policy class to be used to create a read-only, fixed value PluginParameter 
  */
 
+
+
 template <class ValType, class RequirementPolicy> 
 class XMLValueReader : public RequirementPolicy
 {
@@ -221,13 +223,12 @@ public:
 	typename TypeInfo<ValType>::SReturn get(SymbolFocus f) const 
 	{ 
 		RequirementPolicy::assertDefined();
-		
-		
 		if (is_const)
 			return const_expr;
 		else 
 			return evaluator->get(f);
 	};
+	
 	typename TypeInfo<ValType>::SReturn safe_get(SymbolFocus f) const {
 		if (!is_initialized) {
 // 			cout << "Warning: Evaluator initialisation during get() for expression '" << evaluator->getExpression() << "'" << endl;
@@ -274,6 +275,7 @@ public:
 	void setLocalsTable(const vector<EvaluatorVariable>& table) { if (is_initialized) throw string("too late to modify the locals table -- expression initialized"); locals_table = table; }
 	void setLocals(const double* data) { if (!is_initialized) throw string("setLocals(): xpression not initialized"); evaluator->setLocals(data); }
 	void allowPartialSpec(bool allow=true) { allow_partial_spec=allow; }
+	void setSpherical(bool s) {  is_radial = s;  if (is_radial && is_initialized) { is_initialized = false; init(); } }
 	
 	void init()
 	{
@@ -286,6 +288,7 @@ public:
 				throw string("PluginParameter missing scope");
 
 			evaluator = make_unique<Evaluator<ValType> >(string_val, local_scope, allow_partial_spec);
+			evaluator->setRadial(is_radial);
 			
 			if (!locals_table.empty())
 				evaluator->setLocalsTable(locals_table);
@@ -323,7 +326,7 @@ public:
 	set<SymbolDependency> getOutputSymbols() const { return set<SymbolDependency>(); };
 	
 protected:
-	XMLEvaluatorBase() : is_const(false), is_initialized(false), local_scope(nullptr), require_global_scope(false), allow_partial_spec(false) {};
+	XMLEvaluatorBase() : is_const(false), is_radial(false), is_initialized(false), local_scope(nullptr), require_global_scope(false), allow_partial_spec(false) {};
 	// TODO Clearify  whether a Copy constructor is required to deal with the unique_ptr evaluator
 	// An assignment will leave the rhs object uninitialized !!!
 	
@@ -339,6 +342,7 @@ protected:
 	
 private:
 	bool is_const;
+	bool is_radial;
 	bool is_initialized;
 	const Scope* local_scope;
 	bool require_global_scope;

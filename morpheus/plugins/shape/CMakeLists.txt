@@ -6,4 +6,4 @@ set(plugin_src
 	connectivity_constraint.cpp
 )
 
-target_sources_relpaths(MorpheusSIM PRIVATE plugin_src)
+target_sources_relpaths(MorpheusCore PRIVATE plugin_src)

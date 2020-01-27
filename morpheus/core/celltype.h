@@ -180,7 +180,7 @@ protected:
 };
 
 
-typedef  CClassFactoryP1 < string, CellType, uint > CellTypeFactory;
+typedef  StaticClassFactoryP1 < string, CellType, uint > CellTypeFactory;
 #define registerCellType(CTClass) bool CTClass::factory_registration = CellTypeFactory::RegisterCreatorFunction(CTClass(0).XMLClassName(),CTClass::createInstance);
 
 
@@ -281,7 +281,7 @@ protected:
 
 	// Cell populations
 	vector< CPM::CELL_ID > cell_ids;
-	struct InitPropertyDesc {string symbol; string expression;  } ;
+	struct InitPropertyDesc {string symbol; string expression; bool spherical = false; } ;
 	struct CellPopDesc {
 		int pop_size;
 		XMLNode xPopNode;

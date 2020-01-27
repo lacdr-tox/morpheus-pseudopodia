@@ -18,6 +18,7 @@
 Assignment of mathematical expression to a vector symbol.
 
 Syntax is comma-separated: x,y,z
+or in the \b spherical / radial case: φ,θ,r
 
 During simulation it is asserted that the provided relation always holds. Therefore, the expression may not depend on the referred output symbol. For recurrence equations, use a \ref ML_VectorRule within Systems.
 
@@ -59,6 +60,7 @@ Differs from \ref ML_VectorEquation in that a VectorRule:
 - explicitly scheduled based on user-specified System time-step
 
 Syntax is comma-separated: x,y,z
+or in the \b spherical / radial case: φ,θ,r
 
 \section Examples
 Assign a value by comma separated list of 3 expressions.

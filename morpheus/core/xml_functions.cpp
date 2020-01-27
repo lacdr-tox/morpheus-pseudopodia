@@ -1,6 +1,6 @@
 #include "xml_functions.h"
 
-XMLNode parseXMLFile(string filename, XMLResults *pResults) {
+string readFile(string filename) {
 	gzFile file=gzopen(filename.c_str(), "rb");
 	if (file==NULL) { cerr << "unable to open file " << filename << endl; exit(-1); }
 	cout << "Initializing from file " << filename << endl;
@@ -16,17 +16,16 @@ XMLNode parseXMLFile(string filename, XMLResults *pResults) {
 	gzclose(file); 
 	if (!(error==Z_STREAM_END or error==Z_OK)) {
 		cerr << "Error " << error << " while reading " << filename << ": "<< gzerror(file,&error);
-		if (pResults) {
-			pResults->error = eXMLErrorEmpty;
-			pResults->nLine = 0;
-			pResults->nColumn = 0;
-		};
-		return XMLNode::emptyNode();
+		return "";
 	}
+	return stringbuff;
+}
+
+XMLNode parseXMLFile(string filename, XMLResults *pResults) {
 	
 // and parse the file
 	cout << "parsing ..." << endl;
-	XMLNode xml_root=XMLNode::parseString(stringbuff.c_str(),"MorpheusModel", pResults);
+	XMLNode xml_root = XMLNode::parseString(readFile(filename).c_str(),"MorpheusModel", pResults);
 	
 	return xml_root;
 }

@@ -40,7 +40,10 @@ Granularity operator+(Granularity a, Granularity b) {
 				return a;
 		case Granularity::Global:
 				return b;
+		case Granularity::SurfaceNode:
+				return a;
 	}
+	return Granularity::Global;
 }
 
 Granularity& operator+=(Granularity& g, Granularity b) {

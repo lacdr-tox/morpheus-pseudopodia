@@ -49,13 +49,13 @@ void FunctionPlugin::loadFromXML ( const XMLNode Node, Scope* scope)
 	// register the symbol in the parental scope
 	accessor = make_shared<Symbol>(this);
 	scope->registerSymbol(accessor);
-	evaluator = make_shared<ThreadedExpressionEvaluator<double> >(raw_expression(), scope, false);
 }
 
 void FunctionPlugin::init (const Scope* scope) {
 	if (initialized) return;
 	Plugin::init(local_scope);
 	
+	evaluator = make_shared<ThreadedExpressionEvaluator<double> >(raw_expression(), scope, false);
 	// Add Parameters as local variables to the evaluators
 	// we don't add them as local variables to the scope, because then they would be shared by all evaluators and may not be used concurrently
 	vector<EvaluatorVariable> parameter_table;

@@ -35,20 +35,9 @@ void CPMSampler::loadFromXML(const XMLNode node, Scope* scope)
 		auto symbol = SymbolAccessorBase<double>::createConstant(mcs_duration_symbol.stringVal(),"Monte Carlo Step Duration", mcs_duration());
 		scope->registerSymbol(symbol);
 	}
-	// In fact, the update neighborhood should include all neighbors up to sqrt(2), aka Moore for square, 1st order for hex and 2nd order in cubic.
-	update_neighborhood = SIM::lattice().getNeighborhoodByDistance(1.5); 
-	XMLNode xNeighborhood = node.getChildNode("MonteCarloSampler").getChildNode("Neighborhood");
-	if (!xNeighborhood.isEmpty()) {
-		update_neighborhood = SIM::lattice().getNeighborhood(xNeighborhood);
-	}
-	else throw string("Missing required element MonteCarloSampler/Neighborhood.");
 	
 	interaction_energy = shared_ptr<InteractionEnergy>(new InteractionEnergy());
 	interaction_energy->loadFromXML(node.getChildNode("Interaction"), scope);
-	
-	if (update_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && update_neighborhood.order()>5) ) {
-		throw string("Update neighborhood is too large");
-	}
 
 	setTimeStep(mcs_duration.get());
 	is_adjustable = false;
@@ -56,7 +45,20 @@ void CPMSampler::loadFromXML(const XMLNode node, Scope* scope)
 
 void CPMSampler::init(const Scope* scope)
 {
-    ContinuousProcessPlugin::init(scope);
+	// In fact, the update neighborhood should include all neighbors up to sqrt(2), aka Moore for square, 1st order for hex and 2nd order in cubic.
+	update_neighborhood = SIM::lattice().getNeighborhoodByDistance(1.5); 
+	XMLNode xNeighborhood = stored_node.getChildNode("MonteCarloSampler").getChildNode("Neighborhood");
+	if (!xNeighborhood.isEmpty()) {
+		update_neighborhood = SIM::lattice().getNeighborhood(xNeighborhood);
+	}
+	else throw string("Missing required element MonteCarloSampler/Neighborhood.");
+	
+	if (update_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && update_neighborhood.order()>5) ) {
+		throw string("Update neighborhood is too large");
+	}
+
+	
+	ContinuousProcessPlugin::init(scope);
 	cell_layer = CPM::getLayer();
 	registerCellPositionOutput();
 	registerOutputSymbol(scope->findSymbol<double>(SymbolBase::CellVolume_symbol,true));

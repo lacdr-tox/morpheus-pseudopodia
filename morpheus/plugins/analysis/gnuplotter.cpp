@@ -816,7 +816,7 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 	
 	// we assume that the neighbors are sorted either clockwise or anti-clockwise.
 	// we could also add a sorting step after the filtering of nodes belonging to the plane
-	vector<VINT> neighbors = SIM::lattice().getNeighborhood(1).neighbors();
+	vector<VINT> neighbors = SIM::lattice().getNeighborhoodByOrder(1).neighbors();
 	if( lattice->getStructure() == Lattice::linear ) {
 		neighbors.resize(4);
 		neighbors[0] = VINT( 1, 0, 0);
@@ -963,6 +963,7 @@ Gnuplotter::Gnuplotter(): AnalysisPlugin(), gnuplot(NULL) {
 	term_map["x11"] = Terminal::SCREEN;
 	term_map["png"] = Terminal::PNG;
 	term_map["jpg"] = Terminal::JPG;
+	term_map["jpeg"] = Terminal::JPG;
 	term_map["svg"] = Terminal::SVG;
 	term_map["pdf"] = Terminal::PDF;
 	term_map["eps"] = Terminal::EPS;

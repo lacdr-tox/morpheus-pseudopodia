@@ -13,4 +13,8 @@ set(plugin_src
 	margolus_diffusion.cpp
 )
 
-target_sources_relpaths(MorpheusSIM PRIVATE plugin_src)
+target_sources_relpaths(MorpheusCore PRIVATE plugin_src)
+
+# if (MORPHEUS_TESTS)
+# 	add_subdirectory(tests)
+# endif()

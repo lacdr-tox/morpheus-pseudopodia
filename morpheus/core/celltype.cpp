@@ -4,6 +4,8 @@
 // #include "diffusion.h"
 // #include "symbol_accessor.h"
 #include "focusrange.h"
+#include "property.h"
+#include "membrane_property.h"
 
 
 
@@ -134,7 +136,7 @@ void CellType::loadPlugins()
 		try {
 			string xml_tag_name(xNode.getName());
 // 			if (xml_tag_name=="Segment") continue; // for compatibility with the segmented celltype
-			shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
+			shared_ptr<Plugin> p = Plugin::CreateInstance(xml_tag_name);
 			if (! p.get()) 
 				throw(string("Unknown plugin " + xml_tag_name));
 			
@@ -147,7 +149,9 @@ void CellType::loadPlugins()
 		}
 		catch(string er) {
 			string s("Error while loading Plugin ");
-			s+= string(xNode.getName()) + "\n" + er;
+			s+= string(xNode.getName()) + "\n" + er; 
+			cout << "\nAvailable Plugins: ";
+			Plugin::getFactory().printKeys();
 			throw MorpheusException(s, stored_node);
 		}
 		catch(const SymbolError& e) {
@@ -253,38 +257,80 @@ void CellType::init() {
 	
 	// Initialization of Cell Properties
 	
-	// i run individual property initialisation through Cell::init()
-	for (auto cell_id : cell_ids) {
-		storage.cell(cell_id).init();
-	}
-	
-	
-	// ii Run property initialization plugins from Population initializers
-	for (auto& cp : cell_populations) {
-		for ( const auto& ip : cp.property_initializers) {
-			
-			SymbolRWAccessor<double> symbol;
-			symbol = local_scope->findRWSymbol<double>(ip.symbol);
-
-			ExpressionEvaluator<double> init_expression(ip.expression,local_scope);
-			init_expression.init();
-			
-			// Apply InitProperty expressions for all cells
-			for (auto cell : cp.cells) {
-				FocusRange range(symbol->flags().granularity,cell);
-				for ( const auto& focus : range) {
-					symbol->set(focus, init_expression.get(focus));
-				}
-			}
-		}
-	}
-	
-	// iii Override with per cell property definitions from xml
+		
+	// i Preset per cell property definitions from xml
 	for (const auto& cell : predefined_cells) {
 		XMLNode xCellNode = cell.second;
 		CPM::CELL_ID cell_id = cell.first;
 		storage.cell(cell_id).loadFromXML( xCellNode );
 	}
+	
+	// ii Bind property initialization plugins from Population initializers
+	for (auto& cp : cell_populations) {
+		for ( const auto& ip : cp.property_initializers) {
+			
+			auto asymbol = local_scope->findSymbol(ip.symbol);
+			if (asymbol->type() == TypeInfo<double>::name()) {
+				auto symbol = local_scope->findRWSymbol<double>(ip.symbol);
+				 
+				auto init_expression = make_shared<ExpressionEvaluator<double>>(ip.expression,local_scope);
+				init_expression->init();
+				auto property_symbol = dynamic_pointer_cast<const PropertySymbol<double>>(symbol);
+				auto mem_property_symbol = dynamic_pointer_cast<const MembranePropertySymbol>(symbol);
+				if (property_symbol) {
+					// Apply InitProperty expressions for all cells
+					for (auto cell : cp.cells) {
+						FocusRange range(symbol->flags().granularity,cell);
+						for ( const auto& focus : range) {
+							property_symbol->setInitializer(init_expression,focus);
+						}
+					}
+				}
+				else if (mem_property_symbol) {
+					// Apply InitProperty expressions for all cells
+					for (auto cell : cp.cells) {
+						FocusRange range(symbol->flags().granularity,cell);
+						for ( const auto& focus : range) {
+							mem_property_symbol->setInitializer(init_expression,focus);
+						}
+					}
+				}
+				else {
+					stringstream s;
+					s << "Initproperty refers to symbol '" << ip.symbol << "' of type " << symbol->linkType() << ", not Cell Property";
+					throw(MorpheusException( s.str() ,cp.xPopNode));
+				}
+			}
+			else if (asymbol->type() == TypeInfo<VDOUBLE>::name()) {
+				auto symbol = local_scope->findRWSymbol<VDOUBLE>(ip.symbol);
+				 
+				auto init_expression = make_shared<ExpressionEvaluator<VDOUBLE>> (ip.expression,local_scope);
+				init_expression->setRadial(ip.spherical);
+				init_expression->init();
+				auto property_symbol = dynamic_pointer_cast<const PropertySymbol<VDOUBLE>>(symbol);
+				if (!property_symbol) {
+					stringstream s;
+					s << "Initproperty refers to symbol '" << ip.symbol << "' of type " << symbol->linkType() << ", not Cell VectorProperty";
+					throw(MorpheusException( s.str() ,cp.xPopNode));
+				}
+				// Apply InitProperty expressions for all cells
+				for (auto cell : cp.cells) {
+					FocusRange range(symbol->flags().granularity,cell);
+					for ( const auto& focus : range) {
+						property_symbol->setInitializer(init_expression,focus);
+					}
+				}
+			}
+		}
+	}
+	
+	// iii Run individual property initialisation through Cell::init()
+	for (auto cell_id : cell_ids) {
+		storage.cell(cell_id).init();
+	}
+	
+	
+
 }
 
 multimap<Plugin*, SymbolDependency > CellType::cpmDependSymbols() const
@@ -341,19 +387,21 @@ void CellType::loadPopulationFromXML(const XMLNode xNode) {
 		XMLNode xcpNode = xNode.getChildNode(i);
 		// Defer loading cells
 		if (string(xcpNode.getName()) == "Cell") continue;
-		if (string(xcpNode.getName()) =="InitProperty") {
+		if (string(xcpNode.getName()) =="InitProperty" || string(xcpNode.getName()) =="InitVectorProperty" ) {
 			InitPropertyDesc ip;
 			if ( ! getXMLAttribute(xcpNode, "symbol-ref", ip.symbol)) {
-				throw string ("Missing symbol in Population[") + this->name + "]/InitProperty";
+				throw MorpheusException ("Missing symbol-ref attribute!", xcpNode);
 			}
 			if ( ! getXMLAttribute(xcpNode,"Expression/text",ip.expression)) {
-				throw string ("Missing expression in Population[") + this->name + "]/InitProperty["+ip.symbol+"]";
+				throw MorpheusException ("Missing Expression!", xcpNode);
 			}
+			ip.spherical = false;
+			getXMLAttribute(xcpNode,"spherical",ip.spherical);
 			cp.property_initializers.push_back(ip);
 		}
 		else {
 			// assume its an initilizer
-			shared_ptr<Plugin> p = PluginFactory::CreateInstance(string(xcpNode.getName()));
+			shared_ptr<Plugin> p = Plugin::CreateInstance(string(xcpNode.getName()));
 			if ( dynamic_pointer_cast<Population_Initializer>( p ) ) {
 				cp.pop_initializers.push_back(dynamic_pointer_cast<Population_Initializer>( p ));
 				cp.pop_initializers.back()->loadFromXML(xcpNode,local_scope);

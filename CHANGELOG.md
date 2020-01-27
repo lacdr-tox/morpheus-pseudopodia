@@ -9,9 +9,15 @@
 ### MorpheusML
   * The space symbol (Space/SpaceSymbol) now always provides the location in orthogonal coordinates, also on hexagonal lattices.
   * ClusterTracker can cluster cells of multiple cell types.
+  * Added Populations InitVectorProperty
+  * Lattice size now can also be specified through expressions
 
 ### Simulator
   * Support reading (gz) compressed models
+  * Added Test system for full XML models
+
+### Bug Fixes
+  * Fix cell property initialization override priority 
   
 ## Release 2.1.1
 

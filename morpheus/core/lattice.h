@@ -24,10 +24,20 @@
 #include "vec.h"
 #include "xml_functions.h"
 #include "domain.h"
+// #include "expression_evaluator.h"
 // All lattice characteristics are kept in a class derived from the Lattice class. They provide metrics (including topological boundaries), the neighborhood and the lattice extends. All data is stored in Lattice_Data_Layer class, which thus is a template.
 
 
+class Scope;
 class Lattice;
+template <class T> class Container;
+
+struct NeighborhoodDesc{
+	enum Mode { Order, Distance, Name } mode = Order;
+	int order = 1;
+	double distance = 0;
+	string name = "";
+};
 
 class Neighborhood {
 public:
@@ -61,15 +71,18 @@ public:
 	enum Structure { linear, square , hexagonal, cubic } structure;
 
 	virtual string getXMLName() const =0;
-	void loadFromXML(const XMLNode xnode);
-	XMLNode saveToXML();
+// 	void loadFromXML(const XMLNode xnode, Scope* scope);
+	void init(const Scope* scope);
+// 	XMLNode saveToXML();
 
 	Lattice();  /// Configure a Lattice from a XML node
 	struct LatticeDesc {
 		Structure structure;
 		VINT size;
-		uint neighborhood_order = 1;
+		NeighborhoodDesc default_neighborhood;
+		double node_length = 1;
 		map<Boundary::Codes,Boundary::Type> boundaries;
+		shared_ptr<Domain> domain = make_shared<Domain>();
 	};
 	Lattice(const LatticeDesc& desc);
 	static unique_ptr<Lattice> createLattice(const LatticeDesc& desc);
@@ -91,7 +104,7 @@ public:
 	/// Read the topological BCs defined within the lattice. Valid values are -x,x,+x for x, y, and z respectively.
 	Boundary::Type get_boundary_type(Boundary::Codes code) const;
 	vector<Boundary::Type> get_boundary_types() const;
-	const Domain& getDomain() const { return domain; } 
+	const Domain& getDomain() const { return *domain; } 
 
 	/// Number of lattice dimensions
 	uint getDimensions() const {return dimensions; }
@@ -112,17 +125,20 @@ public:
 	/// Neighborhood identified by @param  name
 	Neighborhood getNeighborhood(const std::string name) const;  
 	/// Neighborhood up to the order defined by @param  order.
-	Neighborhood getNeighborhood(uint order) const { return getNeighborhoodByOrder(order); };
-	Neighborhood getNeighborhood(const XMLNode node) const ;
+	Neighborhood getNeighborhood(const NeighborhoodDesc& desc) const;
+	Neighborhood getNeighborhood(const XMLNode node) const;
 	Neighborhood getNeighborhoodByDistance(const double dist_max) const;
 	Neighborhood getNeighborhoodByOrder(const uint order) const;
 	
 protected:
 	const double sin_60 = 0.86602540378443864676;
 	uint dimensions;
+	
+	Container<VDOUBLE>* size_constant;
+// 	SymbolAccessor<double> size_symbol;
 	VINT _size;
 	Boundary::Type boundaries[Boundary::nCodes];
-	Domain domain;
+	shared_ptr<Domain> domain;
 	VINT setSize(const VINT&);
 	string neighborhood_value, neighborhood_type;
 	XMLNode stored_node;
@@ -304,8 +320,13 @@ inline bool Lattice::inside(const VINT& a) const {
 
 class Hex_Lattice: public Lattice {
 	public:
-	Hex_Lattice(const XMLNode xnode);
-	Hex_Lattice(const LatticeDesc& desc) : Lattice(desc) { dimensions=2; structure = hexagonal;  _size.z=1; };
+	Hex_Lattice(const LatticeDesc& desc) : Lattice(desc) {
+		dimensions=2;
+		structure = hexagonal; 
+		_size.z=1;
+		orth_size = VDOUBLE(_size.x, _size.y * sin_60, 1);
+		default_neighborhood = getNeighborhood(desc.default_neighborhood);
+	};
 	string getXMLName() const override { return "hexagonal"; };
 	VDOUBLE to_orth(const VDOUBLE& a) const override;
 	VDOUBLE orth_distance(const VDOUBLE& a, const VDOUBLE& b) const override;
@@ -321,7 +342,6 @@ private:
 // typedef enum topo
 class Orth_Lattice: public Lattice {
 public:
-	Orth_Lattice(const XMLNode a) : Lattice() {};
 	Orth_Lattice(const LatticeDesc& desc) : Lattice(desc) {};
 	VDOUBLE to_orth(const VDOUBLE& a) const override;
 	VDOUBLE orth_distance(const VDOUBLE& a, const VDOUBLE& b) const override;
@@ -330,8 +350,11 @@ public:
 
 class Cubic_Lattice: public Orth_Lattice {
 public:
-	Cubic_Lattice(const XMLNode xnode);
-	Cubic_Lattice(const LatticeDesc& desc) : Orth_Lattice(desc) { dimensions=3; structure = cubic; };
+	Cubic_Lattice(const LatticeDesc& desc) : Orth_Lattice(desc) {
+		dimensions=3;
+		structure = cubic;
+		default_neighborhood = getNeighborhood(desc.default_neighborhood);
+	};
 	string getXMLName() const override { return "cubic"; };
 	Neighborhood getNeighborhoodByName(std::string name) const override;
 private:
@@ -342,9 +365,13 @@ private:
 
 class Square_Lattice: public Orth_Lattice {
 public:
-       static Square_Lattice* create(VINT resolution, bool spherical);
-	Square_Lattice(const XMLNode xNode);
-	Square_Lattice(const LatticeDesc& desc) : Orth_Lattice(desc) { dimensions=2; structure = square; _size.z=1; };
+	static Square_Lattice* create(VINT resolution, bool spherical);
+	Square_Lattice(const LatticeDesc& desc) : Orth_Lattice(desc) {
+		dimensions=2;
+		structure = square;
+		_size.z=1;
+		default_neighborhood = getNeighborhood(desc.default_neighborhood);
+	};
 	string getXMLName() const override { return "square"; };
 private:
 	vector<VINT> get_all_neighbors() const override;
@@ -356,8 +383,13 @@ private:
 class Linear_Lattice: public Orth_Lattice {
 public:
 	static Linear_Lattice* create(VINT length, bool periodic);
-	Linear_Lattice(const XMLNode xNode);
-	Linear_Lattice(const LatticeDesc& desc) : Orth_Lattice(desc) { dimensions=1; structure = linear; _size.y=1; _size.z=1; };
+	Linear_Lattice(const LatticeDesc& desc) : Orth_Lattice(desc) {
+		dimensions=1;
+		structure = linear;
+		_size.y=1;
+		_size.z=1;
+		default_neighborhood = getNeighborhood(desc.default_neighborhood);
+	};
 	string getXMLName() const override { return "linear"; };
 private:
 	vector<VINT> get_all_neighbors() const override;

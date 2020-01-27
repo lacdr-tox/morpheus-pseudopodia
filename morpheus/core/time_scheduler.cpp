@@ -25,13 +25,25 @@ bool set_disjoint(const std::set<T> &set1, const std::set<T> &set2)
     return true;
 }
 
+unique_ptr<TimeScheduler> TimeScheduler::sched;
 
 TimeScheduler::TimeScheduler() : start_time("StartTime",0), save_interval("SaveInterval",-1), is_state_valid(false), stop_time("StopTime",1000) {};
 
 TimeScheduler& TimeScheduler::getInstance() {
-	static TimeScheduler sched;
-	return sched;
+	if (!sched) {
+		sched = unique_ptr<TimeScheduler>(new TimeScheduler());
+		sched->start_time.set(0);
+		sched->stop_time.set(1);
+		sched->current_time = sched->start_time();
+	}
+	return *sched;
 }
+
+void TimeScheduler::wipe()
+{
+	sched.release();
+}
+
 
 void TimeScheduler::loadFromXML(XMLNode xTime, Scope* scope)
 {
@@ -60,9 +72,11 @@ XMLNode TimeScheduler::saveToXML() {
 	return xmlTime;
 };
 
-void TimeScheduler::init()
+void TimeScheduler::init(Scope* scope)
 {
 	TimeScheduler& ts = getInstance();
+	ts.global_scope = scope;
+
 	ts.current_time = ts.start_time();
 	ts.progress_notify_interval = (ts.stop_time() - ts.current_time)/ 100;
 	

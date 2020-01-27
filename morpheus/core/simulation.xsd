@@ -166,15 +166,8 @@
 		<xs:choice minOccurs="0" maxOccurs="unbounded">
 			<xs:group ref="PopulationInitPlugins"/>
 			<xs:element name="Cell" type="cpmCell"/>
-			<xs:element name="InitProperty" type="cpmPopulationProperty">
-				<xs:annotation>
-					<xs:documentation>Initial value of a cell Property.
-						
-					Note:
-					- May contain a random number to generate a heterogenous initial population.
-					</xs:documentation>
-				</xs:annotation>
-			</xs:element>
+			<xs:element name="InitProperty" type="cpmPopulationProperty" />
+			<xs:element name="InitVectorProperty" type="cpmPopulationVectorProperty" />
 		</xs:choice>
 		
 		<xs:attribute name="type" type="cpmCellTypeRef" use="required">
@@ -213,6 +206,14 @@ This allows the user to create populations a heterogeneous initial population. T
 			<xs:element name="Expression" type="cpmMathExpression"/>
 		</xs:all>
 		<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef"/>
+	</xs:complexType>
+	
+	<xs:complexType name="cpmPopulationVectorProperty">
+		<xs:all>
+			<xs:element name="Expression" type="cpmVectorMathExpression"/>
+		</xs:all>
+		<xs:attribute name="symbol-ref" type="cpmVectorSymbolRef"/>
+		<xs:attribute name="spherical" type="cpmBoolean" use="optional" default="false" />
 	</xs:complexType>
 	
 	<xs:complexType name="cpmCell">

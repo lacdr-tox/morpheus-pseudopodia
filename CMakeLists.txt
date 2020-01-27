@@ -59,6 +59,21 @@ IF ( NOT (MORPHEUS_GRAPHVIZ STREQUAL "None" OR MORPHEUS_GRAPHVIZ STREQUAL "WebRe
 ENDIF()
 
 
+FIND_PACKAGE(OpenMP)
+option(MORPHEUS_OPENMP "Switch off the usage of OPENMP" ON)
+
+IF (OPENMP_FOUND AND MORPHEUS_OPENMP)
+	MESSAGE(STATUS "Enabling OpenMP support for ${CMAKE_CXX_COMPILER_ID} using  '${OpenMP_CXX_FLAGS}'")
+	SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+	SET(HAVE_OPENMP ON)
+ELSEIF(NOT HAVE_OPENMP)
+	MESSAGE(STATUS "Unable to detect OpenMP compiler support. Disabling OpenMP.")
+	SET(HAVE_OPENMP OFF)
+ELSE()
+	MESSAGE(STATUS "OpenMP support was switched off manually. Disabling OpenMP. ")
+	SET(HAVE_OPENMP OFF)
+ENDIF()
+
 # Configuration file for the uninstall target
 CONFIGURE_FILE( "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
 	"${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
@@ -87,6 +102,10 @@ FIND_PACKAGE(TIFF REQUIRED)
 SET( SIMULATOR_EXEC_NAME "morpheus")
 SET( GUI_EXEC_NAME "morpheus-gui")
 
+IF( MORPHEUS_TESTS )
+	enable_testing()
+ENDIF()
+
 ADD_SUBDIRECTORY( morpheus )
 
 IF(MORPHEUS_GUI)
@@ -94,10 +113,6 @@ IF(MORPHEUS_GUI)
 	ADD_SUBDIRECTORY( gui )
 ENDIF()
 
-IF( MORPHEUS_TESTS )
-	enable_testing()
-	ADD_SUBDIRECTORY( tests )
-ENDIF()
 
 INCLUDE(InstallRequiredSystemLibraries)
 

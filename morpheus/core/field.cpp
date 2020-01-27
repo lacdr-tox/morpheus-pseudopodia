@@ -21,18 +21,22 @@ REGISTER_PLUGIN(Field);
 
 void Field::loadFromXML(const XMLNode node, Scope * scope) {
 	Plugin::loadFromXML(node, scope);
-	auto field = make_shared<PDE_Layer>(SIM::getLattice(), SIM::getNodeLength(), false);
-	field->loadFromXML(node, scope);
-	accessor = make_shared<Symbol>(symbol_name(), this->getDescription(), field);
+	
+	accessor = make_shared<Symbol>(symbol_name(), this->getDescription());
 	scope->registerSymbol(accessor);
+}
+
+void Field::init(const Scope * scope) { 
+
+	auto field = make_shared<PDE_Layer>(SIM::getLattice(), SIM::getNodeLength(), false);
+	field->loadFromXML(stored_node, scope);
+	accessor->field = field;
+	field->init();
+// 	if (accessor) accessor->field->init();
 	// Create the diffusion wrapper
 	if (field->getDiffusionRate() > 0.0) {
 		diffusion_plugin = make_shared<Diffusion>(accessor);
 	}
-}
-
-void Field::init(const Scope * scope) { 
-	if (accessor) accessor->field->init();
 	if (diffusion_plugin) diffusion_plugin->init(scope);
 }
 
@@ -51,10 +55,16 @@ VectorField::VectorField() : Plugin() {
 
 void VectorField::loadFromXML(const XMLNode node, Scope * scope) {
 	Plugin::loadFromXML(node, scope);
-	auto field = make_shared<VectorField_Layer>(SIM::getLattice(), SIM::getNodeLength());
-	field->loadFromXML(node, scope);
-	accessor = make_shared<Symbol>(symbol_name(), getDescription(), field);
+	
+	accessor = make_shared<Symbol>(symbol_name(), getDescription());
 	scope->registerSymbol(accessor);
+}
+
+void VectorField::init(const Scope * scope) {
+	auto field = make_shared<VectorField_Layer>(SIM::getLattice(), SIM::getNodeLength());
+	field->loadFromXML(stored_node, scope);
+	accessor->field = field;
+	field->init(scope);
 }
 
 XMLNode VectorField::saveToXML() const {
@@ -87,7 +97,7 @@ PDE_Layer::PDE_Layer(shared_ptr<const Lattice> l, double p_node_length, bool sur
 PDE_Layer::~PDE_Layer()
 {/* if (write_buffer) delete[] write_buffer;*/ }
 
-void PDE_Layer::loadFromXML(const XMLNode xNode, Scope* scope)
+void PDE_Layer::loadFromXML(const XMLNode xNode, const Scope* scope)
 {
 	Lattice_Data_Layer<double>::loadFromXML(xNode, make_shared<ExpressionReader>(scope) );
 	max_time_step = -1;
@@ -125,7 +135,7 @@ void PDE_Layer::loadFromXML(const XMLNode xNode, Scope* scope)
 		shared_ptr<Plugin> p = PluginFactory::CreateInstance(string(xTiffreader.getName()));
 		if(!p)
 			throw MorpheusException("Unknown Initialization Plugin.", xTiffreader);
-		p->loadFromXML(xTiffreader, scope);
+		p->loadFromXML(xTiffreader, const_cast<Scope*>(scope));
 		plugins.push_back(p);
  	}
 // 		// parse for all PDE Initializers and run them
@@ -148,7 +158,7 @@ void PDE_Layer::loadFromXML(const XMLNode xNode, Scope* scope)
 	if ( diffusion_rate>0 ) {
 		// forward euler diffusion stability condition
 // 		 alpha = (diffusion_rate * time_interval) / sqr(node_length)* getLattice() -> getNeighborhood(1).size();
-		max_time_step = 0.75 * sqr(node_length)/(lattice().getNeighborhood(1).size() * diffusion_rate);
+		max_time_step = 0.75 * sqr(node_length)/(lattice().getNeighborhoodByOrder(1).size() * diffusion_rate);
 	}
 }
 
@@ -167,14 +177,20 @@ void PDE_Layer::init(const SymbolFocus& focus)
 	phi_coarsening[0]=l_size.x;
 	phi_coarsening[l_size.y-1]=l_size.x;
 
-	if (!initial_expression.empty() && !init_by_restore) {
-		ExpressionEvaluator<double> init_val(initial_expression, local_scope);
-		init_val.init();
+	if ( !init_by_restore) {
+		shared_ptr<ExpressionEvaluator<double>> init_val;
+		if (initializer) {
+			init_val = initializer; 
+		}
+		else {
+			init_val = make_shared<ExpressionEvaluator<double>>(initial_expression, local_scope);
+			init_val->init();
+		}
 		if (is_surface) {
 			CPM::CELL_ID cell_id = focus.cellID();
 			FocusRange range(Granularity::MembraneNode, cell_id);
 			for (auto focus : range) {
-				this->set(focus.membrane_pos(),init_val.safe_get(focus));
+				this->set(focus.membrane_pos(),init_val->safe_get(focus));
 			}
 		}
 		else {
@@ -189,7 +205,7 @@ void PDE_Layer::init(const SymbolFocus& focus)
 			}
 			FocusRange range(Granularity::Node, r);
 			for (auto focus : range) {
-				this->set(focus.pos(),init_val.safe_get(focus));
+				this->set(focus.pos(),init_val->safe_get(focus));
 			}
 		}
 	}
@@ -606,7 +622,7 @@ bool PDE_Layer::solve_fwd_euler_diffusion_generalized(double time_interval)
 	double alpha_normal = (diffusion_rate * time_interval) / sqr(node_length);
 
 	double alpha_total = 0;
-	vector<VINT> neighbors = _lattice->getNeighborhood(1).neighbors();
+	vector<VINT> neighbors = _lattice->getNeighborhoodByOrder(1).neighbors();
 	valarray<double> neighbor_distance(neighbors.size());
 	valarray<double> neighbor_alpha(neighbors.size());
 	valarray<int> neighbor_index_offst(neighbors.size());
@@ -691,7 +707,7 @@ bool PDE_Layer::solve_fwd_euler_diffusion_spheric(double time_interval)
 	
 //	cout << "alpha = " << alpha << endl;
 	
-	if( max_alpha * _lattice -> getNeighborhood(1).size() >= 1.0 ){
+	if( max_alpha * _lattice -> getNeighborhoodByOrder(1).size() >= 1.0 ){
 		// ht < (hx^2 / 4D) (for the 2D lattice case)
 //  		cout << "diffusion step in fwd euler spherical numerically unstable! " << alpha << endl;
 //  		cout <<  " time_interval > node_length² / 2D" << endl;
@@ -1060,7 +1076,7 @@ VectorField_Layer::VectorField_Layer(shared_ptr<const Lattice> lattice, double n
 	useBuffer(true);
 }
 
-void VectorField_Layer::loadFromXML(XMLNode node, Scope* scope)
+void VectorField_Layer::loadFromXML(XMLNode node, const Scope* scope)
 {
 	Lattice_Data_Layer<VDOUBLE>::loadFromXML(node, make_shared<ExpressionReader>(scope));
 	getXMLAttribute(node,"value", initial_expression);

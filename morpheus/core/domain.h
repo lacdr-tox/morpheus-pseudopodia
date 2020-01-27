@@ -34,14 +34,16 @@ std::ostream& operator << (std::ostream& os, const Boundary::Type& a) ;
 std::istream& operator >> (std::istream& is, Boundary::Type& a);
 
 class Lattice;
+class Scope;
 
 class Domain {
 public:
 	Domain() : type(none) {};
-	void loadFromXML(const XMLNode xNode, Lattice* l);
+	void loadFromXML(const XMLNode xNode, Scope* scope);
+	void init(Lattice* l);
 	enum Type {none ,image, circle, hexagon};
 
-// 	VINT domainSize() const { return domain_size; };
+	VINT size() const { return domain_size; };
 	const vector<VINT>& enumerated() const {return domain_enumeration; };
 	Boundary::Type boundaryType() const { return boundary_type; }
 	bool inside(const VINT& a) const;
@@ -51,7 +53,7 @@ private:
 	Boundary::Type boundary_type;
 	Type type;
 	Lattice* lattice;
-	VDOUBLE domain_size;
+	VINT domain_size;
     double diameter;
 	VINT center;
 	

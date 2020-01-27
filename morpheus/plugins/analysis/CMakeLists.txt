@@ -21,9 +21,9 @@ set(plugin_src
 
 
 IF (GRAPHVIZ_FOUND) 
-	target_include_directories(MorpheusSIM PRIVATE ${GRAPHVIZ_INCLUDE_DIR} )
+	target_include_directories(MorpheusCore PRIVATE ${GRAPHVIZ_INCLUDE_DIR} )
 ENDIF()
 list(APPEND plugin_src dependency_graph.cpp )
 
-target_sources_relpaths(MorpheusSIM PRIVATE plugin_src)
+target_sources_relpaths(MorpheusCore PRIVATE plugin_src)
 
