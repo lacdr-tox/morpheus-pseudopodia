@@ -914,6 +914,14 @@ void SystemSolver::Euler(const SymbolFocus& f, double ht) {
 }
 
 void SystemSolver::Heun(const SymbolFocus& f, double ht) {
+	// constants of the butcher tableau of the classical 2nd order scheme
+// 	const double a21=1;
+// 	const double b1=0.5, b2=0.5;
+// 	const double c2=1.0;
+// 	// constants of the butcher tableau of the Heun method (Runge-Kutta 2th order scheme)
+	const double a21=2.0/3;
+	const double b1=0.25, b2=0.75;
+	const double c2=2.0/3;
 	
 	cache->setLocal(noise_scaling_idx, sqrt(1.0/ht));
 
@@ -921,18 +929,15 @@ void SystemSolver::Heun(const SymbolFocus& f, double ht) {
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
 		e.k0 = cache->getLocalD(e.cache_idx);
-	}
-	for(uint i=0; i < odes.size(); i++) {
-		SystemFunc<double> &e = *odes[i];
 		e.k1 = e.evaluator->plain_get(f); check_result(e.k1,e);
 	}
 
 	// Second Step interpolation
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
-		cache->setLocal(e.cache_idx, e.k0 + 0.5 * ht * e.k1);
+		cache->setLocal(e.cache_idx, e.k0 + ht * a21 * e.k1);
 	}
-	cache->setLocal(local_time_idx, cache->getLocalD(local_time_idx) + ht);
+	cache->setLocal(local_time_idx, cache->getLocalD(local_time_idx) + c2 * ht);
 	updateLocalVars(f);
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
@@ -942,7 +947,7 @@ void SystemSolver::Heun(const SymbolFocus& f, double ht) {
 	// Apply the step to the local cache
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
-		e.dy = 0.5 * (e.k1 + e.k2);
+		e.dy = b1*e.k1 + b2*e.k2;
 		cache->setLocal(e.rate_cache_idx, e.dy);
 		cache->setLocal(e.cache_idx, e.k0 + ht * e.dy );
 	}
@@ -1414,7 +1419,7 @@ void EventSystem::loadFromXML ( const XMLNode node, Scope* scope )
 	registerInputSymbol(SIM::findGlobalSymbol<double>(SymbolBase::Time_symbol));
 
 	// Allow manual adjustment that cannot be overridden
-	if (timeStep()>0)
+	if (InstantaneousProcessPlugin::timeStep()>0)
 		this->is_adjustable = false;
 
 	if (node.nChildNode("Condition")) {

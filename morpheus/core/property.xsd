@@ -96,6 +96,7 @@
 		<xs:attribute name="name" 	type="cpmString"			use="optional" />
 		<xs:attribute name="symbol"	type="cpmVectorSymbolDef"	use="required" />
 		<xs:attribute name="value" 	type="cpmVectorMathExpression"		use="required" />
+		<xs:attribute name="spherical" 	type="cpmBoolean"		use="optional"	default="false" />
 	</xs:complexType>
 	
 	
@@ -128,6 +129,7 @@
 		<xs:attribute name="name" 	type="cpmString"		use="optional" />
 		<xs:attribute name="symbol"	type="cpmVectorSymbolDef"		use="required" />
 		<xs:attribute name="value"	type="cpmVectorMathExpression"		use="required" />
+		<xs:attribute name="spherical" type="cpmBoolean" use="optional" default="false" />
 	</xs:complexType>
 	
 	<xs:complexType name="PropertyQueue">

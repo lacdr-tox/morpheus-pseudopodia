@@ -2,7 +2,15 @@
 #include "time_scheduler.h"
 #include "plugin_parameter.h"
 
-int Plugin::plugins_alive =0;
+
+Plugin::Plugin() : plugin_name(""), local_scope(nullptr) {}
+
+Plugin::~Plugin() {};
+
+unique_ptr<Plugin::Factory> factory;
+
+Plugin::Factory& Plugin::getFactory() { if (!factory) factory = make_unique<Factory>(); return *factory; }
+
 
 XMLNode Plugin::saveToXML() const {
 	return stored_node;

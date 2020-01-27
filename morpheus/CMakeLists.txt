@@ -12,21 +12,6 @@ INCLUDE (CheckTypeSize)
 CHECK_TYPE_SIZE(uint UINT)
 # sets HAVE_UINT
 
-FIND_PACKAGE(OpenMP)
-
-option(MORPHEUS_OPENMP "Switch off the usage of OPENMP" ON)
-
-IF (OPENMP_FOUND AND MORPHEUS_OPENMP)
-	MESSAGE(STATUS "Enabling OpenMP support for ${CMAKE_CXX_COMPILER_ID} using  '${OpenMP_CXX_FLAGS}'")
-	SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-	SET(HAVE_OPENMP ON)
-ELSEIF(NOT HAVE_OPENMP)
-	MESSAGE(STATUS "Unable to detect OpenMP compiler support. Disabling OpenMP.")
-	SET(HAVE_OPENMP OFF)
-ELSE()
-	MESSAGE(STATUS "OpenMP support was switched off manually. Disabling OpenMP. ")
-	SET(HAVE_OPENMP OFF)
-ENDIF()
 
 ###########################
 ## Target definitions
@@ -35,7 +20,7 @@ ENDIF()
 ADD_EXECUTABLE(MorpheusSIM "")
 SET_TARGET_PROPERTIES(MorpheusSIM PROPERTIES  OUTPUT_NAME ${MORPHEUS_EXEC_NAME} )
 ADD_LIBRARY(MorpheusCore OBJECT ""  )
-TARGET_INCLUDE_DIRECTORIES(MorpheusCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/core)
+TARGET_INCLUDE_DIRECTORIES(MorpheusCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
 
 ###############################
 ## Internal target dependencies
@@ -77,9 +62,11 @@ IF(GRAPHVIZ_FOUND)
 	ENDIF()
 ENDIF()
 
+add_subdirectory(testing)
 
 add_subdirectory(plugins)
 add_subdirectory(core)
+
 
 
 IF  ("${MORPHEUS_OS}" STREQUAL "WIN32")
@@ -180,7 +167,6 @@ ENDIF()
 SET(XSD_SOURCES 
 	${CMAKE_CURRENT_SOURCE_DIR}/core/base_types.xsd
 	${CMAKE_CURRENT_SOURCE_DIR}/core/simulation.xsd
-	${CMAKE_CURRENT_SOURCE_DIR}/core/lattice.xsd
 )
 
 SET(APP_DOC_HEADERS 
@@ -194,21 +180,22 @@ foreach(source ${sources})
 	STRING(REGEX REPLACE "\\.cpp" ".h" header ${source})
 	STRING(REGEX REPLACE "\\.cpp" ".xsd" xsd ${source})
 	#  check the header for the PLUGIN macro
-	file(STRINGS "${header}" lines REGEX "DECLARE_PLUGIN")
-	if (lines)
-		list(APPEND APP_DOC_HEADERS ${header})
-		if ( EXISTS ${xsd} )
-			list(APPEND XSD_SOURCES ${xsd})
-		else()
-			if ( header MATCHES "interfaces.h")
-				# just the macro definition
+	IF (EXISTS ${header} )
+		file(STRINGS "${header}" lines REGEX "DECLARE_PLUGIN")
+		if (lines)
+			list(APPEND APP_DOC_HEADERS ${header})
+			if ( EXISTS ${xsd} )
+				list(APPEND XSD_SOURCES ${xsd})
 			else()
-				message(WARNING "Missing plugin language description ${xsd}" )
+				if ( header MATCHES "interfaces.h")
+					# just the macro definition
+				else()
+					message(WARNING "Missing plugin language description ${xsd}" )
+				endif()
 			endif()
-		endif()
+		ENDIF()
 	ENDIF()
 endforeach(source)
-
 
 SET(XML_MERGE_TRANS_SCRIPT  "${CMAKE_CURRENT_SOURCE_DIR}/merge.xslt")
 

@@ -81,16 +81,21 @@ float ExpressionEvaluator<float>::plain_get(const SymbolFocus& focus) const
 template <>
 int ExpressionEvaluator<VDOUBLE>::expectedNumResults() const { return 3; }
 
+
 template <>
 VDOUBLE ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus, bool safe) const
 {
 	if (safe && !initialized)
 		const_cast<ExpressionEvaluator*>(this)->init();
+	
 	if (expr_is_const)
 		return const_val;
 	
 	if (expr_is_symbol)
-		return symbol_val->get(focus);
+		if (is_radial)
+			return VDOUBLE::from_radial(symbol_val->get(focus));
+		else
+			return symbol_val->get(focus);
 	
 	VDOUBLE result;
 	evaluator_cache->fetch(focus, safe | allow_partial_spec);
@@ -112,6 +117,8 @@ VDOUBLE ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus, bool safe) c
 			throw string("Wrong number of expressions in VectorExpression ") + this->expression;
 		}
 		result = VDOUBLE(results[0],results[1],results[2]);
+		if (is_radial)
+			result = VDOUBLE::from_radial(result);
 	}
 	if (delay_const_expr_init) {
 		const_val = result;

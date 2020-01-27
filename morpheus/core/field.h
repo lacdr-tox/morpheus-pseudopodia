@@ -103,7 +103,7 @@ public:
 			const Scope* scope;
 	};
 
-	void loadFromXML(const XMLNode xnode, Scope* scope);
+	void loadFromXML(const XMLNode xnode, const Scope* scope);
 	const string getXMLPath();
 	XMLNode saveToXML() const;
 	
@@ -111,6 +111,7 @@ public:
 	XMLNode storeData(string filename="") const;
 
 	void init(const SymbolFocus& focus = SymbolFocus::global);
+	void setInitializer(shared_ptr<ExpressionEvaluator<double>> init) { initializer = init; }
 
 // 	void execute_once_each_mcs(uint mcs);
 	/// Calculate the values of time + delta_t  without changing the current values of the layer.
@@ -157,6 +158,7 @@ public:
 
 private:
 	string initial_expression;
+	shared_ptr<ExpressionEvaluator<double>> initializer;
 	bool initialized;
 	const Scope* local_scope;
 	bool init_by_restore;
@@ -216,7 +218,7 @@ public:
 	
 	class Symbol : public SymbolRWAccessorBase<double> {
 	public:
-		Symbol(string name, string descr, shared_ptr<PDE_Layer> field): SymbolRWAccessorBase<double>(name), descr(descr), field(field) {
+		Symbol(string name, string descr): SymbolRWAccessorBase<double>(name), descr(descr) {
 			this->flags().granularity = Granularity::Node;
 		};
 		const string&  description() const override { return descr; }
@@ -250,7 +252,7 @@ private:
 class VectorField_Layer : public Lattice_Data_Layer<VDOUBLE> {
 public: 
 	VectorField_Layer(shared_ptr< const Lattice > lattice, double node_length);
-	void loadFromXML(XMLNode node, Scope* scope);
+	void loadFromXML(XMLNode node, const Scope* scope);
 	XMLNode saveToXML() const;
 	
 	bool restoreData(const XMLNode xnode);
@@ -284,11 +286,11 @@ public:
 	VectorField();
 	void loadFromXML(const XMLNode node, Scope * scope) override;
 	XMLNode saveToXML() const override;
-	void init(const Scope * scope) override {  if (accessor) accessor->field->init(scope);}
+	void init(const Scope * scope) override;
 	
 	class Symbol : public SymbolRWAccessorBase<VDOUBLE> {
 	public:
-		Symbol(string name, string descr, shared_ptr<VectorField_Layer> field): SymbolRWAccessorBase<VDOUBLE>(name), descr(descr), field(field) {
+		Symbol(string name, string descr): SymbolRWAccessorBase<VDOUBLE>(name), descr(descr) {
 			this->flags().granularity = Granularity::Node;
 		};
 		const string&  description() const override { return descr; }

@@ -1,4 +1,5 @@
 #include "domain.h"
+#include "scope.h"
 #include "lattice_data_layer.cpp"
 #include "simulation.h"
 
@@ -74,10 +75,9 @@ std::istream& operator >> (std::istream& is, Boundary::Type& a) { string s; is >
 template class Lattice_Data_Layer<Boundary::Type>;
 
 
-void Domain::loadFromXML(const XMLNode xNode, Lattice* l)
+void Domain::loadFromXML(const XMLNode xNode, Scope* scope)
 {
 	boundary_type = Boundary::noflux;
-	lattice = l;
 	getXMLAttribute(xNode, "boundary-type", boundary_type);
 	if (xNode.nChildNode("Image")) {
 		type = image;
@@ -86,43 +86,38 @@ void Domain::loadFromXML(const XMLNode xNode, Lattice* l)
 		getXMLAttribute(xNode, "Image/invert", invert);
 
 		createImageMap(image_path, invert);
-		VINT lattice_size = max(lattice->size(), image_size);
-		if (domain_size != lattice->size()) {
-			cout << "Domain: overriding lattice size with domain size " << domain_size << endl;
-			lattice->setSize(lattice_size);
-		}
-		domain_size = lattice_size;
-		lattice->setSize(lattice_size);
-		image_offset = (lattice_size - image_size) /2;
-		cout << "Domain Image size " << image_size << ", domain offset " << image_offset << endl;
+		domain_size = image_size;
 	}
 	else if (xNode.nChildNode("Circle")) {
 		type = circle;
 		getXMLAttribute(xNode, "Circle/diameter", diameter);
-		domain_size = VDOUBLE(diameter,diameter,1);
+		domain_size = VINT(diameter,diameter,1);
 		if (lattice->structure == Lattice::Structure::hexagonal)
 			domain_size.x*=sqrt(3);
-		
+	}
+	else if (xNode.nChildNode("Hexagon")) {
+		type = hexagon;
+		getXMLAttribute(xNode, "Hexagon/diameter", diameter);
+		domain_size = VINT(diameter, sin(M_PI/3)*diameter, 1);
+	}
+	cout << "Domain size " << domain_size << endl;
+}
+
+void Domain::init(Lattice* l) {
+	lattice = l;
+	if (type == image) {
+		VINT lattice_size = max(lattice->size(), domain_size);
+		image_offset = max((lattice_size - image_size) /2, VINT(0,0,0));
+	}
+	else if (type == circle) {
 		VINT lattice_size = max(lattice->from_orth(domain_size), lattice->size());
-		if (lattice_size != lattice->size()) {
-			cout << "Domain: overriding lattice size with domain size " << lattice_size << endl;
-			lattice->setSize(lattice_size);
-		}
 		center = lattice_size / 2;
 		if (lattice->structure == Lattice::Structure::hexagonal && lattice->get_boundary_type(Boundary::mx) == Boundary::periodic) {
 			center.x -= center.y/2;
 		}
 	}
-	else if (xNode.nChildNode("Hexagon")) {
-		type = hexagon;
-		getXMLAttribute(xNode, "Hexagon/diameter", diameter);
-		domain_size = VDOUBLE(diameter, sin(M_PI/3)*diameter, 1);
-		
+	else if (type == hexagon) {
 		VINT lattice_size = max(lattice->from_orth(domain_size), lattice->size());
-		if (lattice_size != lattice->size()) {
-			cout << "Domain: overriding lattice size with domain size " << lattice_size << endl;
-			lattice->setSize(lattice_size);
-		}
 		center = lattice_size / 2;
 		if (lattice->structure == Lattice::Structure::hexagonal && lattice->get_boundary_type(Boundary::mx) == Boundary::periodic) {
 			center.x -= center.y/2;
@@ -158,7 +153,7 @@ bool Domain::insideHexagonalDomain(const VINT& a) const
 	VDOUBLE r = lattice->to_orth(lattice->node_distance(a,center));
 	r.z=0;
 	auto size = domain_size/2;
-	if ( abs(r.y) <= size.y && (abs(r.x) <= (size.x-abs(r.y)/sin(M_PI/3)/2)))
+	if ( abs(r.y) <= size.y && (abs(r.x) <= (size.x-abs(r.y)/sin(M_PI/3)/2) + 0.01))
 		return true;
 	return false;
 }

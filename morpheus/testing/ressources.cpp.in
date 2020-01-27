@@ -1,0 +1,10 @@
+#include <map>
+#include <string>
+#include "model_test.h"
+
+@RESSOURCE_INCLUDES@
+
+RessourceManager ressources {
+	@RESSOURCE_FILE_DESCRIPTORS@
+};
+

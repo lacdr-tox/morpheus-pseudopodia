@@ -122,6 +122,7 @@ namespace SIM {
 	
 	string getLengthScaleUnit();
 	double getLengthScaleValue();
+	Lattice::Structure getLatticeStructure();
 	shared_ptr<const Lattice> getLattice();
 	const Lattice& lattice();
 	
@@ -138,8 +139,9 @@ namespace SIM {
 	void saveToXML();
 	
    /// Get the global Scope. All other scopes are direct or indirect sub-scopes of the global scope.
-	const Scope* getGlobalScope();
-
+	Scope* getGlobalScope();
+	
+	void wipe();
 	
 	/// \brief Find a globally accessible Symbol (global scope)
 	template <class S>

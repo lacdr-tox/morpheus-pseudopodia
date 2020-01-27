@@ -153,27 +153,11 @@ uint nSurfaces(const VINT& pos) {
 
 
 void loadFromXML(XMLNode xMorph, Scope* local_scope) {
+	
 	scope = local_scope;
+	
 	if ( ! xMorph.getChildNode("CellTypes").isEmpty() ) 
 		loadCellTypes(xMorph.getChildNode("CellTypes"));
-	
-	boundary_neighborhood = SIM::lattice().getDefaultNeighborhood();
-	CPMShape::boundaryNeighborhood = boundary_neighborhood;
-	
-// 	if (SIM::lattice().getStructure() == Lattice::square)
-// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(2);
-// 	else if (SIM::lattice().getStructure() == Lattice::hexagonal)
-// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
-// 	else if (SIM::lattice().getStructure() == Lattice::cubic)
-// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(3);
-// 	else if (SIM::lattice().getStructure() == Lattice::linear)
-// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
-	
-	surface_neighborhood = SIM::lattice().getDefaultNeighborhood();
-	
-	if ( surface_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && surface_neighborhood.order()>5)) {
-		throw string("Default neighborhood is too large for estimation of cell surface nodes");
-	}
 	
 	// look for a medium type in predefined celltypes, or create one ...
 	if ( ! celltypes.empty()) {
@@ -195,98 +179,24 @@ void loadFromXML(XMLNode xMorph, Scope* local_scope) {
 				break;
 			}
 		}
-
-		EmptyState.cell_id = celltypes[EmptyCellType]->createCell(); // make sure the the medium contains the cell representing the medium
 	}
 	
 	if ( ! xMorph.getChildNode("CPM").isEmpty() ) {
 		xCPM = xMorph.getChildNode("CPM");
-		try {
-			// CPM Cell representation requires the definition of the CPM ShapeSurface for shape length estimations
-			boundary_neighborhood = SIM::lattice().getNeighborhood(xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood"));
-			if ( boundary_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && boundary_neighborhood.order()>5)) {
-				throw string("Shape neighborhood is too large");
-			}
-			CPMShape::boundaryNeighborhood = boundary_neighborhood;
-		} 
-		catch (string e) { 
-			throw MorpheusException(e, xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood"));
-		}
-		string boundary_scaling;
-		if (getXMLAttribute(xCPM,"ShapeSurface/scaling",boundary_scaling)) {
-			if (boundary_scaling == "none") {
-				CPMShape::scalingMode = CPMShape::BoundaryScalingMode::None;
-			}
-			else if (boundary_scaling == "norm") {
-				CPMShape::scalingMode = CPMShape::BoundaryScalingMode::Magno;
-			}
-			else if (boundary_scaling == "size") {
-				CPMShape::scalingMode = CPMShape::BoundaryScalingMode::NeigborNumber;
-			}
-			else if (boundary_scaling == "magno") {
-				CPMShape::scalingMode = CPMShape::BoundaryScalingMode::Magno;
-			}
-		}
-		
 		// CPM time evolution is defined by a MonteCarlo simulation based on the a Hamiltionian and the metropolis kintics
 		if ( ! xCPM.getChildNode("MonteCarloSampler").isEmpty() ) {
 			cpm_sampler =  shared_ptr<CPMSampler>(new CPMSampler());
 			cpm_sampler->loadFromXML(xCPM, scope);
 // 			time_per_mcs.set( cpm_sampler->timeStep() );
-			update_neighborhood = cpm_sampler->getUpdateNeighborhood();
+
 		}
 		
 		enabled = true;
 		
 	}
+	
 	if ( ! xMorph.getChildNode("CellPopulations").isEmpty()) {
 		xCellPop = xMorph.getChildNode("CellPopulations");
-	}
-	
-	if ( ! celltypes.empty()) {
-		cout << "Creating cell layer ";
-   
-		InitialState = EmptyState;
-		cout << "with initial state set to CellType \'" << celltypes[EmptyCellType]->getName() << "\'" << endl;
-
-		layer = shared_ptr<LAYER>(new LAYER(SIM::getLattice(), 3, InitialState, "cpm") );
-		assert(layer);
-		
-		// Setting up lattice boundaries
-		if (! xCellPop.isEmpty()) {
-			layer->loadFromXML( xCellPop, make_shared<BoundaryReader>());
-		}
-		
-		// Setting the initial state
-		VINT size = SIM::lattice().size();
-		for (InitialState.pos.z=0; InitialState.pos.z<size.z; InitialState.pos.z++)
-			for (InitialState.pos.y=0; InitialState.pos.y<size.y; InitialState.pos.y++)
-				for (InitialState.pos.x=0; InitialState.pos.x<size.x; InitialState.pos.x++)
-// 					if (cpm_layer->writable(InitialState.pos))
-						layer->set(InitialState.pos, InitialState);
-
-		// Creating a default global update template
-		global_update_data.boundary = unique_ptr<StatisticalLatticeStencil>(new StatisticalLatticeStencil(layer, boundary_neighborhood.neighbors()));
-		global_update_data.surface = unique_ptr<LatticeStencil>(new LatticeStencil(layer, surface_neighborhood.neighbors()));
-		if ( ! update_neighborhood.empty() ) {
-			if (update_neighborhood.neighbors() == surface_neighborhood.neighbors()) {
-				global_update_data.update = global_update_data.surface;
-			}
-			else {
-				global_update_data.update = make_unique<LatticeStencil>(layer, update_neighborhood.neighbors());
-			}
-			// Setting up the EdgeTracker
-			edgeTracker = shared_ptr<EdgeTrackerBase>(new NoEdgeTracker(layer, update_neighborhood.neighbors(), surface_neighborhood.neighbors()));
-		}
-		else {
-			edgeTracker = shared_ptr<EdgeTrackerBase>(new NoEdgeTracker(layer, surface_neighborhood.neighbors(), surface_neighborhood.neighbors()));
-		}
-		
-	}
-	else {
-		global_update_data.boundary = 0;
-		global_update_data.update = 0;
-		global_update_data.surface = 0;
 	}
 	
 }
@@ -343,7 +253,101 @@ void loadCellTypes(XMLNode xCellTypesNode) {
 }
 
 void init() {
+	boundary_neighborhood = SIM::lattice().getDefaultNeighborhood();
+	CPMShape::boundaryNeighborhood = boundary_neighborhood;
+	
+// 	if (SIM::lattice().getStructure() == Lattice::square)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(2);
+// 	else if (SIM::lattice().getStructure() == Lattice::hexagonal)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
+// 	else if (SIM::lattice().getStructure() == Lattice::cubic)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(3);
+// 	else if (SIM::lattice().getStructure() == Lattice::linear)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
+	
+	surface_neighborhood = SIM::lattice().getDefaultNeighborhood();
+	
 
+	if ( surface_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && surface_neighborhood.order()>5)) {
+		throw string("Default neighborhood is too large for estimation of cell surface nodes");
+	}
+	if ( enabled ) {
+		try {
+			// CPM Cell representation requires the definition of the CPM ShapeSurface for shape length estimations
+			boundary_neighborhood = SIM::lattice().getNeighborhood(xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood"));
+			if ( boundary_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && boundary_neighborhood.order()>5)) {
+				throw string("Shape neighborhood is too large");
+			}
+			CPMShape::boundaryNeighborhood = boundary_neighborhood;
+		} 
+		catch (string e) { 
+			throw MorpheusException(e, xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood"));
+		}
+		string boundary_scaling;
+		if (getXMLAttribute(xCPM,"ShapeSurface/scaling",boundary_scaling)) {
+			if (boundary_scaling == "none") {
+				CPMShape::scalingMode = CPMShape::BoundaryScalingMode::None;
+			}
+			else if (boundary_scaling == "norm") {
+				CPMShape::scalingMode = CPMShape::BoundaryScalingMode::Magno;
+			}
+			else if (boundary_scaling == "size") {
+				CPMShape::scalingMode = CPMShape::BoundaryScalingMode::NeigborNumber;
+			}
+			else if (boundary_scaling == "magno") {
+				CPMShape::scalingMode = CPMShape::BoundaryScalingMode::Magno;
+			}
+		}
+	}
+	
+	if ( ! celltypes.empty()) {
+		cout << "Creating cell layer ";
+		// make sure the the medium contains the cell representing the medium
+		EmptyState.cell_id = celltypes[EmptyCellType]->createCell(); 
+		InitialState = EmptyState;
+		
+		cout << "with initial state set to CellType \'" << celltypes[EmptyCellType]->getName() << "\'" << endl;
+
+		layer = shared_ptr<LAYER>(new LAYER(SIM::getLattice(), 3, InitialState, "cpm") );
+		assert(layer);
+		
+		// Setting up lattice boundaries
+		if (! xCellPop.isEmpty()) {
+			layer->loadFromXML( xCellPop, make_shared<BoundaryReader>());
+		}
+		
+		// Setting the initial state
+		VINT size = SIM::lattice().size();
+		for (InitialState.pos.z=0; InitialState.pos.z<size.z; InitialState.pos.z++)
+			for (InitialState.pos.y=0; InitialState.pos.y<size.y; InitialState.pos.y++)
+				for (InitialState.pos.x=0; InitialState.pos.x<size.x; InitialState.pos.x++)
+// 					if (cpm_layer->writable(InitialState.pos))
+						layer->set(InitialState.pos, InitialState);
+
+		// Creating a default global update template
+		global_update_data.boundary = unique_ptr<StatisticalLatticeStencil>(new StatisticalLatticeStencil(layer, boundary_neighborhood.neighbors()));
+		global_update_data.surface = unique_ptr<LatticeStencil>(new LatticeStencil(layer, surface_neighborhood.neighbors()));
+		if ( ! update_neighborhood.empty() ) {
+			if (update_neighborhood.neighbors() == surface_neighborhood.neighbors()) {
+				global_update_data.update = global_update_data.surface;
+			}
+			else {
+				global_update_data.update = make_unique<LatticeStencil>(layer, update_neighborhood.neighbors());
+			}
+			// Setting up the EdgeTracker
+			edgeTracker = shared_ptr<EdgeTrackerBase>(new NoEdgeTracker(layer, update_neighborhood.neighbors(), surface_neighborhood.neighbors()));
+		}
+		else {
+			edgeTracker = shared_ptr<EdgeTrackerBase>(new NoEdgeTracker(layer, surface_neighborhood.neighbors(), surface_neighborhood.neighbors()));
+		}
+		
+	}
+	else {
+		global_update_data.boundary = 0;
+		global_update_data.update = 0;
+		global_update_data.surface = 0;
+	}
+	
 	loadCellPopulations();
 
 	// Init the CellTypes and their (CPM) Plugins
@@ -591,7 +595,7 @@ void setUpdate(CPM::Update& update) {
 	
 }
 
-void finish() {
+void wipe() {
 	celltypes.clear();
 	celltype_names.clear();
 	cpm_sampler.reset();

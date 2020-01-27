@@ -2,12 +2,6 @@
 
 REGISTER_PLUGIN(Mapper);
 
-// Plugin* Mapper::createInstance() { return new CellReporter(); }
-// bool CellReporter::factory_registration =
-// 	PluginFactory::RegisterCreatorFunction("CellReporter", CellReporter::createInstance ) &&
-// 	PluginFactory::RegisterCreatorFunction("Mapping", CellReporter::createInstance );
-
-
 
 Mapper::Mapper() {
 	input->setXMLPath("Input/value");

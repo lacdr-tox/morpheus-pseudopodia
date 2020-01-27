@@ -266,7 +266,8 @@ private:
 			auto& f = this->flags();
 			f = of;
 			f.space_const = false;
-			initialized=true;
+			f.function = false;
+			initialized = true;
 		}
 		else {
 			auto& f = this->flags();

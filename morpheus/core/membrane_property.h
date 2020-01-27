@@ -155,6 +155,11 @@ public:
 	
 	void set(const SymbolFocus & f, double val) const override { getProperty(f)->membrane_pde->set(f.membrane_pos(),val); };
 	
+	void setInitializer(shared_ptr<ExpressionEvaluator<double>> initializer, SymbolFocus f) const {
+		auto p = getProperty(f)->membrane_pde;
+		p->setInitializer( initializer );
+	}
+		
 	void setBuffer(const SymbolFocus & f, double val) const override { getProperty(f)->membrane_pde->setBuffer(f.membrane_pos(),val); }
 	
 	void applyBuffer() const override;

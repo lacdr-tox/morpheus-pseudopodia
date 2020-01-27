@@ -166,11 +166,13 @@ void init() {
  */
 class Plugin {
 	private:
+		
 		vector<PluginParameterBase* > plugin_parameters2;
 		set<SymbolDependency> input_symbols;
 		// All writable symbols are solely registered as output Symbols
 		set<SymbolDependency> output_symbols;
 		set<Symbol> direct_input_symbols;
+		
 		
 	protected:
 		string plugin_name;
@@ -178,11 +180,16 @@ class Plugin {
 		const Scope* local_scope;
 		
 	public:
-		Plugin() : plugin_name(""), local_scope(nullptr) {  Plugin::plugins_alive++; }
-		virtual  ~Plugin() { Plugin::plugins_alive--; };  // any plugin will have a virtual destructor though
+		
+		Plugin();
+		virtual  ~Plugin();  // any plugin will have a virtual destructor though
 
-// 		static multiset<string> plugins_alive;
-		static int plugins_alive;
+		typedef ClassFactory<string, Plugin> Factory;
+		static Factory& getFactory();
+		
+		// TODO: Some forwarding to accomodate the old interface should be removed one day
+		static bool RegisterCreatorFunction(string name, Factory::CreatorFunction creator) { return getFactory().Register(name, creator); }
+		static Factory::InstancePtr CreateInstance(string name) { return getFactory().CreateInstance(name); }
 		/// Get an XMLNode containing the XML specification the plugin has loaded
 		virtual XMLNode saveToXML() const;
 		
@@ -231,8 +238,10 @@ class Plugin {
 		set<SymbolDependency> getOutputSymbols() const;
 };
 
-typedef CClassFactory<string, Plugin> PluginFactory;
+// typedef StaticClassFactory<string, Plugin> PluginFactory;
+typedef Plugin PluginFactory;
 
+		
 /** This macro creates all the declaration (class header) needed for plugin system integration.
  *  The string @param xml_tag_name defines the tag used to identify the plugin.
  *  Use this macro alongside with REGISTER_PLUGIN.
@@ -242,10 +251,11 @@ static Plugin* createInstance(); \
 string XMLName() const override { return string(xml_tag_name); }; \
 static string FactoryName() { return string(xml_tag_name); };
 
+
 template <class PluginClass>
 bool registerPlugin() {
-	bool ret=PluginFactory::RegisterCreatorFunction(PluginClass::FactoryName(), PluginClass::createInstance );
-	return ret;
+	static_assert(is_convertible<PluginClass*,Plugin*>::value, "Only descendants of class Plugin can be registered");
+	return Plugin::getFactory().Register( PluginClass::FactoryName(), PluginClass::createInstance );
 }
 
 /** This macro creates all the definitions (class source) needed for plugin system integration.
@@ -253,7 +263,8 @@ bool registerPlugin() {
  *  Use this macro alongside with DECLARE_PLUGIN.
  */
 #define REGISTER_PLUGIN(PClass) Plugin* PClass::createInstance() { return new PClass(); } \
-bool PClass::factory_registration = registerPlugin<PClass>(); /* PluginFactory::RegisterCreatorFunction(PClass().XMLName(),PClass::createInstance) */
+bool PClass::factory_registration = registerPlugin<PClass>();
+
 
 
 /** \defgroup CPM_EnergyPlugins CPM Hamiltonian Plugins

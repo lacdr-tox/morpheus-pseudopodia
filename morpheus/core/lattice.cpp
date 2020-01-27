@@ -1,6 +1,7 @@
 #include "lattice.h"
+#include "scope.h"
+#include "lattice_plugin.h"
 #include "random_functions.h"
-
 
 
 
@@ -29,9 +30,7 @@ Neighborhood::Neighborhood(const vector< VINT >& neighbors, int order, const Lat
 		d = d > _distance ? d : _distance;
 	}
 }
-	
-	
-	
+
 
 Lattice::Lattice() {
 // set default boundary conditions
@@ -43,10 +42,32 @@ Lattice::Lattice() {
 Lattice::Lattice(const Lattice::LatticeDesc& desc) : Lattice()
 {
 	for (auto const & bdry : desc.boundaries) {
-		boundaries[bdry.first] = bdry.second;
+		if (bdry.second != Boundary::periodic) {
+			boundaries[bdry.first] = bdry.second;
+		} 
+		else {
+			switch (bdry.first) {
+					case Boundary::mx :
+					case Boundary::px :
+						boundaries[Boundary::px] = Boundary::periodic;
+						boundaries[Boundary::mx] = Boundary::periodic;
+						break;
+					case Boundary::my :
+					case Boundary::py :
+						boundaries[Boundary::py] = Boundary::periodic;
+						boundaries[Boundary::my] = Boundary::periodic;
+						break;
+					case Boundary::mz :
+					case Boundary::pz :
+						boundaries[Boundary::pz] = Boundary::periodic;
+						boundaries[Boundary::mz] = Boundary::periodic;
+						break;
+				}
+		}
 	}
+	
 	_size = desc.size;
-	default_neighborhood = getNeighborhoodByOrder(desc.neighborhood_order);
+	domain = desc.domain;
 }
 
 
@@ -66,108 +87,11 @@ unique_ptr<Lattice> Lattice::createLattice(const Lattice::LatticeDesc& desc)
 	}
 }
 
-
-void Lattice::loadFromXML(const XMLNode xnode) {
-// 	VINT xml_size, domain_size;
-	
-	stored_node = xnode;
-	
-	VINT s;
-	getXMLAttribute(xnode, "Size/value", s);
-	setSize(s);
-	
-	// set default boundary conditions
-	// relevant boudaries are set to 'periodic'
-	// other boundaries (i.e. -z and z in 1D and 2D models) are set to noflux
-	//  the latter solves a plotting problem with cells
-	for (uint i=0; i<Boundary::nCodes; i++){
-		if(i < getDimensions()*2)
-			boundaries[i] = Boundary::periodic;
-		else
-			boundaries[i] = Boundary::noflux;
-	}
-
-	if (xnode.nChildNode("BoundaryConditions")) {
-		XMLNode xbcs = xnode.getChildNode("BoundaryConditions");
-		for (int i=0; i< xbcs.nChildNode("Condition"); i++) {
-			XMLNode xbc = xbcs.getChildNode("Condition",i);
-			string code_name;
-			if (! getXMLAttribute(xbc, "boundary",code_name)) 
-				throw string("No boundary in BoundaryCondition");
-			Boundary::Codes code = Boundary::name_to_code(code_name);
-
-			string type_name;
-			if ( ! getXMLAttribute(xbc, "type", type_name) )
-				throw(string("No boundary type defined in BoundaryCondition"));
-			Boundary::Type boundary_type = Boundary::name_to_type(type_name);
-
-			
-			bool set_opposite = (boundary_type == Boundary::periodic || boundaries[code] == Boundary::periodic );
-			
-			boundaries[code] = boundary_type;
-			if (set_opposite) {
-				switch (code) {
-					case Boundary::mx :
-						boundaries[Boundary::px] = boundary_type; break;
-					case Boundary::px :
-						boundaries[Boundary::mx] = boundary_type; break;
-					case Boundary::my :
-						boundaries[Boundary::py] = boundary_type; break;
-					case Boundary::py :
-						boundaries[Boundary::my] = boundary_type; break;
-					case Boundary::mz :
-						boundaries[Boundary::pz] = boundary_type; break;
-					case Boundary::pz :
-						boundaries[Boundary::mz] = boundary_type; break;
-				}
-			}
-		}
-	}
-	
-	if (xnode.nChildNode("Domain")) {
-		domain.loadFromXML(xnode.getChildNode("Domain"), this);
-	} 
-	if (_size.abs() == 0) {
-		throw string("undefined lattice size");
-	}
-	
-	if (xnode.nChildNode("Neighborhood")) {
-		setNeighborhood(xnode.getChildNode("Neighborhood"));
-	}
-	else {
-		default_neighborhood = getNeighborhoodByOrder(1);
-		neighborhood_type = "Order";
-		neighborhood_value = "1";
-	}
-	
+void Lattice::init(const Scope* scope) {
+	if (domain)
+		domain->init(this);
 }
 
-
-XMLNode Lattice::saveToXML() {
-
-// 	XMLNode xLattice = XMLNode::createXMLTopNode("Lattice");
-// 	xLattice.addChild("Size").addAttribute("value",to_cstr(_size));
-// 	xLattice.addAttribute("class",getXMLName().c_str());
-// 	XMLNode xNode = XMLNode::createXMLTopNode("BoundaryConditions");
-// 	for (uint i=0; i<Boundary::nCodes; i++) {
-// 		XMLNode xCond = xNode.addChild("Condition");
-// 		xCond.addAttribute("boundary", Boundary::code_to_name(Boundary::Codes(i)).c_str());
-// 		xCond.addAttribute("type", Boundary::type_to_name(boundaries[i]).c_str());
-// 	}
-// 	if (xNode.nChildNode())
-// 		xLattice.addChild(xNode);
-// 	xLattice.addChild("Neighborhood").addChild(neighborhood_type.c_str()).addText(neighborhood_value.c_str());
-	return stored_node;
-}
- 
-// std::unique_ptr<BoundaryConstraint> Lattice::getConstraint(const XMLNode xNode) const {
-// 	if (xNode.getName() == string("BoundaryCondition") || xNode.getName() == string("Condition") ) {
-// 		std::unique_ptr<BoundaryConstraint> bc (new BoundaryConstraint(this, xNode));
-// 		return bc;
-// 	};
-// 	assert(0);
-// 	return std::unique_ptr<BoundaryConstraint>();
-// }
 
 VINT Lattice::setSize(const VINT& a) { 
 	_size.x =  max(a.x,1);
@@ -238,29 +162,19 @@ void Lattice::setNeighborhood(const XMLNode node) {
 	default_neighborhood = getNeighborhood(node);
 }
 
+Neighborhood  Lattice::getNeighborhood(const NeighborhoodDesc& desc) const {
+	switch (desc.mode) {
+		case NeighborhoodDesc::Order :
+			return getNeighborhoodByOrder( desc.order );
+		case NeighborhoodDesc::Distance :
+			return getNeighborhoodByDistance(desc.distance);
+		case NeighborhoodDesc::Name :
+			return getNeighborhoodByName(desc.name);
+	}
+}
+
 Neighborhood Lattice::getNeighborhood(const XMLNode node) const {
-	if ( node.nChildNode("Distance") ) {
-		double distance;
-		getXMLAttribute(node,"Distance/text",distance);
-		if( distance == 0 ){
-		  throw string("Neighborhood/Distance must be greater than 0.");
-		}
-		return getNeighborhoodByDistance( distance );
-	}
-	else if ( node.nChildNode("Order") ) {
-		int order;
-		getXMLAttribute(node,"Order/text",order);
-		if( order == 0 ){
-		  throw string("Neighborhood/Order must be greater than 0.");
-		}
-		return getNeighborhoodByOrder( order );
-	}
-	else if ( node.nChildNode("Name") &&  node.getChildNode("Name").getText()) {
-		return getNeighborhood( string(node.getChildNode("Name").getText()) );
-	}
-	else {
-		throw string("Unknown neighborhood definition in ") + node.getName();
-	}
+	return getNeighborhood(LatticePlugin::parseNeighborhood(node));
 }
 
 Neighborhood Lattice::getNeighborhoodByDistance(const double dist_max) const  {
@@ -296,16 +210,6 @@ Neighborhood Lattice::getNeighborhoodByOrder(const uint order) const {
 	neighbors.resize(n_neighbors);
 	return Neighborhood(neighbors,order, this);
 }
-
-
-Hex_Lattice::Hex_Lattice(const XMLNode xNode) : Lattice() {
-	dimensions = 2;
-	structure = hexagonal;
-	_size = VINT(50,50,1);
-	loadFromXML(xNode);
-	_size.z = 1;
-	orth_size = VDOUBLE(_size.x, _size.y * sin_60, 1);
-};
 
 VDOUBLE Hex_Lattice::to_orth(const VDOUBLE& a) const {
 	return VDOUBLE(a.x+0.5*a.y, sin_60 * a.y,0);
@@ -349,26 +253,6 @@ VDOUBLE Hex_Lattice::orth_distance(const VDOUBLE& a, const VDOUBLE& b) const {
 	}
 	return c;
 }
-
-/* vector<VINT> Hex_Lattice::get_all_neighbors() const {
-	const VINT neighbors[] = {
-	// 1st order
-	VINT(1,0,0), VINT(0,1,0),  VINT(-1,1,0), VINT(-1,0,0), VINT(0,-1,0), VINT(1,-1,0),
-	// 2nd order
-	VINT(1,1,0), VINT(-1,-1,0),VINT(2,-1,0), VINT(1,-2,0), VINT(-2,1,0), VINT(-1,2,0),
-	// 3rd order
-	VINT(2,0,0), VINT(-2,0,0),VINT(0,2,0), VINT(0,-2,0), VINT(-2,2,0), VINT(2,-2,0),
-	// 4th order
-	VINT(2,1,0), VINT(1,2,0),VINT(-1,3,0), VINT(-2,3,0), VINT(-3,2,0), VINT(-3,1,0),
-	VINT(-2,-1,0), VINT(-1,-2,0),VINT(1,-3,0), VINT(2,-3,0), VINT(3,-2,0), VINT(3,-1,0),
-	// 5th order
-	VINT(3,0,0), VINT(-3,0,0),VINT(0,3,0), VINT(0,-3,0), VINT(-3,3,0), VINT(3,-3,0)
-	};
-	
-	vector<VINT> acc(c_array_begin(neighbors), c_array_end(neighbors));
-	return acc;
-}; */
-
 
 vector<VINT> Hex_Lattice::get_all_neighbors() const {
 	const VINT neighbors[] = {
@@ -450,14 +334,6 @@ VINT Orth_Lattice::from_orth(const VDOUBLE& a) const {
 	return VINT(round(a.x), round(a.y) , round(a.z));
 }
 
-Cubic_Lattice::Cubic_Lattice(const XMLNode xNode) : Orth_Lattice(xNode) {
-	structure = cubic;
-	dimensions = 3;
-	_size = VINT(50,50,20);
-	loadFromXML(xNode);
-}
-
-
 vector<VINT> Cubic_Lattice::get_all_neighbors() const {
 const VINT neighbors[] = {
 	//Flächennnachbarn
@@ -537,29 +413,18 @@ Neighborhood Cubic_Lattice::getNeighborhoodByName(std::string name) const {
 
 
 Square_Lattice* Square_Lattice::create(VINT resolution, bool spherical) {
-        XMLNode xLattice = XMLNode::createXMLTopNode("Lattice");
-        xLattice.addChild("Size").addAttribute("value",to_cstr(resolution));
-        if  (spherical) {
-                XMLNode xBoundary = xLattice.addChild("BoundaryConditions");
-                XMLNode xCondition = xBoundary.addChild("Condition");
-                xCondition.addAttribute("boundary","x");
-                xCondition.addAttribute("type","periodic");
-                XMLNode yCondition = xBoundary.addChild("Condition");
-                yCondition.addAttribute("boundary","y");
-                yCondition.addAttribute("type","noflux");
-                yCondition = xBoundary.addChild("Condition");
-                yCondition.addAttribute("boundary","-y");
-                yCondition.addAttribute("type","noflux");
-        }
-        return new Square_Lattice(xLattice);
-}
-
-Square_Lattice::Square_Lattice(const XMLNode xnode) : Orth_Lattice(xnode) {
-	structure = square;
-	dimensions = 2;
-	_size = VINT (50,50,1);
-	loadFromXML(xnode);
-	_size.z = 1;
+	LatticeDesc desc;
+	desc.structure = square;
+	desc.size = resolution;
+	desc.default_neighborhood.mode = NeighborhoodDesc::Order;
+	desc.default_neighborhood.order = 1;
+	if (spherical) {
+		desc. boundaries[Boundary::mx]=Boundary::periodic;
+		desc. boundaries[Boundary::px]=Boundary::periodic;
+		desc. boundaries[Boundary::my]=Boundary::noflux;
+		desc. boundaries[Boundary::py]=Boundary::noflux;
+	}
+	return new Square_Lattice(desc);
 }
 
 vector<VINT> Square_Lattice::get_all_neighbors() const {
@@ -592,27 +457,17 @@ std::vector<int> Square_Lattice::get_all_neighbors_per_order() const {
 	return acc;	
 };
 
-Linear_Lattice::Linear_Lattice(const XMLNode xNode): Orth_Lattice(xNode)
-{
-	dimensions=1;
-	structure = linear;
-	_size=VINT(100,1,1);
-	loadFromXML(xNode);
-	_size.y=1;
-	_size.z=1;
-}
 
 
 Linear_Lattice* Linear_Lattice::create(VINT resolution, bool periodic) {
-	XMLNode xLattice = XMLNode::createXMLTopNode("Lattice");
-	xLattice.addChild("Size").addAttribute("value",to_cstr(resolution));
-	if  (periodic) {
-		XMLNode xBoundary = xLattice.addChild("BoundaryConditions");
-		XMLNode xCondition = xBoundary.addChild("Condition");
-		xCondition.addAttribute("boundary","x");
-		xCondition.addAttribute("type","periodic");
+	LatticeDesc desc;
+	desc.structure = linear;
+	desc.size = resolution;
+	if (periodic) {
+		desc.boundaries[Boundary::mx] = Boundary::periodic;
+		desc.boundaries[Boundary::px] = Boundary::periodic;
 	}
-	return new Linear_Lattice(xLattice);
+	return new Linear_Lattice(desc);
 }
 
 
@@ -632,4 +487,5 @@ vector< int > Linear_Lattice::get_all_neighbors_per_order() const {
 	std::vector<int> acc(c_array_begin(neighbors), c_array_end(neighbors));
 	return acc;	 
 }
+
 

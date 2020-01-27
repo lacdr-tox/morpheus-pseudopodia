@@ -46,6 +46,7 @@ class TimeScheduler {
 	
 private:
 	TimeScheduler();
+	static unique_ptr<TimeScheduler> sched;
 	static TimeScheduler& getInstance();
 	vector<TimeStepListener *> all_listeners;
 	vector<ContinuousProcessPlugin *> continuous;
@@ -75,17 +76,21 @@ public:
 	static void loadFromXML(XMLNode xTime, Scope* scope);
 	static XMLNode saveToXML();
 
-	static void init();
+	static void init(Scope* scope);
 	/// compute until time 
 	static void compute();
 	
 	static void finish();
+	
+	static void wipe();
 	
 	static double getTime() { return getInstance().current_time; };
 	static string getTimeScaleUnit() { return getInstance().stop_time.getTimeScaleUnit(); };
 // 	static double getTimeScaleValue() ;
 	static double getStartTime() { return getInstance().start_time(); };
 	static double getStopTime() { return getInstance().stop_time(); };
+	/// Set the stop time in atu
+	static void setStopTime(double t) { getInstance().stop_time.set(t); }
 };
 
 	// TODO: This shall become getTimeString

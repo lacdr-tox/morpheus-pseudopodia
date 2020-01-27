@@ -50,7 +50,6 @@ public:
 	
 	ExpressionEvaluator(const ExpressionEvaluator<T> & other, shared_ptr<EvaluatorCache> cache = shared_ptr<EvaluatorCache>()); //!< copy constructor
 	
-	
 	/**  \brief Set the list of local variables to be used for expression evaluation. 
 	 * 
 	 *   These local variables must be set separately and override symbols from the scope.
@@ -87,6 +86,8 @@ public:
 	/// Parse the expresion and bind to the external symbol via an \ref EvaluatorCache
 	void init();
 	
+	/// In case of T=VDOUBLE assume radial coordinates  phi, theta, r are given
+	void setRadial(bool radial=true);
 	/// \brief Mmetadata of the expression
 	const SymbolBase::Flags& flags() const {
 		if (!initialized )
@@ -119,6 +120,7 @@ private:
 	string expression;
 	string clean_expression;
 	bool allow_partial_spec;
+	bool is_radial;
 	
 	bool initialized = false;
 	mutable bool expr_is_const;
@@ -181,7 +183,7 @@ public:
 	uint addNameSpaceScope(const string& ns_name, const Scope* scope) { uint id=0; for (auto& evaluator : evaluators) id = evaluator->addNameSpaceScope(ns_name, scope); return id; }
 	set<Symbol> getNameSpaceUsedSymbols(uint ns_id) const { return evaluators[0]->getNameSpaceUsedSymbols(ns_id); }
 	void setNameSpaceFocus(uint ns_id, const SymbolFocus& f) const { getEvaluator()->setNameSpaceFocus(ns_id, f); }
-	
+	void setRadial(bool radial=true) { getEvaluator()->setRadial(radial); } 
 	void setLocals(const double* data) const { getEvaluator()->setLocals(data); }
 	int getLocalsCount() const { return evaluators[0]->getLocalsCount(); } 
 	
@@ -283,6 +285,14 @@ ExpressionEvaluator<T>::ExpressionEvaluator(const ExpressionEvaluator<T> & other
 	
 }
 
+
+template <class T>
+void ExpressionEvaluator<T>::setRadial(bool radial) { 
+	if (initialized)
+		throw string("ExpressionEvaluator<VDOUBLE>::setRadial called after initialization");
+	is_radial = radial;
+}
+
 template <class T>
 void ExpressionEvaluator<T>::init()
 {
@@ -320,6 +330,8 @@ void ExpressionEvaluator<T>::init()
 		if (symbol->flags().function) {
 			// DefineFun with the generic callback interface
 			auto fun_symbol = dynamic_pointer_cast<const FunctionAccessor<double> >(symbol);
+			if (!fun_symbol) 
+				throw string("Symbol ") + symbol->name() + " Flagged function but is no FunctionAccessor<double> but " + symbol->linkType() ;
 			parser->DefineFun(
 				symbol->name(),
 				fun_symbol->getCallBack(),

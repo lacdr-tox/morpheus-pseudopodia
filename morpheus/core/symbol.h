@@ -194,6 +194,8 @@ public:
 			this->flags().time_const = true;
 			this->flags().space_const = true;
 		};
+	/// Simplified interface for space-independent Symbols
+	typename TypeInfo<T>::SReturn get() const { return value; };
 	typename TypeInfo<T>::SReturn get(const SymbolFocus&) const override { return value; };
 	const string& description() const override { return descr; }
 	std::string linkType() const override { return "PrimitiveConstant"; }
@@ -236,7 +238,11 @@ class PrimitiveVariableSymbol : public SymbolRWAccessorBase<T> {
 public:
 	PrimitiveVariableSymbol(string name, string description, const T& value) : SymbolRWAccessorBase<T>(name),
 		descr(description), value(value) {};
+	/// Simplified interface for space-independent Symbols
+	typename TypeInfo<T>::SReturn get() const { return value; };
 	typename TypeInfo<T>::SReturn get(const SymbolFocus&) const override { return value; };
+	/// Simplified interface for space-independent Symbols
+	void set(typename TypeInfo<T>::Parameter val) const { value = val; };
 	void set(const SymbolFocus&, typename TypeInfo<T>::Parameter val) const override { value = val; };
 	void setBuffer(const SymbolFocus& f, typename TypeInfo<T>::Parameter value) const override { buffer = value; }
 	void applyBuffer() const override { value = buffer; };

@@ -206,10 +206,10 @@ public:
 	set< SymbolDependency > getDependSymbols();
 	set< SymbolDependency > getOutputSymbols();
 	bool adaptive() const;
+	double timeStep() { return solver_spec.time_step / solver_spec.time_scaling; }
 	void setTimeStep(double ht);
 	void setSubStepHooks(const vector<ReporterPlugin*> hooks) { assert(sub_step_hooks.empty()); sub_step_hooks = hooks; this->init(); };
 	
-protected:
 	/// Compute Interface 
 	void computeToTarget(const SymbolFocus& f, bool use_buffer, vector<double>* buffer=nullptr);
 	void compute(const SymbolFocus& f);
@@ -221,6 +221,7 @@ protected:
 	void applyBuffer(const SymbolFocus& f);
 	void applyBuffer(const SymbolFocus& f, const vector<double>& buffer);
 	
+protected:
 	bool target_defined;
 	const Scope *target_scope;
 	Granularity target_granularity;
@@ -251,7 +252,7 @@ protected:
 /** @brief ContinuousSystem is a Solver for time continuous ODE systems that is thightly coupled to the TimeScheduler
  */
 
-class ContinuousSystem: public System, public ContinuousProcessPlugin {
+class ContinuousSystem: protected System, public ContinuousProcessPlugin {
 public:
 	DECLARE_PLUGIN("System");
 
@@ -263,7 +264,13 @@ public:
 	void executeTimeStep() override { System::applyContextBuffer(); };
 	void setTimeStep(double t) override { ContinuousProcessPlugin::setTimeStep(t); System::setTimeStep(t); };
 	void setSubStepHooks(const vector<ReporterPlugin*> hooks) { System::setSubStepHooks(hooks); }
-	const Scope* scope()  override{ return System::getLocalScope(); };
+	const Scope* scope()  override { return System::getLocalScope(); };
+	using System::adaptive;
+	using System::setSubStepHooks;
+	using System::getDependSymbols;
+	using System::getOutputSymbols;
+	
+	
 };
 
 /** @brief DiscreteSystem regularly applies a System on each individual in a context.

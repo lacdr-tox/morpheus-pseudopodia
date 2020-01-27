@@ -36,17 +36,19 @@ int LatticeStructureAdapter::getDimensions(QString structure)
 
 void LatticeStructureAdapter::structureChanged()
 {
-	bool changed= false;
-	
 	if (!a_structure) { qDebug() << "Structure Attribute already destroyed in LatticeStructureAdapter::structureChanged()"; return; }
 	if (!a_size) { qDebug() << "Size Attribute already destroyed in LatticeStructureAdapter::structureChanged()"; return; }
 	
 	int dimensions = getDimensions(a_structure->get());
-	QStringList lengths = a_size->get().split(QRegExp("[\\s,]+"));
-// 	qDebug() << "Got lattice size " << lengths;
-
-	if (lengths.size() < 3) {
-		lengths = stored_lengths;
+	QStringList lengths = a_size->get().split(QRegExp("[, ]"),QString::SkipEmptyParts);
+// 	qDebug() << "Got lattice size " << lengths << " and dimensions " << dimensions;
+	
+	bool changed = false;
+	if (a_size->get().count(',')!=2) 
+		changed = true;
+	if (lengths.size() !=3) {
+		while (lengths.size()<3) lengths.append(stored_lengths[lengths.size()-1]);
+		while (lengths.size()>3) lengths.removeLast();
 		changed = true;
 	}
 
@@ -79,19 +81,20 @@ void LatticeStructureAdapter::sizeChanged()
 	int dimensions = getDimensions(a_structure->get());
 
 	if (!a_size) { qDebug() << "Cannot convert size Attribute into SharedPoint in LatticeStructureAdapter::sizeChanged()"; return; }
-	QStringList lengths = a_size->get().split(QRegExp("[\\s,]+"));
-
+	QStringList lengths = a_size->get().split(QRegExp("[, ]"),QString::SkipEmptyParts);
+	
 	bool changed = false;
-
+	if (a_size->get().count(',')!=2) 
+		changed = true;
+	if (lengths.size() !=3) {
+		while (lengths.size()<3) lengths.append(stored_lengths[lengths.size()-1]);
+		while (lengths.size()>3) lengths.removeLast();
+		changed = true;
+	}
+	
 	for (uint dim=0; dim<3; dim++) {
 		if (dim < dimensions) {
-			if (lengths[dim].toInt() < 1) {
-				lengths[dim] = stored_lengths[dim];
-				changed = true;
-			}
-			else {
-				stored_lengths[dim] = lengths[dim];
-			}
+			stored_lengths[dim] = lengths[dim].trimmed();
 		}
 		else {
 			if (lengths[dim].toInt() != 0) {

@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MorpheusModel version="4">
+    <Description>
+        <Title>Directed motion test model</Title>
+        <Details></Details>
+    </Description>
+    <Global>
+        <ConstantVector symbol="move_dir" value="0.01, 0.0, 0.0"/>
+        <VariableVector symbol="velocity" value="0.0, 0.0, 0.0"/>
+        <Constant symbol="expected_msd_mean" value="10"/>
+        <Constant symbol="expected_msd_stddev" value="0.2"/>
+    </Global>
+    <Space>
+        <Lattice class="square">
+            <Size symbol="size" value="300 300 0"/>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+            <BoundaryConditions>
+                <Condition boundary="x" type="periodic"/>
+                <Condition boundary="y" type="periodic"/>
+            </BoundaryConditions>
+        </Lattice>
+        <SpaceSymbol symbol="space"/>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="1000"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <CellTypes>
+        <CellType class="biological" name="amoeba">
+            <VolumeConstraint target="200" strength="1"/>
+            <ConnectivityConstraint/>
+            <DirectedMotion direction="move_dir" strength="1"/>
+            <MotilityReporter time-step="1000.0">
+                <Velocity symbol-ref="velocity"/>
+                <Displacement symbol-ref="cell.center"/>
+            </MotilityReporter>
+        </CellType>
+        <CellType class="medium" name="medium"/>
+    </CellTypes>
+    <CPM>
+        <Interaction>
+            <Contact type1="amoeba" value="10" type2="medium"/>
+        </Interaction>
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1"/>
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+            <MetropolisKinetics temperature="0.6"/>
+        </MonteCarloSampler>
+        <ShapeSurface scaling="norm">
+            <Neighborhood>
+                <Distance>2.5</Distance>
+            </Neighborhood>
+        </ShapeSurface>
+    </CPM>
+    <CellPopulations>
+        <Population size="1" type="amoeba">
+            <InitCellObjects mode="distance">
+                <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
+                    <Sphere center="150.0, 150.0, 0.0" radius="8.0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+    </CellPopulations>
+    <Analysis>
+        <!--    <Disabled>
+        <Gnuplotter time-step="100">
+            <Plot>
+                <Cells/>
+            </Plot>
+            <Terminal name="png"/>
+        </Gnuplotter>
+    </Disabled>
+-->
+        <DependencyGraph reduced="false" format="svg"/>
+    </Analysis>
+</MorpheusModel>

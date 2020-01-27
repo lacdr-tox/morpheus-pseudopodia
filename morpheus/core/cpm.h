@@ -118,7 +118,7 @@ namespace CPM {
 	const Neighborhood& getSurfaceNeighborhood(); /// Returns the Neighborhood, that designates a node to be surface node, sorted counterclockwise
 	
 	/// release all data
-	void finish();
+	void wipe();
 	
 }
 

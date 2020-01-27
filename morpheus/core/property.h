@@ -43,7 +43,9 @@ public:
 	static  Plugin* createCellPropertyInstance() { return new Container<T>(Mode::CellProperty); };
 	
 	Container(Mode mode);
-	~Container() { if (_accessor && _accessor->scope()) const_cast<Scope*>(_accessor->scope())->removeSymbol(_accessor); }
+	~Container() { 
+		if (_accessor && _accessor->scope()) 
+			const_cast<Scope*>(_accessor->scope())->removeSymbol(_accessor); }
 	string XMLName() const override;
 	const string& getName() const { return name.isDefined() ? name() : symbol();}
 	const string& getSymbol() const { return symbol(); }
@@ -65,6 +67,7 @@ protected:
 	PluginParameter2<T,XMLEvaluator,RequiredPolicy> value;
 	PluginParameter2<string,XMLValueReader,RequiredPolicy> symbol;
 	PluginParameter2<string,XMLValueReader,OptionalPolicy> name;
+	PluginParameter2<bool,XMLValueReader,OptionalPolicy> spherical;
 	shared_ptr<SymbolBase> _accessor;
 };
 
@@ -90,8 +93,19 @@ public:
 		return make_shared< Property<T,V> >(*this);
 		
 	}
+	
+	void restoreData(XMLNode node) override { 
+		PrimitiveProperty<V>::restoreData(node);
+		initialized = true;
+	}
+	
 	void init(const SymbolFocus& f) override {
-		this->value = parent->getInitValue(f);
+		if (! initialized) {
+			if (initializer)
+				this->value = initializer->get(f);
+			else
+				this->value = parent->getInitValue(f);
+		}
 		initialized = true;
 	};
 	
@@ -109,6 +123,7 @@ public:
 
 // private:
 	bool initialized;
+	shared_ptr<ExpressionEvaluator<V>> initializer;
 	Container<T>* parent;
 };
 
@@ -180,6 +195,12 @@ class PropertySymbol : public PrimitivePropertySymbol<T> {
 			}
 			return p->value;
 		}
+		
+		void setInitializer(shared_ptr<ExpressionEvaluator<T>> initializer, SymbolFocus f) const {
+			auto p = getCellProperty(f);
+			p->initializer = initializer;
+		}
+		
 		void init() const { 
 			assert(this->celltype->default_properties.size()>this->property_id);
 			auto p = dynamic_pointer_cast<Property<T,T>>(this->celltype->default_properties[this->property_id]);
@@ -215,6 +236,8 @@ Container<T>::Container(Mode mode) : mode(mode), initialized(false) {
 	this->registerPluginParameter(symbol);
 	value.setXMLPath("value");
 	this->registerPluginParameter(value);
+	spherical.setXMLPath("spherical");
+	this->registerPluginParameter(spherical);
 };
 
 
@@ -231,12 +254,13 @@ string Container<T>::XMLName() const {
 	return "NoName";
 }
 
-template <> string Container<double>::ConstantXMLName();
-template <> string Container<VDOUBLE>::ConstantXMLName();
-template <> string Container<double>::VariableXMLName();
-template <> string Container<VDOUBLE>::VariableXMLName();
-template <> string Container<double>::CellPropertyXMLName();
-template <> string Container<VDOUBLE>::CellPropertyXMLName();
+// template <> string Container<double>::ConstantXMLName();
+// template <> string Container<VDOUBLE>::ConstantXMLName();
+// template <> string Container<double>::VariableXMLName();
+// template <> string Container<VDOUBLE>::VariableXMLName();
+// template <> string Container<double>::CellPropertyXMLName();
+// template <> string Container<VDOUBLE>::CellPropertyXMLName();
+
 
 // template <class T> 
 // bool Container<T>::type_registration = PluginFactory::RegisterCreatorFunction( Container<T>::ConstantXMLName(),Container<T>::createConstantInstance) 
@@ -258,6 +282,9 @@ void Container<T>::loadFromXML(XMLNode node, Scope* scope)
 	}
 	
 	Plugin::loadFromXML(node, scope);
+	
+	if (spherical.isDefined())
+		value.setSpherical(spherical());
 	
 	switch (mode) {
 		case Mode::Constant : {
