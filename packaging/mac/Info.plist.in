@@ -10,7 +10,7 @@
 	<key>CFBundleExecutable</key>
 	<string>Morpheus</string>
 	<key>CFBundleVersion</key>
-	<string>1.9.1</string>
+	<string>@MACOSX_BUNDLE_VERSION@</string>
 	<key>CFBundleIdentifier</key>
 	<string>de.tu-dresden.Morpheus</string>
 	<key>CFBundleName</key>
@@ -20,10 +20,12 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.9</string>
+	<string>@MACOSX_BUNDLE_SHORT_VERSION@</string>
 	<key>CFBundleSignature</key>
 	<string>ttxt</string>
 	<key>CFBundleDocumentTypes</key>
+	<key>NSHumanReadableCopyright</key>
+	<string>@MACOSX_GUI_COPYRIGHT@</string>
 	<array>
 		<dict>
 			<key>CFBundleTypeMIMETypes</key>

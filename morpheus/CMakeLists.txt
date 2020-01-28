@@ -1,8 +1,8 @@
-IF(MORPHEUS_STATIC_BUILD)
-	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-	# ich haette lieber am echten Ende der Linkerliste '-Wl,--whole-archive  -lpthread -Wl,--no-whole-archive'
-	SET(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-static -static-libstdc++ -static-libgcc")
-ENDIF()
+# IF(MORPHEUS_STATIC_BUILD)
+# 	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+# 	# ich haette lieber am echten Ende der Linkerliste '-Wl,--whole-archive  -lpthread -Wl,--no-whole-archive'
+# 	SET(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-static -static-libstdc++ -static-libgcc")
+# ENDIF()
 
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckIncludeFileCXX)
@@ -30,6 +30,16 @@ TARGET_INCLUDE_DIRECTORIES(MorpheusCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMA
 
 TARGET_LINK_LIBRARIES_PATCHED(MorpheusSIM PRIVATE MorpheusCore)
 TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC muParser xmlParser gnuplot_interface tiny-process-library)
+
+IF(HAVE_OPENMP)
+	if (CMAKE_VERSION VERSION_LESS 3.9)
+		set_property( TARGET MorpheusCore APPEND COMPILE_FLAGS ${OpenMP_CXX_FLAGS})
+		target_link_libraries_PATCHED(MorpheusCore PUBLIC ${OpenMP_CXX_LIBRARY})
+	ELSE()
+		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC OpenMP::OpenMP_CXX)
+# 		dump_target_properties(OpenMP::OpenMP_CXX)
+	ENDIF()
+ENDIF()
 
 ################################
 ## External Package dependencies
@@ -108,11 +118,11 @@ ENDIF()
 
 IF(GRAPHVIZ_FOUND)
 	target_compile_definitions(MorpheusCore PUBLIC HAVE_GRAPHVIZ=1)
-	FIND_PACKAGE(EXPAT REQUIRED)
+# 	FIND_PACKAGE(EXPAT REQUIRED)
 	IF (EXISTS "${GRAPHVIZ_GRAPH_LIBRARY}")
-		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_GRAPH_LIBRARY} ${GRAPHVIZ_CDT_LIBRARY} ${GRAPHVIZ_PATHPLAN_LIBRARY} ${EXPAT_LIBRARY})
+		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_GRAPH_LIBRARY} ${GRAPHVIZ_CDT_LIBRARY} ${GRAPHVIZ_PATHPLAN_LIBRARY})
 	ELSE()
-		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_CGRAPH_LIBRARY} ${GRAPHVIZ_CDT_LIBRARY} ${GRAPHVIZ_PATHPLAN_LIBRARY} ${EXPAT_LIBRARY})
+		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_CGRAPH_LIBRARY} ${GRAPHVIZ_CDT_LIBRARY} ${GRAPHVIZ_PATHPLAN_LIBRARY})
 	ENDIF()
 ENDIF()
 
@@ -150,7 +160,7 @@ IF  ("${MORPHEUS_OS}" STREQUAL "WIN32")
 # 	ENDIF()
 ENDIF()
 
-
+# dump_target_properties(MorpheusCore)
 
 # Installation of the program
 IF  ( "${MORPHEUS_OS}" STREQUAL "WIN32")

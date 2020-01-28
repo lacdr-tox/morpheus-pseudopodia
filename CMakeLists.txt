@@ -26,6 +26,11 @@ include(cmake/tools.cmake)
 IF( UNIX AND NOT APPLE )
 	SET(MORPHEUS_OS "UNIX")
 	MESSAGE(STATUS "Compiling for platform *NIX.")
+	set(CMAKE_INSTALL_DEFAULT_DIRECTORY_PERMISSIONS
+		OWNER_READ OWNER_WRITE OWNER_EXECUTE
+		GROUP_READ GROUP_EXECUTE
+		WORLD_READ WORLD_EXECUTE
+	)
 ELSEIF(APPLE)
 	SET(MORPHEUS_OS "APPLE")
 	MESSAGE(STATUS "Compiling for platform OSX.")
@@ -53,6 +58,11 @@ OPTION(MORPHEUS_TESTS "Enable testing" OFF)
 
 OPTION(MORPHEUS_STATIC_BUILD "Create a statically linked binary." OFF)
 
+IF(MORPHEUS_STATIC_BUILD)
+	set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
+	SET(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-static -static-libstdc++ -static-libgcc")
+ENDIF()
+
 SET(MORPHEUS_GRAPHVIZ "Library" CACHE STRING "Select Graph rendering backend")
 SET_PROPERTY(CACHE MORPHEUS_GRAPHVIZ PROPERTY STRINGS None WebRenderer Library)
 IF ( NOT (MORPHEUS_GRAPHVIZ STREQUAL "None" OR MORPHEUS_GRAPHVIZ STREQUAL "WebRenderer" OR MORPHEUS_GRAPHVIZ STREQUAL "Library") )
@@ -66,7 +76,6 @@ option(MORPHEUS_OPENMP "Switch off the usage of OPENMP" ON)
 
 IF (OPENMP_FOUND AND MORPHEUS_OPENMP)
 	MESSAGE(STATUS "Enabling OpenMP support for ${CMAKE_CXX_COMPILER_ID} using  '${OpenMP_CXX_FLAGS}'")
-	SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 	SET(HAVE_OPENMP ON)
 ELSEIF(NOT HAVE_OPENMP)
 	MESSAGE(STATUS "Unable to detect OpenMP compiler support. Disabling OpenMP.")
@@ -119,169 +128,6 @@ ENDIF()
 
 INCLUDE(InstallRequiredSystemLibraries)
 
-
-SET(M_MAINTAINER "Joern Starruss <joern.starruss@tu-dresden.de>")
-SET(M_APP_NAME "Morpheus")
-SET(M_EXECUTABLES ${SIMULATOR_EXEC_NAME} ${GUI_EXEC_NAME})
-
-STRING(TOLOWER "${M_APP_NAME}" CPACK_PACKAGE_NAME )
-# SET(CPACK_PACKAGE_NAME "${M_APP_NAME}")
-SET(CPACK_PACKAGE_EXECUTABLES  ${GUI_EXEC_NAME}; "Morpheus - Modeling Morphogenesis")
-
-SET(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR} )
-SET(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR} )
-SET(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH} )
-
-
-SET(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_NAME}")
-
-#-${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
-#SET(CPACK_PACKAGE_VENDOR "IMC, Center for High Performance Computing, TU Dresden")
-SET(CPACK_PACKAGE_VENDOR "Jörn Starruß & Walter de Back (ZIH, TU-Dresden)")
-
-
-SET(CPACK_PACKAGE_CONTACT ${M_MAINTAINER})
-
-# SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README")
-
-SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md")
-
-
-SET(CPACK_STRIP_FILES "${M_EXECUTABLES}")
-#SET(CPACK_SOURCE_STRIP_FILES "")
-
-
-
-IF( "${MORPHEUS_OS}" STREQUAL "UNIX" AND  NOT "${MORPHEUS_OS}" STREQUAL "APPLE" )
-  
-  SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Modeling environment for Multi-Cellular Systems Biology
- Modeling and simulation environment for multi-cellular systems biology.
- Includes simulators for ODEs, PDEs and cellular Potts models. 
- .
- Facilitates 
-  - Modeling without programming.
-  - Model integration into multiscale models by symbolic linking.
-  - Import of SBML models.
-  - Simulating, sharing and archiving Models with ease.
-  - Parameter exploration through (parallel) batch processing.
-  - Multi-core concurrency support using openMP multithreading")
-
-  SET(CPACK_DEBIAN_PACKAGE_SECTION "science")
-  SET(CPACK_DEBIAN_PACKAGE_MAINTAINTER ${M_MAINTAINTER})
-  
- add_custom_target( CompressedChangelog ALL
-COMMAND gzip -c -n -9 -f  ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md >  ${CMAKE_CURRENT_BINARY_DIR}/changelog.gz
-COMMAND cmake -E copy ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md ${CMAKE_CURRENT_BINARY_DIR}/copyright
-SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/CHANGELOG.md ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md )
-
-  INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/changelog.gz ${CMAKE_CURRENT_BINARY_DIR}/copyright
-DESTINATION "share/doc/${CPACK_PACKAGE_NAME}/")
-  
-  FIND_PROGRAM(DPKG_PROGRAM dpkg DOC "dpkg package manager of Debian-based systems")
-  
-  SET(DEBIAN_TIFF_PACKAGE "libtiff5")
-  
-  SET(CMAKE_INSTALL_RPATH bin)
-  SET(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "gnuplot (>= 4.4)")
-  IF (MORPHEUS_GRAPHVIZ STREQUAL "Library")
-     SET(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, graphviz")
-  ENDIF()
-#   SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.6), libgomp1, libgcc1 (>= 1:4.1), libssh-4, ${DEBIAN_TIFF_PACKAGE}, libqtcore4, libqtgui4, libqt4-xml, libqt4-help, libqt4-svg, libqt4-sql-sqlite, libqtwebkit4, gnuplot-qt (>= 4.4) | gnuplot-x11 (>=4.4), graphviz")
-  
-#   IF(LIBSBML_FOUND AND MORPHEUS_SBML)
-#     SET(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libsbml5")
-#   ENDIF()
-  
-  SET(CPACK_GENERATOR "DEB")
-
-  SET(CPACK_DEBIAN_PACKAGE_HOMEPAGE "http://morpheus.gitlab.io")
-
-  STRING(TOLOWER "${CPACK_PACKAGE_NAME}" CPACK_PACKAGE_NAME_LOWERCASE)
- 
-  IF(DPKG_PROGRAM)
-    EXECUTE_PROCESS(
-      COMMAND ${DPKG_PROGRAM} --print-architecture
-      OUTPUT_VARIABLE CPACK_DEBIAN_PACKAGE_ARCHITECTURE
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME_LOWERCASE}_${PROJECT_VERSION}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}~b${MORPHEUS_REVISION}")   
-  ELSE(DPKG_PROGRAM)
-	  SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME_LOWERCASE}_${PROJECT_VERSION}_${CMAKE_SYSTEM_NAME}~b${MORPHEUS_REVISION}")
-  ENDIF(DPKG_PROGRAM)
-  
-
-ELSEIF("${MORPHEUS_OS}" STREQUAL "APPLE")
- 	SET( PROGNAME Morpheus )
- 	MESSAGE("Getting morpheus simulator and XSD file ../../morpheus. Note: We assuma a proper folder structure (1) morpheus/build and (2) morpheus-gui/build where cpack is executed from folder (2).")
- 	INSTALL( FILES ${CMAKE_SOURCE_DIR}/build/morpheus/core/morpheus
-                         DESTINATION bin )
- 	INSTALL( FILES ${CMAKE_SOURCE_DIR}/build/gui/morpheus-gui
-                         DESTINATION bin )
- 	INSTALL( FILES ${CMAKE_SOURCE_DIR}/build/xmlSchema/morpheus.xsd
-                         DESTINATION share )
- 	INSTALL( DIRECTORY ${CMAKE_SOURCE_DIR}/Examples
-                         DESTINATION . )
-
-	MESSAGE("Trying to pack bundle, source dir = " ${CMAKE_CURRENT_SOURCE_DIR} "; "  ${CMAKE_SOURCE_DIR} )			
-	SET(CPACK_GENERATOR "Bundle")
-	SET(CPACK_BUNDLE_NAME "Morpheus")
-	SET(CPACK_PACKAGE_FILE_NAME "Morpheus_${morpheus_VERSION}") 
-	SET(CPACK_DMG_VOLUME_NAME "Morpheus_${morpheus_VERSION}")  # does not work?
-	MESSAGE( "CPACK_DMG_VOLUME_NAME = ${CPACK_DMG_VOLUME_NAME}")
-	SET(CPACK_BUNDLE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/gui/icons/mac/icon.icns")
-	SET(CPACK_BUNDLE_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/gui/icons/mac/Info.plist")
-	SET(CPACK_BUNDLE_STARTUP_COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/gui/icons/mac/startup.sh")
-	#${CMAKE_CURRENT_SOURCE_DIR}/build/src/morpheus-gui")
-
-ELSEIF("${MORPHEUS_OS}" STREQUAL "WIN32")
-  SET(CPACK_WIX_PRODUCT_GUID "D80BAC6B-539F-4384-AD1B-FCDD8091DE76")
-  SET(CPACK_WIX_UPGRADE_GUID ${CPACK_WIX_PRODUCT_GUID})
-  SET(CPACK_WIX_PRODUCT_ICON "${CMAKE_CURRENT_SOURCE_DIR}/gui/icons/win/morpheus.ico")
-  SET(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "http:\\\\morpheu.gitlab.io" )
-  
-  SET(CPACK_GENERATOR "NSIS")
-  SET(CPACK_MONOLITHIC_INSTALL 1)
-  SET(CPACK_PACKAGE_EXECUTABLES "${GUI_EXEC_NAME};Morpheus")
-  SET(CPACK_PACKAGE_NAME "${M_APP_NAME}")
-  SET(CPACK_PACKAGE_FILE_NAME "morpheus-${PROJECT_VERSION}.${CMAKE_SYSTEM_NAME}.b${MORPHEUS_REVISION}")
-  SET(CPACK_PACKAGE_INSTALL_REGISTRY_KEY morpheus)
-  SET(CPACK_NSIS_DISPLAY_NAME "${M_APP_NAME} ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}")
-  # : Modeling environment for Multiscale Morphogenesis")
-  SET(CPACK_NSIS_CONTACT "${MAINTAINTER}")
-  #SET(CPACK_PACKAGE_EXECUTABLES "${M_EXEC_NAME}" "${EWS_APP_NAME}")
-  SET(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\morpheu.gitlab.io")
-  
-  # RTF update: pandoc -s -f markdown -t rtf LICENSE.md  > LICENSE.rtf
-  SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.rtf")
-
-  # create Start Menu links (application, uninstaller and website)
-  SET(CPACK_NSIS_MENU_LINKS "${GUI_EXEC_NAME}" "${M_APP_NAME}")
-  # install/uninstall Desktop item
-  
-  SET(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
-    "CreateShortCut \\\"$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Morpheus Website.lnk\\\" \\\"http:\\\\\\\\morpheus.gitlab.io\\\" \n
-     WriteRegStr HKCU \\\"Software\\\\Morpheus\\\\Morpheus\\\\local\\\" \\\"executable\\\" \\\"$INSTDIR\\\\morpheus.exe\\\"
-  ")
-  # CreateShortCut \\\"$DESKTOP\\\\${M_APP_NAME}.lnk\\\" \\\"$INSTDIR\\\\${GUI_EXEC_NAME}\\\" \n
-  SET(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS 
-    "Delete \\\"$DESKTOP\\\\${M_APP_NAME}.lnk\\\" \n
-	 Delete \\\"$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Morpheus Website.lnk\\\"
-    ")
-
-  # name as it appears in the Add/Remove Software panel
-  SET(CPACK_NSIS_INSTALLED_ICON_NAME "${GUI_EXEC_NAME}")
-  # installation directory of morpheus-GUI need NOT be set in the PATH
-  SET(CPACK_NSIS_MODIFY_PATH "OFF")
-
-  # icons ICO for the installer/uninstaller and BMP 'branding image' displayed within installer and uninstaller.
-  SET(CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_SOURCE_DIR}/gui/icons/win/morpheus.ico")
-  SET(CPACK_NSIS_MUI_UNIICON "${CMAKE_CURRENT_SOURCE_DIR}/gui/icons/win/morpheus.ico")
-  #SET(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/gui/icons/win/morpheus.ico")
-ENDIF()
-
-
-INCLUDE(CPack)
-
-# MESSAGE("Precompiler platform: __UNIX__ " ${__UNIX__} ", __APPLE__ " ${__APPLE__} ", __WIN32__ " ${__WIN32__})
+MESSAGE(STATUS "Configuring Generators for packaging Morpheus")
+INCLUDE(Package.cmake)
 

@@ -418,7 +418,7 @@ void JobView::openTerminal() {
 	}
 #else //might be an apple?
 	if ( ! (terminal_command = config::getPathToExecutable("open")).isEmpty() ) {
-		QProcess::startDetached(terminal_command, QStringList() << "-a" << "Terminal.app", out_dir);
+		QProcess::startDetached(terminal_command, QStringList() << "-a" << "Terminal.app \"" << out_dir << "\"", out_dir);
 		return;
 	}
 #endif
