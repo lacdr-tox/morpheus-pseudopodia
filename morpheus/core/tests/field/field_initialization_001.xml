@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MorpheusModel version="4">
+    <Description>
+        <Details>Intialisation of spatial fields with position dependent expressions.</Details>
+        <Title>Spatial gradient initialization</Title>
+    </Description>
+    <Space>
+        <Lattice class="square">
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+            <Size symbol="size" value="s, s,  0"/>
+        </Lattice>
+        <SpaceSymbol symbol="space"/>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="0"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <Analysis>
+        <DependencyGraph reduced="false" format="svg"/>
+    </Analysis>
+    <Global>
+        <Constant symbol="s" value="2"/>
+        <Field symbol="f" value="f_init(space.x)"/>
+        <Function symbol="f_init">
+            <Parameter name="control variable" symbol="u"/>
+            <Expression>u / (size.x-1)</Expression>
+        </Function>
+        <Variable symbol="mass" value="0"/>
+        <Variable symbol="mean" value="0"/>
+        <Function symbol="result">
+            <Expression> (mean = 0.5) and (mass = 0.5 *s*s) </Expression>
+        </Function>
+        <Mapper>
+            <Input value="f"/>
+            <Output symbol-ref="mass" mapping="sum"/>
+            <Output symbol-ref="mean" mapping="average"/>
+        </Mapper>
+    </Global>
+</MorpheusModel>

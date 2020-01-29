@@ -1,0 +1,103 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MorpheusModel version="4">
+    <Description>
+        <Details></Details>
+        <Title></Title>
+    </Description>
+    <Space>
+        <Lattice class="square">
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+            <Size symbol="size" value="100, 100, 0"/>
+            <BoundaryConditions>
+                <Condition boundary="x" type="periodic"/>
+                <Condition boundary="y" type="periodic"/>
+            </BoundaryConditions>
+        </Lattice>
+        <SpaceSymbol symbol="space"/>
+    </Space>
+    <Time>
+        <StartTime value="2"/>
+        <StopTime symbol="stop_time" value="100"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <Analysis>
+        <DependencyGraph reduced="false" format="svg"/>
+        <!--    <Disabled>
+        <Gnuplotter time-step="100">
+            <Plot>
+                <Field symbol-ref="f"/>
+            </Plot>
+            <Terminal size="1600, 800, 0" name="png"/>
+            <Plot>
+                <Field symbol-ref="f_solution"/>
+            </Plot>
+            <Plot>
+                <Field symbol-ref="f_error"/>
+            </Plot>
+        </Gnuplotter>
+    </Disabled>
+-->
+        <!--    <Disabled>
+        <Logger time-step="10">
+            <Input>
+                <Symbol symbol-ref="mass"/>
+            </Input>
+            <Output>
+                <TextOutput/>
+            </Output>
+            <Plots>
+                <Plot>
+                    <Style style="lines" decorate="true"/>
+                    <Terminal terminal="png"/>
+                    <X-axis>
+                        <Symbol symbol-ref="time"/>
+                    </X-axis>
+                    <Y-axis>
+                        <Symbol symbol-ref="mass_error"/>
+                        <Symbol symbol-ref="mass_solution_error"/>
+                        <Symbol symbol-ref="total_error"/>
+                    </Y-axis>
+                </Plot>
+            </Plots>
+        </Logger>
+    </Disabled>
+-->
+    </Analysis>
+    <Global>
+        <Constant symbol="node_size" value="1"/>
+        <Constant symbol="initial_mass" value="10.0"/>
+        <Field name="simulation" symbol="f" value="f_solution">
+            <Diffusion rate="0.50"/>
+        </Field>
+        <Function name="solution" symbol="f_solution">
+            <Expression>initial_mass/(4*pi*0.5*time) 
+  * exp(-((space.x-50)^2+(space.y-50)^2)/(4*0.5*time))</Expression>
+        </Function>
+        <Function name="error" symbol="f_error">
+            <Expression>(f-f_solution)</Expression>
+        </Function>
+        <Mapper>
+            <Input value="f * node_size"/>
+            <Output symbol-ref="mass" mapping="sum"/>
+        </Mapper>
+        <Variable symbol="mass" value="initial_mass"/>
+        <Function name="mass error simulation" symbol="mass_error">
+            <Expression>mass-initial_mass</Expression>
+        </Function>
+        <Mapper>
+            <Input value="f_solution * node_size"/>
+            <Output symbol-ref="mass_solution" mapping="sum"/>
+        </Mapper>
+        <Variable name="mass solution" symbol="mass_solution" value="0.0"/>
+        <Function name="mass error solution" symbol="mass_solution_error">
+            <Expression>mass_solution-initial_mass</Expression>
+        </Function>
+        <Mapper>
+            <Input value="abs(f_error)"/>
+            <Output symbol-ref="total_error" mapping="sum"/>
+        </Mapper>
+        <Variable name="total error" symbol="total_error" value="0.0"/>
+    </Global>
+</MorpheusModel>

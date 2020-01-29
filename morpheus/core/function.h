@@ -134,7 +134,7 @@ class FunctionPlugin : public Plugin {
 				double safe_get(double parameters[], const SymbolFocus& focus) const override { if (!evaluator) parent-> init(); return get(parameters, focus);};
 				
 				std::set<SymbolDependency> dependencies() const override { if (!evaluator) parent-> init(); return evaluator->getDependSymbols();};
-				const std::string & description() const override { return parent->getDescription(); }
+				const std::string & description() const override { if (parent->getDescription().empty()) return parent->getSymbol(); else return parent->getDescription(); }
 				std::string linkType() const override { return "FunctionLink"; }
 				
 			private:
@@ -210,7 +210,7 @@ class VectorFunction : public Plugin
 				TypeInfo<VDOUBLE>::SReturn safe_get(const SymbolFocus& focus) const override { if (!evaluator) parent-> init(); return evaluator->get(focus); }
 				TypeInfo<VDOUBLE>::SReturn get(const SymbolFocus& focus) const override { return is_spherical ? VDOUBLE::from_radial(evaluator->get(focus)) : evaluator->get(focus); }
 				std::set<SymbolDependency> dependencies() const override { if (!evaluator) parent-> init(); return evaluator->getDependSymbols();};
-				const std::string & description() const override { return parent->getDescription(); }
+				const std::string & description() const override { if (parent->getDescription().empty()) return parent->getSymbol(); else return parent->getDescription(); }
 				std::string linkType() const override { return "VectorFunctionLink"; }
 			private:
 				void setEvaluator(shared_ptr<ThreadedExpressionEvaluator<VDOUBLE> > e) { evaluator = e; flags().granularity = evaluator->getGranularity(); };

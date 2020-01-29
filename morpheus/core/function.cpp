@@ -47,6 +47,7 @@ void FunctionPlugin::loadFromXML ( const XMLNode Node, Scope* scope)
 	Plugin::loadFromXML(Node,local_scope);
 	
 	// register the symbol in the parental scope
+	symbol.init();
 	accessor = make_shared<Symbol>(this);
 	scope->registerSymbol(accessor);
 }
@@ -119,7 +120,7 @@ void VectorFunction::loadFromXML ( const XMLNode Node, Scope* scope)
 	Plugin::loadFromXML(Node,scope);
 
 	description = this->plugin_name;
-	
+	symbol.init();
 	accessor = make_shared<Symbol>(this);
 	scope->registerSymbol(accessor);
 	
