@@ -19,22 +19,23 @@
     </Space>
     <Time>
         <StartTime value="2"/>
-        <StopTime symbol="stop_time" value="80"/>
+        <StopTime symbol="stop_time" value="100"/>
         <TimeSymbol symbol="time"/>
     </Time>
     <Analysis>
+        <!--    <Disabled>
         <DependencyGraph reduced="false" format="svg"/>
+    </Disabled>
+-->
         <!--    <Disabled>
         <Gnuplotter time-step="100">
             <Plot>
                 <Field symbol-ref="f"/>
             </Plot>
             <Terminal size="1600, 800, 0" name="png"/>
-            <Disabled>
-                <Plot>
-                    <Field symbol-ref="f_solution"/>
-                </Plot>
-            </Disabled>
+            <Plot>
+                <Field symbol-ref="f_solution"/>
+            </Plot>
             <Plot>
                 <Field symbol-ref="f_error"/>
             </Plot>
@@ -66,15 +67,16 @@
         </Logger>
     </Disabled>
 -->
+        <DependencyGraph reduced="false" format="svg"/>
     </Analysis>
     <Global>
         <Constant symbol="node_size" value="0.8660254"/>
-        <Constant symbol="intial_mass" value="10.0"/>
+        <Constant name="initial mass" symbol="initial_mass" value="10.0"/>
         <Field name="simulation" symbol="f" value="f_solution">
-            <Diffusion rate="0.5000"/>
+            <Diffusion rate="0.5"/>
         </Field>
         <Function name="solution" symbol="f_solution">
-            <Expression>intial_mass/(4*pi*0.5*time) 
+            <Expression>initial_mass/(4*pi*0.5*time) 
   * exp(-((space.x-50)^2+(space.y-50)^2)/(4*0.5*time))</Expression>
         </Function>
         <Function name="error" symbol="f_error">
@@ -84,9 +86,9 @@
             <Input value="f * node_size"/>
             <Output symbol-ref="mass" mapping="sum"/>
         </Mapper>
-        <Variable name="initial mass" symbol="mass" value="intial_mass"/>
-        <Function name="mass error simulation" symbol="mass_error">
-            <Expression>mass-intial_mass</Expression>
+        <Variable name="mass" symbol="mass" value="initial_mass"/>
+        <Function name="mass error of simulation" symbol="mass_error">
+            <Expression>mass-initial_mass</Expression>
         </Function>
         <Mapper>
             <Input value="f_solution * node_size"/>
@@ -94,10 +96,10 @@
         </Mapper>
         <Variable name="mass of solution" symbol="mass_solution" value="0.0"/>
         <Function name="mass error of solution" symbol="mass_solution_error">
-            <Expression>mass_solution-intial_mass</Expression>
+            <Expression>mass_solution-initial_mass</Expression>
         </Function>
         <Mapper>
-            <Input value="abs(f_error)"/>
+            <Input value="abs(f_error) * node_size"/>
             <Output symbol-ref="total_error" mapping="sum"/>
         </Mapper>
         <Variable name="total error" symbol="total_error" value="0.0"/>

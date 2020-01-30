@@ -559,6 +559,7 @@ bool PDE_Layer::solve_fwd_euler_diffusion(double time_interval)
 		}
 	} 
 	else if (structure == Lattice::hexagonal )  {
+		alpha *= 2.0*2.0/6.0; // rescale from 4 to 6 2d-neighbors
 		double beta = (1.0-6*alpha);
 		// numerical stability criterion
 		if (beta <= beta_critical) return false;

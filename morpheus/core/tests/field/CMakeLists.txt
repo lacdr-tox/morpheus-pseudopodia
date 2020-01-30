@@ -1,5 +1,5 @@
 
-add_executable(FieldTests field_initialization_test.cpp)
+add_executable(FieldTests field_initialization_test.cpp field_diffusion.cpp)
 # target_link_libraries(FieldTests PRIVATE)
 InjectModels(FieldTests)
 

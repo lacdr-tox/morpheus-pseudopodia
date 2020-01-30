@@ -13,13 +13,14 @@
             <BoundaryConditions>
                 <Condition boundary="x" type="periodic"/>
                 <Condition boundary="y" type="periodic"/>
+				<Condition boundary="z" type="periodic"/>
             </BoundaryConditions>
         </Lattice>
         <SpaceSymbol symbol="space"/>
     </Space>
     <Time>
         <StartTime value="2"/>
-        <StopTime symbol="stop_time" value="80"/>
+        <StopTime symbol="stop_time" value="100"/>
         <TimeSymbol symbol="time"/>
     </Time>
     <Analysis>
@@ -67,19 +68,13 @@
     </Analysis>
     <Global>
         <Constant symbol="node_size" value="1"/>
-        <Constant symbol="initial_mass" value="10.0"/>
+        <Constant symbol="initial_mass" value="10.0" name="initial mass"/>
         <Field name="simulation" symbol="f" value="f_solution">
             <Diffusion rate="0.50"/>
         </Field>
         <Function name="solution" symbol="f_solution">
             <Expression>initial_mass / (4 * pi * 0.5 * (time) )^(3/2)
- * exp(-(
-      (  space.x-50)^2
-       + (space.y-50)^2
-       + (space.z-50)^2
-      )
-      /(4*0.5*time)
-    )</Expression>
+ * exp(-(( space.x-50)^2 + (space.y-50)^2 + (space.z-50)^2 ) / (4*0.5*time) )</Expression>
         </Function>
         <Function name="error" symbol="f_error">
             <Expression>(f-f_solution)</Expression>
@@ -88,15 +83,15 @@
             <Input value="f * node_size"/>
             <Output symbol-ref="mass" mapping="sum"/>
         </Mapper>
-        <Variable symbol="mass" value="10.0"/>
-        <Function name="mass error simulation" symbol="mass_error">
+        <Variable symbol="mass" value="initial_mass"/>
+        <Function name="mass error of simulation" symbol="mass_error">
             <Expression>mass-10</Expression>
         </Function>
         <Mapper>
             <Input value="f_solution * node_size"/>
             <Output symbol-ref="mass_solution" mapping="sum"/>
         </Mapper>
-        <Variable name="mass of the solution" symbol="mass_solution" value="0.0"/>
+        <Variable name="mass of solution" symbol="mass_solution" value="0.0"/>
         <Function name="mass error of solution" symbol="mass_solution_error">
             <Expression>mass_solution-10</Expression>
         </Function>

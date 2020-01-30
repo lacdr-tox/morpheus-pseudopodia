@@ -67,7 +67,7 @@
     </Analysis>
     <Global>
         <Constant symbol="node_size" value="1"/>
-        <Constant symbol="initial_mass" value="10.0"/>
+        <Constant symbol="initial_mass" value="10.0" name="initial mass"/>
         <Field name="simulation" symbol="f" value="f_solution">
             <Diffusion rate="0.50"/>
         </Field>
@@ -83,15 +83,15 @@
             <Output symbol-ref="mass" mapping="sum"/>
         </Mapper>
         <Variable symbol="mass" value="initial_mass"/>
-        <Function name="mass error simulation" symbol="mass_error">
+        <Function name="mass error of simulation" symbol="mass_error">
             <Expression>mass-initial_mass</Expression>
         </Function>
         <Mapper>
             <Input value="f_solution * node_size"/>
             <Output symbol-ref="mass_solution" mapping="sum"/>
         </Mapper>
-        <Variable name="mass solution" symbol="mass_solution" value="0.0"/>
-        <Function name="mass error solution" symbol="mass_solution_error">
+        <Variable name="mass of solution" symbol="mass_solution" value="0.0"/>
+        <Function name="mass error of solution" symbol="mass_solution_error">
             <Expression>mass_solution-initial_mass</Expression>
         </Function>
         <Mapper>

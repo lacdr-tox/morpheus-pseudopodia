@@ -18,6 +18,7 @@
 
 ### Bug Fixes
   * Fix cell property initialization override priority 
+  * Fixed diffusion scaling on hexagonal lattices
   
 ## Release 2.1.1
 

@@ -17,7 +17,7 @@ RessourceManager::RessourceManager(std::initializer_list<RessourceData> raw_data
 RessourceData RessourceManager::getData(std::string name) const{
 	auto res = res_map.find(name);
 	if (res==res_map.end()) {
-		string msg = string("File \'") + name +"\' not found in ressources" + res_map.begin()->first;
+		string msg = string("File \'") + name +"\' not found in ressources.\nUse \"ImportFile()\" macro.";
 		throw std::out_of_range(msg.c_str()); 
 		return RessourceData {"",NULL,0};
 	}
@@ -74,8 +74,9 @@ void TestModel::setParam(std::string p, std::string value)
 
 void TestModel::run(double time_step) {
 	if (is_initialized) {
-		SIM::wipe();
 	}
+	// unconditionally wipe the simulator 
+	SIM::wipe();
 	SIM::init(model, param_overrides);
 	is_initialized = true;
 	if (time_step > 0) {

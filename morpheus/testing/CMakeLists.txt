@@ -37,7 +37,7 @@ FUNCTION(InjectModels target)
 				add_custom_command(OUTPUT ${MODEL_RES} 
 								   COMMAND xxd ARGS -i ${MODEL_FILE} ${MODEL_RES} 
 								   MAIN_DEPENDENCY ${MODEL_FILE} 
-								   DEPENDS ${source}
+								   DEPENDS ${MODEL_FILE} ${source}
 								   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 								   COMMENT "Moving ${MODEL_FILE} to ressources"
 								   )
@@ -51,9 +51,11 @@ FUNCTION(InjectModels target)
 # 		ENDIF()
 	ENDFOREACH()
 
+	## Convert lists to string
+	STRING(CONCAT  RESSOURCE_INCLUDES ${RESSOURCE_INCLUDES} )
+	STRING(CONCAT  RESSOURCE_FILE_DESCRIPTORS ${RESSOURCE_FILE_DESCRIPTORS} )
 	## Remove trailing comma
 	STRING(REGEX REPLACE "[ \n,]+$" "" RESSOURCE_FILE_DESCRIPTORS "${RESSOURCE_FILE_DESCRIPTORS}")
-	
 	# Configure the ressource source file
 	configure_file(${CMAKE_SOURCE_DIR}/morpheus/testing/ressources.cpp.in ${target}_ressources.cpp @ONLY)
 	SET(ressources_file  ${CMAKE_CURRENT_BINARY_DIR}/${target}_ressources.cpp)
