@@ -3,28 +3,35 @@
 #define MODEL_TEST_CPP
 #include "core/simulation_p.h"
 
-extern RessourceManager ressources;
+// extern RessourceManager ressources;
 // RessourceManager ressources;
 
 /// Ressource Manager implementation
-
-RessourceManager::RessourceManager(std::initializer_list<RessourceData> raw_data) {
-	for (const auto& d : raw_data) {
-		res_map[d.name] = d;
-	}
+RessourceManager& RessourceManager::getInstance() {
+	static RessourceManager r;
+	return r;
 }
 
-RessourceData RessourceManager::getData(std::string name) const{
-	auto res = res_map.find(name);
-	if (res==res_map.end()) {
-		string msg = string("File \'") + name +"\' not found in ressources.\nUse \"ImportFile()\" macro.";
+bool RessourceManager::insert(std::initializer_list<RessourceData> raw_data) {
+	RessourceManager& rm = getInstance();
+	for (const auto& d : raw_data) {
+		rm.res_map[d.name] = d;
+	}
+	return true;
+}
+
+RessourceData RessourceManager::getData(std::string name) {
+	RessourceManager& rm = getInstance();
+	auto res = rm.res_map.find(name);
+	if (res==rm.res_map.end()) {
+		string msg = string("File \'") + name +"\' not found in ressources.\nUse \"ImportFile()\" macro to include the file.";
 		throw std::out_of_range(msg.c_str()); 
 		return RessourceData {"",NULL,0};
 	}
 	return res->second;
 }
 
-void RessourceManager::storeFile(std::string name, std::string path) const{
+void RessourceManager::storeFile(std::string name, std::string path) {
 	auto data = getData(name);
 	if (data.data == nullptr)
 		return;
@@ -35,30 +42,27 @@ void RessourceManager::storeFile(std::string name, std::string path) const{
 }
 
 
-std::string RessourceManager::getDataAsString(std::string name) const {
-	auto res = res_map.find(name);
-	if (res!=res_map.end()) {
-		return std::string(res->second.data, res->second.data+res->second.length);
-	}
-	return "";
+std::string RessourceManager::getDataAsString(std::string name) {
+	auto data = getData(name);
+	return std::string(data.data, data.data+data.length);
 }
 
 
 
 RessourceData ImportFile(std::string relativePath) {
-	return ressources.getData(relativePath);
+	return RessourceManager::getData(relativePath);
 };
 
 void StoreFile(std::string name, std::string path) {
-	ressources.storeFile(name,path);
+	RessourceManager::storeFile(name,path);
 };
 
 RessourceData GetFile(std::string name) {
-	return ressources.getData(name);
+	return RessourceManager::getData(name);
 };
 
 std::string GetFileString(std::string name) {
-	auto data = ressources.getData(name);
+	auto data = RessourceManager::getData(name);
 	return string(data.data, data.data + data.length);
 }
 

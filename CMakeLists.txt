@@ -40,6 +40,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fPIC")
 
 ## Switch to Release Build Mode
 OPTION(MORPHEUS_RELEASE_BUNDLE "Build the release bundle of morpheus only." OFF)

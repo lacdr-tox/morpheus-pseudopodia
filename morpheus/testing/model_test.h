@@ -18,20 +18,22 @@ struct RessourceData {
 /// Ressource Manager implementation
 class RessourceManager {
 public:
-	RessourceManager() {};
-	RessourceManager(std::initializer_list<RessourceData> raw_data);
+	static bool insert(std::initializer_list<RessourceData> raw_data);
 	
 	/// Access to the internal storage format
-	RessourceData getData(std::string name) const;
+	static RessourceData getData(std::string name);
 	
 	/// store file data on disc
-	void storeFile(std::string name, std::string path) const;
+	static void storeFile(std::string name, std::string path);
 	
 	/// convert the file data to string
-	std::string getDataAsString(std::string name) const;
+	static std::string getDataAsString(std::string name);
 	
 private:
+	RessourceManager() {};
+	static RessourceManager& getInstance();
 	std::map<std::string, RessourceData> res_map;
+	
 };
 
 /** Import a model via a CMake/Ressource Compiler --> inject it via include into the code

@@ -1,12 +1,11 @@
 cmake_policy(SET CMP0022 NEW)
 
-add_library(ModelTesting OBJECT model_test.cpp)
+add_library(ModelTesting SHARED model_test.cpp)
 target_include_directories(ModelTesting PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries_fixed(ModelTesting PUBLIC MorpheusCore)
 
 FUNCTION(InjectModels target)
-	add_library(${target}_ressources)
-	
+
 	SET(RESSOURCE_INCLUDES "")
 	SET(RESSOURCE_FILE_DESCRIPTORS "")
 	
@@ -21,7 +20,7 @@ FUNCTION(InjectModels target)
 # 				message(STATUS "${entry} is the method implementation" )
 				continue()
 			ENDIF()
-			string(REGEX MATCH "ImportFile\\((.*)\\)" match ${entry} )
+			string(REGEX MATCH "^[^/#]*ImportFile\\((.*)\\)" match ${entry} )
 			IF(match)
 				SET(MODEL_FILE ${CMAKE_MATCH_1})
 				## Remove white space
@@ -41,10 +40,8 @@ FUNCTION(InjectModels target)
 								   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 								   COMMENT "Moving ${MODEL_FILE} to ressources"
 								   )
-# 				add_dependencies(${target}_ressources ${MODEL_RES} )
-				target_sources(${target}_ressources PRIVATE ${MODEL_RES} )
+				target_sources(${target} PRIVATE ${MODEL_RES})
 				LIST(APPEND RESSOURCE_INCLUDES "#include \"${variable}.h\"\n")
-# 				LIST(APPEND ressources_init "ressources[\"${TRIMMED_FILE}\"] = ${variable};")
 				LIST(APPEND RESSOURCE_FILE_DESCRIPTORS "\t{\"${TRIMMED_FILE}\", ${variable},  ${variable}_len},\n")
 			endif()
 		ENDFOREACH()
@@ -60,12 +57,8 @@ FUNCTION(InjectModels target)
 	configure_file(${CMAKE_SOURCE_DIR}/morpheus/testing/ressources.cpp.in ${target}_ressources.cpp @ONLY)
 	SET(ressources_file  ${CMAKE_CURRENT_BINARY_DIR}/${target}_ressources.cpp)
 	
-	# Assemble ressources to a target
-	target_sources(${target}_ressources PRIVATE ${ressources_file})
-	# Add the RessourceManager implementation library target
-	target_link_libraries(${target}_ressources PRIVATE ModelTesting) 
-	# Append the ressources to the target
-	target_link_libraries(${target} PRIVATE ${target}_ressources )
+	# Add ressources to the target
+	target_sources(${target} PRIVATE ${ressources_file})
 ENDFUNCTION()
 
 # InjectModels(ModelTesting)

@@ -4,7 +4,7 @@
 
 @RESSOURCE_INCLUDES@
 
-RessourceManager ressources {
-	@RESSOURCE_FILE_DESCRIPTORS@
-};
+bool happy_include = RessourceManager::insert({
+@RESSOURCE_FILE_DESCRIPTORS@
+});
 
