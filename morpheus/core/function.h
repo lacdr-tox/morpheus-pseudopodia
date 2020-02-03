@@ -88,7 +88,7 @@ Symbol that defines a relation between vector \ref Symbols from the \ref Scope o
 #include "expression_evaluator.h"
 
 
-// template <class source, class target, class trans >
+// template <class source, class target, class trans >i
 // void transform_all(const source& s, target& t, trans&& tr) {
 // 	std::transform(s.begin(), s.end(), back_inserter(t), tr);
 // }
@@ -115,7 +115,7 @@ class FunctionPlugin : public Plugin {
 			public:
 				Symbol(FunctionPlugin* parent) : SymbolAccessorBase<double>(parent->getSymbol()), parent(parent) { flags().function = true; };
 				// Standard symbol interface, used for parameter-free functions, which is merely an alias
-				double safe_get(const SymbolFocus& focus) const override { if (!evaluator) parent-> init(); return evaluator->get(focus); }
+				double safe_get(const SymbolFocus& focus) const override { if (!evaluator) parent-> init(); return evaluator->safe_get(focus); }
 				double get(const SymbolFocus& focus) const override { return evaluator->get(focus); }
 				
 				// Interface for the parametric function call
@@ -155,8 +155,12 @@ class FunctionPlugin : public Plugin {
 				};
 				void setEvaluator(shared_ptr<ThreadedExpressionEvaluator<double> > e) {
 					evaluator = e;
-					flags().granularity = evaluator->getGranularity();
 				};
+				void evaluatorInitialized() {
+					flags().granularity = evaluator->getGranularity();
+					flags().space_const = evaluator->flags().space_const;
+					flags().time_const = evaluator->flags().time_const;
+				}
 				shared_ptr<ThreadedExpressionEvaluator<double> > evaluator;
 				mutable unique_ptr<CallBack> callback;
 				FunctionPlugin* parent;
@@ -207,7 +211,7 @@ class VectorFunction : public Plugin
 		class Symbol: public SymbolAccessorBase<VDOUBLE> {
 			public:
 				Symbol(VectorFunction* parent) : SymbolAccessorBase<VDOUBLE>(parent->getSymbol()), parent(parent) {};
-				TypeInfo<VDOUBLE>::SReturn safe_get(const SymbolFocus& focus) const override { if (!evaluator) parent-> init(); return evaluator->get(focus); }
+				TypeInfo<VDOUBLE>::SReturn safe_get(const SymbolFocus& focus) const override { if (!evaluator) parent-> init(); return evaluator->safe_get(focus); }
 				TypeInfo<VDOUBLE>::SReturn get(const SymbolFocus& focus) const override { return is_spherical ? VDOUBLE::from_radial(evaluator->get(focus)) : evaluator->get(focus); }
 				std::set<SymbolDependency> dependencies() const override { if (!evaluator) parent-> init(); return evaluator->getDependSymbols();};
 				const std::string & description() const override { if (parent->getDescription().empty()) return parent->getSymbol(); else return parent->getDescription(); }

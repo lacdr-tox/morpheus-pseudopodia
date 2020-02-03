@@ -66,8 +66,9 @@ void FunctionPlugin::init (const Scope* scope) {
 	evaluator->setLocalsTable(parameter_table);
 	
 	accessor->setEvaluator(evaluator);
-	initialized = true;
 	evaluator->init();
+	initialized = true;
+	accessor->evaluatorInitialized();
 }
 
 
