@@ -1425,7 +1425,7 @@ void EventSystem::loadFromXML ( const XMLNode node, Scope* scope )
 	if (node.nChildNode("Condition")) {
 		string expression;
 		if (getXMLAttribute(node,"Condition/text",expression))
-			condition = make_shared<ExpressionEvaluator<double> >(expression,scope);
+			condition = make_shared<ThreadedExpressionEvaluator<double> >(expression,scope);
 
 		XMLNode xSystem = node.deepCopy();
 		XMLNode xCondition = XMLNode::createXMLTopNode("Trash");
@@ -1461,6 +1461,7 @@ void EventSystem::executeTimeStep()
 	auto time = SIM::getTime();
 	FocusRange range(target_granularity, target_scope);
 	if (trigger_on_change()) {
+#pragma omp parallel for schedule(static)
 		for (auto focus : range) {
 			
 			double cond = condition->get(focus);
@@ -1469,34 +1470,45 @@ void EventSystem::executeTimeStep()
 			double trigger = ( history_val != condition_history.end()? history_val->second <= 0.0 :  ! xml_condition_history()) && cond;
 			
 			if (trigger) {
-				double d = delay(focus);
-// 				cout << "Delay " << d << " at " << to_str(time) << endl;
-				if (d == 0) {
-					compute(focus);
+#pragma omp critical
+				{
+					double d = delay(focus);
+	// 				cout << "Delay " << d << " at " << to_str(time) << endl;
+					if (d == 0) {
+						compute(focus);
+					}
+					else if (delay_compute()) {
+						DelayedAssignment assignment {focus,{}};
+						delayed_assignments.insert({time + d,assignment});
+					}
+					else {
+						DelayedAssignment assignment {focus,{}};
+						computeToTarget(focus,true, &assignment.value_cache);
+						delayed_assignments.insert({time + d,assignment});
+					}
+					if (history_val != condition_history.end()) {
+						history_val->second = cond;
+					}
+					else 
+						condition_history[focus] = cond;
 				}
-				else if (delay_compute()) {
-					DelayedAssignment assignment {focus,{}};
-					delayed_assignments.insert({time + d,assignment});
-				}
-				else {
-					DelayedAssignment assignment {focus,{}};
-					computeToTarget(focus,true, &assignment.value_cache);
-					delayed_assignments.insert({time + d,assignment});
-				}
-				
 			}
-			if (history_val != condition_history.end()) {
-				history_val->second = cond;
-			}
-			else 
-				condition_history[focus] = cond;
 		}
 	}
 	else {
-		for (auto focus : range) {
-			if (condition->get(focus))
-				compute(focus);
-		}
+// 		if (range.size()>50) {
+#pragma omp parallel for schedule(static)
+			for (auto focus : range) {
+				if (condition->get(focus))
+					compute(focus);
+			}
+// 		}
+// 		else {
+// 			for (auto focus : range) {
+// 				if (condition->get(focus))
+// 					compute(focus);
+// 			}
+// 		}
 	}
 	
 	if (!delayed_assignments.empty()) {

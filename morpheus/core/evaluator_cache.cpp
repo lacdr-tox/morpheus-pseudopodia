@@ -29,21 +29,21 @@ void EvaluatorCache::NS::setFocus(const SymbolFocus& f) const
 
 uint EvaluatorCache::addNameSpaceScope(const string& ns_name, const Scope* scope)
 {
-	uint ns_id = externals_namespaces.size();
-	externals_namespaces.push_back(NS(ns_name,scope));
+	uint ns_id = external_namespaces.size();
+	external_namespaces.push_back(NS(ns_name,scope));
 	return ns_id;
 }
 
 set<Symbol> EvaluatorCache::getNameSpaceUsedSymbols(uint ns_id) const {
-	if (ns_id>externals_namespaces.size())
+	if (ns_id>external_namespaces.size())
 		throw string("EvaluatorCache: Invalid namespace id");
-	return externals_namespaces[ns_id].getUsedSymbols();
+	return external_namespaces[ns_id].getUsedSymbols();
 }
 
 void EvaluatorCache::setNameSpaceFocus(uint ns_id, const SymbolFocus& f) const {
-	if (ns_id>externals_namespaces.size())
+	if (ns_id>external_namespaces.size())
 		throw string("EvaluatorCache: Invalid namespace id");
-	externals_namespaces[ns_id].setFocus(f);
+	external_namespaces[ns_id].setFocus(f);
 }
 
 
@@ -63,7 +63,7 @@ EvaluatorCache::EvaluatorCache(const EvaluatorCache& other)
 	
 	// External variable storage
 	externals = other.externals;
-	externals_namespaces = other.externals_namespaces;
+	external_namespaces = other.external_namespaces;
 	
 	// infrastructure for vector symbol expansion
 	scalar_expansion_permitted  = other.scalar_expansion_permitted;
@@ -73,8 +73,13 @@ EvaluatorCache::EvaluatorCache(const EvaluatorCache& other)
 	// parser local symbols, i.e. used for Function parameters
 	parser_symbols = other.parser_symbols;
 	
+	//Rewire flat_externals
+	for (auto& ext : externals) {
+		flat_externals.push_back(&ext.second);
+	}
+	
 	// Rewire cached SymbolDesc
-	for (auto& ns : externals_namespaces) {
+	for (auto& ns : external_namespaces) {
 		for (auto& sym : ns.used_symbols) {
 			sym.second = &externals[sym.first];
 		}
@@ -139,7 +144,7 @@ mu::value_type* EvaluatorCache::registerSymbol_internal(const mu::char_type* sym
 		string ns_name = symbol.substr(0,symbol.find('.'));
 		string ns_symbol = symbol.substr(symbol.find('.')+1, string::npos);
 		// Try to find a suitible name space
-		for ( auto& l_ns : externals_namespaces ) {
+		for ( auto& l_ns : external_namespaces ) {
 			if ( l_ns.ns_name == ns_name ) {
 				ns = &l_ns;
 				search_scope = l_ns.scope;
@@ -156,6 +161,7 @@ mu::value_type* EvaluatorCache::registerSymbol_internal(const mu::char_type* sym
 		sd.source = ns ? SymbolDesc::NS : SymbolDesc::Ext;
 		auto ext_it = externals.insert({ symbol, sd }).first;
 		if (ns) ns->used_symbols.insert({search_symbol, &ext_it->second});
+		flat_externals.push_back(&ext_it->second);
 		return &ext_it->second.valD;
 	}
 	if (scalar_expansion_permitted && search_scope->getAllSymbolNames<VDOUBLE>(allow_partial_spec).count(search_symbol)) {
@@ -170,6 +176,7 @@ mu::value_type* EvaluatorCache::registerSymbol_internal(const mu::char_type* sym
 			sd.type = SymbolDesc::VECTOR;
 			sd.source = ns ? SymbolDesc::NS : SymbolDesc::Ext;
 			ext_it = externals.insert({symbol,sd}).first;
+			flat_externals.push_back(&ext_it->second);
 			if (ns) ns->used_symbols.insert({search_symbol, &ext_it->second});
 		}
 		ExpansionDesc exp;
@@ -326,15 +333,15 @@ void EvaluatorCache::attach(mu::Parser *parser) {
 /// Fill the cache with data wrt. @p focus
 void EvaluatorCache::fetch(const SymbolFocus& focus, const bool safe) {
 // 	if (current_focus == focus && current_time = SIM::getTime()) return;
-	for (auto& sym : externals) {
-		if (sym.second.source == SymbolDesc::Ext) {
-			if (sym.second.type == SymbolDesc::DOUBLE) {
-				auto accessor = static_pointer_cast<const SymbolAccessorBase<double> >(sym.second.sym);
-				sym.second.valD = safe ? accessor->safe_get(focus) : accessor->get(focus);
+	for (auto& sym : flat_externals) {
+		if (sym->source == SymbolDesc::Ext) {
+			if (sym->type == SymbolDesc::DOUBLE) {
+				auto accessor = static_pointer_cast<const SymbolAccessorBase<double> >(sym->sym);
+				sym->valD = safe ? accessor->safe_get(focus) : accessor->get(focus);
 			}
-			else if (sym.second.type == SymbolDesc::VECTOR) {
-				auto accessor = static_pointer_cast<const SymbolAccessorBase<VDOUBLE> >(sym.second.sym);
-				sym.second.valV = safe ? accessor->safe_get(focus) : accessor->get(focus);
+			else if (sym->type == SymbolDesc::VECTOR) {
+				auto accessor = static_pointer_cast<const SymbolAccessorBase<VDOUBLE> >(sym->sym);
+				sym->valV = safe ? accessor->safe_get(focus) : accessor->get(focus);
 			}
 		}
 	}

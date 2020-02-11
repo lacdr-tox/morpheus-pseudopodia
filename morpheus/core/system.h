@@ -313,7 +313,7 @@ public:
 protected:
 	// TODO We have to store the state of the event with respect to the context !! map<SymbolFocus, bool> old_value ?? that is a map lookup per context !!!
 	// Alternatively, we can also create a hidden cell-property --> maybe a wise way to store the state
-	shared_ptr<ExpressionEvaluator<double> > condition;
+	shared_ptr<ThreadedExpressionEvaluator<double> > condition;
 	PluginParameter<bool,XMLNamedValueReader,DefaultValPolicy> delay_compute;  /// Also delay the computation of the assignments
 	PluginParameter<double,XMLEvaluator, DefaultValPolicy> delay;  /// Duration of the delay
 	PluginParameter<bool,XMLNamedValueReader,DefaultValPolicy> trigger_on_change;

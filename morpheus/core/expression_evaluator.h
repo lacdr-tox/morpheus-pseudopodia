@@ -176,18 +176,41 @@ typedef std::mutex GlobalMutex;
 template <class T>
 class ThreadedExpressionEvaluator {
 public:
-	ThreadedExpressionEvaluator(const string& expression, const Scope* scope, bool partial_spec = false) { evaluators.push_back( make_unique<ExpressionEvaluator<T> >(expression, scope, partial_spec) );};
+	ThreadedExpressionEvaluator(const string& expression, const Scope* scope, bool partial_spec = false) { 
+		evaluators.resize( omp_get_max_threads(), nullptr );
+		evaluators[0] = new ExpressionEvaluator<T> (expression, scope, partial_spec);
+	};
+	~ThreadedExpressionEvaluator() {
+		for (auto evaluator : evaluators) {
+			if (evaluator)
+				delete evaluator;
+		}
+	}
 	
-	void setLocalsTable(const vector<EvaluatorVariable>& locals) { for (auto& evaluator : evaluators) evaluator->setLocalsTable(locals); }
+	void setLocalsTable(const vector<EvaluatorVariable>& locals) { 
+		for (auto evaluator : evaluators) 
+			if (evaluator)
+				evaluator->setLocalsTable(locals);
+	}
 
-	uint addNameSpaceScope(const string& ns_name, const Scope* scope) { uint id=0; for (auto& evaluator : evaluators) id = evaluator->addNameSpaceScope(ns_name, scope); return id; }
+	uint addNameSpaceScope(const string& ns_name, const Scope* scope) {
+		uint id=0;
+		for (auto& evaluator : evaluators)
+			if (evaluator)
+				id = evaluator->addNameSpaceScope(ns_name, scope);
+		return id;
+	}
 	set<Symbol> getNameSpaceUsedSymbols(uint ns_id) const { return evaluators[0]->getNameSpaceUsedSymbols(ns_id); }
 	void setNameSpaceFocus(uint ns_id, const SymbolFocus& f) const { getEvaluator()->setNameSpaceFocus(ns_id, f); }
 	void setRadial(bool radial=true) { getEvaluator()->setRadial(radial); } 
 	void setLocals(const double* data) const { getEvaluator()->setLocals(data); }
 	int getLocalsCount() const { return evaluators[0]->getLocalsCount(); } 
 	
-	void init() { for (auto& evaluator : evaluators) evaluator->init(); }
+	void init() { 
+		for (auto evaluator : evaluators)
+			if (evaluator)
+				evaluator->init();
+	}
 	const string& getDescription() const { return evaluators[0]->getDescription(); };
 	const SymbolBase::Flags& flags() const { return evaluators[0]->flags(); }
 	Granularity getGranularity() const { return evaluators[0]->getGranularity(); };
@@ -199,17 +222,20 @@ public:
 private:
 	ExpressionEvaluator<T>* getEvaluator() const {
 		uint t = omp_get_thread_num();
-		if (evaluators.size()<=t || ! evaluators[t] ) {
-			mutex.lock();
-			if (evaluators.size()<=t) {
-				evaluators.resize(t+1);
-			}
-			evaluators[t] = make_unique<ExpressionEvaluator<T> >( *evaluators[0] );
-			mutex.unlock();
+		if (/*evaluators.size()<=t || */! evaluators[t] ) {
+// 			mutex.lock();
+// 			auto n_threads = omp_get_max_threads();
+//  			if (evaluators.size()<=n_threads) {
+// 				evaluators.resize(n_threads, nullptr);
+// 			}
+			
+// 			if (!evaluators[t])
+				evaluators[t] = new ExpressionEvaluator<T>( *evaluators[0] );
+// 			mutex.unlock();
 		}
-		return evaluators[t].get();
+		return evaluators[t];
 	}
-	mutable vector<unique_ptr<ExpressionEvaluator<T> > > evaluators;
+	mutable vector< ExpressionEvaluator<T>* > evaluators;
 	mutable GlobalMutex mutex;
 };
 

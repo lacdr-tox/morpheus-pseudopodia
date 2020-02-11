@@ -138,7 +138,8 @@ void SymbolFocus::unset() {
 bool SymbolFocus::operator<(const SymbolFocus& rhs) const {
 	if (has_pos && rhs.has_pos) {
 		const VINT& a=d_pos;const VINT& b=rhs.d_pos;
-		return ( a.z < b.z || (a.z==b.z  &&  (a.y<b.y || (a.y==b.y && a.x<b.x))));
+// 		return ( a.z < b.z || (a.z==b.z  &&  (a.y<b.y || (a.y==b.y && a.x<b.x))));
+		return ( a.x < b.x || (a.x==b.x  &&  (a.y<b.y || (a.y==b.y && a.z<b.z))));
 	}
 	else if (has_pos || rhs.has_pos)
 		return has_pos;
@@ -146,7 +147,8 @@ bool SymbolFocus::operator<(const SymbolFocus& rhs) const {
 		if (d_cell->getID() == rhs.d_cell->getID()){
 			if (has_membrane && rhs.has_membrane) {
 				const VINT& a=d_membrane_pos;const VINT& b=rhs.d_membrane_pos;
-				return (a.y<b.y || (a.y==b.y && a.x<b.x));
+// 				return (a.y<b.y || (a.y==b.y && a.x<b.x));
+				return (a.x<b.x || (a.x==b.x && a.y<b.y));
 			}
 			else if (has_membrane || rhs.has_membrane) {
 				return has_membrane;
