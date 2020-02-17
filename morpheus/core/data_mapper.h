@@ -46,7 +46,10 @@ protected:
 
 class DataMapperSum : public DataMapper{
 public:
-	DataMapperSum() { reset(); mode = DataMapper::SUM; sum.resize(omp_get_max_threads(),0); };
+	DataMapperSum() {
+		mode = DataMapper::SUM;
+		sum.resize(omp_get_max_threads(),0);
+	};
 	void addVal(double value) override { auto t=thread(); sum[t]+=value; }
 	void addVal(double value, double weight) override {  auto t=thread(); sum[t]+=value*weight; };
 	double get() override { auto t=thread(); return sum[t]; }
