@@ -25,11 +25,11 @@
 class DataMapper {
 public:
 	enum Mode { AVERAGE, SUM, VARIANCE, MAXIMUM, MINIMUM };
-	virtual void addVal(double value) = 0;
-	virtual void addVal(double value, double weight) = 0;
-	virtual double get() = 0;
+	virtual void addVal(double value, int slot=thread()) = 0;
+	virtual void addValW(double value, double weight, int slot=thread()) = 0;
+	virtual double get(int slot=thread()) = 0;
 	virtual double getCollapsed() = 0;
-	virtual void reset() = 0;
+	virtual void reset(int slot=thread()) = 0;
 	[[deprecated]] virtual DataMapper*  clone()  =0;
 	static shared_ptr<DataMapper> create(Mode mode);
 	static std::map<std::string, DataMapper::Mode> getModeNames();
@@ -38,6 +38,7 @@ public:
 	void setWeightsAreBuckets(bool enabled) { weightsAreBuckets = enabled; };
 	virtual ~DataMapper() {}
 protected:
+	static inline int thread() { return omp_get_thread_num(); }
 	DataMapper() :weightsAreBuckets(false) {};
 	bool weightsAreBuckets;
 	DataMapper::Mode mode;
@@ -50,10 +51,10 @@ public:
 		mode = DataMapper::SUM;
 		sum.resize(omp_get_max_threads(),0);
 	};
-	void addVal(double value) override { auto t=thread(); sum[t]+=value; }
-	void addVal(double value, double weight) override {  auto t=thread(); sum[t]+=value*weight; };
-	double get() override { auto t=thread(); return sum[t]; }
-	void reset() override { auto t=thread(); sum[t]=0;};
+	void addVal(double value, int slot=thread()) override { sum[slot]+=value; }
+	void addValW(double value, double weight, int slot=thread()) override { sum[slot]+=value*weight; };
+	double get(int slot=thread()) override { return sum[slot]; }
+	void reset(int slot=thread()) override { sum[slot]=0;};
 	DataMapper*  clone() override { return new DataMapperSum(*this); };
 	double getCollapsed() override { 
 		double csum=0; 
@@ -61,7 +62,6 @@ public:
 		return csum;
 	}
 private:
-	inline int thread() { return omp_get_thread_num(); }
 	vector<double> sum;
 };
 
@@ -72,10 +72,10 @@ public:
 		sum.resize(omp_get_max_threads(),0);
 		count.resize(omp_get_max_threads(),0);
 	};
-	void addVal(double value) override {  auto t=thread(); sum[t]+=value; count[t]++; } 
-	void addVal(double value, double weight) override {  auto t=thread(); sum[t]+=value*weight; count[t]+=weight; };
-	double get() override { auto t=thread(); if (count[t]<=0) return 0;  return sum[t] / count[t]; }
-	void reset() override { auto t=thread(); sum[t]=0; count[t]=0; };
+	void addVal(double value, int slot=thread()) override {  sum[slot]+=value; count[slot]++; } 
+	void addValW(double value, double weight, int slot=thread()) override {  sum[slot]+=value*weight; count[slot]+=weight; };
+	double get(int slot=thread()) override { if (count[slot]<=0) return 0;  return sum[slot] / count[slot]; }
+	void reset(int slot=thread()) override { sum[slot]=0; count[slot]=0; };
 	DataMapper*  clone() override { return new DataMapperAverage(*this); };
 	double getCollapsed() override { 
 		double csum=0; double ccount=0; 
@@ -84,7 +84,6 @@ public:
 		return csum/ccount;
 	}
 private: 
-	inline int thread() { return omp_get_thread_num(); }
 	vector<double> sum; vector<double> count;
 };
 
@@ -96,10 +95,10 @@ public:
 		count.resize(omp_get_max_threads(),0);
 		sum_of_squares.resize(omp_get_max_threads(),0);
 	};
-	void addVal(double value) override { auto t=thread(); sum[t]+=value; sum_of_squares[t]+=value*value; count[t]++;   } 
-	void addVal(double value, double weight) override { auto t=thread(); sum[t]+=value * weight; sum_of_squares[t]+=value*value * weight; count[t]+=weight; }
-	double get() override { auto t=thread(); if (count[t]<=0) return 0; return (sum_of_squares[t]  - sum[t]*(sum[t]/count[t])) / count[t]; }
-	void reset() override { auto t=thread(); sum[t]=0; sum_of_squares[t]=0; count[t]=0; };
+	void addVal(double value, int slot=thread()) override { sum[slot]+=value; sum_of_squares[slot]+=value*value; count[slot]++;   } 
+	void addValW(double value, double weight, int slot=thread()) override { sum[slot]+=value * weight; sum_of_squares[slot]+=value*value * weight; count[slot]+=weight; }
+	double get(int slot=thread()) override { if (count[slot]<=0) return 0; return (sum_of_squares[slot]  - sum[slot]*(sum[slot]/count[slot])) / count[slot]; }
+	void reset(int slot=thread()) override { sum[slot]=0; sum_of_squares[slot]=0; count[slot]=0; };
 	DataMapper* clone() override { return new DataMapperVariance(*this); };
 	double getCollapsed() override { 
 		double csum=0; double ccount=0; double csum_of_squares=0;
@@ -109,7 +108,6 @@ public:
 		return (csum_of_squares  - csum*(csum/ccount)) / ccount;
 	}
 private:
-	inline int thread() { return omp_get_thread_num(); }
 	vector<double> sum; vector<double> count; vector<double> sum_of_squares;
 };
 
@@ -119,10 +117,10 @@ public:
 		mode = DataMapper::MINIMUM;
 		min.resize(omp_get_max_threads(),std::numeric_limits< double >::max());
 	};
-	void addVal(double value) override { auto t=thread(); min[t] = value<min[t] ? value : min[t]; } 
-	void addVal(double value, double weight) override { auto t=thread(); if (this->weightsAreBuckets) min[t] = value*weight<min[t] ? value*weight : min[t]; else min[t] = value<min[t] ? value : min[t]; }
-	double get() override { auto t=thread(); return min[t]; }
-    void reset() override { auto t=thread(); min[t] = std::numeric_limits< double >::max(); };
+	void addVal(double value, int slot=thread()) override { min[slot] = value<min[slot] ? value : min[slot]; } 
+	void addValW(double value, double weight, int slot=thread()) override { if (this->weightsAreBuckets) min[slot] = value*weight<min[slot] ? value*weight : min[slot]; else min[slot] = value<min[slot] ? value : min[slot]; }
+	double get(int slot=thread()) override { return min[slot]; }
+    void reset(int slot=thread()) override { min[slot] = std::numeric_limits< double >::max(); };
 	DataMapper*  clone() override { return new DataMapperMin(*this); };
 	double getCollapsed() override { 
 		double cmin=std::numeric_limits< double >::max();
@@ -132,7 +130,6 @@ public:
 		return cmin;
 	}
 private:
-	inline int thread() { return omp_get_thread_num(); }
 	vector<double> min;
 };
 
@@ -142,10 +139,10 @@ public:
 		mode = DataMapper::MAXIMUM;
 		max.resize(omp_get_max_threads(),std::numeric_limits< double >::min());
 	};
-	void addVal(double value) override { auto t=thread(); max[t] = value>max [t]? value : max[t]; } 
-	void addVal(double value, double weight) override { auto t=thread(); if (this->weightsAreBuckets) max[t] = value*weight>max[t] ? value*weight : max[t]; else  max[t] = value>max[t] ? value : max[t]; } 
-	double get() override { auto t=thread(); return max[t]; }
-    void reset() override { auto t=thread(); max[t] = std::numeric_limits< double >::min(); };
+	void addVal(double value, int slot=thread()) override { max[slot] = value>max [slot]? value : max[slot]; } 
+	void addValW(double value, double weight, int slot=thread()) override { if (this->weightsAreBuckets) max[slot] = value*weight>max[slot] ? value*weight : max[slot]; else  max[slot] = value>max[slot] ? value : max[slot]; } 
+	double get(int slot=thread()) override { return max[slot]; }
+    void reset(int slot=thread()) override { max[slot] = std::numeric_limits< double >::min(); };
 	DataMapper*  clone() override { return new DataMapperMax(*this); };
 	double getCollapsed() override { 
 		double cmax = std::numeric_limits< double >::min();
@@ -155,7 +152,6 @@ public:
 		return cmax;
 	}
 private:
-	inline int thread() { return omp_get_thread_num(); }
 	vector<double> max;
 };
 

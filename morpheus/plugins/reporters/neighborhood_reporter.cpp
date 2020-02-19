@@ -157,13 +157,13 @@ void NeighborhoodReporter::reportGlobal() {
 				double value = input(nb_pos);
 				// add value to data mapper
 				for (auto const&  out: output){
-					out->mapper->addVal( value );
+					out->mapper->addVal( value , thread);
 				}
 			}
 			// write mapped values to output symbol at node
 			for ( auto const&  out: output ) {
-				out->symbol.set(node.pos(), out->mapper->get());
-				out->mapper->reset();
+				out->symbol.set(node.pos(), out->mapper->get(thread));
+				out->mapper->reset(thread);
 			}
 		}
 	}
@@ -309,8 +309,9 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 		// Assume cell granularity
 #pragma omp parallel
 		{
+			int thread = omp_get_thread_num();
 			for (auto const& out : interf_output) {
-				out->mapper->reset();
+				out->mapper->reset(thread);
 			}
 #pragma omp for schedule(static)
 			for (int c=0; c<cells.size(); c++) {
@@ -347,14 +348,14 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 					double interfacelength = (scaling() == INTERFACES) ? nb->second : 1;
 					
 					for (auto & out : interf_output) {
-						out->mapper->addVal(value, interfacelength);
+						out->mapper->addValW(value, interfacelength, thread);
 					}
 				}
 
 				for (auto& out : interf_output) {
 					if (out->symbol.granularity() == Granularity::Cell) {
-						out->symbol.set(cell_focus, out->mapper->get());
-						out->mapper->reset();
+						out->symbol.set(cell_focus, out->mapper->get(thread));
+						out->mapper->reset(thread);
 					}
 				}
 			}

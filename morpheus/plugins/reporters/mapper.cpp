@@ -84,18 +84,22 @@ void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 			bool dimensions_lost = extends.size() < input_extends.size();
 			if (  output.symbol->granularity() ==  input->granularity() &&  dimensions_lost) {
 				auto mapper =  DataMapper::create(output.mapping());
-#pragma omp parallel for
-				for (const auto& focus : range) {
-					multimap<FocusRangeAxis,int> restrictions;
-					for (auto e : extends) {
-						restrictions.insert(make_pair(e,focus.get(e)));
+#pragma omp parallel
+				{
+					auto thread = omp_get_thread_num();
+#pragma omp for schedule(static)
+					for (const auto& focus : range) {
+						multimap<FocusRangeAxis,int> restrictions;
+						for (auto e : extends) {
+							restrictions.insert(make_pair(e,focus.get(e)));
+						}
+						FocusRange inner_range(input->granularity(),restrictions);
+						mapper->reset(thread);
+						for (const auto& inner_focus : inner_range ){
+							mapper->addVal(input(inner_focus),thread);
+						}
+						output.symbol->set(focus,mapper->get(thread));
 					}
-					FocusRange inner_range(input->granularity(),restrictions);
-					mapper->reset();
-					for (const auto& inner_focus : inner_range ){
-						mapper->addVal(input(inner_focus));
-					}
-					output.symbol->set(focus,mapper->get());
 				}
 			}
 			else {
@@ -142,6 +146,7 @@ void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 			FocusRange range(output.symbol->accessor(), scope);
 #pragma omp parallel
 			{
+				auto thread = omp_get_thread_num();
 #pragma omp for schedule(static)
 				for (auto out_focus : range) {
 					// Optimization for single node cells
@@ -152,10 +157,10 @@ void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 					else {
 						FocusRange input_range(input->granularity(),out_focus.cellID());
 						for (auto focus: input_range) {
-							mapper->addVal(input(focus));
+							mapper->addVal(input(focus),thread);
 						}
 						output.symbol->set(out_focus,mapper->get());
-						mapper->reset();
+						mapper->reset(thread);
 					}
 				}
 			}
@@ -163,9 +168,9 @@ void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 		else if (output.symbol->granularity() == Granularity::Global) {
 			FocusRange input_range(input->granularity(),scope);
 			for (auto focus: input_range) {
-				mapper->addVal(input(focus));
+				mapper->addVal(input(focus),0);
 			}
-			output.symbol->set(SymbolFocus::global, mapper->get());
+			output.symbol->set(SymbolFocus::global, mapper->get(0));
 		}
 		else {
 			throw string("Missing mapping implementation");
