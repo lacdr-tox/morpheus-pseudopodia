@@ -64,6 +64,7 @@ void CPMSampler::init(const Scope* scope)
 	registerOutputSymbol(scope->findSymbol<double>(SymbolBase::CellVolume_symbol,true));
 	registerOutputSymbol(scope->findSymbol<double>(SymbolBase::CellSurface_symbol,true));
 	registerOutputSymbol(scope->findSymbol<double>(SymbolBase::CellLength_symbol,true));
+	registerOutputSymbol(scope->findSymbol<double>(SymbolBase::CellType_symbol,true));
 	if (stepper_type() == StepperType::EDGELIST) {
 		CPM::enableEgdeTracking();
 	}

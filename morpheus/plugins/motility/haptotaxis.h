@@ -12,7 +12,6 @@
 #include "core/simulation.h"
 #include "core/interfaces.h"
 #include "core/cell.h"
-#include "core/pde_layer.h"
 #include "core/plugin_parameter.h"
 
 /** \defgroup Haptotaxis
@@ -21,15 +20,13 @@
 \ingroup CPM_EnergyPlugins
 
 \section Description
-Haptotaxis is an Energy that puts an energetic bias in the hamiltonian depending on the gradient of an underlying PDE_Layer.
+Haptotaxis favors updates in the directions of certain attractants. Unlike \ref Chemotaxis the amount of attractant at the target site is taken into account, not the gradient of the attractor.
 
 \section Example
-\verbatim
-<Haptotaxis [layer="agent1" saturation="0.1"]>
-	<Layer symbol="agent1" />
-	<Strength [symbol="S" | value="0.1"] />
+~~~~~~~~~~~~~~~~{.xml}
+<Haptotaxis attractant="10 * agent1" strength="0.1">
 </Haptotaxis>
-\endverbatim
+~~~~~~~~~~~~~~~~
 */
 
 class Haptotaxis : virtual public CPM_Energy
@@ -43,8 +40,7 @@ class Haptotaxis : virtual public CPM_Energy
 
 		Haptotaxis(); // default values
 		void init(const Scope* scope) override;
-		void loadFromXML(const XMLNode node) override;
 
-		double delta(const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const override;
+		double delta(const SymbolFocus& cell_focus, const CPM::Update& update) const override;
 		double hamiltonian(CPM::CELL_ID cell_id) const override;
 };

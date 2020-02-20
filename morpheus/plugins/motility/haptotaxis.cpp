@@ -12,26 +12,21 @@ Haptotaxis::Haptotaxis() {
 };
 
 
-void Haptotaxis::loadFromXML(const XMLNode Node)
-{
-	CPM_Energy::loadFromXML(Node);
-}
-
 void Haptotaxis::init(const Scope* scope) {
 	CPM_Energy::init(scope);
 };
 
-double Haptotaxis::delta( const SymbolFocus& cell_focus, const CPM::UPDATE& update, CPM::UPDATE_TODO todo) const
+double Haptotaxis::delta( const SymbolFocus& cell_focus, const CPM::Update& update) const
 {
 	double attraction = strength(cell_focus);
 	
 	if ( attraction == 0.0 ) return 0.;
-	double c_neighbor = attractant(update.focus);  // concentration at site of which state is being copied from
+	double c_neighbor = attractant(update.focus());  // concentration at site of which state is being copied from
 	
 	attraction *= c_neighbor;
 	
-	if ( todo & CPM::ADD 	) return -attraction;   
-	if ( todo & CPM::REMOVE ) return  attraction;  
+	if ( update.opAdd() ) return -attraction;   
+	if ( update.opRemove() ) return  attraction;  
 	return 0.0;
 }
 

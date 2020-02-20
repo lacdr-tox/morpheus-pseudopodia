@@ -10,11 +10,10 @@
 		<xs:annotation>
 			<xs:appinfo>Motility</xs:appinfo>
 		</xs:annotation>
-		<xs:all maxOccurs="1">
-			<xs:element name="Layer" 				type="cpmLayerRef" 								/>
-			<xs:element name="Strength"  			type="cpmDoublePropertyRef"			 				/>
-		</xs:all>
+
 		<xs:attribute name="name" type="cpmString" use="optional" />
+		<xs:attribute name="attractant" type="cpmMathExpression" use="required" />
+		<xs:attribute name="strength" type="cpmMathExpression" use="required" />
 	</xs:complexType>
 
 </xs:schema>
