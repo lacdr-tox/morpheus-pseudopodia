@@ -1498,9 +1498,9 @@ void EventSystem::executeTimeStep()
 	else {
 // 		if (range.size()>50) {
 #pragma omp parallel for schedule(static)
-			for (auto focus : range) {
-				if (condition->get(focus))
-					compute(focus);
+			for (auto focus = range.begin(); focus<range.end(); ++focus) { {
+				if (condition->get(*focus))
+					compute(*focus);
 			}
 // 		}
 // 		else {
