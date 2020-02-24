@@ -2,7 +2,7 @@ cmake_policy(SET CMP0022 NEW)
 
 add_library(ModelTesting SHARED model_test.cpp)
 target_include_directories(ModelTesting PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries_fixed(ModelTesting PUBLIC MorpheusCore)
+target_link_libraries_patched(ModelTesting PUBLIC MorpheusCore)
 
 FUNCTION(InjectModels target)
 

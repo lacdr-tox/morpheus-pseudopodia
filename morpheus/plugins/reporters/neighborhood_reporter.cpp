@@ -188,11 +188,10 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 			for (auto const& out : halo_output) { out->mapper->reset(); }
 			
 #pragma omp for schedule(static)
-			for ( auto i_cell_id = cells.begin(); i_cell_id<cells.end(); ++i_cell_id) {
+			for ( int i=0; i<cells.size(); i++) {
 	// 		for ( auto cell_id : cells) {
 				// Create halo of nodes surrounding the cell
-				auto cell_id = *i_cell_id;
-				SymbolFocus cell_focus(cell_id);
+				SymbolFocus cell_focus(cells[i]);
 				
 				if ( using_local_ns && local_ns_granularity != Granularity::MembraneNode) {
 					// Expose local symbols to input
@@ -200,14 +199,14 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 				}
 				
 				Cell::Nodes halo_nodes; // holds nodes of neighbors of membrane nodes. Used for <concentration>
-				const Cell::Nodes& surface_nodes = CPM::getCell (cell_id).getSurface();
+				const Cell::Nodes& surface_nodes = cell_focus.cell().getSurface();
 				for ( Cell::Nodes::const_iterator m = surface_nodes.begin(); m != surface_nodes.end(); ++m ) {
 					// check the current boundary neighborhood
 					for ( int i_nei = 0; i_nei < neighbor_offsets.size(); ++i_nei ) {
 						VINT neighbor_position = ( *m ) + neighbor_offsets[i_nei];
 						const CPM::STATE& nb_spin = CPM::getNode( neighbor_position );
 
-						if ( cell_id != nb_spin.cell_id ) { // if neighbor is different from me
+						if ( cell_focus.cellID() != nb_spin.cell_id ) { // if neighbor is different from me
 							// HACK: NOFLUX BOUNDARY CONDITIONS when halo is in MEDIUM
 							//cout << CPM::getCellIndex( nb_spin.cell_id ).celltype << " != " << CPM::getEmptyCelltypeID() << endl;
 							if ( exclude_medium() ) {
@@ -221,18 +220,18 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 					}
 				}
 				if (halo_nodes.empty() ) {
-					cout << "MembraneReporter refuses to report on cell " << cell_id << " because it has no surface" << endl;
-					cout << "Cell "<< cell_id << " Cell size was " << CPM::getCell ( cell_id ).nNodes() << endl;
+					cout << "MembraneReporter refuses to report on cell " << cell_focus.cellID() << " because it has no surface" << endl;
+					cout << "Cell "<< cell_focus.cellID() << " Cell size was " << cell_focus.cell().nNodes() << endl;
 					continue;
 				}
 				
 				if (scaling() == INTERFACES) {
 					// Report halo input into membrane mapper, coordinating the transfer into an intermediate membrane property
-					mapper.attachToCell(cell_id);
+					mapper.attachToCell(cell_focus.cellID());
 					for ( auto const & i :halo_nodes) {
 						if ( using_local_ns && local_ns_granularity == Granularity::MembraneNode) {
 							// Expose local symbols to input
-							cell_focus.setCell(cell_id,i);
+							cell_focus.setCell(cell_focus.cellID(),i);
 	// 						cout << "Setting focus for local ns " << local_ns_id << " to " << cell_focus.pos() << "; " << cell_focus.cellID()  << endl;
 							input.setNameSpaceFocus(local_ns_id, cell_focus);
 						}
@@ -245,7 +244,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 					for (auto & out : halo_output) {
 						// TODO There must be a lock on the out->mapper if using it in multithreading !
 						if (out->membrane_acc) {
-							mapper.copyData(out->membrane_acc->getField(cell_id));
+							mapper.copyData(out->membrane_acc->getField(cell_focus.cellID()));
 						}
 						else {
 							if (raw_data.size() == 0) {
