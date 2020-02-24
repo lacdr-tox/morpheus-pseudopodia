@@ -1462,35 +1462,35 @@ void EventSystem::executeTimeStep()
 	FocusRange range(target_granularity, target_scope);
 	if (trigger_on_change()) {
 #pragma omp parallel for schedule(static)
-		for (auto focus : range) {
+		for (auto focus = range.begin(); focus<range.end(); ++focus) {
 			
-			double cond = condition->get(focus);
-			auto history_val = condition_history.find(focus);
+			double cond = condition->get(*focus);
+			auto history_val = condition_history.find(*focus);
 			
 			double trigger = ( history_val != condition_history.end()? history_val->second <= 0.0 :  ! xml_condition_history()) && cond;
 			
 			if (trigger) {
 #pragma omp critical
 				{
-					double d = delay(focus);
+					double d = delay(*focus);
 	// 				cout << "Delay " << d << " at " << to_str(time) << endl;
 					if (d == 0) {
-						compute(focus);
+						compute(*focus);
 					}
 					else if (delay_compute()) {
-						DelayedAssignment assignment {focus,{}};
+						DelayedAssignment assignment {*focus,{}};
 						delayed_assignments.insert({time + d,assignment});
 					}
 					else {
-						DelayedAssignment assignment {focus,{}};
-						computeToTarget(focus,true, &assignment.value_cache);
+						DelayedAssignment assignment {*focus,{}};
+						computeToTarget(*focus,true, &assignment.value_cache);
 						delayed_assignments.insert({time + d,assignment});
 					}
 					if (history_val != condition_history.end()) {
 						history_val->second = cond;
 					}
 					else 
-						condition_history[focus] = cond;
+						condition_history[*focus] = cond;
 				}
 			}
 		}
@@ -1498,7 +1498,7 @@ void EventSystem::executeTimeStep()
 	else {
 // 		if (range.size()>50) {
 #pragma omp parallel for schedule(static)
-			for (auto focus = range.begin(); focus<range.end(); ++focus) { {
+			for (auto focus = range.begin(); focus<range.end(); ++focus) {
 				if (condition->get(*focus))
 					compute(*focus);
 			}
