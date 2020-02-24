@@ -45,7 +45,7 @@ build tools required:
 
 Libraries required (debian package notation):
   - zlib1g-dev libtiff-dev graphviz-dev libboost-dev
-  - qttools5-dev libqt5sql5-sqlite libqt5svg5-dev (qtwebengine5-dev | libqt5webview5-dev)
+  - qttools5-dev libqt5sql5-sqlite libqt5svg5-dev (qtwebengine5-dev | libqt5webkit5-dev)
 
  
 Runtime dependencies:

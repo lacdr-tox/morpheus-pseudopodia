@@ -62,7 +62,9 @@ IF(GRAPHVIZ_FOUND)
 	ENDIF()
 ENDIF()
 
-add_subdirectory(testing)
+IF (MORPHEUS_TESTS)
+	add_subdirectory(testing)
+ENDIF()
 
 add_subdirectory(plugins)
 add_subdirectory(core)
