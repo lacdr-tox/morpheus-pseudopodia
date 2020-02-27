@@ -7,6 +7,9 @@ FUNCTION(list_prepend IN prefix OUT)
 ENDFUNCTION()
 
 ## Add sources paths 
+IF(POLICY CMP0076)
+	CMAKE_POLICY(SET CMP0076 NEW)
+ENDIF()
 FUNCTION(target_sources_relpaths target iface sources)
 	IF (CMAKE_VERSION VERSION_LESS 3.13)
 		FOREACH(entry ${${sources}})
@@ -22,7 +25,7 @@ ENDFUNCTION()
 ## TODO Linker flags are not copied though.
 FUNCTION(target_link_libraries_patched target iface)
 	set(libraries ${ARGN})
-	if (CMAKE_VERSION VERSION_LESS 3.16)
+	if (CMAKE_VERSION VERSION_LESS 3.12)
 		get_property(target_type TARGET ${target} PROPERTY TYPE)
 		FOREACH(library ${libraries})
 			SET(LIB_IS_OBJECT FALSE)
