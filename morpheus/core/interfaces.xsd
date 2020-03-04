@@ -10,6 +10,9 @@
 	<xs:complexType name="morphPlugin">
 		<xs:attribute name="name" 	type="cpmString"			use="optional" />
 		<xs:attribute name="tags"	type="morphTags"			use="optional" />
+		<xs:all>
+			<xs:element name="Annotation" type="morphText" minOccurs="0" />
+		</xs:all>
 	</xs:complexType>
 
 	<xs:complexType name="morphProcessPlugin">

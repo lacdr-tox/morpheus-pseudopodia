@@ -132,7 +132,7 @@ void domNodeEditor::setNode(nodeController* node, SharedMorphModel model)
 			multi_line_math_editor->show();
 			current_value_edit = MathText;
 		}
-		else if ( node->textType()->name == "cpmText") {
+		else if ( node->textType()->name == "cpmText" || node->textType()->name == "morphText" ) {
 			if (node->getText().size()>500 || node->getName().endsWith("Data")) {
 				multi_line_text_editor->setText(node->getText().left(100) + " ...");
 				multi_line_text_editor->setEnabled(false);

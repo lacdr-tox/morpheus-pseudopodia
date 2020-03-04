@@ -437,7 +437,12 @@ void XSD::initComplexType(QSharedPointer<XSD::ComplexTypeInfo> info)
 		if (sub_node.nodeName() == "xs:attribute") {
 			// TODO override existing attributes with same name
 			auto attr_name = sub_node.attributes().namedItem("name").nodeValue();
-			for (const auto& attr : info->attributes) { if (attr.attributes().namedItem("name").nodeValue() == attr_name) info->attributes.removeAll(attr); break; }
+			for (const auto& attr : info->attributes) {
+				if (attr.attributes().namedItem("name").nodeValue() == attr_name){
+					info->attributes.removeAll(attr);
+					break;
+				}
+			}
 			info->attributes.append(sub_node);
 		}
 		else if (sub_node.nodeName() == "xs:sequence" || sub_node.nodeName() == "xs:choice" || sub_node.nodeName() == "xs:all") {
@@ -456,6 +461,8 @@ void XSD::initComplexType(QSharedPointer<XSD::ComplexTypeInfo> info)
 				}
 				
 				info->child_info.is_choice = child_group.is_choice;
+				info->child_info.min_occurs = child_group.min_occurs;
+				info->child_info.max_occurs = child_group.max_occurs;
 				
 				if (sub_node.attributes().contains("minOccurs"))
 					info->child_info.min_occurs = child_group.min_occurs;
