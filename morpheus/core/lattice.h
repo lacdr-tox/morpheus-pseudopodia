@@ -64,11 +64,25 @@ private:
 // 	friend class Lattice;
 };
 
+// Descriptor for Lattices
+struct LatticeDesc {
+	enum Structure { linear, square , hexagonal, cubic };
+	Structure structure;
+	VINT size;
+	NeighborhoodDesc default_neighborhood;
+	double node_length = 1;
+	map<Boundary::Codes,Boundary::Type> boundaries;
+	shared_ptr<Domain> domain = make_shared<Domain>();
+};
 
 class Lattice {
 public:
 
-	enum Structure { linear, square , hexagonal, cubic } structure;
+	using Structure = LatticeDesc::Structure;
+	static const auto linear = Structure::linear;
+	static const auto square = Structure::square;
+	static const auto hexagonal = Structure::hexagonal;
+	static const auto cubic = Structure::cubic;
 
 	virtual string getXMLName() const =0;
 // 	void loadFromXML(const XMLNode xnode, Scope* scope);
@@ -76,14 +90,6 @@ public:
 // 	XMLNode saveToXML();
 
 	Lattice();  /// Configure a Lattice from a XML node
-	struct LatticeDesc {
-		Structure structure;
-		VINT size;
-		NeighborhoodDesc default_neighborhood;
-		double node_length = 1;
-		map<Boundary::Codes,Boundary::Type> boundaries;
-		shared_ptr<Domain> domain = make_shared<Domain>();
-	};
 	Lattice(const LatticeDesc& desc);
 	static unique_ptr<Lattice> createLattice(const LatticeDesc& desc);
 	
@@ -131,11 +137,11 @@ public:
 	Neighborhood getNeighborhoodByOrder(const uint order) const;
 	
 protected:
-	const double sin_60 = 0.86602540378443864676;
+	const double sin_60 = M_HALF_SQRT3;
 	uint dimensions;
-	
+	Structure structure;
 	Container<VDOUBLE>* size_constant;
-// 	SymbolAccessor<double> size_symbol;
+
 	VINT _size;
 	Boundary::Type boundaries[Boundary::nCodes];
 	shared_ptr<Domain> domain;
@@ -225,7 +231,7 @@ inline bool Lattice::orth_resolve ( VDOUBLE& a) const {
 			return false;
 		}
 	}
-	if (structure == hexagonal) {
+	if (structure == Structure::hexagonal) {
 		double orth_y_size = sin_60 *_size.y;
 		if ( a.y<0 or a.y >= orth_y_size ) {
 			if (boundaries[Boundary::py] == Boundary::periodic) {
@@ -322,7 +328,7 @@ class Hex_Lattice: public Lattice {
 	public:
 	Hex_Lattice(const LatticeDesc& desc) : Lattice(desc) {
 		dimensions=2;
-		structure = hexagonal; 
+		structure = Structure::hexagonal; 
 		_size.z=1;
 		orth_size = VDOUBLE(_size.x, _size.y * sin_60, 1);
 		default_neighborhood = getNeighborhood(desc.default_neighborhood);
@@ -352,7 +358,7 @@ class Cubic_Lattice: public Orth_Lattice {
 public:
 	Cubic_Lattice(const LatticeDesc& desc) : Orth_Lattice(desc) {
 		dimensions=3;
-		structure = cubic;
+		structure = Structure::cubic;
 		default_neighborhood = getNeighborhood(desc.default_neighborhood);
 	};
 	string getXMLName() const override { return "cubic"; };
@@ -368,7 +374,7 @@ public:
 	static Square_Lattice* create(VINT resolution, bool spherical);
 	Square_Lattice(const LatticeDesc& desc) : Orth_Lattice(desc) {
 		dimensions=2;
-		structure = square;
+		structure = Structure::square;
 		_size.z=1;
 		default_neighborhood = getNeighborhood(desc.default_neighborhood);
 	};
@@ -385,7 +391,7 @@ public:
 	static Linear_Lattice* create(VINT length, bool periodic);
 	Linear_Lattice(const LatticeDesc& desc) : Orth_Lattice(desc) {
 		dimensions=1;
-		structure = linear;
+		structure = Structure::linear;
 		_size.y=1;
 		_size.z=1;
 		default_neighborhood = getNeighborhood(desc.default_neighborhood);

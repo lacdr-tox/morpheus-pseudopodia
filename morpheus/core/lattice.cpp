@@ -39,7 +39,7 @@ Lattice::Lattice() {
 	}
 }
 
-Lattice::Lattice(const Lattice::LatticeDesc& desc) : Lattice()
+Lattice::Lattice(const LatticeDesc& desc) : Lattice()
 {
 	for (auto const & bdry : desc.boundaries) {
 		if (bdry.second != Boundary::periodic) {
@@ -71,7 +71,7 @@ Lattice::Lattice(const Lattice::LatticeDesc& desc) : Lattice()
 }
 
 
-unique_ptr<Lattice> Lattice::createLattice(const Lattice::LatticeDesc& desc)
+unique_ptr<Lattice> Lattice::createLattice(const LatticeDesc& desc)
 {
 	switch (desc.structure) {
 		case cubic:

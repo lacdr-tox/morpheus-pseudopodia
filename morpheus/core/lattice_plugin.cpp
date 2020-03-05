@@ -82,7 +82,7 @@ void LatticePlugin::loadFromXML(XMLNode xnode, Scope* scope) {
 	
 	if (xnode.nChildNode("Domain")) {
 		lattice_desc.domain = make_shared<Domain>();
-		lattice_desc.domain->loadFromXML(xnode.getChildNode("Domain"),scope);
+		lattice_desc.domain->loadFromXML(xnode.getChildNode("Domain"),scope, lattice_desc);
 	} 
 
 	

@@ -23,7 +23,7 @@ private:
 	PluginParameter<string, XMLValueReader, OptionalPolicy> size_symbol_name;
 	
 	Length_Scale node_length;
-	Lattice::LatticeDesc lattice_desc;
+	LatticeDesc lattice_desc;
 	shared_ptr<Lattice> lattice;
 	shared_ptr<SymbolRWAccessorBase<VDOUBLE>> size_symbol;
 	Scope* lattice_scope;

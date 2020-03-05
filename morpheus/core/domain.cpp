@@ -1,6 +1,5 @@
 #include "domain.h"
 #include "scope.h"
-#include "lattice_data_layer.cpp"
 #include "simulation.h"
 
 
@@ -75,7 +74,7 @@ std::istream& operator >> (std::istream& is, Boundary::Type& a) { string s; is >
 template class Lattice_Data_Layer<Boundary::Type>;
 
 
-void Domain::loadFromXML(const XMLNode xNode, Scope* scope)
+void Domain::loadFromXML(const XMLNode xNode, Scope* scope, const LatticeDesc& lattice_desc)
 {
 	boundary_type = Boundary::noflux;
 	getXMLAttribute(xNode, "boundary-type", boundary_type);
@@ -92,13 +91,15 @@ void Domain::loadFromXML(const XMLNode xNode, Scope* scope)
 		type = circle;
 		getXMLAttribute(xNode, "Circle/diameter", diameter);
 		domain_size = VINT(diameter,diameter,1);
-		if (lattice->structure == Lattice::Structure::hexagonal)
+		if (lattice_desc.structure == LatticeDesc::hexagonal)
 			domain_size.x*=sqrt(3);
 	}
 	else if (xNode.nChildNode("Hexagon")) {
 		type = hexagon;
 		getXMLAttribute(xNode, "Hexagon/diameter", diameter);
 		domain_size = VINT(diameter, sin(M_PI/3)*diameter, 1);
+		if (lattice_desc.structure == LatticeDesc::hexagonal)
+			domain_size.x*=1.5;
 	}
 	cout << "Domain size " << domain_size << endl;
 }
@@ -122,6 +123,7 @@ void Domain::init(Lattice* l) {
 		if (lattice->structure == Lattice::Structure::hexagonal && lattice->get_boundary_type(Boundary::mx) == Boundary::periodic) {
 			center.x -= center.y/2;
 		}
+
 	}
 	
 	createEnumerationMap();
@@ -152,8 +154,10 @@ bool Domain::insideHexagonalDomain(const VINT& a) const
 {
 	VDOUBLE r = lattice->to_orth(lattice->node_distance(a,center));
 	r.z=0;
-	auto size = domain_size/2;
-	if ( abs(r.y) <= size.y && (abs(r.x) <= (size.x-abs(r.y)/sin(M_PI/3)/2) + 0.01))
+// 	auto size = domain_size/2;
+	auto r_y = M_HALF_SQRT3 * diameter / 2.0;
+	auto r_x = diameter / 2;
+	if ( abs(r.y) <= r_y && (abs(r.x) <= (r_x-abs(r.y)/sin(M_PI/3)/2) + 0.01))
 		return true;
 	return false;
 }

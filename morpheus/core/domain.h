@@ -34,12 +34,13 @@ std::ostream& operator << (std::ostream& os, const Boundary::Type& a) ;
 std::istream& operator >> (std::istream& is, Boundary::Type& a);
 
 class Lattice;
+struct LatticeDesc;
 class Scope;
 
 class Domain {
 public:
 	Domain() : type(none) {};
-	void loadFromXML(const XMLNode xNode, Scope* scope);
+	void loadFromXML(const XMLNode xNode, Scope* scope, const LatticeDesc& desc);
 	void init(Lattice* l);
 	enum Type {none ,image, circle, hexagon};
 

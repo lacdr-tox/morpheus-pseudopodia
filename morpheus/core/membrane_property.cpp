@@ -44,7 +44,7 @@ void MembranePropertyPlugin::loadMembraneLattice(const XMLNode& node, Scope* sco
 	
 
 	if (SIM::getLatticeStructure() == Lattice::square || SIM::getLatticeStructure() == Lattice::hexagonal ) {
-		Lattice::LatticeDesc desc;
+		LatticeDesc desc;
 		desc.size = VINT(resolution,1,1);
 		size = desc.size;
 		desc.boundaries[Boundary::mx] = Boundary::periodic;
@@ -53,7 +53,7 @@ void MembranePropertyPlugin::loadMembraneLattice(const XMLNode& node, Scope* sco
 		node_sizes.push_back(1.0);
 	}
 	else if (SIM::getLatticeStructure() == Lattice::cubic) {
-		Lattice::LatticeDesc desc;
+		LatticeDesc desc;
 		size.y = resolution/2;
 		size.x = 2 * size.y;
 		size.z = 1;

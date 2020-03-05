@@ -22,15 +22,20 @@
 #include <functional>
 #include "cpp_future.h"
 
-#ifndef M_PI
-  const double M_PI = 3.1415926535897932384626433832795028841971;
+#ifdef M_PI
+#undef M_PI
 #endif
-#ifndef M_SQRT3
-  const double M_SQRT3 = 1.7320508075688772935274463415059;
+const double M_PI = 3.1415926535897932384626433832795028841971;
+
+#ifdef M_SQRT3
+#undef M_SQRT3
 #endif
-#ifndef M_HALF_SQRT3
-  const double  M_HALF_SQRT3 = 0.86602540378443864676372317075294;
+const double M_SQRT3 = 1.7320508075688772935274463415059;
+
+#ifdef M_HALF_SQRT3
+#undef M_HALF_SQRT3
 #endif
+const double  M_HALF_SQRT3 = 0.86602540378443864676372317075294;
 
 
 inline int pmod(int a, int b) { a%=b; return (a<0) ? a+b : a; }
