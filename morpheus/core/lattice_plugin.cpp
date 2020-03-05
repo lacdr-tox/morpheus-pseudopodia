@@ -79,6 +79,8 @@ void LatticePlugin::loadFromXML(XMLNode xnode, Scope* scope) {
 // 			}
 		}
 	}
+	structure.init();
+	lattice_desc.structure = structure();
 	
 	if (xnode.nChildNode("Domain")) {
 		lattice_desc.domain = make_shared<Domain>();
@@ -111,7 +113,6 @@ void LatticePlugin::init(const Scope* scope)
 		size_symbol->set(SymbolFocus::global, lattice_desc.size);
 	}
 	
-	lattice_desc.structure = structure();
 	lattice_desc.node_length = node_length();
 
 	lattice = Lattice::createLattice(lattice_desc);
