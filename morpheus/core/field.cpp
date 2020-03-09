@@ -995,7 +995,11 @@ double PDE_Layer::getDiffusionRate(){
 double PDE_Layer::sum() const
 {
 	if (using_domain) {
-		return data[domain == Boundary::none].sum();
+		double s=0;
+		for (int i=0; i<data.size(); i++) {
+			s+= domain[i]==Boundary::none ? data[i] : 0.0;
+		}
+		return s;
 	}
 	double s=0;
 	for (int z=0; z<l_size.z; z++) {
@@ -1012,7 +1016,13 @@ double PDE_Layer::sum() const
 double PDE_Layer::mean() const
 {
 	if (using_domain) {
-		return sum() / (domain == Boundary::none).sum();
+		double s=0;
+		double c=0;
+		for (int i=0; i<data.size(); i++) {
+			s+= domain[i]==Boundary::none ? data[i] : 0.0;
+			c+= domain[i]==Boundary::none;
+		}
+		return s/c;
 	}
 	return sum() / (l_size.x*l_size.y*l_size.z);
 }
@@ -1021,7 +1031,15 @@ double PDE_Layer::variance() const
 {
 	double average = mean();
 	if (using_domain) {
-		return ((data[domain == Boundary::none] - average) * (data[domain == Boundary::none] - average)).sum() / ((domain == Boundary::none).sum() - 1);
+		double v=0;
+		double c=0;
+		for (int i=0; i<data.size(); i++) {
+			if (domain[i]==Boundary::none) {
+				v+=(data[i]-average) * (data[i]-average);
+				c++;
+			}
+		}
+		return v/c;
 	}
 	double s=0;
 	for (int z=0; z<l_size.z; z++) {
@@ -1038,7 +1056,9 @@ double PDE_Layer::variance() const
 
 double PDE_Layer::min_val() const {
 	if (using_domain) {
-		return data[domain == Boundary::none].min();
+		double m=std::numeric_limits<double>::max();
+		for (int i=0; i<data.size(); i++) if (domain[i]==Boundary::none && data[i]<m) m=data[i];
+		return m;
 	}
 	double m = data[get_data_index(VINT(0,0,0))];
 	for (int z=0; z<l_size.z; z++) {
@@ -1054,7 +1074,9 @@ double PDE_Layer::min_val() const {
 
 double PDE_Layer::max_val() const {
 	if (using_domain) {
-		return data[domain == Boundary::none].max();
+		double m=std::numeric_limits<double>::min();
+		for (int i=0; i<data.size(); i++) if (domain[i]==Boundary::none && data[i]>m) m=data[i];
+		return m;
 	}
 	double m = data[get_data_index(VINT(0,0,0))];
 	for (int z=0; z<l_size.z; z++) {
