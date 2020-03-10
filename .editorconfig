@@ -1,0 +1,17 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# Unix-style newlines with a newline ending every file
+[*]
+end_of_line = lf
+insert_final_newline = true
+
+# C++ source files
+[*.{h,cpp}]
+indent_style = tab
+
+# xcd source files
+[*.xsd]
+indent_style = tab
