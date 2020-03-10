@@ -8,7 +8,15 @@ PersistentMotion::PersistentMotion() {
 	registerPluginParameter(decaytime);
 	strength.setXMLPath("strength");
 	registerPluginParameter(strength);
-	
+
+
+    persTypeEval.setXMLPath("type");
+    map<string, PersistenceType> persTypeMap;
+    persTypeMap["default"] = PersistenceType::MORPHEUS;
+    persTypeMap["szabo"] = PersistenceType::SZABO;
+    persTypeEval.setConversionMap(persTypeMap);
+    registerPluginParameter(persTypeEval);
+
 	// optional
 	protrusion.setXMLPath("protrusion");
 	protrusion.setDefault("true");
@@ -18,6 +26,7 @@ PersistentMotion::PersistentMotion() {
 	registerPluginParameter(retraction);
 
 }
+
 
 void PersistentMotion::init(const Scope* scope) {
 	ReporterPlugin::init(scope);
@@ -34,11 +43,14 @@ void PersistentMotion::init(const Scope* scope) {
 	ReporterPlugin::registerOutputSymbol(cell_position_memory);
 	CPM_Energy::registerInputSymbol(cell_position_memory);
 	CPM_Energy::registerInputSymbol(cell_direction);
+
+	persistenceType = persTypeEval();
+    persistence = Persistence::create(persistenceType, *this);
 	
 	if( !protrusion() && !retraction() ) 
 	{
 		cerr << "PersistentMotion: init(): Both retraction and protrusion is set to false. Therefore, PersistentMotion has no effect, which is probably not the intended behavior." << endl;
-	    exit(-1);
+	    exit(EXIT_FAILURE);
 	}
 	
 
@@ -65,12 +77,7 @@ void PersistentMotion::report(){
 
 double PersistentMotion::delta ( const SymbolFocus& cell_focus, const CPM::Update& update) const
 {
-	const Cell& cell = cell_focus.cell();
-	VDOUBLE update_direction = cell.getUpdatedCenter() - cell.getCenter();
-	double cell_size = cell.nNodes();
-
-	double s = (update.opAdd() && protrusion() ) || ( update.opRemove() && retraction() ) ? strength( cell_focus ) : 0.0 ; 
-	return -s * cell_size * dot( update_direction,cell_direction->get( cell_focus.cellID() ) );
+    return persistence->delta(cell_focus, update);
 }
 
 double PersistentMotion::hamiltonian(CPM::CELL_ID cell_id) const {
@@ -78,4 +85,36 @@ double PersistentMotion::hamiltonian(CPM::CELL_ID cell_id) const {
 };
 
 
+double PersistentMotion::MorpheusPersistence::delta(const SymbolFocus &cell_focus, const CPM::Update &update) {
+    auto update_direction = Persistence::update_direction(cell_focus);
+    auto cell_size = cell_focus.cell().nNodes();
+
+    auto s = (update.opAdd() && pmp.protrusion() ) || (update.opRemove() && pmp.retraction() ) ? pmp.strength(cell_focus ) : 0.0 ;
+    return -s * cell_size * dot(update_direction, pmp.cell_direction->get(cell_focus.cellID() ) );
+}
+
+
+double PersistentMotion::SzaboPersistence::delta(const SymbolFocus &cell_focus, const CPM::Update &update) {
+    auto update_direction = Persistence::update_direction(cell_focus);
+
+    auto s = (update.opAdd() && pmp.protrusion() ) || (update.opRemove() && pmp.retraction() ) ? pmp.strength(cell_focus ) : 0.0 ;
+    return -s * dot(update_direction, pmp.cell_direction->get(cell_focus.cellID() ) );
+}
+
+VDOUBLE PersistentMotion::Persistence::update_direction(const SymbolFocus &cell_focus) {
+    auto cell = cell_focus.cell();
+    return cell.getUpdatedCenter() - cell.getCenter();
+}
+
+unique_ptr<PersistentMotion::Persistence>
+        PersistentMotion::Persistence::create(const PersistentMotion::PersistenceType persistenceType,
+                PersistentMotion& pM) {
+switch(persistenceType) {
+    case PersistenceType::MORPHEUS:
+        return make_unique<MorpheusPersistence>(pM);
+    case PersistenceType::SZABO:
+        return make_unique<SzaboPersistence>(pM);
+    }
+    __builtin_unreachable();
+}
 

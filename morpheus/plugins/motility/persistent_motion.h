@@ -68,7 +68,35 @@ Optional
 */
 
 class PersistentMotion : public ReporterPlugin, public CPM_Energy
-{	
+{
+protected:
+
+    enum class PersistenceType {MORPHEUS, SZABO};
+
+    class Persistence
+    {
+    protected:
+        PersistentMotion& pmp; // link to the PersistentMotion plugin instance (outer class)
+    public:
+        explicit Persistence(PersistentMotion& pM): pmp(pM) {}
+        virtual ~Persistence() {};
+        virtual double delta(const SymbolFocus& cell_focus, const CPM::Update& update) = 0;
+        static std::unique_ptr<Persistence> create(const PersistenceType persistenceType, PersistentMotion& pM);
+        static VDOUBLE update_direction(const SymbolFocus& cell_focus);
+    };
+
+    class MorpheusPersistence: public Persistence {
+        using Persistence::Persistence;
+    public:
+        double delta(const SymbolFocus &cell_focus, const CPM::Update &update) override ;
+    };
+
+    class SzaboPersistence: public Persistence {
+        using Persistence::Persistence;
+    public:
+        double delta(const SymbolFocus &cell_focus, const CPM::Update &update) override ;
+    };
+
 private:
 	
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> decaytime;
@@ -76,14 +104,20 @@ private:
 
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> retraction;
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> protrusion;
-	
+
+    PluginParameter2<PersistenceType, XMLNamedValueReader, RequiredPolicy> persTypeEval;
+
 	CellType* celltype;
+
+	PersistenceType persistenceType;
 	
 	// We store the direction and old position in 
 	// CellPropertyAccessor
 	SymbolRWAccessor<VDOUBLE> cell_direction; // stores direction of cell from cell property
 	SymbolRWAccessor<VDOUBLE> cell_position_memory; // stores cell.center from cell property
-	
+
+	unique_ptr<Persistence> persistence;
+
 public:
 	PersistentMotion();
 	DECLARE_PLUGIN("PersistentMotion")
