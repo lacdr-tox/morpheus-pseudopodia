@@ -95,6 +95,7 @@ double PersistentMotion::SzaboPersistence::delta(const SymbolFocus &cell_focus, 
     auto update_direction = Persistence::update_direction(cell_focus);
     auto target_direction = Persistence::target_direction(cell_focus);
 
+    // Equation 9 from Szabo et al. https://dx.doi.org/10.1088/1478-3975/7/4/046007
     return -pmp.strength(cell_focus) * dot(update_direction, target_direction.norm());
 }
 
@@ -155,7 +156,7 @@ void PersistentMotion::Persistence::exitWhenPointless() {
     if(!protrusion && !retraction)
     {
         std::cerr << "PersistentMotion::Persistence::exitWhenPointless(): "
-                     "Both retraction and protrusion is set to false. Therefore, PersistentMotion has no effect, "
+                     "Both retraction and protrusion are set to false. Therefore, PersistentMotion has no effect, "
                      "which is probably not the intended behavior." << endl;
         exit(EXIT_FAILURE);
     }

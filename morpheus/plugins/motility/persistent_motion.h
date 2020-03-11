@@ -22,21 +22,28 @@
 
 PersistentMotion models the tendency of cells to maintain their previous direction of movement (memory or inertia), due to the non-instantaneous turnover of the cytoskeleton
 
-Cells have a target direction \f$  \vec{t} \f$ based on previous movement, and CPM update in this direction are preferred (i.e. they decrease energy \f$ E \f$).
+Cells have a target direction \f$  \vec{t} \f$ based on previous movements, and CPM update in this direction are preferred (i.e. they decrease energy \f$ E \f$).
 
 For each proposed copy attempt \f$ \mathbf{x} \rightarrow \mathbf{x_{neighbor}} \f$ in direction \f$ \vec{s} \f$ , the change in effective energy is computed as:
 
-\f$ \Delta E = - \mu \cdot v_{\sigma,t} \cdot ( \vec{t} \cdot \vec{s} ) \f$
+- default: \f$ \Delta E = - \mu \cdot v_{\sigma,t} \cdot ( \vec{s} \cdot \vec{t} ) \f$
+- szabo: \f$ \Delta E = - \mu \cdot ( \vec{s} \cdot \vec{t} / |\vec{t}| ) \f$
 
 where
 - \f$ \mu \f$ is the strength of persistence, in units of energy.
 - \f$ v_{\sigma,t} \f$ is the cell volume
-- \f$ \vec{t} \f$ is a vector giving the target direction of previous movement
+- \f$ \vec{t} \f$ is a vector giving the target direction
 - \f$ \vec{s} \f$ is a vector giving the direction of CPM update
 
-The target direction is updated continuously according to the shift of cell centroid \f$\mathbf{x_t} - \mathbf{x_{t-1}}\f$, keeping a memory of of length 'decaytime' \f$ dt \f$ (units of MCS):
+The target direction is updated continuously according to:
 
-\f$ \vec{t_t} = (1-dt) \cdot \vec{t_{t_1}} + dt \cdot \mathbf{x_t} - \mathbf{x_{t-1}} \f$ 
+- default: \f$ \vec{t_t} = (1-dr) \cdot \vec{t_{t-1}} + dr \cdot \vec{\Delta x} / |\vec{\Delta x}| \f$
+- szabo: \f$ \vec{t_t} = (1-dr) \cdot \vec{t_{t-1}} + \vec{\Delta x} \f$
+
+where
+- \f$ dr  = \text{min}(1 / dt, 1) \f$ is the decay rate, with 'decaytime' \f$ dt \f$ in units of MCS
+- \f$ \vec{\Delta x} = \mathbf{x_t} - \mathbf{x_{t-1}}\f$ is the shift of the cell centroid
+
 
 \section Input 
 Required
@@ -46,8 +53,10 @@ Required
 
 Optional
 --------
+- *type* (default=default): Which persistence type (implementation) to use. Possible values are "default" (the "old" morpheus behavior) or "szabo" (see Szabo et al. reference).
 - *protrusion* (default=true): Boolean describing whether persistence should be considered during protrusions.
 - *retraction* (default=false): Boolean describing whether persistence should be considered during retractions.
+- *override-type-defaults* (default=false): Boolean describing whether default protrusion and retraction values of persistence types should be overwritten by user-specified ones.
 
 \section Notes
 
