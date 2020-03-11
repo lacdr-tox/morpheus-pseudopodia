@@ -75,7 +75,7 @@ double PersistentMotion::MorpheusPersistence::delta(const SymbolFocus &cell_focu
 }
 
 void PersistentMotion::MorpheusPersistence::report() {
-    for (auto cell_id : pmp.celltype->getCellIDs()) {
+    for (const auto& cell_id : pmp.celltype->getCellIDs()) {
         auto decay_rate = this->decay_rate(cell_id);
 
         auto new_center = CPM::getCell(cell_id).getCenter();
@@ -101,7 +101,7 @@ double PersistentMotion::SzaboPersistence::delta(const SymbolFocus &cell_focus, 
 
 void PersistentMotion::SzaboPersistence::report() {
 
-    for (auto cell_id : pmp.celltype->getCellIDs()) {
+    for (const auto& cell_id : pmp.celltype->getCellIDs()) {
 
         auto new_center = CPM::getCell(cell_id).getCenter();
         auto shift = new_center - pmp.cell_position_memory->get(cell_id);
