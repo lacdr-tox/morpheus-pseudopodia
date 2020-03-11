@@ -77,24 +77,34 @@ protected:
     {
     protected:
         PersistentMotion& pmp; // link to the PersistentMotion plugin instance (outer class)
+        bool protrusion;
+        bool retraction;
     public:
-        explicit Persistence(PersistentMotion& pM): pmp(pM) {}
-        virtual ~Persistence() {};
+        explicit Persistence(bool protrusion, bool retraction, PersistentMotion& pM);
+        virtual ~Persistence() = default;
+        virtual void report() = 0;
         virtual double delta(const SymbolFocus& cell_focus, const CPM::Update& update) = 0;
-        static std::unique_ptr<Persistence> create(const PersistenceType persistenceType, PersistentMotion& pM);
+        static std::unique_ptr<Persistence> create(PersistenceType persistenceType,
+                bool protrusion, bool retraction, bool typeOverride, PersistentMotion& pM);
         static VDOUBLE update_direction(const SymbolFocus& cell_focus);
+        VDOUBLE target_direction(const SymbolFocus& cell_focus) const;
+        void exitWhenPointless();
+        double decay_rate(CPM::CELL_ID cellId) const;
+        bool applyPersistence(const CPM::Update& update) const;
     };
 
     class MorpheusPersistence: public Persistence {
         using Persistence::Persistence;
     public:
-        double delta(const SymbolFocus &cell_focus, const CPM::Update &update) override ;
+        void report() override;
+        double delta(const SymbolFocus &cell_focus, const CPM::Update &update) override;
     };
 
     class SzaboPersistence: public Persistence {
-        using Persistence::Persistence;
     public:
-        double delta(const SymbolFocus &cell_focus, const CPM::Update &update) override ;
+        SzaboPersistence(bool protrusion, bool retraction, bool defaultOverride, PersistentMotion &pM);
+        void report() override;
+        double delta(const SymbolFocus &cell_focus, const CPM::Update &update) override;
     };
 
 private:
@@ -102,10 +112,11 @@ private:
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> decaytime;
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> strength;
 
-	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> retraction;
-	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> protrusion;
+	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> protrusionEval;
+	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> retractionEval;
 
-    PluginParameter2<PersistenceType, XMLNamedValueReader, RequiredPolicy> persTypeEval;
+	PluginParameter2<PersistenceType, XMLNamedValueReader, RequiredPolicy> persTypeEval;
+	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> overrideTypeDefaults;
 
 	CellType* celltype;
 

@@ -13,9 +13,10 @@
 		</xs:annotation>
 		<xs:attribute name="decay-time" type="cpmMathExpression"  use="required" />
 		<xs:attribute name="strength" type="cpmMathExpression"  use="required" />
+		<xs:attribute name="type" use="required" type="cpmPersistenceType" default="default" />
 		<xs:attribute name="protrusion" type="cpmBoolean" use="optional" default="true" />
 		<xs:attribute name="retraction" type="cpmBoolean" use="optional" default="false" />
-		<xs:attribute name="type" use="required" type="cpmPersistenceType" default="default" />
+		<xs:attribute name="override-type-defaults" type="cpmBoolean" use="optional" default="false" />
 		<xs:attribute name="name"       type="cpmString"  use="optional" />
 	</xs:complexType>
 
