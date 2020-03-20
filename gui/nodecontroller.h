@@ -172,4 +172,6 @@ private:
     void setRequiredElements(); /*!< Parses all possible child-nodes and attributes and sets all these who are required ones. */
 };
 
+Q_DECLARE_METATYPE(nodeController*);
+
 #endif // NODECONTROLLER_H

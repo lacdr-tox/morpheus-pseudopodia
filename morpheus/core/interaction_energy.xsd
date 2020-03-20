@@ -5,9 +5,9 @@
 		<xs:all>
 			<xs:element name="Contact" minOccurs="0" maxOccurs="unbounded">
 				<xs:complexType>
-					<xs:choice minOccurs="0" maxOccurs="unbounded">
+					<xs:all>
 						<xs:group ref="ContactPlugins"/>
-					</xs:choice>
+					</xs:all>
 					<xs:attribute name="type1" use="required" type="cpmCellTypeRef" />
 					<xs:attribute name="type2" use="required" type="cpmCellTypeRef" />
 					<xs:attribute name="value" use="required" type="cpmMathExpression" />

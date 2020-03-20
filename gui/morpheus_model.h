@@ -36,6 +36,9 @@ class MorphModel: public QAbstractItemModel
 {
     Q_OBJECT
 public:
+	static const int NodeRole = Qt::UserRole + 1;
+	static const int XPathRole = Qt::UserRole + 2;
+	static const int TagsRole = Qt::UserRole + 3;
 
     explicit MorphModel(QObject *parent = 0);
     /*!< Creates an empty model from scratch */

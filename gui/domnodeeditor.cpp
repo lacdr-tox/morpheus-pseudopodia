@@ -3,6 +3,7 @@
 domNodeEditor::domNodeEditor(QWidget* parent) : QWidget(parent)
 {
 	QVBoxLayout *main_layout = new QVBoxLayout(this);
+	main_layout->setContentsMargins(0, 0, 0, 0);
 	value_label = new QLabel("Value:");
 	main_layout->addWidget(value_label);
 	all_edits.append(value_label);

@@ -1,5 +1,23 @@
 #include "domnodeviewer.h"
 
+
+bool TagFilterSortProxyModel::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const {
+	if (filter_tags.isEmpty())
+		return true;
+	auto row_index = sourceModel()->index(source_row,0,source_parent);
+	auto tags_string = row_index.data(MorphModel::TagsRole).toString();
+	if (tags_string == "*") {
+		return true;
+	}
+	auto tags = tags_string.remove(QRegExp("\\s")).split(",", QString::SkipEmptyParts).toSet();
+	return ! tags.intersect(filter_tags).isEmpty();
+};
+
+void TagFilterSortProxyModel::setFilterTags(QString tag_list) {
+	filter_tags = tag_list.remove(QRegExp("\\s")).split(",", QString::SkipEmptyParts).toSet();
+	invalidateFilter();
+};
+
 //------------------------------------------------------------------------------
 
 domNodeViewer::domNodeViewer(QWidget* parent): QWidget(parent)
@@ -29,8 +47,12 @@ void domNodeViewer::createLayout()
     model_tree_view->setDragEnabled(true);
     model_tree_view->setAcceptDrops (true);
     model_tree_view->setDefaultDropAction(Qt::MoveAction);
-// 	model_tree_view->setAutoExpandDelay(200);
+	model_tree_view->setAutoExpandDelay(100);
 	model_tree_view->setAnimated(true);
+	model_tree_filter = new TagFilterSortProxyModel();
+	model_tree_filter->setFilterRole(MorphModel::TagsRole);
+	model_tree_view->setModel(model_tree_filter);
+	model_tree_view->setSortingEnabled(true);
 	
 	node_editor = new domNodeEditor(this);
 
@@ -41,14 +63,13 @@ void domNodeViewer::createLayout()
     symbol_list_wid->setRootIsDecorated(true);
     symbol_list_wid->setFocusPolicy(Qt::NoFocus);
     symbol_list_wid->setColumnWidth(0, 200);
-    symbol_list_wid->setSortingEnabled(true);
     symbol_list_wid->sortByColumn(0, Qt::AscendingOrder);
 
 	
     plugin_tree_widget = new QTreeWidget(this);
     plugin_tree_widget->setAlternatingRowColors(true);
     plugin_tree_widget->setColumnCount(2);
-    plugin_tree_widget ->setHeaderLabels(QStringList() << "Plugin" << "Category");
+    plugin_tree_widget->setHeaderLabels(QStringList() << "Plugin" << "Category");
     plugin_tree_widget->setColumnWidth(0, 200);
     plugin_tree_widget->setRootIsDecorated(false);
     plugin_tree_widget->setSortingEnabled(true);
@@ -57,14 +78,38 @@ void domNodeViewer::createLayout()
 
 
     splitter = new QSplitter(this);
-    QWidget *rightWid = new QWidget(this);
-
-    QVBoxLayout *vl = new QVBoxLayout(rightWid);
-	vl->addWidget(node_editor);
-    vl->addWidget(new QLabel("Symbols"));
-    vl->addWidget(symbol_list_wid);
-    vl->addWidget(new QLabel("Plugins"));
-    vl->addWidget(plugin_tree_widget);
+	
+	QWidget *leftWid = new QWidget(this);
+	leftWid->setLayout(new QVBoxLayout(this));
+// 	leftWid->setContentsMargins(0, 0, 0, 0);
+	leftWid->layout()->setContentsMargins(0, 10, 4, 0);
+	leftWid->layout()->setSpacing(0);
+	auto filter_row = new QHBoxLayout();
+	filter_row->setContentsMargins(10, 0, 10, 0);
+	filter_row->addStretch(1);
+	filter_row->setSpacing(8);
+	auto filter_label = new QLabel("&Filter tags",this);
+	filter_row->addWidget(filter_label);
+	model_tree_filter_edit = new QLineEdit(this);
+	filter_label->setBuddy(model_tree_filter_edit);
+	filter_row->addWidget(model_tree_filter_edit);
+	model_tree_filter_button = new QPushButton(this);
+	model_tree_filter_button->setIcon(QThemedIcon("view-filter",QIcon(":/view_filter.png")));
+	model_tree_filter_button->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+	filter_row->addWidget(model_tree_filter_button);
+	leftWid->layout()->addItem(filter_row);
+	leftWid->layout()->addWidget(model_tree_view);
+	
+	QWidget *rightWid = new QWidget(this);
+	rightWid->setLayout(new QVBoxLayout(rightWid));
+	rightWid->layout()->setContentsMargins(4, 10, 0, 0);
+	rightWid->layout()->setSpacing(8);
+// 	rightWid->setContentsMargins(0, 0, 0, 0);
+	rightWid->layout()->addWidget(node_editor);
+	rightWid->layout()->addWidget(new QLabel("Symbols"));
+	rightWid->layout()->addWidget(symbol_list_wid);
+	rightWid->layout()->addWidget(new QLabel("Plugins"));
+	rightWid->layout()->addWidget(plugin_tree_widget);
     //vl->addStretch();
 
     lFont.setFamily( lFont.defaultFamily() );
@@ -74,7 +119,8 @@ void domNodeViewer::createLayout()
     connect(plugin_tree_widget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),this,SLOT(pluginTreeDoubleClicked(QTreeWidgetItem*, int)));
     connect(plugin_tree_widget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(pluginTreeItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)));
 
-    splitter->addWidget(model_tree_view);
+	
+    splitter->addWidget(leftWid);
     splitter->addWidget(rightWid);
 
     QHBoxLayout *hl = new QHBoxLayout(this);
@@ -82,7 +128,8 @@ void domNodeViewer::createLayout()
 	this->setFocusPolicy(Qt::NoFocus);
 	this->setFocusProxy(model_tree_view);
 	updateConfig();
-
+	QObject::connect(model_tree_filter_edit, &QLineEdit::textChanged, model_tree_filter, &TagFilterSortProxyModel::setFilterTags);
+	QObject::connect(model_tree_filter_button, &QPushButton::clicked, [this]() { model_tree_filter->setFilterTags(model_tree_filter_edit->text()); });
     QObject::connect(model_tree_view, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(createTreeContextMenu(QPoint)));
     QObject::connect(symbol_list_wid, SIGNAL(doubleClicked(QModelIndex)), SLOT(insertSymbolIntoEquation(QModelIndex)));
     QObject::connect(splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(splitterPosChanged()));
@@ -97,6 +144,7 @@ void domNodeViewer::createMenu()
     treeMenu = new QMenu();
     addNodeAction = treeMenu->addAction(QThemedIcon("list-add",QIcon(":/list-add")),"Add");
     copyNodeAction = treeMenu->addAction(QThemedIcon("edit-copy",QIcon(":/edit-copy.png")),"Copy");
+	copyXPathAction = treeMenu->addAction(QThemedIcon("edit-copy",QIcon(":/edit-copy.png")),"Copy XPath");
     pasteNodeAction = treeMenu->addAction(QThemedIcon("edit-paste",QIcon(":/edit-paste.png")),"Paste");
     pasteNodeAction->setMenu(new QMenu()); // Placeholder for the submenu of paste codes ...
     cutNodeAction = treeMenu->addAction(QThemedIcon("list-cut",QIcon(":/edit-cut.png")),"Cut");
@@ -118,18 +166,26 @@ void domNodeViewer::setModelPart(QString part_name) {
 	for (uint i=0; i<model->parts.size(); i++) {
 		if (model->parts[i].label == part_name) {
 			setModelPart(i);
+			return;
 		}
 	}
+	qDebug() << "Requested model part " << part_name << " cannot be found";
 }
 
 //------------------------------------------------------------------------------
 
 void domNodeViewer::setModelPart(int part) {
-	if (model->parts[part].enabled && model->parts[part].element_index.isValid()) {
-		QModelIndex root;
-		root = model->parts[part].element_index;
-		model_tree_view->setRootIndex(root);
-		model_tree_view->setCurrentIndex(root);
+	auto part_root = model->parts[part].element_index;
+	if (model->parts[part].enabled && part_root.isValid()) {
+		auto view_index = model_tree_filter->mapFromSource(part_root);
+		if (!view_index.isValid()) {
+			qDebug() << "Requested model part " << part << " is filtered out !!";
+		}
+		model_tree_view->setRootIndex(view_index);
+		model_tree_view->setCurrentIndex(view_index);
+	}
+	else {
+		qDebug() << "Requested model part " << part << " is not enabled";
 	}
 }
 
@@ -137,8 +193,8 @@ void domNodeViewer::setModelPart(int part) {
 
 void domNodeViewer::setModel(SharedMorphModel mod, int part) {
     model = mod;
-    model_tree_view->setModel(model);
-// 	QObject::connect(model_tree_view, SIGNAL(), this, SLOT());
+	model_tree_filter->setSourceModel(model);
+	model_tree_view->setSortingEnabled(true);
 	
 	QObject::connect(model_tree_view->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(setTreeItem( const QModelIndex& )));
 	QObject::connect(model, SIGNAL(rowsMoved ( const QModelIndex & , int , int , const QModelIndex & , int  )), this, SLOT(selectMovedItem(const QModelIndex & , int , int , const QModelIndex & , int )),Qt::QueuedConnection);
@@ -149,12 +205,14 @@ void domNodeViewer::setModel(SharedMorphModel mod, int part) {
 void domNodeViewer::selectMovedItem(const QModelIndex & sourceParent, int sourceRow, int , const QModelIndex & destParent, int destRow) {
 	if (sourceParent == destParent && sourceRow < destRow)
 		destRow-=1;
-	setTreeItem(destParent.child(destRow,0));
+	auto child_idx = model->index(destRow,0,destParent);
+	setTreeItem( model_tree_filter->mapFromSource(child_idx) );
 }
 
 
-void domNodeViewer::selectInsertedItem(const QModelIndex & destParent, int destRowFirst, int destRowLast) {
-	setTreeItem(destParent.child(destRowFirst,0));
+void domNodeViewer::selectInsertedItem(const QModelIndex & destParent, int destRowFirst, int /*destRowLast*/) {
+	auto child_idx = model->index(destRowFirst,0,destParent);
+	setTreeItem( model_tree_filter->mapFromSource(child_idx) );
 }
 
 //------------------------------------------------------------------------------
@@ -162,23 +220,45 @@ void domNodeViewer::selectInsertedItem(const QModelIndex & destParent, int destR
 //slot welcher aufgerufen wird, wenn im baum ein anderer Knoten ausgewählt wird
 void domNodeViewer::setTreeItem( const QModelIndex& index)
 {
-// 	qDebug() << "selecting new Item " << index;
+	qDebug() << "selecting new Item " << index;
+	
 	model_tree_view->blockSignals(true);
-    if (model_tree_view->currentIndex() != index) {
-        model_tree_view->setCurrentIndex(index);
-    }
-	QModelIndex exp_idx = index;
+	QModelIndex view_index = index;
+	if (index.model() == model) {
+		qDebug() << "setTreeItem: Got a source index";
+		view_index = model_tree_filter->mapFromSource(index);
+	}
+// 	else {
+// 		if (index.isValid()) {
+// 			qDebug() << "setTreeItem: Got a view index";
+// 			view_index = index;
+// 		}
+// 		else {
+// 			qDebug() << "setTreeItem: Got an invalid index";
+// 			view_index = model_tree_view->rootIndex();
+// 		}
+// 	}
+	
+	// Make item visible
+	if (model_tree_view->currentIndex() != view_index) {
+		model_tree_view->setCurrentIndex(view_index);
+	}
+	QModelIndex exp_idx = view_index;
 	while (exp_idx.isValid()) {
 		model_tree_view->expand(exp_idx);
 		exp_idx = exp_idx.parent();
 	}
 	
-    nodeController* node = model->indexToItem(index);
-	
+	// Select the proper editor
+    nodeController* node = view_index.data(MorphModel::NodeRole).value<nodeController*>();
+    if (! node) {
+		qDebug() << "Critical error! No model node for index";
+		return;
+	}
 	node_editor->setNode(node,model);
-    if (! node) return;
 	
-	// Always show the list of available symbols 
+	// Always update the list of available symbols 
+	symbol_list_wid->setSortingEnabled(false);
 	symbol_list_wid->clear();
 	QMap<QString,QString> sym_names = model->rootNodeContr->getModelDescr().getSymbolNames("cpmDoubleSymbolRef");
 	QMap<QString,QString> vsym_names = model->rootNodeContr->getModelDescr().getSymbolNames("cpmVectorSymbolRef");
@@ -222,24 +302,26 @@ void domNodeViewer::setTreeItem( const QModelIndex& index)
 				parents.removeLast();
 			}
 			
-            QTreeWidgetItem* trWItem = new QTreeWidgetItem(parents.back(), QStringList() << subnames.back() << it.value() << it.key());
-            trWItem->setFont(1, lFont);
+			QTreeWidgetItem* trWItem = new QTreeWidgetItem(parents.back(), QStringList() << subnames.back() << it.value() << it.key());
+			trWItem->setFont(1, lFont);
 		}
 	}
+	symbol_list_wid->setSortingEnabled(true);
 
-    plugin_tree_widget->clear();
-    QStringList allChilds = node->getAddableChilds(true);
-    QStringList addableChilds = node->getAddableChilds(false);
-    for(int i = 0; i < allChilds.size(); i++)
-    {
-        QTreeWidgetItem* trWItem = new QTreeWidgetItem(plugin_tree_widget, QStringList() << allChilds.at(i)  << node->childInformation(allChilds.at(i)).type->pluginClass);
-        if (! addableChilds.contains(allChilds.at(i))) {
-            trWItem->setIcon(0,style()->standardIcon(QStyle::SP_MessageBoxWarning));
-            trWItem->setToolTip(0,"This node will disable an existing node!");
-        }
-        trWItem->setFont(1, lFont);
-    }
-    plugin_tree_widget->sortByColumn(1, Qt::AscendingOrder);
+	// Update the list of available Plugins
+	plugin_tree_widget->clear();
+	QStringList allChilds = node->getAddableChilds(true);
+	QStringList addableChilds = node->getAddableChilds(false);
+	for(int i = 0; i < allChilds.size(); i++)
+	{
+		QTreeWidgetItem* trWItem = new QTreeWidgetItem(plugin_tree_widget, QStringList() << allChilds.at(i)  << node->childInformation(allChilds.at(i)).type->pluginClass);
+		if (! addableChilds.contains(allChilds.at(i))) {
+			trWItem->setIcon(0,style()->standardIcon(QStyle::SP_MessageBoxWarning));
+			trWItem->setToolTip(0,"This node will disable an existing node!");
+		}
+		trWItem->setFont(1, lFont);
+	}
+	plugin_tree_widget->sortByColumn(1, Qt::AscendingOrder);
 	model_tree_view->blockSignals(false);
 
     emit nodeSelected(node);
@@ -250,92 +332,94 @@ void domNodeViewer::setTreeItem( const QModelIndex& index)
 
 void domNodeViewer::createTreeContextMenu(QPoint point)
 {
-    bool root_index = false;
-    treePopupIndex = model_tree_view->indexAt(point);
-    if (! treePopupIndex.isValid()) {
-        treePopupIndex = model_tree_view->rootIndex();
-        root_index = true;
-    }
-    else {
-        model_tree_view->setExpanded(treePopupIndex,true);
-    }
+	// Adjust view
+	bool root_index = false;
+	treePopupIndex = model_tree_view->indexAt(point);
+	if (! treePopupIndex.isValid()) {
+		treePopupIndex = model_tree_view->rootIndex();
+		root_index = true;
+	}
+	else {
+		model_tree_view->setExpanded(treePopupIndex,true);
+	}
+	// translate to model index -- no, it's a view index
+	Q_ASSERT (treePopupIndex.isValid());
 
-    nodeController *contr = model->indexToItem(treePopupIndex);
-    if (contr->getName() == "#document") return;
+	auto *contr = treePopupIndex.data(MorphModel::NodeRole).value<nodeController*>();
+	if (!contr || contr->getName() == "#document") return;
 
-    Q_ASSERT (treePopupIndex.isValid());
+	// Adjust popup menue entries
+	bool disabled = contr->isDisabled() ||contr->isInheritedDisabled() ;
+	addNodeAction->setEnabled(! disabled && ! contr->getAddableChilds(true).empty());  // Add
 
-    if (contr) {
-        bool disabled = contr->isDisabled() ||contr->isInheritedDisabled() ;
-        addNodeAction->setEnabled(! disabled && ! contr->getAddableChilds(true).empty());  // Add
+	cutNodeAction->setEnabled( ! contr->isInheritedDisabled() && contr->isDeletable() && ! root_index ); // Cut
+	removeNodeAction->setEnabled(  ! contr->isInheritedDisabled() && contr->isDeletable() && ! root_index ); // Remove
 
-        cutNodeAction->setEnabled( ! contr->isInheritedDisabled() && contr->isDeletable() && ! root_index ); // Cut
-        removeNodeAction->setEnabled(  ! contr->isInheritedDisabled() && contr->isDeletable() && ! root_index ); // Remove
+	copyNodeAction->setEnabled(! root_index); // Copy
 
-        copyNodeAction->setEnabled(! root_index); // Copy
-
-        pasteNodeAction->menu()->clear();
-        QList<QString> childs = contr->getAddableChilds(true);
-		
-		// Get Nodes from local cache
-		QList<QDomNode> nodes = config::getInstance()->getNodeCopies();
-		for(int i = 0; i < nodes.size(); i++) {
-			QDomNode n = nodes.at(i);
-			if (childs.contains(n.nodeName())) {
-				QDomDocument doc("");
-				doc.appendChild(n);
-				QStringList xml_hint = doc.toString(4).split("\n");
-				if (xml_hint.size()>6) {
-					QStringList new_text;
-					new_text.append(xml_hint[0]);
-					new_text.append(xml_hint[1]);
-					new_text.append(xml_hint[2]);
-					new_text.append("\t\t...");
-					new_text.append(xml_hint[xml_hint.size()-3]);
-					new_text.append(xml_hint[xml_hint.size()-2]);
-					new_text.append(xml_hint[xml_hint.size()-1]);
-					xml_hint = new_text;
-				}
-				infoAction* act = new infoAction(n.nodeName(), xml_hint.join("\n"), this);
-				auto data = QVariant::fromValue(n);
-				act->setData(data);
-				pasteNodeAction->menu()->addAction(act);// Paste
+	pasteNodeAction->menu()->clear();
+	QList<QString> childs = contr->getAddableChilds(true);
+	
+	// Get Nodes from local cache
+	QList<QDomNode> nodes = config::getInstance()->getNodeCopies();
+	for(int i = 0; i < nodes.size(); i++) {
+		QDomNode n = nodes.at(i);
+		if (childs.contains(n.nodeName())) {
+			QDomDocument doc("");
+			doc.appendChild(n);
+			QStringList xml_hint = doc.toString(4).split("\n");
+			if (xml_hint.size()>6) {
+				QStringList new_text;
+				new_text.append(xml_hint[0]);
+				new_text.append(xml_hint[1]);
+				new_text.append(xml_hint[2]);
+				new_text.append("\t\t...");
+				new_text.append(xml_hint[xml_hint.size()-3]);
+				new_text.append(xml_hint[xml_hint.size()-2]);
+				new_text.append(xml_hint[xml_hint.size()-1]);
+				xml_hint = new_text;
 			}
-        }
-        pasteNodeAction->setEnabled(! disabled && ! pasteNodeAction->menu()->isEmpty() );
-
-        // ---- check deactivatable
-        disableNodeAction->setEnabled( ( ! contr->isInheritedDisabled() && contr->isDeletable()) && ! root_index );  // Disable
-        disableNodeAction->setChecked( contr->isDisabled() || contr->isInheritedDisabled() );
-
-        // ---- check sweepable
-		if (! disabled && contr->hasText()) {
-			sweepNodeAction->setEnabled(true);
-			sweepNodeAction->setChecked( model->isSweeperAttribute(contr->textAttribute()) );
+			infoAction* act = new infoAction(n.nodeName(), xml_hint.join("\n"), this);
+			auto data = QVariant::fromValue(n);
+			act->setData(data);
+			pasteNodeAction->menu()->addAction(act);// Paste
 		}
-		else if (! disabled &&  contr->attribute("value") && contr->attribute("value")->isActive()) {
-			sweepNodeAction->setEnabled(true);
-			sweepNodeAction->setChecked( model->isSweeperAttribute(contr->attribute("value")) );
-		}
-		else {
-			sweepNodeAction->setEnabled(false);
-			sweepNodeAction->setChecked(false);
-		}
+	}
+	pasteNodeAction->setEnabled(! disabled && ! pasteNodeAction->menu()->isEmpty() );
 
-        treeMenu->exec(model_tree_view->mapToGlobal(point));
-    }
+	// ---- check deactivatable
+	disableNodeAction->setEnabled( ( ! contr->isInheritedDisabled() && contr->isDeletable()) && ! root_index );  // Disable
+	disableNodeAction->setChecked( contr->isDisabled() || contr->isInheritedDisabled() );
+
+	// ---- check sweepable
+	if (! disabled && contr->hasText()) {
+		sweepNodeAction->setEnabled(true);
+		sweepNodeAction->setChecked( model->isSweeperAttribute(contr->textAttribute()) );
+	}
+	else if (! disabled &&  contr->attribute("value") && contr->attribute("value")->isActive()) {
+		sweepNodeAction->setEnabled(true);
+		sweepNodeAction->setChecked( model->isSweeperAttribute(contr->attribute("value")) );
+	}
+	else {
+		sweepNodeAction->setEnabled(false);
+		sweepNodeAction->setChecked(false);
+	}
+
+	treeMenu->exec(model_tree_view->mapToGlobal(point));
 }
+
 
 void domNodeViewer::pluginTreeDoubleClicked(QTreeWidgetItem* item, int column)
 {
-     model->insertNode(model_tree_view->currentIndex(),item->text(0));
+	auto model_index = model_tree_filter->mapToSource( model_tree_view->currentIndex() );
+	model->insertNode(model_index, item->text(0));
 }
 
 
 void domNodeViewer::pluginTreeItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous)
 {
     if (current) {
-		 emit xmlElementSelected( model->indexToItem(model_tree_view->currentIndex())->getXPath() << current->text(0) );
+		 emit xmlElementSelected( model_tree_view->currentIndex().data(MorphModel::XPathRole).value<QStringList>() << current->text(0));
 	 }
 }
 
@@ -343,27 +427,32 @@ void domNodeViewer::pluginTreeItemChanged(QTreeWidgetItem* current, QTreeWidgetI
 
 void domNodeViewer::doContextMenuAction(QAction *action)
 {
+	auto model_index = model_tree_filter->mapToSource(treePopupIndex);
     if (action == addNodeAction)
     {
-        nodeController *contr = model->indexToItem(treePopupIndex);
+        nodeController *contr = model->indexToItem(model_index);
         addNodeDialog dia(contr);
         if (dia.exec() == QDialog::Accepted) {
-            model->insertNode(treePopupIndex,dia.nodeName);
+            model->insertNode(model_index,dia.nodeName);
         }
         return;
     }
 
     if (action == copyNodeAction)
     {
-        xmlElementCopied( model->indexToItem(treePopupIndex)->cloneXML());
+        xmlElementCopied( model->indexToItem(model_index)->cloneXML());
         return;
     }
+	if (action == copyXPathAction) {
+		QGuiApplication::clipboard()->setText(model_index.data(MorphModel::XPathRole).toStringList().join("/"));
+		return;
+	}
 
     if (action == cutNodeAction)
     {
-        if (treePopupIndex.isValid()) {
-//             xmlElementCopied( model->indexToItem(treePopupIndex)->cloneXML());
-            auto element = model->removeNode(treePopupIndex.parent(), treePopupIndex.row());
+    if (model_index.isValid()) {
+//             xmlElementCopied( model->indexToItem(model_index)->cloneXML());
+            auto element = model->removeNode(model_index.parent(), model_index.row());
 			xmlElementCopied(element->cloneXML());
         }
         return;
@@ -371,7 +460,7 @@ void domNodeViewer::doContextMenuAction(QAction *action)
 
     if (action == removeNodeAction)
     {
-        if (treePopupIndex.isValid()) {
+        if (model_index.isValid()) {
             QMessageBox::StandardButton r = QMessageBox::question(this,
                         "Remove node",
                         QString("Are you sure?\t"),
@@ -379,7 +468,7 @@ void domNodeViewer::doContextMenuAction(QAction *action)
                         );
             if (r == QMessageBox::No)
                 return;
-            model->removeNode(treePopupIndex.parent(), treePopupIndex.row());
+            model->removeNode(model_index.parent(), model_index.row());
         }
         return;
     }
@@ -387,13 +476,13 @@ void domNodeViewer::doContextMenuAction(QAction *action)
     QMenu *m = pasteNodeAction->menu(); // Paste
     if( m && m->actions().contains(action)) {
 		if (!action->data().value<QDomNode>().isNull())
-			model->insertNode(treePopupIndex, action->data().value<QDomNode>().cloneNode());
+			model->insertNode(model_index, action->data().value<QDomNode>().cloneNode());
         return;
     }
 
     if(action == disableNodeAction) {
-        model->setDisabled(treePopupIndex,disableNodeAction->isChecked() );
-		setTreeItem(treePopupIndex);
+        model->setDisabled(model_index,disableNodeAction->isChecked() );
+		setTreeItem(model_index);
         return;
     }
 
@@ -413,7 +502,7 @@ void domNodeViewer::doContextMenuAction(QAction *action)
 
     if (action == sweepNodeAction)
     {
-		nodeController* node = model->indexToItem(treePopupIndex);
+		nodeController* node = model->indexToItem(model_index);
         AbstractAttribute *attr = node->hasText() ? node->textAttribute() : node->attribute("value");
         if (sweepNodeAction->isChecked()) {
             model->addSweeperAttribute(attr);
