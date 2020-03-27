@@ -1,5 +1,7 @@
 IF(MORPHEUS_STATIC_BUILD)
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+	# ich haette lieber am echten Ende der Linkerliste '-Wl,--whole-archive  -lpthread -Wl,--no-whole-archive'
+	SET(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-static -static-libstdc++ -static-libgcc")
 ENDIF()
 
 INCLUDE(CheckIncludeFiles)
@@ -46,6 +48,57 @@ FIND_PACKAGE(ZLIB REQUIRED)
 FIND_PACKAGE(TIFF REQUIRED)
 TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${ZLIB_LIBRARY} ${TIFF_LIBRARY})
 
+IF(MORPHEUS_STATIC_BUILD)
+	## We guess the static library dependencies from the corresponding dynamic library dependencies
+	IF(NOT UNIX)
+		message(FATAL_ERROR "Static binary build only supported on *nix systems") 
+	ENDIF()
+	execute_process( COMMAND ldconfig -p 
+					 COMMAND grep "libtiff.so "
+					 OUTPUT_VARIABLE TIFF_DYN_LIB
+	)
+	separate_arguments(TIFF_DYN_LIB)
+	list(GET TIFF_DYN_LIB -1 TIFF_DYN_LIB)
+	string(STRIP ${TIFF_DYN_LIB} TIFF_DYN_LIB)
+# 	message(STATUS "LibTIFF dynamic lib  ${TIFF_DYN_LIB}")
+	
+	execute_process( COMMAND ldd ${TIFF_DYN_LIB}
+					 OUTPUT_VARIABLE TIFF_DEPENDS
+	)
+	string(REPLACE "\n" ";" TIFF_DEPENDS ${TIFF_DEPENDS})
+	SET(LIB_LIST "")
+	FOREACH(DEP ${TIFF_DEPENDS})
+		string(REPLACE "." ";" DEP ${DEP})
+		LIST(GET DEP 0 DEP)
+		STRING(STRIP ${DEP} DEP)
+		LIST(APPEND LIB_LIST ${DEP})
+	ENDFOREACH()
+	SET(TIFF_DEPENDS ${LIB_LIST})
+# 	message(STATUS "LibTIFF dependencies ${TIFF_DEPENDS}")
+	IF("libjpeg" IN_LIST TIFF_DEPENDS)
+		FIND_PACKAGE(JPEG REQUIRED)
+		message(STATUS "LibTIFF requires libjpeg")
+		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${JPEG_LIBRARY})
+	ENDIF()
+	IF("liblzma" IN_LIST TIFF_DEPENDS)
+		FIND_PACKAGE(LibLZMA REQUIRED) # newer ubuntu versions
+		message(STATUS "LibTIFF requires liblzma")
+		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${LIBLZMA_LIBRARIES})
+	ENDIF()
+	IF("libjbig" IN_LIST TIFF_DEPENDS)
+		message(STATUS "LibTIFF requires libjbig")
+		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC -ljbig )
+	ENDIF()
+	IF("libwebp" IN_LIST TIFF_DEPENDS)
+		message(STATUS "LibTIFF requires webp")
+		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC -lwebp )
+	ENDIF()
+	IF("libzstd" IN_LIST TIFF_DEPENDS)
+		message(STATUS "LibTIFF requires zstd")
+		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC -lzstd )
+	ENDIF()
+ENDIF()
+
 
 IF(MORPHEUS_GRAPHVIZ STREQUAL "Library")
 	SET(GRAPHVIZ_ROOT "" CACHE PATH "Set root directory to search for GraphViz" )
@@ -55,10 +108,11 @@ ENDIF()
 
 IF(GRAPHVIZ_FOUND)
 	target_compile_definitions(MorpheusCore PUBLIC HAVE_GRAPHVIZ=1)
+	FIND_PACKAGE(EXPAT REQUIRED)
 	IF (EXISTS "${GRAPHVIZ_GRAPH_LIBRARY}")
-		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_GRAPH_LIBRARY} )
+		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_GRAPH_LIBRARY} ${GRAPHVIZ_CDT_LIBRARY} ${GRAPHVIZ_PATHPLAN_LIBRARY} ${EXPAT_LIBRARY})
 	ELSE()
-		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_CGRAPH_LIBRARY} )
+		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${GRAPHVIZ_GVC_LIBRARY} ${GRAPHVIZ_CGRAPH_LIBRARY} ${GRAPHVIZ_CDT_LIBRARY} ${GRAPHVIZ_PATHPLAN_LIBRARY} ${EXPAT_LIBRARY})
 	ENDIF()
 ENDIF()
 
@@ -69,7 +123,10 @@ ENDIF()
 add_subdirectory(plugins)
 add_subdirectory(core)
 
-
+IF(MORPHEUS_STATIC_BUILD)
+	target_link_libraries_PATCHED(MorpheusCore PUBLIC -Wl,--whole-archive -lpthread -Wl,--no-whole-archive)
+# 	TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PRIVATE -static-libstdc++ -static-libgcc)
+ENDIF()
 
 IF  ("${MORPHEUS_OS}" STREQUAL "WIN32")
 	TARGET_LINK_LIBRARIES_PATCHED(MorpheusSIM pthread psapi)
