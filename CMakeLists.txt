@@ -1,7 +1,7 @@
 if (CMAKE_VERSION VERSION_LESS 3.12)
-	cmake_minimum_required(VERSION 3.1.0)
+	cmake_minimum_required(VERSION 3.3.0)
 else()
-	cmake_minimum_required(VERSION 3.1.0...3.13.4)
+	cmake_minimum_required(VERSION 3.3.0...3.13.4)
 endif()
 
 PROJECT(morpheus VERSION 2.1.0)
@@ -94,12 +94,13 @@ ENDIF(NOT CMAKE_BUILD_TYPE)
 SET(MORPHEUS_EXEC_NAME ${PROJECT_NAME} CACHE STRING "Base name of the simulator executable and the GUI exexcutable")
 OPTION(MORPHEUS_GUI "Build the graphical user interface." ON)
 
+IF (MORPHEUS_STATIC_BUILD AND MORPHEUS_GUI)
+	message(STATUS "Excluding MorpheusGUI from static build")
+	SET(MORPHEUS_GUI OFF)
+ENDIF()
+
 INCLUDE_DIRECTORIES( 3rdparty)
 ADD_SUBDIRECTORY( 3rdparty )
-
-
-FIND_PACKAGE(TIFF REQUIRED)
-
 
 SET( SIMULATOR_EXEC_NAME "morpheus")
 SET( GUI_EXEC_NAME "morpheus-gui")
