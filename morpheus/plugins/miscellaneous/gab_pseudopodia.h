@@ -37,7 +37,7 @@ private:
     PluginParameter2<double, XMLValueReader, DefaultValPolicy> maxGrowthTime;
     PluginParameter2<double, XMLValueReader, DefaultValPolicy> directionalStrengthInit;
     PluginParameter2<double, XMLValueReader, DefaultValPolicy> directionalStrengthCont;
-    PluginParameter2<double, XMLEvaluator, DefaultValPolicy> maxPseudopods;
+    PluginParameter2<unsigned int, XMLValueReader, DefaultValPolicy> maxPseudopods;
     PluginParameter2<unsigned int, XMLValueReader, DefaultValPolicy> timeBetweenExtensions;
     PluginParameter2<double, XMLReadableSymbol, RequiredPolicy> movingDirection;
     PluginParameter2<Pseudopod::RetractionMethod, XMLNamedValueReader, DefaultValPolicy> retractionMethod;

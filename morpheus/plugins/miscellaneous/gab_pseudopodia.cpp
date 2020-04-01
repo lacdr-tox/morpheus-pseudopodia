@@ -99,7 +99,7 @@ void Pseudopodia::executeTimeStep() {
             auto pseudopod = Pseudopod((unsigned int) maxGrowthTime(), cpmLayer.get(),
                                        cellId, &movingDirection, &field, retractionMethod(), directionalStrengthInit(),
                                        directionalStrengthCont(), touchBehavior(), timeBetweenExtensions());
-            pseudopods.insert(make_pair(cellId, vector<Pseudopod>((size_t) maxPseudopods(SymbolFocus()), pseudopod)));
+            pseudopods.insert(make_pair(cellId, vector<Pseudopod>((size_t) maxPseudopods(), pseudopod)));
         }
     });
     assert(pseudopods.size() == cells.size()); // We don't handle cell death or proliferation
