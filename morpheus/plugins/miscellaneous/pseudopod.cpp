@@ -6,14 +6,20 @@
 #include "core/cell.h"
 
 // returns a radial in phi, theta, radius. convert with from_radial()
-static VDOUBLE RandomVonMisesPoint(VDOUBLE mu, double kappa) {
+// default van Mises has range 2 M_PI, but this function allows a custom range (thereby capping
+// the van Mises distruction)
+static VDOUBLE RandomVonMisesRangePoint(VDOUBLE mu, double kappa, double range) {
     double ar, theta;
     do {
         ar = getRandom01();
-        theta = 2 * M_PI * (getRandom01() - 0.5);
+        theta = range * (getRandom01() - 0.5);
     } while (ar > exp(kappa * (cos(theta - mu.x) - 1.0)));
 
     return {theta, 0.0, 1.0};
+}
+
+static VDOUBLE RandomVonMisesPoint(VDOUBLE mu, double kappa) {
+    return RandomVonMisesRangePoint(mu, kappa, 2 * M_PI);
 }
 
 Pseudopod::Pseudopod(unsigned int maxGrowthTime, const CPM::LAYER *cpm_layer, CPM::CELL_ID cellId,
