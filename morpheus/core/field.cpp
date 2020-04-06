@@ -628,6 +628,9 @@ bool PDE_Layer::solve_fwd_euler_diffusion_generalized(double time_interval)
 	valarray<double> neighbor_alpha(neighbors.size());
 	valarray<int> neighbor_index_offst(neighbors.size());
 
+	// Rescale if we have than the independent axial neighbors
+	alpha_normal *= 2.0 * _lattice->getDimensions() / neighbors.size();
+	
 	for (uint i=0; i<neighbors.size(); i++) {
 		neighbor_index_offst[i] = dot(neighbors[i], shadow_offset);
 		neighbor_distance[i] = _lattice->to_orth( neighbors[i]).abs();
