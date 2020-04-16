@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+		
+	<xs:group name="PopulationInitPlugins">
+		<xs:choice>
+			<xs:element name="InitDistribute" 		type="InitDistribute"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="InitDistribute">
+		<xs:annotation>
+			<xs:appinfo>Initialization</xs:appinfo>
+		</xs:annotation>
+        <xs:attribute name="number-of-cells" use="required" type="cpmMathExpression" default="100" />
+		<xs:attribute name="probability" use="required" type="cpmMathExpression" default="0.1" />
+		<xs:attribute name="mode" use="optional" type="morphInitDistribMode" default="regular" />
+	</xs:complexType>
+	
+	<xs:simpleType name="morphInitDistribMode">
+		<xs:restriction base="cpmString">
+			<xs:enumeration value="regular"/>
+			<xs:enumeration value="random"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+</xs:schema>

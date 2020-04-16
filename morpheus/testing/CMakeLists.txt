@@ -5,7 +5,7 @@ SET_PROPERTY(TARGET ModelTesting PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 target_include_directories(ModelTesting PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries_patched(ModelTesting PUBLIC MorpheusCore)
 # assert all dependency target are compiled using -fPIC
-SET_PROPERTY(TARGET MorpheusCore muParser tiny-process-library xmlParser gnuplot_interface APPEND PROPERTY COMPILE_FLAGS -fPIC)
+SET_PROPERTY(TARGET MorpheusCore muParser tiny-process-library xmlParser gnuplot_interface APPEND PROPERTY COMPILE_OPTIONS -fPIC)
 
 FUNCTION(InjectModels target)
 

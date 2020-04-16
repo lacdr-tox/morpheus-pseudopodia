@@ -406,6 +406,9 @@ void CellType::loadPopulationFromXML(const XMLNode xNode) {
 				cp.pop_initializers.push_back(dynamic_pointer_cast<Population_Initializer>( p ));
 				cp.pop_initializers.back()->loadFromXML(xcpNode,local_scope);
 			}
+			else {
+				throw MorpheusException(string("Could not create instance for plugin ") + xcpNode.getName(), xcpNode);
+			}
 		}
 	}
 	
