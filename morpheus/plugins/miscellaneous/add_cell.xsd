@@ -12,7 +12,8 @@
 			<xs:appinfo>Population</xs:appinfo>
 		</xs:annotation>
 		<xs:all>
-			<xs:element name="Condition" type="cpmMathExpression" />
+<!-- 			<xs:element name="Condition" type="cpmMathExpression" /> -->
+			<xs:element name="Count" type="cpmMathExpression" />
 			<xs:element name="Distribution" type="cpmMathExpression" />
 			<xs:element name="Triggers" type="TriggeredSystem" />
 		</xs:all>

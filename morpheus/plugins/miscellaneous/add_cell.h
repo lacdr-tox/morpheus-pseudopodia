@@ -23,7 +23,7 @@
 
 Create a new cell during simulation, depending on a condition in a position depending on a probability distribution.
 
-- \b Condition: Expression describing the condition under which a cell is to be created.
+- \b Count: Expression describing how many cells to be created.
 - \b Distribution: Expression describing the spatial probability distribution (normalized to 1 internally).
 
 - \b Overwrite (default=false): Whether or not a cell should be in a location occupied by another cell.
@@ -33,7 +33,7 @@ Create a new cell during simulation, depending on a condition in a position depe
 // Adding cell with increasing probability along x axis, automatically scheduled
 \verbatim
 <AddCell>
-	<Condition> rand_uni(0,1) &lt; 0.001 </Condition>
+	<Count> rand_uni(0,1) &lt; 0.001 </Count>
 	<Distribution> l.x / size.x </Distribution>
 </AddCell>
 \endverbatim
@@ -41,7 +41,7 @@ Create a new cell during simulation, depending on a condition in a position depe
 // Adding cells with normal distribution centered in middle of lattice (stdev=25), with explicit time step
 \verbatim
 <AddCell time-step="1.0">
-	<Condition> rand_uni(0,1) &lt; 0.001 </Condition>
+	<Count> rand_uni(0,1) &lt; 0.001 </Count>
 	<Distribution> exp(-((l.x-size.x/2)^2 + (l.y-size.y/2)^2) / (2*25^2) )</Distribution>
 </AddCell>
 \endverbatim
@@ -49,11 +49,10 @@ Create a new cell during simulation, depending on a condition in a position depe
 // Adding cells with uniform spatial distribution, setting properties of new cell with Triggers
 \verbatim
 <AddCell>
-	<Condition> p > 1 </Condition>
+	<Count> p > 1 </Count>
 	<Distribution> 1 </Distribution>
 	<Triggers>
 		<Rule symbol-ref="Vt"> 50 </Rule>
-		<Rule symbol-ref="p"> p + 0.1 </Rule>
 	</Triggers>
 </AddCell>
 \endverbatim
@@ -63,17 +62,15 @@ Create a new cell during simulation, depending on a condition in a position depe
 class AddCell : public InstantaneousProcessPlugin
 {
 private:
-	PluginParameter2<double, XMLEvaluator, RequiredPolicy> condition;
+	PluginParameter2<double, XMLEvaluator, RequiredPolicy> count;
 	PluginParameter2<double, XMLEvaluator, RequiredPolicy> probdist;
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> overwrite;
 	
 	
 	// variable and functions declared here
 	CellType* celltype;
-	shared_ptr<const CPM::LAYER > cpm_layer;
-	VINT lsize;
-
 	shared_ptr<TriggeredSystem> triggers;
+	Lattice_Data_Layer<double>* cdf;
 
 	//shared_ptr<Function> position_function;
 	//string position_symbol_string;

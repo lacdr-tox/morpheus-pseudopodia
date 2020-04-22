@@ -308,9 +308,10 @@ public:
 		}
 	};
 	
+	// Forward some Expression interface
 	const string& description() const  { RequirementPolicy::assertDefined(); return evaluator->getDescription(); }
 	string expression() const { RequirementPolicy::assertDefined(); return evaluator->getExpression(); }
-	
+	const SymbolBase::Flags& flags() const { RequirementPolicy::assertDefined(); return evaluator->flags(); }
 	Granularity granularity() const { RequirementPolicy::assertDefined(); return evaluator->getGranularity();}
 	bool isInteger() const { RequirementPolicy::assertDefined(); return evaluator->isInteger(); }
 	
