@@ -137,6 +137,7 @@ void PDE_Layer::loadFromXML(const XMLNode xNode, const Scope* scope)
 			throw MorpheusException("Unknown Initialization Plugin.", xTiffreader);
 		p->loadFromXML(xTiffreader, const_cast<Scope*>(scope));
 		plugins.push_back(p);
+		
  	}
 // 		// parse for all PDE Initializers and run them
 // 		for (int i=0; i < xInit.nChildNode(); i++) {
@@ -224,6 +225,9 @@ XMLNode PDE_Layer::saveToXML() const
 	XMLNode saved = Lattice_Data_Layer<double>::saveToXML();
 	while (saved.nChildNode("Data")) {
 		saved.getChildNode("Data").deleteNodeContent();
+	}
+	while (saved.nChildNode("TIFFReader")) {
+			saved.getChildNode("TIFFReader").deleteNodeContent();
 	}
 	saved.addChild(storeData(""));
 	return saved;

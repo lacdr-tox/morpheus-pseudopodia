@@ -1723,7 +1723,7 @@ Gnuplotter::plotLayout Gnuplotter::getPlotLayout( uint plot_count, bool border )
 	double y_margin = 0;
 	if (border) {
 		double view_extend =  max(lattice_size.x, lattice_size.y);
-		x_margin = 0.2 * view_extend;
+		x_margin = 0.3 * view_extend;
 		plot_size.x += x_margin;
 		
 		y_margin = 0.15 * view_extend;
