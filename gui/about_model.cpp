@@ -1,4 +1,6 @@
 #include "about_model.h"
+#include <QtConcurrent/QtConcurrent>
+
 AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent)
 {
 	this->model = model;
@@ -81,6 +83,7 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	central->addWidget(frame,4);
 	webGraph->show();
 	
+	connect(&waitForGraph, &QFutureWatcher<QString>::finished, this, &AboutModel::graphReady);
 	lastGraph = "";
 };
 
@@ -141,16 +144,17 @@ void AboutModel::update()
 
 void AboutModel::update_graph()
 {
-	// save file to tmp folder
 	if (!isVisible()) return;
-	MorphModel::GRAPH_TYPE type;
-	if ( web_render ) {
-		type= MorphModel::DOT;
-	}
-	else {
-		type= MorphModel::SVG;
-	}
-	QString graph = model->getDependencyGraph(type);
+
+	MorphModel::GRAPH_TYPE type = web_render ? MorphModel::DOT : MorphModel::SVG;
+	QFuture<QString> graph_returned = QtConcurrent::run( model.data(), &MorphModel::getDependencyGraph, type );
+	webGraph->setUrl(QUrl("qrc:///graph_generating.html"));
+	waitForGraph.setFuture(graph_returned);
+}
+
+void AboutModel::graphReady() {
+	qDebug() << "waitForGraph " << waitForGraph.future();
+	auto graph = waitForGraph.result();
 	if (!graph.isEmpty()) {
 		qDebug() << "Showing dependency graph: " << QString(graph);
 		
@@ -220,9 +224,10 @@ void AboutModel::update_graph()
 		}
 	}
 	else {
+		webGraph->setUrl(QUrl("qrc:///graph_failed.html"));
 		qDebug() << "Morpheus did not provide a dependency graph rendering!!" << graph;
 	}
-	// run morpsi on it
+	// run mopsi on it
 	// reload the resulting dependency_graph.png/svg
 	// display an error, id something went wrong.
 	

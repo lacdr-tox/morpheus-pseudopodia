@@ -149,11 +149,13 @@ AbstractAttribute::AbstractAttribute( QObject* parent, QDomNode xsdAttrNode, QDo
 	// Read XML attribute, if exists
 	if (xmlParentNode.attributes().contains(this->name) ) {
 		value = xmlParentNode.attributes().namedItem(this->name).nodeValue();
-		if ( XSD::dynamicTypeDefs.contains(type->name) ) {
-			int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
-			model_descr->xsd.registerEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
-		}
 		is_active = true;
+		if (!is_disabled) {
+			if ( XSD::dynamicTypeDefs.contains(type->name) ) {
+				int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
+				model_descr->xsd.registerEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
+			}
+		}
 	}
 
 	orig_active = is_active;
@@ -291,16 +293,20 @@ bool AbstractAttribute::append(QString s) {
 void AbstractAttribute::inheritDisabled(bool disable) {
 	if (is_disabled == disable) return;
 	if (disable) {
-		if ( XSD::dynamicTypeDefs.contains(type->name) ) {
-			int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
-			model_descr->xsd.removeEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
+		if (is_active) {
+			if ( XSD::dynamicTypeDefs.contains(type->name) ) {
+				int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
+				model_descr->xsd.removeEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
+			}
 		}
 		is_disabled = true;
 	}
 	else {
-		if ( XSD::dynamicTypeDefs.contains(type->name) ) {
-			int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
-			model_descr->xsd.registerEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
+		if (is_active) {
+			if ( XSD::dynamicTypeDefs.contains(type->name) ) {
+				int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
+				model_descr->xsd.registerEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
+			}
 		}
 		is_disabled = false;
 	}
@@ -315,18 +321,20 @@ void AbstractAttribute::setActive(bool a)
 
 	if ( ! is_active) {
 		parentNode.toElement().setAttribute(this->name, value);
-
-		if ( XSD::dynamicTypeDefs.contains(type->name) ) {
-			int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
-			model_descr->xsd.registerEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
+		if (!is_disabled) {
+			if ( XSD::dynamicTypeDefs.contains(type->name) ) {
+				int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
+				model_descr->xsd.registerEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
+			}
 		}
 	}
 	else {
 		parentNode.attributes().removeNamedItem(name);
-
-		if ( XSD::dynamicTypeDefs.contains(type->name) ) {
-			int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
-			model_descr->xsd.removeEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
+		if (!is_disabled) {
+			if ( XSD::dynamicTypeDefs.contains(type->name) ) {
+				int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
+				model_descr->xsd.removeEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
+			}
 		}
 	}
 	is_active = a;

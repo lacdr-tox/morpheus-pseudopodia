@@ -25,13 +25,16 @@ public:
 
     QString path;  /*! full path of the file */
     QString name;  /*! plain filename */
+	bool is_zipped;
     QDomDocument xmlDocument; /*!< root xml-node of the xml-file. */
 
-    bool save(QString name);
+    bool save(QString name, bool zip) const;
     /*!<
       Trys to save the current xml-model to file 'fileName'.
       Returns true on success and false if fail.
       */
+    bool save() const { return save(path,is_zipped); }
+    
     bool saveAsDialog();
     /*!<
       Opens a save-dialog to choose a directory and filename.
@@ -39,13 +42,14 @@ public:
       otherwise it returns false.
       */
 
-    QString domDocToText();
+    QString domDocToText() const;
     /*!< Returns the structure of the current loaded xml-model as QString. */
 
     static QString getNewModelName();
     /*!< Returns a name for a new model. */
 
     bool is_plain_model;
+
 };
 
 

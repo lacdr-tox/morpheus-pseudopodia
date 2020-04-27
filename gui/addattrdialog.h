@@ -24,6 +24,7 @@
 #include <QPushButton>
 #include <vector>
 #include "nodecontroller.h"
+#include "widgets/webviewer.h"
 
 /*!
 This class represents an add-dialog.<br>
@@ -48,7 +49,7 @@ QString nodeName; /*!< Name of the currently selected node, which shall eventual
 private:
     nodeController *contr; /*!< nodeController whose addable attributes are shown in dialog. */   
     QTreeWidget *trW; /*!< QTreeWidget which lists all addable attributes of nodeController. */
-    QTextEdit *edit; /*!< QTextEdit which contains the documentation of the selected xml-attribute. */
+	WebViewer *docu_view;
     QSplitter *splitter; /*!< QSplitter which shares the view of dialog. */
 
 //    void keyReleaseEvent(QKeyEvent *);

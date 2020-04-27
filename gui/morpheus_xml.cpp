@@ -22,7 +22,11 @@ MorpheusXML::MorpheusXML(QDomDocument model) {
 MorpheusXML::MorpheusXML(QString xmlFile) {
     QDomDocument cpmDoc( "cpmDocument" );
 	
-	if (QFileInfo(xmlFile).suffix() == "gz") {
+	
+	QMimeDatabase db;
+    QMimeType type = db.mimeTypeForFile(xmlFile);
+	
+	if (type.name()=="application/gzip" || QFileInfo(xmlFile).suffix() == "gz" || QFileInfo(xmlFile).suffix() == "xmlz" ) {
 		gzFile gzDoc;
 		gzDoc = gzopen(xmlFile.toStdString().c_str(), "rb");
 		if (gzDoc == NULL ) {
@@ -44,6 +48,7 @@ MorpheusXML::MorpheusXML(QString xmlFile) {
 		}
 		path = xmlFile;
 		name = QFileInfo(path).fileName();
+		is_zipped = true;
 	}
 	else {
 		QFile file(xmlFile);
@@ -58,6 +63,7 @@ MorpheusXML::MorpheusXML(QString xmlFile) {
 		file.close();
 		path = QFileInfo(xmlFile).absoluteFilePath();
 		name = QFileInfo(path).fileName();
+		is_zipped = false;
 	}
 	qDebug() << "Reading of XML-Document succesfully finished!" << endl;
 
@@ -67,70 +73,85 @@ MorpheusXML::MorpheusXML(QString xmlFile) {
 
 //------------------------------------------------------------------------------
 
-bool MorpheusXML::save(QString fileName) {
+bool MorpheusXML::save(QString fileName, bool zip) const {
 	QString outputXML = fileName;
 	// pull the focus, such that all edit operations finish
 // 	if (qApp->focusWidget())
 // 		qApp->focusWidget()->clearFocus();
 
-	QFile file(outputXML);
-	if(file.open(QIODevice::WriteOnly | QIODevice::Truncate) )
-	{
+	if (zip) {
+		gzFile gzDoc;
+		gzDoc = gzopen(outputXML.toStdString().c_str(), "wb");
+		if (!gzDoc) {
+			qDebug() << "Can't open xml-file " << outputXML << " for saving!";
+			return false;
+		}
+		
+		auto raw_text = domDocToText().toUtf8();
+		auto written = gzwrite(gzDoc, raw_text.begin(), raw_text.size());
+		if (written != raw_text.size()) {
+			qDebug() << "Unable to write xml-file " << outputXML << " to disc! (" << written << "!=" << raw_text.size() << ")";
+			return false;
+		}
+		
+		gzclose(gzDoc);
+	}
+	else {
+		QFile file(outputXML);
+		if ( ! file.open(QIODevice::WriteOnly | QIODevice::Truncate) ) {
+			qDebug() << "Can't open xml-file " << outputXML << " for saving!" << endl;
+			return false;
+		}
+		
 		QTextStream ts( &file );
-		ts << domDocToText();
 		ts.setCodec("UTF-8");
+		ts << domDocToText();
 		file.close();
-		qDebug() << "Saved to " << outputXML << endl;
-		return true;
 	}
-	else
-	{
-		qDebug() << "Can't open xml-file for saving!" << endl;
-		return false;
-	}
+	qDebug() << "Saved to " << outputXML << endl;
+	return true;
 }
 
 //------------------------------------------------------------------------------
 
 bool MorpheusXML::saveAsDialog()
 {
-
-    QString directory = ".";
-    if ( QSettings().contains("FileDialog/path") ) {
-        directory = QSettings().value("FileDialog/path").toString();
-    }
-    QString fileName = QFileDialog::getSaveFileName(nullptr, "Select xml-file to save configuration!", directory, "Configuration Files (*.xml)");
+	QString directory = ".";
+	if ( QSettings().contains("FileDialog/path") ) {
+		directory = QSettings().value("FileDialog/path").toString();
+	}
+	QString fileName = QFileDialog::getSaveFileName(nullptr, "Select xml-file to save configuration!", directory, "Morpheus Model (*.xml);;Compressed Morpheus Model (*.xml.gz)");
 	if (fileName.isEmpty())
 		return false;
-    // pull the focus, such that all edit operations finish
+	// pull the focus, such that all edit operations finish
 //    qApp->activeWindow()->setFocus();
 	if (!fileName.endsWith(".xml")) {
 		fileName.append(".xml");
 	}
-    QString outputXML = fileName;
-    QFile file(outputXML);
-    if( !file.open(QIODevice::WriteOnly) )
-    {
-        return false;
-    }
-    else
-    {
-        QTextStream ts( &file );
+	QString outputXML = fileName;
+	QFile file(outputXML);
+	if( !file.open(QIODevice::WriteOnly) )
+	{
+		return false;
+	}
+	else
+	{
+		QTextStream ts( &file );
 		ts.setCodec("UTF-8");
-        ts << domDocToText();
-        file.close();
-        this->path = QFileInfo(fileName).filePath();
-        this->name = QFileInfo(fileName).fileName();
+		ts << domDocToText();
+		file.close();
+		this->path = QFileInfo(fileName).filePath();
+		this->name = QFileInfo(fileName).fileName();
 		qDebug() << "1. FileDialog/path = " << QFileInfo(fileName).dir().path() << endl;
 		qDebug() << "2. Writing of XML-file completed!" << endl;
 		QSettings().setValue("FileDialog/path", QFileInfo(fileName).dir().path());
 		return true;
-    }
+	}
 }
 
 //------------------------------------------------------------------------------
 
-QString MorpheusXML::domDocToText() {
+QString MorpheusXML::domDocToText() const {
     return xmlDocument.toString(4); // subelements are indented with 6 whitespaces
 }
 

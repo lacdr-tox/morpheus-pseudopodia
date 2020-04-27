@@ -28,23 +28,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)//, ui(new Ui::Main
  qDebug() << "(Mac only) Library Path (incl. plugins): " << libpaths;
 #endif
 */
-	QStringList libpaths = QApplication::libraryPaths();
-	qDebug() << "Using library Path (should include Qt plugins dir): " << libpaths;
-
-	QCoreApplication::setOrganizationName("Morpheus");
-    QCoreApplication::setOrganizationDomain("morpheus.org");
-    QCoreApplication::setApplicationName("Morpheus");
-    QApplication::setWindowIcon(QIcon(":/morpheus.png") );
+// 	QStringList libpaths = QApplication::libraryPaths();
+// 	qDebug() << "Using library Path (should include Qt plugins dir): " << libpaths;
+// 
+// 	QCoreApplication::setOrganizationName("Morpheus");
+//     QCoreApplication::setOrganizationDomain("morpheus.org");
+//     QCoreApplication::setApplicationName("Morpheus");
+//     QApplication::setWindowIcon(QIcon(":/morpheus.png") );
     QWidget::setWindowTitle(tr("Morpheus"));
     QWidget::setAcceptDrops(true);
 
-#if defined USE_QWebEngine  && QTCORE_VERSION >= 0x051200
-	QWebEngineUrlScheme scheme(HelpNetworkScheme::scheme());
-	scheme.setSyntax(QWebEngineUrlScheme::Syntax::HostAndPort);
-	scheme.setDefaultPort(80);
-	scheme.setFlags(QWebEngineUrlScheme::LocalScheme | QWebEngineUrlScheme::LocalAccessAllowed);
-	QWebEngineUrlScheme::registerScheme(scheme);
-#endif
+// #if defined USE_QWebEngine  && QTCORE_VERSION >= 0x051200
+// 	QWebEngineUrlScheme scheme(HelpNetworkScheme::scheme());
+// 	scheme.setSyntax(QWebEngineUrlScheme::Syntax::HostAndPort);
+// 	scheme.setDefaultPort(80);
+// 	scheme.setFlags(QWebEngineUrlScheme::LocalScheme | QWebEngineUrlScheme::LocalAccessAllowed);
+// 	QWebEngineUrlScheme::registerScheme(scheme);
+// #endif
 
     createMainWidgets();
     createMenuBar();
@@ -242,7 +242,7 @@ void MainWindow::createMenuBar()
 				}
 			}
 			else {
-				if ( current_model->xml_file.save(current_model->xml_file.path) ) {
+				if ( current_model->xml_file.save() ) {
 					current_model->rootNodeContr->saved();
 					modelList->topLevelItem(model_index.model)->setText(0, current_model->xml_file.name);
 				}
@@ -639,7 +639,7 @@ void MainWindow::loadXMLFile()
         directory = QSettings().value("FileDialog/path").toString();
     }
 
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Open model configuration"), directory, tr("Configuration Files (*.xml *.xml.gz)"));
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Open model"), directory, tr("Morphes Model Files (*.xml *.xml.gz)"));
     if(fileName != "")
     {
         QString path = QFileInfo(fileName).dir().path();

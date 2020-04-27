@@ -20,6 +20,7 @@
 #include "config.h"
 #include "widgets/checkboxlist.h"
 #include "widgets/webviewer.h"
+#include <QFutureWatcher>
 
 class AboutModel : public QWidget {
 	Q_OBJECT
@@ -40,6 +41,8 @@ class AboutModel : public QWidget {
 	QMetaObject::Connection onLoadConnect;
 	QString lastGraph;
 	
+	QFutureWatcher<QString> waitForGraph;
+	
 public:
 	AboutModel(SharedMorphModel model, QWidget* parent = NULL);
 	void update();
@@ -50,6 +53,7 @@ signals:
 	
 private slots:
 	void update_graph();
+	void graphReady();
 	void assignTitle(QString title);
 	void assignDescription();
 	void openLink(const QUrl&);

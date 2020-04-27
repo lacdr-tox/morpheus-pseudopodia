@@ -59,6 +59,7 @@ Q_OBJECT
 
 public:
     static const int max_output_size = 1e7;
+	static const bool zip_models = false;
 
     abstractProcess(SharedMorphModel model, int job_id, QString sub_dir);
     /*!<

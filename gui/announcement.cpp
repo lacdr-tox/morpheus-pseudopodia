@@ -17,7 +17,8 @@ AnnouncementDialog::AnnouncementDialog(QWidget* parent)
 	}
 	settings.endGroup();
 	
-	auto central_layout = new QVBoxLayout(this);
+	auto central_layout = new QVBoxLayout();
+	this->setLayout(central_layout);
 	this->setMinimumWidth(425);
 	this->setMinimumHeight(300);
 
@@ -25,7 +26,7 @@ AnnouncementDialog::AnnouncementDialog(QWidget* parent)
 	connect(web_view, SIGNAL(linkClicked(const QUrl&)), this, SLOT(openLink(const QUrl&)));
 	central_layout->addWidget(web_view);
 	
-	auto button_layout = new QHBoxLayout(this);
+	auto button_layout = new QHBoxLayout();
 	central_layout->addLayout(button_layout);
 	button_layout->addSpacing(10);
 	button_layout->addStretch(1);

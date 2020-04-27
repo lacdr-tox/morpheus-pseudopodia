@@ -3,22 +3,24 @@
 #include "qtsingleapp/qtsingleapplication.h"
 #include "mainwindow.h"
 #include "sbml_import.h"
-#ifdef USE_QWebEngine
-#include "network_schemes.h"
 
+#if (defined USE_QWebEngine) && (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
+// #include "network_schemes.h"
+#include <QWebEngineUrlScheme>
 #endif
+
 int main(int argc, char *argv[])
 {
 	// Properly initialize X11 multithreading. Fixes problems when x-forwarding the gui to a remote computer.
 	QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 	QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
 	
-	//only allow a single instance of Morpheus
+	// Only allow a single instance of Morpheus
 	QtSingleApplication a(argc, argv);
-	//QApplication a(argc, argv);
 	
-	 QStringList args = QApplication::arguments();
-	 args.pop_front();
+	// Handle no gui command line options
+	QStringList args = QApplication::arguments();
+	args.pop_front();
 	 
 	 if ( ! args.empty() && args[0] == "--convert" ) {
 		if (! SBMLImporter::supported) {
@@ -35,24 +37,44 @@ int main(int argc, char *argv[])
 			return -1;
 		}
 		if (args.size()<3)
-			morpheus_model->xml_file.save(args[1].left(5) + "-morpheus-v" + QString::number(morpheus_model->morpheus_ml_version) + ".xml");
+			morpheus_model->xml_file.save(args[1].left(5) + "-morpheus-v" + QString::number(morpheus_model->morpheus_ml_version) + ".xml", false);
 		else
-			morpheus_model->xml_file.save(args[2]);
+			morpheus_model->xml_file.save(args[2], false);
 		return 0;
 	 }
 	
-	// if another instance of Morpheus is already running, 
-	//  send the arguments to that instance 
+	// Instance forwarding 
+	// 
+	// if another instance of Morpheus is already running, forward the arguments to that instance
+	
 	QString message;
 	if(a.isRunning()){
 		message = QDir::currentPath() + " " + args.join(" ");
 		if (a.sendMessage(message))
 			return 0;
 	}
-	
+
+//  Global application configurations
 // 	QTextCodec::setCodecForCStrings( QTextCodec::codecForName("UTF-8") );
+	QStringList libpaths = QApplication::libraryPaths();
+	qDebug() << "Using library Path (should include Qt plugins dir): " << libpaths;
+
+	QCoreApplication::setOrganizationName("Morpheus");
+    QCoreApplication::setOrganizationDomain("morpheus.org");
+    QCoreApplication::setApplicationName("Morpheus");
+    QApplication::setWindowIcon(QIcon(":/morpheus.png") );
+
+#if (defined USE_QWebEngine) &&  (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
+	QWebEngineUrlScheme scheme(HelpNetworkScheme::scheme());
+	scheme.setSyntax(QWebEngineUrlScheme::Syntax::HostAndPort);
+	scheme.setDefaultPort(80);
+	scheme.setFlags(QWebEngineUrlScheme::LocalScheme | QWebEngineUrlScheme::LocalAccessAllowed);
+	QWebEngineUrlScheme::registerScheme(scheme);
+#endif
+
 	
-	//anlegen des hauptfensters
+	
+// Create main windows
 	MainWindow w;
 	if(a.isRunning()){
 		w.handleMessage(message);
@@ -63,7 +85,7 @@ int main(int argc, char *argv[])
 					 &w, SLOT(handleMessage(const QString&)));
 	
 	w.move(300, 200);
-    w.readSettings();
-    w.show();
-    return a.exec();
+	w.readSettings();
+	w.show();
+	return a.exec();
 }

@@ -362,8 +362,9 @@ void domNodeViewer::doContextMenuAction(QAction *action)
     if (action == cutNodeAction)
     {
         if (treePopupIndex.isValid()) {
-            xmlElementCopied( model->indexToItem(treePopupIndex)->cloneXML());
-            model->removeNode(treePopupIndex.parent(), treePopupIndex.row());
+//             xmlElementCopied( model->indexToItem(treePopupIndex)->cloneXML());
+            auto element = model->removeNode(treePopupIndex.parent(), treePopupIndex.row());
+			xmlElementCopied(element->cloneXML());
         }
         return;
     }

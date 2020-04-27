@@ -166,7 +166,7 @@ QString MorphModel::getDependencyGraph(GRAPH_TYPE type)
 		}
 	}
 	
-	QString model_file = temp_folder.absoluteFilePath("model.xml");
+	QString model_file = temp_folder.absoluteFilePath("model.xml.gz");
 
 	auto system_files = this->rootNodeContr->getModelDescr().sys_file_refs;
 	QList<QString> original_paths;
@@ -192,7 +192,7 @@ QString MorphModel::getDependencyGraph(GRAPH_TYPE type)
 	}
 	
 	//Run mopsi on it
-	xml_file.save(model_file);
+	xml_file.save(model_file, true);
 	
 	// revert file ref absolute paths
 	for (uint i=0; i<system_files.size(); i++ ) {
@@ -239,7 +239,8 @@ QString MorphModel::getDependencyGraph(GRAPH_TYPE type)
 		dep_graph_model_edit_stamp = rootNodeContr->getModelDescr().edits;
 		return temp_folder.absoluteFilePath("dependency_graph.dot");
 	}
-	qDebug() << "Expectd graph file does not exist " << temp_folder.absoluteFilePath(graph_file);
+	qDebug() << "Expected graph file does not exist " << temp_folder.absoluteFilePath(graph_file);
+	qDebug() << process.readAllStandardOutput();
 	return "";
 }
 
@@ -659,7 +660,7 @@ bool MorphModel::close()
                             return false;
                     }
                     else {
-                        xml_file.save( xml_file.path );
+                        xml_file.save();
                     }
                     break;
                 }
@@ -1008,15 +1009,16 @@ QModelIndex MorphModel::insertNode(const QModelIndex &parent, QString child, int
 //------------------------------------------------------------------------------
 
 
-void MorphModel::removeNode(const QModelIndex &parent, int row) {
+QSharedPointer<nodeController> MorphModel::removeNode(const QModelIndex &parent, int row) {
 	if (indexToItem(parent)->getChilds().size()<=row) {
 		qDebug() << "MorphModel::removeNode out of bounds " << indexToItem(parent)->childs[row]->name << "["<<row<<"]";
-		return;
+		return QSharedPointer<nodeController>();
 	}
     beginRemoveRows(parent, row, row);
 	// --> the row of the view might not be identical to the row in the model !
-    indexToItem(parent)->removeChild( row );
-    endRemoveRows();
+	auto child = QSharedPointer<nodeController>(indexToItem(parent)->removeChild( row ));
+	endRemoveRows();
+	return child;
 }
 
 void MorphModel::setDisabled(const QModelIndex &node_index, bool disable) {

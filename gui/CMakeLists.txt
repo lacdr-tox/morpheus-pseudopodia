@@ -19,7 +19,7 @@ mark_as_advanced(LIBSBML_STATIC)
 ## Select the proper WebView        ##
 ######################################
 
-FIND_PACKAGE(Qt5 COMPONENTS Widgets Sql Network Xml Svg Help)
+FIND_PACKAGE(Qt5 COMPONENTS Widgets Sql Network Concurrent Xml Svg Help)
 
 IF ( "${MORPHEUS_WEBVIEW}" STREQUAL "Auto" )
 	FIND_PACKAGE(Qt5 QUIET OPTIONAL_COMPONENTS WebEngineWidgets)

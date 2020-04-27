@@ -73,7 +73,7 @@ public:
 	void setDisabled(const QModelIndex &node, bool disabled);
 
     // bool removeRows ( int row, int count, const QModelIndex & parent = QModelIndex() );
-    void removeNode(const QModelIndex &parent, int row);
+    QSharedPointer<nodeController> removeNode(const QModelIndex &parent, int row);
 
 	bool activatePart(int idx);
     bool addPart(QString name);

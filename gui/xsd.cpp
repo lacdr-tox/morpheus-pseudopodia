@@ -654,6 +654,7 @@ void XSD::registerEnumValue(QString simple_type, QString value)
 	else {
 		simple_types[simple_type]->value_instances[value]+=1;
 	}
+// 	qDebug() << "Adding instance of Value " << value << " to Simple Type " << simple_type << " -> " << simple_types[simple_type]->value_instances[value];
 }
 
 //------------------------------------------------------------------------------
@@ -668,6 +669,7 @@ void XSD::removeEnumValue(QString simple_type, QString value)
 			removeEnumValue("cpmDoubleSymbolRef", QString("celltype.").append(value));
 		}
 		if (simple_types[simple_type]->value_instances[value] == 1) {
+// 			qDebug() << "Removing last instance of Value " << value << " from Simple Type " << simple_type;
 			simple_types[simple_type]->value_instances.remove(value);
 			simple_types[simple_type]->value_set.removeAll(value);
 			simple_types[simple_type]->is_enum=true;
@@ -695,7 +697,7 @@ void XSD::removeEnumValue(QString simple_type, QString value)
 		}
 		else {
 			simple_types[simple_type]->value_instances[value] -= 1;
-
+// 			qDebug() << "Removing Value " << value << " from Simple Type " << simple_type << " -> " << simple_types[simple_type]->value_instances[value];
 		}
 	}
 	else

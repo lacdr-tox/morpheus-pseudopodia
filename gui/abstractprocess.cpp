@@ -78,7 +78,7 @@ abstractProcess::abstractProcess(SharedMorphModel model, int job_id, QString sub
 	}
 
 // writing the model file
-	if  (! model->xml_file.save(outputDir + "/" + model_file_name) )
+	if  (! model->xml_file.save(outputDir + "/" + model_file_name, zip_models) )
 	{
 		throw QString("Can't create xml-model: '%1'!\n; Unable to start simulation!\n").arg(outputDir + "/" + model_file_name);
 	}
