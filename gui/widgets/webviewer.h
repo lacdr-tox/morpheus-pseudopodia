@@ -92,6 +92,8 @@ protected:
 #include<QWebEngineView>
 #include <QWebEngineHistory>
 #include <QWebEnginePage>
+#include <QPointer>
+#include <QOpenGLWidget>
 #include "../network_schemes.h"
 
 class AdaptiveWebPage : public QWebEnginePage {
@@ -119,6 +121,7 @@ public:
 	bool supportsSVG() const { return true;}
 	
 	void reset();
+	bool event(QEvent* e) override;
 	template <class F>
 	void evaluateJS(QString code, F callable) {
 		page()->runJavaScript(code, callable);
@@ -137,9 +140,11 @@ public slots:
 private slots:
 // 	void reset() {if (adaptive_page) setPage(adaptive_page);}
 protected:
+	bool eventFilter(QObject *obj, QEvent *ev) override;
 	void wheelEvent(QWheelEvent *event) override;
 private:
 	AdaptiveWebPage* adaptive_page = nullptr;
+	QPointer<QWidget> child_;
 	
 };
 #endif // USE_QTextBrowser

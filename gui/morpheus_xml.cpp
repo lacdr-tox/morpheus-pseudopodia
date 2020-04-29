@@ -87,7 +87,7 @@ bool MorpheusXML::save(QString fileName, bool zip) const {
 			return false;
 		}
 		
-		auto raw_text = domDocToText().toUtf8();
+		auto raw_text = domDocToText();
 		auto written = gzwrite(gzDoc, raw_text.begin(), raw_text.size());
 		if (written != raw_text.size()) {
 			qDebug() << "Unable to write xml-file " << outputXML << " to disc! (" << written << "!=" << raw_text.size() << ")";
@@ -151,8 +151,8 @@ bool MorpheusXML::saveAsDialog()
 
 //------------------------------------------------------------------------------
 
-QString MorpheusXML::domDocToText() const {
-    return xmlDocument.toString(4); // subelements are indented with 6 whitespaces
+QByteArray MorpheusXML::domDocToText() const {
+    return xmlDocument.toByteArray(4); // subelements are indented with 6 whitespaces
 }
 
 //------------------------------------------------------------------------------

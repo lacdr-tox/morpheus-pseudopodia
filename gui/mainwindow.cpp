@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include <QtConcurrent/QtConcurrentRun>
 #ifdef USE_QWebEngine
 	#include "network_schemes.h"
 	#include <QWebEngineProfile>
@@ -540,10 +541,13 @@ void MainWindow::createMainWidgets()
 
 void MainWindow::selectModel(int index, int part)
 {
-	config::modelIndex selected = modelListIndex(modelList->currentItem());
 	if (index<0) return;
+	if (model_index.model == index && (model_index.part==part || part == -1))
+		return;
+	
+	config::modelIndex selected = modelListIndex(modelList->currentItem());
 	if (model_index.model != index) {
-		qDebug() << "Switching model";
+// 		qDebug() << "Switching model";
 		model_index.model = index;
 		current_model = config::getOpenModels()[model_index.model];
 		if (selected.model == model_index.model)
@@ -579,13 +583,13 @@ void MainWindow::selectModel(int index, int part)
 				item->setToolTip(fixes[i].value);
 			}
 		}
-		
 		config::switchModel(model_index.model);
     }
     else {
-		qDebug() << "Switching model part";
+// 		qDebug() << "Switching model part";
 		if (part<0 || part>=current_model->parts.size()) {
 			model_index.part = selected.part;
+			return;
 		}
 		else if (current_model->parts[part].enabled) {
 			model_index.part = part;
@@ -645,7 +649,7 @@ void MainWindow::loadXMLFile()
         QString path = QFileInfo(fileName).dir().path();
         QSettings().setValue("FileDialog/path", path);
         QString xmlFile = fileName;
-        config::openModel(xmlFile);
+		QtConcurrent::run(&config::openModel,xmlFile);
     }
     else
     {
@@ -968,7 +972,7 @@ void MainWindow::removeModel(int index) {
 }
 
 void MainWindow::showCurrentModel() {
-// 	qDebug() << "showing current model from " << sender();
+	qDebug() << "showing current model from " << sender();
 	if (current_model->parts[model_index.part].label=="ParamSweep") {
         editorStack->setCurrentWidget(sweeper);
 		QWidget::setTabOrder(modelList,sweeper);

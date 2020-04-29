@@ -79,8 +79,10 @@ void WebViewer::reset() {
 }
 
 void WebViewer::wheelEvent(QWheelEvent *event) {
+	qDebug() << "Wheel event";
 	if (event->modifiers() == Qt::ControlModifier) {
 		double factor = 0.002;
+		qDebug() << "Changing Zoom Factor" << zoomFactor() << " -> " << zoomFactor() * (1 + event->angleDelta().y() * factor);
 		setZoomFactor(zoomFactor() * (1 + event->angleDelta().y() * factor));
 		event->accept();
 		
@@ -88,6 +90,37 @@ void WebViewer::wheelEvent(QWheelEvent *event) {
 	else
 		QWebEngineView::wheelEvent(event);
 }
+
+bool WebViewer::event(QEvent * ev) {
+	if (ev->type() == QEvent::ChildAdded) {
+		QChildEvent *child_ev = static_cast<QChildEvent*>(ev);
+		// there is also QObject child that should be ignored here;
+		// use only QOpenGLWidget child
+		QWidget *w = qobject_cast<QWidget*>(child_ev->child());
+		if (w) {
+			qDebug()<< ev->type() << "Installing Event filter to WebEngineView painter" ;
+			child_ = w;
+			w->installEventFilter(this);
+		}
+	}
+
+	return QWebEngineView::event(ev);
+}
+
+bool WebViewer::eventFilter(QObject *obj, QEvent *ev)
+{
+	// filter the required events from the painter widget
+// 	if (obj == child_) {
+		if (ev->type() == QEvent::Wheel) {
+			QWheelEvent *we = static_cast<QWheelEvent*>(ev);
+			wheelEvent(we);
+			return true;
+		}
+// 	}
+
+	return false;
+}
+
 
 bool WebViewer::debug(bool state) {
 // 	this->page()->settings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, state);

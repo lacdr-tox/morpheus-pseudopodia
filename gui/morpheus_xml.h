@@ -42,7 +42,7 @@ public:
       otherwise it returns false.
       */
 
-    QString domDocToText() const;
+    QByteArray domDocToText() const;
     /*!< Returns the structure of the current loaded xml-model as QString. */
 
     static QString getNewModelName();
