@@ -179,6 +179,7 @@ void AboutModel::graphReady() {
 		if (graph.endsWith("png")) {
 			url = "qrc:///model_graph_viewer.html";
 			QString command = QString("setGraph('file://")+ graph + "');";
+			
 			if (webGraph->url() == url) {
 				webGraph->evaluateJS(command, [](const QVariant& r){});
 			}
@@ -191,11 +192,11 @@ void AboutModel::graphReady() {
 				webGraph->setUrl(url);
 			}
 			lastGraph = graph;
-// 			url = (QString("file://") + graph);
-// 			webGraph->setUrl(url);
+
 		} else if (graph.endsWith("svg")) {
 			url = "qrc:///model_graph_viewer.html";
 			QString command = QString("setGraph('file://")+ graph + "');";
+			
 			if (webGraph->url() == url) {
 				webGraph->evaluateJS(command, [](const QVariant& r){});
 			}
@@ -207,6 +208,7 @@ void AboutModel::graphReady() {
 				});
 				webGraph->setUrl(url);
 			}
+			lastGraph = graph;
 			
 // 			QFile data(graph);
 // 			if (data.open(QFile::ReadWrite)) {
@@ -232,7 +234,6 @@ void AboutModel::graphReady() {
 		} else if (graph.endsWith("dot")) {
 			url = "qrc:///model_graph_renderer.html";
 			
-				
 			QFile dotsource(graph);
 			QString dot;
 			if (dotsource.exists()) {
@@ -300,23 +301,13 @@ void AboutModel::openLink(const QUrl& url)
 
 void AboutModel::svgOut()
 {
-	QString fileName = webGraph->url().path().split("/").last();
-	if (web_render) fileName="dependency-graph.svg";
-	fileName.prepend(QDir::currentPath()+"/");
-	QString format;
-	if (fileName.endsWith("svg")) {
-		format = "Scalable Vector Graphics (*.svg)";
-	}
-	else if (fileName.endsWith("png")) {
-		format = "Portable Network Graphics (*.png)";
-	}
-	else if (fileName.endsWith("dot")) {
-		format = "Graphiz dot Graph (*.dot)";
-	}
 	
-	fileName = QFileDialog::getSaveFileName(this,tr("Save Image"), fileName , format);
 	
 	if (web_render) {
+		QString fileName="dependency-graph.svg";
+		QString format = "Scalable Vector Graphics (*.svg)";
+		fileName = QFileDialog::getSaveFileName(this,tr("Save Image"), fileName , format);
+		
 		webGraph->evaluateJS("retSVG()",  
 			[=](const QVariant& r){
 				qDebug() << "saving SVG";
@@ -332,10 +323,25 @@ void AboutModel::svgOut()
 		);
 	}
 	else {
+		QString fileName = lastGraph.split("/").last();
+		fileName.prepend(QDir::currentPath()+"/");
+		QString format;
+		if (fileName.endsWith("svg")) {
+			format = "Scalable Vector Graphics (*.svg)";
+		}
+		else if (fileName.endsWith("png")) {
+			format = "Portable Network Graphics (*.png)";
+		}
+		else if (fileName.endsWith("dot")) {
+			format = "Graphiz dot Graph (*.dot)";
+		}
+		
+		fileName = QFileDialog::getSaveFileName(this,tr("Save Image"), fileName , format);
+		
 		if (QFile::exists(fileName))
 			QFile::remove(fileName);
 		
-		QFile::copy(url.path(), fileName);
+		QFile::copy(lastGraph, fileName);
 	}
 }
 

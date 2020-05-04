@@ -141,7 +141,6 @@ private slots:
 // 	void reset() {if (adaptive_page) setPage(adaptive_page);}
 protected:
 	bool eventFilter(QObject *obj, QEvent *ev) override;
-	void wheelEvent(QWheelEvent *event) override;
 private:
 	AdaptiveWebPage* adaptive_page = nullptr;
 	QPointer<QWidget> child_;

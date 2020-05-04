@@ -78,19 +78,6 @@ void WebViewer::reset() {
 	setPage(adaptive_page);
 }
 
-void WebViewer::wheelEvent(QWheelEvent *event) {
-	qDebug() << "Wheel event";
-	if (event->modifiers() == Qt::ControlModifier) {
-		double factor = 0.002;
-		qDebug() << "Changing Zoom Factor" << zoomFactor() << " -> " << zoomFactor() * (1 + event->angleDelta().y() * factor);
-		setZoomFactor(zoomFactor() * (1 + event->angleDelta().y() * factor));
-		event->accept();
-		
-	}
-	else
-		QWebEngineView::wheelEvent(event);
-}
-
 bool WebViewer::event(QEvent * ev) {
 	if (ev->type() == QEvent::ChildAdded) {
 		QChildEvent *child_ev = static_cast<QChildEvent*>(ev);
@@ -113,8 +100,14 @@ bool WebViewer::eventFilter(QObject *obj, QEvent *ev)
 // 	if (obj == child_) {
 		if (ev->type() == QEvent::Wheel) {
 			QWheelEvent *we = static_cast<QWheelEvent*>(ev);
-			wheelEvent(we);
-			return true;
+			if (we->modifiers() == Qt::ControlModifier) {
+				wheelEvent(we);
+				double factor = 0.002;
+				qDebug() << "Changing Zoom Factor" << zoomFactor() << " -> " << zoomFactor() * (1 + we->angleDelta().y() * factor);
+				setZoomFactor(zoomFactor() * (1 + we->angleDelta().y() * factor));
+				we->accept();
+				return true;
+			}
 		}
 // 	}
 
