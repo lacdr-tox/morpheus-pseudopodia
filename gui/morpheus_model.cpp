@@ -284,6 +284,9 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 	if (morpheus_file_version == morpheus_ml_version) {
 		// nothing to do ...
 		fix_version=morpheus_ml_version;
+		MorphModel::AutoFix a;
+		a.match_path = "MorpheusModel/CellTypes/CellType/AddCell/Condition"; a.target_path = "MorpheusModel/CellTypes/CellType/AddCell/Count"; fixes.append(a);
+		
 	}
 	else if (morpheus_file_version == 3) {
 		fix_version=4;

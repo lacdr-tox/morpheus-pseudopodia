@@ -5,9 +5,11 @@
 ### GUI
   * Introduced Interactive Model Graph
   * Switched to Qt5
+  * Support reading and writing (gz) compressed models
 
 ### MorpheusML
   * The space symbol (Space/SpaceSymbol) now always provides the location in orthogonal coordinates, also on hexagonal lattices.
+  * AddCell accepts Count as the number of cells to be placed.
   * ClusterTracker can cluster cells of multiple cell types.
   * Added Populations InitVectorProperty
   * Lattice size now can also be specified through expressions

@@ -1,11 +1,12 @@
 #include "add_cell.h"
+#include "core/field.h"
 
 REGISTER_PLUGIN(AddCell);
 
-AddCell::AddCell() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_OPTIONAL ) {
+AddCell::AddCell() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_NONE ) {
 	
-	condition.setXMLPath("Condition/text");
-	registerPluginParameter(condition);
+	count.setXMLPath("Count/text");
+	registerPluginParameter(count);
 
 	probdist.setXMLPath("Distribution/text");
 	registerPluginParameter(probdist);
@@ -13,14 +14,14 @@ AddCell::AddCell() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_
 	overwrite.setXMLPath("overwrite");
 	overwrite.setDefault("false");
 	registerPluginParameter(overwrite);
-
+	
 }
 
 void AddCell::loadFromXML(const XMLNode xNode, Scope* scope)
 {
 	InstantaneousProcessPlugin::loadFromXML(xNode, scope);
-	triggers = shared_ptr<TriggeredSystem>(new TriggeredSystem);
 	if (xNode.nChildNode("Triggers")) {
+		triggers = shared_ptr<TriggeredSystem>(new TriggeredSystem);
 		triggers->loadFromXML(xNode.getChildNode("Triggers"), scope);
 	}
 }
@@ -30,93 +31,107 @@ void AddCell::init(const Scope* scope)
 	InstantaneousProcessPlugin::init( scope );  
 
 	celltype = scope->getCellType();
-	cpm_layer = CPM::getLayer();
-	lsize = SIM::getLattice()->size();
-	triggers->init();
+	
+	if (triggers)
+		triggers->init();
 
-	//if( this->timeStep() == 0 ){
-		setTimeStep( CPM::getMCSDuration() );
-		is_adjustable = false;
-	//}
+	// Adjust a fixed time step
+	setTimeStep( CPM::getMCSDuration() );
+	is_adjustable = false;
 
 	// because this plugin changes the cell configuration, 
-	//  the cell position need to be registered as output symbol (during init())
+	// the cell position need to be registered as output symbol (during init())
 	registerCellPositionOutput();
 }
 
-bool AddCell::checkIfMedium(VINT pos) {
-	uint celltype_at_pos = SymbolFocus(pos).celltype();
-	return (celltype_at_pos == CPM::getEmptyCelltypeID());
-}
-
 void AddCell::executeTimeStep() {
+	
+	auto raw_count = count(SymbolFocus());
+	// Statistically realize also dezimal counts
+	int cell_count = floor(raw_count);
+	cell_count += (raw_count - cell_count) > getRandom01();
+	
+	if( cell_count >= 1.0 ) {
 
-	if( condition( SymbolFocus() ) >= 1.0 ){
-
-		bool createCell = false;
-		VINT position = this->getRandomPos();
-		
-		if( !overwrite() ) {
-			if( checkIfMedium(position) )
-				createCell = true;
+		if (cdf.size()==0 || !probdist.flags().time_const ) {
+			createCDF();
 		}
-		else
-			createCell = true;
 		
-		if( createCell ){
-			int newID = celltype->createCell();
-			CPM::setNode(position, newID);
-			//TODO: triggers->trigger(SymbolFocus(newID));
+		int cells_created =0;
+		int iterations =0;
+		int max_iterations = 10 * cell_count;
+		int current_cell_id =0;
+		while (cell_count > cells_created) {
+
+			if (iterations >= max_iterations) {
+				auto error_msg = string("AddCell: Could only place ") +to_str(cells_created) + " of " + to_str(cell_count) + " requested cells after " + to_str(max_iterations) + " tries.";
+				cout << error_msg << endl;
+				break;
+			}
+
+			iterations++;
+			VINT position = this->getRandomPos();
+
+			SymbolFocus focus(position);
+			if( focus.celltype() != CPM::getEmptyCelltypeID() ) {
+				if ( !overwrite() ) {
+					continue;
+				}
+				else if (focus.cell().nNodes() == 1) {
+					continue;
+				}
+			}
+
+			// For safety reasons we would retry placing a cell if setNode() fails
+			if (current_cell_id==0) {
+				current_cell_id = celltype->createCell();
+			}
+
+			if (CPM::setNode(position, current_cell_id)) {
+				cells_created++;
+				if (triggers)
+					triggers->trigger(SymbolFocus(current_cell_id));
+				current_cell_id = 0;
+			}
 		}
 	}
 }
 
-VINT AddCell::getPosFromIndex(int ind, VINT size){
-	VINT pos;
-	pos.z = ind / (size.x*size.y);
-	pos.y = (ind - pos.z*(size.x*size.y)) / (size.x);
-	pos.x = (ind - pos.y*size.x - pos.z*(size.x*size.y));
-	//cout << "Index = " << ind << ", position = " << pos << endl;
-	return pos;
+void AddCell::createCDF() {
+	double cum_sum =0;
+	// FocusRange automatically excludes all ranges outside of the global domain
+	FocusRange range(Granularity::Node, SIM::getGlobalScope());
+	cdf.resize(range.size());
+	int idx=0;
+	for (auto focus : range) {
+		auto prob =  probdist.get(focus);
+		if (prob<0) {
+			throw MorpheusException(string("AddCell: Distribution expression evaluates to negative probabilty at position ") + to_str(focus.pos()) + " = " + to_str(prob), this->stored_node); 
+		}
+		cum_sum += prob;
+		cdf[idx++] = { cum_sum, focus.pos() };
+	}
 }
 
-VINT AddCell::getRandomPos(){
-	VINT a(0,0,0);
-	int latsize = (lsize.x*lsize.y*lsize.z);
-	valarray<double> cdf(1.0, latsize);
 
-	// evaluate function at every position in the lattice
-	VINT pos(0,0,0);
-	cdf[0] = probdist( SymbolFocus(pos) ); 
-	//cout << cdf[0] << " ";
-
-//TODO: enable multi-threading (what to do with cdf[]?)
-//#pragma omp parallel for
-	for(int i=1; i<cdf.size(); i++){
-		VINT pos_local = getPosFromIndex(i, lsize);
-		SymbolFocus sf(pos_local);
-		//cout << sf.pos() << endl;
-		double val = probdist( sf );
-		if(val<0) {
-			cerr << "AddCell: Position expression is negative for position " << pos_local << " = " << val << endl; 
-			exit(-1);
-		}
-		cdf[i] = cdf[i-1] + val;
-		//cout << pos << ":" << cdf[i] << "\n";
+VINT AddCell::getRandomPos() {
+	
+	if (probdist.flags().space_const) {
+		return CPM::getLayer()->lattice().getRandomPos();
 	}
-	//cout << endl;
-
+	
 	// get random double between 0 and max_cdf
-	double random = getRandom01() * cdf[ cdf.size() - 1];
+	double cdf_level = getRandom01() * cdf[cdf.size()-1].val;
+	
 	// get index from random number of CDF
-	int ind;
-	for(ind=0; ind<cdf.size(); ind++){
-		if(cdf[ind] >= random)
-			break;
-	}
+	auto index = lower_bound(
+		begin(cdf), end(cdf),
+		cdf_level,
+		[=](const cdf_data & a, double level) { return a.val<level;}
+	);
+
 	// get position from index
-	pos = getPosFromIndex(ind, lsize);
-	return pos;
+	return index->pos;
 }
 
 

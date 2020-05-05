@@ -12,20 +12,13 @@
 			<xs:appinfo>Population</xs:appinfo>
 		</xs:annotation>
 		<xs:all>
-			<xs:element name="Condition" type="cpmMathExpression" />
+<!-- 			<xs:element name="Condition" type="cpmMathExpression" /> -->
+			<xs:element name="Count" type="cpmMathExpression" />
 			<xs:element name="Distribution" type="cpmMathExpression" />
 			<xs:element name="Triggers" type="TriggeredSystem" />
 		</xs:all>
 		<xs:attribute name="name" type="cpmString" use="optional" />
-		<xs:attribute name="mode" type="cpmAddCellMode" use="required">
-			<xs:annotation>
-				<xs:documentation>
-Mode: 
-- 'overwrite' adds cell at position even when it was occupied by another cell 
-- 'exclude' does not overwrite (default)
-				</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
+		<xs:attribute name="overwrite" type="cpmBoolean" use="optional" default="false" />
 	</xs:complexType>
 	
 	<xs:simpleType name="cpmAddCellMode">

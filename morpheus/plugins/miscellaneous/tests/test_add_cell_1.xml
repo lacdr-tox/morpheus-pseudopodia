@@ -1,0 +1,122 @@
+<MorpheusModel version="4">
+    <Description>
+        <Title>Add Cell Test 1</Title>
+        <Details>Test adding  cells with factional counts --> 0.1/mcs  * 1000 mcs  = 100 cells expected</Details>
+    </Description>
+    <Global>
+        <Variable symbol="boundary" value="0.0" name="Boundary length of CT1 with other cell types"/>
+        <Constant symbol="b" value="0.0"/>
+        <Constant symbol="b2" value="0.0"/>
+    </Global>
+    <Space>
+        <SpaceSymbol symbol="l"/>
+        <Lattice class="square">
+            <Size symbol="size" value="200, 200, 0"/>
+            <BoundaryConditions>
+                <Condition type="periodic" boundary="x"/>
+                <Condition type="periodic" boundary="y"/>
+            </BoundaryConditions>
+            <Neighborhood>
+                <Order>2</Order>
+            </Neighborhood>
+        </Lattice>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="1000"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <CellTypes>
+        <CellType name="ct1" class="biological">
+            <VolumeConstraint target="100" strength="1"/>
+            <AddCell mode="overwrite">
+                <Count>0.1</Count>
+                <Distribution>l.x&lt;100</Distribution>
+                <Triggers/>
+            </AddCell>
+        </CellType>
+        <CellType name="medium" class="medium"/>
+    </CellTypes>
+    <CPM>
+        <Interaction default="0.0">
+            <Contact value="12" type1="ct1" type2="medium"/>
+            <Contact value="12" type1="ct1" type2="ct1"/>
+        </Interaction>
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1"/>
+            <Neighborhood>
+                <Order>2</Order>
+            </Neighborhood>
+            <MetropolisKinetics temperature="2"/>
+        </MonteCarloSampler>
+        <ShapeSurface scaling="norm">
+            <Neighborhood>
+                <Order>6</Order>
+            </Neighborhood>
+        </ShapeSurface>
+    </CPM>
+    <CellPopulations>
+        <Population type="ct1" size="0">
+            <InitCircle number-of-cells="00" mode="random">
+                <Dimensions center="size.x/2, size.y/2, 0" radius="size.x/3"/>
+            </InitCircle>
+        </Population>
+        <!--    <Disabled>
+        <Population type="ct2" size="0">
+            <InitCircle number-of-cells="50" mode="random">
+                <Dimensions center="size.x/2, size.y/2, 0" radius="size.x/3"/>
+            </InitCircle>
+        </Population>
+    </Disabled>
+-->
+    </CellPopulations>
+    <Analysis>
+        <Gnuplotter time-step="100" decorate="false">
+            <Terminal name="png"/>
+            <Plot>
+                <Cells value="cell.type" flooding="true"/>
+            </Plot>
+            <Plot>
+                <Cells value="b" flooding="true">
+                    <ColorMap>
+                        <Color value="2" color="red"/>
+                        <Color value="1" color="yellow"/>
+                        <Color value="0" color="white"/>
+                    </ColorMap>
+                </Cells>
+                <CellLabels value="b" fontsize="10" precision="0"/>
+            </Plot>
+            <Plot>
+                <Cells value="b2" per-frame-range="true">
+                    <ColorMap>
+                        <Color value="2" color="red"/>
+                        <Color value="1" color="yellow"/>
+                        <Color value="0" color="white"/>
+                    </ColorMap>
+                </Cells>
+                <CellLabels value="b2" fontsize="10" precision="0"/>
+            </Plot>
+        </Gnuplotter>
+        <DependencyGraph reduced="false" format="svg"/>
+        <Logger time-step="10">
+            <Input>
+                <Symbol symbol-ref="celltype.ct1.size"/>
+            </Input>
+            <Output>
+                <TextOutput/>
+            </Output>
+            <Plots>
+                <Plot time-step="-1">
+                    <Style style="linespoints"/>
+                    <Terminal terminal="png"/>
+                    <X-axis>
+                        <Symbol symbol-ref="time"/>
+                    </X-axis>
+                    <Y-axis>
+                        <Symbol symbol-ref="celltype.ct1.size"/>
+                    </Y-axis>
+                </Plot>
+            </Plots>
+        </Logger>
+    </Analysis>
+</MorpheusModel>
