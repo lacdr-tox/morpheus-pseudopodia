@@ -3,7 +3,7 @@
 
 REGISTER_PLUGIN(AddCell);
 
-AddCell::AddCell() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_OPTIONAL ) {
+AddCell::AddCell() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_NONE ) {
 	
 	count.setXMLPath("Count/text");
 	registerPluginParameter(count);
@@ -15,7 +15,6 @@ AddCell::AddCell() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_
 	overwrite.setDefault("false");
 	registerPluginParameter(overwrite);
 	
-	cdf = nullptr;
 }
 
 void AddCell::loadFromXML(const XMLNode xNode, Scope* scope)
@@ -36,19 +35,13 @@ void AddCell::init(const Scope* scope)
 	if (triggers)
 		triggers->init();
 
-	//if( this->timeStep() == 0 ){
-		setTimeStep( CPM::getMCSDuration() );
-		is_adjustable = false;
-	//}
+	// Adjust a fixed time step
+	setTimeStep( CPM::getMCSDuration() );
+	is_adjustable = false;
 
 	// because this plugin changes the cell configuration, 
-	//  the cell position need to be registered as output symbol (during init())
+	// the cell position need to be registered as output symbol (during init())
 	registerCellPositionOutput();
-}
-
-bool AddCell::checkIfMedium(VINT pos) {
-	uint celltype_at_pos = SymbolFocus(pos).celltype();
-	return (celltype_at_pos == CPM::getEmptyCelltypeID());
 }
 
 void AddCell::executeTimeStep() {
@@ -59,75 +52,86 @@ void AddCell::executeTimeStep() {
 	cell_count += (raw_count - cell_count) > getRandom01();
 	
 	if( cell_count >= 1.0 ) {
+
+		if (cdf.size()==0 || !probdist.flags().time_const ) {
+			createCDF();
+		}
+		
 		int cells_created =0;
 		int iterations =0;
 		int max_iterations = 10 * cell_count;
-		
-		if (!cdf || !probdist.flags().time_const ) {
-			if (!cdf)
-				cdf = new Lattice_Data_Layer<double>(SIM::getLattice(),0,0,"AddCell distribution cdf");
-			double cum_sum =0;
-			FocusRange range(Granularity::Node, SIM::getGlobalScope());
-			for (auto focus : range) {
-				auto prob =  probdist.get(focus);
-				if (prob<0) {
-					throw MorpheusException(string("AddCell: Distribution expression evaluates to negative probabilty at position ") + to_str(focus.pos()) + " = " + to_str(prob), this->stored_node); 
-				}
-				cum_sum += prob;
-				cdf->set(focus.pos(), cum_sum);
-			}
-		}
-		
-		while (cell_count > cells_created && iterations<max_iterations ) {
+		int current_cell_id =0;
+		while (cell_count > cells_created) {
 
 			if (iterations >= max_iterations) {
 				auto error_msg = string("AddCell: Could only place ") +to_str(cells_created) + " of " + to_str(cell_count) + " requested cells after " + to_str(max_iterations) + " tries.";
 				cout << error_msg << endl;
 				break;
 			}
-				
+
 			iterations++;
 			VINT position = this->getRandomPos();
-			
-			if( !overwrite() && ! checkIfMedium(position) )
-					break;
 
-			int newID = celltype->createCell();
-			if (CPM::setNode(position, newID)) {
+			SymbolFocus focus(position);
+			if( focus.celltype() != CPM::getEmptyCelltypeID() ) {
+				if ( !overwrite() ) {
+					continue;
+				}
+				else if (focus.cell().nNodes() == 1) {
+					continue;
+				}
+			}
+
+			// For safety reasons we would retry placing a cell if setNode() fails
+			if (current_cell_id==0) {
+				current_cell_id = celltype->createCell();
+			}
+
+			if (CPM::setNode(position, current_cell_id)) {
 				cells_created++;
 				if (triggers)
-					triggers->trigger(SymbolFocus(newID));
+					triggers->trigger(SymbolFocus(current_cell_id));
+				current_cell_id = 0;
 			}
 		}
 	}
 }
 
-VINT AddCell::getPosFromIndex(int ind, VINT size){
-	VINT pos;
-	pos.z = ind / (size.x*size.y);
-	pos.y = (ind - pos.z*(size.x*size.y)) / (size.x);
-	pos.x = (ind - pos.y*size.x - pos.z*(size.x*size.y));
-	//cout << "Index = " << ind << ", position = " << pos << endl;
-	return pos;
+void AddCell::createCDF() {
+	double cum_sum =0;
+	// FocusRange automatically excludes all ranges outside of the global domain
+	FocusRange range(Granularity::Node, SIM::getGlobalScope());
+	cdf.resize(range.size());
+	int idx=0;
+	for (auto focus : range) {
+		auto prob =  probdist.get(focus);
+		if (prob<0) {
+			throw MorpheusException(string("AddCell: Distribution expression evaluates to negative probabilty at position ") + to_str(focus.pos()) + " = " + to_str(prob), this->stored_node); 
+		}
+		cum_sum += prob;
+		cdf[idx++] = { cum_sum, focus.pos() };
+	}
 }
+
 
 VINT AddCell::getRandomPos() {
 	
 	if (probdist.flags().space_const) {
 		return CPM::getLayer()->lattice().getRandomPos();
 	}
-
-	VINT pos(0,0,0);
+	
 	// get random double between 0 and max_cdf
-	const auto& cdf_data = cdf->getData();
+	double cdf_level = getRandom01() * cdf[cdf.size()-1].val;
 	
-	double cdf_level = getRandom01() * cdf_data[cdf_data.size()-1];
 	// get index from random number of CDF
-	
-	auto ind = lower_bound(begin(cdf_data), end(cdf_data), cdf_level ) - begin(cdf_data);
+	auto index = lower_bound(
+		begin(cdf), end(cdf),
+		cdf_level,
+		[=](const cdf_data & a, double level) { return a.val<level;}
+	);
+
 	// get position from index
-	pos = getPosFromIndex(ind, cdf->lattice().size());
-	return pos;
+	return index->pos;
 }
 
 

@@ -19,29 +19,30 @@
 /** \defgroup ML_AddCell AddCell
 \ingroup ML_CellType
 \ingroup MiscellaneousPlugins InstantaneousProcessPlugins
-\brief Add a new cell based on a condition.
+\brief Add new cells based during simulation.
 
-Create a new cell during simulation, depending on a condition in a position depending on a probability distribution.
+Create new cells during simulation at positions given by a probability distribution. AddCell runs every MCS and places cells given by \b Count. Fractional counts are realized statistically.
 
-- \b Count: Expression describing how many cells to be created.
+- \b Count: Expression describing how many cells to be created. Fractional counts are realized statistically.
 - \b Distribution: Expression describing the spatial probability distribution (normalized to 1 internally).
+- \b overwrite (default=false): Whether or not a cell should be created in a location occupied by another cell.
 
-- \b Overwrite (default=false): Whether or not a cell should be in a location occupied by another cell.
 - \b Triggers (optional): System of Rules to be triggered after cell is added.
 
 \section Example
-// Adding cell with increasing probability along x axis, automatically scheduled
+// Adding cell every MCS with increasing probability along x axis, automatically scheduled
 \verbatim
 <AddCell>
-	<Count> rand_uni(0,1) &lt; 0.001 </Count>
+	<Count> 1 </Count>
 	<Distribution> l.x / size.x </Distribution>
 </AddCell>
 \endverbatim
 
 // Adding cells with normal distribution centered in middle of lattice (stdev=25), with explicit time step
+// Fractional count 0.01 is realized such that on average the every 100 MCS a cell is created. 
 \verbatim
-<AddCell time-step="1.0">
-	<Count> rand_uni(0,1) &lt; 0.001 </Count>
+<AddCell>
+	<Count> 0.01 </Count>
 	<Distribution> exp(-((l.x-size.x/2)^2 + (l.y-size.y/2)^2) / (2*25^2) )</Distribution>
 </AddCell>
 \endverbatim
@@ -52,7 +53,7 @@ Create a new cell during simulation, depending on a condition in a position depe
 	<Count> p > 1 </Count>
 	<Distribution> 1 </Distribution>
 	<Triggers>
-		<Rule symbol-ref="Vt"> 50 </Rule>
+		<Rule symbol-ref="birth_time"> time </Rule>
 	</Triggers>
 </AddCell>
 \endverbatim
@@ -70,22 +71,12 @@ private:
 	// variable and functions declared here
 	CellType* celltype;
 	shared_ptr<TriggeredSystem> triggers;
-	Lattice_Data_Layer<double>* cdf;
+	struct cdf_data { double val; VINT pos; };
+	valarray<cdf_data> cdf;
 
-	//shared_ptr<Function> position_function;
-	//string position_symbol_string;
-	//SymbolAccessor<VDOUBLE> position_symbol;
-
-	enum Mode{
-		OVERWRITE,
-		EXCLUDE
-	};
-	Mode mode;
-	bool checkIfMedium(VINT pos);
-
+	void createCDF();
 	/// Choose a lattice site at random, according to a probability density function 
 	VINT getRandomPos();
-	VINT getPosFromIndex(int index, VINT size);
 
 public:
 	AddCell();
