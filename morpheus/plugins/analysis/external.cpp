@@ -113,13 +113,13 @@ void External::execute(){
 			"",
 			[output_log](const char *bytes, size_t n) {
 				ofstream fout;
-				fout.open(output_log);
+				fout.open(output_log, std::ofstream::out | std::ofstream::app);
 				fout.write(bytes, n);
 				fout.close();
 			},
 			[error_log](const char *bytes, size_t n) {
 				ofstream fout;
-				fout.open(error_log);
+				fout.open(error_log, std::ofstream::out | std::ofstream::app);
 				fout.write(bytes, n);
 				fout.close();
 			},
