@@ -78,7 +78,7 @@ protected:
  * XML-interface class. A Data tag name for snapshoting/loading of the value is derived from the 
  * Container XML tag name by appending 'Data'.
  * 
- * T ist the interfacial type of the Symbol attached to the property
+ * T is the interfacial type of the Symbol attached to the property
  * V is the actual value type of the property
  */
 template <class T, class V = T>
@@ -132,7 +132,7 @@ public:
  * 
  * The ConstantSymbol template attaches a constant value to a scope.
  * It provides all the necessary meta-information (type, constness, symbol name)
- * and the mediates access to the value.
+ * and mediates access to the value.
  */
 template <class T>
 class ConstantSymbol : public PrimitiveConstantSymbol<T> {
@@ -153,7 +153,7 @@ class ConstantSymbol : public PrimitiveConstantSymbol<T> {
  * 
  * The VariableSymbol template attaches a variable value to a scope.
  * It provides all the necessary meta-information (type, constness, symbol name)
- * and the mediates access to the value. 
+ * and mediates access to the value. 
  * 
  * When snapshoting, the value is copied back to the XML interfacing Container.
  */
@@ -175,9 +175,9 @@ class VariableSymbol : public PrimitiveVariableSymbol<T> {
 /** Symbol (accessor) for cell-attached Properties
  * 
  * Alike the PrimitivePropertySymbol, the PropertySymbol attaches Properties to a scope.
- * In addition, it interaces to a Container plugin to mediate initialization, snapshoting and loading of values
+ * In addition, it interfaces to a Container plugin to mediate initialization, snapshoting and loading of values
  * 
- * When snapshoting, the XML data tag name is derived from the XML interfacing Container tag name by appanding 'Data'.
+ * When snapshoting, the XML data tag name is derived from the XML interfacing Container tag name by appending 'Data'.
  */
 template <class T>
 class PropertySymbol : public PrimitivePropertySymbol<T> {

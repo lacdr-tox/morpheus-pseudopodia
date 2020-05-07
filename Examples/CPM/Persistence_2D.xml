@@ -1,7 +1,14 @@
 <MorpheusModel version="3">
     <Description>
         <Title>Example-Persistence</Title>
-        <Details></Details>
+        <Details>Illustrates the Plugin PersistentMotion and shows
+
+        - 400 cells confined to a circular domain (defined in Space) and forced to move with persistence
+        
+        - rectangular obstacle without dynamics since FreezeMotion is set of this cell type
+
+        - alignment of motion directions emerges from the random initial state as a collective effect
+        </Details>
     </Description>
     <Global>
         <VariableVector symbol="d" value="0.0, 0.0, 0.0" name="Moving direction"/>

@@ -2,7 +2,16 @@
 <MorpheusModel version="3">
     <Description>
         <Title>Example-CellCycle</Title>
-        <Details>James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: Why Do Certain Circuits Oscillate?, Cell 144, p874-885. http://dx.doi.org/10.1016/j.cell.2011.03.006</Details>
+        <Details>Example showing oscillatory cell cycle model by Ferrell et al. inside an individual cell.
+
+The related Example "CellCycle_Global" uses this same model uniformly just once for the whole space but here each cell (with cell-specific values) runs this model independently. Stochasticity may lead to different cellular states (if multiple cells were initialised on a large enough lattice).
+
+Reference:
+James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: Why Do Certain Circuits Oscillate?, Cell 144, p874-885. http://dx.doi.org/10.1016/j.cell.2011.03.006
+
+Illustrates how to 
+- create a simple ODE model inside a cell
+- log and plot data of cell properties</Details>
     </Description>
     <Global/>
     <Space>

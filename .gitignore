@@ -5,3 +5,7 @@ build*
 # kdevelop files
 .kdev4/
 *.kdev4
+
+# miscellaneous
+*.code-workspace
+.vscode

@@ -2,7 +2,13 @@
 <MorpheusModel version="3">
     <Description>
         <Title>Example-Proliferation2D</Title>
-        <Details></Details>
+        <Details>Illustrates Plugin CellDivision under CellTypes
+        
+        - here, any cell can divide symmetrically with probability p and daughters then increase their counter d of dividion rounds by 1 (plotted as number inside each cell)
+
+        - to highlight recent division events, both daughters are labeled red for some time (controled by a counter c as CellProperty)
+        
+        </Details>
     </Description>
     <Global>
         <Variable symbol="c" value="0.0"/>

@@ -31,16 +31,16 @@ Gnuplotter plots the Cell configurations (and optionally Fields) to screen or to
 Requires GNUPlot 4.2.5 or higher.
 
 
-Organised in Plots, several artistic representations can be selected :
+Organized in Plots, several artistic representations can be selected:
   - Cells can be colorized using the value attribute.
   - Spatial Fields can be superimposed under the plot.
   - Additional information can be visualized using CellLabels and CellArrows.
-  - VectorFields can be plotted by providing x and y components seperately. 
+  - VectorFields can be plotted by providing x and y components separately. 
 
 \subsection Attributes
-- \b time-step (optional): Frequency of plotting events. If unspecified adopts to the frequency of input updates. Setting \b time-step<=0 will plot only the final state of the simulation.
+- \b time-step (optional): Frequency of plotting events. If unspecified, adopts to the frequency of input updates. Setting \b time-step<=0 will plot only the final state of the simulation.
 - \b decorate (optional, true): Enables axis labels and legends.
-- \b log-commands (optional, false): Enables logging of data and plot commands to disc. Allows to manually repeat and manipulate the plots.
+- \b log-commands (optional, false): Enables logging of data and plotting commands to disc. Allows to manually repeat and manipulate the plots.
 - \b file-numbering (optional, time): Set the numbering of the plot images to either be consecutive or based on simulation time.
 
 \subsection Terminal
@@ -50,7 +50,7 @@ Organised in Plots, several artistic representations can be selected :
 - \b Cells: Plot the spatial cell pattern restricted to a 2d scenario. Cell coloring is determined by the \b value attribute.
 - \b CellLabels: Put labels at the cell center according to the expression provided with the \b value attribute.
 - \b CellArrows: Put arrows at the cell center according to the expression provided with the \b value attribute.
-- \b Field: Plot a scalare field given by the expression in \b value. \b Coarsening will reduce the spatial data resolution.
+- \b Field: Plot a scalar field given by the expression in \b value. \b Coarsening will reduce the spatial data resolution.
 - \b VectorField: Plot a vector field given by the expression in \b value. \b Coarsening will reduce the spatial data resolution.
 
 \section Examples
@@ -76,7 +76,7 @@ Example: Plot CPM state showing two cell properties to PNG files
 \endverbatim
 
 
-Example: Plot CPM state showing a cell properties (no cell membrane), and with custom color map
+Example: Plot CPM state showing a cell property (no cell membrane), and with custom color map
 \verbatim
     <Analysis>
         <Gnuplotter interval="500">

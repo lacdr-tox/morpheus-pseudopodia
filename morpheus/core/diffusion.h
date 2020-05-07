@@ -21,7 +21,7 @@
 \defgroup ML_Diffusion Diffusion
 \ingroup ML_Field ML_MembraneProperty ContinuousProcessPlugins
 
-Simulation of homogeneous \b Diffusion is implemented for \ref ML_Field  and \ref ML_MembraneProperty for 1,2 and 3 dimensions. Diffusion can be give by a \b rate or defined to be \b well-mixed, which corresponds to infinitely fast diffusion. Diffusion on membranes is not performed on the actual shape but on a sphere matching the cell's volume.
+Simulation of homogeneous \b Diffusion is implemented for \ref ML_Field  and \ref ML_MembraneProperty for 1,2 and 3 dimensions. Diffusion can be given by a diffusion \b rate or defined to be \b well-mixed, which corresponds to infinitely fast diffusion. Diffusion on membranes is not performed on the actual shape but approximated on a sphere matching the cell's volume.
 
 - \b rate: diffusion coefficient [nodes per time²]
 - \b well-mixed (optional): if true, homogenizes the scalar field. Requires rate=0.

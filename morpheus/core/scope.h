@@ -388,7 +388,7 @@ SymbolRWAccessor<T> Scope::findRWSymbol(string name) const
 		throw SymbolError(SymbolError::Type::WrongType, string("Symbol '") + name + "' is not writable.");
 	auto r = dynamic_pointer_cast<const SymbolRWAccessorBase<T> >(sym);
 	if (!r)
-		throw SymbolError(SymbolError::Type::Undefined, string("Unknown error while creating writable symbol accessor for symbol '") + name +"'.");
+		throw SymbolError(SymbolError::Type::Undefined, string("Unknown error while creating writable symbol accessor for symbol '") + name +"'. Occurs e.g. if you defined a symbol as a constant and the model attempts to change its value. Then define that symbol as variable.");
 	return r;
 };
 

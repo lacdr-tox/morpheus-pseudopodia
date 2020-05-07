@@ -33,12 +33,12 @@ The neighorhood size is retrieved from the \ref ML_CPM definition of the ShapeSu
 \section Parameters
 
 A single \b Input element must be specified:
-- \b value: input expression (e.g. Property, MembraneProperty or Field), which is evaluated at global scope in the  whole neighborhood. The local cell's/node's scope is available under namespace 'local', i.e. a cell's id is 'local.cell.id'.
+- \b value: input expression (e.g. Property, MembraneProperty or Field), which is evaluated at global scope in the  whole neighborhood. The local cell's/node's scope is available under namespace 'local', e.g. a cell's own id is 'local.cell.id' while the id of any of it's neighbors is 'cell.id'.
 - \b scaling: setting scaling to \b per_cell will aquire information per neighboring cell (entity), \b per_length will scale the information with the interface length, i.e. the input value is considered to
 be a rate per node length.
 - \b noflux-cell-medium: if true, the cell-medium interfaces are treated as no-flux boundaries. That is, at these interfaces, the value will be taken from the cell itself instead of the (empty) neighborhood.
 
-Accessing the local cell's/node's properties in the input expression is directly possible through the symbol namespace 'local'.
+Note, accessing the local cell's/node's properties in the input expression is directly possible through the symbol namespace 'local'.
 
 If input is a Vector, use \ref NeighborhoodVectorReporter.
 
@@ -70,7 +70,7 @@ Spatially resolved distribution of a (membrane) concentration into a CellMembran
 </NeighborhoodReporter>
 \endverbatim
 
-Compute the number of cells of a particular celltype in the cell's neighborhood
+Count the number of cells of a particular celltype (ct2) in the cell's neighborhood
 (Assume 'A' refers to a CellProperty)
 \verbatim
 <NeighborhoodReporter>

@@ -15,14 +15,14 @@
 \brief Reports statistics about cell motility.
 
 \section Description
-MotilityReporter reports statistics about the cell motility.
+MotilityReporter reports statistics about cell motility.
 
-- \b Velocity: estimates cell velocity within time intervals determined by time-step.
-- \b Displacement: measures the displacement of a cell relative to it's original position can be determined.
+- \b Velocity: estimates cell velocity over time intervals of length time-step [simulation time units].
+- \b Displacement: measures the displacement of a cell relative to it's original position at simulation start.
 
 \section Example
-Report every 10 [simulation time] the velocity and displacement of cells into properties A and B.
-(Assume both 'A' and 'B' refer to a VectorProperty)
+Report every 10 [simulation time units] the velocity and displacement of cells into properties A and B.
+(Assume both 'A' and 'B' refer to a VectorProperty of the cell)
 \verbatim
 <MotilityReporter time-step="10.0">
 	<Velocity symbol-ref="A" />

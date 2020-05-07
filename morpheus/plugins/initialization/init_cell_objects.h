@@ -25,13 +25,13 @@ Initializes cells with defined shapes in 2D and 3D, arranged in a regular fashio
 
 Supported shapes (2D/3D) are: square / box, circle / sphere, ellipse / ellipsoid, bar / cylinder.
 
-\b mode (default=distance): Specified how conflicts are resolved in case multiple objects claim the same lattice node. 
-  - order: first object is assigned
+\b mode (default=distance): Specifies how conflicts are resolved in case multiple objects claim the same lattice node. 
+  - order: object with lowest celltype.id (as given by order of CellType definitions) is assigned
   - distance: closest object is assigned
 
 \b Arrangement: the layout of the cell objects 
-- \b repetitions: (x,y,z) vector specifying the number of objects to create along x,y,z axis (in units of object number).
-- \b displacements: (x,y,z) vector specifying the distance between objects along x,y,z axis (in units of lattice sites). 
+- \b repetitions: (x,y,z) vector specifying the number of objects to create along x,y,z axes (in units of object number).
+- \b displacements: (x,y,z) vector specifying the distance between objects along x,y,z axes (in units of lattice sites). 
 - \b random_displacement: (default=0.0): Optional value specifying a random displacement of objects from the regular arrangement (in units of lattice sites).
 
 \b Object: specify the type and size of geometrical object
@@ -45,10 +45,10 @@ Supported shapes (2D/3D) are: square / box, circle / sphere, ellipse / ellipsoid
   + radius: radius of sphere
 - \b Ellipsoid: specified by center and length of semi-principal axes
   + center: center of initial object
-  + axes: length of semi-principle axes along x, y, z directions
+  + axes: length of semi-principal axes along x, y, z directions
 - \b Cylinder: 
-  + origin: Origin of cylinder, ie. one end
-  + length: Vector to the other cylinder end
+  + origin: origin of cylinder, i.e. one end
+  + length: vector to the other cylinder end
   + radius: radius of cylinder
 
 \section Examples

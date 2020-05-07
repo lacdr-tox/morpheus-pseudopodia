@@ -33,11 +33,11 @@ The neighorhood size is retrieved from the \ref ML_CPM definition of the ShapeSu
 \section Parameters
 
 A single \b Input element must be specified:
-- \b value: input expression (e.g. VectorProperty), which is evaluated at global scope in the  whole neighborhood. The local cell's/node's scope is available under namespace 'local', i.e. a cell's id is 'local.cell.id'.
+- \b value: input expression (e.g. VectorProperty), which is evaluated at global scope in the whole neighborhood. The local cell's/node's scope is available under namespace 'local', e.g. a cell's own id is 'local.cell.id' while the id of any of it's neighbors is 'cell.id'.
 - \b scaling: setting scaling to \b per_cell will aquire information per neighboring cell (entity), \b per_length will scale the information with the interface length, i.e. the input value is considered to
 be a rate per node length.
 
-Accessing the local cell's/node's properties in the input expression is directly possible through the symbol namespace 'local'.
+Note, accessing the local cell's/node's properties in the input expression is directly possible through the symbol namespace 'local'.
 
 
 If input variable is a scalar, use \ref NeighborhoodReporter.

@@ -15,9 +15,9 @@
 \ingroup ML_CellType
 \ingroup ReporterPlugins
 
-\brief Map data from a spatial context into another symbol, usually reducing spatial information by a mapping function.
+\brief Map data from a spatial context into another symbol, usually reducing spatial resolution by a mapping function.
 
-former CellReporter
+(formerly known as CellReporter)
 
 \section Description
 
@@ -75,7 +75,7 @@ Polarisation and variance of a membrane property
 </Mapper>
 \endverbatim
 
-Determine the binding rate of a soluble substance to a membrane bound molecule
+Compute the binding rate of a soluble substance (A) to a membrane bound molecule (C).
 (Assume 'A' to refer to a Field  and 'C' and 'C_r' to refer to MembraneProperties)
 \verbatim
 <Mapper>
