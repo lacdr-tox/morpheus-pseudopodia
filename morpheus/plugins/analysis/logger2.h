@@ -72,7 +72,7 @@ Versatile interface to
 \subsection Input
 
 - \b time-step (optional): time between logging events. If unspecified adopts to the frequency of input updates. Setting \b time-step<=0 will log only the final state of the simulation.
-- \b name (optional, default=none): shows in GUI, only for user-convenience
+- \b name (optional, default=none): displayed in GUI, only for user-convenience
 - \b force-node-granularity (optional, default=false): force logging per node in a grid-like fashion.
 - \b exclude-medium (optional, default=true): when logging cell properties, only include biological cells.
 
@@ -95,7 +95,7 @@ Specifies the details of the output file
 
 \subsection Restriction Restriction (optional)
 
-Restrict the data query to a certain slice, a cell type or certain cell ids.
+Restrict the data query to a certain slice, a cell type or certain cell IDs.
 
 - \b Slice: restrict query to slice (note: require node granularity)
   - \b axis  (required): x,y,z axis to slice
@@ -191,7 +191,7 @@ Draws a surface plot (e.g. heatmap) from data in matrix format
     - -1  : end of simulation
     -  0  : same interval as Logger
     - else: should be multiple of Logger/time-step
-- \b name (optional, default=none): shows in GUI, only for user-convenience
+- \b name (optional, default=none): displayed in GUI, only for user-convenience
 
 
 \section Examples

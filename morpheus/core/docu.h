@@ -19,14 +19,14 @@
 \defgroup Description
 \ingroup MorpheusML
 
-\b Description provides human readable title and annotation.
+\b Description provides a human readable title and annotation.
 
 \b Title (required): name of the simulation model. 
 This is used as folder name to store simulation results, appended by the job ID.
 
-\b Details (optional): Human readable model annotations in plain text. 
-This may include verbal model description, change history or references.
-This information only serves for human readability and does not affect the simulation itself. 
+\b Details (optional): human readable model annotations in plain text. 
+This may include a verbal model description, change history or references.
+This data only serves as information for users and does not affect the simulation itself. 
 
 \section Example
 \verbatim
@@ -43,10 +43,10 @@ This information only serves for human readability and does not affect the simul
 \defgroup ML_Global Global
 \ingroup MorpheusML
 
-Section to include mathematical variabes and equations in the global \ref Scope.
+Section to include mathematical variabes and equations in the global \ref Scope. If not yet part of a (new) model, a double-click on this section in the model tree will add it.
 
-\b Global provides section for:
-- Global \ref ML_Constant and \ref ML_Variable that can be overridden in local scopes such as \ref ML_CellType and \ref ML_System. In this case, \b Global serve as default values.
+\b Global provides subsections for:
+- Global \ref ML_Constant and \ref ML_Variable that can be overwritten in local scopes such as \ref ML_CellType and \ref ML_System. In this case, \b Global serves as default value at spatial locations not occupied by local scopes (cells) which supports modular model development and allows to plot (cellular) variables for the whole spatial domain using \ref Gnuplotter.
 - \b ODE systems: \ref ML_System of \ref ML_DiffEqn operating on \ref ML_Variable
 - \b Reaction-diffusion PDE systems: \ref ML_System of \ref ML_DiffEqn operating on diffusive \ref ML_Field
 - Global \b Events: \ref ML_Event changing global variables.
@@ -81,7 +81,7 @@ Section to include mathematical variabes and equations in the global \ref Scope.
 </Global>
 \endverbatim
 
-- PDE reaction-diffusion System with two diffusive scalar fields 'a' and 'i'. See ActivatorInhibitor_2D example.
+- PDE reaction-diffusion System with two diffusive scalar fields 'a' and 'i'. See PDE/ActivatorInhibitor_2D example.
 \verbatim
 <Global>
 	<Field symbol="a" value="rand_norm(0.5,0.1)" name="activator">
@@ -121,9 +121,9 @@ Valid symbol identifiers may contain the following characters
 - Numbers: 0123456789
 - Special chars: ._
 
-but may not start with a number.
+but must not start with a number.
 
-The \b name attribute is used for descriptive purposes only. In particular, graph labels will carry this information. You may use latex style super- and subscripts
+The \b name attribute is used for descriptive purposes only. In particular, graph labels will display this information. You may use latex style super- and subscripts
   * (c_{1})^{2} will become \f$ (c_1)^{2} \f$
 
 **/
@@ -190,7 +190,7 @@ or in the \b spherical / radial case: φ,θ,r
 \ingroup ML_CellType
 \ingroup Symbols
 
-Symbol with a variable scalar value. The initial value is given by a  given by a \ref MathExpressions.
+Symbol with a variable scalar value. The initial value is given by a \ref MathExpressions.
 **/
 /**
 \defgroup ML_VariableVector VariableVector
@@ -198,7 +198,7 @@ Symbol with a variable scalar value. The initial value is given by a  given by a
 \ingroup ML_CellType
 \ingroup Symbols
 
-Symbol with a variable 3D vector value. The initial value is given by a  given by a \ref MathExpressions.
+Symbol with a variable 3D vector value. The initial value is given by a \ref MathExpressions.
 
 Syntax is comma-separated: x,y,z
 or in the \b spherical / radial case: φ,θ,r
@@ -209,7 +209,7 @@ or in the \b spherical / radial case: φ,θ,r
 \ingroup ML_Global
 \ingroup Symbols
 
-Symbol with a scalar value and a \b delay time before an assigned values become current. The initial value and history is given by a  given by a \ref MathExpressions.
+Symbol with a scalar value and a \b delay time until an assigned value becomes current. The initial value and history are given by a \ref MathExpressions.
 **/
 
 /**
@@ -218,7 +218,7 @@ Symbol with a scalar value and a \b delay time before an assigned values become 
 \ingroup Symbols
 
 
-Symbol with a cell-bound variable scalar value. The initial value is given by a  given by a \ref MathExpressions and may contain stochasticity to create diversity.
+Symbol with a cell-bound, variable scalar value. The initial value is given by a \ref MathExpressions and may contain stochasticity to create diversity.
 **/
 
 /**
@@ -227,7 +227,7 @@ Symbol with a cell-bound variable scalar value. The initial value is given by a 
 \ingroup Symbols
 
 
-Symbol with a cell-bound scalar value and a \b delay time before values become current. The initial value and history is given by a  given by a \ref MathExpressions
+Symbol with a cell-bound scalar value and a \b delay time until an assigned value becomes current. The initial value and history are given by a \ref MathExpressions.
 **/
 
 /**
@@ -235,7 +235,7 @@ Symbol with a cell-bound scalar value and a \b delay time before values become c
 \ingroup ML_CellType
 \ingroup Symbols
 
-Symbol with cell-bound, variable 3D vector value. The initial value and history is given by a  given by a \ref MathExpressions.
+Symbol with cell-bound, variable 3D vector data. The initial data and history are given by a \ref MathExpressions.
 
 Syntax is comma-separated: x,y,z
 or in the \b spherical / radial case: φ,θ,r
@@ -249,11 +249,11 @@ or in the \b spherical / radial case: φ,θ,r
 
 Assignment of a rate equation to a symbol.
 
-Ordinary differential equation \f$ \frac{dX}{dt}=a \f$ if \f$ X \f$ is a \ref ML_Variable or a \ref ML_Property
+Ordinary differential equation \f$ \frac{dX}{dt}=a \f$ if \f$ X \f$ is a \ref ML_Variable or a \ref ML_Property.
 
-Partial differential equation \f$ \frac{\partial X}{\partial x}=D_{X}\nabla^2X+a \f$ where \f$ X \f$ is a \ref ML_Field and \f$ D_{X} \f$ is its diffusion coefficient.
+Partial differential equation \f$ \frac{\partial X}{\partial t}=D_{X}\nabla^2X+a \f$ where \f$ X \f$ is a \ref ML_Field and \f$ D_{X} \f$ is its diffusion coefficient.
 
-DiffEqn are only allowed within \ref ML_System
+DiffEqn are only allowed within \ref ML_System.
 **/
 
 
@@ -263,7 +263,7 @@ DiffEqn are only allowed within \ref ML_System
 \ingroup ML_CellType
 \ingroup MathExpressions ContinuousProcessPlugins
 
-Environment for tightly coupled \ref ML_Rule and \ref ML_DiffEqn. Expressions with a System are synchronously updated and may contain recurrence relations.
+Environment for tightly coupled \ref ML_Rule and \ref ML_DiffEqn. Expressions within a \b System are synchronously updated and may contain recurrence relations.
 
 - \b solver: numerical solver for DiffEqn:
   - Adaptive time step solvers: 
@@ -282,9 +282,9 @@ Environment for tightly coupled \ref ML_Rule and \ref ML_DiffEqn. Expressions wi
 - \b time-step:
   - \b Fixed schemes: integration step size, given in system time.
   - \b Adaptive schemes: Coupling interval given in system time, i.e. maximum step size without coupling to other processes.
-- \b time-scaling (optional): scales the dynamics of \b ML_System to the simulation time. Equivalent to multiplying all \b ML_DiffEqn in the \b ML_System with a scalar.
+- \b time-scaling (optional): scales the dynamics of \b ML_System to the system time. Equivalent to multiplying all \b ML_DiffEqn in the \b ML_System with a scalar.
 
-Note: Systems define their own \ref Scope. This implies that values of symbols defined within a System are not accessible outside of the System.
+Note: Systems define their own \ref Scope. This implies that values of symbols defined within a System are not accessible outside of the System. Multiple Systems can be defined within the same parental Scope, easing modular model development.
 
 **/
 /**
@@ -311,13 +311,13 @@ An IntermediateVector Symbol is available to all expressions within a System. In
 
 Environment for conditionally executed set of assignments.
 
-- \b time-step: if specified, Condition is evulated in regular intervals (\e time-step). If not specified the minimal time-step of the input symbols is used.
+- \b time-step: if specified, Condition is evaluated in regular intervals (\e time-step). If not specified, the minimal time-step of the input symbols is used.
 - \b Condition: expression that must evaluate true to trigger assignments.
 - \b Condition/history: initial value of the condition. Used to determine whether an initially true condition may trigger if \e trigger="on-change".
-- \b trigger: whether assigments are executed when the Condition turns from false to true (\e trigger="on-change", as in SBML) or whenever the condition is found true (\e trigger="when-true").
-- \b delay: time by which the execution of the assignments of the event are delayed.
-- \b persistent: a delayed event who's condition \e fell false meanwhile a delay does only execute if \e persistent="true". (default \e true)
-- \b compute-time: time at which the values of the assignments are computes \e on-trigger / \e on-execution.
+- \b trigger: whether assigments are executed when the Condition turns from false to true (\e trigger="on-change", as in SBML) or whenever (see \e time-step) the condition is found true (\e trigger="when-true").
+- \b delay: time by which the execution of the assignments of the event is delayed.
+- \b persistent: a delayed event who's condition \e fell false during a delay does only execute if \e persistent="true". (default \e true)
+- \b compute-time: time at which the values of the assignments are computed \e on-trigger / \e on-execution.
 
 \section Example
 Set symbol "c" (e.g. assume it's a CellProperty) to 1 after 1000 simulation time units
@@ -337,14 +337,15 @@ Set symbol "c" (e.g. assume it's a CellProperty) to 1 after 1000 simulation time
 \ingroup MorpheusML
 
 The \ref ML_Space element specifies the size, structure and boundary conditions of the spatial lattice. 
-The types of boundary conditions are homogeneous among all model parts, while the exact values can be specified through \b BoundaryValue in a \ref ML_Field or in \ref ML_CellPopulations for the cell layer.
+
+The selected types of boundary conditions are identically valid for all model components, while the exact values (for Dirichlet boundary conditions, denoted \b constant) can be specified through \b BoundaryValue in a \ref ML_Field or in \ref ML_CellPopulations for the cell layer.
 
 A \ref ML_SpaceSymbol can be used to create a symbol representing the current (x,y,z) location. The symbol always provides the location in orthogonal coordinates. It is not (yet) scaled by the defined node length.
 
-\ref ML_MembraneLattice specifies the resolution of membrane-bound Fields. These fields are represented by a sphere-wrapped periodic lattice (0..resolution-1, 0..resolution/2-1, 0). The \b SpaceSymbol refers to the index position of within the lattice.
+\ref ML_MembraneLattice specifies the resolution of membrane-bound \b Fields. These fields are represented in 2D by a circle-wrapped periodic lattice  (0..resolution-1, 0, 0) and in 3D by a sphere-wrapped periodic lattice (0..resolution-1, 0..resolution/2-1, 0), respectively. The \b SpaceSymbol refers to the index position within the lattice.
 
 \section Examples
-Linear lattice with periodic boundary conditions. See ShellCA example.
+Linear lattice with periodic boundary conditions. See example Miscellaneous/ShellCA.
 \verbatim
 <Space>
 	<Lattice class="linear">
@@ -356,7 +357,7 @@ Linear lattice with periodic boundary conditions. See ShellCA example.
 </Space>
 \endverbatim
 
-Hexagonal lattice. See LateralSignalling example.
+Hexagonal lattice. See example ODE/LateralSignalling.
 \verbatim
 <Space>
 	<Lattice class="hexagonal">
@@ -369,7 +370,7 @@ Hexagonal lattice. See LateralSignalling example.
 </Space>
 \endverbatim
 
-Space specification with image-based domain. See Crypt example.
+Space specification with image-based domain. See example CPM/Crypt and note that mismatches of image size versus lattice size are partially resolved automatically, see \ref ML_Domain.
 \verbatim
 <Space>
 	<Lattice class="square">
@@ -408,6 +409,7 @@ The \b class attribute determines the structure of the regular lattice:
 - periodic (a.k.a. wrapped). Default.
 - noflux (a.k.a. Neumann)
 - constant (a.k.a. Dirichlet)
+Left and right boundaries are denoted as -x and x, respectively, and for y and z alike.
 
 \b Neighborhood determines the size of the neighborhood to be used in calculations. This can be provided in terms of:
 - Distance: Maximal distance to take into account, in units of lattice nodes.
@@ -427,9 +429,9 @@ Defines the discretization of the membrane property system (\ref ML_MembraneProp
 \b Resolution specifies the lattice discretization of the membrane-bound fields.
 This resolution is equal for all MembraneProperties and for all cells. By convention, the x and y-resolution in 2D MembraneProperties are identical.
 
-Optionally, a \b symbol can be specified to refer to the lattice discretization.
+Optionally, a \b Symbol can be specified to refer to the lattice discretization.
 
-\b SpaceSymbol can be specified to refer to the current location with respect ot a membrane property. Positions are given as a vector (x,y,z) within the unit sphere / circle representing the memrane field.
+\b SpaceSymbol can be specified to refer to the current location with respect to a membrane property. Positions are given as a vector (x,y,z) on the unit sphere / circle representing the membrane field.
 This can be used to initialize membrane properties (see example below).
 
 
@@ -461,9 +463,9 @@ Here, using a sine wave, scaled between 0 and 1 by just referring to the x part 
 \defgroup ML_Domain Domain
 \ingroup ML_Lattice
 
-A \b Domain specifies a non-regular geometry that restricts the simulation to a domain within the lattice. Boundary condititions can be chosen to be either constant or no-flux, but are required to be homogeneous. 
+A \b Domain specifies a non-regular geometry that restricts the simulation to a domain within the lattice. Boundary conditions can be chosen to be either constant or no-flux, but are required to be homogeneous. 
 
-The \b Image tag allows to import a domain shape from a 8-bit TIFF image. By convention, non-zero pixels are foreground, zero pixels are background.
+The \b Image tag allows to import a domain shape from an 8-bit TIFF image. By convention, non-zero pixels are foreground, zero pixels are background. If a pixel dimension of the image file is smaller than the manually defined lattice size (x,y,z) then the domain gets centered on the lattice along that axis, otherwise the lattice size gets increased to the larger dimension of the image file along that axis. Note that explicit position-dependencies in terms or attributes (e.g. for initialization of \b CellPopulations) may need to be rescaled manually if a domain image does not match the manually defined lattice size.
 
 The \b Circle tag allows to define circular domain shapes.
 
@@ -478,7 +480,7 @@ The \b Hexagon tag allows to define hexagonal domain shapes.
 
 Specifies a symbol referring to the current location as a 3D vector (x,y,z). 
 
-This symbol can then be used to make aspects dependent on space, such as a gradient field
+This symbol can then be used to make aspects dependent on space, such as a gradient field.
 
 \section Example
 To create a gradient along the x direction from 0 to 1, first specify a SpaceSymbol:
@@ -491,7 +493,7 @@ To create a gradient along the x direction from 0 to 1, first specify a SpaceSym
 </Space>
 \endverbatim
 
-And then create a Field with location-dependent initial condition, using this symbol (see FrenchFlag example):
+And then create a \ref ML_Field \f$f\f$ with location-dependent initial condition, using this symbol (see Example Miscellaneous/FrenchFlag):
 \verbatim
 <Global>
 	<Field init-expression="l.x / size.x" symbol="f" >
@@ -499,7 +501,7 @@ And then create a Field with location-dependent initial condition, using this sy
 <Global>
 \endverbatim
 
-Or to make variable spatially heterogeneous (see Turing pattern example):
+Or to render a parameter (mathematical term) spatially heterogeneous (see Example PDE/TuringPatterns):
 \verbatim
 <Function symbol="A">
 	<Expression>0.07 + ((0.07 * l.y)/ size.y)</Expression>
@@ -512,21 +514,24 @@ Or to make variable spatially heterogeneous (see Turing pattern example):
 \defgroup ML_Time Time
 \ingroup MorpheusML
 
-Sets duration of simulation and random seed. 
+Sets the duration of a simulation and controls the pseudo-random number generator's seed. 
 
-\b StartTime specifies the initial time.
+\b StartTime specifies the initial time point. Default 0.
 
-\b StopTime specifies the final time. Should be larger than StartTime.
+\b StopTime specifies the final time point. Must be larger than StartTime.
 
-\b TimeSymbol specifies a symbol to refer to the current time.
+\b TimeSymbol specifies a symbol to refer to the current time, e.g. in \ref ML_Event conditions.
 
-\b RandomSeed specifies a seed for the pseudo-random number generator. 
-For multithreaded simulations, not that each thread receives its own seed, based on the one specified by the user. 
+\b RandomSeed specifies a seed for the pseudo-random number generator.
+A user-specified seed allows to reproduce stochastic simulation results, including \ref ML_CPM. 
+For multithreaded simulations, note that each thread receives its own seed, based on that one specified by the user. 
 This implies that for exact reproduction of simulation results, the RandomSeed as well as the number of parallel threads must be equal to the original simulation.
+Deactivated \b RandomSeed will initialize the pseudo-random number generator based on the processor's time stamp and hence yields different simulation results in subsequent runs.
 
 \b StopCondition provides a condition to terminate the simulation.
+This is handy within automated parameter exploration via parameter sweeps.
 
-\b SaveInterval specifies the interval for checkpointing: writing complete simulation state to file (xml.gz). 
+\b SaveInterval specifies the interval for checkpointing: writing the complete simulation state to a file (xml.gz). 
 Use the special value '-1' to never save simulation state (default) or '0' to save state at end of simulation (either \b StopTime or after fulfilling \b StopCondition).
 
 
@@ -549,7 +554,7 @@ Use the special value '-1' to never save simulation state (default) or '0' to sa
 \defgroup ML_CellTypes CellTypes
 \ingroup MorpheusML
 
-Container for specification of different \ref ML_CellType elements that specify cell properties and behaviors.
+Container for specification of different \ref ML_CellType elements that specify cell properties and behaviors via plugins.
 
 **/
 
@@ -558,7 +563,7 @@ Container for specification of different \ref ML_CellType elements that specify 
 \defgroup ML_CellType CellType
 \ingroup ML_CellTypes
 
-A CellType specifies the cell properties, intracellular dynamics and cell behaviors of the cells within the population.
+A CellType specifies the cell properties, intracellular dynamics and cell behaviors of the cells within the population. Instead of defining a specific single cell, CellType defines a blueprint from which specific single cells can be derived upon initialization and during the simulation.
 
 CellType can contain any of the following plugin types:
 - \ref Symbols
@@ -568,17 +573,17 @@ CellType can contain any of the following plugin types:
 - \ref ReporterPlugins
 - \ref MiscellaneousPlugins
 
-A CellType defines its own \ref Scope. This implies that symbols defined within a CellType are not accessible outside of the CellType.
-However, if the identical symbol is defined in all CellTypes, it is also accessible at the global scope.
+A CellType defines its own \ref Scope. This implies that symbols defined within a CellType are not normally accessible outside of the CellType except through \b NeighborhoodReporters.
+However, if the identical symbol is defined in all CellTypes, then it also becomes accessible at the global scope.
 
-In addition, celltype scopes provide symbols to access cell properties
+In addition, celltype scopes intrinsically provide preset symbols to access cell properties
 - cell.id
 - cell.center
 - cell.volume
 - cell.type
 - cell.surface
 
-Initial configuration of cell population must be specified in \ref ML_CellPopulations section.
+The initial configuration of the cell population must be specified in the \ref ML_CellPopulations section.
 
 **/
 
@@ -603,7 +608,7 @@ loaded cell by cell from \b Cell definitions. These options may also be intermix
 
 Cell property initialisation can be overridden for the specific \ref ML_Population using \b InitProperty and \b InitVectorProperty. 
 
-If SaveInterval is specified (see \ref ML_Time), the simulation state for each cell in a population is written to Population/Cell elements. 
+If SaveInterval is specified (see \ref ML_Time), the simulation state for each cell in a population is written to Population/Cell elements in the xml.gz file. 
 
 **/
 
@@ -654,10 +659,11 @@ Container for \ref AnalysisPlugins for data analysis, logging and visualization.
 
 Specification of a batch process for parameter exploration or sensitivity analysis.
 
-- Parameter(s) are selected via the context menu.
+- Parameter(s) are selected via the context menu in their respective model section and only selected parameters appear in the \b ParamSweep panel.
 - Parameter values are specified as a list or range under \b Values.
-- To change parameters consecutively instead of combinatorily, drag-and-drop a parameter on another.
-- Execute the batch process through the \b Start button in the \b ParamSweep panel.
+- To change parameters consecutively instead of combinatorially, drag-and-drop a parameter on another.
+- Execute the batch process through the \b Start button in the \b ParamSweep panel. You will see a summary of the job list to be started.
+- Repetitions of stochastic simulations with identical parameter set can be generated by adding a dummy parameter and sweeping of it.
 
 **/
 
@@ -691,7 +697,7 @@ Specification of a batch process for parameter exploration or sensitivity analys
 \defgroup Scope
 \ingroup Concepts
 
-\b Scopes manage the symbol of the (nested) the model sections, allow symbols registration by model components and symbol retrieval by others. Symbols defined in a scope are invalid outside of this scope, but available in all sub-scopes, i.e. nested sections. This is analogous to the local variable scoping in most programming languages.
+\b Scopes manage the symbols of the (nested) model sections, allow symbol registration by model components and symbol retrieval by others. Symbols defined in a scope are invalid outside of this scope, but available in all sub-scopes, i.e. nested sections. This is analogous to the local variable scoping in most programming languages. Special reporter plugins can define additional information flow between neighboring scopes.
 
 The top-most scope is \ref ML_Global.
 The following model elements define their own sub-scopes:
@@ -699,13 +705,13 @@ The following model elements define their own sub-scopes:
 - \ref ML_System (including \b Triggers of  \ref ML_Event and \ref ML_CellDivision)
 - \ref ML_Function 
 
-Ss stated above, symbols are inherited from the parental scope, but may be overridden, even to differ in constness and granularity (e.g. Global/\ref ML_Constant may be overwritten in a System by a \ref ML_Variable). 
+As stated above, symbols are inherited from the parental scope, but may be overwritten, even to differ in constness and granularity (e.g. Global/\ref ML_Constant may be overwritten in a System by a \ref ML_Variable). 
 The type of the symbol (scalar / vector), however, has to be conserved. In this way, global symbols can be used as default values.
 
-Unlike the other scopes, the \ref ML_CellType scopes also represent spatial compartments. In order to adhere to intuitive modelling logics, we apply \b spatial \b scoping, such that symbols defined in a \ref ML_CellType scope can override parental, i.e. global, symbols in the (dynamic) spatial region the celltype occupies. Therefore, a global symbol can be effectively composed of a global value and celltype specific values defined within the celltypes themself. 
-Forwarding the global access to a symbol at a specific position to through such a spatially structured symbols is what we call <b>spatial scoping</b>.
+Unlike the other scopes, the \ref ML_CellType scopes also represent spatial compartments. In order to adhere to intuitive modelling logics, we apply \b spatial \b scoping, such that symbols defined in a \ref ML_CellType scope can overwrite parental, i.e. global, symbols in the (dynamic) spatial region the celltype occupies. Therefore, a global symbol can be effectively composed of a global value and celltype specific values defined within the celltypes themselves. 
+Forwarding the global access to a symbol at a specific position through such a spatially structured model is what we call <b>spatial scoping</b>.
 
-When a symbol is declared in \b all CellType scopes (e.g. in all CellTypes), it also becomes available in the global scope (known as a virtual composite symbol.)
+When a symbol is declared in \b all CellType scopes (e.g. in all CellTypes), it also becomes available in the global scope (known as a virtual composite symbol).
 
 \section Examples
 In the following example, 'a=1' is declared in the Global scope, and 'b=2' is declared in the System scope. The global variable 'result' will yield '3'.
@@ -723,7 +729,7 @@ In the following example, 'a=1' is declared in the Global scope, and 'b=2' is de
 </Global>
 \endverbatim
 ______
-Here, the global constant 'a=1' is overwritten in by the local constant 'a=2', such that 'result' will yield '4'.
+In the following, the global constant 'a=1' is overwritten in System by the local constant 'a=2', such that 'result' will yield '4'.
 \verbatim
 <Global>
 	<Constant symbol="a" value="1"/>
@@ -739,11 +745,11 @@ Here, the global constant 'a=1' is overwritten in by the local constant 'a=2', s
 </Global>
 \endverbatim
 ______
-Symbols can be re-used with different local scopes. Here, the symbol 'p' is used in different CellTypes. 
+Symbols can be re-used within different local scopes. Here, the symbol 'p' is used in different CellTypes. 
 In 'ct1', 'p' is a constant with value '0'. In 'ct2', 'p' is a constant with value '1.0'.
 In 'ct3', 'p' denote a cell-bound Property and in 'ct4' it represents a MembraneProperty.
 
-Because 'p' is defined in all CellTypes, it is automatically also available in the Global scope. 
+Because 'p' is defined in all CellTypes, it is automatically also available in the Global scope, e.g. for plotting domain-wide spatial maps. 
 \verbatim
 <CellTypes>
 	<CellType class="biological" name="ct1">
@@ -816,7 +822,7 @@ The \b sequential update scheme will look as follows:
 \ingroup Concepts
 
 Morpheus employs \b OpenMP as the workload-sharing construct. CPM computation, however, does not yet make use of OpenMP.
-Use the environmental variable \b OMP_NUM_THREADS to adjust the number of threads used.
+Use the environmental variable \b OMP_NUM_THREADS to adjust the number of usable threads.
 
 **/
 

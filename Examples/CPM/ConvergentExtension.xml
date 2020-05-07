@@ -1,7 +1,16 @@
 <MorpheusModel version="3">
     <Description>
         <Title>Example-Convergence-Extension</Title>
-        <Details></Details>
+        <Details>Illustrates the plugins MembraneProperty and HomophilicAdhesion
+        
+        - each cell is polarized through a pattern of concentration c (e.g. of adhesion molecules) along its surface as defined by the plugin MembraneProperty under CellTypes and visualised as black (low c) to yellow (high c) coloration of cell membranes in the plots
+
+        - here the pattern c is predefined as function of direction (angle m.phi of the MembraneLattice defined as m under Space) while PDE-dynamics for c along m on the deforming cell surface is also supported by Morpheus
+
+        - HomophilicAdhesion as Interaction under CPM favors longer contacts between neighboring cells exactly where both adjacent membranes have high values of c, i.e. adhesion is polarised downstream of c
+        
+        - as emergent behavior, the rectangular tissue gets narrower and higher        
+        </Details>
     </Description>
     <Global/>
     <Space>

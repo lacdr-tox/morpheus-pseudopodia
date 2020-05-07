@@ -2,7 +2,12 @@
 <MorpheusModel version="3">
     <Description>
         <Title>Example-Proliferation3D</Title>
-        <Details></Details>
+        <Details>Illustrates size-dependent cell division and plotting 2D slices of 3D configurations
+        
+        - Upon cell division, two daughters are initialised each with its half the mother's occupied volume, then CPM dynamics lets each daughter grow to the target volume are the mother had.  
+        
+        - A condition for CellDivision is used that combines (logic and) a threshold (actual cell size > threshold) with a probability to divide.
+        </Details>
     </Description>
     <Global/>
     <Space>

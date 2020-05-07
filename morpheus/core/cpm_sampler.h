@@ -23,33 +23,37 @@
 \defgroup ML_CPM CPM
 \ingroup MorpheusML ContinuousProcessPlugins
 
-Specifies parameters for a cellular Potts model (CPM) which provides a MonteCarlo sampler that evolves a spatial cell configuration on the basis of a Hamiltonian definition by statistical sampling.
+Specifies parameters for a cellular Potts model (CPM) which provides a MonteCarlo sampler that evolves a spatial cell configuration on the basis of a Hamiltonian by statistical sampling.
 
-\f$ H = \f$
+Basic Hamiltonian
 
-\f$ P = \f$
+\f$ H = \Sum J_{\sigma, \sigma '} (1-\delta_{\sigma, \sigma '}) + \lambda_A \Sum (a_\sigma-A_\sigma)^2 \f$
+
+Acceptance probability 
+
+\f$ P (\Delta H) = either 1 if \Delta H < 0 or exp(- \Delta H / T) otherwise \f$
 
 \b ShapeSurface specifies the Neighborhood used to estimate the boundary length of CPM Shapes, in particular cells. This estimate is used for computing interaction energies, cell perimeters and interface lengths.
   - \b scaling scaling of number of neighbors to length: \b norm estimate the length in unit of node length (see Magno, Grieneisen and Marée, BMC Biophysics, 2015), \b size neigborhood fraction occupied by other entities, \b none number of neighbors occupied by other entities.
-  - \b Neigborhood defines the stencil size to approximate the surface length. Wrt. to shape isotropy some neighborhoods are favourable: 
+  - \b Neigborhood defines the stencil size to approximate the surface length. Wrt. shape isotropy some neighborhoods are favourable on a given lattice: 
     - square  -- 6th order corresponding to a distance of 3
     - hexagonal -- 3rd order, corresponding to a distance of 2
     - cubic  -- 7th order  corresponding to a distance of \f$ 2 \sqrt 2 \f$ 
 
-\ref ML_Interaction specifies interaction energies \f$ J_{\sigma, \sigma} \f$ for different inter-cellular \ref ML_Contact. The interaction energy given per length unit as defined in ShapeSurface.
+\ref ML_Interaction specifies interaction energies \f$ J_{\sigma, \sigma '} \f$ for different inter-cellular \ref ML_Contact. The interaction energy is given per length unit as defined in ShapeSurface.
 
 
 \b MonteCarloSampler
-  - \b stepper: \b edgelist chooses updates from a tracked list of lattice sites that can potentially change configuration; \b random sampling chooses lattice site with uniform random distribution over all lattice sites.
+  - \b stepper: \b edgelist chooses updates from a tracked list of lattice sites that can potentially change configuration; \b random sampling chooses a lattice site with uniform random distribution over all lattice sites.
   - \b MetropolisKinetics:
     - \b temperature: specifies Boltzmann probability to accept updates that increase energy, required to be homogeneous in space.
     - \b yield: offset for Boltzmann probability distribution representing resistance to membrane deformations (see Kafer, Hogeweg and Maree, PLoS Comp Biol, 2006).
   - \b Neighborhood specifies the neighborhood size used for choosing updates in the modified Metropolis algorithm.
-  - \b MCSDuration scales the Monte Carlo Step (MCS) to the simulation time. One MCS is defined as a number of update attempts equal to the number of lattice sites.
+  - \b MCSDuration scales the Monte Carlo Step (MCS) to global model time (a value of 10 will distribute one MCS over 10 model time units). One MCS is defined as a number of update attempts equal to the number of lattice sites.
     
 \section References
 
-Graner, Glazier, 1992
+Graner and Glazier, Phys Rev Lett, 1992
 
 Kafer, Hogeweg and Maree, PLoS Comp Biol, 2006
 
@@ -58,10 +62,10 @@ Magno, Grieneisen and Marée, BMC Biophysics, 2015
 
 \defgroup ML_Interaction Interaction
 \ingroup ML_CPM
-specifies interaction energies \f$ J_{\sigma, \sigma} \f$ for different inter-cellular \ref ML_Contact. The interaction energy given per length unit as defined in ShapeSurface.
+specifies interaction energies \f$ J_{\sigma, \sigma '} \f$ for different inter-cellular \ref ML_Contact. The interaction energy is given per length unit as defined in ShapeSurface.
 
  - \b default: default value for unspecified interactions
- - \b negate: negate all defined interaction values
+ - \b negative: negate all defined interaction values
  
 
 \defgroup ML_Contact Contact

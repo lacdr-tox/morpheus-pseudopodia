@@ -18,16 +18,16 @@
 
 \brief Parametric Function declaration.
 
-Functions define an expression that relate Parameters, \ref Symbols from the \ref Scope of the Function definition and other \b Functions to a scalar result. A Function captures the scope of it's definition, thus applying a Function in a sub-scope will not make the sub-scope's symbol definitions available.
+Functions define an expression that relates Parameters, \ref Symbols from the \ref Scope of the Function definition and other \b Functions to a scalar result. A Function captures the scope of it's definition, thus applying a Function in a sub-scope will not make the sub-scope's symbol definitions available.
 
-A kind of exception is spatial scoping, where sub-scope symbols of spatial regions (celltype symbols) are promoted top the parental scopes. 
+A kind of exception is spatial scoping, where sub-scope symbols of spatial regions (notably celltype symbols) are promoted to the parental scopes. 
 
 
-Function definitions are available within the their local \ref Scope and all sub-scopes therein.
+Function definitions are available within their local \ref Scope and all sub-scopes therein.
 
 For convenience, a parameter-free Function definition is also available as a plain Symbol, thus you may call it without parentheses. 
 
-Functions are not explicitly scheduled. Instead they are evaluated 'on-the-fly' whenever their output requested.
+Functions are not explicitly scheduled. Instead they are evaluated 'on-the-fly' whenever their output is requested.
 
 
 For vector data, use \ref ML_VectorFunction.
@@ -36,7 +36,7 @@ To assign to a variable or property, use \ref ML_Equation.
 
 \section Example
 
-A non-parametric function avalable as **a** and **a()** in mathematical expressions
+A non-parametric function available as **a** and **a()** in mathematical expressions
 \verbatim
 <Field symbol="u" />
 <Variable symbol="v" value="2.4" />

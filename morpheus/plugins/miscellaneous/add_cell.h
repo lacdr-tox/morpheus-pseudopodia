@@ -21,16 +21,17 @@
 \ingroup MiscellaneousPlugins InstantaneousProcessPlugins
 \brief Add new cells based during simulation.
 
-Create new cells during simulation at positions given by a probability distribution. AddCell runs every MCS and places cells given by \b Count. Fractional counts are realized statistically.
+Create new cells during simulation at positions given by a spatial probability distribution. AddCell runs every MCS and places cells given by \b Count. Fractional counts are realized statistically.
 
 - \b Count: Expression describing how many cells to be created. Fractional counts are realized statistically.
 - \b Distribution: Expression describing the spatial probability distribution (normalized to 1 internally).
-- \b overwrite (default=false): Whether or not a cell should be created in a location occupied by another cell.
+- \b overwrite (default=false): Whether or not a new cell should be created at a location occupied by another cell.
 
-- \b Triggers (optional): System of Rules to be triggered after cell is added.
+
+- \b Triggers (optional): System of Rules to be triggered after a cell was added.
 
 \section Example
-// Adding cell every MCS with increasing probability along x axis, automatically scheduled
+Adding a new cell every MCS with increasing probability along x axis, automatically scheduled
 \verbatim
 <AddCell>
 	<Count> 1 </Count>
@@ -38,8 +39,7 @@ Create new cells during simulation at positions given by a probability distribut
 </AddCell>
 \endverbatim
 
-// Adding cells with normal distribution centered in middle of lattice (stdev=25), with explicit time step
-// Fractional count 0.01 is realized such that on average the every 100 MCS a cell is created. 
+Adding cells with normal distribution centered in middle of lattice (stdev=25). The fractional count 0.01 is realized statistically, such that on average the every 100 MCS a cell is created. 
 \verbatim
 <AddCell>
 	<Count> 0.01 </Count>
