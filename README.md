@@ -31,7 +31,7 @@ To find out more about Morpheus, please take a look at the home page:
 - [Homepage](https://morpheus.gitlab.io): Blog, events and downloads.
 
 
-# Install
+# Building
 
 build tools required:
   - g++ (>= 5.0)
@@ -41,11 +41,11 @@ build tools required:
   - xmllint (optional)
   - doxygen
   - git
-  - gnuplot (runtime)
 
 Libraries required (debian package notation):
   - zlib1g-dev libtiff-dev graphviz-dev libboost-dev
   - qttools5-dev libqt5sql5-sqlite libqt5svg5-dev (qtwebengine5-dev | libqt5webkit5-dev)
+  - optional: libsbml5-dev
 
  
 Runtime dependencies:
@@ -66,6 +66,11 @@ Runtime dependencies:
 To install all dependencies on Ubuntu 16.04 and 18.04 run:
 ```  
 sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libboost-dev libtiff5-dev libsbml5-dev qttools5-dev libqt5svg5-dev qtwebengine5-dev libqt5sql5-sqlite gnuplot  
+```
+
+To install all dependencies on Ubuntu 20.04 run:
+```  
+sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libboost-dev libtiff5-dev libsbml5-dev qttools5-dev libqt5svg5-dev qtwebengine5-dev libqt5sql5-sqlite libsbml5-dev gnuplot  
 ```
 
 ## Building/Installing on other systems
