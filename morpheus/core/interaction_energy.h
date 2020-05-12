@@ -8,6 +8,26 @@
 // Copyright 2009-2016, Technische Universität Dresden, Germany
 //
 //////
+/**
+
+\defgroup ML_Interaction Interaction
+\ingroup ML_CPM
+specifies interaction energies \f$ J_{\sigma_1, \sigma_2} \f$ for different inter-cellular \ref ML_Contact. The interaction energy is given per length unit as defined in \ref ML_CPM ShapeSurface.
+
+ - \b default: default value for unspecified interactions
+ - \b negate: negate all defined interaction values
+ 
+\defgroup ML_Contact Contact
+\ingroup ML_Interaction
+
+\brief Inter-celltype contact energies per lenght unit as defined in \ref ML_CPM ShapeSurface. 
+Contact energies can be constant values or expressions of global symbols or symbols of the involved cell types.
+
+ - \b type1: name of one celltype involved in the interaction
+ - \b type2: name of the other celltype involved in the interaction
+ - \b value: Contact energy. Expression based on \b global symbols and symbols defined in cell type 1 -- prefixed by namespace \b cell1 (e.g. cell1.adhesive)  and symbols defined in cell type 2 -- prefixed by namespace \b cell2.
+
+*/
 
 #ifndef INTERACTIONENERGY_H
 #define INTERACTIONENERGY_H
@@ -18,7 +38,7 @@
 #include "interfaces.h"
 #include "celltype.h"
 #include "function.h"
-
+// #include "symbolfocus.h"
 
 class InteractionEnergy : public Plugin {
 
@@ -36,6 +56,7 @@ class InteractionEnergy : public Plugin {
 		uint n_celltypes;
 // 		Neighborhood ia_neighborhood;
 		double boundaryLenghScaling;
+		vector<VINT> ia_neighborhood;
 		vector<int> ia_neighborhood_offsets;
 		vector<int> ia_neighborhood_row_offsets;
 		XMLNode ia_XMLNode;
@@ -45,7 +66,9 @@ class InteractionEnergy : public Plugin {
 // 		static const int max_neighbors=40;
 		
 		double default_interaction;
-		vector<double> ia_energies;
+		struct ContactValue { shared_ptr<ThreadedExpressionEvaluator<double> > value; bool celltypes_swapped; bool subscope_use;};
+		vector<ContactValue> ia_energies2;
+// 		vector<double> ia_energies;
 		vector< vector< shared_ptr<Plugin> > > plugins;
 		vector< shared_ptr<CPM_Interaction_Overrider> > ia_overrider;
 		vector< vector< shared_ptr<CPM_Interaction_Addon> > > ia_addon;
@@ -53,6 +76,7 @@ class InteractionEnergy : public Plugin {
 		set< SymbolDependency > dependencies;
 
 		uint getInterActionID(uint celltype1, uint celltype2 ) const { assert(celltype1<n_celltypes); assert(celltype2<n_celltypes); return celltype1 * n_celltypes + celltype2; }
+		double getBaseInteraction(const SymbolFocus& cell1, const SymbolFocus& cell2) const;
 
 	public:
 		InteractionEnergy();

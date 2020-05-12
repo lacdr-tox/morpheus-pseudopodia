@@ -80,28 +80,7 @@
 		</xs:annotation>
 	</xs:complexType>
 	
-	<xs:complexType name="CPMType">
-		<xs:annotation>
-			<xs:documentation>Let's you define all ingredients for a CPM simulation.</xs:documentation>
-		</xs:annotation>
-		<xs:all>
-<!-- 			<xs:element name="BoundaryConditions" type="cpmCPMBoundaryConditions" minOccurs="0" /> -->
-			<xs:element name="ShapeSurface">
-				<xs:complexType>
-					<xs:all>
-						<xs:element name="Neighborhood" type="cpmNeighborhood" /> 
-					</xs:all>
-					<xs:attribute name="scaling" use="required" type="cpmBoundaryScalingModes" default="norm" />
-				</xs:complexType>
-			</xs:element>
-			<xs:element name="Interaction" type="Interaction" />
-			<xs:element name="MonteCarloSampler" type="MonteCarloSampler" minOccurs="0" />
-<!-- 			<xs:element name="MetropolisKinetics" type="MetropolisKinetics" minOccurs="0" /> -->
-<!-- 			 -->
-		</xs:all>
-<!-- 		<xs:attribute name="default-type" use="optional" type="cpmCellTypeRef"/> -->
-		
-	</xs:complexType>
+
 	
 	<xs:complexType name="cpmCPMBoundaryConditions">
 		<xs:choice maxOccurs="unbounded">
@@ -119,14 +98,6 @@
 		<xs:attribute name="value" use="required" type="cpmCellTypeRef" />
 	</xs:complexType>
 
-	<xs:simpleType name="cpmBoundaryScalingModes">
-        <xs:restriction base="cpmString">
-			<xs:enumeration value="norm"/>
-			<xs:enumeration value="size"/>
-			<xs:enumeration value="none"/>
-        </xs:restriction>
-    </xs:simpleType>
-	
 	<xs:complexType name="CellTypes">
 		<xs:choice minOccurs="1" maxOccurs="unbounded">
 			<xs:element name="CellType" type="CellType">
@@ -246,33 +217,6 @@ This allows the user to create populations a heterogeneous initial population. T
 		</xs:restriction>
 	</xs:simpleType>
 
-
-	<xs:complexType name="Interaction">
-		<xs:all>
-<!--  			<xs:element name="Neighborhood" type="cpmNeighborhood" minOccurs="0"/>  -->
-<!-- 			<xs:choice minOccurs="0" maxOccurs="unbounded"> -->
-<!-- 				<xs:group ref="InteractionPlugins"/> -->
-			<xs:element name="Contact" minOccurs="0" maxOccurs="unbounded">
-				<xs:complexType>
-					<xs:choice minOccurs="0" maxOccurs="unbounded">
-						<xs:group ref="ContactPlugins"/>
-					</xs:choice>
-					<xs:attribute name="type1" use="required" type="cpmCellTypeRef" />
-					<xs:attribute name="type2" use="required" type="cpmCellTypeRef" />
-					<xs:attribute name="value" use="required" type="cpmDouble" />
-				</xs:complexType>
-			</xs:element>
-		</xs:all>
-		<xs:attribute name="default" use="optional" type="cpmDouble"/>
-<!--		<xs:attribute name="collapse" use="optional" type="cpmBoolean" default="true" /> -->
-		<xs:attribute name="negative" use="optional" type="cpmBoolean" default="false">
-			<xs:annotation>
-				<xs:documentation>Use negative surface values when using SurfaceConstraint (Ouchi, 2003)</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		
-	</xs:complexType>
-	
 	<xs:complexType name="Analysis">
 		<xs:choice minOccurs="0" maxOccurs="unbounded">
 			<xs:group  ref="AnalysisPlugins"/>
@@ -296,41 +240,6 @@ This allows the user to create populations a heterogeneous initial population. T
 			</xs:element>
 		</xs:all>
 	</xs:complexType>
-	
-	<xs:complexType name="MonteCarloSampler">
-		
-		<xs:all>
-			<xs:element name="MetropolisKinetics">
-				<xs:complexType>
-					<xs:annotation>
-						<xs:documentation>Specifies the modified Metropolis algorithm used to stochastically find the minimal energy configuration.</xs:documentation>
-					</xs:annotation>
-					<xs:attribute name="temperature" type="cpmMathExpression" use="required" default="1" />
-					<xs:attribute name="yield" type="cpmDouble" use="optional" default="0.0" />
-				</xs:complexType>
-			</xs:element>
-			<xs:element name="Neighborhood" type="cpmNeighborhood" />
-			<xs:element name="MCSDuration" minOccurs="1" >
-				<xs:complexType>
-					<xs:attribute name="value" type="cpmUnsignedDouble" use="required" default="1" />
-					<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="optional" default="mcs_duration" />
-				</xs:complexType>
-			</xs:element>	
-		</xs:all>
-
-		<xs:attribute name="stepper" type="cpmStepper" use="required"/>
-	</xs:complexType>
-
-    <xs:simpleType name="cpmStepper">
-		<xs:annotation>
-			<xs:documentation>Monte Carlo sampling is done randomly (1) over whole lattice ("random"), or (2) on edges only ("edgelist"). 
-Typically, "edgelist" is computationally much more efficient since updates can only take place at the interfaces of different domains (cell interfaces).</xs:documentation>
-		</xs:annotation>
-        <xs:restriction base="cpmString">
-                <xs:enumeration value="edgelist"/>
-                <xs:enumeration value="random"/>
-        </xs:restriction>
-    </xs:simpleType>
 	
 	<xs:complexType name="Time">
 	

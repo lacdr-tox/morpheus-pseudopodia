@@ -18,11 +18,13 @@
 /** \defgroup ML_AddOnAdhesion AddOnAdhesion
 \ingroup ML_Contact
 \ingroup InteractionPlugins  CPM_InteractionPlugins
-\brief Increases adhesion between neighboring CPM cells based on cell or membrane property
+\brief Additive interaction energy based on a global expression (deprecated)
 
-Increases adhesion (i.e. decreases cell-contact energy) between neighboring CPM cells based on cell property or membrane property.
+<b> Deprecation note: This plugin is deprecated and might be removed without further notice. It's functionality superseded by expression usage in Contact/value. It's only conserved for compatibility reasons. </b>
 
-Changes cell-contact energy depending on the amount of adhesive \f$ a_{\sigma} \f$ present in one of the cells (additive).
+Increases adhesion (i.e. decreases cell-contact energy) between neighboring CPM cells. Expression may use globally defined symbols that map to cell or membrane property.
+
+Changes cell-contact energy depending on the amount of adhesive \f$ a_{\sigma} \f$ present in the cells (additive).
 
 \f$ E = -a_{\sigma} \cdot s_{\sigma} \f$ with units energy per node length.
 
@@ -52,7 +54,7 @@ class AddonAdhesion: public CPM_Interaction_Addon
 	public:
 		DECLARE_PLUGIN("AddonAdhesion");
 		AddonAdhesion();
-		double interaction(CPM::STATE s1, CPM::STATE s2) override;
+		double interaction(const SymbolFocus& cell1, const SymbolFocus& cell2) override;
 };
 
 #endif // ADDONADHESION_H

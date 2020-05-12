@@ -55,21 +55,10 @@ Acceptance probability
 
 Graner and Glazier, Phys Rev Lett, 1992
 
-Kafer, Hogeweg and Maree, PLoS Comp Biol, 2006
+Käfer, Hogeweg and Marée, PLoS Comp Biol, 2006
 
 Magno, Grieneisen and Marée, BMC Biophysics, 2015
 
-
-\defgroup ML_Interaction Interaction
-\ingroup ML_CPM
-specifies interaction energies \f$ J_{\sigma, \sigma '} \f$ for different inter-cellular \ref ML_Contact. The interaction energy is given per length unit as defined in ShapeSurface.
-
- - \b default: default value for unspecified interactions
- - \b negative: negate all defined interaction values
- 
-
-\defgroup ML_Contact Contact
-\ingroup ML_Interaction
 **/
 
 

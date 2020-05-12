@@ -50,7 +50,7 @@ class HeterophilicAdhesion : public CPM_Interaction_Addon
 	public:
 		DECLARE_PLUGIN("HeterophilicAdhesion");
 		HeterophilicAdhesion();
-		double interaction(CPM::STATE s1, CPM::STATE s2) override;
+		double interaction(const SymbolFocus& cell1, const SymbolFocus& cell2) override;
 };
 
 #endif // HETEROPHILICADHESION_H

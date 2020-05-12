@@ -82,7 +82,7 @@ class HomophilicAdhesion : public CPM_Interaction_Addon
 	public:
 		DECLARE_PLUGIN("HomophilicAdhesion");
 		HomophilicAdhesion();
-		double interaction(CPM::STATE s1, CPM::STATE s2) override;
+		double interaction(const SymbolFocus& cell1, const SymbolFocus& cell2) override;
 };
 
 #endif // HOMOPHILICADHESION_H
