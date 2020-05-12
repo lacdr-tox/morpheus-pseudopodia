@@ -236,10 +236,13 @@ ENDIF()
 SET(XSD_SOURCES 
 	${CMAKE_CURRENT_SOURCE_DIR}/core/base_types.xsd
 	${CMAKE_CURRENT_SOURCE_DIR}/core/simulation.xsd
+	${CMAKE_CURRENT_SOURCE_DIR}/core/interaction_energy.xsd
 )
 
 SET(APP_DOC_HEADERS 
 	${CMAKE_CURRENT_SOURCE_DIR}/core/docu.h
+	${CMAKE_CURRENT_SOURCE_DIR}/core/cpm_sampler.h
+	${CMAKE_CURRENT_SOURCE_DIR}/core/interaction_energy.h
 	${CMAKE_CURRENT_SOURCE_DIR}/core/expression_evaluator.h
 )
 

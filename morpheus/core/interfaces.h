@@ -566,18 +566,18 @@ class Field_Initializer : virtual public Plugin
 /// Interface to override the interaction energies between CPM cells computed by the CPM logic
 class CPM_Interaction_Overrider : virtual public Plugin {
 	public:
-		virtual double interaction(CPM::STATE s1, CPM::STATE s2, double base_interaction) =0;
+		virtual double interaction(const SymbolFocus& cell1, const SymbolFocus& cell2, double base_interaction) =0;
 };
 
 /// Interface to provide additional interaction energies between CPM cells
 class CPM_Interaction_Addon : virtual public Plugin {
 	public:
-		/// Compute additional interaction energies between CPM cell **s1** and **s2**, that may depend on the individual cells.
-		virtual double interaction(CPM::STATE s1, CPM::STATE s2) =0;
+		/// Compute additional interaction energies between CPM cell **cell1** and **cell2**, that may depend on the state of individual cells.
+		virtual double interaction(const SymbolFocus& cell1, const SymbolFocus& cell2) =0;
 };
 
 
-/// Abstract base class for attachable Properties
+/// Interface class for attachable Properties
 class AbstractProperty {
 public:
 	virtual const string& symbol() const =0;

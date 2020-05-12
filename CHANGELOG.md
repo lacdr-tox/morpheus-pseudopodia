@@ -13,6 +13,7 @@
   * ClusterTracker can cluster cells of multiple cell types.
   * Added Populations InitVectorProperty
   * Lattice size now can also be specified through expressions
+  * Contact energies now support expressions with access to symbols of involved cells
 
 ### Simulator
   * Support reading (gz) compressed models
