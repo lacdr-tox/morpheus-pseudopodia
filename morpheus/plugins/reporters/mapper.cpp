@@ -134,7 +134,7 @@ void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 				SymbolFocus surface_focus = *focus;
 				for (auto node : cell_surface) {
 					surface_focus.setPosition(node);
-					membrane_mapper.map(node, input(*focus));
+					membrane_mapper.map(node, input(surface_focus));
 				}
 				membrane_mapper.fillGaps();
 				membrane_mapper.copyData(membrane_symbol->getField(*focus));
