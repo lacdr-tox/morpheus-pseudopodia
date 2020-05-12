@@ -662,7 +662,7 @@ Therefore, InitProperty is NOT called for cells created during simulation, e.g. 
 \defgroup ML_Analysis Analysis
 \ingroup MorpheusML
 
-Container for \ref AnalysisPlugins for data analysis, logging and visualization. Output is written to text files and/or images.
+Analyis section allows definition of \ref AnalysisPlugins for data analysis, logging and visualization. Most analysers produce output in terms of  text files, xml-files and/or images.
 
 **/
 
