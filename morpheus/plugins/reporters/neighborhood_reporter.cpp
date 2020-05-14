@@ -74,6 +74,7 @@ void NeighborhoodReporter::init(const Scope* scope)
 				case Granularity::MembraneNode:
 					halo_output.push_back(out);
 					out->membrane_acc = dynamic_pointer_cast<const MembranePropertySymbol>(out->symbol.accessor());
+					out->mapper = DataMapper::create(out->mapping());
 					break;
 				case Granularity::Global :
 				case Granularity::Cell :
@@ -182,17 +183,17 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 #pragma omp parallel
 		{
 			// There might also be boolean input, that we cannot easily handle this way. But works for concentrations and rates, i.e. all continuous quantities.
+			auto thread = omp_get_thread_num();
 			MembraneMapper mapper(MembraneMapper::MAP_CONTINUOUS,false);
 			struct count_data { double val; double count; };
 			map<CPM::CELL_ID,count_data> cell_mapper;
-			for (auto const& out : halo_output) { out->mapper->reset(); }
+			for ( const auto& out : halo_output) { out->mapper->reset(thread); }
 			
 #pragma omp for schedule(static)
 			for ( int i=0; i<cells.size(); i++) {
 	// 		for ( auto cell_id : cells) {
 				// Create halo of nodes surrounding the cell
 				SymbolFocus cell_focus(cells[i]);
-				
 				if ( using_local_ns && local_ns_granularity != Granularity::MembraneNode) {
 					// Expose local symbols to input
 					input.setNameSpaceFocus(local_ns_id, cell_focus);
@@ -241,7 +242,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 
 					mapper.fillGaps();
 					valarray<double> raw_data;
-					for (auto & out : halo_output) {
+					for (const auto & out : halo_output) {
 						// TODO There must be a lock on the out->mapper if using it in multithreading !
 						if (out->membrane_acc) {
 							mapper.copyData(out->membrane_acc->getField(cell_focus.cellID()));
@@ -251,18 +252,18 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 								raw_data =  mapper.getData().getData();
 							}
 							for (uint i=0; i<raw_data.size(); i++) {
-								out->mapper->addVal(raw_data[i]);
+								out->mapper->addVal(raw_data[i], thread);
 							}
 							
 							if (out->symbol.granularity() == Granularity::Cell) {
 								if (out->mapper->getMode() == DataMapper::SUM) {
 									// Rescale to Interface length
-									out->symbol.set(cell_focus, out->mapper->get() / raw_data.size() *  cell_focus.cell().getInterfaceLength() );
+									out->symbol.set(cell_focus, out->mapper->get(thread) / raw_data.size() *  cell_focus.cell().getInterfaceLength() );
 								}
 								else {
-									out->symbol.set(cell_focus, out->mapper->get());
+									out->symbol.set(cell_focus, out->mapper->get(thread));
 								}
-								out->mapper->reset();
+								out->mapper->reset(thread);
 							}
 						}
 					}
@@ -270,7 +271,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 				else if (scaling() == CELLS) {
 					
 					cell_mapper.clear();
-					for ( auto const & i :halo_nodes) {
+					for ( const auto & i :halo_nodes) {
 						SymbolFocus f(i);
 						
 						if (using_local_ns) {
@@ -283,13 +284,13 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 						cell_mapper[f.cellID()].count ++;
 					}
 					
-					for (auto & out : halo_output) {
+					for ( const auto & out : halo_output) {
 						for ( const auto & cell_stat : cell_mapper ) {
-							out->mapper->addVal(cell_stat.second.val / cell_stat.second.count);
+							out->mapper->addVal(cell_stat.second.val / cell_stat.second.count, thread);
 						}
 						if (out->symbol.granularity() == Granularity::Cell) {
-							out->symbol.set(cell_focus, out->mapper->get());
-							out->mapper->reset();
+							out->symbol.set(cell_focus, out->mapper->get(thread));
+							out->mapper->reset(thread);
 						}
 					}
 				}
