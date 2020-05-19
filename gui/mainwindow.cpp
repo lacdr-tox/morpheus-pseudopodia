@@ -974,7 +974,7 @@ void MainWindow::removeModel(int index) {
 }
 
 void MainWindow::showCurrentModel() {
-	qDebug() << "showing current model from " << sender();
+// 	qDebug() << "showing current model from " << sender();
 	if (current_model->parts[model_index.part].label=="ParamSweep") {
         editorStack->setCurrentWidget(sweeper);
 		QWidget::setTabOrder(modelList,sweeper);

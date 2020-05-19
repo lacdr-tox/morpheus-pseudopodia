@@ -27,6 +27,9 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	central->addWidget(description);
 	
 	auto layset= new QBoxLayout(QBoxLayout::Direction::LeftToRight);
+	auto include_tags_label = new QLabel("included Tags");
+	include_tags_label->setAlignment(Qt::AlignRight);
+	
 	auto ql_plugins = new QLabel("excluded Plugins");
 	ql_plugins->setAlignment(Qt::AlignRight);
 	auto ql_symbols = new QLabel("excluded Symbols");
@@ -34,11 +37,14 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	auto ql_reduced = new QLabel("&reduced");
 	ql_reduced->setAlignment(Qt::AlignLeft);
 
+	includeTags = new CheckBoxList();
+	connect(includeTags, &CheckBoxList::currentTextChanged,[=](QStringList includes) { update_include_tags(includes); update_graph();});
+	
 	excludeP = new CheckBoxList();
-	connect(excludeP, &CheckBoxList::currentTextChanged,[=](QStringList excludes){update_plugin_excludes(excludes);update_graph();});
+	connect(excludeP, &CheckBoxList::currentTextChanged,[=](QStringList excludes) {update_plugin_excludes(excludes);update_graph();});
 
 	excludeS = new CheckBoxList();
-	connect(excludeS, &CheckBoxList::currentTextChanged, [=](QStringList excludes){update_excludes(excludes);update_graph();} );
+	connect(excludeS, &CheckBoxList::currentTextChanged, [=](QStringList excludes) {update_excludes(excludes);update_graph();} );
 
 	reduced = new QCheckBox();
 	connect(reduced, &QCheckBox::stateChanged, [=](int state){update_reduced(state);update_graph();} );
@@ -52,6 +58,9 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	
 	layset->addWidget(reduced,0,Qt::AlignRight);
 	layset->addWidget(ql_reduced,0,Qt::AlignLeft);
+	layset->addStretch(1);
+	layset->addWidget(include_tags_label);
+	layset->addWidget(includeTags,3);
 	layset->addStretch(1);
 	layset->addWidget(ql_plugins);
 	layset->addWidget(excludeP,3);
@@ -103,10 +112,22 @@ void AboutModel::update()
 	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
 	model->getRoot()->setStealth(false);
 	
+	QStringList qtl = dg->attribute("include-tags")->get().split(",", QString::SplitBehavior::SkipEmptyParts);
+	for (auto& key : qtl) key = key.trimmed();
+
 	QStringList qsl = dg->attribute("exclude-symbols")->get().split(",", QString::SplitBehavior::SkipEmptyParts);
 	for (auto& key : qsl) key = key.trimmed();
 	QStringList qpl = dg->attribute("exclude-plugins")->get().split(",", QString::SplitBehavior::SkipEmptyParts);
 	for (auto& key : qpl) key = key.trimmed();
+	
+	includeTags->clear();
+	auto tags = model->getRoot()->subtreeTags();
+	tags.removeDuplicates();
+	tags.sort();
+	
+	for (auto tag : tags) {
+		includeTags->addItem(tag, qtl.contains(tag));
+	}
 	
 	excludeS->clear();
 	QMap<QString,QString> qsm = model->getModelDescr().getSymbolNames("cpmDoubleSymbolRef");
@@ -400,4 +421,14 @@ void AboutModel::update_reduced(int state)
 		dg->attribute("reduced")->set("false");
 	}
 	model->getRoot()->setStealth(false);
+}
+
+
+void AboutModel::update_include_tags(QStringList includes) {
+	model->getRoot()->setStealth(true);
+	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
+	dg->attribute("include-tags")->setActive( ! includes.isEmpty() );
+	dg->attribute("include-tags")->set(includes.join(", "));
+	model->getRoot()->setStealth(false);
+		
 }

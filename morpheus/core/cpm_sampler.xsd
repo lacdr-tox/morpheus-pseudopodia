@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
-	<xs:complexType name="CPMType">
+	<xs:complexType name="CPMType">  <!-- should be an extension of plugin ?? -->
 		<xs:annotation>
 			<xs:documentation>Let's you define all ingredients for a CPM simulation.</xs:documentation>
 		</xs:annotation>
@@ -17,6 +17,7 @@
 			<xs:element name="Interaction" type="Interaction" />
 			<xs:element name="MonteCarloSampler" type="MonteCarloSampler" minOccurs="0" />
 		</xs:all>
+		<xs:attribute name="tags"	type="morphTags"			use="optional" />
 		
 	</xs:complexType>
 

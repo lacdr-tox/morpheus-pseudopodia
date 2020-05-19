@@ -97,6 +97,11 @@ public:
     QSharedPointer<XSD::SimpleTypeInfo> textType();
 	/// Return the attribut which represents the text of the xml-node.
     AbstractAttribute* textAttribute();
+	QStringList inheritedTags() const;
+	QStringList subtreeTags() const;
+	QStringList getEffectiveTags() const;
+	QStringList getTags() const { return tags; };
+	bool allowsTags() const { return attributes.contains("tags"); } 
 	
 	/// Find all active child nodes named @p childName. If name is omitted, all active childs are returned.
 	QList<nodeController*> activeChilds(QString childName = "");
@@ -151,6 +156,7 @@ private:
     QSharedPointer<XSD::ComplexTypeInfo> node_type; /*!< Node of the xml-schema which describes the xml-node.*/
 
     AbstractAttribute* text; /*!< Attribute which presents the text of the xml-node. */
+    QStringList tags;
     QMap<QString, AbstractAttribute* > attributes; /*!< Contains all possible attributes and their informations.*/
     QList< nodeController* > childs; /*!< Contains all controllers which are representing the childnodes.*/
     QList<QObject*> adapters;

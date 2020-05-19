@@ -2,21 +2,27 @@
 
 
 bool TagFilterSortProxyModel::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const {
-	if (filter_tags.isEmpty())
+	if (!filtering || filter_tags.isEmpty())
 		return true;
 	auto row_index = sourceModel()->index(source_row,0,source_parent);
-	auto tags_string = row_index.data(MorphModel::TagsRole).toString();
-	if (tags_string == "*") {
+	auto tags = row_index.data(MorphModel::TagsRole).toStringList();
+	if (tags.size()==1 && tags[0] == "*") {
 		return true;
 	}
-	auto tags = tags_string.remove(QRegExp("\\s")).split(",", QString::SkipEmptyParts).toSet();
-	return ! tags.intersect(filter_tags).isEmpty();
+	return tags.toSet().intersects(filter_tags);
 };
 
-void TagFilterSortProxyModel::setFilterTags(QString tag_list) {
-	filter_tags = tag_list.remove(QRegExp("\\s")).split(",", QString::SkipEmptyParts).toSet();
+void TagFilterSortProxyModel::setFilterTags(QStringList tag_list) {
+	filter_tags = tag_list.toSet();
 	invalidateFilter();
 };
+
+void TagFilterSortProxyModel::setFilteringEnabled(bool enabled)
+{
+	filtering = enabled;
+	invalidateFilter();
+}
+
 
 //------------------------------------------------------------------------------
 
@@ -51,9 +57,9 @@ void domNodeViewer::createLayout()
 	model_tree_view->setAnimated(true);
 	model_tree_filter = new TagFilterSortProxyModel();
 	model_tree_filter->setFilterRole(MorphModel::TagsRole);
+	model_tree_filter->setSortRole(Qt::DisplayRole);
+	model_tree_filter->setSortCaseSensitivity(Qt::CaseInsensitive);
 	model_tree_view->setModel(model_tree_filter);
-	model_tree_view->setSortingEnabled(true);
-	
 	node_editor = new domNodeEditor(this);
 
     symbol_list_wid = new QTreeWidget(this);
@@ -84,19 +90,37 @@ void domNodeViewer::createLayout()
 // 	leftWid->setContentsMargins(0, 0, 0, 0);
 	leftWid->layout()->setContentsMargins(0, 10, 4, 0);
 	leftWid->layout()->setSpacing(0);
+	
 	auto filter_row = new QHBoxLayout();
 	filter_row->setContentsMargins(10, 0, 10, 0);
-	filter_row->addStretch(1);
 	filter_row->setSpacing(8);
-	auto filter_label = new QLabel("&Filter tags",this);
-	filter_row->addWidget(filter_label);
-	model_tree_filter_edit = new QLineEdit(this);
-	filter_label->setBuddy(model_tree_filter_edit);
-	filter_row->addWidget(model_tree_filter_edit);
-	model_tree_filter_button = new QPushButton(this);
-	model_tree_filter_button->setIcon(QThemedIcon("view-filter",QIcon(":/view_filter.png")));
-	model_tree_filter_button->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-	filter_row->addWidget(model_tree_filter_button);
+	
+	// Sort Button
+	filter_row->addStretch(2);
+	sort_button = new QPushButton(QIcon::fromTheme("view-sort-ascending"),"sort", this);
+	sort_button->setCheckable(true);
+	sort_button->setFlat(true);
+	connect(sort_button, &QPushButton::toggled, model_tree_view, &QTreeView::setSortingEnabled);
+	filter_row->addWidget(sort_button);
+	
+	// Filter edit
+	filter_row->addSpacing(8);
+	filter_tag_list = new CheckBoxList(this);
+	filter_row->addWidget(filter_tag_list);
+	connect(filter_tag_list, &CheckBoxList::currentTextChanged, model_tree_filter, &TagFilterSortProxyModel::setFilterTags);
+	
+	// Filter Button
+	filter_button = new QPushButton(QThemedIcon("view-filter",QIcon(":/view_filter.png")),"tags",this);
+	filter_button->setCheckable(true);
+	filter_button->setFlat(true);
+	filter_button->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
+	filter_row->addWidget(filter_button);
+	connect(filter_button, &QPushButton::toggled, [this](bool state) {
+		disconnect(model_tree_filter, nullptr, this, SLOT(selectInsertedItem(const QModelIndex & , int , int )));
+		model_tree_filter->setFilteringEnabled(state);
+		connect(model_tree_filter, SIGNAL(rowsInserted( const QModelIndex & , int , int)), this, SLOT(selectInsertedItem(const QModelIndex & , int , int )),Qt::QueuedConnection);
+	});
+	
 	leftWid->layout()->addItem(filter_row);
 	leftWid->layout()->addWidget(model_tree_view);
 	
@@ -128,8 +152,6 @@ void domNodeViewer::createLayout()
 	this->setFocusPolicy(Qt::NoFocus);
 	this->setFocusProxy(model_tree_view);
 	updateConfig();
-	QObject::connect(model_tree_filter_edit, &QLineEdit::textChanged, model_tree_filter, &TagFilterSortProxyModel::setFilterTags);
-	QObject::connect(model_tree_filter_button, &QPushButton::clicked, [this]() { model_tree_filter->setFilterTags(model_tree_filter_edit->text()); });
     QObject::connect(model_tree_view, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(createTreeContextMenu(QPoint)));
     QObject::connect(symbol_list_wid, SIGNAL(doubleClicked(QModelIndex)), SLOT(insertSymbolIntoEquation(QModelIndex)));
     QObject::connect(splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(splitterPosChanged()));
@@ -183,6 +205,17 @@ void domNodeViewer::setModelPart(int part) {
 		}
 		model_tree_view->setRootIndex(view_index);
 		model_tree_view->setCurrentIndex(view_index);
+		model_tree_view->setSortingEnabled(sort_button->isChecked());
+		model_tree_filter->setFilteringEnabled(filter_button->isChecked());
+		
+		auto current_selection = filter_tag_list->currentData(Qt::UserRole).toStringList();
+		filter_tag_list->clear();
+		auto tags = model->rootNodeContr->subtreeTags();
+		tags.removeDuplicates();
+		tags.sort();
+		for (auto tag : tags) {
+			filter_tag_list->addItem(tag, current_selection.contains(tag));
+		}
 	}
 	else {
 		qDebug() << "Requested model part " << part << " is not enabled";
@@ -194,25 +227,35 @@ void domNodeViewer::setModelPart(int part) {
 void domNodeViewer::setModel(SharedMorphModel mod, int part) {
     model = mod;
 	model_tree_filter->setSourceModel(model);
-	model_tree_view->setSortingEnabled(true);
+	
 	
 	QObject::connect(model_tree_view->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(setTreeItem( const QModelIndex& )));
-	QObject::connect(model, SIGNAL(rowsMoved ( const QModelIndex & , int , int , const QModelIndex & , int  )), this, SLOT(selectMovedItem(const QModelIndex & , int , int , const QModelIndex & , int )),Qt::QueuedConnection);
-	QObject::connect(model, SIGNAL(rowsInserted( const QModelIndex & , int , int)), this, SLOT(selectInsertedItem(const QModelIndex & , int , int )),Qt::QueuedConnection);
+	QObject::connect(model_tree_filter, SIGNAL(rowsMoved ( const QModelIndex & , int , int , const QModelIndex & , int  )), this, SLOT(selectMovedItem(const QModelIndex & , int , int , const QModelIndex & , int )),Qt::QueuedConnection);
+	connect(model_tree_filter, SIGNAL(rowsInserted( const QModelIndex & , int , int)), this, SLOT(selectInsertedItem(const QModelIndex & , int , int )),Qt::QueuedConnection);
 	setModelPart(part);
+	connect(model_tree_filter, &TagFilterSortProxyModel::dataChanged,[this]() {
+		auto current_selection = filter_tag_list->currentData(Qt::UserRole).toStringList();
+		filter_tag_list->clear();
+		auto tags = this->model->rootNodeContr->subtreeTags();
+		tags.removeDuplicates();
+		tags.sort();
+		for (auto tag : tags) {
+			filter_tag_list->addItem(tag, current_selection.contains(tag));
+		}
+	});
 }
 
 void domNodeViewer::selectMovedItem(const QModelIndex & sourceParent, int sourceRow, int , const QModelIndex & destParent, int destRow) {
 	if (sourceParent == destParent && sourceRow < destRow)
 		destRow-=1;
-	auto child_idx = model->index(destRow,0,destParent);
-	setTreeItem( model_tree_filter->mapFromSource(child_idx) );
+	auto child_idx = model_tree_filter->index(destRow,0,destParent);
+	setTreeItem( child_idx );
 }
 
 
 void domNodeViewer::selectInsertedItem(const QModelIndex & destParent, int destRowFirst, int /*destRowLast*/) {
-	auto child_idx = model->index(destRowFirst,0,destParent);
-	setTreeItem( model_tree_filter->mapFromSource(child_idx) );
+	auto child_idx = model_tree_filter->index(destRowFirst,0,destParent);
+	if (!lazy_mode) setTreeItem( child_idx );
 }
 
 //------------------------------------------------------------------------------
@@ -220,7 +263,7 @@ void domNodeViewer::selectInsertedItem(const QModelIndex & destParent, int destR
 //slot welcher aufgerufen wird, wenn im baum ein anderer Knoten ausgewählt wird
 void domNodeViewer::setTreeItem( const QModelIndex& index)
 {
-	qDebug() << "selecting new Item " << index;
+// 	qDebug() << "selecting new Item " << index;
 	
 	model_tree_view->blockSignals(true);
 	QModelIndex view_index = index;
@@ -238,15 +281,20 @@ void domNodeViewer::setTreeItem( const QModelIndex& index)
 // 			view_index = model_tree_view->rootIndex();
 // 		}
 // 	}
+	bool within_part = false;
+	QModelIndex exp_idx = view_index;
+	while (exp_idx.isValid()) {
+		if (exp_idx == model_tree_view->rootIndex()) {
+			within_part = true;
+		}
+		model_tree_view->expand(exp_idx);
+		exp_idx = exp_idx.parent();
+	}
+	if (!within_part) return;
 	
 	// Make item visible
 	if (model_tree_view->currentIndex() != view_index) {
 		model_tree_view->setCurrentIndex(view_index);
-	}
-	QModelIndex exp_idx = view_index;
-	while (exp_idx.isValid()) {
-		model_tree_view->expand(exp_idx);
-		exp_idx = exp_idx.parent();
 	}
 	
 	// Select the proper editor
@@ -290,9 +338,9 @@ void domNodeViewer::setTreeItem( const QModelIndex& index)
 					if (vsym_names.contains(subname)) {
 						subdescr = vsym_names[subname];
 					}
-                     QTreeWidgetItem* trWItem_sub = new QTreeWidgetItem(parents.back(),QStringList() << subnames[level] << subdescr);
-                     trWItem_sub->setFont(1, lFont);
-                     parents.push_back(trWItem_sub);
+					QTreeWidgetItem* trWItem_sub = new QTreeWidgetItem(parents.back(),QStringList() << subnames[level] << subdescr);
+					trWItem_sub->setFont(1, lFont);
+					parents.push_back(trWItem_sub);
 					parents_names.push_back(subnames[level]);
 					level++;
 				}

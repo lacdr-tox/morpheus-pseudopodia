@@ -16,7 +16,6 @@
         <file alias="edit-copy.png">icons/16x16/edit-copy.png</file>
         <file alias="edit-paste.png">icons/16x16/edit-paste.png</file>
         <file alias="edit-cut.png">icons/16x16/edit-cut.png</file>
-		<file alias="edit-find.png">icons/16x16/edit-find.png</file>
 		<file alias="view-filter.png">icons/16x16/view-filter.png</file>
         <file alias="go-previous.png">icons/16x16/go-previous.png</file>
         <file alias="go-next.png">icons/16x16/go-next.png</file>

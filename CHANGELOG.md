@@ -4,6 +4,7 @@
 
 ### GUI
   * Introduced Interactive Model Graph
+  * Support Tagging, Filtering and Sorting of Model Components
   * Switched to Qt5
   * Support reading and writing (gz) compressed models
 

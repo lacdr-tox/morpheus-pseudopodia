@@ -34,6 +34,7 @@ class AboutModel : public QWidget {
 
 	QUrl url;
 	QFrame* webFrame;
+	CheckBoxList* includeTags;
 	CheckBoxList* excludeP;
 	CheckBoxList* excludeS;
 	QCheckBox* reduced;
@@ -60,6 +61,7 @@ private slots:
 	void svgOut();
 	void update_excludes(QStringList qsl);
 	void update_plugin_excludes(QStringList qsl);
+	void update_include_tags(QStringList includes);
 	void update_reduced(int);
 };
 

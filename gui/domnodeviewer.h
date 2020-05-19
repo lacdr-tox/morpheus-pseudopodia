@@ -23,6 +23,7 @@
 
 #include "addattrdialog.h"         // Add DOM Node Dialoge
 #include "infoaction.h"
+#include "widgets/checkboxlist.h"
 
 #include "config.h"
 //#include "parametersweeper.h"
@@ -33,8 +34,10 @@ private:
 	QSet<QString> filter_tags;
 protected:
 	 bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
+	 bool filtering;
 public slots:
-	void setFilterTags(QString tag_list);   /// comma separated list
+	void setFilterTags(QStringList tag_list);   /// comma separated list
+	void setFilteringEnabled(bool enabled);   /// comma separated list
 };
 
 
@@ -75,15 +78,17 @@ private:
 
 	QTreeView* model_tree_view; /*!< TreeWidget in which the xml-nodes will be shown.*/
 	TagFilterSortProxyModel* model_tree_filter;
-	QLineEdit* model_tree_filter_edit;
-	QPushButton* model_tree_filter_button;
+	CheckBoxList* filter_tag_list;
+	QPushButton* filter_button;
 	QSet<QString> filter_tags;
+	QPushButton* sort_button;
 	QSplitter* splitter; /*!< Splitter which divide the view of the widget. */
 	domNodeEditor* node_editor;
 	QTreeWidget *symbol_list_wid;
     QTreeWidget *plugin_tree_widget;
     //QListWidget *child_list_widget;
     QFont lFont;
+	bool lazy_mode;
 
     void createLayout(); /*!< Creates the sub-widgets and their layout */
     void createMenu(); /*!< Adds actions to the treeMenu and tableMenu.*/

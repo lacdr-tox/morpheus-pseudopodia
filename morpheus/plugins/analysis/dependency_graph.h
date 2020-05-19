@@ -41,8 +41,10 @@ class DependencyGraph: public AnalysisPlugin {
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> reduced;
 	PluginParameter2<string,XMLValueReader,OptionalPolicy> exclude_symbols_string;
 	PluginParameter2<string,XMLValueReader,OptionalPolicy> exclude_plugins_string;
+	PluginParameter2<string,XMLValueReader,OptionalPolicy> include_tags_option;
 	set<string> exclude_symbols;
 	set<string> exclude_plugins;
+	set<string> include_tags;
 	vector<string> skip_symbols = {"_.*"};
 	vector<string> skip_symbols_reduced = {".*\\.x", ".*\\.y",".*\\.z",".*\\.phi",".*\\.theta",".*\\.abs"};
 	regex skip_symbols_regex;

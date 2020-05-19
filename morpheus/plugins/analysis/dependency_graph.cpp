@@ -20,8 +20,10 @@ DependencyGraph::DependencyGraph() : AnalysisPlugin()
 	registerPluginParameter(reduced);
 	exclude_plugins_string.setXMLPath("exclude-plugins");
 	exclude_symbols_string.setXMLPath("exclude-symbols");
+	include_tags_option.setXMLPath("include-tags");
 	registerPluginParameter(exclude_plugins_string);
 	registerPluginParameter(exclude_symbols_string);
+	registerPluginParameter(include_tags_option);
 }
 
 void DependencyGraph::init(const Scope* scope)
@@ -56,11 +58,14 @@ void DependencyGraph::analyse(double time)
 			exclude_symbols.insert(e);
 		}
 	}
+	if (include_tags_option.isDefined()) {
+		vector<string> tags = tokenize(include_tags_option(),"|, ");
+		include_tags.insert(tags.begin(), tags.end());
+	}
 	if (reduced())
 		skip_symbols_regex = join(skip_symbols,"|") + "|" + join(skip_symbols_reduced,"|");
 	else 
 		skip_symbols_regex = join(skip_symbols,"|");
-		
 	
 	stringstream dot;
 	
@@ -191,10 +196,16 @@ void DependencyGraph::parse_scope(const Scope* scope)
 	// Parse the TimeStepListeners, register their dependencies and collect their links
 	auto tsls = scope->getTSLs();
 	
+			
 	for (auto tsl : tsls) {
+		// Apply filters
+		if (reduced() && dynamic_cast<AnalysisPlugin*>(tsl))
+			continue;
 		if ( exclude_plugins.count( tsl->XMLName() ) )
 			continue;
-		
+		if (include_tags_option.isDefined() && !tsl->isTagged(include_tags) )
+			continue;
+			
 		if ( dynamic_cast<CPMSampler*>(tsl)) {
 			string cpm_name = tslDotName(tsl);
 			set<SymbolDependency> inter_dep = dynamic_cast<CPMSampler*>(tsl)->getInteractionDependencies();
@@ -214,10 +225,12 @@ void DependencyGraph::parse_scope(const Scope* scope)
 				// check existing dependecies
 				bool have_dep = false;
 				for (const auto& dep : dependencies) {
-					 if (exclude_plugins.count(dep.first->XMLName()))
+					if (exclude_plugins.count(dep.first->XMLName()))
 						 continue;
-					 // draw a line to the first CellType CPM plugin to linke it's CPM box
-					 if (!have_dep) {
+					if (include_tags_option.isDefined() && !dep.first->isTagged(include_tags) )
+						continue;
+					// draw a line to the first CellType CPM plugin to linke it's CPM box
+					if (!have_dep) {
 						string first_plugin = pluginDotName( dep.first );
 						stringstream link;
 						link << cpm_name << " -> " << first_plugin << " [" << graphstyle.at("arrow_connect") << ",lhead=" << string("cluster_cpm") << ct_scope->getID() << "] \n";
@@ -256,8 +269,6 @@ void DependencyGraph::parse_scope(const Scope* scope)
 		}
 		else {
 			// TSL Box
-			if (reduced() && dynamic_cast<AnalysisPlugin*>(tsl))
-				continue;
 			info.definitions << tslDotName(tsl)
 				<< "[ "
 				<< "shape=record"
@@ -297,10 +308,12 @@ void DependencyGraph::parse_scope(const Scope* scope)
 		auto cpm_dep = scope->ct_component->cpmDependSymbols();
 		bool found_valid_cpm_plugin = false;
 		for (auto dep : cpm_dep) {
-			if ( exclude_plugins.count( dep.first->XMLName() ) == 0) {
-				found_valid_cpm_plugin = true;
-				break;
-			}
+			if ( exclude_plugins.count( dep.first->XMLName() ) > 0)
+				continue;
+			if (include_tags_option.isDefined() && !dep.first->isTagged(include_tags) )
+				continue;
+			found_valid_cpm_plugin = true;
+			break;
 		}
 		if ( found_valid_cpm_plugin ) {
 			string cpm_blob_name = string("cluster_cpm") + to_str(scope->getID());
@@ -310,6 +323,8 @@ void DependencyGraph::parse_scope(const Scope* scope)
 			string plugin_node_name;
 			for (auto dep : cpm_dep) {
 				if ( exclude_plugins.count( dep.first->XMLName() ))
+					continue;
+				if (include_tags_option.isDefined() && !dep.first->isTagged(include_tags) )
 					continue;
 				
 				plugin_node_name = pluginDotName(dep.first);

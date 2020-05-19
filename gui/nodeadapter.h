@@ -40,4 +40,5 @@ private Q_SLOTS:
 	void reset();
 };
 
+
 #endif // NODEADAPTER_H

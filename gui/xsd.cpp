@@ -559,6 +559,7 @@ void XSD::createTypeMaps()
 	info->initialized = false;
 	info->name = "xs:token";
 	info->pattern = "^\\S*$";
+	info->mode = SimpleTypeInfo::PATTERN;
 	info->default_val= "";
 	simple_types[info->name] = info;
 
@@ -566,6 +567,7 @@ void XSD::createTypeMaps()
 	info->initialized = false;
 	info->name ="xs:integer";
 	info->pattern = "^-?\\d+$";
+	info->mode = SimpleTypeInfo::PATTERN;
 	info->default_val= "0";
 	simple_types[info->name] = info;
 
@@ -573,6 +575,7 @@ void XSD::createTypeMaps()
 	info->initialized = false;
 	info->name ="xs:decimal";
 	info->pattern = "^-?\\d+(\\.\\d+)?(e[+-]?\\d+)?$";
+	info->mode = SimpleTypeInfo::PATTERN;
 	info->default_val= "0";
 	simple_types[info->name] = info;
 
@@ -580,6 +583,7 @@ void XSD::createTypeMaps()
 	info->initialized = false;
 	info->name ="xs:double";
 	info->pattern = "^-?\\d+(\\.\\d+)?(e[+-]?\\d+)?$";
+	info->mode = SimpleTypeInfo::PATTERN;
 	info->default_val= "0";
 	simple_types[info->name] = info;
 
@@ -587,6 +591,7 @@ void XSD::createTypeMaps()
 	info->initialized = false;
 	info->name ="xs:normalizedString";
 	info->pattern = ".*";
+	info->mode = SimpleTypeInfo::PATTERN;
 	info->default_val= "";
 	simple_types[info->name] = info;
 
@@ -594,6 +599,7 @@ void XSD::createTypeMaps()
 	info->initialized = false;
 	info->name ="xs:string";
 	info->pattern = ".*";
+	info->mode = SimpleTypeInfo::PATTERN;
 	info->default_val= "";
 	simple_types[info->name] = info;
 
@@ -604,6 +610,7 @@ void XSD::createTypeMaps()
 	info->pattern = "^(true|false)$";
 	info->default_val= "true";
 	info->is_enum= true;
+	info->mode = SimpleTypeInfo::ENUM;
 	simple_types[info->name] = info;
 
 	QDomNodeList list = xsdSchema.elementsByTagName("xs:simpleType");

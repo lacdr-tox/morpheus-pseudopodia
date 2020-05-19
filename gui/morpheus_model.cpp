@@ -62,6 +62,12 @@ try : QAbstractItemModel(parent),  xml_file(xmlFile)
     //XML in datenstruktur einlesen (nodeController)
     rootNodeContr = new nodeController(xml_file.xmlDocument.documentElement());
 	rootNodeContr->setParent(this);
+	connect(rootNodeContr, &nodeController::dataChanged, [this](nodeController* node) {
+		if (!node) return;
+		auto idx = itemToIndex(node);
+		idx.siblingAtColumn(2);
+		emit dataChanged(idx, idx.siblingAtColumn(2), QVector<int>() << Qt::DisplayRole << MorphModel::TagsRole);
+	});
 
     ModelDescriptor& desc = const_cast<ModelDescriptor&>(rootNodeContr->getModelDescr());
     for (int i=0; i<edits.size();i++) {
@@ -888,12 +894,11 @@ QVariant MorphModel::data(const QModelIndex &index, int role) const {
 		return node ? QVariant(node->getXPath()) : QVariant(QStringList());
 	}
 	else if (role == TagsRole) {
-		auto tags_attr = indexToItem(index)->attribute("tags");
-		
-		if ( tags_attr && tags_attr->isActive())
-			return QVariant(tags_attr->get());
+		auto node = indexToItem(index);
+		if (node->allowsTags())
+			return QVariant(node->getEffectiveTags());
 		else 
-			return QVariant(QString("*"));
+			return QVariant(QStringList("*"));
 	}
 	return QVariant();
 }

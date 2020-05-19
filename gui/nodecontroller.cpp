@@ -192,6 +192,20 @@ QObject(parent)
 // 		if (attribute("symbol"))
 			model_descr->time_symbol = attribute("symbol");
 	}
+	if (attributes.contains("tags")) {
+		auto root = this;
+		while (root->parent) root = root->parent;
+		
+		auto updater = 
+			[this, root](AbstractAttribute* a) {
+				if (a->isActive()) {
+					this->tags = a->get().remove(QRegExp("\\s")).split(",", QString::SkipEmptyParts);
+					emit root->dataChanged(this);
+				}
+			};
+		connect(attributes["tags"], &AbstractAttribute::changed, updater);
+		updater(attributes["tags"]);
+	}
 	
 	if ( node_type->is_scheduled )
 		model_descr->pluginNames[name]+=1;
@@ -616,6 +630,43 @@ bool nodeController::isDeletable()
 bool nodeController::hasText()
 {
     return text;
+}
+
+//------------------------------------------------------------------------------
+QStringList nodeController::inheritedTags() const {
+	QStringList inh_tags;
+	if (parent) {
+		inh_tags = parent->inheritedTags();
+		if (parent->allowsTags()) {
+			inh_tags += parent->getTags();
+		}
+	}
+	return inh_tags;
+}
+
+//------------------------------------------------------------------------------
+
+QStringList nodeController::subtreeTags() const {
+	
+	if (childs.isEmpty())
+		return tags;
+	
+	QStringList subtree_tags = tags;
+	for (const auto& child : childs) {
+		if ( ! child->isDisabled() )  {
+			subtree_tags += child->subtreeTags();
+		}
+	}
+	return subtree_tags;
+}
+
+//------------------------------------------------------------------------------
+
+QStringList nodeController::getEffectiveTags() const
+{
+	QStringList effective_tags =  inheritedTags() + tags;
+	effective_tags.removeDuplicates();
+	return effective_tags;
 }
 
 //------------------------------------------------------------------------------
