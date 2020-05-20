@@ -1,7 +1,7 @@
 class Morpheus < Formula
   desc "Modelling environment for Multi-Cellular Systems Biology"
   homepage "https://morpheus.gitlab.io"
-  url "http://gitlab.com/morpheus/-/archive/v2.2.0b1/morpheus-v2.2.0b1.tar.gz"
+  url "https://gitlab.com/morpheus.lab/morpheus/-/archive/v2.2.0b1/morpheus-v2.2.0b1.tar.gz"
   head "https://gitlab.com/morpheus.lab/morpheus.git", :branch => "develop"
 
   depends_on "boost" => :build
