@@ -41,7 +41,7 @@ TEST (System, Solver_Heun) {
 	auto x_sys = x_ode_sys_1.deepCopy();
 	x_sys.addAttribute("solver","heun");
 // 	std::cout <<  x_sys.createXMLString() << endl;
-	auto sys = make_unique<System>(SystemType::CONTINUOUS_SYS);
+	auto sys = make_unique<System>(System::CONTINUOUS);
 	sys->loadFromXML(x_sys, scope);
 	sys->setTimeStep(ode_1_time/1000);
 	sys->init();
@@ -68,7 +68,7 @@ TEST (System, Solver_RK4) {
 	scope->registerSymbol(const_lambda);
 	auto x_sys = x_ode_sys_1.deepCopy();
 	x_sys.addAttribute("solver","fixed4");
-	auto sys = make_unique<System>(SystemType::CONTINUOUS_SYS);
+	auto sys = make_unique<System>(System::CONTINUOUS);
 // 	std::cout <<  x_sys.createXMLString() << endl;
 	sys->loadFromXML(x_sys, scope);
 	double time_step = ode_1_time/100;
@@ -98,7 +98,7 @@ TEST (System, Solver_RK45) {
 	x_sys.addAttribute("solver","adaptive45");
 	x_sys.addAttribute("solver-eps", to_cstr(rel_prec/10));
 // 	std::cout <<  x_sys.createXMLString() << endl;
-	auto sys = make_unique<System>(SystemType::CONTINUOUS_SYS);
+	auto sys = make_unique<System>(System::CONTINUOUS);
 	sys->loadFromXML(x_sys, scope);
 	sys->setTimeStep(ode_1_time);
 	sys->init();
@@ -126,7 +126,7 @@ TEST (System, Solver_RK23) {
 	x_sys.addAttribute("solver","adaptive23");
 	x_sys.addAttribute("solver-eps", to_cstr(rel_prec/10));
 // 	std::cout <<  x_sys.createXMLString() << endl;
-	auto sys = make_unique<System>(SystemType::CONTINUOUS_SYS);
+	auto sys = make_unique<System>(System::CONTINUOUS);
 	sys->loadFromXML(x_sys, scope);
 	sys->setTimeStep(ode_1_time);
 	sys->init();

@@ -1,32 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
-	<xs:group name="DiscreteSystemPlugins">
-		<xs:choice>
-		</xs:choice>
-	</xs:group>
-	
 	<xs:group name="SystemPlugins">
-		<xs:choice>
-			<xs:element name="DiffEqn" 				type="DiffEqn"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="DiffEqn" 				type="DiffEqn" 		minOccurs="0" 	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 
 	<xs:complexType name="DiffEqn">
-		
-		<xs:annotation>
-			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
-			<xs:appinfo>Math</xs:appinfo>
-		
-			<xs:documentation>Defines a differential equation to apply on a symbol at each time step.</xs:documentation>
-		</xs:annotation>
-		
-		<xs:all>
-			<xs:element name="Expression"	type="cpmMathExpression" />
-		</xs:all>
-		<xs:attribute name="name" 	type="cpmString"		use="optional" />
-		<xs:attribute name="symbol-ref"	type="cpmDoubleSymbolRef"		use="required" />
-		
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+					<xs:appinfo>Math</xs:appinfo>
+				
+					<xs:documentation>Defines a differential equation to apply on a symbol at each time step.</xs:documentation>
+				</xs:annotation>
+				
+				<xs:all>
+					<xs:element name="Expression"	type="cpmMathExpression" />
+				</xs:all>
+				<xs:attribute name="symbol-ref"	type="cpmDoubleSymbolRef"		use="required" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 </xs:schema>

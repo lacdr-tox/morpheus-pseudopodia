@@ -2,44 +2,46 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="PopulationInitPlugins">
-		<xs:choice>
-			<xs:element name="TIFFReader" 		type="TIFFReaderPop"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="TIFFReader" 		type="TIFFReaderPop" 	minOccurs="0" />
+		</xs:all>
 	</xs:group>
 	
 	<xs:group  name="FieldInitPlugins">
-		<xs:choice>
-			<xs:element name="TIFFReader" type="TIFFReaderField" />
-		</xs:choice>
-	</xs:group>
-	
-	<xs:group name="Field">
 		<xs:all>
-			<xs:element name="TIFFReader" type="TIFFReaderField" minOccurs="0"/>
+			<xs:element name="TIFFReader" type="TIFFReaderField"  	minOccurs="0" />
 		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="TIFFReaderPop">
-		<xs:annotation>
-			<xs:appinfo>Initialization</xs:appinfo>
-		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Initialization</xs:appinfo>
+				</xs:annotation>
 
-		<xs:attribute name="filename" use="required" type="cpmSystemFile" />
-		<xs:attribute name="offset" use="optional" type="cpmIntegerVector" default="0,0,0" />
-		<xs:attribute name="keep_ID" use="optional" type="cpmBoolean" default="false" />
-<!-- 		<xs:attribute name="scale_to_max" use="optional" type="cpmDouble" default="1.0" /> -->
+				<xs:attribute name="filename" use="required" type="cpmSystemFile" />
+				<xs:attribute name="offset" use="optional" type="cpmIntegerVector" default="0,0,0" />
+				<xs:attribute name="keep_ID" use="optional" type="cpmBoolean" default="false" />
+		<!-- 		<xs:attribute name="scale_to_max" use="optional" type="cpmDouble" default="1.0" /> -->
 		
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	
 	<xs:complexType name="TIFFReaderField">
-		<xs:annotation>
-			<xs:appinfo>Initialization</xs:appinfo>
-		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Initialization</xs:appinfo>
+				</xs:annotation>
 
-		<xs:attribute name="filename" use="required" type="cpmSystemFile" />
-<!-- 		<xs:attribute name="offset" use="optional" type="cpmIntegerVector" default="0,0,0" /> -->
-<!-- 		<xs:attribute name="keep_ID" use="optional" type="cpmBoolean" default="false" /> -->
-		<xs:attribute name="scale_to_max" use="optional" type="cpmDouble" default="1.0" />
+				<xs:attribute name="filename" use="required" type="cpmSystemFile" />
+		<!-- 		<xs:attribute name="offset" use="optional" type="cpmIntegerVector" default="0,0,0" /> -->
+		<!-- 		<xs:attribute name="keep_ID" use="optional" type="cpmBoolean" default="false" /> -->
+				<xs:attribute name="scale_to_max" use="optional" type="cpmDouble" default="1.0" />
+			</xs:extension>
+		</xs:complexContent>
 		
 	</xs:complexType>
 	

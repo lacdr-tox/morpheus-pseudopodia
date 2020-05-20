@@ -2,25 +2,29 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="CellDivision"	type="CellDivision"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="CellDivision"	type="CellDivision" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="CellDivision">
-		<xs:annotation>
-			<xs:appinfo>Population</xs:appinfo>
-		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Population</xs:appinfo>
+				</xs:annotation>
 
-		<xs:all>
-			<xs:element name="Condition" type="cpmMathExpression" use="required"/>
-			<xs:element name="Triggers" type="TriggeredSystem" />
-		</xs:all>
-		<xs:attribute name="division-plane" type="cpmDivisionMode" use="required"/>
-		<xs:attribute name="name" type="cpmString" use="optional" />
-		<xs:attribute name="write-log" type="cpmWriteLogMode" use="optional" default="none"/>
-		<xs:attribute name="daughterID" type="cpmString" use="optional"/>
-		<xs:attribute name="orientation" type="cpmVectorMathExpression" use="optional"/>
+				<xs:all>
+					<xs:element name="Condition" type="cpmMathExpression" />
+					<xs:element name="Triggers" type="TriggeredSystem" minOccurs="0" maxOccurs="unbounded" />
+				</xs:all>
+				
+				<xs:attribute name="division-plane" type="cpmDivisionMode" use="required"/>
+				<xs:attribute name="write-log" type="cpmWriteLogMode" use="optional" default="none"/>
+				<xs:attribute name="daughterID" type="cpmString" use="optional"/>
+				<xs:attribute name="orientation" type="cpmVectorMathExpression" use="optional"/>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	
 	<xs:simpleType name="cpmDivisionMode">

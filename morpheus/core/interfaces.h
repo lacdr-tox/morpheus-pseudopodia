@@ -28,8 +28,9 @@ class PDE_Layer;
 
 
 
-
+/*
 enum SystemType { DISCRETE_SYS, CONTINUOUS_SYS};
+enum SystemContext { ELEMENT_CONTEXT, SCOPE_CONTEXT};*/
 
 using namespace std;
 /**
@@ -172,6 +173,7 @@ class Plugin {
 		// All writable symbols are solely registered as output Symbols
 		set<SymbolDependency> output_symbols;
 		set<Symbol> direct_input_symbols;
+		set<string> xml_tags;
 		
 		
 	protected:
@@ -203,6 +205,9 @@ class Plugin {
 		
 		/// XML Tag the Plugin corresponds to. Gets overridden by the DECLARE_PLUGIN macro.
 		virtual string XMLName() const =0;
+		
+		/// Test if one of @p tags is set for the plugin
+		bool isTagged(const set< string >& tags) const;
 		
 		/// \brief Register a PluginParameter for automatic treatment
 		/// Loading from XML, initialisation and dependency tracking is done automatically

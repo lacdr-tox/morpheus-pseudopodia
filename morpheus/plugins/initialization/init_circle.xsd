@@ -2,23 +2,27 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="PopulationInitPlugins">
-		<xs:choice>
-			<xs:element name="InitCircle" 			type="InitCircle"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="InitCircle" 			type="InitCircle" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="InitCircle">
-		<xs:annotation>
-			<xs:appinfo>Initialization</xs:appinfo>
-		</xs:annotation>
-		<xs:all>
-				<xs:element name="Dimensions" 	type="cpmInitCircleDimension" minOccurs="1" />
-		</xs:all>
-        <xs:attribute name="number-of-cells" use="required" type="cpmMathExpression" default="100" />
-		<xs:attribute name="mode" use="required" type="cpmInitCircleMode" default="regular" />
-		<xs:attribute name="random_displacement" use="optional" type="cpmMathExpression" default="0.0" />
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Initialization</xs:appinfo>
+				</xs:annotation>
+				<xs:all>
+						<xs:element name="Dimensions" 	type="cpmInitCircleDimension" minOccurs="1" />
+				</xs:all>
+				<xs:attribute name="number-of-cells" use="required" type="cpmMathExpression" default="100" />
+				<xs:attribute name="mode" use="required" type="cpmInitCircleMode" default="regular" />
+				<xs:attribute name="random_displacement" use="optional" type="cpmMathExpression" default="0.0" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
-		
+	
 	<xs:complexType name="cpmInitCircleDimension">	
 		<xs:attribute name="radius" type="cpmMathExpression" use="required" default="10.0" />
 		<xs:attribute name="center" type="cpmVectorMathExpression" use="required" default="0.0, 0.0, 0.0"/>

@@ -158,89 +158,6 @@ Additional functions can be defined using \ref ML_Function.
 
 **/
 
-/**
-\defgroup ML_Constant Constant
-\ingroup ML_Global
-\ingroup ML_CellType
-\ingroup ML_Contact
-\ingroup ML_System
-\ingroup ML_Event
-\ingroup ML_Analysis
-\ingroup Symbols
-
-Symbol with a fixed scalar value given by a \ref MathExpressions.
-**/
-/**
-\defgroup ML_ConstantVector ConstantVector
-\ingroup ML_Global
-\ingroup ML_CellType
-\ingroup ML_System
-\ingroup ML_Event
-\ingroup ML_Analysis
-\ingroup Symbols
-
-Symbol with a fixed 3D vector value, given by a \ref MathExpressions.
-
-Syntax is comma-separated: x,y,z  
-or in the \b spherical / radial case: φ,θ,r
-**/
-/**
-\defgroup ML_Variable Variable
-\ingroup ML_Global
-\ingroup ML_CellType
-\ingroup Symbols
-
-Symbol with a variable scalar value. The initial value is given by a \ref MathExpressions.
-**/
-/**
-\defgroup ML_VariableVector VariableVector
-\ingroup ML_Global
-\ingroup ML_CellType
-\ingroup Symbols
-
-Symbol with a variable 3D vector value. The initial value is given by a \ref MathExpressions.
-
-Syntax is comma-separated: x,y,z
-or in the \b spherical / radial case: φ,θ,r
-**/
-
-/**
-\defgroup ML_DelayVariable DelayVariable
-\ingroup ML_Global
-\ingroup Symbols
-
-Symbol with a scalar value and a \b delay time until an assigned value becomes current. The initial value and history are given by a \ref MathExpressions.
-**/
-
-/**
-\defgroup ML_Property Property
-\ingroup ML_CellType
-\ingroup Symbols
-
-
-Symbol with a cell-bound, variable scalar value. The initial value is given by a \ref MathExpressions and may contain stochasticity to create diversity.
-**/
-
-/**
-\defgroup ML_DelayProperty DelayProperty
-\ingroup ML_CellType
-\ingroup Symbols
-
-
-Symbol with a cell-bound scalar value and a \b delay time until an assigned value becomes current. The initial value and history are given by a \ref MathExpressions.
-**/
-
-/**
-\defgroup  ML_PropertyVector PropertyVector
-\ingroup ML_CellType
-\ingroup Symbols
-
-Symbol with cell-bound, variable 3D vector data. The initial data and history are given by a \ref MathExpressions.
-
-Syntax is comma-separated: x,y,z
-or in the \b spherical / radial case: φ,θ,r
-**/
-
 
 /**
 \defgroup ML_DiffEqn DiffEqn
@@ -282,7 +199,11 @@ Environment for tightly coupled \ref ML_Rule and \ref ML_DiffEqn. Expressions wi
 - \b time-step:
   - \b Fixed schemes: integration step size, given in system time.
   - \b Adaptive schemes: Coupling interval given in system time, i.e. maximum step size without coupling to other processes.
+<<<<<<< HEAD
 - \b time-scaling (optional): scales the dynamics of \b ML_System to the system time. Equivalent to multiplying all \b ML_DiffEqn in the \b ML_System with a scalar.
+=======
+- \b time-scaling (optional): scales the dynamics of \b ML_System relative to the simulation time. The time thus runs within the system is prefactored by the time-scaling.
+>>>>>>> some initial thoughts
 
 Note: Systems define their own \ref Scope. This implies that values of symbols defined within a System are not accessible outside of the System. Multiple Systems can be defined within the same parental Scope, easing modular model development.
 

@@ -2,60 +2,64 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 
 	<xs:complexType name="Lattice">
-		<xs:annotation>
-			<xs:documentation>Specifies the lattice by size, structure and boundary conditions.</xs:documentation>
-		</xs:annotation>	
-		<xs:all>
-			<xs:element name="Size" >
-				<xs:complexType>
-					<xs:attribute name="value" use="required" type="cpmVectorMathExpression"/>
-					<xs:attribute name="symbol" use="required" type="cpmVectorSymbolDef" default="size"/>
-				</xs:complexType>
-			</xs:element>
-			<xs:element name="NodeLength" type="cpmLength" minOccurs="0">
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
 				<xs:annotation>
-					<xs:documentation>Length of a lattice node.</xs:documentation>
-				</xs:annotation>
-			</xs:element>
-			<xs:element name="BoundaryConditions" type="cpmLatticeBoundaryConditions" minOccurs="0">
-			</xs:element>
-			<xs:element name="Domain" type="cpmDomain" minOccurs="0">
-				<xs:annotation>
-					<xs:documentation>Specify a custom non-rectangular lattice domain using a predefined structure (cirle) or TIFF image.
-					</xs:documentation>
-				</xs:annotation>
-			</xs:element>
-			<xs:element name="Neighborhood" type="cpmNeighborhood"/>
-		</xs:all>
-		<xs:attribute name="class" use="required" type="cpmLatticeStructure">
-			<xs:annotation>
-				<xs:documentation>Lattice structure.
-					
-					For non-spatial (ODE) models:
-					
-					1D: linear
-					2D: square or hexagonal
-					3D: cubic
-					
-					Note: 
-					- For non-spatial (ODE) models, choose 'linear' with size: 1 0 0.
-				</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
+					<xs:documentation>Specifies the lattice by size, structure and boundary conditions.</xs:documentation>
+				</xs:annotation>	
+				<xs:all>
+					<xs:element name="Size" >
+						<xs:complexType>
+							<xs:attribute name="value" use="required" type="cpmVectorMathExpression"/>
+							<xs:attribute name="symbol" use="required" type="cpmVectorSymbolDef" default="size"/>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="NodeLength" type="cpmLength" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Length of a lattice node.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="BoundaryConditions" type="cpmLatticeBoundaryConditions" minOccurs="0">
+					</xs:element>
+					<xs:element name="Domain" type="cpmDomain" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Specify a custom non-rectangular lattice domain using a predefined structure (cirle) or TIFF image.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Neighborhood" type="cpmNeighborhood"/>
+				</xs:all>
+				<xs:attribute name="class" use="required" type="cpmLatticeStructure">
+					<xs:annotation>
+						<xs:documentation>Lattice structure.
+							
+							For non-spatial (ODE) models:
+							
+							1D: linear
+							2D: square or hexagonal
+							3D: cubic
+							
+							Note: 
+							- For non-spatial (ODE) models, choose 'linear' with size: 1 0 0.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	
 	<xs:complexType name="cpmLatticeBoundaryConditions">
-		<xs:choice maxOccurs="unbounded">
-			<xs:element name="Condition">
+		<xs:all>
+			<xs:element name="Condition" maxOccurs="unbounded">
 				<xs:complexType>
 					<xs:attribute name="type" use="required" type="cpmBoundaryTypes"/>
 					<xs:attribute name="boundary" use="required" type="cpmBoundary"/>
 <!-- 					<xs:attribute name="value" use="optional" type="cpmDouble" /> -->
 				</xs:complexType>
 			</xs:element>
-		</xs:choice>	
-
+		</xs:all>	
 	</xs:complexType>
+	
 	<xs:complexType name="cpmDomain">
 		<xs:choice maxOccurs="1">
 			<xs:element name="Circle">
@@ -99,6 +103,7 @@
 			<xs:enumeration value="noflux"/>
 		</xs:restriction>
 	</xs:simpleType>
+	
 	<xs:simpleType name="cpmDomainBoundaryTypes">
 		<xs:annotation>
 			<xs:documentation>Domain Boundary conditions.

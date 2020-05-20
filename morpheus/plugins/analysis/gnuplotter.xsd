@@ -2,56 +2,27 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="AnalysisPlugins">
-        <xs:choice>
-			<xs:element name="Gnuplotter" 			type="Gnuplotter"/>
-		</xs:choice>
+        <xs:all>
+			<xs:element name="Gnuplotter" 			type="Gnuplotter"	minOccurs="0"	maxOccurs="unbounded" />
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="Gnuplotter">
-		<xs:annotation>
-			<xs:appinfo>Visualization</xs:appinfo>
-			<xs:documentation>Gnuplotter is a versatile interface for 2D visualization of cells, properties and reaction-diffusion fields.
-
-Supports multiple output terminals for on-screen (wxt, aqua, x11) as well as file-based (png, pdf, etc.) graphics.
-
-Note: this plugin requires stand-alone installation of Gnuplot 4.4+. When not found on in PATH environment variable, the gnuplot executable can be specified in Settings/Local.
-			</xs:documentation>
-		</xs:annotation>
-	
-		<xs:all maxOccurs="unbounded">
-			<xs:element name="Terminal" 	type="cpmGnuplotTerminal" 	/>
-			<xs:element name="Plot"			type="morphGnuplotPlot"	 maxOccurs="unbounded" />
-<!-- 			<xs:element name="Membrane" 	type="cpmMembraneRef" 		minOccurs="0" /> -->
-		</xs:all>
-
-		<xs:attribute name="time-step" use="optional" type="cpmMathExpression" default="1">
-			<xs:annotation>
-				<xs:documentation>Time interval of plots.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-<!--		<xs:attribute name="endstate" use="optional" type="cpmBoolean">
-			<xs:annotation>
-				<xs:documentation>
-					Only execute analysis plugin at the end of the simulation.
-					
-					Note: This overrides the specified 'interval'.
-				</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>-->
-		<xs:attribute name="log-commands"   use="optional" type="cpmBoolean" default="false" >
-			<xs:annotation>
-				<xs:documentation> Save commands and data of each plot to disk.
-				</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="file-numbering"   use="optional" type="cpmFileNumbering" default="time" />
-		<xs:attribute name="decorate" 		type="cpmBoolean" 		use="optional" default="true" />
-<!-- 		<xs:attribute name="interpolation" type="cpmBoolean" use="optional" default="true"> -->
-<!-- 			<xs:annotation> -->
-<!-- 				<xs:documentation>Interpolation using pm3d.</xs:documentation> -->
-<!-- 			</xs:annotation> -->
-<!-- 		</xs:attribute> -->
-
+		<xs:complexContent>
+			<xs:extension base="morphAnalysisPlugin">
+				<xs:annotation>
+					<xs:appinfo>Visualization</xs:appinfo>
+				</xs:annotation>
+			
+				<xs:all maxOccurs="unbounded">
+					<xs:element name="Terminal" 	type="cpmGnuplotTerminal" 	/>
+					<xs:element name="Plot"			type="morphGnuplotPlot"	 maxOccurs="unbounded" />
+				</xs:all>
+				<xs:attribute name="log-commands"   use="optional" type="cpmBoolean" default="false" />
+				<xs:attribute name="file-numbering"   use="optional" type="cpmFileNumbering" default="time" />
+				<xs:attribute name="decorate" 		type="cpmBoolean" 		use="optional" default="true" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	
 	<xs:complexType name="morphGnuplotPlot">
@@ -59,7 +30,7 @@ Note: this plugin requires stand-alone installation of Gnuplot 4.4+. When not fo
 			<xs:documentation>
 			</xs:documentation>
 		</xs:annotation>
-		<xs:all maxOccurs="1">
+		<xs:all >
 			<xs:element name="Cells" 		type="cpmCellPlotRef"		minOccurs="0"  maxOccurs="1"/>
 			<xs:element name="CellLabels" 		type="cpmLabelPlotRef"		minOccurs="0"  maxOccurs="1"/>
 			<xs:element name="CellArrows" 		type="cpmArrowPlotRef"		minOccurs="0"  maxOccurs="1"/>
@@ -79,8 +50,8 @@ Note: this plugin requires stand-alone installation of Gnuplot 4.4+. When not fo
 		</xs:annotation>
 		
 		
-		<xs:all minOccurs="0" maxOccurs="1">
-			<xs:element name="ColorMap" type="cpmColorMap"/>
+		<xs:all>
+			<xs:element name="ColorMap" type="cpmColorMap" minOccurs="0"/>
 		</xs:all>
 		<xs:attribute name="value" type="cpmDoubleSymbolRef" use="optional" >
 			<xs:annotation>

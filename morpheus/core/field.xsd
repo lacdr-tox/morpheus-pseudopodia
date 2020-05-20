@@ -2,31 +2,34 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 
 	<xs:group name="GlobalPlugins">
-		<xs:choice>
-			<xs:element name="Field" type="Field" />
-			<xs:element name="VectorField" type="cpmVectorField" />
-		</xs:choice>
+		<xs:all>
+			<xs:element name="Field" type="Field"  						minOccurs="0" 	maxOccurs="unbounded"/>
+			<xs:element name="VectorField" type="cpmVectorField"  		minOccurs="0" 	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="Field">
-		<xs:annotation>
-			<xs:appinfo>Container</xs:appinfo>
-		</xs:annotation>
-		<xs:all>
-			<xs:element name="Diffusion" type="cpmDiffusion"  minOccurs="0" />
-<!-- 			<xs:element name="BoundaryConditions"  type="cpmPDEBoundaryConditions" minOccurs="0" /> -->
-			<xs:element name="BoundaryValue" type="cpmPDEBoundaryValue" minOccurs="0" maxOccurs="unbounded" />
-			<xs:element name="Reduction" type="cpmBoundary" minOccurs="0" />
-<!-- 			<xs:element name="Initial" minOccurs="0">
-				<xs:group  ref="FieldInitPlugins" />
-			</xs:element>-->
-			<xs:element name="Data" type="cpmFieldData" minOccurs="0" />
- 			<xs:element name="TIFFReader" type="TIFFReaderField" minOccurs="0" />
-			
-		</xs:all>
-		<xs:attribute name="name" 	type="cpmString" 	use="optional" />
-		<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required" />
-		<xs:attribute name="value"	type="cpmMathExpression" use="required" />
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Container</xs:appinfo>
+				</xs:annotation>
+				<xs:all>
+					<xs:element name="Diffusion" type="cpmDiffusion"  minOccurs="0" />
+		<!-- 			<xs:element name="BoundaryConditions"  type="cpmPDEBoundaryConditions" minOccurs="0" /> -->
+					<xs:element name="BoundaryValue" type="cpmPDEBoundaryValue" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="Reduction" type="cpmBoundary" minOccurs="0" />
+		<!-- 			<xs:element name="Initial" minOccurs="0">
+						<xs:group  ref="FieldInitPlugins" />
+					</xs:element>-->
+					<xs:element name="Data" type="cpmFieldData" minOccurs="0" />
+					<xs:element name="TIFFReader" type="TIFFReaderField" minOccurs="0" />
+					
+				</xs:all>
+				<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required" />
+				<xs:attribute name="value"	type="cpmMathExpression" use="required" />
+					</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	
 	<xs:group  name="FieldInitPlugins">
@@ -60,14 +63,14 @@
     </xs:simpleType>
 
 	<xs:complexType name="cpmPDEBoundaryConditions">
-		<xs:choice maxOccurs="unbounded">
-			<xs:element name="Condition">
+		<xs:all>
+			<xs:element name="Condition"		maxOccurs="unbounded">
 				<xs:complexType>
-					<xs:attribute name="boundary" use="required" type="cpmBoundaryRef"/>
+					<xs:attribute name="boundary" use="required" type="cpmBoundaryRef" />
 					<xs:attribute name="value" use="required" type="cpmDouble" />
 				</xs:complexType>
 			</xs:element>
-		</xs:choice>
+		</xs:all>
 	</xs:complexType>
 	
 	<xs:complexType name="cpmPDEBoundaryValue">
@@ -96,21 +99,24 @@
 	</xs:simpleType>
 	
 	<xs:complexType name="cpmVectorField">
-		<xs:annotation>
-			<xs:appinfo>Container</xs:appinfo>
-		</xs:annotation>
-		<xs:all>
-			<xs:element name="BoundaryValue" type="cpmVectorBoundaryValue" minOccurs="0" maxOccurs="unbounded" />
-			<xs:element name="Reduction" type="cpmBoundary" minOccurs="0" />
-<!-- 			<xs:element name="Initial" minOccurs="0">
-				<xs:group  ref="FieldInitPlugins" />
-			</xs:element>-->
-			<xs:element name="Data" type="cpmFieldData" minOccurs="0" />
-			
-		</xs:all>
-		<xs:attribute name="name" 	type="cpmString" 	use="optional" />
-		<xs:attribute name="symbol" type="cpmVectorSymbolDef" use="required" />
-		<xs:attribute name="value"	type="cpmVectorMathExpression" use="required" />
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Container</xs:appinfo>
+				</xs:annotation>
+				<xs:all>
+					<xs:element name="BoundaryValue" type="cpmVectorBoundaryValue" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="Reduction" type="cpmBoundary" minOccurs="0" />
+		<!-- 			<xs:element name="Initial" minOccurs="0">
+						<xs:group  ref="FieldInitPlugins" />
+					</xs:element>-->
+					<xs:element name="Data" type="cpmFieldData" minOccurs="0" />
+					
+				</xs:all>
+				<xs:attribute name="symbol" type="cpmVectorSymbolDef" use="required" />
+				<xs:attribute name="value"	type="cpmVectorMathExpression" use="required" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	
 	<xs:complexType name="cpmVectorBoundaryValue">

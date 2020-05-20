@@ -2,19 +2,22 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="FreezeMotion"	type="FreezeMotion"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="FreezeMotion"	type="FreezeMotion" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
-	<xs:complexType name="FreezeMotion">		
-		<xs:annotation>
-			<xs:appinfo>Motility</xs:appinfo>
-		</xs:annotation>
-		<xs:all>
-			<xs:element name="Condition" type="cpmMathExpression" />
-		</xs:all>
-		<xs:attribute name="name" type="cpmString" use="optional"/>
+	<xs:complexType name="FreezeMotion">
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Motility</xs:appinfo>
+				</xs:annotation>
+				<xs:all>
+					<xs:element name="Condition" type="cpmMathExpression" />
+				</xs:all>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 </xs:schema>

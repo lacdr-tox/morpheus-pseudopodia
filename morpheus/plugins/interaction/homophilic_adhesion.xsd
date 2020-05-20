@@ -2,18 +2,22 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="ContactPlugins">
-		<xs:choice>
-			<xs:element name="HomophilicAdhesion" type="HomophilicAdhesion"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="HomophilicAdhesion" type="HomophilicAdhesion" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="HomophilicAdhesion">
-		<xs:annotation>
-			<xs:appinfo>Interaction</xs:appinfo>
-		</xs:annotation>
-		<xs:attribute name="adhesive" type="cpmMathExpression" use="required"/>
-		<xs:attribute name="strength" type="cpmMathExpression" use="required"/> 
-		<xs:attribute name="equilibriumConstant" type="cpmMathExpression" use="optional"/>
-		<xs:attribute name="name" type="cpmString" use="optional"/> 
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Interaction</xs:appinfo>
+				</xs:annotation>
+				<xs:attribute name="adhesive" type="cpmMathExpression" use="required"/>
+				<xs:attribute name="strength" type="cpmMathExpression" use="required"/> 
+				<xs:attribute name="equilibriumConstant" type="cpmMathExpression" use="optional"/>
+				<xs:attribute name="name" type="cpmString" use="optional"/> 
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 </xs:schema>

@@ -8,15 +8,15 @@ class CheckBoxList: public QComboBox
     Q_OBJECT
 
 public:
-    CheckBoxList(QWidget *widget = nullptr);
-    virtual ~CheckBoxList() override;
-    bool eventFilter(QObject *object, QEvent *event) override;
-    virtual void paintEvent(QPaintEvent *) override;
-    void setData(QStringList data);
-    void hidePopup() override;
+	CheckBoxList(QWidget *widget = nullptr);
+	~CheckBoxList() override;
+	bool eventFilter(QObject *object, QEvent *event) override;
+	void paintEvent(QPaintEvent *) override;
+	void setData(QStringList data);
+	void hidePopup() override;
 	void updateText();
-    QString	currentText() const;
-    QVariant currentData(int role = Qt::UserRole) const;
+	QString currentText() const;
+	QVariant currentData(int role = Qt::UserRole) const;
 signals:
 	void currentTextChanged(QStringList newList); 
 private: 
@@ -27,13 +27,14 @@ private:
 class CheckBoxListDelegate : public QAbstractItemDelegate
 {
 public:
-    CheckBoxListDelegate(QObject* parent): QAbstractItemDelegate(parent){}
-    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-    QSize sizeHint(const QStyleOptionViewItem & option, const QModelIndex &index) const override;
-    QWidget *createEditor(QWidget *parent,const QStyleOptionViewItem & option ,const QModelIndex & index ) const override;
-    void setEditorData(QWidget *editor, const QModelIndex &index) const override;
-    void setModelData(QWidget *editor, QAbstractItemModel *model,const QModelIndex &index) const override;
-    void updateEditorGeometry(QWidget *editor,const QStyleOptionViewItem &option, const QModelIndex &index ) const override;
+	CheckBoxListDelegate(QObject* parent);
+	void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+	QSize sizeHint(const QStyleOptionViewItem & option, const QModelIndex &index) const override;
+	bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index) override;
+	QWidget *createEditor(QWidget *parent,const QStyleOptionViewItem & option ,const QModelIndex & index ) const override;
+	void setEditorData(QWidget *editor, const QModelIndex &index) const override;
+	void setModelData(QWidget *editor, QAbstractItemModel *model,const QModelIndex &index) const override;
+	void updateEditorGeometry(QWidget *editor,const QStyleOptionViewItem &option, const QModelIndex &index ) const override;
 };
 
 #endif // DROPDOWNMULTISELECT_H

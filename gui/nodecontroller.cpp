@@ -25,7 +25,7 @@ QObject(parent)
 				// This is an xml root element, and we create a descriptor,
 		// and an XSD, and derive the node type from the XSD's root element ...
 		try {
-			model_descr = QSharedPointer<ModelDescriptor>( new ModelDescriptor);
+			model_descr = QSharedPointer<ModelDescriptor>::create();
 			model_descr->change_count =0;
 			model_descr->edits =0;
 			model_descr->track_next_change = false;
@@ -181,7 +181,7 @@ QObject(parent)
 		model_descr->time_symbol = attribute("symbol");
 	}
 	if ( name=="Lattice" ) {
-		if (attributes.contains("class") && firstActiveChild("Size")->attributes.contains("value")) {
+		if (attributes.contains("class") && firstActiveChild("Size") && firstActiveChild("Size")->attributes.contains("value")) {
 			QObject* adapter = new LatticeStructureAdapter(this, attributes["class"], firstActiveChild("Size")->attributes["value"]);
 			adapters.append(adapter);
 		}
@@ -191,6 +191,20 @@ QObject(parent)
 	if ( name=="TimeSymbol" ) {
 // 		if (attribute("symbol"))
 			model_descr->time_symbol = attribute("symbol");
+	}
+	if (attributes.contains("tags")) {
+		auto root = this;
+		while (root->parent) root = root->parent;
+		
+		auto updater = 
+			[this, root](AbstractAttribute* a) {
+				if (a->isActive()) {
+					this->tags = a->get().remove(QRegExp("\\s")).split(",", QString::SkipEmptyParts);
+					emit root->dataChanged(this);
+				}
+			};
+		connect(attributes["tags"], &AbstractAttribute::changed, updater);
+		updater(attributes["tags"]);
 	}
 	
 	if ( node_type->is_scheduled )
@@ -278,32 +292,32 @@ QList<QString> nodeController::getAddableChilds(bool unfiltered)
 		for (const auto& child : node_type->child_info.children )
 			addableChilds.push_back(child.name);
 	}
-	else if (node_type->child_info.is_choice) {
-		if (node_type->child_info.max_occurs == "unbounded" || activeChilds().size() < node_type->child_info.max_occurs.toInt() ) {
-			for (const auto& child : node_type->child_info.children )
-				addableChilds.push_back(child.name);
-		}
-	}
 	else {
 		QMap<QString, int> child_count;
-		for(int h = 0; h < this->childs.size(); h++)
-		{
-			if (! childs[h]->isDisabled())
-				child_count[childs[h]->name] ++ ;
+		for ( auto child : this->childs) {
+			if (! child->isDisabled()) child_count[child->name] ++ ;
 		}
-		for (const auto& child : node_type->child_info.children )
-		{
-			if (child.max_occurs == "unbounded" || node_type->child_info.max_occurs == "unbounded") {
-				addableChilds.push_back(child.name);
-			}
-			else {
-				int count;
-				int max = child.max_occurs.toInt() * node_type->child_info.max_occurs.toInt();
-				QMap<QString, int>::const_iterator r = child_count.find(child.name);
-				count = ( r != child_count.end() ) ? r.value() : 0;
-				
-				if (count < max) {
+		if (node_type->child_info.is_choice) { // xs::choice
+			if (node_type->child_info.max_occurs == "unbounded" || activeChilds().size() < node_type->child_info.max_occurs.toInt() ) {
+				for (const auto& child : node_type->child_info.children )
 					addableChilds.push_back(child.name);
+			}
+		}
+		else { // xs:all
+			for (const auto& child : node_type->child_info.children )
+			{
+				if (child.max_occurs == "unbounded" || node_type->child_info.max_occurs == "unbounded") {
+					addableChilds.push_back(child.name);
+				}
+				else {
+					int count;
+					int max = child.max_occurs.toInt() * node_type->child_info.max_occurs.toInt();
+					QMap<QString, int>::const_iterator r = child_count.find(child.name);
+					count = ( r != child_count.end() ) ? r.value() : 0;
+					
+					if (count < max) {
+						addableChilds.push_back(child.name);
+					}
 				}
 			}
 		}
@@ -616,6 +630,43 @@ bool nodeController::isDeletable()
 bool nodeController::hasText()
 {
     return text;
+}
+
+//------------------------------------------------------------------------------
+QStringList nodeController::inheritedTags() const {
+	QStringList inh_tags;
+	if (parent) {
+		inh_tags = parent->inheritedTags();
+		if (parent->allowsTags()) {
+			inh_tags += parent->getTags();
+		}
+	}
+	return inh_tags;
+}
+
+//------------------------------------------------------------------------------
+
+QStringList nodeController::subtreeTags() const {
+	
+	if (childs.isEmpty())
+		return tags;
+	
+	QStringList subtree_tags = tags;
+	for (const auto& child : childs) {
+		if ( ! child->isDisabled() )  {
+			subtree_tags += child->subtreeTags();
+		}
+	}
+	return subtree_tags;
+}
+
+//------------------------------------------------------------------------------
+
+QStringList nodeController::getEffectiveTags() const
+{
+	QStringList effective_tags =  inheritedTags() + tags;
+	effective_tags.removeDuplicates();
+	return effective_tags;
 }
 
 //------------------------------------------------------------------------------

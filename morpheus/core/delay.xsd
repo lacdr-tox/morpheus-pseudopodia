@@ -2,30 +2,28 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="GlobalPlugins">
-		<xs:choice>
-			<xs:element name="DelayVariable" 		type="DelayProperty"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="DelayVariable" 		type="DelayProperty"	minOccurs="0" 	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="DelayProperty" 		type="DelayProperty"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="DelayProperty" 		type="DelayProperty"	minOccurs="0" 	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 
 	<xs:complexType name="DelayProperty">
-		<xs:annotation>
-			<xs:appinfo>Container</xs:appinfo>
-			<xs:documentation>Numeric delay-property for each cell that can be referenced via a symbol.
-
-				At time t, the container provides numerical values that have been written at t-delay.
-				The specified value serves as the initial (or default) value.
-			</xs:documentation>
-		</xs:annotation>
-			<xs:attribute name="name" type="cpmString" use="optional" />
-			<xs:attribute name="delay" type="cpmMathExpression" use="required" default="1" />
-			<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required" />
-			<xs:attribute name="value" type="cpmMathExpression" use="required" />
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Container</xs:appinfo>
+				</xs:annotation>
+				<xs:attribute name="delay" type="cpmMathExpression" use="required" default="1" />
+				<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required" />
+				<xs:attribute name="value" type="cpmMathExpression" use="required" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 	<xs:complexType name="DelayPropertyData">

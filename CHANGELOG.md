@@ -4,6 +4,7 @@
 
 ### GUI
   * Introduced Interactive Model Graph
+  * Support Tagging, Filtering and Sorting of Model Components
   * Switched to Qt5
   * Support reading and writing (gz) compressed models
 
@@ -14,6 +15,11 @@
   * Added Populations InitVectorProperty
   * Lattice size now can also be specified through expressions
   * Contact energies now support expressions with access to symbols of involved cells
+  * Rework of XSD specifcation
+    * XSD parser supports extension of complexTypes
+    * Plugins are extension of base types
+    * Registration of plugins as members of <xs:all> groups
+  * Added **tags** and **Annotation** nodes to all plugins
 
 ### Simulator
   * Support reading (gz) compressed models

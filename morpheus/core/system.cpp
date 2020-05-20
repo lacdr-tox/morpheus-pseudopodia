@@ -26,7 +26,7 @@ void SystemFunc<VDOUBLE>::initFunction() {}
 
 const string SystemSolver::noise_scaling_symbol = "_noise_scaling";
 
-System::System(SystemType type) : system_type(type) {}
+System::System(SystemType type, SystemContext context_req) : context_requirement(context_req), system_type(type) {}
 
 
 void System::loadFromXML(const XMLNode node, Scope* scope)
@@ -39,7 +39,7 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 	}
 
 // 	addLocalSymbol(SystemSolver::noise_scaling_symbol, 1 );
-	if (system_type == CONTINUOUS_SYS) {
+	if (system_type == CONTINUOUS) {
 		PluginParameter<SystemSolver::Method, XMLNamedValueReader, DefaultValPolicy> method;
 		method.setXMLPath("solver");
 		map<string,SystemSolver::Method> solver_map;
@@ -1393,7 +1393,7 @@ void DiscreteSystem::init(const Scope* scope)
 	registerOutputSymbols(System::getOutputSymbols());
 }
 
-EventSystem::EventSystem() : System(DISCRETE_SYS), InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_OPTIONAL ) {
+EventSystem::EventSystem() : System(DISCRETE), InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_OPTIONAL ) {
 	delay.setDefault("0");
 	delay.setXMLPath("delay");
 	registerPluginParameter(delay);

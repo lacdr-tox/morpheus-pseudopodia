@@ -62,6 +62,12 @@ try : QAbstractItemModel(parent),  xml_file(xmlFile)
     //XML in datenstruktur einlesen (nodeController)
     rootNodeContr = new nodeController(xml_file.xmlDocument.documentElement());
 	rootNodeContr->setParent(this);
+	connect(rootNodeContr, &nodeController::dataChanged, [this](nodeController* node) {
+		if (!node) return;
+		auto idx = itemToIndex(node);
+		idx.siblingAtColumn(2);
+		emit dataChanged(idx, idx.siblingAtColumn(2), QVector<int>() << Qt::DisplayRole << MorphModel::TagsRole);
+	});
 
     ModelDescriptor& desc = const_cast<ModelDescriptor&>(rootNodeContr->getModelDescr());
     for (int i=0; i<edits.size();i++) {
@@ -722,7 +728,7 @@ Qt::ItemFlags MorphModel::flags( const QModelIndex & index ) const {
 			return Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled |  Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 	}
 	else
-		return Qt::ItemIsDropEnabled | Qt::ItemIsEnabled ;
+		return Qt::NoItemFlags; // TODO Qt::ItemIsDropEnabled | Qt::ItemIsEnabled ;
 }
 
 //------------------------------------------------------------------------------
@@ -876,7 +882,24 @@ QVariant MorphModel::data(const QModelIndex &index, int role) const {
 			return QThemedIcon("media-seek-forward",QApplication::style()->standardIcon(QStyle::SP_MediaSeekForward));
 		}
 	}
-
+	else if (role == NodeRole) {
+		return QVariant::fromValue(indexToItem(index));
+	}
+	else if (role == XPathRole) {
+		auto node = indexToItem(index);
+		return node ? QVariant(node->getXPath()) : QVariant(QStringList());
+	}
+	else if (role == XPathRole) {
+		auto node = indexToItem(index);
+		return node ? QVariant(node->getXPath()) : QVariant(QStringList());
+	}
+	else if (role == TagsRole) {
+		auto node = indexToItem(index);
+		if (node->allowsTags())
+			return QVariant(node->getEffectiveTags());
+		else 
+			return QVariant(QStringList("*"));
+	}
 	return QVariant();
 }
 
@@ -896,10 +919,11 @@ QVariant MorphModel::headerData( int section, Qt::Orientation orientation, int r
 
 nodeController* MorphModel::indexToItem(const QModelIndex& idx) const {
     if (idx.isValid()) {
+		if (idx.model() != this) return nullptr;
         return static_cast< nodeController* >(idx.internalPointer());
     }
     else {
-		return NULL;
+		return rootNodeContr; //TODO nullptr;
     }
 }
 
@@ -911,7 +935,8 @@ QModelIndex MorphModel::itemToIndex(nodeController* node) const {
 		return QModelIndex();
 	}
     if (node == rootNodeContr)
-        return createIndex(0,0,(void*)node);
+		return QModelIndex();
+//      TODO    return createIndex(0,0,(void*)node);
     else {
         Q_ASSERT(node->parent);
         int pos = node->parent->childIndex(node);
@@ -981,9 +1006,10 @@ QModelIndex MorphModel::insertNode(const QModelIndex &parent, QDomNode child, in
 
 //------------------------------------------------------------------------------
 
-QModelIndex MorphModel::insertNode(const QModelIndex &parent, QString child, int pos) {
-//    qDebug() << "MorphModel::insertNode at " << parent;
+QModelIndex MorphModel::insertNode(const QModelIndex &parent, QString child, int pos)
+{
 	nodeController* contr = indexToItem(parent);
+// 	if (!contr) { qDebug() << "MorphModel::insertNode received invalid index " << parent; return QModelIndex(); }
 	QModelIndex result;
 	try {
 	
@@ -1198,7 +1224,7 @@ bool MorphModel::activatePart(int idx) {
 		return false;
 	auto& part = parts[idx];
 	if (!part.enabled) {
-		part.element_index = insertNode(itemToIndex(rootNodeContr),part.label);
+		part.element_index = insertNode(QModelIndex(),part.label); //  TODO itemToIndex(rootNodeContr)
 		if (!part.element_index.isValid())
 			return false;
 		part.element = indexToItem(part.element_index);

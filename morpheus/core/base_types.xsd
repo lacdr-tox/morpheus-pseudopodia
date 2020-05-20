@@ -97,6 +97,10 @@
 	<xs:simpleType name="cpmText">
 		<xs:restriction base="xs:string"/>
 	</xs:simpleType>
+	
+	<xs:simpleType name="morphText">
+		<xs:restriction base="xs:string"/>
+	</xs:simpleType>
 
 
 	<xs:simpleType name="cpmUnsignedInteger">

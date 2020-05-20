@@ -8,60 +8,63 @@
 	</xs:group>
 	
 	<xs:complexType name="Vesicles">
-		<xs:annotation>
-			<xs:appinfo>Miscellaneous</xs:appinfo>
-		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Miscellaneous</xs:appinfo>
+				</xs:annotation>
 
-		<xs:all>
-			
-			<xs:element name="Internalization" minOccurs="1" maxOccurs="1">
-				<xs:annotation>	
-					<xs:documentation>Defines the influx rate and typical size (gamma distr...) blablabla</xs:documentation>
-				</xs:annotation>
-				<xs:complexType>
-					<xs:attribute name="influx" type="cpmUnsignedDouble" use="required"/>
-					<xs:attribute name="typicalSize" type="cpmUnsignedDouble" use="required"/>
-				</xs:complexType>
-			</xs:element> 
-			
-			<xs:element name="Fusion" minOccurs="1" maxOccurs="1">
-				<xs:annotation>
-					<xs:documentation>Fusion</xs:documentation>
-				</xs:annotation>
-				<xs:complexType>
-					<xs:attribute name="rate" type="cpmUnsignedDouble" use="required"/>
-				</xs:complexType>
-			</xs:element> 
-			
-			<xs:element name="Fission" minOccurs="1" maxOccurs="1">
-				<xs:annotation>
-					<xs:documentation>Fission</xs:documentation>
-				</xs:annotation>
-				<xs:complexType>
-					<xs:attribute name="rate" type="cpmUnsignedDouble" use="required"/>
-				</xs:complexType>
-			</xs:element> 
+				<xs:all>
+					
+					<xs:element name="Internalization" minOccurs="1" maxOccurs="1">
+						<xs:annotation>	
+							<xs:documentation>Defines the influx rate and typical size (gamma distr...) blablabla</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="influx" type="cpmUnsignedDouble" use="required"/>
+							<xs:attribute name="typicalSize" type="cpmUnsignedDouble" use="required"/>
+						</xs:complexType>
+					</xs:element> 
+					
+					<xs:element name="Fusion" minOccurs="1" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>Fusion</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="rate" type="cpmUnsignedDouble" use="required"/>
+						</xs:complexType>
+					</xs:element> 
+					
+					<xs:element name="Fission" minOccurs="1" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>Fission</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="rate" type="cpmUnsignedDouble" use="required"/>
+						</xs:complexType>
+					</xs:element> 
 
-			<xs:element name="Conversion" minOccurs="1" maxOccurs="1">
-				<xs:annotation>
-					<xs:documentation>Conversion</xs:documentation>
-				</xs:annotation>
-				<xs:complexType>
-					<xs:attribute name="rate" type="cpmUnsignedDouble" use="required"/>
-				</xs:complexType>
-			</xs:element> 
+					<xs:element name="Conversion" minOccurs="1" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>Conversion</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="rate" type="cpmUnsignedDouble" use="required"/>
+						</xs:complexType>
+					</xs:element> 
 
-			<xs:element name="Timestep" minOccurs="1" maxOccurs="1">
-				<xs:annotation>
-					<xs:documentation>Timestep</xs:documentation>
-				</xs:annotation>
-				<xs:complexType>
-					<xs:attribute name="value" type="cpmUnsignedDouble" use="required"/>
-				</xs:complexType>
-			</xs:element> 
-		</xs:all>
-		
-		<xs:attribute name="name" type="cpmString" use="optional" />
+					<xs:element name="Timestep" minOccurs="1" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>Timestep</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="value" type="cpmUnsignedDouble" use="required"/>
+						</xs:complexType>
+					</xs:element> 
+				</xs:all>
+			
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 </xs:schema>

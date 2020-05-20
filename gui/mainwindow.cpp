@@ -542,8 +542,10 @@ void MainWindow::createMainWidgets()
 void MainWindow::selectModel(int index, int part)
 {
 	if (index<0) return;
-	if (model_index.model == index && (model_index.part==part || part == -1))
+	if (model_index.model == index && (model_index.part==part || part == -1)) {
+		showCurrentModel();
 		return;
+	}
 	
 	config::modelIndex selected = modelListIndex(modelList->currentItem());
 	if (model_index.model != index) {
@@ -972,18 +974,20 @@ void MainWindow::removeModel(int index) {
 }
 
 void MainWindow::showCurrentModel() {
-	qDebug() << "showing current model from " << sender();
+// 	qDebug() << "showing current model from " << sender();
 	if (current_model->parts[model_index.part].label=="ParamSweep") {
         editorStack->setCurrentWidget(sweeper);
 		QWidget::setTabOrder(modelList,sweeper);
 		docuDock->setCurrentElement( "ParameterSweep" );
 	}
 	else if (model_index.part==0) {
-		modelAbout[current_model]->update();
-		editorStack->setCurrentWidget(modelAbout[current_model]);
+		if (editorStack->currentWidget() != modelAbout[current_model]) {
+			modelAbout[current_model]->update();
+			editorStack->setCurrentWidget(modelAbout[current_model]);
+			QWidget::setTabOrder(modelList,modelAbout[current_model]);
+		}
 		docuDock->setCurrentElement(current_model->parts[model_index.part].element->getXPath() );
 // 		docuDock->setCurrentNode( current_model->parts[model_index.part].element);
-		QWidget::setTabOrder(modelList,modelAbout[current_model]);
 	}
     else {
         modelViewer[current_model]->setModelPart(model_index.part);
@@ -1007,16 +1011,14 @@ void MainWindow::modelListChanged(QTreeWidgetItem * item) {
  
 void MainWindow::activatePart(QModelIndex idx)
 {
-	
 	if (idx.isValid() && idx.parent().isValid()) {
 		config::modelIndex selection;
 		selection.model = idx.parent().row();
 		selection.part = idx.row();
 		auto model = config::getOpenModels()[selection.model];
-		model->activatePart(selection.part);
-		
-		modelList->setCurrentItem(modelList->invisibleRootItem()->child(selection.model)->child(selection.part));
-		selectModel(selection.model,selection.part);
+		if (model->activatePart(selection.part) )
+			modelList->setCurrentItem(modelList->invisibleRootItem()->child(selection.model)->child(selection.part));
+// 		selectModel(selection.model,selection.part);
 // 		if ( !model->parts[selection.part].enabled ) {
 // 			if (model->activatePart(selection.part)) {
 // 				QTreeWidgetItem* item = modelList->invisibleRootItem()->child(selection.model)->child(selection.part);

@@ -15,6 +15,7 @@
 #include <QtGui>
 #include <QSharedPointer>
 #include <QDesktopServices>
+#include <QSortFilterProxyModel>
 
 #include "morpheus_model.h"
 #include "domnodeeditor.h"
@@ -22,12 +23,24 @@
 
 #include "addattrdialog.h"         // Add DOM Node Dialoge
 #include "infoaction.h"
+#include "widgets/checkboxlist.h"
 
 #include "config.h"
 //#include "parametersweeper.h"
 
+class TagFilterSortProxyModel : public QSortFilterProxyModel {
+Q_OBJECT
+private:
+	QSet<QString> filter_tags;
+protected:
+	 bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const override;
+	 bool filtering;
+public slots:
+	void setFilterTags(QStringList tag_list);   /// comma separated list
+	void setFilteringEnabled(bool enabled);   /// comma separated list
+};
 
-using namespace std;
+
 /*!
 This class represents a widget, which shows all informations about a named nodeController.<br>
 On the left side it shows all xml-nodes and their child-nodes of the nodeController in a QTreeWidget.<br>
@@ -64,17 +77,23 @@ private:
     map<QAction, QString> action_names;
 
 	QTreeView* model_tree_view; /*!< TreeWidget in which the xml-nodes will be shown.*/
+	TagFilterSortProxyModel* model_tree_filter;
+	CheckBoxList* filter_tag_list;
+	QPushButton* filter_button;
+	QSet<QString> filter_tags;
+	QPushButton* sort_button;
 	QSplitter* splitter; /*!< Splitter which divide the view of the widget. */
 	domNodeEditor* node_editor;
 	QTreeWidget *symbol_list_wid;
     QTreeWidget *plugin_tree_widget;
     //QListWidget *child_list_widget;
     QFont lFont;
+	bool lazy_mode;
 
     void createLayout(); /*!< Creates the sub-widgets and their layout */
     void createMenu(); /*!< Adds actions to the treeMenu and tableMenu.*/
     QMenu *treeMenu; /*!< Menu which appears, when requesting a context-menu over the treewidget. */
-    QAction *addNodeAction, *copyNodeAction, *pasteNodeAction, *cutNodeAction, *removeNodeAction;
+    QAction *addNodeAction, *copyNodeAction, *copyXPathAction, *pasteNodeAction, *cutNodeAction, *removeNodeAction;
     QAction *sweepNodeAction, *disableNodeAction;
     QModelIndex treePopupIndex;
     
@@ -85,7 +104,7 @@ private:
 private slots:
     void setTreeItem(const QModelIndex& ); /*!< Slot which reload parameters, when another xmlnode was selected in the treeViewWidget.*/
 	void selectMovedItem(const QModelIndex& sourceParent, int sourceRow, int, const QModelIndex& destParent, int destRow );
-	void selectInsertedItem(const QModelIndex & , int , int);
+	void selectInsertedItem(const QModelIndex& destParent, int destRowFirst, int);
     void insertSymbolIntoEquation(const QModelIndex&); /*!< inserts the symbol given by model index from the symbolList to the equation editor. */
 
     void createTreeContextMenu(QPoint); /*!< Updates the state for the menu of the TreeItem at the given position.*/
@@ -95,7 +114,6 @@ private slots:
 	void treeViewHeaderChanged(); /*!< stores the new TreeView header geometry to QSettings. */
     //void childListDoubleClicked(QListWidgetItem* item);
     //void childListItemChanged(QListWidgetItem* current, QListWidgetItem* previous);
-
     void pluginTreeDoubleClicked(QTreeWidgetItem*, int);
     void pluginTreeItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous);
 signals:

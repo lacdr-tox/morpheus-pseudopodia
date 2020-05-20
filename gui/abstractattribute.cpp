@@ -71,6 +71,7 @@ AbstractAttribute::AbstractAttribute( QObject* parent, QSharedPointer<XSD::Simpl
 	if (parentNode.firstChild().nodeType() == QDomNode::TextNode) {
 		textNode = parentNode.firstChild().toText();
 		value = parentNode.firstChild().nodeValue();
+		exposeValue(true);
 	}
 	else {
 		textNode = parentNode.ownerDocument().createTextNode(value);
@@ -151,34 +152,34 @@ AbstractAttribute::AbstractAttribute( QObject* parent, QDomNode xsdAttrNode, QDo
 		value = xmlParentNode.attributes().namedItem(this->name).nodeValue();
 		is_active = true;
 		if (!is_disabled) {
-			if ( XSD::dynamicTypeDefs.contains(type->name) ) {
-				int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
-				model_descr->xsd.registerEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
-			}
+			exposeValue(true);
 		}
 	}
 
 	orig_active = is_active;
 	orig_value = value;
 	is_changed = false;
+	
+	if (is_active) {
+		if ( ! isValid(value) &&  ! XSD::dynamicTypeRefs.contains(type->name) ) {
+			MorphModelEdit ed;
+			ed.info = QString("Invalid value '") + value + "' of attribute '" + name + "' was changed into '" + default_value + "'";
+			ed.edit_type = MorphModelEdit::AttribChange;
+			ed.value = name + "=\"" + value + "\"";
+			ed.xml_parent = parentNode;
+			ed.name = name;
 
-	if ( ! isValid(value) &&  ! XSD::dynamicTypeRefs.contains(type->name) ) {
-		MorphModelEdit ed;
-		ed.info = QString("Invalid value '") + value + "' of attribute '" + name + "' was changed into '" + default_value + "'";
-		ed.edit_type = MorphModelEdit::AttribChange;
-		ed.value = name + "=\"" + value + "\"";
-		ed.xml_parent = parentNode;
-		ed.name = name;
-
-		set(default_value);
-		if (!model_descr->stealth) model_descr->auto_fixes.append(ed);
+			set(default_value);
+			if (!model_descr->stealth) model_descr->auto_fixes.append(ed);
+		}
 	}
 }
 
 //------------------------------------------------------------------------------
 
-QString AbstractAttribute::get()
-{return this->value;}
+QString AbstractAttribute::get(){
+	return this->value;
+}
 
 //------------------------------------------------------------------------------
 
@@ -187,16 +188,20 @@ bool AbstractAttribute::set(QString att)
 	if(this->isValid(att))
 	{
 		QString old_value = this->value;
-		this->value = att;
-
-		if (is_active) {
-
-			if ( XSD::dynamicTypeDefs.contains(type->name) ) {
-				int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
-				model_descr->xsd.removeEnumValue(XSD::dynamicTypeRefs[type_index], old_value);
-				model_descr->xsd.registerEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
+		
+		if (!is_active) {
+			this->value = att;
+		}
+		else {
+			if (is_disabled) {
+				this->value = att;
 			}
-
+			else {
+				exposeValue(false);
+				this->value = att;
+				exposeValue(true);
+			}
+			
 			if (is_text) {
 				textNode.setNodeValue(value);
 				if (model_descr->track_next_change) {
@@ -240,75 +245,59 @@ bool AbstractAttribute::set(QString att)
 }
 
 bool AbstractAttribute::append(QString s) {
-	if ( ! this->isValid(value + s))
-		return false;
-		
-	QString old_value = this->value;
-	this->value += s;
-	
-	// Inactive attributes may not interact with the XSD types
-	if (! is_active)
-		return true;
-	
-	if ( XSD::dynamicTypeDefs.contains(type->name) ) {
-		int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
-		model_descr->xsd.removeEnumValue(XSD::dynamicTypeRefs[type_index], old_value);
-		model_descr->xsd.registerEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
-	}
+	return set(value + s);
+}
 
-	if (is_text) {
-		textNode.setNodeValue(value);
-		if (model_descr->track_next_change) {
-			MorphModelEdit e;
-			e.edit_type = MorphModelEdit::TextChange;
-			e.info = QString("Text of node %1 was set to %2").arg(this->parentNode.nodeName(),this->value);
-			e.xml_parent = this->parentNode;
-			e.name = this->name;
-			e.value = this->value;
-			model_descr->auto_fixes.append(e);
-			model_descr->track_next_change = false;
+
+void AbstractAttribute::exposeValue(bool expose) {
+	Q_ASSERT(is_active && ! is_disabled);
+	if (expose) {
+		if ( XSD::dynamicTypeDefs.contains(type->name) ) {
+			int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
+			model_descr->xsd.registerEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
+		}
+		if (name == "tags") {
+			auto new_tags = value.split(",",QString::SkipEmptyParts);
+			for (auto& tag : new_tags) {
+				tag = tag.trimmed();
+				model_descr->used_tags[tag]++;
+			}
 		}
 	}
 	else {
-		parentNode.toElement().setAttribute(this->name, value);
-		if (model_descr->track_next_change) {
-
-			MorphModelEdit e;
-			e.edit_type = MorphModelEdit::AttribChange;
-			e.info = QString("Attribute \"%1\" of node %2 was set to %3").arg(this->name,this->parentNode.nodeName(),this->value);
-			e.xml_parent = this->parentNode;
-			e.name = "";
-			e.value = this->value;
-			model_descr->auto_fixes.append(e);
-			model_descr->track_next_change = false;
+		if ( XSD::dynamicTypeDefs.contains(type->name) ) {
+			int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
+			model_descr->xsd.removeEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
+		}
+		if (name == "tags") {
+			auto new_tags = value.split(",",QString::SkipEmptyParts);
+			for (auto& tag : new_tags) {
+				tag = tag.trimmed();
+				model_descr->used_tags[tag]--;
+				if (model_descr->used_tags[tag]==0) {
+					model_descr->used_tags.remove(tag);
+				}
+			}
 		}
 	}
-	model_descr->edits++;
-	
-	emit changed(this);
-
-	return true;
 }
+
+
+
 
 void AbstractAttribute::inheritDisabled(bool disable) {
 	if (is_disabled == disable) return;
 	if (disable) {
 		if (is_active) {
-			if ( XSD::dynamicTypeDefs.contains(type->name) ) {
-				int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
-				model_descr->xsd.removeEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
-			}
+			exposeValue(false);
 		}
 		is_disabled = true;
 	}
 	else {
-		if (is_active) {
-			if ( XSD::dynamicTypeDefs.contains(type->name) ) {
-				int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
-				model_descr->xsd.registerEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
-			}
-		}
 		is_disabled = false;
+		if (is_active) {
+			exposeValue(true);
+		}
 	}
 }
 
@@ -321,23 +310,19 @@ void AbstractAttribute::setActive(bool a)
 
 	if ( ! is_active) {
 		parentNode.toElement().setAttribute(this->name, value);
+		is_active = true;
 		if (!is_disabled) {
-			if ( XSD::dynamicTypeDefs.contains(type->name) ) {
-				int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
-				model_descr->xsd.registerEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
-			}
+			exposeValue(true);
 		}
 	}
 	else {
 		parentNode.attributes().removeNamedItem(name);
 		if (!is_disabled) {
-			if ( XSD::dynamicTypeDefs.contains(type->name) ) {
-				int type_index = XSD::dynamicTypeDefs.indexOf(type->name);
-				model_descr->xsd.removeEnumValue(XSD::dynamicTypeRefs[type_index], this->value);
-			}
+			exposeValue(false);
 		}
+		is_active = false;
 	}
-	is_active = a;
+	
 	if (is_changed) {
 		if ((is_active == orig_active) && ( ! is_active || (orig_value == value))) {
 			is_changed = false;
@@ -361,14 +346,7 @@ bool AbstractAttribute::isValid( QString att )
 	int pos = 0;
 	QValidator::State ret = type->validator.validate(att, pos);
 
-	if( ret == 1 || ret == 2)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return ( ret == QValidator::Intermediate || ret == QValidator::Acceptable);
 }
 
 //------------------------------------------------------------------------------

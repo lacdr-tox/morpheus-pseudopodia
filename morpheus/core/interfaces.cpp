@@ -20,6 +20,11 @@ void Plugin::loadFromXML(const XMLNode xNode, Scope* scope) {
 // 	assert( string(xNode.getName()) == XMLName());
 	stored_node = xNode;
 	getXMLAttribute(xNode, "name",plugin_name,false);
+	
+	string tags_string;
+	getXMLAttribute(xNode, "tags", tags_string, false);
+	auto tags_split = tokenize(tags_string," \t,", true);
+	xml_tags.insert(tags_split.begin(), tags_split.end());
 
 	for (uint i=0; i<plugin_parameters2.size(); i++) {
 		plugin_parameters2[i]->loadFromXML(xNode, scope);
@@ -27,6 +32,25 @@ void Plugin::loadFromXML(const XMLNode xNode, Scope* scope) {
 	// Use the current scope as default scope;
 	local_scope = scope;
 };
+
+bool Plugin::isTagged(const set< string >& tags) const
+{
+	auto it1 = tags.begin();
+	auto it2 = xml_tags.begin();
+	while (it1!=tags.end() && it2!=xml_tags.end()) {
+		if (*it1<*it2) {
+			it1++;
+		}
+		else if (*it2<*it1) {
+			it2++;
+		}
+		else {
+			return true;
+		}
+	}
+	
+	return false;
+}
 
 void Plugin::registerPluginParameter(PluginParameterBase& parameter ) {
 	plugin_parameters2.push_back(&parameter);

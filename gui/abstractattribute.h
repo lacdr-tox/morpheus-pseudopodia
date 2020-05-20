@@ -51,6 +51,8 @@ struct ModelDescriptor {
     int edits;
 	int change_count;
 	QMap<QString,QString> getSymbolNames(QString type_name) const;
+	QMap<QString, int> used_tags;
+	QList<QString> getTags() const { return used_tags.keys(); };
 	QMap<QString,int> pluginNames;
 };
 
@@ -88,6 +90,8 @@ protected:
     bool is_changed;
     bool is_text; /*!< If variable is true, the attribut is a pure text-node. */
     QSharedPointer<ModelDescriptor> model_descr;
+	
+	void exposeValue(bool expose);
 
 public:
 	AbstractAttribute(QObject* parent, QDomNode xsdAttrNode, QDomNode xmlParentNode, QSharedPointer<ModelDescriptor> m_descr);

@@ -2,14 +2,19 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="PopulationInitPlugins">
-		<xs:choice>
-			<xs:element name="InitCellLattice" 		type="InitCellLattice"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="InitCellLattice" 		type="InitCellLattice"	minOccurs="0"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="InitCellLattice">
-		<xs:annotation>
-			<xs:appinfo>Initialization</xs:appinfo>
-		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Initialization</xs:appinfo>
+				</xs:annotation>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
+	
 </xs:schema>

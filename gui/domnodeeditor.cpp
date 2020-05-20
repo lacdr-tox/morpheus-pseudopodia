@@ -3,6 +3,7 @@
 domNodeEditor::domNodeEditor(QWidget* parent) : QWidget(parent)
 {
 	QVBoxLayout *main_layout = new QVBoxLayout(this);
+	main_layout->setContentsMargins(0, 0, 0, 0);
 	value_label = new QLabel("Value:");
 	main_layout->addWidget(value_label);
 	all_edits.append(value_label);
@@ -64,7 +65,7 @@ domNodeEditor::domNodeEditor(QWidget* parent) : QWidget(parent)
 	
 	QObject::connect(attribute_editor, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(createAttributeEditContextMenu(QPoint)));
 	QObject::connect(attribute_editor, SIGNAL(itemChanged(QTableWidgetItem*)), this, SLOT(changedAttributeEditItem(QTableWidgetItem*)));
-	QObject::connect(attribute_editor, SIGNAL(itemChanged(QTableWidgetItem*)), this, SLOT(changedAttributeEditItem(QTableWidgetItem*)));
+// 	QObject::connect(attribute_editor, SIGNAL(itemChanged(QTableWidgetItem*)), this, SLOT(changedAttributeEditItem(QTableWidgetItem*)));
 	
 	this->setLayout(main_layout);
 }
@@ -132,7 +133,7 @@ void domNodeEditor::setNode(nodeController* node, SharedMorphModel model)
 			multi_line_math_editor->show();
 			current_value_edit = MathText;
 		}
-		else if ( node->textType()->name == "cpmText") {
+		else if ( node->textType()->name == "cpmText" || node->textType()->name == "morphText" ) {
 			if (node->getText().size()>500 || node->getName().endsWith("Data")) {
 				multi_line_text_editor->setText(node->getText().left(100) + " ...");
 				multi_line_text_editor->setEnabled(false);

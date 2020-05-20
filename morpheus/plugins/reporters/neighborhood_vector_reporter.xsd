@@ -2,52 +2,55 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="GlobalPlugins">
-		<xs:choice>
-			<xs:element name="NeighborhoodVectorReporter"	type="NeighborhoodVectorReporter"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="NeighborhoodVectorReporter"	type="NeighborhoodVectorReporter"  	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="NeighborhoodVectorReporter"	type="NeighborhoodVectorReporter"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="NeighborhoodVectorReporter"	type="NeighborhoodVectorReporter" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="NeighborhoodVectorReporter" mixed="false" >
-		<xs:annotation>
-			<xs:appinfo>Reporter</xs:appinfo>
-		</xs:annotation>
-			
-		<xs:all>
-			<xs:element name="Input">
-				<xs:complexType>
-					<xs:all>
-						<xs:element name="LocalSymbolInjection" minOccurs="0"  maxOccurs="unbounded">
-							<xs:complexType>
-								<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required" />
-								<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required"/>
-							</xs:complexType>
-						</xs:element>
-					</xs:all>
-					<xs:attribute name="scaling" type="cpmNeighborsReporterInputMode" use="required" />
-					<xs:attribute name="value" type="cpmMathExpression" use="required" />
-					<xs:attribute name="exclude-medium" type="cpmBoolean" use="optional" />
-				</xs:complexType>	
+		<xs:complexContent>
+			<xs:extension base="morphReporterPlugin">
+				<xs:annotation>
+					<xs:appinfo>Reporter</xs:appinfo>
+				</xs:annotation>
+					
+				<xs:all>
+					<xs:element name="Input">
+						<xs:complexType>
+							<xs:all>
+								<xs:element name="LocalSymbolInjection" minOccurs="0"  maxOccurs="unbounded">
+									<xs:complexType>
+										<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required" />
+										<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required"/>
+									</xs:complexType>
+								</xs:element>
+							</xs:all>
+							<xs:attribute name="scaling" type="cpmNeighborsReporterInputMode" use="required" />
+							<xs:attribute name="value" type="cpmMathExpression" use="required" />
+							<xs:attribute name="exclude-medium" type="cpmBoolean" use="optional" />
+						</xs:complexType>	
 
-			</xs:element>
-			
-			<xs:element name="Output">
-				<xs:complexType>
-					<xs:attribute name="mapping" type="cpmVectorArrayStatistics" use="required" />
-					<xs:attribute name="symbol-ref" type="cpmVectorSymbolRef" use="required" />
-				</xs:complexType>
-			</xs:element>
+					</xs:element>
+					
+					<xs:element name="Output">
+						<xs:complexType>
+							<xs:attribute name="mapping" type="cpmVectorArrayStatistics" use="required" />
+							<xs:attribute name="symbol-ref" type="cpmVectorSymbolRef" use="required" />
+						</xs:complexType>
+					</xs:element>
 
-		</xs:all>
-		
-		
-		<xs:attribute name="name" type="cpmString" use="optional" />
-		<xs:attribute name="time-step" type="cpmMathExpression" use="optional" />
+				</xs:all>
+				
+				<xs:attribute name="name" type="cpmString" use="optional" />
+				<xs:attribute name="time-step" type="cpmMathExpression" use="optional" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	
 	

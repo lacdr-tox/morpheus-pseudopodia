@@ -5,38 +5,42 @@
 	
 <!-- XMLPath /MorpheusML/Global -->
 	<xs:group name="GlobalPlugins">
-		<xs:choice>
-			<xs:element name="ExtSymbol"	type="ExtSymbolPlugin"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="ExtSymbol"	type="ExtSymbolPlugin" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 
 <!-- XMLPath /MorpheusML/CellTypes/CellType -->
 <!--	<xs:group name="CellTypePlugins">
-		<xs:choice>
-		</xs:choice>
+		<xs:all>
+		</xs:all>
 	</xs:group>-->
   
 <!--  /MorpheusML/Analysis -->
 <!--	<xs:group name="AnalysisPlugins">
-        <xs:choice>
-		</xs:choice>
+        <xs:all>
+		</xs:all>
 	</xs:group>-->
 
 <!-- XMLPath  */System -->
 <!--	<xs:group name="SystemPlugins">
-		<xs:choice>
-		</xs:choice>
+		<xs:all>
+		</xs:all>
 	</xs:group>-->
 	
 	<!-- Define the description language piece of the Plugin -->
 	<xs:complexType name="ExtSymbolPlugin">
-		<xs:annotation>
-			<xs:appinfo>Math</xs:appinfo>
-		</xs:annotation>
-		<!-- time step attribute to be read by the inherited ContiuousProcessPlugin -->
-		<xs:attribute name="time-step" type="cpmDouble" use="required" default="1.0" />
-		
-		<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required" />
-		<xs:attribute name="any-xml-attribute" type="cpmDouble" use="optional" />
+		<xs:complexContent>
+			<xs:extension base="morphInstantProcessPlugin">
+				<xs:annotation>
+					<xs:appinfo>Math</xs:appinfo>
+				</xs:annotation>
+					<!-- time step attribute is defined in the inherited plugin description and will be read by the inherited ContiuousProcessPlugin -->
+					<!--		<xs:attribute name="time-step" type="cpmDouble" use="required" default="1.0" />-->
+				
+				<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required" />
+				<xs:attribute name="any-xml-attribute" type="cpmDouble" use="optional" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 </xs:schema>
