@@ -27,11 +27,15 @@ Specifies parameters for a cellular Potts model (CPM) which provides a MonteCarl
 
 Basic Hamiltonian
 
-\f$ H = \Sum J_{\sigma, \sigma '} (1-\delta_{\sigma, \sigma '}) + \lambda_A \Sum (a_\sigma-A_\sigma)^2 \f$
+\f$ H = \sum J_{\sigma, \sigma '} (1-\delta_{\sigma, \sigma '}) + \lambda_A \sum (a_\sigma-A_\sigma)^2 \f$
 
 Acceptance probability 
 
-\f$ P (\Delta H) = either 1 if \Delta H < 0 or exp(- \Delta H / T) otherwise \f$
+\f$ P (\Delta H) = \left\{ \begin{array}{lr}
+	1, & if \; (\Delta H < 0) \\
+	exp(- \Delta H / T) & otherwise \\
+	\end{array} \right.
+\f$
 
 \b ShapeSurface specifies the Neighborhood used to estimate the boundary length of CPM Shapes, in particular cells. This estimate is used for computing interaction energies, cell perimeters and interface lengths.
   - \b scaling scaling of number of neighbors to length: \b norm estimate the length in unit of node length (see Magno, Grieneisen and Marée, BMC Biophysics, 2015), \b size neigborhood fraction occupied by other entities, \b none number of neighbors occupied by other entities.
@@ -53,11 +57,9 @@ Acceptance probability
     
 \section References
 
-Graner and Glazier, Phys Rev Lett, 1992
-
-Käfer, Hogeweg and Marée, PLoS Comp Biol, 2006
-
-Magno, Grieneisen and Marée, BMC Biophysics, 2015
+ -# Graner and Glazier, Phys Rev Lett, 1992
+ -# Käfer, Hogeweg and Marée, PLoS Comp Biol, 2006
+ -# Magno, Grieneisen and Marée, BMC Biophysics, 2015
 
 **/
 

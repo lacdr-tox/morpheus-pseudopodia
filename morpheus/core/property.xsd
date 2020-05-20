@@ -164,10 +164,10 @@
 	</xs:complexType>-->
 	
 	<xs:group  name="PropertyDataGroup">
-		<xs:all maxOccurs="unbounded">
-			<xs:element name="PropertyData" type="PropertyData" />
-			<xs:element name="PropertyVectorData" type="PropertyVectorData" />
-			<xs:element name="DelayPropertyData" type="DelayPropertyData" />
+		<xs:all>
+			<xs:element name="PropertyData" type="PropertyData" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="PropertyVectorData" type="PropertyVectorData"  minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="DelayPropertyData" type="DelayPropertyData"  minOccurs="0" maxOccurs="unbounded"/>
 <!-- 			<xs:element name="PropertyArrayData" type="PropertyArrayData" /> -->
 		</xs:all>
 	</xs:group>
