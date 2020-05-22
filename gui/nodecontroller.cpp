@@ -1028,6 +1028,21 @@ void nodeController::inheritDisabled(bool inherit) {
 
 //------------------------------------------------------------------------------
 
+void nodeController::synchDOM() {
+	if (disabled) {
+		// synch xml comment !
+		QString dis_node_text;
+		QTextStream s(&dis_node_text);
+		xmlDisabledNode.save(s,4);
+		xmlNode.setNodeValue(dis_node_text);
+	}
+	else {
+		for (auto& child : childs ) {
+			child -> synchDOM();
+		}
+	}
+}
+
 void nodeController::setStealth(bool enabled) {
 	model_descr->stealth = enabled;
 }

@@ -217,12 +217,15 @@ void MainWindow::createMenuBar()
     fileSaveAs->setShortcut(QKeySequence::SaveAs);
     fileSaveAs->setStatusTip(tr("Save model to file"));
 	connect(fileSaveAs, &QAction::triggered, [=](){
-		if ( current_model->xml_file.saveAsDialog() ) {
-			config::addRecentFile(current_model->xml_file.path);
-			current_model->rootNodeContr->saved();
-			modelList->topLevelItem(model_index.model)->setText(0, current_model->xml_file.name);
-			qDebug() << "Save As: " << current_model->xml_file.name << endl;
-			this->setWindowTitle(tr("Morpheus - %1").arg(  current_model->xml_file.name ) );
+		if (current_model) {
+			current_model->getRoot()->synchDOM();
+			if ( current_model->xml_file.saveAsDialog() ) {
+				config::addRecentFile(current_model->xml_file.path);
+				current_model->rootNodeContr->saved();
+				modelList->topLevelItem(model_index.model)->setText(0, current_model->xml_file.name);
+				qDebug() << "Save As: " << current_model->xml_file.name << endl;
+				this->setWindowTitle(tr("Morpheus - %1").arg(  current_model->xml_file.name ) );
+			}
 		}
 	});
     fileMenu->addAction(fileSaveAs);
@@ -232,6 +235,7 @@ void MainWindow::createMenuBar()
     fileSave->setStatusTip(tr("Save model to file"));
 	connect(fileSave, &QAction::triggered, [=](){
 		if (current_model) {
+			current_model->getRoot()->synchDOM();
 			if (current_model &&  current_model->xml_file.path.isEmpty()) {
 				if ( current_model->xml_file.saveAsDialog() ) {
 					config::addRecentFile(current_model->xml_file.path);
@@ -777,7 +781,7 @@ void MainWindow::modelActionTriggerd (QAction *act)
     }
 */
     else if (act == showModelXMLAction) {
-        XMLTextDialog* dia = new XMLTextDialog( popup_model->xml_file.domDocToText(), this);
+        XMLTextDialog* dia = new XMLTextDialog( popup_model->getXMLText() , this);
         dia->exec();
         delete dia;
     }

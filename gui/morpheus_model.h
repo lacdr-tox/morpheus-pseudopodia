@@ -36,9 +36,9 @@ class MorphModel: public QAbstractItemModel
 {
     Q_OBJECT
 public:
-	static const int NodeRole = Qt::UserRole + 1;
-	static const int XPathRole = Qt::UserRole + 2;
-	static const int TagsRole = Qt::UserRole + 3;
+	static const int NodeRole;
+	static const int XPathRole;
+	static const int TagsRole;
 
     explicit MorphModel(QObject *parent = 0);
     /*!< Creates an empty model from scratch */
@@ -97,6 +97,8 @@ public:
 	
 	enum GRAPH_TYPE { SVG, PNG, DOT };
 	QString getDependencyGraph(GRAPH_TYPE type);
+	QByteArray getXMLText() const;
+	
     nodeController* rootNodeContr; /*!< root nodeController, which handels the root xml-node. */
     bool sweep_lock;
 	

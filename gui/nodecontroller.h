@@ -141,7 +141,7 @@ public:
 	  Enabling it reactivates the node from the comment node.
 	*/
 	bool setDisabled(bool b);
-    
+	void synchDOM();
 
 signals:
 	void dataChanged(nodeController*);

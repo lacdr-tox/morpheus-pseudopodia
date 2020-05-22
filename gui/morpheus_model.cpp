@@ -1,6 +1,10 @@
 #include "morpheus_model.h"
 #include "config.h"
 
+const int MorphModel::NodeRole = Qt::UserRole + 1;
+const int MorphModel::XPathRole = Qt::UserRole + 2;
+const int MorphModel::TagsRole = Qt::UserRole + 3;
+
 QList<QString> model_parts() {
 	QList<QString> parts;
 	parts << "Description" << "Space" << "Time" << "Global" << "CellTypes" << "CPM";
@@ -254,6 +258,10 @@ QString MorphModel::getDependencyGraph(GRAPH_TYPE type)
 	return "";
 }
 
+QByteArray MorphModel::getXMLText() const {
+	rootNodeContr->synchDOM();
+	return xml_file.domDocToText();
+}
 
 void MorphModel::initModel()
 {
@@ -906,37 +914,39 @@ QVariant MorphModel::data(const QModelIndex &index, int role) const {
 //------------------------------------------------------------------------------
 
 QVariant MorphModel::headerData( int section, Qt::Orientation orientation, int role ) const {
-    if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
-        switch (section) {
-            case 0: return QVariant("Element");
-            case 1: return QVariant("Name/Symbol");
-            case 2: return QVariant("Value");
-            }
-    return QVariant();
+	
+	if (orientation == Qt::Horizontal) {
+		if (role == Qt::DisplayRole) {
+			switch (section) {
+				case 0: return QVariant("Element");
+				case 1: return QVariant("Name/Symbol");
+				case 2: return QVariant("Value");
+			}
+		}
+	}
+	return QVariant();
 }
 
 //------------------------------------------------------------------------------
 
 nodeController* MorphModel::indexToItem(const QModelIndex& idx) const {
-    if (idx.isValid()) {
+	if (idx.isValid()) {
 		if (idx.model() != this) return nullptr;
-        return static_cast< nodeController* >(idx.internalPointer());
-    }
-    else {
-		return rootNodeContr; //TODO nullptr;
-    }
+		return static_cast< nodeController* >(idx.internalPointer());
+	}
+	else {
+		return rootNodeContr;
+	}
 }
 
 //------------------------------------------------------------------------------
 
 QModelIndex MorphModel::itemToIndex(nodeController* node) const {
 	if (node == NULL) {
-// 		qDebug() << "Creating a Index for a NULL node";
 		return QModelIndex();
 	}
     if (node == rootNodeContr)
 		return QModelIndex();
-//      TODO    return createIndex(0,0,(void*)node);
     else {
         Q_ASSERT(node->parent);
         int pos = node->parent->childIndex(node);

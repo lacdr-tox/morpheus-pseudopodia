@@ -1,7 +1,8 @@
 class Morpheus < Formula
   desc "Modelling environment for Multi-Cellular Systems Biology"
   homepage "https://morpheus.gitlab.io"
-  url "https://gitlab.com/morpheus.lab/morpheus/-/archive/v2.2.0b1/morpheus-v2.2.0b1.tar.gz"
+  url "https://gitlab.com/morpheus.lab/morpheus/-/archive/v2.2.0-b2/morpheus-v2.2.0-b2.tar.gz"
+
   head "https://gitlab.com/morpheus.lab/morpheus.git", :branch => "develop"
 
   depends_on "boost" => :build
@@ -20,5 +21,9 @@ class Morpheus < Formula
   def install
     system "cmake", ".", *std_cmake_args
     system "make", "install"
+  end
+
+  def do_test
+    system "morpheus/morpheus", "--version"
   end
 end
