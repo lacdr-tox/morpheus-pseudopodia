@@ -27,12 +27,12 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	central->addWidget(description);
 	
 	auto layset= new QBoxLayout(QBoxLayout::Direction::LeftToRight);
-	auto include_tags_label = new QLabel("included Tags");
+	auto include_tags_label = new QLabel("incl. tags");
 	include_tags_label->setAlignment(Qt::AlignRight);
 	
 	auto ql_plugins = new QLabel("excluded Plugins");
 	ql_plugins->setAlignment(Qt::AlignRight);
-	auto ql_symbols = new QLabel("excluded Symbols");
+	auto ql_symbols = new QLabel("excl. symbols");
 	ql_symbols->setAlignment(Qt::AlignRight);
 	auto ql_reduced = new QLabel("&reduced");
 	ql_reduced->setAlignment(Qt::AlignLeft);
@@ -46,7 +46,7 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	excludeS = new CheckBoxList();
 	connect(excludeS, &CheckBoxList::currentTextChanged, [=](QStringList excludes) {update_excludes(excludes);update_graph();} );
 
-	reduced = new QCheckBox();
+	reduced = new QCheckBox("reduced", this);
 	connect(reduced, &QCheckBox::stateChanged, [=](int state){update_reduced(state);update_graph();} );
 	update_reduced(Qt::Unchecked);
 	ql_reduced->setBuddy(reduced);
@@ -57,16 +57,16 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	connect(save_btn,SIGNAL(clicked()),this, SLOT(svgOut()));
 	
 	layset->addWidget(reduced,0,Qt::AlignRight);
-	layset->addWidget(ql_reduced,0,Qt::AlignLeft);
+// 	layset->addWidget(ql_reduced,0,Qt::AlignLeft);
 	layset->addStretch(1);
-	layset->addWidget(include_tags_label);
 	layset->addWidget(includeTags,3);
+	layset->addWidget(include_tags_label,1,Qt::AlignLeft);
 	layset->addStretch(1);
-	layset->addWidget(ql_plugins);
-	layset->addWidget(excludeP,3);
-	layset->addStretch(1);
-	layset->addWidget(ql_symbols);
+// 	layset->addWidget(ql_plugins);
+// 	layset->addWidget(excludeP,3);
+// 	layset->addStretch(1);
 	layset->addWidget(excludeS,3);
+	layset->addWidget(ql_symbols,1,Qt::AlignLeft);
 	layset->addStretch(2);
 	layset->addWidget(save_btn);
 	
@@ -391,8 +391,14 @@ void AboutModel::update_excludes(QStringList qsl)
 {
 	model->getRoot()->setStealth(true);
 	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
-	dg->attribute("exclude-symbols")->setActive(true);
-	dg->attribute("exclude-symbols")->set(qsl.join(","));
+	if (qsl.isEmpty()) {
+		dg->attribute("exclude-symbols")->set("");
+		dg->attribute("exclude-symbols")->setActive(false);
+	}
+	else {
+		dg->attribute("exclude-symbols")->setActive(true);
+		dg->attribute("exclude-symbols")->set(qsl.join(","));
+	}
 	model->getRoot()->setStealth(false);
 }
 
@@ -427,8 +433,14 @@ void AboutModel::update_reduced(int state)
 void AboutModel::update_include_tags(QStringList includes) {
 	model->getRoot()->setStealth(true);
 	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
-	dg->attribute("include-tags")->setActive( ! includes.isEmpty() );
-	dg->attribute("include-tags")->set(includes.join(", "));
+	if (includes.isEmpty()) {
+		dg->attribute("include-tags")->set("");
+		dg->attribute("include-tags")->setActive(false);
+	}
+	else {
+		dg->attribute("include-tags")->setActive(true);
+		dg->attribute("include-tags")->set(includes.join(","));
+	}
 	model->getRoot()->setStealth(false);
 		
 }

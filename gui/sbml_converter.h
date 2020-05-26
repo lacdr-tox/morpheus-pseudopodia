@@ -110,6 +110,7 @@ public:
 private:
 	QLineEdit* path;
 	QComboBox* into_celltype;
+	QLineEdit* tag;
 
 	SharedMorphModel model;
 	bool model_created = false;
@@ -185,6 +186,7 @@ private:
     void translateSBMLReactions(Model* sbml_model);
     void parseMissingFeatures(Model* sbml_model);
 	void replaceDelays(ASTNode* math);
+	void applyTags(nodeController* node);
 
 private slots:
 	void import();

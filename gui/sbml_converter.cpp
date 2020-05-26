@@ -244,20 +244,13 @@ SBMLImporter::SBMLImporter(QWidget* parent, SharedMorphModel current_model) : QD
 {
 	this->setMaximumWidth(500);
 	this->setMinimumHeight(250);
-	QVBoxLayout* layout = new QVBoxLayout(this);
-// 	this->setLayout(layout);
-// 	auto layout = this->layout();
-	
+	auto layout = new QVBoxLayout(this);
+	auto grid_layout = new QGridLayout();
+	this->setLayout(layout);
 
-
-// 	QLabel* header = new QLabel(this);
-// 	header->setText("SBML Import");
-// 	header->setAlignment(Qt::AlignHCenter);
 	setWindowTitle("SBML Import");
 
-// 	layout->addWidget(header);
 // 	layout->addSpacing(20);
-	layout->addStretch(1);
 	QGroupBox* frame = new QGroupBox("", this);
 
 	frame->setLayout(new QHBoxLayout());
@@ -275,18 +268,20 @@ SBMLImporter::SBMLImporter(QWidget* parent, SharedMorphModel current_model) : QD
 
 	frame->layout()->addWidget(disclaimer);
 	layout->addWidget(frame);
-
 	layout->addStretch(1);
 
-	QHBoxLayout* path_layout = new QHBoxLayout();
+	layout->addLayout(grid_layout);
 	QLabel* path_label = new QLabel("SBML File ",this);
-	path_layout->addWidget(path_label);
+	grid_layout->addWidget(path_label,1,0,Qt::AlignRight);
 
 	path = new QLineEdit(this);
 	path_label->setBuddy(path);
-	path_layout->addWidget(path);
+	grid_layout->addWidget(path,1,1);
 	
-	QHBoxLayout* celltype_layout = new QHBoxLayout();
+	QPushButton * file_dlg = new QPushButton(this);
+	file_dlg->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
+	connect(file_dlg,SIGNAL(clicked(bool)),this,SLOT(fileDialog()));
+	grid_layout->addWidget(file_dlg,1,2);
 	
 	into_celltype  = new QComboBox(this);
 	into_celltype->addItem("Global (new model)", "new,global");
@@ -327,34 +322,28 @@ SBMLImporter::SBMLImporter(QWidget* parent, SharedMorphModel current_model) : QD
 	}
 	
 	QLabel* celltype_label = new QLabel("Import into ",this);	
-	celltype_layout->addWidget(celltype_label);
-	celltype_layout->addWidget(into_celltype);
 	celltype_label->setBuddy(into_celltype);
-	
-	celltype_layout->addStretch(1);
-	
+	grid_layout->addWidget(celltype_label,2,0,Qt::AlignRight);
+	grid_layout->addWidget(into_celltype,2,1);
 
-	QPushButton * file_dlg = new QPushButton(this);
-	file_dlg->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
-	connect(file_dlg,SIGNAL(clicked(bool)),this,SLOT(fileDialog()));
-	path_layout->addWidget(file_dlg);
-	layout->addLayout(path_layout);
-	layout->addLayout(celltype_layout);
-	
-	layout->addStretch(3);
+	tag = new QLineEdit(this);
+// 	tag->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+	auto tag_label = new QLabel("Tag",this);
+	grid_layout->addWidget(tag_label,3,0,Qt::AlignRight);
+	grid_layout->addWidget(tag,3,1);
 
+	
 	QHBoxLayout *bottom = new QHBoxLayout();
-
 	bottom->addStretch(1);
-
-	QPushButton *ok, *cancel;
-	ok = new QPushButton( "Import", this );
+	
+	auto ok = new QPushButton( "Import", this );
 	connect( ok, SIGNAL(clicked()), SLOT(import()) );
 	bottom->layout()->addWidget(ok);
 
-	cancel = new QPushButton( "Cancel", this );
+	auto cancel = new QPushButton( "Cancel", this );
 	connect( cancel, SIGNAL(clicked()), SLOT(reject()) );
 	bottom->addWidget(cancel);
+	layout->addStretch(2);
 	layout->addLayout(bottom);
 }
 
@@ -679,6 +668,8 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 	
 	target_system = target_scope->insertChild("System");
 	target_system->attribute("solver")->set("adaptive45");
+	applyTags(target_system);
+
 	auto stop_symbol_attr = morph_model->rootNodeContr->firstActiveChild("Time")->firstActiveChild("StopTime")->attribute("symbol");
 	QString stop_symbol;
 	if (stop_symbol_attr->isActive()) {
@@ -738,6 +729,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 				compartment_node -> attribute("value") -> set(comp.init_assignment);
 			else
 				compartment_node -> attribute("value") -> set(comp.init_value);
+			applyTags(compartment_node);
 			compartments[comp.name] = comp;
 			amount_map[comp.name] = comp.name;
 		}
@@ -821,11 +813,12 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 				ASTTool::renameSymbol(init_expression, var->attribute("symbol")->get(), QString("(") + var->attribute("value")->get() +")");
 			}
 			delay_property->attribute("value")->set(formulaToString(init_expression));
+			applyTags(delay_property);
 			
 			auto delay_rule = target_scope->insertChild("Equation");
 			delay_rule->attribute("symbol-ref")->set(delay.delayed_symbol);
 			delay_rule->firstActiveChild("Expression")->setText(delay.formula_string);
-			
+			applyTags(delay_rule);
 // 			delays.append(delay);
 // 		}
 	}
@@ -882,6 +875,16 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 	return true;
 	
 };
+
+void SBMLImporter::applyTags(nodeController* node) {
+	if (!tag->text().isEmpty()) {
+		auto tag_attr = node->attribute("tags");
+		if (tag_attr) {
+			tag_attr->set(tag->text());
+			tag_attr->setActive(true);
+		}
+	}
+}
 
 void SBMLImporter::addSBMLSpecies(Model* sbml_model)
 {
@@ -940,6 +943,7 @@ void SBMLImporter::addSBMLSpecies(Model* sbml_model)
 		}
 		
 		desc.node->attribute("value")->set(init_value);
+		applyTags(desc.node);
 		
 		concentration_map[desc.name] = QString("c") + desc.name;
 		auto cFun = target_scope->insertChild("Function");
@@ -1016,6 +1020,8 @@ void SBMLImporter::addSBMLParameters(Model* sbml_model)
 		else
 			init_val = "0.0";
 		param_node->attribute("value")->set(init_val);
+		
+		applyTags(param_node);
 	}
 }
 
@@ -1034,6 +1040,8 @@ void SBMLImporter::addSBMLFunctions(Model* sbml_model)
 			param->attribute("symbol")->set(function->getArgument(i)->getName());
 		}
 		mo_function->firstActiveChild("Expression")->setText(formulaToString(function->getBody()));
+		
+		applyTags(mo_function);
 	}
 };
 
@@ -1115,6 +1123,8 @@ void SBMLImporter::addSBMLRules(Model* sbml_model)
 					rule_node->attribute("name")->set(rule->getName());
 					rule_node->attribute("name")->setActive(true);
 				}
+				applyTags(rule_node);
+				
 				break;
 				
 			}
@@ -1135,6 +1145,7 @@ void SBMLImporter::addSBMLRules(Model* sbml_model)
 					rule_node->attribute("name")->set(rule->getName());
 					rule_node->attribute("name")->setActive(true);
 				}
+				applyTags(rule_node);
 				diffeqn_map.insert(symbol, { quantity, rule_node->firstActiveChild("Expression")->textAttribute() });
 				break;
 			}
@@ -1207,6 +1218,7 @@ void SBMLImporter::addSBMLEvents(Model* sbml_model)
 			}
 			equation->firstActiveChild("Expression")->setText(formula);
 		}
+		applyTags(event);
 	}
 }
 
@@ -1283,6 +1295,7 @@ void SBMLImporter::translateSBMLReactions(Model* sbml_model)
 				param_node->attribute("name")->setActive(true);
 			}
 			param_node->attribute("value")->set(param->getValue());
+			applyTags(param_node);
 		}
 		
 		// After parsing the params, we know which symbols to rename in the kinetics

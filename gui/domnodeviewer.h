@@ -82,6 +82,7 @@ private:
 	QPushButton* filter_button;
 	QSet<QString> filter_tags;
 	QPushButton* sort_button;
+	struct { int column; Qt::SortOrder order; } sort_state;
 	QSplitter* splitter; /*!< Splitter which divide the view of the widget. */
 	domNodeEditor* node_editor;
 	QTreeWidget *symbol_list_wid;

@@ -2,6 +2,8 @@ class Morpheus < Formula
   desc "Modelling environment for Multi-Cellular Systems Biology"
   homepage "https://morpheus.gitlab.io"
   url "https://gitlab.com/morpheus.lab/morpheus/-/archive/v2.2.0-b2/morpheus-v2.2.0-b2.tar.gz"
+  sha256 "3807a072368eb597d7960ad84617f37ee04b195e2807fa2539f608d71a01dd7d"
+  version "2.2.0-b2"
 
   head "https://gitlab.com/morpheus.lab/morpheus.git", :branch => "develop"
 
@@ -23,7 +25,7 @@ class Morpheus < Formula
     system "make", "install"
   end
 
-  def do_test
-    system "morpheus/morpheus", "--version"
-  end
+  #test do
+  #  system "morpheus/morpheus", "--version"
+  #end
 end

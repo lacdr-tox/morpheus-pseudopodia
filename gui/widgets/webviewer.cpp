@@ -64,9 +64,6 @@ bool AdaptiveWebPage::acceptNavigationRequest(const QUrl& url, QWebEnginePage::N
 
 WebViewer::WebViewer(QWidget* parent): QWebEngineView(parent) {
 	reset();
-	auto pal = QPalette(this->palette());/*palette().color(QPalette::Foreground)*/
-	pal.setColor(/*QPalette::Active, */QPalette::ToolTipText, QColor("black"));
-	setPalette(pal);
 }
 
 void WebViewer::reset() {
@@ -79,15 +76,20 @@ void WebViewer::reset() {
 }
 
 bool WebViewer::event(QEvent * ev) {
+	if (ev->type() == QEvent::ToolTip) {
+		// Intercept the creation of ToolTips
+		return true;
+	}
 	if (ev->type() == QEvent::ChildAdded) {
 		QChildEvent *child_ev = static_cast<QChildEvent*>(ev);
-		// there is also QObject child that should be ignored here;
-		// use only QOpenGLWidget child
 		QWidget *w = qobject_cast<QWidget*>(child_ev->child());
 		if (w) {
-			qDebug()<< ev->type() << "Installing Event filter to WebEngineView painter" ;
+// 			qDebug()<< ev->type() << "Installing Event filter to " << w->metaObject()->className();
 			child_ = w;
 			w->installEventFilter(this);
+// 			auto pal = w->palette();
+// 			pal.setColor(QPalette::Foreground, QColor("black"));
+// 			w->setPalette(pal);
 		}
 	}
 

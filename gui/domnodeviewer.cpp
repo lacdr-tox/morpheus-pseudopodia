@@ -100,7 +100,22 @@ void domNodeViewer::createLayout()
 	sort_button = new QPushButton(QIcon::fromTheme("view-sort-ascending"),"sort", this);
 	sort_button->setCheckable(true);
 	sort_button->setFlat(true);
-	connect(sort_button, &QPushButton::toggled, model_tree_view, &QTreeView::setSortingEnabled);
+	sort_state.column = 0;
+	sort_state.column = Qt::AscendingOrder;
+	connect(sort_button, &QPushButton::toggled, 
+		[this](bool enabled){ 
+			if (enabled) {
+				this->model_tree_view->setSortingEnabled(true);
+				this->model_tree_view->sortByColumn(sort_state.column, sort_state.order);
+			}
+			else {
+				this->sort_state.column = this->model_tree_filter->sortColumn();
+				this->sort_state.order = this->model_tree_filter->sortOrder();
+				this->model_tree_view->setSortingEnabled(false);
+				this->model_tree_filter->sort(-1,Qt::AscendingOrder);
+			} 
+		}
+	);
 	filter_row->addWidget(sort_button);
 	
 	// Filter edit
