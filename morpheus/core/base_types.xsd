@@ -125,6 +125,15 @@
 		</xs:restriction>
 	</xs:simpleType>
 	
+	<xs:simpleType name="morphVectorNotation">
+		<xs:restriction base="xs:normalizedString">
+			<xs:enumeration value="x,y,z" />
+			<xs:enumeration value="orthogonal" />
+			<xs:enumeration value="r,φ,θ" />
+			<xs:enumeration value="φ,θ,r" />
+		</xs:restriction>
+	</xs:simpleType>
+	
 	<xs:simpleType name="cpmDoubleQueue">
 		<xs:restriction base="xs:string">
 			<!-- This pattern specifies a generic 3D coordinate type with whitespaces as separators (allowing for commas, decimal) -->
@@ -334,7 +343,7 @@ rand_bool()
 	</xs:simpleType>
 	
 	<xs:simpleType name="cpmVectorMathExpression">
-		<xs:annotation>
+<!--		<xs:annotation>
 			<xs:documentation>Vector Expression to be evaluated during run-time.
 				
 				Vectors Expressions consist of three comma separated scalar expressions (a, b, c).
@@ -353,7 +362,7 @@ rand_bool()
 				rand_gamma([shape], [scale])
 				rand_bool()
 			</xs:documentation>
-		</xs:annotation>
+		</xs:annotation>-->
 		<xs:restriction base="xs:normalizedString"  />
 	</xs:simpleType>
 	

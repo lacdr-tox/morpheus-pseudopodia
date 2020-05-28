@@ -213,6 +213,7 @@ private:
 	ValType const_val;
 };
 
+
 /** 
  * Policy class to be used to create a read-only but evaluated value PluginParameter 
  */
@@ -275,7 +276,12 @@ public:
 	void setLocalsTable(const vector<EvaluatorVariable>& table) { if (is_initialized) throw string("too late to modify the locals table -- expression initialized"); locals_table = table; }
 	void setLocals(const double* data) { if (!is_initialized) throw string("setLocals(): xpression not initialized"); evaluator->setLocals(data); }
 	void allowPartialSpec(bool allow=true) { allow_partial_spec=allow; }
-	void setSpherical(bool s) {  is_radial = s;  if (is_radial && is_initialized) { is_initialized = false; init(); } }
+	void setSpherical(bool s) {  setNotation(s ? VecNotation::SPHERE_PTR : VecNotation::ORTH); };
+	void setNotation(VecNotation notation) {
+		this->notation = notation;
+		// reinitialize if required
+		if (is_initialized) { is_initialized = false; init(); }
+	}
 	
 	void init()
 	{
@@ -288,7 +294,7 @@ public:
 				throw string("PluginParameter missing scope");
 
 			evaluator = make_unique<Evaluator<ValType> >(string_val, local_scope, allow_partial_spec);
-			evaluator->setRadial(is_radial);
+			evaluator->setNotation(notation);
 			
 			if (!locals_table.empty())
 				evaluator->setLocalsTable(locals_table);
@@ -331,7 +337,6 @@ protected:
 	// TODO Clearify  whether a Copy constructor is required to deal with the unique_ptr evaluator
 	// An assignment will leave the rhs object uninitialized !!!
 	
-	
 	bool read(const string& string_val){
 		this->string_val = string_val;
 		is_initialized = false;
@@ -344,6 +349,7 @@ protected:
 private:
 	bool is_const;
 	bool is_radial;
+	VecNotation notation;
 	bool is_initialized;
 	const Scope* local_scope;
 	bool require_global_scope;

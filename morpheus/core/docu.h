@@ -131,7 +131,8 @@ The \b name attribute is used for descriptive purposes only. In particular, grap
 /**
 \defgroup MathExpressions
   
-Mathematical expressions to be evaluated during run-time. The vector version uses the component-wise 'x,y,z' notation, or -- if available -- the spherical notation 'phi,theta,radius'. 
+Mathematical expressions to be evaluated during run-time. 
+The vector version uses by default the component-wise 'x,y,z' notation, or alternative spherical notations as offered by \b notation attribute. 
 
 \section Available Operators:
 +, -, *, /, ^, =, >=, <=, !=, ==, <, >
@@ -199,11 +200,9 @@ Environment for tightly coupled \ref ML_Rule and \ref ML_DiffEqn. Expressions wi
 - \b time-step:
   - \b Fixed schemes: integration step size, given in system time.
   - \b Adaptive schemes: Coupling interval given in system time, i.e. maximum step size without coupling to other processes.
-<<<<<<< HEAD
-- \b time-scaling (optional): scales the dynamics of \b ML_System to the system time. Equivalent to multiplying all \b ML_DiffEqn in the \b ML_System with a scalar.
-=======
-- \b time-scaling (optional): scales the dynamics of \b ML_System relative to the simulation time. The time thus runs within the system is prefactored by the time-scaling.
->>>>>>> some initial thoughts
+
+- \b time-scaling (optional): scales the dynamics of \b ML_System relative to the simulation time. The time within the system runs prefactored with the \b time-scaling.
+
 
 Note: Systems define their own \ref Scope. This implies that values of symbols defined within a System are not accessible outside of the System. Multiple Systems can be defined within the same parental Scope, easing modular model development.
 
@@ -576,6 +575,11 @@ Expressions are evaluated separately for each cell, such that properties can bec
 
 Note the difference to initialization with CellType/Property: InitProperty is called ONLY during initialization (at StartTime, see \ref ML_Time). 
 Therefore, InitProperty is NOT called for cells created during simulation, e.g. using the \ref ML_AddCell plugin.
+
+Syntax is comma-separated as given by \b notation :
+	orthogonal - x,y,z
+	radial     - r,φ,θ
+	or radial  - φ,θ,r
 
 **/
 

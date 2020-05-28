@@ -90,7 +90,7 @@
 		<xs:attribute name="name" type="cpmString" use="optional" />
 
 		<xs:attribute name="symbol"	type="cpmVectorSymbolDef"		use="required" />
-		<xs:attribute name="spherical"	type="cpmBoolean"	default="false"	use="optional" />
+		<xs:attribute name="notation"	type="morphVectorNotation"	default="x,y,z"	use="optional" />
 
 	</xs:complexType>
 

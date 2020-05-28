@@ -80,6 +80,11 @@ Scalar or dot product of two vector parameters
 \ingroup MathExpressions Symbols
 
 Symbol that defines a relation between vector \ref Symbols from the \ref Scope of the VectorFunction definition and other *Function*s to a scalar result.
+
+Syntax is comma-separated as given by \b notation :
+	orthogonal - x,y,z
+	radial     - r,φ,θ
+	or radial  - φ,θ,r
 **/
 
 #ifndef Function_H
@@ -204,29 +209,28 @@ class VectorFunction : public Plugin
 							});
 			return names;
 		}
-		bool isSpherical() const { return is_spherical(); }
+		VecNotation getNotation() const { return notation(); }
 		const string& getSymbol()  const { return symbol(); }
 // 		Granularity getGranularity() const { if (evaluator) return evaluator->getGranularity(); else return Granularity::Global; };
 
 		class Symbol: public SymbolAccessorBase<VDOUBLE> {
 			public:
-				Symbol(VectorFunction* parent) : SymbolAccessorBase<VDOUBLE>(parent->getSymbol()), parent(parent) {};
-				TypeInfo<VDOUBLE>::SReturn safe_get(const SymbolFocus& focus) const override { if (!evaluator) parent-> init(); return evaluator->safe_get(focus); }
-				TypeInfo<VDOUBLE>::SReturn get(const SymbolFocus& focus) const override { return is_spherical ? VDOUBLE::from_radial(evaluator->get(focus)) : evaluator->get(focus); }
+				Symbol(VectorFunction* parent) : SymbolAccessorBase<VDOUBLE>(parent->getSymbol()), parent(parent), notation(parent->getNotation()) {};
+				TypeInfo<VDOUBLE>::SReturn safe_get(const SymbolFocus& focus) const override { if (!evaluator) parent-> init(); return get(focus); }
+				TypeInfo<VDOUBLE>::SReturn get(const SymbolFocus& focus) const override { return VDOUBLE::from(evaluator->get(focus), notation); }
 				std::set<SymbolDependency> dependencies() const override { if (!evaluator) parent-> init(); return evaluator->getDependSymbols();};
 				const std::string & description() const override { if (parent->getDescription().empty()) return parent->getSymbol(); else return parent->getDescription(); }
 				std::string linkType() const override { return "VectorFunctionLink"; }
+				void init(std::shared_ptr< ThreadedExpressionEvaluator< VDOUBLE > > e) { evaluator = e; flags().granularity = evaluator->getGranularity(); };
 			private:
-				void setEvaluator(shared_ptr<ThreadedExpressionEvaluator<VDOUBLE> > e) { evaluator = e; flags().granularity = evaluator->getGranularity(); };
-				shared_ptr<ThreadedExpressionEvaluator<VDOUBLE> > evaluator;
-				bool is_spherical;
 				VectorFunction* parent;
-				friend class VectorFunction;
+				shared_ptr<ThreadedExpressionEvaluator<VDOUBLE> > evaluator;
+				VecNotation notation;
 		};
 		
 	private:
 		shared_ptr<ThreadedExpressionEvaluator<VDOUBLE> > evaluator;
-		PluginParameter2<bool, XMLValueReader, DefaultValPolicy> is_spherical;
+		PluginParameter2<VecNotation, XMLNamedValueReader, DefaultValPolicy> notation;
 		PluginParameter2<string, XMLValueReader, RequiredPolicy> raw_expression;
 		PluginParameter2<string, XMLValueReader, RequiredPolicy> symbol;
 		string description;

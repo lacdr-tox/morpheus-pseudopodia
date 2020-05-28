@@ -92,10 +92,7 @@ VDOUBLE ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus, bool safe) c
 		return const_val;
 	
 	if (expr_is_symbol)
-		if (is_radial)
-			return VDOUBLE::from_radial(symbol_val->get(focus));
-		else
-			return symbol_val->get(focus);
+		VDOUBLE::from(symbol_val->get(focus), _notation);
 	
 	VDOUBLE result;
 	evaluator_cache->fetch(focus, safe | allow_partial_spec);
@@ -116,9 +113,7 @@ VDOUBLE ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus, bool safe) c
 			cerr << "Wrong number of results " << n << " of 3 in VectorExpression " << this->expression << endl;
 			throw string("Wrong number of expressions in VectorExpression ") + this->expression;
 		}
-		result = VDOUBLE(results[0],results[1],results[2]);
-		if (is_radial)
-			result = VDOUBLE::from_radial(result);
+		result = VDOUBLE::from(VDOUBLE(results[0],results[1],results[2]), _notation);
 	}
 	if (delay_const_expr_init) {
 		const_val = result;
@@ -152,7 +147,7 @@ VDOUBLE ExpressionEvaluator<VDOUBLE>::plain_get(const SymbolFocus& focus) const
 			cerr << "Wrong number of results " << n << " of 3 in VectorExpression " << this->expression << endl;
 			throw string("Wrong number of expressions in VectorExpression ") + this->expression;
 		}
-		result = VDOUBLE(results[0],results[1],results[2]);
+		result = VDOUBLE::from(VDOUBLE(results[0],results[1],results[2]), _notation);
 	}
 	if (delay_const_expr_init) {
 		const_val = result;
@@ -161,6 +156,8 @@ VDOUBLE ExpressionEvaluator<VDOUBLE>::plain_get(const SymbolFocus& focus) const
 	}
 	return result;
 }
+
+/* Implementation of math functions registered in the parser */
 
 double unary_plus(double val) {
 	return val;

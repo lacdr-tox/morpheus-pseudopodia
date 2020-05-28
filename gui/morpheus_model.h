@@ -112,7 +112,8 @@ private:
 		QString require_path;
 		enum { COPY, MOVE } operation;
 		bool replace_existing;
-		AutoFix() : operation(COPY), replace_existing(true) {};
+		QMap<QString,QString> value_conversions;
+		AutoFix() : operation(MOVE), replace_existing(true) {};
 	};
 	QList<MorphModelEdit> applyAutoFixes(QDomDocument document);
 	

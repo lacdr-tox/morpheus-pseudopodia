@@ -53,8 +53,28 @@ DEPRECATED inline double DIV(double a, double b) { return floor(a/b);}
 // 	int pow(int a, int b) { int r=1; for (; b>0; --b) r*=a; return r;}
 constexpr double sqr(double a){return a*a;}
 
+/** Valid notations for Vectors
+ *    - ORTH         orthogonal coordinates
+ *    - SPHERE_RPT   spherical r, phy, theta (radius, x-y-plane, elevation (-pi/2+pi/2))
+ *    - SPHERE_PTR   spherical phy, theta, r ( x-y-plane, elevation (-pi/2+pi/2), radius)
+ * */
+enum class VecNotation {
+	/// orthogonal
+	ORTH,          
+	/// spherical  r,phy (x,y-plane), theta (elevation)
+	SPHERE_RPT,
+	/// spherical phy (x,y-plane), theta (elevation), r
+	SPHERE_PTR     
+};
 
-
+inline std::map<std::string, VecNotation> VecNotationMap() { 
+	return { 
+		{"x,y,z",VecNotation::ORTH},
+		{"orthogonal",VecNotation::ORTH},
+		{"r,φ,θ",VecNotation::SPHERE_RPT},
+		{"φ,θ,r",VecNotation::SPHERE_PTR}
+	};
+}
 
 template <class T>
 class _V {
@@ -98,6 +118,10 @@ class _V {
 		/// Returns the radial representation of the vector by phi, theta, radius triplet
 		_V<double> to_radial() const;
 		static _V<T> from_radial(const _V<double>& a);
+		/// Convert to other vector notations
+		_V< double > to(VecNotation notation) const;
+		static _V<T> from(const _V<double>& a, VecNotation notation);
+		
 		// to/from std::array to allow working with iterators
 		constexpr array<T,3> to_array() const;
 		static constexpr _V<T> from_array(const array<T,3> &a);
@@ -186,6 +210,37 @@ inline _V<double> _V<double>::from_radial(const _V< double >& a) {
 		return _V<double>(cos(a.y) * cos(a.x) * a.z, cos(a.y) *  sin(a.x) * a.z, sin(a.y) * a.z);
 	else
 		return _V<double>(cos(a.x) * a.z, sin(a.x) * a.z, 0.0);
+}
+
+template <class T> 
+_V<double> _V<T>::to(VecNotation notation) const {
+	if (notation==VecNotation::ORTH)  
+		return *this;
+	
+	double radius = this->abs();
+		return _V<double>(0,0,0);
+	double phi = angle_xy();
+	double theta = M_PI - acos( this->z / radius );
+	if (notation==VecNotation::SPHERE_PTR)
+		return _V<double>(phi,theta,radius);
+	else /*if(notation==VecNotation::SPHERE_RPT)*/
+		return _V<double>(radius,phi,theta);
+}
+
+template <>
+inline _V<double> _V<double>::from(const _V<double>& a, VecNotation notation) {
+	if (notation==VecNotation::ORTH)  
+		return a;
+	double radius = notation==VecNotation::SPHERE_RPT ? a.x : a.z;
+	double phi    = notation==VecNotation::SPHERE_RPT ? a.y : a.x;
+	double theta  = notation==VecNotation::SPHERE_RPT ? a.z : a.y;
+	
+	if (theta==0.0) {
+		return _V<double>(cos(phi) * radius, sin(phi) * radius, 0.0);
+	}
+	else {
+		return _V<double>(cos(theta) * cos(phi) * radius, cos(theta) *  sin(phi) * radius, sin(theta) * radius);
+	}
 }
 
 template <class T>

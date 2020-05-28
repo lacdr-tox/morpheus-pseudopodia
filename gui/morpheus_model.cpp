@@ -299,8 +299,27 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		// nothing to do ...
 		fix_version=morpheus_ml_version;
 		MorphModel::AutoFix a;
+		a.operation = AutoFix::MOVE;
 		a.match_path = "MorpheusModel/CellTypes/CellType/AddCell/Condition"; a.target_path = "MorpheusModel/CellTypes/CellType/AddCell/Count"; fixes.append(a);
+
+		QStringList prefixes;
+		prefixes << "MorpheusModel/Global/" 
+				 << "MorpheusModel/Global/System/" 
+				 << "MorpheusModel/CellTypes/CellType/"
+				 << "MorpheusModel/CellTypes/CellType/System/" 
+				 << "MorpheusModel/CellTypes/CellType/Event/" 
+				 << "MorpheusModel/CellTypes/CellType/CellDivision/Triggers/";
+		QStringList suffixes;
+		suffixes << "VectorConstant/" << "VectorVariable/" << "VectorProperty/" << "VectorEquation/" << "VectorRule/" << "VectorFunction/";
 		
+		a.value_conversions["true"]="φ,θ,r"; a.value_conversions["false"]="x,y,z";
+		for (auto suffix : suffixes) {
+			for (auto prefix : prefixes) {
+				a.match_path = prefix+suffix+"@spherical"; a.target_path = prefix+suffix+"@notation"; fixes.append(a);
+			}
+		}
+		
+		a.match_path = "MorpheusModel/CellPopulations/Population/InitVectorProperty/@spherical"; a.target_path = "MorpheusModel/CellPopulations/Population/InitVectorProperty/@notation"; a.value_conversions["true"]="φ,θ,r"; a.value_conversions["false"]="x,y,z"; fixes.append(a);
 	}
 	else if (morpheus_file_version == 3) {
 		fix_version=4;
@@ -605,7 +624,13 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 							ed.name.replace("@","");
 							qDebug() << ed.info;
 							
-							new_parent.setAttribute( ed.name, matches[j].nodeValue().replace("\n",""));
+							// Purge prohibited characters
+							QString new_value = matches[j].nodeValue().replace("[\n\r]","");
+							
+							if (fixes[i].value_conversions.contains(new_value))
+								new_value = fixes[i].value_conversions[new_value];
+							
+							new_parent.setAttribute( ed.name, new_value);
 							
 // 							qDebug() << "new_parent: " << new_parent.tagName();
 // 							qDebug() << "ed.name   : " << ed.name;

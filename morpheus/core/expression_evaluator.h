@@ -39,6 +39,7 @@ typedef EvaluatorCache::LocalSymbolDesc EvaluatorVariable;
  * Threadsafe -- nope
  */
 
+
 template <class T>
 class ExpressionEvaluator {
 public:
@@ -74,20 +75,28 @@ public:
 	 */
 	void setLocals(const double* data) const { evaluator_cache->setLocals(data);/*(&symbol_values[l_sym_cache_offset], data, sizeof(double) * local_symbols.size()); */};
 	
-	/** \brief Initialize expression evaluator.
-	 * 
-	 *  In particular, all dependent symbols, functions and parameters must be declared prior
-	 *  to initalisation. Symbols are retrieved form the scope.
-	 */
-	
 	///  \brief Number of local variables in terms of doubles (VDOUBLEs count 3 doubles)
 	int getLocalsCount() { return evaluator_cache->getLocalsTable().size();  }
-	
-	/// Parse the expresion and bind to the external symbol via an \ref EvaluatorCache
+
+	/** \brief Initialize expression evaluator.
+	 * 
+	 *  Parse the expresion and bind to the external symbol via an \ref EvaluatorCache.
+	 *  In particular, all dependent symbols, functions and parameters must be declared prior
+	 *  to initalisation
+	 */
 	void init();
 	
-	/// In case of T=VDOUBLE assume radial coordinates  phi, theta, r are given
-	void setRadial(bool radial=true);
+	/// Set the notation of the Vector expression. Non-Vector types ignore this property.
+	void setNotation(VecNotation notation) {
+		_notation = notation;
+		if (initialized && expr_is_const) {
+			delay_const_expr_init = true;
+		}
+	}
+	
+	/// In case of T=VDOUBLE assume vector is given in that notation
+	VecNotation notation() const { return this->_notation; };
+	
 	/// \brief Mmetadata of the expression
 	const SymbolBase::Flags& flags() const {
 		if (!initialized )
@@ -110,7 +119,7 @@ public:
 	/// get without updating the associated cache (has been updated earlier).
 	typename TypeInfo<T>::SReturn plain_get(const SymbolFocus& focus) const;
 	/// set of symbols the expression depends on
-	set<SymbolDependency> getDependSymbols() const;
+	set<SymbolDependency> getDependSymbols() const { return depend_symbols; }
 	
 private:
 	
@@ -120,7 +129,7 @@ private:
 	string expression;
 	string clean_expression;
 	bool allow_partial_spec;
-	bool is_radial;
+	VecNotation _notation;
 	
 	bool initialized = false;
 	mutable bool expr_is_const;
@@ -202,7 +211,11 @@ public:
 	}
 	set<Symbol> getNameSpaceUsedSymbols(uint ns_id) const { return evaluators[0]->getNameSpaceUsedSymbols(ns_id); }
 	void setNameSpaceFocus(uint ns_id, const SymbolFocus& f) const { getEvaluator()->setNameSpaceFocus(ns_id, f); }
-	void setRadial(bool radial=true) { getEvaluator()->setRadial(radial); } 
+	void setNotation(VecNotation notation) {
+		for (auto e :evaluators) {
+			if (e) e->setNotation(notation);
+		}
+	};
 	void setLocals(const double* data) const { getEvaluator()->setLocals(data); }
 	int getLocalsCount() const { return evaluators[0]->getLocalsCount(); } 
 	
@@ -312,12 +325,12 @@ ExpressionEvaluator<T>::ExpressionEvaluator(const ExpressionEvaluator<T> & other
 }
 
 
-template <class T>
-void ExpressionEvaluator<T>::setRadial(bool radial) { 
-	if (initialized)
-		throw string("ExpressionEvaluator<VDOUBLE>::setRadial called after initialization");
-	is_radial = radial;
-}
+// template <class T>
+// void ExpressionEvaluator<T>::setRadial(bool radial) { 
+// 	if (initialized)
+// 		throw string("ExpressionEvaluator<VDOUBLE>::setRadial called after initialization");
+// 	is_radial = radial;
+// }
 
 template <class T>
 void ExpressionEvaluator<T>::init()
@@ -527,13 +540,6 @@ typename TypeInfo<float>::SReturn  ExpressionEvaluator<float>::get(const SymbolF
 
 template <>
 typename TypeInfo<VDOUBLE>::SReturn  ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus, bool safe) const;
-
-template <class T>
-set< SymbolDependency > ExpressionEvaluator<T>::getDependSymbols() const
-{
-	return depend_symbols;
-}
-
 
 
 

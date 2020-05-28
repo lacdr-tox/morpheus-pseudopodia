@@ -79,7 +79,7 @@ public:
 	int rate_cache_idx;
 	
 	string symbol_name, expression;
-	bool vec_spherical;
+	VecNotation notation;
 	shared_ptr< ExpressionEvaluator<T> > evaluator;
 	shared_ptr<EvaluatorCache> cache;
 	vector<double> fun_params;
@@ -91,7 +91,7 @@ public:
 
 private:
 	/// @brief Private CallBack class for registration of the internal evaluator in mu_parser as a generic lambda object
-	class CallBack : public mu::fun_class_generic {
+	class CallBack final : public mu::fun_class_generic {
 		public:
 			CallBack(shared_ptr<ExpressionEvaluator<double> > evaluator, double *data, uint size) : evaluator(evaluator), params(data), nparams(size) {};
 			

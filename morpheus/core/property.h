@@ -42,8 +42,10 @@ Symbol with a fixed scalar value given by a \ref MathExpressions.
 
 Symbol with a fixed 3D vector value, given by a \ref MathExpressions.
 
-Syntax is comma-separated: x,y,z  
-or in the \b spherical / radial case: φ,θ,r
+Syntax is comma-separated as given by \b notation :
+	orthogonal - x,y,z
+	radial     - r,φ,θ
+	or radial  - φ,θ,r
 **/
 /**
 \defgroup ML_Variable Variable
@@ -61,8 +63,10 @@ Symbol with a variable scalar value. The initial value is given by a \ref MathEx
 
 Symbol with a variable 3D vector value. The initial value is given by a \ref MathExpressions.
 
-Syntax is comma-separated: x,y,z
-or in the \b spherical / radial case: φ,θ,r
+Syntax is comma-separated as given by \b notation :
+	orthogonal - x,y,z
+	radial     - r,φ,θ
+	or radial  - φ,θ,r
 **/
 
 /**
@@ -98,8 +102,10 @@ Symbol with a cell-bound scalar value and a \b delay time until values become cu
 
 Symbol with cell-bound, variable 3D vector value. The initial value and history is  given by a \ref MathExpressions.
 
-Syntax is comma-separated: x,y,z
-or in the \b spherical / radial case: φ,θ,r
+Syntax is comma-separated as given by \b notation :
+	orthogonal - x,y,z
+	radial     - r,φ,θ
+	or radial  - φ,θ,r
 **/
 
 
@@ -154,7 +160,7 @@ protected:
 	PluginParameter2<T,XMLEvaluator,RequiredPolicy> value;
 	PluginParameter2<string,XMLValueReader,RequiredPolicy> symbol;
 	PluginParameter2<string,XMLValueReader,OptionalPolicy> name;
-	PluginParameter2<bool,XMLValueReader,OptionalPolicy> spherical;
+	PluginParameter2<VecNotation,XMLNamedValueReader,DefaultValPolicy> notation;
 	shared_ptr<SymbolBase> _accessor;
 };
 
@@ -323,8 +329,10 @@ Container<T>::Container(Mode mode) : mode(mode), initialized(false) {
 	this->registerPluginParameter(symbol);
 	value.setXMLPath("value");
 	this->registerPluginParameter(value);
-	spherical.setXMLPath("spherical");
-	this->registerPluginParameter(spherical);
+	notation.setXMLPath("notation");
+	notation.setDefault("x,y,z");
+	notation.setConversionMap(VecNotationMap());
+	registerPluginParameter(notation);
 };
 
 
@@ -370,8 +378,7 @@ void Container<T>::loadFromXML(XMLNode node, Scope* scope)
 	
 	Plugin::loadFromXML(node, scope);
 	
-	if (spherical.isDefined())
-		value.setSpherical(spherical());
+	value.setNotation(notation());
 	
 	switch (mode) {
 		case Mode::Constant : {

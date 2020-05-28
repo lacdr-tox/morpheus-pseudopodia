@@ -281,7 +281,7 @@ protected:
 
 	// Cell populations
 	vector< CPM::CELL_ID > cell_ids;
-	struct InitPropertyDesc {string symbol; string expression; bool spherical = false; } ;
+	struct InitPropertyDesc { string symbol; string expression; VecNotation notation=VecNotation::ORTH; };
 	struct CellPopDesc {
 		int pop_size;
 		XMLNode xPopNode;

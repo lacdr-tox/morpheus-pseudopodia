@@ -183,7 +183,7 @@ This allows the user to create populations a heterogeneous initial population. T
 			<xs:element name="Expression" type="cpmVectorMathExpression"/>
 		</xs:all>
 		<xs:attribute name="symbol-ref" type="cpmVectorSymbolRef"/>
-		<xs:attribute name="spherical" type="cpmBoolean" use="optional" default="false" />
+		<xs:attribute name="notation" type="morphVectorNotation" use="optional" default="x,y,z" />
 	</xs:complexType>
 	
 	<xs:complexType name="cpmCell">

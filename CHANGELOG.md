@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### GUI
-  * Introduced Interactive Model Graph
+  * Introduced an Interactive Configurable Model Graph
   * Support Tagging, Filtering and Sorting of Model Components
   * Switched to Qt5
   * Support reading and writing (gz) compressed models
@@ -12,7 +12,8 @@
   * The space symbol (Space/SpaceSymbol) now always provides the location in orthogonal coordinates, also on hexagonal lattices.
   * AddCell accepts Count as the number of cells to be placed.
   * ClusterTracker can cluster cells of multiple cell types.
-  * Added Populations InitVectorProperty
+  * Logger gained support for conditional logging using Logger/Restrictions/@condition
+  * Added Populations InitVectorProperty with optional spherical notation
   * Lattice size now can also be specified through expressions
   * Contact energies now support expressions with access to symbols of involved cells
   * Rework of XSD specifcation
@@ -22,12 +23,14 @@
   * Added **tags** and **Annotation** nodes to all plugins
 
 ### Simulator
+  * Performance improvements for Mappers and Reporters using OpenMP parallelization
   * Support reading (gz) compressed models
   * Added Test system for full XML models
+  * Restructured CMake build to make use of targets, boosted requrements to cmake>=3.3.0 and
 
 ### Bug Fixes
-  * Fix cell property initialization override priority 
-  * Fixed diffusion scaling on hexagonal lattices
+  * Fix cell property initialization override priority (InitProperty takes highest priority)
+  * Fixed diffusion scaling on hexagonal lattices (was raised by factor 0.5)
   
 ## Release 2.1.1
 

@@ -305,7 +305,7 @@ void CellType::init() {
 				auto symbol = local_scope->findRWSymbol<VDOUBLE>(ip.symbol);
 				 
 				auto init_expression = make_shared<ExpressionEvaluator<VDOUBLE>> (ip.expression,local_scope);
-				init_expression->setRadial(ip.spherical);
+				init_expression->setNotation(ip.notation);
 				init_expression->init();
 				auto property_symbol = dynamic_pointer_cast<const PropertySymbol<VDOUBLE>>(symbol);
 				if (!property_symbol) {
@@ -395,8 +395,16 @@ void CellType::loadPopulationFromXML(const XMLNode xNode) {
 			if ( ! getXMLAttribute(xcpNode,"Expression/text",ip.expression)) {
 				throw MorpheusException ("Missing Expression!", xcpNode);
 			}
-			ip.spherical = false;
-			getXMLAttribute(xcpNode,"spherical",ip.spherical);
+			ip.notation = VecNotation::ORTH;
+			string s_notation;
+			if (getXMLAttribute(xcpNode,"notation",s_notation)) {
+				try {
+					ip.notation = VecNotationMap().at(s_notation);
+				}
+				catch(std::out_of_range) {
+					throw MorpheusException(string("Invalid notation attribute: ") + s_notation,xcpNode);
+				}
+			}
 			cp.property_initializers.push_back(ip);
 		}
 		else {

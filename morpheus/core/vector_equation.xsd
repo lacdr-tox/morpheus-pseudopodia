@@ -41,7 +41,7 @@
 				</xs:all>
 
 				<xs:attribute name="symbol-ref"	type="cpmVectorSymbolRef"		use="required" />
-				<xs:attribute name="spherical"	type="cpmBoolean"	default="false"	use="optional" />
+				<xs:attribute name="notation"	type="morphVectorNotation"	default="x,y,z"	use="optional" />
 				
 			</xs:extension>
 		</xs:complexContent>

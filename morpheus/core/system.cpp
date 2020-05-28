@@ -149,7 +149,7 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 					eqn->type = SystemFunc<VDOUBLE>::RULE;
 					eqn->expression = dynamic_pointer_cast<VectorEquation>(p)->getExpr();
 					eqn->symbol_name = dynamic_pointer_cast<VectorEquation>(p)->getSymbol();
-					eqn->vec_spherical = dynamic_pointer_cast<VectorEquation>(p)->isSpherical();
+					eqn->notation = dynamic_pointer_cast<VectorEquation>(p)->getNotation();
 					vec_evals.push_back(eqn);
 					vec_equations.push_back(eqn);
 				}
@@ -195,7 +195,7 @@ void System::init() {
 			eqn->type = SystemFunc<VDOUBLE>::EQN;
 			eqn->expression = static_cast<VectorEquation*>(p)->getExpr();
 			eqn->symbol_name = static_cast<VectorEquation*>(p)->getSymbol();
-			eqn->vec_spherical = static_cast<VectorEquation*>(p)->isSpherical();
+			eqn->notation = static_cast<VectorEquation*>(p)->getNotation();
 			vec_evals.push_back(eqn);
 // 			vec_equations.push_back(eqn);
 		}
@@ -890,7 +890,7 @@ void SystemSolver::Discrete(const SymbolFocus& f) {
 	}
 	for (uint i=0; i < vec_rules.size(); i++) {
 		auto& e = *vec_rules[i];
-		this->cache->setLocal(e.cache_idx, e.vec_spherical ?  VDOUBLE::from_radial(e.k1) : e.k1);
+		this->cache->setLocal(e.cache_idx, VDOUBLE::from(e.k1, e.notation));
 	}
 }
 

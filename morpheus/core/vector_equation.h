@@ -17,8 +17,10 @@
 
 Assignment of mathematical expression to a vector symbol.
 
-Syntax is comma-separated: x,y,z
-or in the \b spherical / radial case: φ,θ,r
+Syntax is comma-separated as given by \b notation :
+	orthogonal - x,y,z
+	radial     - r,φ,θ
+	or radial  - φ,θ,r
 
 During simulation it is asserted that the provided relation always holds. Therefore, the expression may not depend on the referred output symbol. For recurrence equations, use a \ref ML_VectorRule within Systems.
 
@@ -40,8 +42,8 @@ Normalise a Vector to length of 5 using element-wise vector calculus (assume u i
 
 Using spherical coordinates
 \verbatim
-<VectorEquation symbol-ref="v" spherical="true">
-	<Expression> angle_phi, angle_theta, radius </Expression>
+<VectorEquation symbol-ref="v" notation="r,φ,θ">
+	<Expression> radius, angle_phi, angle_theta </Expression>
 </VectorEquation>
 \endverbatim
 **/
@@ -59,8 +61,10 @@ Differs from \ref ML_VectorEquation in that a VectorRule:
 - can only appear in \ref ML_System
 - explicitly scheduled based on user-specified System time-step
 
-Syntax is comma-separated: x,y,z
-or in the \b spherical / radial case: φ,θ,r
+Syntax is comma-separated as given by \b notation :
+	orthogonal - x,y,z
+	radial     - r,φ,θ
+	or radial  - φ,θ,r
 
 \section Examples
 Assign a value by comma separated list of 3 expressions.
@@ -84,8 +88,8 @@ class VectorEquation : public ReporterPlugin {
 	
 	private:
 		PluginParameter2<VDOUBLE,XMLWritableSymbol,RequiredPolicy> symbol;
-		PluginParameter2<bool,XMLValueReader,DefaultValPolicy> spherical;
 		PluginParameter2<VDOUBLE, XMLThreadsaveEvaluator, RequiredPolicy> expression;
+		PluginParameter2<VecNotation, XMLNamedValueReader, DefaultValPolicy> notation;
 		
 	public:
 		DECLARE_PLUGIN("VectorEquation");
@@ -96,7 +100,7 @@ class VectorEquation : public ReporterPlugin {
 		
 		string getExpr() { return expression.stringVal(); }
 		string getSymbol() { return symbol.name(); };
-		bool isSpherical() { return spherical(); };
+		VecNotation getNotation() { return notation(); };
 
 };
 

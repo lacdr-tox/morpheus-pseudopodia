@@ -91,9 +91,10 @@ void VectorFunction::loadFromXML ( const XMLNode Node, Scope* scope)
 	registerPluginParameter(symbol);
 	raw_expression.setXMLPath("Expression/text");
 	registerPluginParameter(raw_expression);
-	is_spherical.setXMLPath("spherical");
-	is_spherical.setDefault("False");
-	registerPluginParameter(is_spherical);
+	notation.setXMLPath("notation");
+	notation.setDefault("x,y,z");
+	notation.setConversionMap(VecNotationMap());
+	registerPluginParameter(notation);
 	
 	for (int i=0; i<Node.nChildNode(); i++) {
 		
@@ -125,13 +126,14 @@ void VectorFunction::loadFromXML ( const XMLNode Node, Scope* scope)
 	accessor = make_shared<Symbol>(this);
 	scope->registerSymbol(accessor);
 	
-	
 	evaluator = make_shared<ThreadedExpressionEvaluator<VDOUBLE> >(raw_expression(), scope, false);
 }
 
 void VectorFunction::init (const Scope* scope) {
+	
 	Plugin::init(scope);
 	evaluator->init();
-	accessor->setEvaluator(evaluator);
+	accessor->init(evaluator);
+
 	registerInputSymbols( evaluator->getDependSymbols() );
 }

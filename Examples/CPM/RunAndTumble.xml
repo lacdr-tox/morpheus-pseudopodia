@@ -11,13 +11,13 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
     </Global>
     <Space>
         <Lattice class="hexagonal">
-            <Size symbol="size" value="300 300 0"/>
+            <Size symbol="size" value="300, 300, 0"/>
             <Neighborhood>
                 <Order>1</Order>
             </Neighborhood>
             <BoundaryConditions>
-                <Condition boundary="x" type="periodic"/>
-                <Condition boundary="y" type="periodic"/>
+                <Condition type="periodic" boundary="x"/>
+                <Condition type="periodic" boundary="y"/>
             </BoundaryConditions>
         </Lattice>
         <SpaceSymbol symbol="space"/>
@@ -29,16 +29,16 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
     </Time>
     <CellTypes>
         <CellType class="biological" name="amoeba">
-            <VolumeConstraint target="200" strength="1"/>
+            <VolumeConstraint strength="1" target="200"/>
             <ConnectivityConstraint/>
             <PropertyVector symbol="move_dir" value="0.0, 0.0, 0.0"/>
-            <Property symbol="tumble.run_duration" value="0.0" name="run duration"/>
-            <Property symbol="tumble.last" value="0" name="last tumble event"/>
-            <Function symbol="tumble.time_left" name="time left">
+            <Property name="run duration" symbol="tumble.run_duration" value="0.0"/>
+            <Property name="last tumble event" symbol="tumble.last" value="0"/>
+            <Function name="time left" symbol="tumble.time_left">
                 <Expression>tumble.last + tumble.run_duration - time</Expression>
             </Function>
             <DirectedMotion direction="move_dir" strength="0.2"/>
-            <Event trigger="when true" time-step="5">
+            <Event time-step="5" trigger="when true">
                 <Condition>time >= tumble.last + tumble.run_duration</Condition>
                 <Rule symbol-ref="tumble.last">
                     <Expression>time</Expression>
@@ -47,8 +47,8 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
                     <Expression>20 * rand_gamma(0.5, 5)</Expression>
                 </Rule>
                 <Intermediate symbol="angle" value="rand_uni(0, 2*pi)"/>
-                <VectorRule symbol-ref="move_dir" spherical="true">
-                    <Expression>angle, 0 , 1</Expression>
+                <VectorRule symbol-ref="move_dir" notation="r,φ,θ">
+                    <Expression>1, angle, 0</Expression>
                 </VectorRule>
             </Event>
         </CellType>
@@ -56,7 +56,7 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
     </CellTypes>
     <CPM>
         <Interaction>
-            <Contact type1="amoeba" type2="medium" value="4"/>
+            <Contact type1="amoeba" value="4" type2="medium"/>
         </Interaction>
         <MonteCarloSampler stepper="edgelist">
             <MCSDuration value="1"/>
@@ -72,8 +72,8 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
         </ShapeSurface>
     </CPM>
     <CellPopulations>
-        <Population size="1" type="amoeba">
-            <Cell id="1" name="1">
+        <Population type="amoeba" size="1">
+            <Cell name="1" id="1">
                 <Nodes>50,100,0</Nodes>
             </Cell>
         </Population>
@@ -84,8 +84,8 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
             <Plot>
                 <Cells min="0.0">
                     <ColorMap>
-                        <Color value="0" color="red"/>
-                        <Color value="2" color="blue"/>
+                        <Color color="red" value="0"/>
+                        <Color color="blue" value="2"/>
                     </ColorMap>
                 </Cells>
                 <CellArrows orientation="5 * move_dir"/>
@@ -114,6 +114,8 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
                     </Color-bar>
                 </Plot>
             </Plots>
+            <Restriction/>
         </Logger>
+        <DependencyGraph reduced="false" format="svg"/>
     </Analysis>
 </MorpheusModel>
