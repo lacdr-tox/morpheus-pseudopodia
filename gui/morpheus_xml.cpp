@@ -4,6 +4,7 @@ MorpheusXML::MorpheusXML() {
     name = getNewModelName();
     path ="";
     is_plain_model = true;
+	is_zipped = false;
     QDomDocument cpmDoc( "cpmDocument" );
     QString str("<?xml version=\"1.0\" encoding=\"UTF-8\" ?><MorpheusModel version=\"95782\"></MorpheusModel>");
     cpmDoc.setContent(str);
@@ -14,6 +15,7 @@ MorpheusXML::MorpheusXML(QDomDocument model) {
     name = getNewModelName();
     path ="";
     is_plain_model = false;
+	is_zipped = false;
     xmlDocument = model;
 };
 

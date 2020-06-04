@@ -202,7 +202,15 @@ QSharedPointer<XSD::SimpleTypeInfo>  XSD::parseSimpleType(QDomNode xsdNode) {
 			}
 			else {
 				info->default_val = info->value_set.first();
-				info->pattern = QString("^(") + info->value_set.join("|") + ")$";
+				info->pattern = info->value_set.join("|");
+				info->pattern.replace("[","\\[");
+				info->pattern.replace("]","\\]");
+				info->pattern.replace("(","\\(");
+				info->pattern.replace(")","\\)");
+				info->pattern.replace(".","\\.");
+				info->pattern.replace("+","\\+");
+				info->pattern.prepend("^(").append(")$");
+				
 			}
 		}
 		else if ( ! xrestriction.firstChildElement("xs:pattern").isNull() ) {
@@ -739,8 +747,15 @@ void XSD::registerEnumValue(QString simple_type, QString value)
 //         qDebug() << "registering enum value " << value << " for type " << simple_type;
 		// --> update pattern !!
 		QStringList enums = simple_types[simple_type]->value_set;
-		simple_types[simple_type]->pattern = QString("^(") + enums.join("|") + ")$";
-		simple_types[simple_type]->validator.setRegExp(QRegExp(simple_types[simple_type]->pattern));
+		QString pattern = enums.join("|");
+		pattern.replace("[","\\[");
+		pattern.replace("]","\\]");
+		pattern.replace("(","\\(");
+		pattern.replace(")","\\)");
+		pattern.replace(".","\\.");
+		pattern.replace("+","\\+");
+		simple_types[simple_type]->pattern =pattern;
+		simple_types[simple_type]->validator.setRegExp(QRegExp(pattern));
 	}
 	else {
 		simple_types[simple_type]->value_instances[value]+=1;
@@ -776,15 +791,24 @@ void XSD::removeEnumValue(QString simple_type, QString value)
 
 			// --> update pattern !!
 			QStringList enums = simple_types[simple_type]->value_set;
+			QString pattern;
 			if(enums.size() != 0)
 			{
-				simple_types[simple_type]->pattern = QString("^(") + enums.join("|") + ")$";
+				pattern = enums.join("|");
+				pattern.replace("[","\\[");
+				pattern.replace("]","\\]");
+				pattern.replace("(","\\(");
+				pattern.replace(")","\\)");
+				pattern.replace(".","\\.");
+				pattern.replace("+","\\+");
+				simple_types[simple_type]->pattern = pattern.prepend("^(").append(")$");
 			}
 			else
 			{
 				simple_types[simple_type]->pattern = "^(...)$";
 			}
-			simple_types[simple_type]->validator.setRegExp(QRegExp(simple_types[simple_type]->pattern));
+			simple_types[simple_type]->pattern = pattern;
+			simple_types[simple_type]->validator.setRegExp(QRegExp(pattern));
 		}
 		else {
 			simple_types[simple_type]->value_instances[value] -= 1;

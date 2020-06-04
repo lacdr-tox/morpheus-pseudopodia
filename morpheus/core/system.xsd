@@ -33,32 +33,22 @@
 					<xs:group ref="SystemPlugins" />
 				</xs:all>
 				<xs:attribute name="time-scaling" type="cpmDouble" use="optional" default="1.0" />
-				<xs:attribute name="solver" type="morphSolver" use="required" default="adaptive45"/>
+				<xs:attribute name="solver" type="morphSolver" use="required" default="Dormand-Prince [adative, O(5)]"/>
 				<xs:attribute name="solver-eps" type="cpmDouble" use="optional" default="1e-4"/>
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
 
 	<xs:simpleType name="morphSolver">
-		<xs:annotation>
-			<xs:documentation>
-Solver for differential equations:
-- Euler: 1st order
-- Heun (aka midpoint): 2nd order
-- Runga-Kutta: 4th order
-			</xs:documentation>
-		</xs:annotation>
 		<xs:restriction base="xs:string">
-			<xs:enumeration value="adaptive45"/>
-			<xs:enumeration value="adaptive45-ck"/>
-			<xs:enumeration value="adaptive23"/>
-			<xs:enumeration value="fixed4"/>
-			<xs:enumeration value="fixed2"/>
-			<xs:enumeration value="fixed1"/>
-			<xs:enumeration value="stochastic"/>
-			<xs:enumeration value="runge-kutta"/>
-			<xs:enumeration value="heun"/>
-			<xs:enumeration value="euler"/>
+			<xs:enumeration value="Dormand-Prince [adative, O(5)]"/>
+			<xs:enumeration value="Cash-Karp [adative, O(5)]"/>
+			<xs:enumeration value="Bogacki-Shampine [adative, O(3)]"/>
+			<xs:enumeration value="Runge-Kutta [fixed, O(4)]"/>
+			<xs:enumeration value="Heun [fixed, O(2)]"/>
+			<xs:enumeration value="Euler [fixed, O(1)]"/>
+			<xs:enumeration value="Euler-Maruyama [stochastic, O(1)]"/>
+<!-- 			<xs:enumeration value="Cash-Karp+Rosenbrock"/> -->
 		</xs:restriction>
 	</xs:simpleType>
 	

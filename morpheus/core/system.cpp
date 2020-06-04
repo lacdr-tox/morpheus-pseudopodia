@@ -43,26 +43,40 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 		PluginParameter<SystemSolver::Method, XMLNamedValueReader, DefaultValPolicy> method;
 		method.setXMLPath("solver");
 		map<string,SystemSolver::Method> solver_map;
-		solver_map["euler"]            = SystemSolver::Method::Euler;
-		solver_map["fixed1"]           = SystemSolver::Method::Euler;
-		solver_map["stochastic"]       = SystemSolver::Method::Euler;
-		solver_map["heun"]             = SystemSolver::Method::Heun;
-		solver_map["fixed2"]           = SystemSolver::Method::Heun;
-		solver_map["runge-kutta"]      = SystemSolver::Method::Runge_Kutta4;
-		solver_map["fixed4"]           = SystemSolver::Method::Runge_Kutta4;
-		solver_map["dormand-prince"]   = SystemSolver::Method::AdaptiveDP;
-		solver_map["adaptive45"]       = SystemSolver::Method::AdaptiveDP;
-		solver_map["adaptive45-dp"]    = SystemSolver::Method::AdaptiveDP;
-		solver_map["runge-kutta-adaptive"] = SystemSolver::Method::AdaptiveDP;
+		solver_map["Euler [fixed, O(1)]"]   = SystemSolver::Method::Euler;
+		solver_map["euler"]                 = SystemSolver::Method::Euler;
+		solver_map["fixed1"]                = SystemSolver::Method::Euler;
+		
+		solver_map["Heun [fixed, O(2)]"]    = SystemSolver::Method::Heun;
+		solver_map["heun"]                  = SystemSolver::Method::Heun;
+		solver_map["fixed2"]                = SystemSolver::Method::Heun;
+		
+		solver_map["Runge-Kutta [fixed, O(4)]"] = SystemSolver::Method::Runge_Kutta4;
+		solver_map["runge-kutta"]           = SystemSolver::Method::Runge_Kutta4;
+		solver_map["fixed4"]                = SystemSolver::Method::Runge_Kutta4;
+		
+		solver_map["Dormand-Prince [adative, O(5)]"] = SystemSolver::Method::AdaptiveDP;
+		solver_map["dormand-prince"]        = SystemSolver::Method::AdaptiveDP;
+		solver_map["adaptive45"]            = SystemSolver::Method::AdaptiveDP;
+		solver_map["adaptive45-dp"]         = SystemSolver::Method::AdaptiveDP;
+		solver_map["runge-kutta-adaptive"]  = SystemSolver::Method::AdaptiveDP;
 		solver_map["runge-kutta-adaptive-DP"] = SystemSolver::Method::AdaptiveDP;
-		solver_map["cash-karp"]        = SystemSolver::Method::AdaptiveCK;
-		solver_map["adaptive45-ck"]    = SystemSolver::Method::AdaptiveCK;
+		
+		solver_map["Cash-Karp [adative, O(5)]"] = SystemSolver::Method::AdaptiveCK;
+		solver_map["cash-karp"]             = SystemSolver::Method::AdaptiveCK;
+		solver_map["adaptive45-ck"]         = SystemSolver::Method::AdaptiveCK;
 		solver_map["runge-kutta-adaptive-CK"] = SystemSolver::Method::AdaptiveCK;
-		solver_map["bogacki-shampine"] = SystemSolver::Method::AdaptiveBS;
-		solver_map["adaptive23"]       = SystemSolver::Method::AdaptiveBS;
+		
+		solver_map["Bogacki-Shampine [adative, O(3)]"] = SystemSolver::Method::AdaptiveBS;
+		solver_map["bogacki-shampine"]      = SystemSolver::Method::AdaptiveBS;
+		solver_map["adaptive23"]            = SystemSolver::Method::AdaptiveBS;
 		solver_map["runge-kutta-adaptive-BS"] = SystemSolver::Method::AdaptiveBS;
+
+		solver_map["Euler-Maruyama [stochastic, O(1)]"] = SystemSolver::Method::Euler;
+		solver_map["stochastic"]            = SystemSolver::Method::Euler;
+		
 		method.setValueMap(solver_map);
-		method.setDefault("adaptive45");
+		method.setDefault("Dormand-Prince [adative, O(5)]");
 		method.loadFromXML(node, scope);
 		solver_spec.method = method();
 	
@@ -957,13 +971,14 @@ void SystemSolver::Heun(const SymbolFocus& f, double ht) {
 
 void SystemSolver::RungeKutta(const SymbolFocus& f, double ht) {
 	// constants of the butcher tableau of the classical Runge-Kutta 4th order scheme
-	const double a21=0.5, a31=0.0, a32=0.5, a41=0.0, a42=0.0, a43=1.0;
-	const double b1=1.0/6, b2=1.0/3, b3=1.0/3, b4=1.0/6;
-	const double c2=0.5, c3=0.5, c4=1.0;
-	// constants of the butcher tableau of the 3/8 Runge-Kutta 4th order scheme
-// 	const double a21 = 1.0/3, a31=-1.0/3, a32=1.0, a41=1.0, a42=-1.0, a43=1.0;
-// 	const double b1=1.0/8, b2=3.0/8, b3=3.0/8, b4=1.0/8;
+// 	const double a21=0.5, a31=0.0, a32=0.5, a41=0.0, a42=0.0, a43=1.0;
+// 	const double b1=1.0/6, b2=1.0/3, b3=1.0/3, b4=1.0/6;
 // 	const double c2=0.5, c3=0.5, c4=1.0;
+	
+	// constants of the butcher tableau of the 3/8 Runge-Kutta 4th order scheme
+	const double a21 = 1.0/3, a31=-1.0/3, a32=1.0, a41=1.0, a42=-1.0, a43=1.0;
+	const double b1=1.0/8, b2=3.0/8, b3=3.0/8, b4=1.0/8;
+	const double c2=1.0/3, c3=2.0/3, c4=1.0;
 
 	
 	// First Step interpolation

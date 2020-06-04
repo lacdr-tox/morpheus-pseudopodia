@@ -294,10 +294,12 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 	QList<MorphModel::AutoFix> fixes;
 	QList<MorphModelEdit> edits;
 	
-	
 	if (morpheus_file_version == morpheus_ml_version) {
 		// nothing to do ...
 		fix_version=morpheus_ml_version;
+	}
+	else if (morpheus_file_version == 4) {
+		fix_version=5;
 		MorphModel::AutoFix a;
 		a.operation = AutoFix::MOVE;
 		a.match_path = "MorpheusModel/CellTypes/CellType/AddCell/Condition"; a.target_path = "MorpheusModel/CellTypes/CellType/AddCell/Count"; fixes.append(a);
@@ -311,15 +313,45 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 				 << "MorpheusModel/CellTypes/CellType/CellDivision/Triggers/";
 		QStringList suffixes;
 		suffixes << "VectorConstant/" << "VectorVariable/" << "VectorProperty/" << "VectorEquation/" << "VectorRule/" << "VectorFunction/";
-		
 		a.value_conversions["true"]="φ,θ,r"; a.value_conversions["false"]="x,y,z";
+		
 		for (auto suffix : suffixes) {
 			for (auto prefix : prefixes) {
 				a.match_path = prefix+suffix+"@spherical"; a.target_path = prefix+suffix+"@notation"; fixes.append(a);
 			}
 		}
+		a.match_path = "MorpheusModel/CellPopulations/Population/InitVectorProperty/@spherical";
+		a.target_path = "MorpheusModel/CellPopulations/Population/InitVectorProperty/@notation";
+		fixes.append(a);
 		
-		a.match_path = "MorpheusModel/CellPopulations/Population/InitVectorProperty/@spherical"; a.target_path = "MorpheusModel/CellPopulations/Population/InitVectorProperty/@notation"; a.value_conversions["true"]="φ,θ,r"; a.value_conversions["false"]="x,y,z"; fixes.append(a);
+		a.value_conversions.clear();
+		a.operation = AutoFix::COPY;
+		a.replace_existing=true;
+		
+		a.value_conversions["euler"]="Euler [fixed, O(1)]";
+		a.value_conversions["fixed1"]="Euler [fixed, O(1)]";
+		
+		a.value_conversions["heun"]="Heun [fixed, O(2)]";
+		a.value_conversions["fixed2"]="Heun [fixed, O(2)]";
+		
+		a.value_conversions["runge"]="Runge-Kutta [fixed, O(4)]";
+		a.value_conversions["runge-kutta"]="Runge-Kutta [fixed, O(4)]";
+		a.value_conversions["fixed4"]="Runge-Kutta [fixed, O(4)]";
+		
+		a.value_conversions["adaptive45"]="Dormand-Prince [adative, O(5)]";
+		a.value_conversions["adaptive45-dp"]="Dormand-Prince [adative, O(5)]";
+		a.value_conversions["adaptive45-ck"]="Cash-Karp [adative, O(5)]";
+		a.value_conversions["adaptive23"]="Bogacki-Shampine [adative, O(3)]";
+		
+		a.value_conversions["stochastic"]="Euler-Maruyama [stochastic, O(1)]";
+		
+		a.match_path ="MorpheusModel/Global/System/@solver";
+		a.target_path="MorpheusModel/Global/System/@solver";
+		fixes.append(a);
+		a.match_path ="MorpheusModel/CellTypes/CellType/System/@solver";
+		a.target_path="MorpheusModel/CellTypes/CellType/System/@solver";
+		fixes.append(a);
+
 	}
 	else if (morpheus_file_version == 3) {
 		fix_version=4;
@@ -590,15 +622,33 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 
 				if (new_name.startsWith("@")) {
 					
-					if (new_name == "@text") {
-						
-						if ( new_parent.text().isEmpty() || fixes[i].replace_existing ) {
+					QString attr_name = new_name;
+					attr_name.replace("@","");
+					
+					
+					if (attr_name == "text") {
+						if (target_path=="./@text") {
+							// same parental node, just convert values
+							QString new_value = matches[j].nodeValue();
+							if (fixes[i].value_conversions.contains(new_value)) {
+								new_value = fixes[i].value_conversions[new_value];
+								matches[j].setNodeValue(new_value);
+								// Assign to an attribute ...
+								ed.edit_type = MorphModelEdit::AttribRename;
+								ed.xml_parent = new_parent;
+								ed.info = QString("Text  ") + search_path + " was changed to " + new_value;
+								ed.name = attr_name;
+								qDebug() << ed.info;
+								edits.append(ed);
+							}
+							
+						}
+						else if ( new_parent.text().isEmpty() || fixes[i].replace_existing ) {
 							// Assign to an attribute ...
 							ed.edit_type = MorphModelEdit::AttribRename;
 							ed.xml_parent = new_parent;
 							ed.info = QString("Text  ") + search_path + (fixes[i].operation == AutoFix::MOVE ? " was moved to " : " was copied to " ) + target_path;
-							ed.name = new_name;
-							ed.name.replace("@","");
+							ed.name = attr_name;
 							qDebug() << ed.info;
 						
 							// Create a TextNode Child, if none exists
@@ -615,13 +665,27 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 						}
 					}
 					else {
-						if ( fixes[i].replace_existing || ! new_parent.attributes().contains(new_name) ) {
+						if (target_path == (QString("./@") + matches[j].nodeName()) ) {
+							// same attribute, just convert the values
+							QString new_value = matches[j].nodeValue();
+							if (fixes[i].value_conversions.contains(new_value)) {
+								new_value = fixes[i].value_conversions[new_value];
+								matches[j].setNodeValue(new_value);
+								// Assign to an attribute ...
+								ed.edit_type = MorphModelEdit::AttribRename;
+								ed.xml_parent = new_parent;
+								ed.info = QString("Attribute  ") + search_path + " was changed to " + new_value;
+								ed.name = attr_name;
+								qDebug() << ed.info;
+								edits.append(ed);
+							}
+						}
+						else if ( fixes[i].replace_existing || ! new_parent.attributes().contains(attr_name) ) {
 							// Assign to an attribute ...
 							ed.edit_type = MorphModelEdit::AttribRename;
 							ed.xml_parent = new_parent;
 							ed.info = QString("Attribute  ") + search_path + (fixes[i].operation == AutoFix::MOVE ? " was moved to " : " was copied to " ) + target_path;
-							ed.name = new_name;
-							ed.name.replace("@","");
+							ed.name = attr_name;
 							qDebug() << ed.info;
 							
 							// Purge prohibited characters
