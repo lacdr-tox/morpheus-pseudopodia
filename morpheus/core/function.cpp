@@ -15,7 +15,7 @@ REGISTER_PLUGIN ( FunctionPlugin );
 
 void FunctionPlugin::loadFromXML ( const XMLNode Node, Scope* scope)
 {
-	local_scope = scope->createSubScope("Function");
+	function_scope = scope->createSubScope("Function");
 	symbol.setXMLPath("symbol");
 	registerPluginParameter(symbol);
 	raw_expression.setXMLPath("Expression/text");
@@ -44,7 +44,7 @@ void FunctionPlugin::loadFromXML ( const XMLNode Node, Scope* scope)
 // 		}
 	}
 	
-	Plugin::loadFromXML(Node,local_scope);
+	Plugin::loadFromXML(Node,function_scope);
 	
 	// register the symbol in the parental scope
 	symbol.init();
@@ -54,7 +54,7 @@ void FunctionPlugin::loadFromXML ( const XMLNode Node, Scope* scope)
 
 void FunctionPlugin::init (const Scope* scope) {
 	if (initialized) return;
-	Plugin::init(local_scope);
+	Plugin::init(function_scope);
 	
 	evaluator = make_shared<ThreadedExpressionEvaluator<double> >(raw_expression(), scope, false);
 	// Add Parameters as local variables to the evaluators

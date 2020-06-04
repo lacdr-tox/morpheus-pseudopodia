@@ -333,7 +333,7 @@ public:
 	set<SymbolDependency> getOutputSymbols() const { return set<SymbolDependency>(); };
 	
 protected:
-	XMLEvaluatorBase() : is_const(false), is_radial(false), is_initialized(false), local_scope(nullptr), require_global_scope(false), allow_partial_spec(false) {};
+	XMLEvaluatorBase() : is_const(false), notation(VecNotation::ORTH), is_initialized(false), local_scope(nullptr), require_global_scope(false), allow_partial_spec(false) {};
 	// TODO Clearify  whether a Copy constructor is required to deal with the unique_ptr evaluator
 	// An assignment will leave the rhs object uninitialized !!!
 	
@@ -348,7 +348,6 @@ protected:
 	
 private:
 	bool is_const;
-	bool is_radial;
 	VecNotation notation;
 	bool is_initialized;
 	const Scope* local_scope;

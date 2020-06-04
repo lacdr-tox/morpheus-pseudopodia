@@ -185,17 +185,17 @@ Environment for tightly coupled \ref ML_Rule and \ref ML_DiffEqn. Expressions wi
 
 - \b solver: numerical solver for DiffEqn:
   - Adaptive time step solvers: 
-    - \b adaptive45 - Dormand-Prince 4/5th order, \b default
-    - \b adaptice45-ck - Cash-Karp 4/5th order
-    - \b adaptive23 - Bogacki-Shampine 2/3rd order
+    - \b Dormand-Prince  - adaptive, uses 4/5th order \b default
+    - \b Cash-Karp  - adaptive, uses 4/5th order
+    - \b Bogacki-Shampine  - adaptive, uses 2/3rd order
   - Fixed time step solvers
-     - \b fixed1 aka \b euler - Euler 1st order
-     - \b fixed2 aka \b heun - Heun 2nd order (aka explicit trapezoid rule)
-     - \b fixes4 aka \b runge-kutta - Runge Kutta 4th order
+     - \b Euler - 1st order
+     - \b Heun  - 2nd order (also Ralston)
+     - \b Runge-Kutta - 4th order (3/8-rule)
   - \b Stochastic fixed time step: 
-    - use \b stochastic - Euler Maruyama method (\b euler also autodetects stochasticity)
-  - \b Stiff/non-stiff adaptive 
-    - Cash-Karp + Rosenbrock (planned)
+    - \b Euler-Maruyama - method (\b Euler also autodetects stochasticity)
+  - Stiff/non-stiff adaptive 
+    - \b Cash-Karp+Rosenbrock (planned)
   
 - \b time-step:
   - \b Fixed schemes: integration step size, given in system time.

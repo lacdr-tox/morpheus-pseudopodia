@@ -64,9 +64,9 @@ Symbol with a variable scalar value. The initial value is given by a \ref MathEx
 Symbol with a variable 3D vector value. The initial value is given by a \ref MathExpressions.
 
 Syntax is comma-separated as given by \b notation :
-	orthogonal - x,y,z
-	radial     - r,φ,θ
-	or radial  - φ,θ,r
+  - orthogonal - x,y,z
+  - radial     - r,φ,θ
+  - or radial  - φ,θ,r
 **/
 
 /**
@@ -103,9 +103,9 @@ Symbol with a cell-bound scalar value and a \b delay time until values become cu
 Symbol with cell-bound, variable 3D vector value. The initial value and history is  given by a \ref MathExpressions.
 
 Syntax is comma-separated as given by \b notation :
-	orthogonal - x,y,z
-	radial     - r,φ,θ
-	or radial  - φ,θ,r
+  - orthogonal - x,y,z
+  - radial     - r,φ,θ
+  - or radial  - φ,θ,r
 **/
 
 

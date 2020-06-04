@@ -39,6 +39,7 @@ void RessourceManager::storeFile(std::string name, std::string path) {
 	if (f==nullptr)
 		return;
 	fwrite(data.data,sizeof(char),data.length,f);
+	fclose(f);
 }
 
 

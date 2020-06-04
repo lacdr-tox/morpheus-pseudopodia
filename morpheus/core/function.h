@@ -82,9 +82,9 @@ Scalar or dot product of two vector parameters
 Symbol that defines a relation between vector \ref Symbols from the \ref Scope of the VectorFunction definition and other *Function*s to a scalar result.
 
 Syntax is comma-separated as given by \b notation :
-	orthogonal - x,y,z
-	radial     - r,φ,θ
-	or radial  - φ,θ,r
+  - orthogonal - x,y,z
+  - radial     - r,φ,θ
+  - or radial  - φ,θ,r
 **/
 
 #ifndef Function_H
@@ -175,7 +175,7 @@ class FunctionPlugin : public Plugin {
 		bool initialized = false;
 		shared_ptr<Symbol> accessor;
 		shared_ptr<ThreadedExpressionEvaluator<double> > evaluator;
-		Scope* local_scope = nullptr;
+		Scope* function_scope = nullptr;
 		
 		PluginParameter2<string, XMLValueReader, RequiredPolicy> raw_expression;
 		PluginParameter2<string, XMLValueReader, RequiredPolicy> symbol;

@@ -128,7 +128,7 @@
 	<xs:simpleType name="morphVectorNotation">
 		<xs:restriction base="xs:normalizedString">
 			<xs:enumeration value="x,y,z" />
-			<xs:enumeration value="orthogonal" />
+<!-- 			<xs:enumeration value="orthogonal" /> -->
 			<xs:enumeration value="r,φ,θ" />
 			<xs:enumeration value="φ,θ,r" />
 		</xs:restriction>

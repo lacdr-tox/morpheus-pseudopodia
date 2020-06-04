@@ -1,5 +1,7 @@
-#include "gtest/gtest.h"
+#include "test_operators.h"
 #include "core/vec.h"
+
+const double min_prec_tol = 1e-15;
 
 TEST (VEC, CONVERSION) {
 	bool vint_to_vdouble = std::is_convertible<VINT, VDOUBLE>::value;
@@ -63,10 +65,10 @@ TEST (VEC, DIV) {
 // Test conversion from different notations
 TEST (VDOUBLE, NOTATION) {
 	EXPECT_EQ(VDOUBLE::from(VDOUBLE(1,2,3),VecNotation::ORTH), VDOUBLE(1,2,3));
-	EXPECT_EQ(VDOUBLE::from(VDOUBLE(1,0.5*M_PI,0),VecNotation::SPHERE_RPT), VDOUBLE(0,0,1));
-	EXPECT_EQ(VDOUBLE::from(VDOUBLE(2,0,0.5*M_PI),VecNotation::SPHERE_RPT), VDOUBLE(0,2,0));
-	EXPECT_EQ(VDOUBLE::from(VDOUBLE(0,-0.5*M_PI,1),VecNotation::SPHERE_PTR), VDOUBLE(0,0,-1));
-	EXPECT_EQ(VDOUBLE::from(VDOUBLE(-0.5*M_PI,0,2),VecNotation::SPHERE_PTR), VDOUBLE(0,-2,0));
+	EXPECT_PRED_FORMAT2(EQ_PREC,VDOUBLE::from(VDOUBLE(1,0.5*M_PI,0),VecNotation::SPHERE_RPT), VDOUBLE(0,1,0));
+	EXPECT_PRED_FORMAT2(EQ_PREC,VDOUBLE::from(VDOUBLE(2,0,0.5*M_PI),VecNotation::SPHERE_RPT), VDOUBLE(0,0,2));
+	EXPECT_PRED_FORMAT2(EQ_PREC,VDOUBLE::from(VDOUBLE(0,-0.5*M_PI,1),VecNotation::SPHERE_PTR), VDOUBLE(0,0,-1));
+	EXPECT_PRED_FORMAT2(EQ_PREC,VDOUBLE::from(VDOUBLE(-0.5*M_PI,0,2),VecNotation::SPHERE_PTR), VDOUBLE(0,-2,0));
 }
 
 

@@ -263,6 +263,7 @@ template <class T>
 ExpressionEvaluator< T >::ExpressionEvaluator(string expression, const Scope* scope, bool partial_spec)
 {
 	this->expression = expression;
+	this->_notation = VecNotation::ORTH;
 	this->scope = scope;
 	if (expression.empty())
 		throw string("Empty expression in ExpressionEvaluator");
@@ -277,6 +278,7 @@ template <class T>
 ExpressionEvaluator< T >::ExpressionEvaluator(string expression, shared_ptr<EvaluatorCache> cache)
 {
 	this->expression = expression;
+	this->_notation = VecNotation::ORTH;
 	if (expression.empty())
 		throw string("Empty expression in ExpressionEvaluator");
 	allow_partial_spec = cache->getPartialSpec();
@@ -295,6 +297,7 @@ ExpressionEvaluator<T>::ExpressionEvaluator(const ExpressionEvaluator<T> & other
 	// at first, copy all configuration
 	scope = other.scope;
 	expression = other.expression;
+	_notation = other._notation;
 	clean_expression = other.clean_expression;
 	allow_partial_spec = other.allow_partial_spec;
 	

@@ -18,9 +18,9 @@
 Assignment of mathematical expression to a vector symbol.
 
 Syntax is comma-separated as given by \b notation :
-	orthogonal - x,y,z
-	radial     - r,φ,θ
-	or radial  - φ,θ,r
+  - orthogonal - x,y,z
+  - radial     - r,φ,θ
+  - or radial  - φ,θ,r
 
 During simulation it is asserted that the provided relation always holds. Therefore, the expression may not depend on the referred output symbol. For recurrence equations, use a \ref ML_VectorRule within Systems.
 
