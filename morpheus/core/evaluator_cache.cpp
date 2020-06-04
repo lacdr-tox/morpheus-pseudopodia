@@ -81,7 +81,10 @@ EvaluatorCache::EvaluatorCache(const EvaluatorCache& other)
 	// Rewire cached SymbolDesc
 	for (auto& ns : external_namespaces) {
 		for (auto& sym : ns.used_symbols) {
-			sym.second = &externals[sym.first];
+			assert(externals.count(sym.first));
+			string name = ns.ns_name + "." + sym.first;
+			sym.second = &externals[name];
+// 			cout << "Rewiring " << name << " = " << sym.second << " -> " << sym.second->sym << endl;
 		}
 	}
 	
