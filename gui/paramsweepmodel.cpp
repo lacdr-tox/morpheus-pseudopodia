@@ -378,7 +378,7 @@ bool ParamSweepModel::dropMimeData ( const QMimeData* data, Qt::DropAction actio
 				if (move_index.row() < row) {
 					new_row = row-1;
 				}
-				else if (move_index.row() >= row) {
+				else /* if (move_index.row() >= row)*/ {
 					new_row = row;
 				}
 				if (new_row == move_index.row())

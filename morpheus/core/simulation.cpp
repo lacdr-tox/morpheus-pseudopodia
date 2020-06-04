@@ -380,11 +380,20 @@ bool init(int argc, char *argv[]) {
 		overrides[it->first] = it->second;
 	}
  
-	if ( ! init(readFile(filename), overrides) ) {
+	try {
+		init(readFile(filename), overrides);
+	}
+	catch (const string &e) {
 		cout << "Could not initialize model " << filename << endl;
+		cout << e << endl;
 		return false;
 	}
-
+	catch (const MorpheusException &e) {
+		cout << "Could not initialize model " << filename << endl;
+		cout << e.what() << endl;
+		cout << e.where() << endl;
+		return false;
+	}
 	
 	if (SIM::generate_symbol_graph_and_exit) {
 		createDepGraph();
@@ -400,9 +409,10 @@ bool init(string model, map<string,string> overrides) {
 	XMLResults results;
 	auto xMorpheusRoot = XMLNode::parseString(model.c_str(),"MorpheusModel", &results);
 	if (results.error!=eXMLErrorNone) {
-		cerr << "Unable to read model" << std::endl; 
-		cerr << XMLNode::getError(results.error) <<  " at line " << results.nLine << " col " << results.nColumn << "!" << std::endl; 
-		return false;
+		stringstream s;
+		s << "Unable to read model" << std::endl; 
+		s << XMLNode::getError(results.error) <<  " at line " << results.nLine << " col " << results.nColumn << "!" << std::endl; 
+		throw s.str();
 	}
 	
 	global_scope = unique_ptr<Scope>(new Scope());

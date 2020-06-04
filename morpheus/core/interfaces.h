@@ -232,7 +232,7 @@ class Plugin {
 		const string& getDescription() const { return plugin_name; };
 		const string& getFullName() const { return plugin_name; };
 		virtual const Scope* scope() { return local_scope; };
-		bool setParameter(string xml_path, string value);
+		bool setParameter( const string& xml_path, string value );
 		
 		/// init method is called by the framework as soon as all model containers and symbols have been set up
 		/// but before cell populations get created.

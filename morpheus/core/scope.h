@@ -182,7 +182,7 @@ private:
 template <class T>
 class CompositeSymbol : public SymbolAccessorBase<T>, public CompositeSymbol_I {
 public:
-	CompositeSymbol(string name, SymbolAccessor<T> default_val = nullptr) : 
+	CompositeSymbol(const string& name, SymbolAccessor<T> default_val = nullptr) : 
 		SymbolAccessorBase<T>(name)
 	{ 
 		if (default_val) {

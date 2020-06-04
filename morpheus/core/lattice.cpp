@@ -73,23 +73,26 @@ Lattice::Lattice(const LatticeDesc& desc) : Lattice()
 
 unique_ptr<Lattice> Lattice::createLattice(const LatticeDesc& desc)
 {
+	unique_ptr<Lattice> lattice;
 	switch (desc.structure) {
 		case cubic:
-			return make_unique<Cubic_Lattice>(desc);
+			lattice = make_unique<Cubic_Lattice>(desc);
+			break;
 		case hexagonal:
-			return make_unique<Hex_Lattice>(desc);
+			lattice = make_unique<Hex_Lattice>(desc);
+			break;
 		case square:
-			return make_unique<Square_Lattice>(desc);
+			lattice = make_unique<Square_Lattice>(desc);
+			break;
 		case linear:
-			return make_unique<Linear_Lattice>(desc);
+			lattice = make_unique<Linear_Lattice>(desc);
+			break;
 		default:
-			return unique_ptr<Lattice>();
+			break;
 	}
-}
-
-void Lattice::init(const Scope* scope) {
-	if (domain)
-		domain->init(this);
+	if (desc.domain->domainType() != Domain::none)
+		desc.domain->init(lattice.get());
+	return lattice;
 }
 
 
@@ -139,7 +142,7 @@ VINT Lattice::getRandomPos( void ) const {
 };
 
 
-Neighborhood Lattice::getNeighborhood(const std::string name) const {
+Neighborhood Lattice::getNeighborhood(const std::string& name) const {
 	Neighborhood neighborhood = this->getNeighborhoodByName(name);
 	if ( ! neighborhood.empty() ) return neighborhood;
 	int float_end = name.find_first_not_of(" 0123456789.,");

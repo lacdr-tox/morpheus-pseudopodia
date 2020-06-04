@@ -243,7 +243,6 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 					mapper.fillGaps();
 					valarray<double> raw_data;
 					for (const auto & out : halo_output) {
-						// TODO There must be a lock on the out->mapper if using it in multithreading !
 						if (out->membrane_acc) {
 							mapper.copyData(out->membrane_acc->getField(cell_focus.cellID()));
 						}

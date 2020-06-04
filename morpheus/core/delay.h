@@ -58,7 +58,7 @@ public:
 
 	void setTimeStep(double t) override;
 	double getDelay() const { return delay(SymbolFocus::global);}
-	double getInitValue(const SymbolFocus f, double time);
+	double getInitValue(const SymbolFocus& f, double time);
 	
 	void prepareTimeStep(double step_size) override {};
 	void executeTimeStep() override {};

@@ -85,9 +85,6 @@ public:
 	static const auto cubic = Structure::cubic;
 
 	virtual string getXMLName() const =0;
-// 	void loadFromXML(const XMLNode xnode, Scope* scope);
-	void init(const Scope* scope);
-// 	XMLNode saveToXML();
 
 	Lattice();  /// Configure a Lattice from a XML node
 	Lattice(const LatticeDesc& desc);
@@ -129,7 +126,7 @@ public:
 	virtual VDOUBLE orth_distance(const VDOUBLE& a, const VDOUBLE& b) const =0; /// distance measure assuming parameters are provided in orthogonal coordinates. Also respects periodic boundary conditions.
 	virtual VINT from_orth(const VDOUBLE& a) const = 0; /// convert orthogonal coordinates into a discrete lattice position
 	/// Neighborhood identified by @param  name
-	Neighborhood getNeighborhood(const std::string name) const;  
+	Neighborhood getNeighborhood(const std::string& name) const;  
 	/// Neighborhood up to the order defined by @param  order.
 	Neighborhood getNeighborhood(const NeighborhoodDesc& desc) const;
 	Neighborhood getNeighborhood(const XMLNode node) const;

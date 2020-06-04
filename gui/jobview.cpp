@@ -216,7 +216,7 @@ void JobQueueView::unselectJobs(const QModelIndex& parent, int min_row, int max_
 						  current_idx.row() :
 						  current_idx.parent().row();
 	
-		if (min_row <= current_row && current_row <= max_row) {
+		if (min_row >= current_row && current_row <= max_row) {
 			if (job_view_model->rowCount(parent)>max_row+1) {
 				selectJob(parent.child(max_row+1,0));
 			}
@@ -231,7 +231,7 @@ void JobQueueView::unselectJobs(const QModelIndex& parent, int min_row, int max_
 	else if (parent == current_idx) { // A model section is selected
 		int current_row = 0;
 		
-		if (min_row <= current_row && current_row <= max_row) {
+		if (min_row >= current_row && current_row <= max_row) {
 			if (job_view_model->rowCount(parent)>max_row+1) {
 				selectJob(parent.child(max_row+1,0));
 			}
@@ -247,7 +247,7 @@ void JobQueueView::unselectJobs(const QModelIndex& parent, int min_row, int max_
 		
 		int current_row = current_idx.row();
 		
-		if (min_row <= current_row && current_row <= max_row) {
+		if (min_row >= current_row && current_row <= max_row) {
 			if (job_view_model->rowCount(parent)>max_row+1) {
 				selectJob(parent.child(max_row+1,0));
 			}

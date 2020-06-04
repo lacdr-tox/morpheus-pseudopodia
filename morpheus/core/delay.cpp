@@ -85,7 +85,7 @@ void DelayPropertyPlugin::assert_initialized() {
 	if (! this->initialized) init(local_scope);
 }
 
-double DelayPropertyPlugin::getInitValue(const SymbolFocus f, double time) {
+double DelayPropertyPlugin::getInitValue(const SymbolFocus& f, double time) {
 	value.setLocals(&time);
 	return value.safe_get(f);
 }

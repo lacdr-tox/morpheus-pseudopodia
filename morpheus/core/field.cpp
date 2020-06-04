@@ -943,7 +943,7 @@ void PDE_Layer::write_binary(ostream& fout, int max_resolution) {
 
 	bool is_hexagonal = 	(_lattice->getXMLName() == "hexagonal");
 	VINT row_start(0,0,0);
-	for (row_start.y=0; row_start.y<l_size.y; row_start.y++) {
+	for (row_start.y=0; row_start.y<l_size.y; row_start.y+=y_iter) {
 		uint row_index = get_data_index(row_start);
 		// value of y axis
 		k = _lattice -> to_orth(row_start).y;

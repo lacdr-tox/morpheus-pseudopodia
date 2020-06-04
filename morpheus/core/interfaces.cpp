@@ -88,7 +88,7 @@ void Plugin::registerCellPositionOutput()
 	registerOutputSymbol(local_scope->findSymbol<VDOUBLE>(SymbolBase::CellCenter_symbol));
 }
 
-bool Plugin::setParameter(string xml_path, string value)
+bool Plugin::setParameter(const string& xml_path, string value)
 {
 	for (uint i=0; i<plugin_parameters2.size(); i++) {
 		if (plugin_parameters2[i]->XMLPath() == xml_path) {

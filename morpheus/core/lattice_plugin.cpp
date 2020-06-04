@@ -106,17 +106,22 @@ void LatticePlugin::init(const Scope* scope)
 	}
 	
 	lattice_desc.size = VINT(size(SymbolFocus::global));
+
 	// Override lattice size to fit at least the domain size
-	if (lattice_desc.domain)
+	if (lattice_desc.domain->domainType() != Domain::none)
 		lattice_desc.size = max(lattice_desc.size, lattice_desc.domain->size());
+	
 	if (size_symbol_name.isDefined()) {
 		size_symbol->set(SymbolFocus::global, lattice_desc.size);
 	}
 	
 	lattice_desc.node_length = node_length();
-
+	if (lattice_desc.node_length<=0)
+		throw MorpheusException(string("Invalid NodeLength ") + to_str(lattice_desc.node_length), stored_node);
+	
 	lattice = Lattice::createLattice(lattice_desc);
-	lattice->init(scope);
+	if (lattice->size().x<=0 || lattice->size().y<=0 || lattice->size().z<=0)
+		throw MorpheusException(string("Invalid Lattice extends ") + to_str(lattice->size()), stored_node);
 }
 
 

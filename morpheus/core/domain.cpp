@@ -101,6 +101,9 @@ void Domain::loadFromXML(const XMLNode xNode, Scope* scope, const LatticeDesc& l
 		if (lattice_desc.structure == LatticeDesc::hexagonal)
 			domain_size.x*=1.5;
 	}
+	else {
+		throw MorpheusException("Unknown Domain specification.", xNode);
+	}
 	cout << "Domain size " << domain_size << endl;
 }
 
@@ -124,6 +127,9 @@ void Domain::init(Lattice* l) {
 			center.x -= center.y/2;
 		}
 
+	}
+	else {
+		return;
 	}
 	
 	createEnumerationMap();
@@ -180,7 +186,6 @@ bool Domain::insideImageDomain(const VINT& a) const
 void Domain::createEnumerationMap() {
 	VINT pos;
 	VINT size = lattice->size();
-	cout << "L_Size " << size;
 	for (pos.z=0; pos.z<size.z; pos.z++)
 		for (pos.y=0; pos.y<size.y; pos.y++)
 			for (pos.x=0; pos.x<size.x; pos.x++) {

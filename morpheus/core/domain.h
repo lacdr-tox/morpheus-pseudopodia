@@ -39,7 +39,7 @@ class Scope;
 
 class Domain {
 public:
-	Domain() : type(none) {};
+	Domain() : boundary_type(Boundary::Type::none), type(none), lattice(nullptr) {};
 	void loadFromXML(const XMLNode xNode, Scope* scope, const LatticeDesc& desc);
 	void init(Lattice* l);
 	enum Type {none ,image, circle, hexagon};

@@ -129,7 +129,7 @@ public:
 template <class T>
 class SymbolAccessorBase : public SymbolBase {
 public:
-	SymbolAccessorBase(std::string name) : SymbolBase(), symbol_name(name), _scope(nullptr) {}
+	SymbolAccessorBase(const std::string& name) : SymbolBase(), symbol_name(name), _scope(nullptr) {}
 	/// Unique string identifier for a the data type
 	const std::string& type() const final { return TypeInfo<T>::name(); }
 	/// Name of the symbol
@@ -159,9 +159,9 @@ public:
 	virtual typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const { return get(f); };
 	
 	/// Static creator method for a constant symbol not associated with the XML, that may be registered in a scope.
-	static shared_ptr<SymbolAccessorBase<T> > createConstant(string name, string description, const T& value);
+	static shared_ptr<SymbolAccessorBase<T> > createConstant(const string& name, const string& description, const T& value);
 	/// Static creator method for a variable symbol not associated with the XML, that may be registered in a scope.
-	static shared_ptr<SymbolAccessorBase<T> > createVariable(string name, string description, const T& value);
+	static shared_ptr<SymbolAccessorBase<T> > createVariable(const string& name, const string& description, const T& value);
 
 protected:
 	/// Scope the Symbol is registered in
@@ -189,7 +189,7 @@ class FunctionAccessor {
 template <class T>
 class PrimitiveConstantSymbol : public SymbolAccessorBase<T> {
 public:
-	PrimitiveConstantSymbol(string name, string description, const T& value) : SymbolAccessorBase<T>(name),
+	PrimitiveConstantSymbol(const string& name, const string& description, const T& value) : SymbolAccessorBase<T>(name),
 		descr(description), value(value) {
 			this->flags().time_const = true;
 			this->flags().space_const = true;
@@ -206,7 +206,7 @@ protected:
 };
 
 template <class T>
-shared_ptr<SymbolAccessorBase<T> > SymbolAccessorBase<T>::createConstant(string name, string description, const T& value) {
+shared_ptr<SymbolAccessorBase<T> > SymbolAccessorBase<T>::createConstant(const string& name, const string& description, const T& value) {
 	return make_shared< PrimitiveConstantSymbol<T> >(name,description, value);
 }
 
@@ -223,20 +223,20 @@ shared_ptr<SymbolAccessorBase<T> > SymbolAccessorBase<T>::createConstant(string 
 template <class T>
 class SymbolRWAccessorBase : public SymbolAccessorBase<T> {
 public:
-	SymbolRWAccessorBase(std::string name) : SymbolAccessorBase<T>(name) {
+	SymbolRWAccessorBase(const std::string& name) : SymbolAccessorBase<T>(name) {
 		this->flags().writable = true;
 	}
 	virtual void set(const SymbolFocus& f, typename TypeInfo<T>::Parameter val) const =0;
 	virtual void setBuffer(const SymbolFocus& f, typename TypeInfo<T>::Parameter value) const =0;
 	virtual void applyBuffer() const =0;
 	virtual void applyBuffer(const SymbolFocus& f) const =0;
-	static shared_ptr<SymbolRWAccessorBase<T> > createVariable(string name, string descr, const T& value);
+	static shared_ptr<SymbolRWAccessorBase<T> > createVariable(const string& name, const string& descr, const T& value);
 };
 
 template <class T>
 class PrimitiveVariableSymbol : public SymbolRWAccessorBase<T> {
 public:
-	PrimitiveVariableSymbol(string name, string description, const T& value) : SymbolRWAccessorBase<T>(name),
+	PrimitiveVariableSymbol(const string& name, const string& description, const T& value) : SymbolRWAccessorBase<T>(name),
 		descr(description), value(value) {};
 	/// Simplified interface for space-independent Symbols
 	typename TypeInfo<T>::SReturn get() const { return value; };
@@ -256,7 +256,7 @@ protected:
 };
 
 template <class T>
-shared_ptr<SymbolRWAccessorBase<T> > SymbolRWAccessorBase<T>::createVariable(string name, string descr, const T& value) {
+shared_ptr<SymbolRWAccessorBase<T> > SymbolRWAccessorBase<T>::createVariable(const string& name, const string& descr, const T& value) {
 	return make_shared< PrimitiveVariableSymbol<T> >(name,descr,value);
 }
 

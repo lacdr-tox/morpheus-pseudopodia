@@ -63,11 +63,11 @@ class VectorField_Layer;
 
 class MorpheusException {
 public:
-	MorpheusException(string what) : _what(what) {};
-	MorpheusException(string what, XMLNode where) : _what(what),_where(getXMLPath(where)) {}
-	MorpheusException(string what, string where) : _what(what),_where(where) {}
-	string where() const { return _where; }
-	string what() const { return _what; }
+	MorpheusException(const string& what) : _what(what) {};
+	MorpheusException(const string& what, XMLNode where) : _what(what),_where(getXMLPath(where)) {}
+	MorpheusException(const string& what, const string& where) : _what(what),_where(where) {}
+	const string& where() const { return _where; }
+	const string& what() const { return _what; }
 protected:
 	string _what;
 	string _where;
