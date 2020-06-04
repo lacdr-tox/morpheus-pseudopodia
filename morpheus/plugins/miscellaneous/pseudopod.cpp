@@ -5,6 +5,10 @@
 #include "pseudopod.h"
 #include "core/cell.h"
 
+static double getRandomAngleRadians(double range = 2 * M_PI) {
+    return range * (getRandom01() - 0.5);
+}
+
 // returns a radial in phi, theta, radius. convert with from_radial()
 // default van Mises has range 2 M_PI, but this function allows a custom range (thereby capping
 // the van Mises distruction)
@@ -12,11 +16,12 @@ static VDOUBLE RandomVonMisesRangePoint(VDOUBLE mu, double kappa, double range) 
     double ar, theta;
     do {
         ar = getRandom01();
-        theta = range * (getRandom01() - 0.5);
+        theta = getRandomAngleRadians(range);
     } while (ar > exp(kappa * (cos(theta - mu.x) - 1.0)));
 
     return {theta, 0.0, 1.0};
 }
+
 
 static VDOUBLE RandomVonMisesPoint(VDOUBLE mu, double kappa) {
     return RandomVonMisesRangePoint(mu, kappa, 2 * M_PI);
@@ -52,7 +57,8 @@ void Pseudopod::startNewBundle() {
 
     //Set polarisation direction based on cell target direction
     auto preferredDirection = VDOUBLE(movingDirection_->get(SymbolFocus(cellId)), 0, 1);
-    polarisationDirection_ = RandomVonMisesPoint(preferredDirection, kappaInit_);
+    //polarisationDirection_ = RandomVonMisesPoint(preferredDirection, kappaInit_);
+    polarisationDirection_ = {getRandomAngleRadians(), 0, 1};
 }
 
 void Pseudopod::addPosToBundle(VDOUBLE const &pos) {
