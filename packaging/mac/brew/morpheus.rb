@@ -1,9 +1,9 @@
 class Morpheus < Formula
   desc "Modelling environment for Multi-Cellular Systems Biology"
   homepage "https://morpheus.gitlab.io"
-  url "https://gitlab.com/morpheus.lab/morpheus/-/archive/v2.1.90/morpheus-v2.1.90.tar.gz"
-  # sha256 "3807a072368eb597d7960ad84617f37ee04b195e2807fa2539f608d71a01dd7d"
-  version "2.1.90"
+  url "https://gitlab.com/morpheus.lab/morpheus/-/archive/v2.1.91/morpheus-v2.1.91.tar.gz"
+  sha256 "4bedf09eb13fa606a02753cb32c0c3a1f77c3a3005b8799ee537c1135f5ba799"
+  version "2.1.91"
 
   head "https://gitlab.com/morpheus.lab/morpheus.git", :branch => "develop"
 
