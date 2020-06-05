@@ -211,12 +211,22 @@ void DependencyGraph::parse_scope(const Scope* scope)
 			set<SymbolDependency> inter_dep = dynamic_cast<CPMSampler*>(tsl)->getInteractionDependencies();
 			
 			// Global CPM TSL Box
-			info.definitions << cpm_name 
+			info.definitions
+				<< cpm_name 
 				<< " ["
-				<< "shape=record"
-				<< ", label=\"{ " << tsl->XMLName()
-				<< (tsl->getFullName().empty()  || reduced() ? string() : string("\\n\\\"") + tsl->getFullName() + "\\\"")
-				<< " | " <<  tsl->timeStep() << " }\""
+				<< "shape=plaintext"
+				<< ", label=<"
+				<< "<font face=\"times\" point-size=\"15\">"
+				<< "<table cellborder=\"0\" border=\"1\" cellspacing=\"0\" cellpadding=\"3\">"
+				<< "  <tr><td>" << tsl->XMLName() << "</td></tr>";
+			if (!tsl->getFullName().empty() && !reduced()) { info.definitions
+				<< "<tr><td><i>\"" + tsl->getFullName() << "\"</i></td></tr>";
+			}
+			info.definitions
+				<< "<hr/><tr><td>" <<  tsl->timeStep() << "</td></tr>"
+				<< "</table>"
+				<< "</font>"
+				<< ">"
 				<< " ]\n" ;
 			
 			for (auto ct_scope : scope->getComponentSubScopes()) {
@@ -269,13 +279,27 @@ void DependencyGraph::parse_scope(const Scope* scope)
 		}
 		else {
 			// TSL Box
-			info.definitions << tslDotName(tsl)
+			info.definitions
+				<< tslDotName(tsl)
 				<< "[ "
-				<< "shape=record"
-				<< ", label=\"{ "<< tsl->XMLName()
-			    << ((tsl->getFullName().empty()  || reduced()) ? string() :  string("\\n\\\"") + tsl->getFullName() + "\\\" ")
-				<< " | " << tsl->timeStep() << " }\""
-				<< (tsl->getXMLNode().isEmpty() ?  string() : string(", URL=\"morph://MorpheusModel/") + getXMLPath(tsl->getXMLNode()) + "\", tooltip=\"" + getXMLPath(tsl->getXMLNode()) +"\"" )
+				<< "shape=plaintext,  margin=\"0\""
+				<< ", label=<"
+				<< "<font face=\"times\" point-size=\"15\">"
+				<< "<table cellborder=\"0\" border=\"1\" cellspacing=\"0\" cellpadding=\"3\" align=\"center\">\n"
+				<< "<tr><td>" << tsl->XMLName() << "</td></tr>\n";
+			if (!tsl->getFullName().empty() && !reduced()) { info.definitions
+				<< "<tr><td><I>\"" << tsl->getFullName() << "\"</I></td></tr>\n"; 
+			}
+			info.definitions
+			    << "<hr/>\n"
+				<< "<tr><td>" <<  tsl->timeStep() << "</td></tr>"
+				<< "</table>"
+				<< "</font>"
+				<< ">";
+			if (!tsl->getXMLNode().isEmpty()) { info.definitions 
+				<< ", URL=\"morph://MorpheusModel/" << getXMLPath(tsl->getXMLNode()) << "\""  /*<< ", tooltip=\"" << getXMLPath(tsl->getXMLNode()) << "\"" */;
+			}
+			info.definitions
 				<< " ]\n" ;
 			
 			// Readers
@@ -330,13 +354,25 @@ void DependencyGraph::parse_scope(const Scope* scope)
 				plugin_node_name = pluginDotName(dep.first);
 				if (plugin_node_name != current_plugin) {
 					current_plugin = plugin_node_name;
-					info.definitions << plugin_node_name
-						<< "["
-						<< "shape=record"
-						<< ", label=\"" << dep.first->XMLName()
-						<< (dep.first->getFullName().empty() || reduced() ?  string("") : string("\\n\\\"") + dep.first->getFullName() + "\\\"")
-						<< "\""
-						<< (dep.first->getXMLNode().isEmpty() ?  string() : string(", URL=\"morph://MorpheusModel/") + getXMLPath(dep.first->getXMLNode()) + "\"")
+					info.definitions
+						<< plugin_node_name
+						<< "[ "
+						<< "shape=plaintext,  margin=\"0\""
+						<< ", label=<"
+						<< "<font face=\"times\" point-size=\"15\"><table cellborder=\"0\" border=\"1\" cellspacing=\"0\" cellpadding=\"3\" align=\"center\" >\n"
+						<< "  <tr><td>" << dep.first->XMLName() << "</td></tr>\n";
+					if (!dep.first->getFullName().empty() && !reduced()) {
+						info.definitions
+						<< "  <tr><td><i>\"" << dep.first->getFullName() << "\"</i></td></tr>\n";
+					}
+					info.definitions
+						<< "</table></font>"
+						<< ">";
+					if (!dep.first->getXMLNode().isEmpty()) {
+						info.definitions
+						<< ", URL=\"morph://MorpheusModel/" << getXMLPath(dep.first->getXMLNode()) << "\"";
+					}
+					info.definitions
 						<< "];\n";
 				}
 				auto symbols = parse_symbol(dep.second);
