@@ -171,7 +171,7 @@ void AboutModel::update_graph()
 	if (webGraph->url().fileName() == "model_graph_renderer.html") {
 		webGraph->evaluateJS("setGenerating();", [](const QVariant& r){});
 	}
-	if (webGraph->url().fileName() == "model_graph_viewer.html") {
+	else if (webGraph->url().fileName() == "model_graph_viewer.html") {
 		webGraph->evaluateJS("setGenerating();", [](const QVariant& r){});
 	}
 	else {
@@ -182,6 +182,15 @@ void AboutModel::update_graph()
 // 					disconnect(onLoadConnect);
 // 				});
 		webGraph->setUrl(url);
+		onLoadConnect = 
+			connect(webGraph, &WebViewer::loadFinished, 
+				[type,this](bool){
+					QFuture<QString> graph_returned = QtConcurrent::run( model.data(), &MorphModel::getDependencyGraph, type );
+	waitForGraph.setFuture(graph_returned);
+					disconnect(onLoadConnect);
+				}
+			);
+		return;
 	}
 	QFuture<QString> graph_returned = QtConcurrent::run( model.data(), &MorphModel::getDependencyGraph, type );
 	waitForGraph.setFuture(graph_returned);
@@ -201,7 +210,7 @@ void AboutModel::graphReady() {
 			url = "qrc:///model_graph_viewer.html";
 			QString command = QString("setGraph('file://")+ graph + "');";
 			
-			if (webGraph->url() == url) {
+			if (webGraph->url() == url && webGraph) {
 				webGraph->evaluateJS(command, [](const QVariant& r){});
 			}
 			else {
