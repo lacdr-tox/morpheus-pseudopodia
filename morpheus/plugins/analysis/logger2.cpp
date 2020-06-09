@@ -353,6 +353,10 @@ LoggerTextWriter::LoggerTextWriter(Logger& logger, LoggerTextWriter::OutputForma
 	separator.setDefault("tab");
 	separator.read("tab");
 	
+	header_guarding.setDefault("true");
+	header_guarding.read("true");
+	
+	
 	filename.setDefault("logger");
 	filename.read("logger");
 	
@@ -625,23 +629,36 @@ void LoggerTextWriter::writeCSV() {
 		plain_restrictions.erase(celltype_restr.first, celltype_restr.second);
 		
 		for (auto cell : cells) {
-			if (condition.isDefined() && condition.granularity() <= Granularity::Cell) {
-				if (!condition(SymbolFocus(cell))) continue;
+			try {
+				SymbolFocus cell_focus(cell);
+				if (condition.isDefined() && condition.granularity() <= Granularity::Cell) {
+					if (!condition(SymbolFocus(cell))) continue;
+				}
 			}
+			catch (const string & e) {
+				continue;
+			}
+		
 			multimap<FocusRangeAxis,int> restrictions = plain_restrictions;
 			restrictions.insert(make_pair(FocusRangeAxis::CELL, cell) );
 			FocusRange cell_range(granularity, restrictions, logger.getDomainOnly());
 			auto out = getOutFile( *(cell_range.begin()) );
-			for (const SymbolFocus& focus : cell_range) {
-				if (condition.isDefined() && condition.granularity() > Granularity::Cell) {
-					if (!condition(focus)) continue;
+			try {
+				for (const SymbolFocus& focus : cell_range) {
+					if (condition.isDefined() && condition.granularity() > Granularity::Cell) {
+						if (!condition(focus)) continue;
+					}
+					// write point of data row
+					for (uint i=0; i<output_symbols.size(); i++ ) {
+						if (i!=0) *out << separator();
+						*out << output_symbols[i]->get( focus );
+					}
+					*out << "\n";
 				}
-				// write point of data row
-				for (uint i=0; i<output_symbols.size(); i++ ) {
-					if (i!=0) *out << separator();
-					*out << output_symbols[i]->get( focus );
-				}
+			}
+			catch (const string& e) {
 				*out << "\n";
+				continue;
 			}
 		}
 		
@@ -649,11 +666,17 @@ void LoggerTextWriter::writeCSV() {
 	else {
 		auto out = getOutFile( *(range.begin()) );
 		for (const SymbolFocus& focus : range) {
-			if (condition.isDefined() && !condition(focus)) continue;
-			// write point of data row header
-			for (uint i=0; i<output_symbols.size(); i++ ) {
-				if (i!=0) *out << separator();
-				*out << output_symbols[i]->get( focus );
+			try {
+				if (condition.isDefined() && !condition(focus)) continue;
+				// write point of data row header
+				for (uint i=0; i<output_symbols.size(); i++ ) {
+					if (i!=0) *out << separator();
+					*out << output_symbols[i]->get( focus );
+				}
+			}
+			catch (const string& e) {
+				*out << "\n";
+				continue;
 			}
 			*out << "\n";
 		}
@@ -1482,27 +1505,44 @@ void LoggerLinePlot::plot()
 		
 		// set range of time points to include in plot
 		stringstream timerange_x;
-		stringstream timerange_cb;
+		
 		switch( timerange() ){
 			case(TimeRange::ALL):{
 				timerange_x << "($1 <= " << time << "?$" << (axes.x.column_num) << ":NaN)";
-				timerange_cb << "($1 <= " << time << "?$" << (axes.cb.column_num) << ":NaN)";
 				break;
 			}
 			case(TimeRange::SINCELAST):{
 				timerange_x << "($1 > " << last_plot_time << " && $1 <= " << time << "?$" << (axes.x.column_num) << ":NaN)";
-				timerange_cb << "($1 > " << last_plot_time << " && $1 <= " << time << "?$" << (axes.cb.column_num) << ":NaN)";
 				break;
 			}
 			case(TimeRange::HISTORY):{
 				timerange_x << "($1 > " << (time-history.get( SymbolFocus())) << " && $1 <= " << time << "?$" << (axes.x.column_num) << ":NaN)";
-				timerange_cb << "($1 > " << (time-history.get( SymbolFocus())) << " && $1 <= " << time << "?$" << (axes.cb.column_num) << ":NaN)";
 				break;
 			}
 			case(TimeRange::CURRENT):{
 				timerange_x << "($1 == " << time << "?$" << (axes.x.column_num) << ":NaN)";
-				timerange_cb << "($1 == " << time << "?$" << (axes.cb.column_num) << ":NaN)";
 				break;
+			}
+		}
+		stringstream timerange_cb;
+		if (axes.cb.defined) {
+				switch( timerange() ){
+				case(TimeRange::ALL):{
+					timerange_cb << "($1 <= " << time << "?$" << (axes.cb.column_num) << ":NaN)";
+					break;
+				}
+				case(TimeRange::SINCELAST):{
+					timerange_cb << "($1 > " << last_plot_time << " && $1 <= " << time << "?$" << (axes.cb.column_num) << ":NaN)";
+					break;
+				}
+				case(TimeRange::HISTORY):{
+					timerange_cb << "($1 > " << (time-history.get( SymbolFocus())) << " && $1 <= " << time << "?$" << (axes.cb.column_num) << ":NaN)";
+					break;
+				}
+				case(TimeRange::CURRENT):{
+					timerange_cb << "($1 == " << time << "?$" << (axes.cb.column_num) << ":NaN)";
+					break;
+				}
 			}
 		}
 		

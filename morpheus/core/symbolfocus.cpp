@@ -8,19 +8,19 @@ SymbolFocus::SymbolFocus () :
 	{};
 
 SymbolFocus::SymbolFocus ( const VINT& pos ) :
-	has_pos(true), has_global_pos(false),  has_membrane(false), has_cell(false), has_cell_index(false), d_cell(NULL), d_pos(pos)
+	has_pos(true), has_global_pos(false),  has_membrane(false), has_cell(false), has_cell_index(false), d_pos(pos), d_cell(NULL)
 	{};
 
 SymbolFocus::SymbolFocus ( CPM::CELL_ID cell_id ) :
-	has_pos(false), has_global_pos(false), has_membrane(false), has_cell(true),  has_cell_index(false), d_cell(& CPM::getCell(cell_id))
+	has_pos(false), has_global_pos(false), has_membrane(false), has_cell(true),  has_cell_index(false), d_cell_id(cell_id), d_cell(& CPM::getCell(cell_id))
 	{};
 
 SymbolFocus::SymbolFocus ( CPM::CELL_ID cell_id, const VINT& pos ) :
-	has_pos(true), has_global_pos(false),  has_membrane(false), has_cell(true),  has_cell_index(false), d_cell(& CPM::getCell(cell_id)), d_pos(pos)
+	has_pos(true), has_global_pos(false),  has_membrane(false), has_cell(true),  has_cell_index(false), d_pos(pos), d_cell_id(cell_id), d_cell(& CPM::getCell(cell_id))
 	{};
 
 SymbolFocus::SymbolFocus ( CPM::CELL_ID cell_id, double phi, double theta) :
-	has_pos(false), has_global_pos(false), has_membrane(true),  has_cell(true),  has_cell_index(false), d_cell(& CPM::getCell(cell_id)), d_membrane_pos(VINT(phi,theta,0))
+	has_pos(false), has_global_pos(false), has_membrane(true),  has_cell(true),  has_cell_index(false), d_membrane_pos(VINT(phi,theta,0)), d_cell_id(cell_id), d_cell(& CPM::getCell(cell_id))
 	{};
 
 const VINT&  SymbolFocus::membrane_pos() const {
@@ -59,11 +59,13 @@ const Cell& SymbolFocus::cell() const {
 		d_cell = & CPM::getCell(CPM::getNode(d_pos).cell_id);
 		has_cell = true;
 	}
+	if (!d_cell)
+		throw string("Cell ") + to_string(d_cell_id) + " does not exist (anymore).";
 	return *d_cell;
 }
 
 const CPM::CELL_ID SymbolFocus::cellID() const {
-	return cell().getID();
+	return d_cell_id;
 }
 
 const CPM::INDEX& SymbolFocus::cell_index() const {
@@ -76,13 +78,16 @@ const CPM::INDEX& SymbolFocus::cell_index() const {
 
 void SymbolFocus::setCell(CPM::CELL_ID cell_id) {
 	unset();
+	d_cell_id = cell_id;
 	d_cell = &CPM::getCell(cell_id);
+	
 	has_cell=true;
 };
 
 void SymbolFocus::setCell(CPM::CELL_ID cell_id, const VINT& pos) {
 	if (! has_cell || d_cell->getID() != cell_id) {
 		unset();
+		d_cell_id = cell_id;
 		d_cell = &CPM::getCell(cell_id);
 		has_cell = true;
 	}
@@ -102,6 +107,7 @@ void SymbolFocus::setPosition(const VINT& pos) {
 void SymbolFocus::setMembrane(CPM::CELL_ID cell_id, const VINT& pos ) {
 	if (! has_cell || d_cell->getID() != cell_id) {
 		unset();
+		d_cell_id = cell_id;
 		d_cell = &CPM::getCell(cell_id);
 		has_cell=true;
 	}
@@ -144,7 +150,7 @@ bool SymbolFocus::operator<(const SymbolFocus& rhs) const {
 	else if (has_pos || rhs.has_pos)
 		return has_pos;
 	else if (has_cell && rhs.has_cell) {
-		if (d_cell->getID() == rhs.d_cell->getID()){
+		if ( d_cell_id == rhs.d_cell_id){
 			if (has_membrane && rhs.has_membrane) {
 				const VINT& a=d_membrane_pos;const VINT& b=rhs.d_membrane_pos;
 // 				return (a.y<b.y || (a.y==b.y && a.x<b.x));
@@ -158,7 +164,7 @@ bool SymbolFocus::operator<(const SymbolFocus& rhs) const {
 			}
 		}
 		else
-			return d_cell->getID() < rhs.d_cell->getID();
+			return d_cell_id < rhs.d_cell_id;
 	}
 	else if (has_cell || rhs.has_cell)
 		return has_cell;
@@ -180,7 +186,7 @@ bool SymbolFocus::operator==(const SymbolFocus& rhs) const {
 			return false;
 		}
 		else 
-			return d_cell->getID() == rhs.d_cell->getID();
+			return d_cell_id == rhs.d_cell_id;
 	}
 	else {
 		return true; // Both are global

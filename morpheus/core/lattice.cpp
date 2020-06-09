@@ -41,6 +41,9 @@ Lattice::Lattice() {
 
 Lattice::Lattice(const LatticeDesc& desc) : Lattice()
 {
+	for (uint i=0; i<Boundary::nCodes; i++){
+		boundaries[i] = Boundary::noflux;
+	}
 	for (auto const & bdry : desc.boundaries) {
 		if (bdry.second != Boundary::periodic) {
 			boundaries[bdry.first] = bdry.second;

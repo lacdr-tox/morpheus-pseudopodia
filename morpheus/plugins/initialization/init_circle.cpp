@@ -137,6 +137,7 @@ CPM::CELL_ID InitCircle::createNode(VINT newPos)
 int InitCircle::calculateLines() //methode zum errechnen der benötigten kreisbahnen
 {
 	vector<double> vec_diff;
+	vec_diff.push_back(radius);
 	for(int i = 1; i <= radius; i++)
 	{
 		int i_lines = i;
@@ -152,8 +153,8 @@ int InitCircle::calculateLines() //methode zum errechnen der benötigten kreisba
 		vec_diff.push_back(abs(dist_lines - dist_number));	//differenzen der bahnenabstände bei verschiedener anzahl an bahnen
 	}
 
-	double diff = vec_diff[0];
-	int i_index = 0;
+	double diff = vec_diff[1];
+	int i_index = 1;
 	for(int i = 1; i < radius; i++)	//rückgabe der anzahl an bahnen, bei der die differenz am geringsten ist
 	{
 		if(vec_diff[i] < diff)
@@ -163,6 +164,6 @@ int InitCircle::calculateLines() //methode zum errechnen der benötigten kreisba
 		}
 	}
 
-	return (i_index+1);
+	return (i_index);
 }
 

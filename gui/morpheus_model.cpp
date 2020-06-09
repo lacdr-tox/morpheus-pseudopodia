@@ -925,6 +925,9 @@ QVariant MorphModel::data(const QModelIndex &index, int role) const {
 				else if (node->name == "Expression" ){
 					val = "";
 				}
+				else if (node->name == "Lattice") {
+					val = node->attribute("class")->get();
+				}
 				else if ( text_node->hasText() ) {
 					val = text_node->getText();
 					if (val.length() > 100 )

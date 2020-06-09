@@ -58,6 +58,7 @@ private:
 	mutable bool has_pos, has_global_pos, has_membrane, has_cell, has_cell_index;
 	mutable VINT d_pos, d_membrane_pos;
 	mutable VDOUBLE d_global_pos;
+	mutable CPM::CELL_ID d_cell_id;
 	mutable const Cell* d_cell;
 	mutable CPM::INDEX d_cell_index;
 };

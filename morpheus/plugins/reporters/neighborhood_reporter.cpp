@@ -336,14 +336,15 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 
 				for (auto nb = interfaces.begin(); nb != interfaces.end(); nb++, i++) {
 					CPM::CELL_ID cell_id = nb->first;
+					SymbolFocus cell_focus(cell_id);
 					
 					double value = 0.0;
-					// HACK: NO-FLUX BOUNDARIES for cell-medium interface
-					if ( exclude_medium() && CPM::getCellIndex( cell_id ).celltype == CPM::getEmptyCelltypeID() ){ // if neighbor is medium, add own value 
-						value = input.get( cell_focus ); // value of own cell
+					if ( exclude_medium() && cell_focus.cell().getCellType()->isMedium() ) { 
+						// if neighbor is medium, skip value
+						continue;
 					}
-					else
-						value = input.get(SymbolFocus(cell_id)); // value of neighboring cell
+
+					value = input.get(cell_focus); // value of neighboring cell
 					double interfacelength = (scaling() == INTERFACES) ? nb->second : 1;
 					
 					for (auto & out : interf_output) {

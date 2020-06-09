@@ -77,10 +77,11 @@ public:
 	double get(int slot=thread()) override { if (count[slot]<=0) return 0;  return sum[slot] / count[slot]; }
 	void reset(int slot=thread()) override { sum[slot]=0; count[slot]=0; };
 	DataMapper*  clone() override { return new DataMapperAverage(*this); };
-	double getCollapsed() override { 
+	double getCollapsed() override {
 		double csum=0; double ccount=0; 
 		for (auto s: sum) { csum += s;}
 		for (auto c: count) { ccount += c;}
+		if (ccount==0) return 0;
 		return csum/ccount;
 	}
 private: 
@@ -105,6 +106,7 @@ public:
 		for (auto s : sum) { csum += s;}
 		for (auto s : sum_of_squares) { csum_of_squares += s;}
 		for (auto c : count) { ccount += c;}
+		if (ccount==0) return 0;
 		return (csum_of_squares  - csum*(csum/ccount)) / ccount;
 	}
 private:

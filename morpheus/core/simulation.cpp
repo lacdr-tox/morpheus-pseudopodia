@@ -611,6 +611,9 @@ void loadFromXML(const XMLNode xNode) {
 				if (dynamic_pointer_cast<AnalysisPlugin>(p) ) {
 					analysers.push_back( dynamic_pointer_cast<AnalysisPlugin>(p) );
 				}
+				else {
+					analysis_section_plugins.push_back(p);
+				}
 			}
 			catch (string er) {
 				cout << er << endl;
@@ -622,11 +625,11 @@ void loadFromXML(const XMLNode xNode) {
 	if (chdir(output_directory.c_str()) != 0) 
 		throw(string("Could not change to output directory \"") + output_directory + "\"");
 	
-	for (uint i=0;i<analysers.size();i++) {
-		analysers[i]->init(global_scope.get());
-	}
 	for (uint i=0;i<analysis_section_plugins.size();i++) {
 		analysis_section_plugins[i]->init(global_scope.get());
+	}
+	for (uint i=0;i<analysers.size();i++) {
+		analysers[i]->init(global_scope.get());
 	}
 	
 	TimeScheduler::init(global_scope.get());

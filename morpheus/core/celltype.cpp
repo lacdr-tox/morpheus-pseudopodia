@@ -503,7 +503,9 @@ pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID mother_id, V
 	// redistribute the Nodes following the split plane rules.
 	Cell::Nodes mother_nodes =  mother.getNodes();
 	Cell::Nodes deferred_nodes;
-	for (Cell::Nodes::const_iterator node = mother_nodes.begin(); node != mother_nodes.end();node++) {
+	for (Cell::Nodes::const_iterator node = mother_nodes.begin(); node != mother_nodes.end();) {
+		auto next_node = node;
+		++next_node;
 		double distance = distance_plane_point( split_plane_normal, split_plane_center, lattice->to_orth(*node) );
 // 		cout << "Distance d" << distance << "\tn" << split_plane_normal << "\tc" << split_plane_center << "\tnode" << VDOUBLE(*node) << endl;
 		if ( distance > 0 ) {
@@ -516,6 +518,7 @@ pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID mother_id, V
 		else
 			if (! CPM::setNode(*(node), daughter2_id))
 				cerr << "unable to set Cell " << daughter2_id << " at position " << *node << endl;
+		node = next_node;
 	}
 	
 	// Distribute Nodes lying right on the split plane
