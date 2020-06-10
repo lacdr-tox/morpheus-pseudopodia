@@ -6,11 +6,11 @@ SET(ICON_SIZES 16 22 36 48 64 128 256 512 )
 
 IF(INKSCAPE AND CONVERT)
 	message(STATUS "Found inkscape and convert, added update_icons target" )
-	FOREACH( ICON_SIZE xsd_file ${ICON_SIZES})
+	FOREACH( ICON_SIZE ${ICON_SIZES})
 		SET(ICON_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/${ICON_SIZE}x${ICON_SIZE} )
 		FILE( MAKE_DIRECTORY ${ICON_FOLDER})
 		# the plain version
-		SET( ICON  ${ICON_FOLDER}/icon.png )
+		SET( ICON  ${ICON_FOLDER}/morpheus.png )
 		SET( ICONS ${ICONS} ${ICON})
 		ADD_CUSTOM_COMMAND(
 			OUTPUT ${ICON}
@@ -20,7 +20,7 @@ IF(INKSCAPE AND CONVERT)
 			COMMENT "Generating icon ${ICON}"
 		)
 		# the running version
-		SET( ICON  ${ICON_FOLDER}/icon_running.png )
+		SET( ICON  ${ICON_FOLDER}/morpheus_running.png )
 		SET( ICONS ${ICONS} ${ICON})
 		ADD_CUSTOM_COMMAND(
 			OUTPUT ${ICON}
@@ -30,7 +30,7 @@ IF(INKSCAPE AND CONVERT)
 			COMMENT "Generating icon ${ICON}"
 		)
 		# the sweeping version
-		SET( ICON  ${ICON_FOLDER}/icon_sweep.png )
+		SET( ICON  ${ICON_FOLDER}/morpheus_sweep.png )
 		SET( ICONS ${ICONS} ${ICON})
 		ADD_CUSTOM_COMMAND(
 			OUTPUT ${ICON}
