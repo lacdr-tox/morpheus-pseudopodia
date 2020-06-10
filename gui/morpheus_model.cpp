@@ -69,8 +69,8 @@ try : QAbstractItemModel(parent),  xml_file(xmlFile)
 	connect(rootNodeContr, &nodeController::dataChanged, [this](nodeController* node) {
 		if (!node) return;
 		auto idx = itemToIndex(node);
-		idx.siblingAtColumn(2);
-		emit dataChanged(idx, idx.siblingAtColumn(2), QVector<int>() << Qt::DisplayRole << MorphModel::TagsRole);
+		auto idx_last = index(idx.row(), 2, idx.parent());
+		emit dataChanged(idx, idx_last, QVector<int>() << Qt::DisplayRole << MorphModel::TagsRole);
 	});
 
     ModelDescriptor& desc = const_cast<ModelDescriptor&>(rootNodeContr->getModelDescr());

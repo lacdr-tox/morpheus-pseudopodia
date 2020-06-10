@@ -569,7 +569,7 @@ Therefore, InitProperty is NOT called for cells created during simulation, e.g. 
 \defgroup ML_InitVectorProperty InitVectorProperty
 \ingroup ML_Population
 
-InitVectorProperty sets the value of a cell-bound \ref ML_VectorProperty during the initialization of a cell of a specific population. 
+InitVectorProperty sets the value of a cell-bound \ref ML_PropertyVector during the initialization of a cell of a specific population. 
 
 Expressions are evaluated separately for each cell, such that properties can become stochastic or dependent on cell-position.
 

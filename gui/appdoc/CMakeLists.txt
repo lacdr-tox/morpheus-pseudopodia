@@ -24,8 +24,8 @@ mark_as_advanced(DOXYGEN_QHP_PATCH)
 # get_target_property(APP_DOC_HEADERS AppDocLib SOURCES)
 
 # Create a space separated file list for Doxygen
-SET(DOXYGEN_SOURCES ${APP_DOC_HEADERS} )
-# STRING(JOIN ${APP_DOC_HEADERS} )
+# STRING(JOIN " " DOXYGEN_SOURCES ${APP_DOC_HEADERS} )
+SET(DOXYGEN_SOURCES "" )
 foreach(source ${APP_DOC_HEADERS})
 	SET(DOXYGEN_SOURCES "${DOXYGEN_SOURCES} ${source}")
 endforeach()
