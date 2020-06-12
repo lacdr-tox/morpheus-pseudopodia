@@ -41,9 +41,9 @@
 
 	<xs:simpleType name="morphSolver">
 		<xs:restriction base="xs:string">
-			<xs:enumeration value="Dormand-Prince [adative, O(5)]"/>
-			<xs:enumeration value="Cash-Karp [adative, O(5)]"/>
-			<xs:enumeration value="Bogacki-Shampine [adative, O(3)]"/>
+			<xs:enumeration value="Dormand-Prince [adaptive, O(5)]"/>
+			<xs:enumeration value="Cash-Karp [adaptive, O(5)]"/>
+			<xs:enumeration value="Bogacki-Shampine [adaptive, O(3)]"/>
 			<xs:enumeration value="Runge-Kutta [fixed, O(4)]"/>
 			<xs:enumeration value="Heun [fixed, O(2)]"/>
 			<xs:enumeration value="Euler [fixed, O(1)]"/>

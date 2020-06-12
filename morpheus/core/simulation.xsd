@@ -225,7 +225,7 @@ This allows the user to create populations a heterogeneous initial population. T
 
 	<xs:complexType name="Description">
 		<xs:all>
-			<xs:element name="Details" type="xs:string" >
+			<xs:element name="Details" type="morphText" >
 				<xs:annotation>
 					<xs:documentation>Text to describe and annotate model, put references and track changes.</xs:documentation>
 				</xs:annotation>

@@ -113,7 +113,7 @@
 	<xs:simpleType name="cpmUnsignedDouble">
 		<xs:restriction base="xs:double">
 <!-- 			<xs:minInclusive value="0.0"/> -->
-			<xs:pattern value="\d+(\.\d+)?(e[-\+]?\d{2})?" />
+			<xs:pattern value="\d+(\.\d+)?(e[-\+]?\d{1,2})?" />
 		</xs:restriction>
 	</xs:simpleType>
 	
@@ -121,7 +121,7 @@
 		<xs:restriction base="xs:string">
 			<!-- This pattern specifies a generic 3D coordinate type with whitespaces as separators (allowing for commas, decimal) -->
 			<!--<xs:pattern value="-?[\d]+([\.¦,][\d]+)?\s+-?[\d]+([\.¦,][\d]+)?\s+-?[\d]+([\.¦,][\d]+)?"/>-->
-			 <xs:pattern value="-?\d+(\.\d+)?(e[-\+]?\d{2})?\s*[\s,]\s*-?\d+(\.\d+)?(e[-\+]?\d{2})?\s*[\s,]\s*-?\d+(\.\d+)?(e[-\+]?\d{2})?"/>
+			 <xs:pattern value="-?\d+(\.\d+)?(e[-\+]?\d{1,2})?\s*[\s,]\s*-?\d+(\.\d+)?(e[-\+]?\d{1,2})?\s*[\s,]\s*-?\d+(\.\d+)?(e[-\+]?\d{1,2})?"/>
 		</xs:restriction>
 	</xs:simpleType>
 	
@@ -138,7 +138,7 @@
 		<xs:restriction base="xs:string">
 			<!-- This pattern specifies a generic 3D coordinate type with whitespaces as separators (allowing for commas, decimal) -->
 			<!--<xs:pattern value="-?[\d]+([\.¦,][\d]+)?\s+-?[\d]+([\.¦,][\d]+)?\s+-?[\d]+([\.¦,][\d]+)?"/>-->
-			 <xs:pattern value="(-?\d+(\.\d+)?(e[-\+]?\d{2})?\s*[\s,]\s*)*-?\d+(\.\d+)?(e[-\+]?\d{2})?"/>
+			 <xs:pattern value="(-?\d+(\.\d+)?(e[-\+]?\d{1,2})?\s*[\s,]\s*)*-?\d+(\.\d+)?(e[-\+]?\d{1,2})?"/>
 		</xs:restriction>
 	</xs:simpleType>
 

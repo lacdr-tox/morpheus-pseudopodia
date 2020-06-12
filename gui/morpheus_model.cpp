@@ -338,10 +338,10 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		a.value_conversions["runge-kutta"]="Runge-Kutta [fixed, O(4)]";
 		a.value_conversions["fixed4"]="Runge-Kutta [fixed, O(4)]";
 		
-		a.value_conversions["adaptive45"]="Dormand-Prince [adative, O(5)]";
-		a.value_conversions["adaptive45-dp"]="Dormand-Prince [adative, O(5)]";
-		a.value_conversions["adaptive45-ck"]="Cash-Karp [adative, O(5)]";
-		a.value_conversions["adaptive23"]="Bogacki-Shampine [adative, O(3)]";
+		a.value_conversions["adaptive45"]="Dormand-Prince [adaptive, O(5)]";
+		a.value_conversions["adaptive45-dp"]="Dormand-Prince [adaptive, O(5)]";
+		a.value_conversions["adaptive45-ck"]="Cash-Karp [adaptive, O(5)]";
+		a.value_conversions["adaptive23"]="Bogacki-Shampine [adaptive, O(3)]";
 		
 		a.value_conversions["stochastic"]="Euler-Maruyama [stochastic, O(1)]";
 		

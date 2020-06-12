@@ -26,7 +26,7 @@
   * Performance improvements for Mappers and Reporters using OpenMP parallelization
   * Support reading (gz) compressed models
   * Added Test system for full XML models
-  * Restructured CMake build to make use of targets, boosted requrements to cmake>=3.3.0 and
+  * Restructured CMake build to make use of targets and boosted requrements to cmake>=3.3.0
 
 ### Bug Fixes
   * Fix cell property initialization override priority (InitProperty takes highest priority)

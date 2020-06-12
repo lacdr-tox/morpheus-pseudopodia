@@ -60,7 +60,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)//, ui(new Ui::Main
 
     statusBar()->addPermanentWidget(permanentStatus);
     connect(config::getJobQueue(), SIGNAL(processChanged(int)), this, SLOT(jobStatusChanged(int)));
-    connect(permanentStatus,SIGNAL(clicked()),this,SLOT(statusBarTriggered()));
+//     connect(permanentStatus,SIGNAL(clicked()),this,SLOT(statusBarTriggered()));
 
     QStringList args = QApplication::arguments();
     model_index.model = -1;

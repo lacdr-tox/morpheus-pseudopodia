@@ -55,7 +55,7 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 		solver_map["runge-kutta"]           = SystemSolver::Method::Runge_Kutta4;
 		solver_map["fixed4"]                = SystemSolver::Method::Runge_Kutta4;
 		
-		solver_map["Dormand-Prince [adative, O(5)]"] = SystemSolver::Method::AdaptiveDP;
+		solver_map["Dormand-Prince [adaptive, O(5)]"] = SystemSolver::Method::AdaptiveDP;
 		solver_map["dormand-prince"]        = SystemSolver::Method::AdaptiveDP;
 		solver_map["adaptive45"]            = SystemSolver::Method::AdaptiveDP;
 		solver_map["adaptive45-dp"]         = SystemSolver::Method::AdaptiveDP;
@@ -67,7 +67,7 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 		solver_map["adaptive45-ck"]         = SystemSolver::Method::AdaptiveCK;
 		solver_map["runge-kutta-adaptive-CK"] = SystemSolver::Method::AdaptiveCK;
 		
-		solver_map["Bogacki-Shampine [adative, O(3)]"] = SystemSolver::Method::AdaptiveBS;
+		solver_map["Bogacki-Shampine [adaptive, O(3)]"] = SystemSolver::Method::AdaptiveBS;
 		solver_map["bogacki-shampine"]      = SystemSolver::Method::AdaptiveBS;
 		solver_map["adaptive23"]            = SystemSolver::Method::AdaptiveBS;
 		solver_map["runge-kutta-adaptive-BS"] = SystemSolver::Method::AdaptiveBS;
@@ -76,7 +76,7 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 		solver_map["stochastic"]            = SystemSolver::Method::Euler;
 		
 		method.setValueMap(solver_map);
-		method.setDefault("Dormand-Prince [adative, O(5)]");
+		method.setDefault("Dormand-Prince [adaptive, O(5)]");
 		method.loadFromXML(node, scope);
 		solver_spec.method = method();
 	

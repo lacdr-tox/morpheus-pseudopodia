@@ -1,8 +1,5 @@
-if (CMAKE_VERSION VERSION_LESS 3.12)
-	cmake_minimum_required(VERSION 3.3.0)
-else()
-	cmake_minimum_required(VERSION 3.3.0...3.13.4)
-endif()
+
+cmake_minimum_required(VERSION 3.3.0...3.13.4)
 
 PROJECT(morpheus VERSION 2.2.0)
 
