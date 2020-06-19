@@ -124,7 +124,7 @@ void localProcess::start()
 	process->start(command,arguments);
 
     // process->start(command);
-    ID = (int)process->pid();
+    ID = process->processId();
     qDebug() << process->errorString();
 }
 
@@ -184,7 +184,7 @@ void localProcess::debug()
 
         // run morpheus
         process->start(command);
-        ID = (int)process->pid();
+        ID = process->processId();
         qDebug() << process->errorString();
     }
 }

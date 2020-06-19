@@ -56,13 +56,14 @@ TARGET_INCLUDE_DIRECTORIES(MorpheusCore PUBLIC ${Boost_INCLUDE_DIR})
 
 FIND_PACKAGE(ZLIB REQUIRED)
 FIND_PACKAGE(TIFF REQUIRED)
-TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${ZLIB_LIBRARY} ${TIFF_LIBRARY})
+
+TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${ZLIB_LIBRARY} ${TIFF_LIBRARY} ${TIFF_LIBRARY})
 
 IF(MORPHEUS_STATIC_BUILD)
 	## We guess the static library dependencies from the corresponding dynamic library dependencies
-	IF(NOT UNIX)
-		message(FATAL_ERROR "Static binary build only supported on *nix systems") 
-	ENDIF()
+	#IF(NOT UNIX)
+	#		message(FATAL_ERROR "Static binary build only supported on *nix systems") 
+	#ENDIF()
 	execute_process( COMMAND ldconfig -p 
 					 COMMAND grep "libtiff.so "
 					 OUTPUT_VARIABLE TIFF_DYN_LIB
@@ -139,7 +140,7 @@ IF(MORPHEUS_STATIC_BUILD)
 ENDIF()
 
 IF  ("${MORPHEUS_OS}" STREQUAL "WIN32")
-	TARGET_LINK_LIBRARIES_PATCHED(MorpheusSIM pthread psapi)
+	# TARGET_LINK_LIBRARIES_PATCHED(MorpheusSIM pthread psapi)
 
 # 	If (MORPHEUS_STATIC_BUILD)
 # 		set(STD_LIB_SUFFIX ${CMAKE_FIND_LIBRARY_SUFFIXES})
@@ -163,65 +164,68 @@ ENDIF()
 # dump_target_properties(MorpheusCore)
 
 # Installation of the program
-IF  ( "${MORPHEUS_OS}" STREQUAL "WIN32")
-	INSTALL(TARGETS ${SIMULATOR_EXEC_NAME} RUNTIME DESTINATION . COMPONENT morpheus )
-	find_library(LIB_STDCXX "libstdc++-6" )
-	find_library(LIB_GCC_S_DW2 "libgcc_s_dw2-1")
-	find_library(LIB_OPENMP "libgomp-1")
-	find_library(LIB_PTHREAD "pthreadGC-3")
-	INSTALL( FILES ${LIB_STDCXX} ${LIB_GCC_S_DW2} ${LIB_OPENMP} ${LIB_PTHREAD} DESTINATION . )
+
+IF  ( WIN32 )
+	INSTALL(TARGETS MorpheusSIM RUNTIME DESTINATION . COMPONENT morpheus )
+	if ( MINGW )
+	#find_library(LIB_STDCXX "libstdc++-6" )
+	#find_library(LIB_GCC_S_DW2 "libgcc_s_dw2-1")
+	#find_library(LIB_OPENMP "libgomp-1")
+	#find_library(LIB_PTHREAD "pthreadGC-3")
+	# INSTALL( FILES ${LIB_STDCXX} ${LIB_GCC_S_DW2} ${LIB_OPENMP} ${LIB_PTHREAD} DESTINATION . )
 	
-	IF (GRAPHVIZ_FOUND)
-		SET(GRAPHVIZ_RUNTIME
-			${GRAPHVIZ_ROOT}/bin/config6
-			${GRAPHVIZ_ROOT}/bin/libexpat.dll
-			${GRAPHVIZ_ROOT}/bin/ltdl.dll
-			${GRAPHVIZ_ROOT}/bin/zlib1.dll
-			${GRAPHVIZ_ROOT}/lib/release/dll/ann.dll
-			${GRAPHVIZ_ROOT}/lib/release/dll/cdt.dll
-			${GRAPHVIZ_ROOT}/lib/release/dll/cgraph.dll
-			${GRAPHVIZ_ROOT}/lib/release/dll/gvc.dll
-			${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_core.dll
-			${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_dot_layout.dll
-			${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_gd.dll
-			${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_gdiplus.dll
-			${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_neato_layout.dll
-			${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_pango.dll
-			${GRAPHVIZ_ROOT}/lib/release/dll/Pathplan.dll
-			${GRAPHVIZ_ROOT}/lib/release/dll/vmalloc.dll
-		)
-		INSTALL(FILES ${GRAPHVIZ_RUNTIME} DESTINATION . COMPONENT GraphViz)
-	ENDIF()
+	#	IF (GRAPHVIZ_FOUND)
+	#	SET(GRAPHVIZ_RUNTIME
+	#		${GRAPHVIZ_ROOT}/bin/config6
+	#		${GRAPHVIZ_ROOT}/bin/libexpat.dll
+	#		${GRAPHVIZ_ROOT}/bin/ltdl.dll
+	#		${GRAPHVIZ_ROOT}/bin/zlib1.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/ann.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/cdt.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/cgraph.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvc.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_core.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_dot_layout.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_gd.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_gdiplus.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_neato_layout.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_pango.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/Pathplan.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/vmalloc.dll
+	#	)
+	#	INSTALL(FILES ${GRAPHVIZ_RUNTIME} DESTINATION . COMPONENT GraphViz)
+	#ENDIF()
 	
-	SET(GNUPLOT_ROOT "" CACHE PATH "Set root directory to search for Gnuplot" )
-	MARK_AS_ADVANCED(GNUPLOT_ROOT)
+	#	SET(GNUPLOT_ROOT "" CACHE PATH "Set root directory to search for Gnuplot" )
+	#	MARK_AS_ADVANCED(GNUPLOT_ROOT)
 	
-	message(STATUS "Gnuplot Path is ${GNUPLOT_ROOT}")
-	SET(GNUPLOT_LIBRARIES 
-		${GNUPLOT_ROOT}/freetype6.dll
-		${GNUPLOT_ROOT}/intl.dll
-		${GNUPLOT_ROOT}/libcairo-2.dll
-		${GNUPLOT_ROOT}/libexpat-1.dll
-		${GNUPLOT_ROOT}/libfontconfig-1.dll
-		${GNUPLOT_ROOT}/libgd-2-733361a31aab.dll
-		${GNUPLOT_ROOT}/libglib-2.0-0.dll
-		${GNUPLOT_ROOT}/libgmodule-2.0-0.dll
-		${GNUPLOT_ROOT}/libgobject-2.0-0.dll
-		${GNUPLOT_ROOT}/libgthread-2.0-0.dll
-		${GNUPLOT_ROOT}/libiconv-2.dll
-		${GNUPLOT_ROOT}/libjpeg-8.dll
-		${GNUPLOT_ROOT}/libpango-1.0-0.dll
-		${GNUPLOT_ROOT}/libpangocairo-1.0-0.dll
-		${GNUPLOT_ROOT}/libpangoft2-1.0-0.dll
-		${GNUPLOT_ROOT}/libpangowin32-1.0-0.dll
-		${GNUPLOT_ROOT}/libpng14-14.dll
-		${GNUPLOT_ROOT}/lua51.dll
-		${GNUPLOT_ROOT}/wxbase28_gcc_custom.dll
-		${GNUPLOT_ROOT}/wxmsw28_core_gcc_custom.dll
-		${GNUPLOT_ROOT}/zlib1.dll
-	)
-	INSTALL(FILES ${GNUPLOT_LIBRARIES} DESTINATION . COMPONENT GnuPlot)
-	INSTALL(FILES ${GNUPLOT_ROOT}/gnuplot.exe DESTINATION . COMPONENT GnuPlot)
+	#message(STATUS "Gnuplot Path is ${GNUPLOT_ROOT}")
+	#SET(GNUPLOT_LIBRARIES 
+	#	${GNUPLOT_ROOT}/freetype6.dll
+	#	${GNUPLOT_ROOT}/intl.dll
+	#	${GNUPLOT_ROOT}/libcairo-2.dll
+	#	${GNUPLOT_ROOT}/libexpat-1.dll
+	#	${GNUPLOT_ROOT}/libfontconfig-1.dll
+	#	${GNUPLOT_ROOT}/libgd-2-733361a31aab.dll
+	#	${GNUPLOT_ROOT}/libglib-2.0-0.dll
+	#	${GNUPLOT_ROOT}/libgmodule-2.0-0.dll
+	#	${GNUPLOT_ROOT}/libgobject-2.0-0.dll
+	#	${GNUPLOT_ROOT}/libgthread-2.0-0.dll
+	#	${GNUPLOT_ROOT}/libiconv-2.dll
+	#	${GNUPLOT_ROOT}/libjpeg-8.dll
+	#	${GNUPLOT_ROOT}/libpango-1.0-0.dll
+	#	${GNUPLOT_ROOT}/libpangocairo-1.0-0.dll
+	#	${GNUPLOT_ROOT}/libpangoft2-1.0-0.dll
+	#	${GNUPLOT_ROOT}/libpangowin32-1.0-0.dll
+	#	${GNUPLOT_ROOT}/libpng14-14.dll
+	#	${GNUPLOT_ROOT}/lua51.dll
+	#	${GNUPLOT_ROOT}/wxbase28_gcc_custom.dll
+	#	${GNUPLOT_ROOT}/wxmsw28_core_gcc_custom.dll
+	#	${GNUPLOT_ROOT}/zlib1.dll
+	#)
+	#INSTALL(FILES ${GNUPLOT_LIBRARIES} DESTINATION . COMPONENT GnuPlot)
+	#INSTALL(FILES ${GNUPLOT_ROOT}/gnuplot.exe DESTINATION . COMPONENT GnuPlot)
+	ENDIF(MINGW)
 		
 ELSE()
 	INSTALL(TARGETS MorpheusSIM RUNTIME DESTINATION bin COMPONENT morpheus )

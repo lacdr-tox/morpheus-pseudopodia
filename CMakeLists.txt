@@ -39,6 +39,8 @@ ELSEIF(WIN32)
 	MESSAGE(STATUS "Compiling for platform WIN32.")
 ELSE()
 	SET(MORPHEUS_OS "UNKNOWN")
+	MESSAGE(STATUS "Compiling for unknown platform2. Assuming WIN32")
+	SET(WIN32 TRUE)
 ENDIF()
 
 set(CMAKE_CXX_STANDARD 11)

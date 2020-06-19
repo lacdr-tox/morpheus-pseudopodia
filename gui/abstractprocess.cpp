@@ -117,7 +117,7 @@ ProcessInfo::status abstractProcess::stateMsgToState(QString stateMsg) {
 /// Constructor used for restoring saved jobs
 abstractProcess::abstractProcess(QSqlRecord& r) : QObject(NULL) {
 	_info.job_id      = r.value( r.indexOf("id") ).toInt();
-	ID                = r.value( r.indexOf("processPid") ).toInt();
+	ID                = r.value( r.indexOf("processPid") ).toLongLong();
 	numthreads        = r.value( r.indexOf("processThreads") ).toInt();
 	_info.state       = ProcessInfo::status(r.value( r.indexOf("processState") ).toInt());
 	

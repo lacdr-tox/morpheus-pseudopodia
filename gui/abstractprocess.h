@@ -116,7 +116,7 @@ public:
 	bool changeState(ProcessInfo::status state); /*!< Updates the job- state the SQL database. */
 
 protected:
-    int ID; /*!< Internal id of the process (id from the underlying system) */
+    qint64 ID; /*!< Internal id of the process (id from the underlying system) */
     QString model_file_name; /*!< name of the xml-file, which describes the cpm-model. */
     QString model_source_file;  /*!< name of the xml-file as it was opened in the editor */
     mutable ProcessInfo _info;
