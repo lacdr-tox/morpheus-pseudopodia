@@ -337,6 +337,7 @@ void EvaluatorCache::attach(mu::Parser *parser) {
 void EvaluatorCache::fetch(const SymbolFocus& focus, const bool safe) {
 // 	if (current_focus == focus && current_time = SIM::getTime()) return;
 	for (auto& sym : flat_externals) {
+		
 		if (sym->source == SymbolDesc::Ext) {
 			if (sym->type == SymbolDesc::DOUBLE) {
 				auto accessor = static_pointer_cast<const SymbolAccessorBase<double> >(sym->sym);

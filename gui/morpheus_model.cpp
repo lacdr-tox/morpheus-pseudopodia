@@ -291,15 +291,17 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 
 	int morpheus_file_version = document.documentElement().attribute("version","1").toInt();
 	int fix_version;
+	bool patching_current = false;
 	QList<MorphModel::AutoFix> fixes;
 	QList<MorphModelEdit> edits;
 	
 	if (morpheus_file_version == morpheus_ml_version) {
 		// nothing to do ...
-		fix_version=morpheus_ml_version;
-	}
-	else if (morpheus_file_version == 4) {
-		fix_version=5;
+		fix_version = morpheus_ml_version;
+		patching_current = true;
+// 	}
+// 	else if (morpheus_file_version == 4) {
+// 		fix_version=5;
 		MorphModel::AutoFix a;
 		a.operation = AutoFix::MOVE;
 		a.match_path = "MorpheusModel/CellTypes/CellType/AddCell/Condition"; a.target_path = "MorpheusModel/CellTypes/CellType/AddCell/Count"; fixes.append(a);
@@ -739,7 +741,7 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 	}
 	
 	document.documentElement().setAttribute( "version", QString::number(fix_version) );
-	if (fix_version != morpheus_ml_version) {
+	if ( ! patching_current ) {
 		auto new_edits = applyAutoFixes(document);
 		edits.append(new_edits);
 	}

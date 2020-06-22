@@ -396,7 +396,7 @@ template <class T> valarray<T> Lattice_Data_Layer<T>::getData() const {
 	sizes[0] = l_size.z;
 	sizes[1] = l_size.y;
 	sizes[2] = l_size.x;
-	valarray<size_t> strides(2);
+	valarray<size_t> strides(3);
 	strides[0] = shadow_size.x * shadow_size.y;
 	strides[1] = shadow_size.x;
 	strides[2] = 1;

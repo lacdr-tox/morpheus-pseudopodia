@@ -655,7 +655,8 @@ void MainWindow::loadXMLFile()
         QString path = QFileInfo(fileName).dir().path();
         QSettings().setValue("FileDialog/path", path);
         QString xmlFile = fileName;
-		QtConcurrent::run(&config::openModel,xmlFile);
+// 		QtConcurrent::run(&config::openModel,xmlFile);
+		config::openModel(xmlFile);
     }
     else
     {

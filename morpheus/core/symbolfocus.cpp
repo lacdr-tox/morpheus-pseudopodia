@@ -56,7 +56,8 @@ const Cell& SymbolFocus::cell() const {
 		if ( ! has_pos) {
 			throw string("SymbolFocus cannot deduce cell.\nNo position or cell associated with the Focus.");
 		}
-		d_cell = & CPM::getCell(CPM::getNode(d_pos).cell_id);
+		d_cell_id = CPM::getNode(d_pos).cell_id;
+		d_cell = & CPM::getCell(d_cell_id);
 		has_cell = true;
 	}
 	if (!d_cell)
@@ -65,12 +66,20 @@ const Cell& SymbolFocus::cell() const {
 }
 
 const CPM::CELL_ID SymbolFocus::cellID() const {
+	if (!has_cell) {
+		if ( ! has_pos) {
+			throw string("SymbolFocus cannot deduce cell.\nNo position or cell associated with the Focus.");
+		}
+		d_cell_id = CPM::getNode(d_pos).cell_id;
+		d_cell = & CPM::getCell(d_cell_id);
+		has_cell = true;
+	}
 	return d_cell_id;
 }
 
 const CPM::INDEX& SymbolFocus::cell_index() const {
 	if (!has_cell_index) {
-		d_cell_index = CPM::getCellIndex(cell().getID() );
+		d_cell_index = CPM::getCellIndex(cellID());
 		has_cell_index=true;
 	}
 	return d_cell_index;
@@ -85,7 +94,7 @@ void SymbolFocus::setCell(CPM::CELL_ID cell_id) {
 };
 
 void SymbolFocus::setCell(CPM::CELL_ID cell_id, const VINT& pos) {
-	if (! has_cell || d_cell->getID() != cell_id) {
+	if (! has_cell || d_cell_id != cell_id) {
 		unset();
 		d_cell_id = cell_id;
 		d_cell = &CPM::getCell(cell_id);
@@ -105,7 +114,7 @@ void SymbolFocus::setPosition(const VINT& pos) {
 	has_pos=true;
 };
 void SymbolFocus::setMembrane(CPM::CELL_ID cell_id, const VINT& pos ) {
-	if (! has_cell || d_cell->getID() != cell_id) {
+	if (! has_cell || d_cell_id != cell_id) {
 		unset();
 		d_cell_id = cell_id;
 		d_cell = &CPM::getCell(cell_id);

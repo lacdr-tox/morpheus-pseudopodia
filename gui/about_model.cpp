@@ -277,7 +277,7 @@ void AboutModel::graphReady() {
 			if (dot.isEmpty()) {
 				command= "setFailed();";
 			}
-			else if (dot != lastGraph) {
+			else /*if (dot != lastGraph)*/ {
 // 				qDebug()<<"UPDATE GRAPH";
 				lastGraph = dot;
 				dot = dot.replace("\n"," ").replace("\t"," ").trimmed();
