@@ -24,9 +24,9 @@
 
 The surface constraint penalizes deviations of the cell perimeter (2D) or surface area \f$ s_{\sigma, t} \f$ from a given target \f$ S_{target} \f$.
 
-This models the cell cortex ridigity by specifying the ratio between a cell's surface area to its volume (or ratio between perimeter length are area in 2D).
+This models the cell cortex ridigity by specifying the ratio between a cell's surface area to its volume (or ratio between perimeter length to area in 2D).
 
-The target can be defined explicitly in surface mode, or implicitely in aspherity mode as a multiple of the surface of a sphere of equal volume.
+The target can be defined explicitly in \b surface mode, or implicitely in \b aspherity mode as a multiple of the surface of a sphere of equal volume.
 
 The Hamiltonian is given by \f$ E_{Surface} = \sum_{\sigma} \lambda_S \cdot ( s_{\sigma, t} - S_{target} )^n \f$
 
@@ -36,29 +36,24 @@ For each proposed copy attempt \f$ \mathbf{x} \rightarrow \mathbf{x_{neighbor}}\
 
 where 
 - \f$ \lambda_s \f$ is strength of the constraint
-- \f$ s_{\sigma, before} \f$ is the current surface area of cell \f$ \sigma \f$ at time \f$ t \f$
-- \f$ s_{\sigma, after} \f$ is the projected (if updated would be accepted) surface area  of cell \f$ \sigma \f$ at time \f$ t \f$
-- \f$ S_{\sigma, t, target} \f$ is the target surface area of cell \f$ \sigma \f$ at time \f$ t \f$.  \f$ S_{\sigma, t, target} < 1 \f$ represent rigid cell.
+- \f$ s_{\sigma, before} \f$ is the current surface area of cell \f$ \sigma \f$.
+- \f$ s_{\sigma, after} \f$ is the projected surface area  of cell \f$ \sigma \f$ (if updated would be accepted).
+- \f$ S_{\sigma, t, target} \f$ is the target surface area of cell \f$ \sigma \f$.
 - \f$ n \f$ is the exponent.
-
-
-# Note that the target surface is normalized to the surface area of a sphere given its cell volume \f$ v_{\sigma, t}\f$: 
-
-2D: \f$ S_{target} =   2\sqrt{  v_{\sigma, t} \pi} \f$
-
-3D: \f$ S_{target} =   4\pi \big( \frac{ \frac{3}{4} v_{\sigma, t}}{ \pi }^{\frac{2}{3}} \big) \f$
-
-
 
 
 \section Input 
 Required
 --------
-- *mode*: Selects the target to be either a lenght/surface or the aspherity of the shape
+- *mode*: Selects the *target* to be either
+  - \b surface : The length/surface \f$ S_{target} \f$ in [node]/[node²]
+  - \b aspherity : <br/>
+     2D: The Multiple of the perimeter of a circle of the same area as the cell σ, i.e.  \f$ S_{target} =  target * 2\sqrt{  a_{\sigma} \pi} \f$<br/>
+     3D: Multiple of the surface of a sphere of the same volume as the cell σ, i.e. \f$ S_{target} =  target * 4\pi \big( \frac{ \frac{3}{4} v_{\sigma}}{ \pi }^{\frac{2}{3}} \big) \f$
 
-- *target*: Expression describing the target perimeter (2D) or surface area (3D) of a cell. This may be a constant (e.g. "1.0"), a symbol (e.g. "St"), or an expression (e.g. "S0 * 2.0")
+- *target*: Expression describing the target perimeter (2D) or surface area (3D) of a cell.
 
-- *strength*: Expression describing the strength of the surface constraint. This may be a constant (e.g. "2.0"), a symbol (e.g. "Ss"), or an expression (e.g. "S0 * 2.0")
+- *strength*: Expression describing the strength of the surface constraint.
 
 Optional
 --------
