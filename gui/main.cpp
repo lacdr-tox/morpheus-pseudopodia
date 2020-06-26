@@ -16,8 +16,13 @@ int main(int argc, char *argv[])
 	QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
 	
 	// Only allow a single instance of Morpheus
+#ifdef WIN32
+	//QString app_path = QFileInfo(QApplication::applicationFilePath()).canonicalPath();
+	QString app_path = ".";
+	QApplication::addLibraryPath(app_path);
+	QApplication::addLibraryPath(app_path + "/plugins");
+#endif
 	QtSingleApplication a(argc, argv);
-	
 	// Handle no gui command line options
 	QStringList args = QApplication::arguments();
 	args.pop_front();
@@ -56,6 +61,7 @@ int main(int argc, char *argv[])
 
 //  Global application configurations
 // 	QTextCodec::setCodecForCStrings( QTextCodec::codecForName("UTF-8") );
+
 	QStringList libpaths = QApplication::libraryPaths();
 	qDebug() << "Using library Path (should include Qt plugins dir): " << libpaths;
 

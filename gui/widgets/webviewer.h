@@ -61,6 +61,7 @@ Q_OBJECT
 
 public:
 	WebViewer(QWidget* parent = nullptr);
+
 	bool supportsJS() const { return true;}
 	bool supportsSVG() const { return true;}
 	

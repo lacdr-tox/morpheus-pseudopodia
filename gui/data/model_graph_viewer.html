@@ -19,9 +19,6 @@ position : absolute;
 	top: 50%;
 	vertical-align: center; */
 }
-#graph a {
-	display : none;
-}
 
 .overlay {
 	position: absolute;
@@ -50,7 +47,6 @@ svg rect{
 </head>
 <body>
 <div id="graph">
-<!-- 	<img id="graph-image" src="test.svg" /> -->
 	<object id="graph-image" type="image/svg+xml" data="" />
 </div>
 
@@ -148,7 +144,6 @@ svg rect{
 	
 	window.addEventListener('load', function () {
 		graph = document.getElementById("graph-image");
-		setGraph("test.svg")
 	});
 	
 	window.onresize = function(event) {

@@ -1,4 +1,61 @@
   SET(CPACK_MONOLITHIC_INSTALL 1)
+  
+  SET(MORPHEUS_EXE ${PROJECT_BINARY_DIR}/morpheus/morpheus.exe)
+ 
+
+	
+	#	IF (GRAPHVIZ_FOUND)
+	#	SET(GRAPHVIZ_RUNTIME
+	#		${GRAPHVIZ_ROOT}/bin/config6
+	#		${GRAPHVIZ_ROOT}/bin/libexpat.dll
+	#		${GRAPHVIZ_ROOT}/bin/ltdl.dll
+	#		${GRAPHVIZ_ROOT}/bin/zlib1.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/ann.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/cdt.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/cgraph.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvc.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_core.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_dot_layout.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_gd.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_gdiplus.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_neato_layout.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_pango.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/Pathplan.dll
+	#		${GRAPHVIZ_ROOT}/lib/release/dll/vmalloc.dll
+	#	)
+	#	INSTALL(FILES ${GRAPHVIZ_RUNTIME} DESTINATION . COMPONENT GraphViz)
+	#ENDIF()
+	
+	#	SET(GNUPLOT_ROOT "" CACHE PATH "Set root directory to search for Gnuplot" )
+	#	MARK_AS_ADVANCED(GNUPLOT_ROOT)
+	
+	#message(STATUS "Gnuplot Path is ${GNUPLOT_ROOT}")
+	#SET(GNUPLOT_LIBRARIES 
+	#	${GNUPLOT_ROOT}/freetype6.dll
+	#	${GNUPLOT_ROOT}/intl.dll
+	#	${GNUPLOT_ROOT}/libcairo-2.dll
+	#	${GNUPLOT_ROOT}/libexpat-1.dll
+	#	${GNUPLOT_ROOT}/libfontconfig-1.dll
+	#	${GNUPLOT_ROOT}/libgd-2-733361a31aab.dll
+	#	${GNUPLOT_ROOT}/libglib-2.0-0.dll
+	#	${GNUPLOT_ROOT}/libgmodule-2.0-0.dll
+	#	${GNUPLOT_ROOT}/libgobject-2.0-0.dll
+	#	${GNUPLOT_ROOT}/libgthread-2.0-0.dll
+	#	${GNUPLOT_ROOT}/libiconv-2.dll
+	#	${GNUPLOT_ROOT}/libjpeg-8.dll
+	#	${GNUPLOT_ROOT}/libpango-1.0-0.dll
+	#	${GNUPLOT_ROOT}/libpangocairo-1.0-0.dll
+	#	${GNUPLOT_ROOT}/libpangoft2-1.0-0.dll
+	#	${GNUPLOT_ROOT}/libpangowin32-1.0-0.dll
+	#	${GNUPLOT_ROOT}/libpng14-14.dll
+	#	${GNUPLOT_ROOT}/lua51.dll
+	#	${GNUPLOT_ROOT}/wxbase28_gcc_custom.dll
+	#	${GNUPLOT_ROOT}/wxmsw28_core_gcc_custom.dll
+	#	${GNUPLOT_ROOT}/zlib1.dll
+	#)
+	#INSTALL(FILES ${GNUPLOT_LIBRARIES} DESTINATION . COMPONENT GnuPlot)
+	#INSTALL(FILES ${GNUPLOT_ROOT}/gnuplot.exe DESTINATION . COMPONENT GnuPlot)
+  
   SET(CPACK_PACKAGE_EXECUTABLES "${GUI_EXEC_NAME};Morpheus")
   SET(CPACK_PACKAGE_FILE_NAME "morpheus-${PROJECT_VERSION}.${CMAKE_SYSTEM_NAME}.b${MORPHEUS_REVISION}")
   SET(CPACK_PACKAGE_INSTALL_REGISTRY_KEY morpheus)

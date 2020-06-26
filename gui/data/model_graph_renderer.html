@@ -14,8 +14,10 @@ body {
 	font-family: "Gill sans", sans-serif;
 	margin: 0 auto;
 }
-#graph {
-	text-align: center;
+
+#graph svg {
+  max-width: 100%;
+  max-height: 99%;
 }
 
 .overlay {
@@ -117,15 +119,8 @@ svg rect{
 		unsetGenerating();
 	}
 
-	
 	function transitionGraph(nextGraph)
 	{
-		d3.select("#graph").graphviz().transition(function () {
-			return d3.transition("main")
-			.ease(d3.easeLinear)
-			.delay(0)
-			.duration(500);
-		});
 		current_graph = nextGraph;
 		clearOverlays();
 		graphviz.renderDot(nextGraph);
@@ -133,10 +128,18 @@ svg rect{
 	
 	function setGraph(nextGraph)
 	{
+		graphviz.transition();
+		
 		current_graph = nextGraph;
-// 		d3.select("#graph").graphviz().transition(function () { return d3.transition("main").duration(0) } );
 		clearOverlays();
 		graphviz.renderDot(nextGraph);
+		
+		graphviz.transition(function () {
+			return d3.transition("main")
+			.ease(d3.easeLinear)
+			.delay(0)
+			.duration(500);
+		});
 	}
 	
 	function retSVG()
@@ -147,24 +150,15 @@ svg rect{
 	window.addEventListener('load', function () {
 		
 		graphviz = d3.select("#graph").graphviz();
-		graphviz.width(window.innerWidth - 20);
-		graphviz.height(window.innerHeight - 20);
+		graphviz.fit = true;
+		graphviz.width("100%");
+		graphviz.height(1000);
 		
 // 		graphviz.renderDot('digraph { compound=true; subgraph cluster{ labelloc=\"t\";label=\"Global\";bgcolor=\"#2341782f\"; empty} }');
 		// 'digraph {   } ');
-		
-// 		var d3trans = d3.select("#graph").graphviz().transition(function () {
-// 				return d3.transition("main")
-// 				.ease(d3.easeLinear)
-// 				.delay(0)
-// 				.duration(500);
-// 			});
 	});
 	
 	window.addEventListener('onresize', function(event) {
-		graphviz.width(window.innerWidth - 20);
-		graphviz.height(window.innerHeight - 20);
-		graphviz.renderDot(current_graph);
 	});
 	
 </script>

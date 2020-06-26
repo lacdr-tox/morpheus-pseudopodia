@@ -169,7 +169,7 @@ void AboutModel::update_graph()
 	qDebug() << "updating graph";
 	MorphModel::GRAPH_TYPE type = web_render ? MorphModel::DOT : MorphModel::SVG;
 	if (webGraph->url().fileName() == "model_graph_renderer.html") {
-		webGraph->evaluateJS("setGenerating();", [](const QVariant& r){});
+		// webGraph->evaluateJS("setGenerating();", [](const QVariant& r){});
 	}
 	else if (webGraph->url().fileName() == "model_graph_viewer.html") {
 		webGraph->evaluateJS("setGenerating();", [](const QVariant& r){});
@@ -206,62 +206,7 @@ void AboutModel::graphReady() {
 			webGraph->reset();
 		}
 			
-		if (graph.endsWith("png")) {
-			url = "qrc:///model_graph_viewer.html";
-			QString command = QString("setGraph('file://")+ graph + "');";
-			
-			if (webGraph->url() == url && webGraph) {
-				webGraph->evaluateJS(command, [](const QVariant& r){});
-			}
-			else {
-				onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [command,this](bool){
-					qDebug() << "Graph loading finished!";
-					webGraph->evaluateJS(command, [](const QVariant& r){});
-					disconnect(onLoadConnect);
-				});
-				webGraph->setUrl(url);
-			}
-			lastGraph = graph;
-
-		} else if (graph.endsWith("svg")) {
-			url = "qrc:///model_graph_viewer.html";
-			QString command = QString("setGraph('file://")+ graph + "');";
-			
-			if (webGraph->url() == url) {
-				webGraph->evaluateJS(command, [](const QVariant& r){});
-			}
-			else {
-				onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [command,this](bool){
-					qDebug() << "Graph loading finished!";
-					webGraph->evaluateJS(command, [](const QVariant& r){});
-					disconnect(onLoadConnect);
-				});
-				webGraph->setUrl(url);
-			}
-			lastGraph = graph;
-			
-// 			QFile data(graph);
-// 			if (data.open(QFile::ReadWrite)) {
-// 				QDomDocument svg("svg-graph");
-// 				svg.setContent(&data,true);
-// 				auto svg_el = svg.elementsByTagName("svg").at(0).toElement();
-// 				svg_el.setAttribute("style","margin: auto auto");
-// 				svg_el.attribute("width").toInt();
-// 				auto titles = svg.elementsByTagName("title");
-// 				for (int i=0; i<=titles.size(); i++) {
-// 					const auto& title = titles.at(i).toElement();
-// 					title.parentNode().removeChild(title);
-// 				}
-// 				data.resize(0);
-// 				QTextStream out(&data);
-// 				out << svg.toString();
-// 				data.close();
-// 			}
-// 			
-// 			url = (QString("file://") + graph);
-// 			webGraph->setUrl(url);
-
-		} else if (graph.endsWith("dot")) {
+		if (graph.endsWith("dot")) {
 			url = "qrc:///model_graph_renderer.html";
 			
 			QFile dotsource(graph);
@@ -280,7 +225,7 @@ void AboutModel::graphReady() {
 			else /*if (dot != lastGraph)*/ {
 // 				qDebug()<<"UPDATE GRAPH";
 				lastGraph = dot;
-				dot = dot.replace("\n"," ").replace("\t"," ").trimmed();
+				dot = dot.replace(QRegularExpression("[\r\n\t]+")," ").trimmed();
 				if (webGraph->url() != url ) {
 					command = QString("setGraph('")+ dot + "');";
 				}
@@ -291,16 +236,45 @@ void AboutModel::graphReady() {
 			if (webGraph->url() != url ) {
 				webGraph->setUrl(url);
 				onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [command,this](bool){
-					qDebug() << "Graph loading finished!";
-					qDebug() << command;
+//					qDebug() << "Graph loading finished!";
 					webGraph->evaluateJS(command, [](const QVariant& r){});
 					disconnect(onLoadConnect);
 				});
 			}
 			else {
 				webGraph->evaluateJS(command, [](const QVariant& r){});
+//				qDebug() << "Graph loading finished!";
 			}
 // 				webGraph->show();
+		}
+		else if (graph.endsWith("png") || graph.endsWith("svg")) {
+			if (webGraph->supportsJS()) {
+				url = "qrc:///model_graph_viewer.html";
+
+				QString command = "setGraph('file://";
+				if (!graph.startsWith("/")) command+="/";
+				command += graph + "');";
+				
+				if ( webGraph->url() == url ) {
+					webGraph->evaluateJS(command, [](const QVariant& r){});
+				}
+				else {
+					onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [command,this](bool){
+						qDebug() << "Graph loading finished!";
+						webGraph->evaluateJS(command, [](const QVariant& r){});
+						disconnect(onLoadConnect);
+					});
+					webGraph->setUrl(url);
+				}
+				lastGraph = graph;
+			}
+			else {
+				if (graph.startsWith("/"))
+					webGraph->setUrl(QString("file://")+graph);
+				else
+					webGraph->setUrl(QString("file:///")+graph);
+			}
+
 		}
 	}
 	else {

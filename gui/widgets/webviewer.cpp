@@ -20,10 +20,14 @@ QVariant WebViewer::loadResource(int type, const QUrl &name) {
 #include <QWebView>
 #include <QWebHistory>
 WebViewer::WebViewer(QWidget* parent) : QWebView(parent) {
+	
+	QWebSettings::globalSettings()->setAttribute(QWebSettings::JavascriptEnabled, true);
+	QWebSettings::globalSettings()->setAttribute(QWebSettings::LocalContentCanAccessRemoteUrls, false);
+	QWebSettings::globalSettings()->setAttribute(QWebSettings::LocalContentCanAccessFileUrls, true);
+	// this->page()->settings()->setAttribute(QWebSettings::JavascriptEnabled, true);
+	// this->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessRemoteUrls, false);
+	// this->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessFileUrls, true);
 	this->page()->setNetworkAccessManager(config::getNetwork());
-	this->page()->settings()->setAttribute(QWebSettings::JavascriptEnabled, true);
-	this->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessRemoteUrls, false);
-	this->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessFileUrls, true);
 	this->page()->setLinkDelegationPolicy(QWebPage::DelegateExternalLinks);
 }
 

@@ -61,51 +61,61 @@ TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${ZLIB_LIBRARY} ${TIFF_LIBRARY
 
 IF(MORPHEUS_STATIC_BUILD)
 	## We guess the static library dependencies from the corresponding dynamic library dependencies
-	#IF(NOT UNIX)
 	#		message(FATAL_ERROR "Static binary build only supported on *nix systems") 
-	#ENDIF()
-	execute_process( COMMAND ldconfig -p 
-					 COMMAND grep "libtiff.so "
-					 OUTPUT_VARIABLE TIFF_DYN_LIB
-	)
-	separate_arguments(TIFF_DYN_LIB)
-	list(GET TIFF_DYN_LIB -1 TIFF_DYN_LIB)
-	string(STRIP ${TIFF_DYN_LIB} TIFF_DYN_LIB)
-# 	message(STATUS "LibTIFF dynamic lib  ${TIFF_DYN_LIB}")
-	
-	execute_process( COMMAND ldd ${TIFF_DYN_LIB}
-					 OUTPUT_VARIABLE TIFF_DEPENDS
-	)
-	string(REPLACE "\n" ";" TIFF_DEPENDS ${TIFF_DEPENDS})
-	SET(LIB_LIST "")
-	FOREACH(DEP ${TIFF_DEPENDS})
-		string(REPLACE "." ";" DEP ${DEP})
-		LIST(GET DEP 0 DEP)
-		STRING(STRIP ${DEP} DEP)
-		LIST(APPEND LIB_LIST ${DEP})
-	ENDFOREACH()
-	SET(TIFF_DEPENDS ${LIB_LIST})
-# 	message(STATUS "LibTIFF dependencies ${TIFF_DEPENDS}")
-	IF("libjpeg" IN_LIST TIFF_DEPENDS)
+	IF(UNIX)
+		execute_process( COMMAND ldconfig -p 
+						 COMMAND grep "libtiff.so "
+						 OUTPUT_VARIABLE TIFF_DYN_LIB
+		)
+		separate_arguments(TIFF_DYN_LIB)
+		list(GET TIFF_DYN_LIB -1 TIFF_DYN_LIB)
+		string(STRIP ${TIFF_DYN_LIB} TIFF_DYN_LIB)
+	# 	message(STATUS "LibTIFF dynamic lib  ${TIFF_DYN_LIB}")
+		
+		execute_process( COMMAND ldd ${TIFF_DYN_LIB}
+						 OUTPUT_VARIABLE TIFF_DEPENDS
+		)
+		string(REPLACE "\n" ";" TIFF_DEPENDS ${TIFF_DEPENDS})
+		SET(LIB_LIST "")
+		FOREACH(DEP ${TIFF_DEPENDS})
+			string(REPLACE "." ";" DEP ${DEP})
+			LIST(GET DEP 0 DEP)
+			STRING(STRIP ${DEP} DEP)
+			LIST(APPEND LIB_LIST ${DEP})
+		ENDFOREACH()
+		SET(TIFF_DEPENDS ${LIB_LIST})
+	# 	message(STATUS "LibTIFF dependencies ${TIFF_DEPENDS}")
+		IF("libjpeg" IN_LIST TIFF_DEPENDS)
+			FIND_PACKAGE(JPEG REQUIRED)
+			message(STATUS "LibTIFF requires libjpeg")
+			TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${JPEG_LIBRARY})
+		ENDIF()
+		IF("liblzma" IN_LIST TIFF_DEPENDS)
+			FIND_PACKAGE(LibLZMA REQUIRED) # newer ubuntu versions
+			message(STATUS "LibTIFF requires liblzma")
+			TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${LIBLZMA_LIBRARIES})
+		ENDIF()
+		IF("libjbig" IN_LIST TIFF_DEPENDS)
+			message(STATUS "LibTIFF requires libjbig")
+			TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC -ljbig )
+		ENDIF()
+		IF("libwebp" IN_LIST TIFF_DEPENDS)
+			message(STATUS "LibTIFF requires webp")
+			TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC -lwebp )
+		ENDIF()
+		IF("libzstd" IN_LIST TIFF_DEPENDS)
+			message(STATUS "LibTIFF requires zstd")
+			TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC -lzstd )
+		ENDIF()
+	ELSEIF(WIN32)
+		MESSAGE(STATUS " WIN32 using MSYS: ${MSYS}")
+		# LibTIFF requires libjpeg
 		FIND_PACKAGE(JPEG REQUIRED)
-		message(STATUS "LibTIFF requires libjpeg")
 		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${JPEG_LIBRARY})
-	ENDIF()
-	IF("liblzma" IN_LIST TIFF_DEPENDS)
+		# LibTIFF requires liblzma
 		FIND_PACKAGE(LibLZMA REQUIRED) # newer ubuntu versions
-		message(STATUS "LibTIFF requires liblzma")
 		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${LIBLZMA_LIBRARIES})
-	ENDIF()
-	IF("libjbig" IN_LIST TIFF_DEPENDS)
-		message(STATUS "LibTIFF requires libjbig")
-		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC -ljbig )
-	ENDIF()
-	IF("libwebp" IN_LIST TIFF_DEPENDS)
-		message(STATUS "LibTIFF requires webp")
-		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC -lwebp )
-	ENDIF()
-	IF("libzstd" IN_LIST TIFF_DEPENDS)
-		message(STATUS "LibTIFF requires zstd")
+		# LibTIFF requires zstd
 		TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC -lzstd )
 	ENDIF()
 ENDIF()

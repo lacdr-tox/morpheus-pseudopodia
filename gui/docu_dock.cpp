@@ -35,31 +35,6 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 {
 	timer = NULL;
 	help_engine = config::getHelpEngine();
-	connect(help_engine,SIGNAL(setupFinished()),this,SLOT(setRootOfHelpIndex()));
-	
-// 	hnam = config::getNetwork();
-// #ifdef USE_QTextBrowser
-// 	auto realViewer = new HelpBrowser();
-// 	realViewer->setNetworkAccessManager(hnam);
-// 	help_view = realViewer;
-// #elif defined USE_QWebKit
-// 	help_view = new QWebView();
-// 	help_view->page()->setNetworkAccessManager(hnam);
-// // 	help_view->page()->settings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
-// 	help_view->page()->settings()->setAttribute(QWebSettings::JavascriptEnabled, true);
-// 	help_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessRemoteUrls, false);
-// 	help_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessFileUrls, true);
-// 	help_view->page()->setLinkDelegationPolicy(QWebPage::DelegateExternalLinks);
-// 	
-// 	
-// #elif defined USE_QWebEngine
-// 	help_view = new QWebEngineView();
-// 	auto page = new AdaptiveWebPage(this);
-// 	page->delegateScheme("http");
-// 	page->delegateScheme("https");
-// 	connect(page, SIGNAL(linkClicked(const QUrl&)),this, SLOT(openHelpLink(const QUrl&)));
-// 	help_view->setPage(page);
-// #endif
 	
 	help_view = new WebViewer(this);
 	connect(help_view, SIGNAL(linkClicked(const QUrl&)),this, SLOT(openHelpLink(const QUrl&)));
@@ -118,6 +93,7 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	
 	this->setWidget(splitter);
 	
+	connect(help_engine->contentModel(), SIGNAL(contentsCreated()),this,SLOT(setRootOfHelpIndex()));
 	help_engine->setupData();
 	resetStatus();
 }
@@ -206,7 +182,7 @@ void DocuDock::resizeEvent(QResizeEvent* event)
 void DocuDock::setRootOfHelpIndex()
 {
 	auto help_model =  help_engine->contentModel();
-	if (help_model->isCreatingContents() || ! timer) {
+	if (help_model->isCreatingContents()) {
 		if ( ! timer) {
 			timer = new QTimer(this);
 			timer->setSingleShot(true);
