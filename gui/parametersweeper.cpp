@@ -232,7 +232,7 @@ void parameterSweeper::submitSweep()
 		QString sweep_header;
 
 		QTextStream ts_header(&sweep_header);
-		ts_header << "Date\t" << QDate::currentDate().toString() << endl;
+		ts_header << "Date\t" << QDate::currentDate().toString() << "\n";
 		ts_header << "Time\t" << QTime::currentTime().toString() << endl;
 		ts_header << "Jobs\t" << parameter_sets.size() << endl;
 		ts_header << "Params\t" << parameters.size() << endl;

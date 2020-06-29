@@ -32,7 +32,7 @@ void remoteProcess::init() {
 
     _info.resource = ProcessInfo::remote;
     checkTimer = new QTimer(this);
-    stopwatch = new QTime();
+    stopwatch = new QElapsedTimer();
 
     connect(checkTimer, SIGNAL(timeout()), SLOT(checkState()));
     run_task = NONE;

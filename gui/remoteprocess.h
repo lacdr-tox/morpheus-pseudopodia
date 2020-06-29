@@ -56,7 +56,7 @@ private:
 
     QString remoteDir; /*!< Directory on the external machine, where the simulationdata should be stored. */
     QTimer *checkTimer; /*!< Timer with whom the state of process will be checked. */
-    QTime *stopwatch;
+    QElapsedTimer *stopwatch;
     sshProxy ssh; /*!< sshProxy which is used to connect ot the external machine. */
     QMutex check_lock;
 
