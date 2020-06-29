@@ -1,4 +1,5 @@
 #include "morpheus_xml.h"
+#include <errno.h>
 
 MorpheusXML::MorpheusXML() {
     name = getNewModelName();
@@ -30,8 +31,14 @@ MorpheusXML::MorpheusXML(QString xmlFile) {
 	
 	if (type.name()=="application/gzip" || QFileInfo(xmlFile).suffix() == "gz" || QFileInfo(xmlFile).suffix() == "xmlz" ) {
 		gzFile gzDoc;
-		gzDoc = gzopen(xmlFile.toStdString().c_str(), "rb");
+#ifdef WIN32
+		QByteArray native_string = QDir::toNativeSeparators(xmlFile).toLatin1();
+#else
+		QByteArray native_string = xmlFile.toUtf8();
+#endif
+		gzDoc = gzopen(native_string.data(), "rb");
 		if (gzDoc == NULL ) {
+			qDebug() << "Error " << errno << ": " << strerror(errno);
 			throw QString("Cannot open file '%1', possibly not a valid gzip file.").arg(qPrintable(xmlFile));
 		}
 		
@@ -83,9 +90,16 @@ bool MorpheusXML::save(QString fileName, bool zip) const {
 
 	if (zip) {
 		gzFile gzDoc;
-		gzDoc = gzopen(outputXML.toStdString().c_str(), "wb");
+#ifdef WIN32
+		QByteArray native_string = QDir::toNativeSeparators(outputXML).toLatin1();
+#else
+		QByteArray native_string = outputXML.toUtf8();
+#endif
+		
+		gzDoc = gzopen(native_string.data(), "wb");
 		if (!gzDoc) {
-			qDebug() << "Can't open xml-file " << outputXML << " for saving!";
+			qDebug() << "Can't open xml-file " << native_string << " for saving!";
+			qDebug() << "Error " << errno << ": " << strerror(errno);
 			return false;
 		}
 		
