@@ -117,6 +117,7 @@ private slots:
     //void childListItemChanged(QListWidgetItem* current, QListWidgetItem* previous);
     void pluginTreeDoubleClicked(QTreeWidgetItem*, int);
     void pluginTreeItemChanged(QTreeWidgetItem* current, QTreeWidgetItem* previous);
+	void updateTagList();
 signals:
 //    void nameChanged(nodeController* node); /*!< Signal sends when the specified name of the root node changed. */
     void xmlElementCopied(QDomNode node); /*!< Signal sends a xmlNode which shall be copied. */
