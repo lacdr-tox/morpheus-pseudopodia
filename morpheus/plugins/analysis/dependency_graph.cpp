@@ -227,6 +227,7 @@ void DependencyGraph::parse_scope(const Scope* scope)
 				<< "</table>"
 				<< "</font>"
 				<< ">"
+				<< ", URL=\"morph://MorpheusModel/CPM\""
 				<< " ]\n" ;
 			
 			for (auto ct_scope : scope->getComponentSubScopes()) {
@@ -297,7 +298,7 @@ void DependencyGraph::parse_scope(const Scope* scope)
 				<< "</font>"
 				<< ">";
 			if (!tsl->getXMLNode().isEmpty()) { info.definitions 
-				<< ", URL=\"morph://MorpheusModel/" << getXMLPath(tsl->getXMLNode()) << "\""  /*<< ", tooltip=\"" << getXMLPath(tsl->getXMLNode()) << "\"" */;
+				<< ", URL=\"morph://" << getXMLPath(tsl->getXMLNode()) << "\""  /*<< ", tooltip=\"" << getXMLPath(tsl->getXMLNode()) << "\"" */;
 			}
 			info.definitions
 				<< " ]\n" ;
@@ -370,7 +371,7 @@ void DependencyGraph::parse_scope(const Scope* scope)
 						<< ">";
 					if (!dep.first->getXMLNode().isEmpty()) {
 						info.definitions
-						<< ", URL=\"morph://MorpheusModel/" << getXMLPath(dep.first->getXMLNode()) << "\"";
+						<< ", URL=\"morph://" << getXMLPath(dep.first->getXMLNode()) << "\"";
 					}
 					info.definitions
 						<< "];\n";
@@ -414,7 +415,7 @@ void DependencyGraph::parse_scope(const Scope* scope)
 			<< "label=" << "\""<< sym.first<<"\"" 
 			<< ", " << label_style;
 		if (!sym.second->XMLPath().empty())
-			info. definitions << ", URL=\"morph://MorpheusModel/" << sym.second->XMLPath() << "\"";
+			info. definitions << ", URL=\"morph://" << sym.second->XMLPath() << "\"";
 		info. definitions << "]\n";
 
 		auto dependencies = sym.second->dependencies();

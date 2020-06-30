@@ -12,9 +12,8 @@ Logger::~Logger(){
 };
 
 void Logger::loadFromXML(const XMLNode xNode, Scope* scope){
-    stored_node = xNode;
-    slice = false;
-    
+	
+	slice = false;
 	// Load symbols
 	XMLNode xInput = xNode.getChildNode("Input");
 	inputs.resize(xInput.nChildNode("Symbol"));
@@ -90,6 +89,7 @@ void Logger::loadFromXML(const XMLNode xNode, Scope* scope){
 	}
 	
 	AnalysisPlugin::loadFromXML(xNode,scope);
+	
 }
 
 

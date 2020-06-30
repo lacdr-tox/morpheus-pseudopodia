@@ -23,6 +23,7 @@ DisplacementTracker::DisplacementTracker()
 
 void DisplacementTracker::init(const Scope* scope) {
 	AnalysisPlugin::init( scope );
+	registerCellPositionDependency();
 	filename = celltype()->getName() + "_displacement.dat";
 	fstream storage(filename.c_str(), fstream::out | fstream::trunc);
 	storage << "#Time\tPOP_SUM\tMSD\tCELL-TRAJECTORIES..." << endl;

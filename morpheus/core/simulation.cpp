@@ -18,7 +18,7 @@ namespace SIM {
 	unique_ptr<LatticePlugin> lattice_plugin = nullptr;
 	shared_ptr<Lattice> global_lattice;
 	
-	XMLNode xDescription,xGlobals,xSpace;
+	XMLNode xMorphModel, xDescription, xGlobals, xSpace, xAnalysis;
 	
 	
 	vector< shared_ptr<AnalysisPlugin> > analysers;
@@ -407,7 +407,7 @@ bool init(int argc, char *argv[]) {
 
 bool init(string model, map<string,string> overrides) {
 	XMLResults results;
-	auto xMorpheusRoot = XMLNode::parseString(model.c_str(),"MorpheusModel", &results);
+	xMorphModel = XMLNode::parseString(model.c_str(),"MorpheusModel", &results);
 	if (results.error!=eXMLErrorNone) {
 		stringstream s;
 		s << "Unable to read model" << std::endl; 
@@ -423,7 +423,7 @@ bool init(string model, map<string,string> overrides) {
 	}
 	current_scope = global_scope.get();
 	
-	loadFromXML(xMorpheusRoot);
+	loadFromXML(xMorphModel);
 	
 	// try to match cmd line options with symbol names and adjust values accordingly
 	// check that global overrides have been used
@@ -458,6 +458,7 @@ void createDepGraph() {
 		if (analysers[i]->XMLName() == "DependencyGraph") {
 			dep_graph_writer = analysers.at(i);
 			dep_graph_writer->setParameter("format", dep_graph_format);
+			
 			break;
 		}
 	}
@@ -594,7 +595,7 @@ void loadFromXML(const XMLNode xNode) {
 
 	CPM::init();
 
-	XMLNode xAnalysis = xNode.getChildNode("Analysis");
+	xAnalysis = xNode.getChildNode("Analysis");
 	if ( ! xAnalysis.isEmpty() ) {
 		cout << "Loading Analysis tools [" << xAnalysis.nChildNode() << "]" <<endl;
 		for (int i=0; i<xAnalysis.nChildNode(); i++) {
@@ -638,20 +639,19 @@ void loadFromXML(const XMLNode xNode) {
 
 
 void saveToXML() {
-	XMLNode xMorpheusNode;
 	ostringstream filename("");
 	filename << fileTitle << setfill('0') << setw(6) << getTimeName() << ".xml.gz";
 	cout << "Saving " << filename.str()<< endl;
 
-	xMorpheusNode = XMLNode::createXMLTopNode("MorpheusModel");
+	xMorphModel = XMLNode::createXMLTopNode("MorpheusModel");
 	if (!morpheus_file_version.empty())
-		xMorpheusNode.addAttribute("version",morpheus_file_version.c_str());
+		xMorphModel.addAttribute("version",morpheus_file_version.c_str());
 
-	XMLNode xTimeNode = xMorpheusNode.addChild( TimeScheduler::saveToXML() );
+	XMLNode xTimeNode = xMorphModel.addChild( TimeScheduler::saveToXML() );
 
-	xMorpheusNode.addChild(xDescription);
+	xMorphModel.addChild(xDescription);
 
-	xMorpheusNode.addChild(xSpace);
+	xMorphModel.addChild(xSpace);
 	
 	// saving Field data
 	// TODO:: global_scope::saveToXML -> Field / VectorField
@@ -660,16 +660,16 @@ void saveToXML() {
 	}
 	
 	// saving global_scope
-	xMorpheusNode.addChild(xGlobals);
+	xMorphModel.addChild(xGlobals);
 
 	// saving cell types
-	xMorpheusNode.addChild(CPM::saveCellTypes());
+	xMorphModel.addChild(CPM::saveCellTypes());
 	
 	// save CPM details (interaction energy and metropolis kinetics)
-	xMorpheusNode.addChild(CPM::saveCPM());
+	xMorphModel.addChild(CPM::saveCPM());
 	
 	if ( ! (analysers.empty() && analysis_section_plugins.empty() )) {
-		XMLNode xAnalysis = xMorpheusNode.addChild("Analysis" );
+		XMLNode xAnalysis = xMorphModel.addChild("Analysis" );
 		for (uint i=0; i<analysis_section_plugins.size(); i++ ) {
 			xAnalysis.addChild(analysis_section_plugins[i]->saveToXML());
 		}
@@ -683,10 +683,10 @@ void saveToXML() {
 	/****************************/
 
 	// cell populations
-	xMorpheusNode.addChild(CPM::saveCellPopulations());
+	xMorphModel.addChild(CPM::saveCellPopulations());
 
 	int xml_size;
-	XMLSTR xml_data=xMorpheusNode.createXMLString(1,&xml_size);
+	XMLSTR xml_data=xMorphModel.createXMLString(1,&xml_size);
 
 	gzFile zfile = gzopen(filename.str().c_str(), "w9");
 	if (Z_NULL == zfile) {

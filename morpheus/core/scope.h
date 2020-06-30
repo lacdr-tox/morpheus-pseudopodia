@@ -259,6 +259,10 @@ public:
 		return this->scope()->getComponentSubScopes();
 	}
 	
+	SymbolAccessor<T> defaultSymbol() const {
+		return default_val;
+	}
+	
 private:
 	
 	void combineFlags(const SymbolBase::Flags& of) {
@@ -386,7 +390,12 @@ SymbolRWAccessor<T> Scope::findRWSymbol(string name) const
 	auto sym = findSymbol<T>(name,false);;
 	if ( ! sym->flags().writable )
 		throw SymbolError(SymbolError::Type::WrongType, string("Symbol '") + name + "' is not writable.");
+	auto compo_r =  dynamic_pointer_cast<const CompositeSymbol<T> >(sym);
 	auto r = dynamic_pointer_cast<const SymbolRWAccessorBase<T> >(sym);
+	// If the symbol is composite, use the definition of the global scope
+	if (compo_r) {
+		r = dynamic_pointer_cast<const SymbolRWAccessorBase<T> >( compo_r->defaultSymbol() );
+	}
 	if (!r)
 		throw SymbolError(SymbolError::Type::Undefined, string("Unknown error while creating writable symbol accessor for symbol '") + name +"'. Occurs e.g. if you defined a symbol as a constant and the model attempts to change its value. Then define that symbol as variable.");
 	return r;

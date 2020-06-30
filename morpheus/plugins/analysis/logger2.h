@@ -364,7 +364,6 @@ class Logger : public AnalysisPlugin
 	static int instances;
 	int instance_id;
 private:
-	XMLNode stored_node;
 	vector< PluginParameter_Shared<double, XMLReadableSymbol> > inputs;
 	vector<shared_ptr<LoggerWriterBase> > writers;
 	vector<shared_ptr<LoggerPlotBase> > plots;
