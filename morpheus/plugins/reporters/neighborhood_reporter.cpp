@@ -185,6 +185,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 			// There might also be boolean input, that we cannot easily handle this way. But works for concentrations and rates, i.e. all continuous quantities.
 			auto thread = omp_get_thread_num();
 			MembraneMapper mapper(MembraneMapper::MAP_CONTINUOUS,false);
+			MembraneMapper discrete_mapper(MembraneMapper::MAP_DISCRETE,false);
 			struct count_data { double val; double count; };
 			map<CPM::CELL_ID,count_data> cell_mapper;
 			for ( const auto& out : halo_output) { out->mapper->reset(thread); }
@@ -238,13 +239,17 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 						}
 						double value = input(SymbolFocus(i));
 						mapper.map(i, std::isnan(value) ? 0 : value );
+						discrete_mapper.map(i, std::isnan(value) ? 0 : value );
 					}
 
 					mapper.fillGaps();
 					valarray<double> raw_data;
 					for (const auto & out : halo_output) {
 						if (out->membrane_acc) {
-							mapper.copyData(out->membrane_acc->getField(cell_focus.cellID()));
+							if (out->mapping() == DataMapper::DISCRETE)
+								discrete_mapper.copyData(out->membrane_acc->getField(cell_focus.cellID()));
+							else
+								mapper.copyData(out->membrane_acc->getField(cell_focus.cellID()));
 						}
 						else {
 							if (raw_data.size() == 0) {

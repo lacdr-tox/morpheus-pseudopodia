@@ -8,6 +8,7 @@ shared_ptr<DataMapper> DataMapper::create(Mode mode) {
 		case VARIANCE: return shared_ptr<DataMapper>(new DataMapperVariance());
 		case MINIMUM: return shared_ptr<DataMapper>(new DataMapperMin());
 		case MAXIMUM: return shared_ptr<DataMapper>(new DataMapperMax());
+		case DISCRETE: return shared_ptr<DataMapper>(new DataMapperDiscrete());
 		default:
 			throw std::string("Unknown DataMapper mode");
 			return shared_ptr<DataMapper>(nullptr);
@@ -22,5 +23,6 @@ std::map< std::string, DataMapper::Mode > DataMapper::getModeNames()
 	mode_map["variance"] = VARIANCE;
 	mode_map["minimum"] = MINIMUM;
 	mode_map["maximum"] = MAXIMUM;
+	mode_map["discrete"] = DISCRETE;
 	return mode_map;
 }

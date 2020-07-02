@@ -157,6 +157,7 @@
 			<xs:enumeration value="variance"/>
 			<xs:enumeration value="minimum"/>
 			<xs:enumeration value="maximum"/>
+			<xs:enumeration value="discrete"/>
 		</xs:restriction>
 	</xs:simpleType>
 	

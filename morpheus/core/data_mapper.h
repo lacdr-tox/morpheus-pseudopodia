@@ -13,8 +13,9 @@
 #define DATAMAPPER_H
 
 #include "vec.h"
-#include "map"
-#include "vector"
+#include <map>
+#include <vector>
+#include "random_functions.h"
 /**
  * @brief Generic online Data statistics collector
  * 
@@ -24,7 +25,7 @@
 
 class DataMapper {
 public:
-	enum Mode { AVERAGE, SUM, VARIANCE, MAXIMUM, MINIMUM };
+	enum Mode { AVERAGE, SUM, VARIANCE, MAXIMUM, MINIMUM, DISCRETE };
 	virtual void addVal(double value, int slot=thread()) = 0;
 	virtual void addValW(double value, double weight, int slot=thread()) = 0;
 	virtual double get(int slot=thread()) = 0;
@@ -155,6 +156,85 @@ public:
 	}
 private:
 	vector<double> max;
+};
+
+class DataMapperDiscrete : public DataMapper {
+public:
+	DataMapperDiscrete() { 
+		mode = DataMapper::DISCRETE;
+		values.resize(omp_get_max_threads());
+	};
+	void addVal(double value, int slot=thread()) override { values[slot][value]++; } 
+	void addValW(double value, double weight, int slot=thread()) override { 
+		if (this->weightsAreBuckets) 
+			values[slot][value*weight]++;
+		else 
+			values[slot][value] += weight;
+	}
+		
+	double get(int slot=thread()) override { 
+		const auto& vmap = values[slot];
+
+		if (vmap.size()==1)
+			return vmap.begin()->first;
+		
+		int max_occ=0; int max_occ_cnt=0; double max_occ_value=0;
+		for (const auto& v : vmap) {
+			if (v.second>max_occ) {
+				max_occ = v.second; max_occ_cnt = 1;
+			}
+			else if (v.second == max_occ)
+				max_occ_cnt++;
+		}
+		
+		if (max_occ_cnt<2)
+			return max_occ_value;
+		
+		int selection = getRandomUint(max_occ_cnt);
+		max_occ_cnt = 0;
+		for (const auto& v : vmap) {
+			if (v.second==max_occ) {
+				if (max_occ_cnt == selection)
+					return v.first;
+				max_occ_cnt++;
+			}
+		}
+		return 0;
+		
+	}
+    void reset(int slot=thread()) override { values[slot].clear(); };
+	DataMapper*  clone() override { return new DataMapperDiscrete(*this); };
+	double getCollapsed() override {
+		
+		int max_occ=0; int max_occ_cnt=0; double max_occ_value=0;
+		for (const auto vmap : values) {
+			for (const auto& v : vmap) {
+				if (v.second>max_occ) {
+					max_occ = v.second; max_occ_cnt = 1;
+				}
+				else if (v.second == max_occ)
+					max_occ_cnt++;
+			}
+		}
+		
+		if (max_occ_cnt<2)
+			return max_occ_value;
+		
+		int selection = getRandomUint(max_occ_cnt);
+		max_occ_cnt = 0;
+		for (const auto vmap : values) {
+			for (const auto& v : vmap) {
+				if (v.second==max_occ) {
+					if (max_occ_cnt == selection)
+						return v.first;
+					max_occ_cnt++;
+				}
+			}
+		}
+		return 0;
+	}
+private:
+	vector< map<double,double> >values;
 };
 
 #endif // DATAMAPPER_H
