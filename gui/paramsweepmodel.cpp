@@ -76,7 +76,7 @@ bool ParamSweepModel::restore ( const QByteArray& data, nodeController* modelRoo
 void ParamSweepModel::createJobList( QList< AbstractAttribute* >& params, QList< QStringList >& values ) const
 {
 	// Use a linked list here due to invasive editing ...
-	QList<QList<QString> >allJobs;
+	std::list<QList<QString> >allJobs;
 
 	for(int i = 0; i < root_item->childCount(); i++)
 	{
@@ -101,16 +101,15 @@ void ParamSweepModel::createJobList( QList< AbstractAttribute* >& params, QList<
 			}
 		}
 		
-		if (allJobs.isEmpty()) {
+		if (allJobs.empty()) {
 			allJobs.push_back(QList<QString>());
 		}
 		// Expand all entries in the JobList by permutations of the current pairwise parameter sets
-		QList<QList<QString> >::Iterator base_job_entry;
-		for (base_job_entry= allJobs.begin(); base_job_entry != allJobs.end(); ) {
+		for (auto base_job_entry= allJobs.begin(); base_job_entry != allJobs.end(); ) {
 			// process all parameter sets
 			for (int param_pos=0; param_pos<min_params; param_pos++) {
 				// duplicate base_job_entry, i.e. use it as a pattern
-				QList<QList<QString> >::Iterator current_job_entry = allJobs.insert(base_job_entry, *base_job_entry);
+				auto current_job_entry = allJobs.insert(base_job_entry, *base_job_entry);
 				// process all parameters
 				for(int j = 0; j < value_lists.size(); j++)
 				{
@@ -121,8 +120,8 @@ void ParamSweepModel::createJobList( QList< AbstractAttribute* >& params, QList<
 			allJobs.erase(base_job_entry++);
 		}
 	}
-	QList<QList<QString> >::ConstIterator cps;
-	for (cps=allJobs.begin(); cps!= allJobs.end(); cps++) {
+
+	for (auto cps=allJobs.cbegin(); cps!= allJobs.cend(); cps++) {
 		values.append(*cps);
 	}
 }

@@ -210,28 +210,31 @@ public:
 		for (const auto vmap : values) {
 			for (const auto& v : vmap) {
 				if (v.second>max_occ) {
-					max_occ = v.second; max_occ_cnt = 1;
+					max_occ = v.second;
+					max_occ_cnt = 1;
+					max_occ_value = v.first;
 				}
 				else if (v.second == max_occ)
 					max_occ_cnt++;
 			}
 		}
 		
-		if (max_occ_cnt<2)
-			return max_occ_value;
+// 		if (max_occ_cnt<2)
+		// first occ dominates
+		return max_occ_value;
 		
-		int selection = getRandomUint(max_occ_cnt);
-		max_occ_cnt = 0;
-		for (const auto vmap : values) {
-			for (const auto& v : vmap) {
-				if (v.second==max_occ) {
-					if (max_occ_cnt == selection)
-						return v.first;
-					max_occ_cnt++;
-				}
-			}
-		}
-		return 0;
+// 		int selection = getRandomUint(max_occ_cnt);
+// 		max_occ_cnt = 0;
+// 		for (const auto vmap : values) {
+// 			for (const auto& v : vmap) {
+// 				if (v.second==max_occ) {
+// 					if (max_occ_cnt == selection)
+// 						return v.first;
+// 					max_occ_cnt++;
+// 				}
+// 			}
+// 		}
+// 		return 0;
 	}
 private:
 	vector< map<double,double> >values;
