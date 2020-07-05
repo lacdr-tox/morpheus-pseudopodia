@@ -230,6 +230,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 				if (scaling() == INTERFACES) {
 					// Report halo input into membrane mapper, coordinating the transfer into an intermediate membrane property
 					mapper.attachToCell(cell_focus.cellID());
+					discrete_mapper.attachToCell( cell_focus.cellID() );
 					for ( auto const & i :halo_nodes) {
 						if ( using_local_ns && local_ns_granularity == Granularity::MembraneNode) {
 							// Expose local symbols to input
@@ -243,6 +244,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 					}
 
 					mapper.fillGaps();
+					discrete_mapper.fillGaps();
 					valarray<double> raw_data;
 					for (const auto & out : halo_output) {
 						if (out->membrane_acc) {
@@ -253,7 +255,10 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 						}
 						else {
 							if (raw_data.size() == 0) {
-								raw_data =  mapper.getData().getData();
+								if (out->mapping() == DataMapper::DISCRETE)
+									raw_data = discrete_mapper.getData().getData();
+								else 
+									raw_data = mapper.getData().getData();
 							}
 							for (uint i=0; i<raw_data.size(); i++) {
 								out->mapper->addVal(raw_data[i], thread);
