@@ -16,26 +16,16 @@ public:
     static void sleep(unsigned long secs){QThread::sleep(secs);}
 };
 
-class HelpBrowser : public QTextBrowser {
-public:
-	QVariant loadResource(int type, const QUrl & name) override;
-	void setNetworkAccessManager(QNetworkAccessManager* nam) { this->nam = nam; };
-private:
-	QNetworkAccessManager* nam;
-};
-
-QVariant HelpBrowser::loadResource(int type, const QUrl & name) {
-	QNetworkRequest request(name);
-// 	qDebug() << "Requesting " << name;
-	auto reply = nam->get(request);
-	return reply->readAll();
-}
 
 DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 {
 	timer = NULL;
 	help_engine = config::getHelpEngine();
-	
+	if (help_engine->setupData() == false) {
+		qDebug() << "Help engine setup failed";
+		qDebug() << help_engine->error();
+	}
+
 	help_view = new WebViewer(this);
 	connect(help_view, SIGNAL(linkClicked(const QUrl&)),this, SLOT(openHelpLink(const QUrl&)));
 	
@@ -83,7 +73,6 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	splitter->addWidget(w_bottom);
 	splitter->setStretchFactor(1,4);
 	
-	help_view->show();
 
 	connect(b_back, SIGNAL(triggered()), help_view, SLOT(back()));
 	connect(b_forward, SIGNAL(triggered()), help_view, SLOT(forward()));
@@ -94,8 +83,10 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	this->setWidget(splitter);
 	
 	connect(help_engine->contentModel(), SIGNAL(contentsCreated()),this,SLOT(setRootOfHelpIndex()));
-	help_engine->setupData();
+	
 	resetStatus();
+	
+	help_view->show();
 }
 
 void DocuDock::openHelpLink(const QUrl& url) {

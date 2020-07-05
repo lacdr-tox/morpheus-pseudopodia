@@ -2,6 +2,7 @@
 #include <QTimer>
 #include <QDesktopServices>
 #include <QDebug>
+#include <QMimeDatabase>
 
 QRCNetworkReply::QRCNetworkReply(QObject* parent, const QNetworkRequest &request) : QNetworkReply(parent)
 {
@@ -15,19 +16,19 @@ QRCNetworkReply::QRCNetworkReply(QObject* parent, const QNetworkRequest &request
 	if ( ! df.exists()) {
 		qDebug() << QString(":") + path << " does not exist";
 		this->setError(NetworkError::ContentNotFoundError,"File not found in QT Ressources");
-		QTimer::singleShot(0, this, SIGNAL(error(NetworkError::ContentNotFoundError)));
+		emit error(NetworkError::ContentNotFoundError);
 		return;
 	}
 	
-	QString mimeType/* = QMimeDatabase().mimeTypeForUrl(request.url()).name()*/;
-	if (path.endsWith(".png")) 
-		mimeType = "image/png";
-	else if (path.endsWith(".html"))
-		mimeType = "text/html";
-	else if (path.endsWith(".js"))
-		mimeType = "text/javascript";
-	else if (path.endsWith(".css"))
-		mimeType = "text/css";
+	QString mimeType = QMimeDatabase().mimeTypeForUrl(request.url()).name();
+// 	if (path.endsWith(".png")) 
+// 		mimeType = "image/png";
+// 	else if (path.endsWith(".html"))
+// 		mimeType = "text/html";
+// 	else if (path.endsWith(".js"))
+// 		mimeType = "text/javascript";
+// 	else if (path.endsWith(".css"))
+// 		mimeType = "text/css";
 	setHeader(QNetworkRequest::ContentTypeHeader, mimeType);
 	setHeader(QNetworkRequest::ContentLengthHeader, QByteArray::number(df.size()));
 	qDebug() << QString(":") + path << " : " << df.size();
@@ -62,19 +63,19 @@ HelpNetworkReply::HelpNetworkReply(QObject* parent, const QNetworkRequest &reque
 	setOpenMode(QIODevice::ReadOnly);
 	if (data.isEmpty()) {
 		this->setError(NetworkError::ContentNotFoundError,"File not found in Help Engine");
-		QTimer::singleShot(0, this, SIGNAL(error(NetworkError::ContentNotFoundError)));
+		emit error(NetworkError::ContentNotFoundError);
 		return;
 	}
-	QString mimeType/* = QMimeDatabase().mimeTypeForUrl(request.url()).name()*/;
-	auto path = request.url().path();
-	if (path.endsWith(".png")) 
-		mimeType = "image/png";
-	else if (path.endsWith(".html"))
-		mimeType = "text/html";
-	else if (path.endsWith(".js"))
-		mimeType = "text/javascript";
-	else if (path.endsWith(".css"))
-		mimeType = "text/css";
+	QString mimeType = QMimeDatabase().mimeTypeForUrl(request.url()).name();
+// 	auto path = request.url().path();
+// 	if (path.endsWith(".png")) 
+// 		mimeType = "image/png";
+// 	else if (path.endsWith(".html"))
+// 		mimeType = "text/html";
+// 	else if (path.endsWith(".js"))
+// 		mimeType = "text/javascript";
+// 	else if (path.endsWith(".css"))
+// 		mimeType = "text/css";
 	
 	setHeader(QNetworkRequest::ContentTypeHeader, mimeType);
 	setHeader(QNetworkRequest::ContentLengthHeader, QByteArray::number(origLen));

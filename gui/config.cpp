@@ -642,15 +642,15 @@ QHelpEngine* config::getHelpEngine(bool lock)
 			QApplication::applicationDirPath();
 			
 			QStringList doc_path;
-			doc_path <<  QApplication::applicationDirPath() + "/"
-						<< QApplication::applicationDirPath() + "/appdoc/"
-						<< QApplication::applicationDirPath() + "/../share/morpheus/"
-						<< QApplication::applicationDirPath() + "/../../Resources/doc/"; // for Mac app bundle
+			doc_path <<  QApplication::applicationDirPath()
+						<< QApplication::applicationDirPath() + "/appdoc"
+						<< QApplication::applicationDirPath() + "/../share/morpheus"
+						<< QApplication::applicationDirPath() + "/../../Resources/doc"; // for Mac app bundle
 			QString path;
 			for(const QString& p:  doc_path) {
 	// 			qDebug() << "Testing "  << p + "morpheus.qhc";
-				if (QFile::exists(p+"morpheus.qhc"))
-					path = p;
+				if (QFile::exists(p+"/morpheus.qhc"))
+					path = QDir(p).canonicalPath();
 			}
 			
 			if (path.isEmpty()) {
@@ -658,13 +658,9 @@ QHelpEngine* config::getHelpEngine(bool lock)
 				conf->helpEngine = new QHelpEngine("");
 			}
 			else {
-				qDebug() << "Documentation located at "  << path + "morpheus.qhc";
-				conf->helpEngine = new QHelpEngine(path+"morpheus.qhc");
-				if (conf->helpEngine->setupData() == false)
-				{
-					qDebug() << "Help engine setup failed";
-					qDebug() << conf->helpEngine->error();
-				}
+				qDebug() << "Documentation located at "  << path + "/morpheus.qhc";
+				conf->helpEngine = new QHelpEngine(path+"/morpheus.qhc");
+// 				conf->helpEngine->setProperty("_q_readonly", QVariant::fromValue<bool>(true));
 			}
 		}
 		if (lock)
