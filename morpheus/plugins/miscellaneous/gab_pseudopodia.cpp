@@ -59,7 +59,8 @@ Pseudopodia::Pseudopodia() : InstantaneousProcessPlugin(TimeStepListener::XMLSpe
     touchBehaviorMap["nothing"] = Pseudopod::TouchBehavior::NOTHING;
     touchBehaviorMap["attach"] = Pseudopod::TouchBehavior::ATTACH;
     touchBehaviorMap["retract"] = Pseudopod::TouchBehavior::RETRACT;
-    touchBehavior.setConversionMap(touchBehaviorMap);
+	touchBehaviorMap["poof-dir"] = Pseudopod::TouchBehavior::POOF_DIRECTIONAL;
+	touchBehavior.setConversionMap(touchBehaviorMap);
     registerPluginParameter(touchBehavior);
 
     pullStrength.setXMLPath("pull-strength");

@@ -106,6 +106,16 @@ void Pseudopod::growBundle() {
                 case TouchBehavior::ATTACH:
                     state_ = State::TOUCHING;
                     break;
+            	case TouchBehavior::POOF_DIRECTIONAL:
+				{
+					auto movingAngle = movingDirection_->get(SymbolFocus(cellId));
+					auto directionAngle = VDOUBLE(bundlePositions_.back() - bundlePositions_.front()).angle_xy();
+					if(cos(directionAngle - movingAngle) < 0.85) {
+						deleteBundle();
+					} else {
+						setRetracting(RetractionMethod::FORWARD);
+					}
+				}
             }
         }
         return;
@@ -128,10 +138,20 @@ void Pseudopod::decrementActinLevelAt(VINT pos) const {
     field_->set(pos, prevFieldVal - 1);
 }
 
+void Pseudopod::deleteBundle() {
+
+	for(auto const &pos: bundlePositions_) {
+		decrementActinLevelAt(VINT(pos));
+	}
+	bundlePositions_.clear();
+
+	// completely retracted, start over
+	state_ = State::INACTIVE;
+}
 
 void Pseudopod::retractBundle() {
-    if (getRandom01() > retractprob_) {
-        //Nothing happens
+	if (getRandom01() > retractprob_) {
+		//Nothing happens
         return;
     }
 

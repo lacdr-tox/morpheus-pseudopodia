@@ -39,6 +39,7 @@
             <xs:enumeration value="attach"/>
             <xs:enumeration value="retract"/>
             <xs:enumeration value="nothing"/>
+            <xs:enumeration value="poof-dir"/>
         </xs:restriction>
     </xs:simpleType>
 

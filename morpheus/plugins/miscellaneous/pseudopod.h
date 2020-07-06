@@ -26,7 +26,8 @@ public:
     enum class TouchBehavior {
         ATTACH,
         RETRACT,
-        NOTHING
+        NOTHING,
+        POOF_DIRECTIONAL
     };
 
 private:
@@ -57,6 +58,7 @@ private:
     void growBundle();
     void setRetracting(RetractionMethod retractionMethod);
     void addPosToBundle(const VDOUBLE &pos);
+	void deleteBundle();
 
 
 public:
