@@ -87,7 +87,7 @@ private:
 	PluginParameter2<string,XMLValueReader,OptionalPolicy> mcs_duration_symbol;
 	PluginParameter2<StepperType,XMLNamedValueReader,RequiredPolicy> stepper_type;
 	PluginParameter2<double,XMLEvaluator,RequiredPolicy> metropolis_temperature;
-	PluginParameter2<double,XMLValueReader,DefaultValPolicy> metropolis_yield;
+	PluginParameter2<double,XMLEvaluator,DefaultValPolicy> metropolis_yield;
 	
 // 	CPM::UPDATE current_update;
 

@@ -156,7 +156,7 @@ void CPMSampler::MonteCarloStep()
 
 bool CPMSampler::evalCPMUpdate(const CPM::Update& update)
 {
-	double dE=0, dInteraction;
+	double dE=0, dInteraction=0, dCell=0;
 	
 	// Find the proper celltype to notify
 	uint source_ct = update.source().celltype();
@@ -174,18 +174,18 @@ bool CPMSampler::evalCPMUpdate(const CPM::Update& update)
 	}
 	
 	// InteractionEnergy
-	dE += interaction_energy -> delta(update);
+	dInteraction = interaction_energy -> delta(update);
 	// CellType dependend energies
 	if ( focus_ct == source_ct ) {
-		dE += celltypes[source_ct] -> delta(update);
+		dCell += celltypes[source_ct] -> delta(update);
 	}
 	else {
-		dE += celltypes[source_ct] -> delta( update.selectOp(CPM::Update::ADD));
-		dE += celltypes[focus_ct] -> delta( update.selectOp(CPM::Update::REMOVE));
+		dCell += celltypes[source_ct] -> delta( update.selectOp(CPM::Update::ADD));
+		dCell += celltypes[focus_ct] -> delta( update.selectOp(CPM::Update::REMOVE));
 		// TODO crawl through the neighborhood for CPM::Update::Neighborhood energy changes, if any CPMEnergy requires that
 	}
 	// the magic Metropolis Kinetics with Boltzmann probability ...
-	dE += metropolis_yield(); //metropolis_yield(update.focus);
+	dE = dInteraction + dCell + metropolis_yield(update.focus()); //metropolis_yield(update.focus);
 
 	if (dE <= 0)
 		return true;

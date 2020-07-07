@@ -40,7 +40,7 @@
 						<xs:documentation>Specifies the modified Metropolis algorithm used to stochastically find the minimal energy configuration.</xs:documentation>
 					</xs:annotation>
 					<xs:attribute name="temperature" type="cpmMathExpression" use="required" default="1" />
-					<xs:attribute name="yield" type="cpmDouble" use="optional" default="0.0" />
+					<xs:attribute name="yield" type="cpmMathExpression" use="optional" default="0.0" />
 				</xs:complexType>
 			</xs:element>
 			<xs:element name="Neighborhood" type="cpmNeighborhood" />
