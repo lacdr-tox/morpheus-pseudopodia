@@ -184,12 +184,17 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 		{
 			// There might also be boolean input, that we cannot easily handle this way. But works for concentrations and rates, i.e. all continuous quantities.
 			auto thread = omp_get_thread_num();
-			MembraneMapper mapper(MembraneMapper::MAP_CONTINUOUS,false);
-			MembraneMapper discrete_mapper(MembraneMapper::MAP_DISCRETE,false);
+			unique_ptr<MembraneMapper> mapper;
+			unique_ptr<MembraneMapper> discrete_mapper;
 			struct count_data { double val; double count; };
 			map<CPM::CELL_ID,count_data> cell_mapper;
-			for ( const auto& out : halo_output) { out->mapper->reset(thread); }
-			
+			for ( const auto& out : halo_output) {
+				out->mapper->reset(thread);
+				if (out->membrane_acc && !mapper ) {
+					mapper = make_unique<MembraneMapper> (MembraneMapper::MAP_DISCRETE,false);
+					discrete_mapper = make_unique<MembraneMapper> (MembraneMapper::MAP_CONTINUOUS,false);
+				}
+			}
 #pragma omp for schedule(static)
 			for ( int i=0; i<cells.size(); i++) {
 	// 		for ( auto cell_id : cells) {
@@ -227,41 +232,58 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 					continue;
 				}
 				
+				
 				if (scaling() == INTERFACES) {
-					// Report halo input into membrane mapper, coordinating the transfer into an intermediate membrane property
-					mapper.attachToCell(cell_focus.cellID());
-					discrete_mapper.attachToCell( cell_focus.cellID() );
-					for ( auto const & i :halo_nodes) {
-						if ( using_local_ns && local_ns_granularity == Granularity::MembraneNode) {
-							// Expose local symbols to input
-							cell_focus.setCell(cell_focus.cellID(),i);
-	// 						cout << "Setting focus for local ns " << local_ns_id << " to " << cell_focus.pos() << "; " << cell_focus.cellID()  << endl;
-							input.setNameSpaceFocus(local_ns_id, cell_focus);
+					vector<double> raw_data;
+					if (mapper) {
+						// Report halo input into membrane mapper, coordinating the transfer into an intermediate membrane property
+						mapper->attachToCell(cell_focus.cellID());
+						discrete_mapper->attachToCell( cell_focus.cellID() );
+						for ( auto const & i :halo_nodes) {
+							if ( using_local_ns && local_ns_granularity == Granularity::MembraneNode) {
+								// Expose local symbols to input
+								cell_focus.setCell(cell_focus.cellID(),i);
+								input.setNameSpaceFocus(local_ns_id, cell_focus);
+							}
+							double value = input(SymbolFocus(i));
+							if (std::isnan(value)) {
+								mapper->map(i,0);
+								discrete_mapper->map(i,0);
+							}
+							else {
+								mapper->map(i, std::isnan(value) ? 0 : value );
+								discrete_mapper->map(i, std::isnan(value) ? 0 : value );
+								raw_data.push_back(value);
+							}
 						}
-						double value = input(SymbolFocus(i));
-						mapper.map(i, std::isnan(value) ? 0 : value );
-						discrete_mapper.map(i, std::isnan(value) ? 0 : value );
+						mapper->fillGaps();
+						discrete_mapper->fillGaps();
+					}
+					else {
+						// Report just into a data store
+						for ( auto const & i :halo_nodes) {
+							if ( using_local_ns && local_ns_granularity == Granularity::MembraneNode) {
+								// Expose local symbols to input
+								cell_focus.setCell(cell_focus.cellID(),i);
+								input.setNameSpaceFocus(local_ns_id, cell_focus);
+							}
+							double value = input(SymbolFocus(i));
+							if (!std::isnan(value)) {
+								raw_data.push_back(value);
+							}
+						}
 					}
 
-					mapper.fillGaps();
-					discrete_mapper.fillGaps();
-					valarray<double> raw_data;
 					for (const auto & out : halo_output) {
 						if (out->membrane_acc) {
 							if (out->mapping() == DataMapper::DISCRETE)
-								discrete_mapper.copyData(out->membrane_acc->getField(cell_focus.cellID()));
+								discrete_mapper->copyData(out->membrane_acc->getField(cell_focus.cellID()));
 							else
-								mapper.copyData(out->membrane_acc->getField(cell_focus.cellID()));
+								mapper->copyData(out->membrane_acc->getField(cell_focus.cellID()));
 						}
 						else {
-							if (raw_data.size() == 0) {
-								if (out->mapping() == DataMapper::DISCRETE)
-									raw_data = discrete_mapper.getData().getData();
-								else 
-									raw_data = mapper.getData().getData();
-							}
-							for (uint i=0; i<raw_data.size(); i++) {
-								out->mapper->addVal(raw_data[i], thread);
+							for (const auto& val : raw_data) {
+								out->mapper->addVal(val, thread);
 							}
 							
 							if (out->symbol.granularity() == Granularity::Cell) {
