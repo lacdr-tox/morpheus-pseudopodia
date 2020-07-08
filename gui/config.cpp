@@ -660,7 +660,7 @@ QHelpEngine* config::getHelpEngine(bool lock)
 			else {
 				qDebug() << "Documentation located at "  << path + "/morpheus.qhc";
 				conf->helpEngine = new QHelpEngine(path+"/morpheus.qhc");
-// 				conf->helpEngine->setProperty("_q_readonly", QVariant::fromValue<bool>(true));
+				conf->helpEngine->setProperty("_q_readonly", QVariant::fromValue<bool>(true));
 			}
 		}
 		if (lock)

@@ -12,7 +12,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <QtGui>
 #include <QDomDocument>
 #include <QDesktopServices>
 #include <QtHelp/QHelpContentWidget>
@@ -33,7 +32,7 @@
     inline QIcon QThemedIcon(QString a, QIcon b) { return QIcon::fromTheme(a,b); };
 #endif
 
-#include "morpheus_model.h"
+#include "morpheusML/morpheus_model.h"
 #include "network_access.h"
 
 

@@ -1,4 +1,4 @@
-#include "abstractattribute.h"
+#include "model_attribute.h"
 
 ModelException::ModelException(Type t, QString m) :message(m), type(t)  {};
 
@@ -238,8 +238,8 @@ bool AbstractAttribute::set(QString att)
 	}
 	else
 	{
-		cout << "Value: '" << value.toStdString() << "' for attribute: '" << this->name.toStdString() << "' from Node: '" << parentNode.nodeName().toStdString() << "', isn't valid!" << endl;
-		cout << "PAttern is " << this->getPattern().toStdString() << endl;
+		qDebug() << "Value: '" << value << "' for attribute: '" << this->name << "' from Node: '" << parentNode.nodeName() << "', isn't valid!";
+		qDebug() << "Validation pattern is " << this->getPattern();
 		return false;
 	}
 }

@@ -12,7 +12,7 @@
 #ifndef SBML_IMPORT_H
 #define SBML_IMPORT_H
 
-#include "morpheus_model.h"
+#include "morpheusML/morpheus_model.h"
 #ifndef HAVE_LIBSBML
 namespace SBMLImporter {
 	const bool supported = false;

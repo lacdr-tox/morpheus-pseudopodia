@@ -12,60 +12,7 @@
 #ifndef ABSTRACTATTRIBUTE_H
 #define ABSTRACTATTRIBUTE_H
 
-#include <QtGui>
-#include "xsd.h"
-#include <exception>
-
-using namespace std;
-
-class AbstractAttribute;
-
-template <class T>
-bool operator <( const QSharedPointer<T> a, const QSharedPointer<T> b) {
-    return a.data() < b.data();
-}
-
-// typedef AbstractAttribute* qspAttribute;
-typedef QMap< AbstractAttribute*, AbstractAttribute* > AttributeMap;
-
-struct MorphModelEdit {
-	enum ModelEditType {AttribAdd, AttribRemove, AttribRename, AttribChange,  NodeAdd, NodeRemove, NodeRename, NodeMove, TextChange};
-	QString info;
-	QString name, value;
-	ModelEditType edit_type;
-	QDomNode xml_parent;
-};
-
-struct ModelDescriptor {
-	AttributeMap symbolNames;
-	XSD xsd;
-	bool track_next_change;
-	bool stealth;
-	QList<MorphModelEdit> auto_fixes;
-	QList<MorphModelEdit> edit_operations;
-	QList<AbstractAttribute*> terminal_names;
-	QList<AbstractAttribute*> sys_file_refs;
-	AbstractAttribute* time_symbol = nullptr;
-    QString title;
-    QString details;
-    int edits;
-	int change_count;
-	QMap<QString,QString> getSymbolNames(QString type_name) const;
-	QMap<QString, int> used_tags;
-	QList<QString> getTags() const { return used_tags.keys(); };
-	QMap<QString,int> pluginNames;
-};
-
-class ModelException : public exception {
-public:
-	enum Type { UnknownXSDType, UndefinedNode, InvalidNodeIndex, InvalidVersion, FileIOError };
-	virtual const char* what() const throw();
-	QString message;
-	Type type;
-	ModelException(Type t, QString n);
-	~ModelException() throw() {};
-};
-
+#include "morpheus_model_desc.h"
 /*!
 The AbstractAttribute class describes the properties of a xml-attribut, which you find at the given QDomNode of a xml-file.<br>
 It also provides an interface to change the value of the xml-attribute.

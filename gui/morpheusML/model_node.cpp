@@ -1,4 +1,4 @@
-#include "nodecontroller.h"
+#include "model_node.h"
 
 nodeController::nodeController(nodeController* parent,  XSD::ChildInfo info, QDomNode xml_node) :
 QObject(parent)

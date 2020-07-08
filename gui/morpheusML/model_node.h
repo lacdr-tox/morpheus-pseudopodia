@@ -12,7 +12,7 @@
 #ifndef NODECONTROLLER_H
 #define NODECONTROLLER_H
 
-#include "abstractattribute.h"
+#include "model_attribute.h"
 #include "nodeadapter.h"
 #include <QtGui>
 #include "xsd.h"

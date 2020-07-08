@@ -1,4 +1,5 @@
 #include "domnodeeditor.h"
+#include "attrcontroller.h"
 
 domNodeEditor::domNodeEditor(QWidget* parent) : QWidget(parent)
 {

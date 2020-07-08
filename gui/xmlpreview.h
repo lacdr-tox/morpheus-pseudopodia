@@ -17,7 +17,7 @@
 #include <QLayout>
 #include <QTextEdit>
 #include <QPushButton>
-#include "xmlhighlighter.h"
+#include "widgets/xmlhighlighter.h"
 
 /*!
 This class provides a widget with a QTextEdit, whose text will be highlighted like a xml for better reading.

@@ -21,10 +21,6 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 {
 	timer = NULL;
 	help_engine = config::getHelpEngine();
-	if (help_engine->setupData() == false) {
-		qDebug() << "Help engine setup failed";
-		qDebug() << help_engine->error();
-	}
 
 	help_view = new WebViewer(this);
 	connect(help_view, SIGNAL(linkClicked(const QUrl&)),this, SLOT(openHelpLink(const QUrl&)));
@@ -83,7 +79,10 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	this->setWidget(splitter);
 	
 	connect(help_engine->contentModel(), SIGNAL(contentsCreated()),this,SLOT(setRootOfHelpIndex()));
-	
+	if (help_engine->setupData() == false) {
+		qDebug() << "Help engine setup failed";
+		qDebug() << help_engine->error();
+	}
 	resetStatus();
 	
 	help_view->show();

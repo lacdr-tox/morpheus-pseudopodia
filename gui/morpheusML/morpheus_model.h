@@ -14,7 +14,7 @@
 
 #include <QAbstractItemModel>
 #include "morpheus_xml.h"
-#include "nodecontroller.h"
+#include "model_node.h"
 #include "model_index_mime_data.h"
 #include "paramsweepmodel.h"
 

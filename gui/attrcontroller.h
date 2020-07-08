@@ -16,9 +16,9 @@
 #include <QItemDelegate>
 #include <QSharedPointer>
 #include <QRegExpValidator>
-#include "abstractattribute.h"
+#include "morpheusML/model_attribute.h"
 #include "config.h"
-#include "mathtextedit.h"
+#include "widgets/mathtextedit.h"
 
 #include <iostream>
 using namespace std;

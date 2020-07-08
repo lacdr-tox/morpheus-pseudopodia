@@ -18,7 +18,7 @@
 #define NODEADAPTER_H
 
 #include <QObject>
-#include "abstractattribute.h"
+#include "model_attribute.h"
 
 class LatticeStructureAdapter : public QObject
 {

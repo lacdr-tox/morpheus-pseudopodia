@@ -23,7 +23,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <vector>
-#include "nodecontroller.h"
+#include "morpheusML/model_node.h"
 #include "widgets/webviewer.h"
 
 /*!

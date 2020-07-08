@@ -17,7 +17,7 @@
 #include <QDesktopServices>
 #include <QSortFilterProxyModel>
 
-#include "morpheus_model.h"
+#include "morpheusML/morpheus_model.h"
 #include "domnodeeditor.h"
 #include "attrcontroller.h"
 

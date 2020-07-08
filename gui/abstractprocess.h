@@ -18,7 +18,7 @@
 //#include <iomanip>
 //#include <sstream>
 #include "config.h"
-#include "morpheus_model.h"
+#include "morpheusML/morpheus_model.h"
 
 using namespace std;
 

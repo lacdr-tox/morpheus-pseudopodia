@@ -24,7 +24,7 @@
 #include <QLayout>
 #include <QStyle>
 #include <QDebug>
-#include "morpheus_model.h"
+#include "morpheusML/morpheus_model.h"
 #include "config.h"
 #include <stdexcept>
 #include <cstdio>

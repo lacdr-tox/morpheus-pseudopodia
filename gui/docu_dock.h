@@ -13,7 +13,7 @@
 #define DOCUDOCK_H
 
 #include "config.h"
-#include "nodecontroller.h"
+#include "morpheusML/model_node.h"
 #include "widgets/webviewer.h"
 
 

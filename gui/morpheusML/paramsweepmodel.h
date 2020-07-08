@@ -16,9 +16,9 @@
 #include <QDataStream>
 #include <QList>
 #include <QMessageBox>
-#include "abstractattribute.h"
-#include "model_index_mime_data.h"
-#include "nodecontroller.h"
+#include "model_attribute.h"
+// #include "model_index_mime_data.h"
+#include "model_node.h"
 
 class ParamItem {
 // Q_OBJECT

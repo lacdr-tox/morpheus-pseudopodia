@@ -12,8 +12,8 @@
 #ifndef JOBSUMMARY_H
 #define JOBSUMMARY_H
 
-#include <QtGui>
-#include "abstractattribute.h"
+#include <QDialog>
+#include "morpheusML/model_attribute.h"
 #include "job_queue.h"
 
 using namespace std;

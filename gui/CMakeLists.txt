@@ -124,7 +124,6 @@ add_subdirectory(icons)
 ### set the source, headers and resources
 SET( SOURCES ${SOURCES}
     about_model.cpp
-    abstractattribute.cpp 
     abstractprocess.cpp 
     addattrdialog.cpp 
     attrcontroller.cpp 
@@ -132,7 +131,6 @@ SET( SOURCES ${SOURCES}
     docu_dock.cpp
     domnodeviewer.cpp
     domnodeeditor.cpp
-    equationhighlighter.cpp 
     announcement.cpp
     imagetable.cpp
     infoaction.cpp 
@@ -145,25 +143,27 @@ SET( SOURCES ${SOURCES}
     localprocess.cpp 
     main.cpp 
     mainwindow.cpp 
-    mathtextedit.cpp 
     model_index_mime_data.cpp
-    morpheus_model.cpp
-    morpheus_xml.cpp
+    morpheusML/model_attribute.cpp 
+    morpheusML/model_node.cpp 
+    morpheusML/morpheus_model.cpp
+    morpheusML/morpheus_xml.cpp
+    morpheusML/nodeadapter.cpp
+    morpheusML/paramsweepmodel.cpp
     moviedialog.cpp
     network_access.cpp
-    nodeadapter.cpp
-    nodecontroller.cpp 
     parametersweeper.cpp
-    paramsweepmodel.cpp
     remoteprocess.cpp 
     settingsdialog.cpp 
     sshproxy.cpp 
     synchronizer.cpp 
-    xmlhighlighter.cpp 
     xmlpreview.cpp 
     xsd.cpp
     widgets/checkboxlist.cpp
+    widgets/equationhighlighter.cpp 
+    widgets/mathtextedit.cpp 
     widgets/webviewer.cpp
+    widgets/xmlhighlighter.cpp 
    )
 
 IF ( USE_QWebEngine )
