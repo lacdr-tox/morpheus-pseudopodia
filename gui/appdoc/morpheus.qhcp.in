@@ -3,17 +3,12 @@
 	<docFiles>
 		<generate>
 			<file>
-				<input>html/index.qhp</input>
+				<input>html/morpheus.qhp</input>
 				<output>morpheus.qch</output>
-			</file>
-			<file>
-				<input>html/mathjax.qhp</input>
-				<output>mathjax.qch</output>
 			</file>
 		</generate>
 		<register>
 			<file>morpheus.qch</file>
-			<file>mathjax.qch</file>
 		</register>
 	</docFiles>
 </QHelpCollectionProject>
