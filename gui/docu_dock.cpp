@@ -79,10 +79,8 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	this->setWidget(splitter);
 	
 	connect(help_engine->contentModel(), SIGNAL(contentsCreated()),this,SLOT(setRootOfHelpIndex()));
-	if (help_engine->setupData() == false) {
-		qDebug() << "Help engine setup failed";
-		qDebug() << help_engine->error();
-	}
+	if (!help_engine->contentModel()->isCreatingContents())
+		setRootOfHelpIndex();
 	resetStatus();
 	
 	help_view->show();
@@ -172,7 +170,7 @@ void DocuDock::resizeEvent(QResizeEvent* event)
 void DocuDock::setRootOfHelpIndex()
 {
 	auto help_model =  help_engine->contentModel();
-	if (help_model->isCreatingContents()) {
+	if ( help_model->isCreatingContents()) {
 		if ( ! timer) {
 			timer = new QTimer(this);
 			timer->setSingleShot(true);
