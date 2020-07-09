@@ -55,6 +55,7 @@ private:
 	QModelIndex modules_index, MorpheusML_index;
 	QNetworkAccessManager* hnam ;
 	bool root_reset;
+	QString element_on_reset;
 	
 // 	QListWidget*  index_view;
 	
