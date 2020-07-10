@@ -99,7 +99,7 @@ qint64 HelpNetworkReply::readData(char *buffer, qint64 maxlen)
  
 QNetworkReply *ExtendedNetworkAccessManager::createRequest(Operation op, const QNetworkRequest &request, QIODevice *outgoingData)
 {
-// 	qDebug() << "Creating Help File Request for URL " << request.url();
+// 	qDebug() << "Creating Network Request for URL " << request.url();
 	QString scheme = request.url().scheme();
 	if (scheme == QLatin1String("qthelp") || scheme == QLatin1String("about")) {
 		auto url = request.url();

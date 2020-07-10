@@ -65,7 +65,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)//, ui(new Ui::Main
     QStringList args = QApplication::arguments();
     model_index.model = -1;
     model_index.part = -1;
-
 	for (int i=1; i<args.size(); i++) {
 		if(args.at(i) == "--clear")
 		{
@@ -74,7 +73,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)//, ui(new Ui::Main
 		}
 		else
 		{
-			if (QFile::exists( args.at(i) )  ) {
+			if (QFileInfo( args.at(i) ).isFile()  ) {
 				config::openModel( args.at(i));
 			}
 		}
@@ -95,6 +94,7 @@ void MainWindow::handleMessage(const QString& message){
 	for(uint i=1; i<arguments.size(); i++){
 		if(!arguments.at(i).startsWith("--")){
 			QString filename = path+"/"+arguments.at(i);
+// 			qDebug() << "Message open file" << filename;
 			if (QFile::exists( filename )  ) {
 				config::openModel( filename );
 			}

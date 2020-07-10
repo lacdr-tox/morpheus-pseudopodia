@@ -659,11 +659,12 @@ QHelpEngine* config::getHelpEngine(bool lock)
 			}
 			else {
 				qDebug() << "Documentation located at "  << path + "/morpheus.qhc";
-				conf->helpEngine = new QHelpEngine(path+"/morpheus.qhc");
+				QString docu_collection = path+"/morpheus.qhc";
+				conf->helpEngine = new QHelpEngine(docu_collection, conf);
 				conf->helpEngine->setProperty("_q_readonly", QVariant::fromValue<bool>(true));
+				
 				if (conf->helpEngine->setupData() == false) {
 					qDebug() << "Help engine setup failed";
-					qDebug() << conf->helpEngine->error();
 				}
 			}
 		}

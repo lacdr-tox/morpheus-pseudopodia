@@ -79,6 +79,7 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	this->setWidget(splitter);
 	
 	connect(help_engine->contentModel(), SIGNAL(contentsCreated()),this,SLOT(setRootOfHelpIndex()));
+// 	help_engine->setupData();
 	resetStatus();
 	
 	help_view->show();
@@ -175,18 +176,6 @@ void DocuDock::resizeEvent(QResizeEvent* event)
 
 void DocuDock::setRootOfHelpIndex()
 {
-	auto help_model =  help_engine->contentModel();
-	if ( help_model->isCreatingContents()) {
-		if ( ! timer) {
-			timer = new QTimer(this);
-			timer->setSingleShot(true);
-			connect(timer,SIGNAL(timeout()),this, SLOT(setRootOfHelpIndex()));
-		}
-		timer->start(500);
-		qDebug() << "Deferring Help setup ...";
-		return;
-	}
-	
 	QModelIndex root = toc_model->index(0,0);
 	label_documentation->setText(root.data().toString() + " Documentation");
 	int rows = toc_model->rowCount(root);
@@ -216,7 +205,7 @@ void DocuDock::setRootOfHelpIndex()
 				timer = new QTimer(this);
 				timer->setSingleShot(true);
 				connect(timer, &QTimer::timeout, [this]{ 
-					qDebug() << "setting deferred docu element " << element_on_reset;
+// 					qDebug() << "setting deferred docu element " << element_on_reset;
 					this->setCurrentElement(element_on_reset); 
 				} );
 			}

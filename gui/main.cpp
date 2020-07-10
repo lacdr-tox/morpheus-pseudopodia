@@ -1,6 +1,9 @@
 #include <QApplication>
 #include <QTextCodec>
+// #define USE_SINGLE_APP
+#ifdef USE_SINGLE_APP
 #include "qtsingleapp/qtsingleapplication.h"
+#endif
 #include "mainwindow.h"
 #include "sbml_import.h"
 
@@ -8,6 +11,7 @@
 // #include "network_schemes.h"
 #include <QWebEngineUrlScheme>
 #endif
+
 
 int main(int argc, char *argv[])
 {
@@ -22,7 +26,11 @@ int main(int argc, char *argv[])
 	QApplication::addLibraryPath(app_path);
 	QApplication::addLibraryPath(app_path + "/plugins");
 #endif
+#ifdef USE_SINGLE_APP
 	QtSingleApplication a(argc, argv);
+#else 
+	QApplication a(argc, argv);
+#endif
 	// Handle no gui command line options
 	QStringList args = QApplication::arguments();
 	args.pop_front();
@@ -52,12 +60,14 @@ int main(int argc, char *argv[])
 	// 
 	// if another instance of Morpheus is already running, forward the arguments to that instance
 	
+#ifdef USE_SINGLE_APP
 	QString message;
 	if(a.isRunning()){
 		message = QDir::currentPath() + " " + args.join(" ");
 		if (a.sendMessage(message))
 			return 0;
 	}
+#endif
 
 //  Global application configurations
 // 	QTextCodec::setCodecForCStrings( QTextCodec::codecForName("UTF-8") );
@@ -82,13 +92,12 @@ int main(int argc, char *argv[])
 	
 // Create main windows
 	MainWindow w;
-	if(a.isRunning()){
-		w.handleMessage(message);
-	}
 	
 	w.show();
+#ifdef USE_SINGLE_APP
 	QObject::connect(&a, SIGNAL(messageReceived(const QString&)),
 					 &w, SLOT(handleMessage(const QString&)));
+#endif
 	
 	w.move(300, 200);
 	w.readSettings();

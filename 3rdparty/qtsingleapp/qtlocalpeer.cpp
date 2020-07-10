@@ -41,6 +41,7 @@
 
 #include "qtlocalpeer.h"
 #include <QCoreApplication>
+#include <QDataStream>
 #include <QTime>
 
 #if defined(Q_OS_WIN)
@@ -175,8 +176,17 @@ void QtLocalPeer::receiveConnection()
     if (!socket)
         return;
 
-    while (socket->bytesAvailable() < (int)sizeof(quint32))
+    while (true) {
+        if (socket->state() == QLocalSocket::UnconnectedState) {
+            qWarning("QtLocalPeer: Peer disconnected");
+            delete socket;
+            return;
+        }
+        if (socket->bytesAvailable() >= qint64(sizeof(quint32)))
+            break;
         socket->waitForReadyRead();
+    }
+
     QDataStream ds(socket);
     QByteArray uMsg;
     quint32 remaining;
@@ -197,6 +207,7 @@ void QtLocalPeer::receiveConnection()
     QString message(QString::fromUtf8(uMsg));
     socket->write(ack, qstrlen(ack));
     socket->waitForBytesWritten(1000);
+    socket->waitForDisconnected(1000); // make sure client reads ack
     delete socket;
     emit messageReceived(message); //### (might take a long time to return)
 }
