@@ -1290,7 +1290,7 @@ QHP_CUST_FILTER_NAME   = AppDoc
 # filters).
 # This tag requires that the tag GENERATE_QHP is set to YES.
 
-QHP_CUST_FILTER_ATTRS  = concept, morpheusML, app_doc
+QHP_CUST_FILTER_ATTRS  = doxygen
 
 # The QHP_SECT_FILTER_ATTRS tag specifies the list of the attributes this
 # project's filter section matches. Qt Help Project / Filter Attributes (see:
