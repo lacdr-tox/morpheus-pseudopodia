@@ -1,11 +1,4 @@
 #include "docu_dock.h"
-
-// #include <QtNetwork/QNetworkAccessManager>
-// #include <QtNetwork/QNetworkReply>
-// #ifdef USE_QWebEngine
-// #include <network_schemes.h>
-// #include <QWebEngineProfile>
-// #endif
 #include <QThread>    
 
 class Sleeper : public QThread
@@ -34,6 +27,7 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	toc_widget->sortByColumn(0,Qt::AscendingOrder);
 	
 	root_reset = false;
+	element_on_reset = "MorpheusML";
 	
 	auto tb = new QToolBar();
 
@@ -79,10 +73,13 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	this->setWidget(splitter);
 	
 	connect(help_engine->contentModel(), SIGNAL(contentsCreated()),this,SLOT(setRootOfHelpIndex()));
-// 	help_engine->setupData();
+
 	resetStatus();
-	
 	help_view->show();
+// 	if (help_engine->setupData() == false) {
+// 		qDebug() << "Help engine setup failed";
+// 	}
+	
 }
 
 void DocuDock::openHelpLink(const QUrl& url) {
@@ -131,7 +128,7 @@ void DocuDock::setCurrentElement(QString name) {
 		return;
 	}
 	QMap <QString, QUrl > identifiers = help_engine->linksForIdentifier(name);
-	qDebug() << "Searching for help for " << name;
+// 	qDebug() << "Searching help for " << name;
 	if (!identifiers.empty()) {
 		setCurrentURL(identifiers.begin().value());
 	}
@@ -142,7 +139,7 @@ void DocuDock::setCurrentElement(QString name) {
 
 void DocuDock::setCurrentIndex(const QModelIndex& idx)
 {
-	setCurrentElement(idx.data(Qt::DisplayRole).toString());
+	setCurrentURL( help_engine->contentModel()->contentItemAt(toc_model->mapToSource(idx))->url());
 }
 
 
@@ -179,6 +176,7 @@ void DocuDock::setRootOfHelpIndex()
 	QModelIndex root = toc_model->index(0,0);
 	label_documentation->setText(root.data().toString() + " Documentation");
 	int rows = toc_model->rowCount(root);
+	qDebug() << help_engine->error();
 	qDebug() << "I am getting the Docu " << rows ;
 	int modules_row = -1;
 	for (uint row=0; row<rows; row++) {
@@ -200,17 +198,20 @@ void DocuDock::setRootOfHelpIndex()
 		toc_widget->setRootIndex(toc_model->index(modules_row,0,root));
 		toc_widget->setExpanded(toc_model->index(modules_row,0,root),true);
 		root_reset = true;
-		if (!element_on_reset.isEmpty()) {
-			if ( ! timer) {
-				timer = new QTimer(this);
-				timer->setSingleShot(true);
-				connect(timer, &QTimer::timeout, [this]{ 
-// 					qDebug() << "setting deferred docu element " << element_on_reset;
-					this->setCurrentElement(element_on_reset); 
-				} );
-			}
-			timer->start(50);
+		
+// 		qDebug() << "setting deferred docu element " << element_on_reset;
+// 		setCurrentElement(element_on_reset);
+
+		if ( ! timer) {
+			timer = new QTimer(this);
+			timer->setSingleShot(true);
+			connect(timer, &QTimer::timeout, [this]{ 
+				qDebug() << "setting deferred docu element " << element_on_reset;
+				this->setCurrentElement(element_on_reset); 
+			} );
 		}
+		timer->start(300);
+
 	}
 }
 

@@ -76,7 +76,7 @@ config::config() : QObject(), helpEngine(NULL) {
        Initialize a SQLite database for jobs and sweeps
 */
 	try {
-		db = QSqlDatabase::addDatabase("QSQLITE");
+		db = QSqlDatabase::addDatabase("QSQLITE","MorpheusJobDB");
 		if(!db.isValid() ) throw;
 		
 /*		QPluginLoader loader("qsqlite4.dll");

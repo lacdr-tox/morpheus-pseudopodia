@@ -50,7 +50,7 @@ private:
 
 	QTimer *timer;
 	QLineEdit* label_documentation;
-	QTreeView* toc_widget;
+	QHelpContentWidget* toc_widget;
 	QSortFilterProxyModel* toc_model;
 	QModelIndex modules_index, MorpheusML_index;
 	QNetworkAccessManager* hnam ;
