@@ -79,19 +79,18 @@ ADD_CUSTOM_COMMAND(
 	COMMAND $<TARGET_FILE:Qt5::qhelpgenerator> ${QT_HELP_PROJECT} -o ${QT_HELP_COMPRESSED}
 	DEPENDS ${QT_HELP_PROJECT}
 	WORKING_DIRECTORY ${QT_DOC_FOLDER}
-	COMMENT "Assembling in-application documentation with qcollectiongenerator" VERBATIM
+	COMMENT "Assembling in-application documentation with qhelpgenerator" VERBATIM
 )
 
 ADD_CUSTOM_COMMAND(
 	OUTPUT  ${QT_HELP_COLLECTION}
 	COMMAND $<TARGET_FILE:Qt5::qhelpgenerator> ${QT_HELP_COLLECTION_PROJECT} -o ${QT_HELP_COLLECTION}
-	DEPENDS ${QT_HELP_COLLECTION_PROJECT}
+	DEPENDS ${QT_HELP_COLLECTION_PROJECT} ${QT_HELP_COMPRESSED}
 	WORKING_DIRECTORY ${QT_DOC_FOLDER}
-	COMMENT "Assembling in-application documentation with qcollectiongenerator" VERBATIM
+	COMMENT "Assembling in-application documentation with qhelpgenerator" VERBATIM
 )
 
 
-FIND_PACKAGE(Doxygen REQUIRED)
 ADD_CUSTOM_TARGET(AppDoc
 	  DEPENDS ${QT_HELP_COLLECTION} ${QT_HELP_COMPRESSED}
 	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
