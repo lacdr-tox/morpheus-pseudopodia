@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <QHelpCollectionProject version="1.0">
 	<docFiles>
-		<generate>
+<!--		<generate>
 			<file>
 				<input>html/morpheus.qhp</input>
 				<output>morpheus.qch</output>
 			</file>
-		</generate>
+		</generate>-->
 		<register>
 			<file>morpheus.qch</file>
 		</register>
