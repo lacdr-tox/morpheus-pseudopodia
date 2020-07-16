@@ -1,10 +1,9 @@
 SET(CPACK_PACKAGE_NAME "Morpheus")
-SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Morpheus - Modeling environment for Multi-Cellular Systems Biology")
-SET(CPACK_PACKAGE_DESCRIPTION "Modeling environment for Multi-Cellular Systems Biology
- Modeling and simulation environment for multi-cellular systems biology.
- Includes simulators for ODEs, PDEs and cellular Potts models. 
+SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Modeling environment for Multi-Cellular Systems Biology")  # Morpheus -
+# Modeling environment for Multi-Cellular Systems Biology 
+SET(CPACK_PACKAGE_DESCRIPTION "Includes simulators for ODEs, PDEs and cellular Potts models. 
 
- Facilitates 
+Facilitates 
   - Modeling without programming.
   - Model integration into multiscale models by symbolic linking.
   - Import of SBML models.
