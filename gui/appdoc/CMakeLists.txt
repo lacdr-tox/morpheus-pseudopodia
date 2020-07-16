@@ -96,4 +96,4 @@ ADD_CUSTOM_TARGET(AppDoc
 	  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	  COMMENT "Generating documentation with Doxygen" VERBATIM )
 
-set_target_properties(AppDoc PROPERTIES RESOURCE "${QT_HELP_COLLECTION};${QT_HELP_COMPRESSED}")
+set_target_properties(AppDoc PROPERTIES RESOURCE "${QT_HELP_COMPRESSED}") # don't deploy the collection . ${QT_HELP_COLLECTION} 
