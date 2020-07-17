@@ -16,7 +16,7 @@ config::~config() {
 	job_queue_thread->deleteLater();
 	if (db.isOpen())
 		db.close();
-    QSqlDatabase::removeDatabase("SQLITE");
+//     QSqlDatabase::removeDatabase("MorpheusJobDB");
 }
 
 config::config() : QObject(), helpEngine(NULL) {
@@ -76,7 +76,7 @@ config::config() : QObject(), helpEngine(NULL) {
        Initialize a SQLite database for jobs and sweeps
 */
 	try {
-		db = QSqlDatabase::addDatabase("QSQLITE","MorpheusJobDB");
+		db = QSqlDatabase::addDatabase("QSQLITE"); // ,"MorpheusJobDB"); <-- DB creation fails when connection name is set.
 		if(!db.isValid() ) throw;
 		
 /*		QPluginLoader loader("qsqlite4.dll");
@@ -659,6 +659,8 @@ QHelpEngine* config::getHelpEngine(bool lock)
 			}
 			else {
 				qDebug() << "Documentation located at "  << path + "/morpheus.qch";
+				QDir data_path(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation));
+				data_path.mkpath("data/Morpheus");
 				QString docu_collection = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)+"/data/Morpheus/morpheus.qhc";
 				conf->helpEngine = new QHelpEngine(docu_collection, conf);
 				if (conf->helpEngine->setupData() == false) {
