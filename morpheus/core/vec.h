@@ -331,6 +331,14 @@ struct less_VINT {  // we use a struct to prevent constructors
 	
 };
 
+// struct that helps to build sorted vint container
+struct less_VDOUBLE {  // we use a struct to prevent constructors
+	bool operator() (const VDOUBLE& a, const VDOUBLE& b) const {
+		return ( a.z < b.z || (a.z==b.z  &&  (a.y<b.y || (a.y==b.y && a.x<b.x))));
+	}
+	
+};
+
 struct CompareAngle {
 	bool operator ()(const VINT &a, const VINT &b) const { 
 		if (a.z != b.z)

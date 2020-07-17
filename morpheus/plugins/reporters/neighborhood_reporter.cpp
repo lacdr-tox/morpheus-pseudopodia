@@ -191,8 +191,8 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 			for ( const auto& out : halo_output) {
 				out->mapper->reset(thread);
 				if (out->membrane_acc && !mapper ) {
-					mapper = make_unique<MembraneMapper> (MembraneMapper::MAP_DISCRETE,false);
-					discrete_mapper = make_unique<MembraneMapper> (MembraneMapper::MAP_CONTINUOUS,false);
+					mapper = make_unique<MembraneMapper> (MembraneMapper::MAP_CONTINUOUS,false);
+					discrete_mapper = make_unique<MembraneMapper> (MembraneMapper::MAP_DISCRETE,false);
 				}
 			}
 #pragma omp for schedule(static)

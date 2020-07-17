@@ -60,6 +60,7 @@
 		<xs:restriction base="cpmString">
 			<xs:enumeration value="average"/>
 			<xs:enumeration value="sum"/>
+			<xs:enumeration value="discrete"/>
 		</xs:restriction>
 	</xs:simpleType>
 	

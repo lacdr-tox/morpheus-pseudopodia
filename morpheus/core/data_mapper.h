@@ -181,25 +181,27 @@ public:
 		int max_occ=0; int max_occ_cnt=0; double max_occ_value=0;
 		for (const auto& v : vmap) {
 			if (v.second>max_occ) {
-				max_occ = v.second; max_occ_cnt = 1;
+				max_occ = v.second;
+				max_occ_cnt = 1;
+				max_occ_value= v.first;
 			}
 			else if (v.second == max_occ)
 				max_occ_cnt++;
 		}
 		
-		if (max_occ_cnt<2)
-			return max_occ_value;
+// 		if (max_occ_cnt<2)
+		return max_occ_value;
 		
-		int selection = getRandomUint(max_occ_cnt);
-		max_occ_cnt = 0;
-		for (const auto& v : vmap) {
-			if (v.second==max_occ) {
-				if (max_occ_cnt == selection)
-					return v.first;
-				max_occ_cnt++;
-			}
-		}
-		return 0;
+// 		int selection = getRandomUint(max_occ_cnt);
+// 		max_occ_cnt = 0;
+// 		for (const auto& v : vmap) {
+// 			if (v.second==max_occ) {
+// 				if (max_occ_cnt == selection)
+// 					return v.first;
+// 				max_occ_cnt++;
+// 			}
+// 		}
+// 		return 0;
 		
 	}
     void reset(int slot=thread()) override { values[slot].clear(); };

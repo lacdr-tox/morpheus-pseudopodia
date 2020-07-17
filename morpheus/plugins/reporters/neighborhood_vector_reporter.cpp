@@ -27,6 +27,7 @@ NeighborhoodVectorReporter::NeighborhoodVectorReporter() : ReporterPlugin() {
 	map<string, OutputMode> out_map;
 	out_map["sum"] =  NeighborhoodVectorReporter::SUM;
 	out_map["average"] = NeighborhoodVectorReporter::AVERAGE;
+	out_map["discrete"] = NeighborhoodVectorReporter::DISCRETE;
 	output_mode.setConversionMap(out_map);
 	output_mode.setXMLPath("Output/mapping");
 	registerPluginParameter(output_mode);
@@ -83,32 +84,54 @@ void NeighborhoodVectorReporter::reportGlobal() {
 				input.setNameSpaceFocus(local_ns_id, node);
 			}
 			
-			double total_interface = 0; // interface-based: number all cell-cell interfaces; cell-based: number of neighboring cells
-			VDOUBLE total_signal(0.0,0.0,0.0);
-	// 	for (auto node : range) { // syntax cannot be used with openMP
-			// loop through its neighbors
-			for ( int i_nei = 0; i_nei < neighbors.size(); ++i_nei ) {
-				VINT nb_pos = node.pos() + neighbors[i_nei];
-				total_interface += 1;
-				// get value at neighbor node
-				total_signal += input(nb_pos);
+			if (output_mode() == NeighborhoodVectorReporter::DISCRETE) {
+				map<VDOUBLE,int,less_VDOUBLE> signal_map;
+				// loop through its neighbors
+				for ( int i_nei = 0; i_nei < neighbors.size(); ++i_nei ) {
+					VDOUBLE signal = input(node.pos() + neighbors[i_nei]);
+					signal_map[signal]+=1;
+				}
+				int max_occ=0; int max_occ_cnt=0; VDOUBLE max_occ_value;
+				for (const auto& v : signal_map) {
+					if (v.second>max_occ) {
+						max_occ = v.second;
+						max_occ_cnt = 1;
+						max_occ_value= v.first;
+					}
+					else if (v.second == max_occ)
+						max_occ_cnt++;
+				}
+				output.set( node, max_occ_value );
+				
 			}
-			
-			// final signal stats calculation
-			VDOUBLE signal;
-			switch (output_mode()) {
-				case NeighborhoodVectorReporter::AVERAGE :
-					if ( total_interface > 0.0)
-						signal = total_signal / total_interface;
-					else
-						signal = VDOUBLE(0.0,0.0,0.0);
-					break;
-				case NeighborhoodVectorReporter::SUM:
-					signal = total_signal;
-					break;
+			else {
+				double total_interface = 0; // interface-based: number all cell-cell interfaces; cell-based: number of neighboring cells
+				VDOUBLE total_signal(0.0,0.0,0.0);
+		// 	for (auto node : range) { // syntax cannot be used with openMP
+				// loop through its neighbors
+				for ( int i_nei = 0; i_nei < neighbors.size(); ++i_nei ) {
+					VINT nb_pos = node.pos() + neighbors[i_nei];
+					total_interface += 1;
+					// get value at neighbor node
+					total_signal += input(nb_pos);
+				}
+				
+				// final signal stats calculation
+				VDOUBLE signal;
+				switch (output_mode()) {
+					case NeighborhoodVectorReporter::AVERAGE :
+						if ( total_interface > 0.0)
+							signal = total_signal / total_interface;
+						else
+							signal = VDOUBLE(0.0,0.0,0.0);
+						break;
+					case NeighborhoodVectorReporter::SUM:
+						signal = total_signal;
+						break;
+					case NeighborhoodVectorReporter::DISCRETE: break;
+				}
+				output.set( node, signal );
 			}
-
-			output.set( node, signal );
 		}
 	}
 }
@@ -128,40 +151,73 @@ void NeighborhoodVectorReporter::reportCelltype(CellType* celltype) {
 			input.setNameSpaceFocus(local_ns_id, cell_focus);
 		}
 		
-		double total_interface = 0; // interface-based: number all cell-cell interfaces; cell-based: number of neighboring cells
-		VDOUBLE total_signal(0.0,0.0,0.0);
+		if (output_mode() == NeighborhoodVectorReporter::DISCRETE) {
+			map<VDOUBLE,int,less_VDOUBLE> signal_map;
+			// loop through its neighbors
+			const map <CPM::CELL_ID, double >& interfaces = cell_focus.cell().getInterfaceLengths();
+			for (map<CPM::CELL_ID,double>::const_iterator nb = interfaces.begin(); nb != interfaces.end(); nb++) {
 
-		const map <CPM::CELL_ID, double >& interfaces = cell_focus.cell().getInterfaceLengths();
-		for (map<CPM::CELL_ID,double>::const_iterator nb = interfaces.begin(); nb != interfaces.end(); nb++) {
+				CPM::CELL_ID nei_cell_id = nb->first;
+				SymbolFocus neighbor(nei_cell_id);
+				if ( exclude_medium() && is_medium_type[neighbor.celltype()] )
+					continue;
 
-			CPM::CELL_ID nei_cell_id = nb->first;
-			SymbolFocus neighbor(nei_cell_id);
-			if ( exclude_medium() && is_medium_type[neighbor.celltype()] )
-				continue;
+				double interfacelength = (scaling() == INTERFACES) ? nb->second : 1;
+	// 			numneighbors++;
 
-			double interfacelength = (scaling() == INTERFACES) ? nb->second : 1;
-// 			numneighbors++;
-
-			total_interface += interfacelength;
-			total_signal +=  interfacelength * input.get( neighbor );
+				signal_map[input.get( neighbor )] += interfacelength;
+			}
+			
+			int max_occ=0; int max_occ_cnt=0; VDOUBLE max_occ_value;
+			for (const auto& v : signal_map) {
+				if (v.second>max_occ) {
+					max_occ = v.second;
+					max_occ_cnt = 1;
+					max_occ_value= v.first;
+				}
+				else if (v.second == max_occ)
+					max_occ_cnt++;
+			}
+			output.set( cell_focus, max_occ_value );
+			
 		}
-// 		if (numberneighbors.valid())
-// 			numberneighbors.set ( cells[c], numneighbors );
+		else {
+			double total_interface = 0; // interface-based: number all cell-cell interfaces; cell-based: number of neighboring cells
+			VDOUBLE total_signal(0.0,0.0,0.0);
 
-		VDOUBLE signal;
-		// final signal stats calculation
-		switch (output_mode()) {
-			case NeighborhoodVectorReporter::AVERAGE :
-				if ( total_interface > 0.0)
-					signal = total_signal / total_interface;
-				else
-					signal = VDOUBLE(0.0,0.0,0.0);
-				break;
-			case NeighborhoodVectorReporter::SUM:
-				signal = total_signal;
-				break;
+			const map <CPM::CELL_ID, double >& interfaces = cell_focus.cell().getInterfaceLengths();
+			for (map<CPM::CELL_ID,double>::const_iterator nb = interfaces.begin(); nb != interfaces.end(); nb++) {
+
+				CPM::CELL_ID nei_cell_id = nb->first;
+				SymbolFocus neighbor(nei_cell_id);
+				if ( exclude_medium() && is_medium_type[neighbor.celltype()] )
+					continue;
+
+				double interfacelength = (scaling() == INTERFACES) ? nb->second : 1;
+	// 			numneighbors++;
+
+				total_interface += interfacelength;
+				total_signal +=  interfacelength * input.get( neighbor );
+			}
+	// 		if (numberneighbors.valid())
+	// 			numberneighbors.set ( cells[c], numneighbors );
+
+			VDOUBLE signal;
+			// final signal stats calculation
+			switch (output_mode()) {
+				case NeighborhoodVectorReporter::AVERAGE :
+					if ( total_interface > 0.0)
+						signal = total_signal / total_interface;
+					else
+						signal = VDOUBLE(0.0,0.0,0.0);
+					break;
+				case NeighborhoodVectorReporter::SUM:
+					signal = total_signal;
+					break;
+				case NeighborhoodVectorReporter::DISCRETE: break;
+			}
+
+			output.set( cell_focus, signal );
 		}
-
-		output.set( cell_focus, signal );
     }
 }

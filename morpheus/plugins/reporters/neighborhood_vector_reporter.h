@@ -72,7 +72,7 @@ class NeighborhoodVectorReporter : public ReporterPlugin
 	private:
 		CellType* celltype;
 		enum InputModes{ INTERFACES, CELLS };
-		enum OutputMode{ AVERAGE, SUM };
+		enum OutputMode{ AVERAGE, SUM, DISCRETE };
 		
 		PluginParameter2<VDOUBLE,XMLEvaluator> input;
 		PluginParameter2<InputModes, XMLNamedValueReader,DefaultValPolicy> scaling;
