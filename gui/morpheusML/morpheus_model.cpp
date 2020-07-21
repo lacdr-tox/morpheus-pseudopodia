@@ -179,6 +179,10 @@ QString MorphModel::getDependencyGraph(GRAPH_TYPE type)
 			return temp_folder.absoluteFilePath(graph_file_fallback);
 		}
 	}
+	else {
+		temp_folder.remove(graph_file);
+		temp_folder.remove(graph_file_fallback);
+	}
 	
 	QString model_file = temp_folder.absoluteFilePath("model.xml.gz");
 

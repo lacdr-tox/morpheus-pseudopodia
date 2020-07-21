@@ -174,19 +174,13 @@ void AboutModel::setGraphState(GraphState state, std::function<void()> ready_fun
 		webGraph->reset();
 		graph_state=GraphState::EMPTY;
 	}
-	const QMap<MorphModel::GRAPH_TYPE,QString> render_url_map {
-		{ MorphModel::DOT, "model_graph_renderer.html"},
-		{ MorphModel::SVG, "model_graph_viewer.html"}
-	};
 	
 	bool set_url = false;;
 	
-	
 	MorphModel::GRAPH_TYPE render_type = web_render ? MorphModel::DOT : MorphModel::SVG;
-	QUrl render_url = render_url_map[render_type];
-	render_url.setScheme("qrc");
+	QUrl url = QUrl("qrc:///model_graph_viewer.html");
 	
-	if ( !( webGraph->url().fileName() == render_url_map[MorphModel::DOT] || webGraph->url().fileName() == render_url_map[MorphModel::SVG])) {
+	if ( webGraph->url() != url ) {
 		graph_state=GraphState::EMPTY;
 	}
 	
@@ -194,11 +188,11 @@ void AboutModel::setGraphState(GraphState state, std::function<void()> ready_fun
 		if (graph_state != GraphState::EMPTY) {
 			webGraph->evaluateJS("setGenerating();", [](const QVariant& r){});
 			ready_fun();
-			graph_state = state;
+			graph_state = GraphState::PENDING;
 		}
 		else {
 			MorphModel::GRAPH_TYPE type = web_render ? MorphModel::DOT : MorphModel::SVG;
-			QUrl url = (type==MorphModel::DOT)  ? QUrl("qrc:///model_graph_renderer.html") : QUrl("qrc:///model_graph_viewer.html");
+// 			QUrl url = (type==MorphModel::DOT)  ? QUrl("qrc:///model_graph_renderer.html") : QUrl("qrc:///model_graph_viewer.html");
 			current_graph="";
 			set_url=true;
 			graph_state = GraphState::PENDING_EMPTY;
@@ -209,7 +203,6 @@ void AboutModel::setGraphState(GraphState state, std::function<void()> ready_fun
 		// apply the current graph
 		if (current_graph.endsWith("dot")) {
 			render_type = MorphModel::DOT;
-			url = render_url_map[render_type];
 			
 			QFile dotsource(current_graph);
 			QString dot;
@@ -232,14 +225,15 @@ void AboutModel::setGraphState(GraphState state, std::function<void()> ready_fun
 				dot = dot.replace(QRegularExpression("[\r\n\t]+")," ").trimmed();
 				if (webGraph->url() != url ) {
 					ready_fun = [ready_fun, dot, this](){ 
-						webGraph->evaluateJS(QString("setGraph('")+ dot + "');", [](const QVariant& r){});
+						webGraph->evaluateJS(QString("setDotGraph('")+ dot + "');", [](const QVariant& r){});
 						ready_fun();
 					};
 				}
 				else {
-					webGraph->evaluateJS(QString("transitionGraph('")+ dot + "');", [](const QVariant& r){});
+					webGraph->evaluateJS(QString("setDotGraph('")+ dot + "');", [](const QVariant& r){});
 					ready_fun();
 				}
+				graph_state = GraphState::UPTODATE;
 			}
 			
 		}
@@ -252,7 +246,6 @@ void AboutModel::setGraphState(GraphState state, std::function<void()> ready_fun
 				graph_url+="/"+current_graph;
 			
 			if (webGraph->supportsJS()) {
-				url = render_url_map[MorphModel::SVG];
 				QString command = QString("setGraph('%1');").arg(graph_url);
 				if ( webGraph->url() == url ) {
 					webGraph->evaluateJS(command, [](const QVariant& r){});
@@ -270,7 +263,7 @@ void AboutModel::setGraphState(GraphState state, std::function<void()> ready_fun
 				set_url = true;
 				url = graph_url;
 			}
-			state = graph_state;
+			graph_state = GraphState::UPTODATE;
 		}
 		else {
 			state=GraphState::FAILED;
@@ -279,7 +272,7 @@ void AboutModel::setGraphState(GraphState state, std::function<void()> ready_fun
 	
 	if (state==GraphState::OUTDATED) {
 		if (graph_state==GraphState::EMPTY) {
-			state = GraphState::EMPTY;
+			graph_state = GraphState::EMPTY;
 		}
 		else {
 			webGraph->evaluateJS("setOutdated();", [](const QVariant& r){});
@@ -295,6 +288,7 @@ void AboutModel::setGraphState(GraphState state, std::function<void()> ready_fun
 			ready_fun();
 		}
 		else {
+// 			url = "qrc:///graph_failed.html";
 			set_url=true;
 			ready_fun = [this,ready_fun](){ webGraph->evaluateJS("setFailed()", [](const QVariant& r){}); ready_fun(); };
 		}
@@ -308,18 +302,28 @@ void AboutModel::setGraphState(GraphState state, std::function<void()> ready_fun
 		onLoadConnect = connect(webGraph, &WebViewer::loadFinished,
 					[=](bool success ){ 
 						disconnect(onLoadConnect); 
-						qDebug() << "Graph loading finished" << (success ? "successfully!" : "failing!");
+						qDebug() << "Graph loading finished" << (success ? "successfully" : "failing") << "for" << webGraph->url();
 						ready_fun();
 					});
 		qDebug() << "Setting URL" << url;
-		webGraph->setUrl(url);
+		webGraph->load(url);
 	}
+	
+	QMap<GraphState,QString> state_map = {
+		{GraphState::EMPTY, "EMPTY"},
+		{GraphState::PENDING,"PENDING"},
+		{GraphState::PENDING_EMPTY,"PENDING_EMPTY"},
+		{GraphState::UPTODATE,"UPTODATE"},
+		{GraphState::OUTDATED,"OUTDATED"},
+		{GraphState::FAILED,"FAILED"}
+	};
+	
+	qDebug() << "Graph state was set to" <<state_map[graph_state];
 }
 
 void AboutModel::update_graph()
 {
 	if (!isVisible()) return;
-	
 	
 	qDebug() << "updating graph";
 	MorphModel::GRAPH_TYPE type = web_render ? MorphModel::DOT : MorphModel::SVG;
@@ -328,35 +332,17 @@ void AboutModel::update_graph()
 		QFuture<QString> graph_returned = QtConcurrent::run( model.data(), &MorphModel::getDependencyGraph, type );
 		waitForGraph.setFuture(graph_returned);
 	});
-	
-// 	if (webGraph->url().fileName() == "model_graph_renderer.html") {
-// 		// webGraph->evaluateJS("setGenerating();", [](const QVariant& r){});
-// 	}
-// 	else if (webGraph->url().fileName() == "model_graph_viewer.html") {
-// 		webGraph->evaluateJS("setGenerating();", [](const QVariant& r){});
-// 	}
-// 	else {
-// 		QUrl url = (type== MorphModel::DOT)  ? QUrl("qrc:///model_graph_renderer.html") : QUrl("qrc:///model_graph_viewer.html");
-// // 		onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [this](bool){
-// // 					qDebug() << "Graph loading finished!";
-// // 					webGraph->evaluateJS("setGenerating();", [](const QVariant& r){});
-// // 					disconnect(onLoadConnect);
-// // 				});
-// 		webGraph->setUrl(url);
-// 		
-// 	}
-	
 }
 
 void AboutModel::graphReady() {
 	auto graph = waitForGraph.result();
 	
 	if (graph.isEmpty()) {
+		qDebug() << "Morpheus did not provide a dependency graph rendering!!" << graph;
 		setGraphState(GraphState::OUTDATED);
 	}
-	if (!graph.isEmpty()) {
+	else {
 		qDebug() << "Showing dependency graph: " << QString(graph);
-		
 		current_graph = graph;
 		setGraphState(GraphState::UPTODATE);
 		
@@ -436,8 +422,8 @@ void AboutModel::graphReady() {
 // 
 // 		}
 	}
-	else {
-		setGraphState(GraphState::FAILED);
+// 	else {
+// 		setGraphState(GraphState::FAILED);
 // 		if (webGraph->url().fileName()=="model_graph_renderer.html") {
 // 			webGraph->evaluateJS("setFailed();", [](const QVariant& r){});
 // 		}
@@ -447,8 +433,8 @@ void AboutModel::graphReady() {
 // 		else {
 // 			webGraph->setUrl(QUrl("qrc:///graph_failed.html"));
 // 		}
-		qDebug() << "Morpheus did not provide a dependency graph rendering!!" << graph;
-	}
+// 		qDebug() << "Morpheus did not provide a dependency graph rendering!!" << graph;
+// 	}
 	// run mopsi on it
 	// reload the resulting dependency_graph.png/svg
 	// display an error, id something went wrong.

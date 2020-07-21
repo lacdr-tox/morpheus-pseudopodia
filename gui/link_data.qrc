@@ -5,6 +5,7 @@
 		<file alias="feedback_request.html">data/feedback_request.html</file>
 		<file alias="no_announcement.html">data/no_announcement.html</file>
 		<file alias="morpheusgui.gif">data/morpheusgui.gif</file>
+		<file alias="model_graph_viewer.css">data/model_graph_viewer.css</file>
 		<file alias="model_graph_viewer.html">data/model_graph_viewer.html</file>
         <file alias="task-done.png">icons/16x16/task-complete.png</file>
         <file alias="task-running.png">icons/16x16/task-ongoing.png</file>
