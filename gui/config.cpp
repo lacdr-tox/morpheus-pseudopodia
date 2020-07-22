@@ -646,19 +646,19 @@ QHelpEngine* config::getHelpEngine(bool lock)
 						<< QApplication::applicationDirPath() + "/appdoc"
 						<< QApplication::applicationDirPath() + "/../share/morpheus"
 						<< QApplication::applicationDirPath() + "/../../Resources/doc"; // for Mac app bundle
-			QString path;
+			QString help_path;
 			for(const QString& p:  doc_path) {
 	// 			qDebug() << "Testing "  << p + "morpheus.qhc";
 				if (QFile::exists(p+"/morpheus.qch"))
-					path = QDir(p).canonicalPath();
+					help_path = QDir(p).canonicalPath()+"/morpheus.qch";
 			}
 			
-			if (path.isEmpty()) {
+			if (help_path.isEmpty()) {
 				qDebug() << "Help engine setup failed. Unable to locate 'morpheus.qch'.";
 				conf->helpEngine = new QHelpEngine("");
 			}
 			else {
-				qDebug() << "Documentation located at "  << path + "/morpheus.qch";
+				qDebug() << "Documentation located at "  << help_path;
 				QDir data_path(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation));
 				data_path.mkpath("data/Morpheus");
 				QString docu_collection = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)+"/data/Morpheus/morpheus.qhc";
@@ -666,9 +666,13 @@ QHelpEngine* config::getHelpEngine(bool lock)
 				if (conf->helpEngine->setupData() == false) {
 					qDebug() << "Help engine setup failed";
 				}
-				if (!conf->helpEngine->registerDocumentation(path + "/morpheus.qch")) {
-					qDebug() << "Unable to register documentation";
-					qDebug() << conf->helpEngine->error();
+				QString docu_name = "org.morpheus.UserDocu";
+				qDebug() << conf->helpEngine->registeredDocumentations();
+				if (!conf->helpEngine->registeredDocumentations().contains(docu_name)) {
+					if (!conf->helpEngine->registerDocumentation(help_path)) {
+						qDebug() << "Unable to register documentation";
+						qDebug() << conf->helpEngine->error();
+					}
 				}
 			}
 		}
