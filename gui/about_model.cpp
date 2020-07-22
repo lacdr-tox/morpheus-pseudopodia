@@ -99,13 +99,11 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 
 void AboutModel::update()
 {
-	qDebug()<<"UPDATE" ;
+// 	qDebug()<<"UPDATE" ;
 	
 	title->blockSignals(true);
 	title->setText(model->getModelDescr().title);
 	title->blockSignals(false);
-	
-	
 	
 	description->blockSignals(true);
 	description->setText(model->getModelDescr().details);
@@ -127,10 +125,17 @@ void AboutModel::update()
 	auto tags = model->getRoot()->subtreeTags();
 	tags.removeDuplicates();
 	tags.sort();
+	tags.prepend("#untagged");
+	
+	if (!dg->attribute("include-tags")->isActive()) {
+		update_include_tags(tags);
+		qtl = tags;
+	}
 	
 	for (auto tag : tags) {
 		includeTags->addItem(tag, qtl.contains(tag));
 	}
+	includeTags->updateText();
 	
 	excludeS->blockSignals(true);
 	excludeS->clear();
@@ -274,12 +279,14 @@ void AboutModel::setGraphState(GraphState state, std::function<void()> ready_fun
 		if (graph_state==GraphState::EMPTY) {
 			graph_state = GraphState::EMPTY;
 		}
+		else if ( graph_state == GraphState::PENDING_EMPTY || graph_state == GraphState::FAILED) {
+			state = GraphState::FAILED;
+		}
 		else {
 			webGraph->evaluateJS("setOutdated();", [](const QVariant& r){});
 			ready_fun();
 			graph_state=GraphState::OUTDATED;
 		}
-		
 	}
 	
 	if (state==GraphState::FAILED) {
@@ -562,14 +569,9 @@ void AboutModel::update_reduced(int state)
 void AboutModel::update_include_tags(QStringList includes) {
 	model->getRoot()->setStealth(true);
 	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
-	if (includes.isEmpty()) {
-		dg->attribute("include-tags")->set("");
-		dg->attribute("include-tags")->setActive(false);
-	}
-	else {
-		dg->attribute("include-tags")->setActive(true);
-		dg->attribute("include-tags")->set(includes.join(","));
-	}
+
+	dg->attribute("include-tags")->setActive(true);
+	dg->attribute("include-tags")->set(includes.join(","));
+
 	model->getRoot()->setStealth(false);
-		
 }

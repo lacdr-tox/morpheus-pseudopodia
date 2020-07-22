@@ -25,6 +25,7 @@ void Plugin::loadFromXML(const XMLNode xNode, Scope* scope) {
 	getXMLAttribute(xNode, "tags", tags_string, false);
 	auto tags_split = tokenize(tags_string," \t,", true);
 	xml_tags.insert(tags_split.begin(), tags_split.end());
+	if (xml_tags.empty()) xml_tags.insert("#untagged");
 
 	for (uint i=0; i<plugin_parameters2.size(); i++) {
 		plugin_parameters2[i]->loadFromXML(xNode, scope);
@@ -37,6 +38,7 @@ bool Plugin::isTagged(const set< string >& tags) const
 {
 	auto it1 = tags.begin();
 	auto it2 = xml_tags.begin();
+
 	while (it1!=tags.end() && it2!=xml_tags.end()) {
 		if (*it1<*it2) {
 			it1++;
