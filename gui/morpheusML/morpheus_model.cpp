@@ -308,7 +308,8 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 // 		fix_version=5;
 		MorphModel::AutoFix a;
 		a.operation = AutoFix::MOVE;
-		a.match_path = "MorpheusModel/CellTypes/CellType/AddCell/Condition"; a.target_path = "MorpheusModel/CellTypes/CellType/AddCell/Count"; fixes.append(a);
+		a.match_path = "MorpheusModel/CellTypes/CellType/AddCell/Condition"; a.target_path = "MorpheusModel/CellTypes/CellType/AddCell/Count";
+		fixes.append(a);
 
 		QStringList prefixes;
 		prefixes << "MorpheusModel/Global/" 

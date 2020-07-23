@@ -328,18 +328,22 @@ int config::openModel(QString filepath) {
 		QMessageBox::critical(qApp->activeWindow(),"Error opening morpheus model","Unknown error");
 		return -1; 
 	}
-    // substitude the last model if it was created from scratch and is still unchanged
-    if ( ! conf->openModels.isEmpty() && conf->openModels.back()->isEmpty()) {
-        conf->openModels.back()->close();
-        emit conf->modelClosing(conf->openModels.size()-1);
-        conf->openModels.pop_back();
-		  conf->current_model = -1;
-    }
+	int close_model_idx =-1;
+	// substitude the last model if it was created from scratch and is still unchanged
+	if ( ! conf->openModels.isEmpty() && conf->openModels.back()->isEmpty()) {
+		close_model_idx = conf->openModels.size()-1;
+	}
+	
     conf->openModels.push_back(m);
     int new_index = conf->openModels.size()-1;
     addRecentFile(m->xml_file.path);
     emit conf->modelAdded(new_index);
-//     switchModel(new_index);
+	
+	if (close_model_idx>=0) {
+		conf->openModels[close_model_idx]->close();
+		emit conf->modelClosing(close_model_idx);
+		conf->openModels.removeAt(close_model_idx);
+	}
 
     return new_index;
 }
@@ -347,18 +351,22 @@ int config::openModel(QString filepath) {
 int config::importModel(SharedMorphModel model)
 {
 	config* conf = getInstance();
+	int close_model_idx =-1;
 	// substitude the last model if it was created from scratch and is still unchanged
 	if ( ! conf->openModels.isEmpty() && conf->openModels.back()->isEmpty()) {
-		conf->openModels.back()->close();
-		emit conf->modelClosing(conf->openModels.size()-1);
-
-		conf->openModels.pop_back();
+		close_model_idx = conf->openModels.size()-1;
 	}
+	
 	model->setParent(conf);
 	conf->openModels.push_back(model);
 	int new_index = conf->openModels.size()-1;
 	emit conf->modelAdded(new_index);
-// 	switchModel(new_index);
+	
+	if (close_model_idx>=0) {
+		conf->openModels[close_model_idx]->close();
+		emit conf->modelClosing(close_model_idx);
+		conf->openModels.removeAt(close_model_idx);
+	}
 
 	return new_index;
 }
