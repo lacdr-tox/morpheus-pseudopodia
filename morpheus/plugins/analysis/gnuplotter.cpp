@@ -1,4 +1,6 @@
 #include "gnuplotter.h"
+#include "focusrange.h"
+
 using namespace SIM;
 
 
@@ -6,7 +8,7 @@ using namespace SIM;
 const float CellPainter::transparency_value = std::numeric_limits<float>::quiet_NaN();
 
 Gnuplotter::PlotSpec::PlotSpec() : 
-field(false), cells(false), labels(false), arrows(false), vectors(false), title("") {};
+field(false), cells(false), labels(false), arrows(false), vectors(false), z_slice(0), title("") {};
 
 VDOUBLE Gnuplotter::PlotSpec::size()
 {
@@ -60,10 +62,11 @@ void ArrowPainter::loadFromXML(const XMLNode node, const Scope * scope)
 
 int ArrowPainter::getStyle() { return style; }
 
-void ArrowPainter::init(const Scope* scope)
+void ArrowPainter::init(const Scope* scope, int slice)
 {
 	arrow.init();
 	centering.init();
+	z_slice = slice;
 }
 
 set< SymbolDependency > ArrowPainter::getInputSymbols() const
@@ -89,13 +92,15 @@ void ArrowPainter::plotData(ostream& out)
 		if (ct->isMedium())
 			continue;
 		
-		vector<CPM::CELL_ID> cells = ct->getCellIDs();
+// 		vector<CPM::CELL_ID> cells = ct->getCellIDs();
 
-		for (uint c=0; c< cells.size(); c++){
-			SymbolFocus f(cells[c]);
+// 		for (uint c=0; c< cells.size(); c++){
+// 			SymbolFocus f(cells[c]);
+		FocusRange range(Granularity::Cell, {{FocusRangeAxis::Z, z_slice}, {FocusRangeAxis::CellType, ct->getID()}});
+		for (const SymbolFocus& focus : range){
 			try {
-				VDOUBLE a = arrow(f);
-				VDOUBLE center = f.cell().getCenter();
+				VDOUBLE a = arrow(focus);
+				VDOUBLE center = focus.cell().getCenter();
 				lattice.orth_resolve (center);
 				
 				if (! (a.x == 0 && a.y==0) ) {
@@ -131,11 +136,11 @@ void FieldPainter::loadFromXML(const XMLNode node, const Scope * scope)
 	surface.setXMLPath("surface");
 	surface.loadFromXML(node, scope);
 	
-	z_slice.setXMLPath("slice");
-	z_slice.setDefault("0");
-	z_slice.loadFromXML(node, scope);
-	if (z_slice()<0 || z_slice() >= SIM::lattice().size().z)
-		throw MorpheusException("Invalid z_slice.", node);
+// 	z_slice.setXMLPath("slice");
+// 	z_slice.setDefault("0");
+// 	z_slice.loadFromXML(node, scope);
+// 	if (z_slice()<0 || z_slice() >= SIM::lattice().size().z)
+// 		throw MorpheusException("Invalid z_slice.", node);
 		
 	
 // 	getXMLAttribute(xPlotChild, "data-cropping", plot.pde_data_cropping);
@@ -154,8 +159,9 @@ void FieldPainter::loadFromXML(const XMLNode node, const Scope * scope)
 	}
 }
 
-void FieldPainter::init(const Scope* scope)
+void FieldPainter::init(const Scope* scope, int slice)
 {
+	z_slice = slice;
 	field_value.init();
 	if( min_value.isDefined() )
 		min_value.init();
@@ -228,7 +234,7 @@ void FieldPainter::plotData(ostream& out)
 	string xsep(" "), ysep("\n");
 		
 	VINT out_pos;
-	VINT pos(0,0,z_slice.get());
+	VINT pos(0,0, z_slice);
 	
 	valarray<float> out_data(out_size.x), out_data2(out_size.x);
 	valarray<float> out_data_count(out_size.x);
@@ -324,16 +330,13 @@ void VectorFieldPainter::loadFromXML(const XMLNode node, const Scope* scope)
 	getXMLAttribute(node, "color", color);
 	coarsening = 1;
 	getXMLAttribute(node, "coarsening",coarsening);
-// 	scaling=1.0;
-// 	getXMLAttribute(node,"scaling",scaling);
-    slice = 0;
-    getXMLAttribute(node,"slice",slice);
 }
 
-void VectorFieldPainter::init(const Scope* scope)
+void VectorFieldPainter::init(const Scope* scope, int slice)
 {
 	value.init();
 	centering.init();
+	z_slice = slice;
 }
 
 set< SymbolDependency > VectorFieldPainter::getInputSymbols() const
@@ -345,7 +348,7 @@ set< SymbolDependency > VectorFieldPainter::getInputSymbols() const
 void VectorFieldPainter::plotData(ostream& out)
 {
 	auto& lattice = SIM::lattice();
-	VINT pos(0, 0, slice);
+	VINT pos(0, 0, z_slice);
 	VINT size = lattice.size();
 	for (pos.y=coarsening/2; pos.y<size.y; pos.y+=coarsening) {
 		for (pos.x=coarsening/2; pos.x<size.x; pos.x+=coarsening) {
@@ -380,6 +383,7 @@ LabelPainter::LabelPainter()
 {
 	_fontcolor="black";
 	_fontsize=12;
+	z_slice = -1;
 	value.setXMLPath("value");
 	value.setUndefVal("");
 }
@@ -409,9 +413,10 @@ void LabelPainter::loadFromXML(const XMLNode node, const Scope* scope)
 
 
 
-void LabelPainter::init(const Scope* scope)
+void LabelPainter::init(const Scope* scope, int slice)
 {
 	value.init();
+	this->z_slice = slice;
 }
 
 
@@ -439,11 +444,10 @@ void LabelPainter::plotData(ostream& out)
 		auto ct = celltypes[i].lock();
 		if ( ct->isMedium() ) 
 			continue;
-
-		vector<CPM::CELL_ID> cells = ct->getCellIDs();
-		for (uint c=0; c< cells.size(); c++){
-			
-			SymbolFocus focus(cells[c]);
+		
+// 		vector<CPM::CELL_ID> cells = ct->getCellIDs();
+		FocusRange range(Granularity::Cell, {{FocusRangeAxis::Z, z_slice}, {FocusRangeAxis::CellType, ct->getID()}});
+		for (const SymbolFocus& focus : range){
 			
 			string val = value.get(focus);
 			if ( ! val.empty() ) {
@@ -464,6 +468,7 @@ CellPainter::CellPainter()
 	external_range = false;
 	min_val = 1e12;
 	max_val = -1e12;
+	fill_opacity = 1.0;
 	z_level = 0;
 	symbol.setXMLPath("value");
 	symbol.setDefault("cell.type");
@@ -489,10 +494,13 @@ void CellPainter::loadFromXML(const XMLNode node, const Scope* scope)
 	if (getXMLAttribute(node,"max",range_max) )
 		external_range_max = true;
 	external_range = external_range_min && external_range_max;
+	
+	getXMLAttribute(node,"opacity", fill_opacity);
+	fill_opacity = cpp17::clamp(fill_opacity, 0.0, 1.0);
 
 	if (string(node.getName()) == "Cells") {
 		
-		getXMLAttribute(node,"slice",z_level);
+// 		getXMLAttribute(node,"slice",z_level);
 		getXMLAttribute(node,"flooding",flooding);
 		getXMLAttribute(node,"per-frame-range", reset_range_per_frame);
 		
@@ -533,12 +541,12 @@ void CellPainter::loadPalette(const XMLNode node)
 	}
 }
 
-void CellPainter::init(const Scope* scope) {
+void CellPainter::init(const Scope* scope, int slice) {
 	symbol.init();
-	
+	z_level = slice;
 	cpm_layer = CPM::getLayer();
 	
-	if(z_level > cpm_layer->size().z){
+	if(z_level > cpm_layer->size().z || z_level < 0 ){
 		throw string("CellPainter: z-slice to be plotted lies outside of lattice range = ") + to_str(cpm_layer->size()) + ".";
 	}
 
@@ -979,8 +987,8 @@ Gnuplotter::Gnuplotter(): AnalysisPlugin(), gnuplot(NULL) {
 // 	pointsize.setDefault("0.5");
 // 	registerPluginParameter(pointsize);
 	
-	cell_opacity.setXMLPath("Terminal/opacity");
-	registerPluginParameter(cell_opacity);
+// 	cell_opacity.setXMLPath("Terminal/opacity");
+// 	registerPluginParameter(cell_opacity);
 	
 	
 	
@@ -1052,6 +1060,10 @@ void Gnuplotter::loadFromXML(const XMLNode xNode, Scope* scope)
 		XMLNode xPlot =  xNode.getChildNode(plot_tag.c_str(),i);
 		PlotSpec plot;
 		getXMLAttribute(xPlot, "title", plot.title);
+		getXMLAttribute(xPlot, "slice", plot.z_slice);
+		if (plot.z_slice<0 || plot.z_slice >= SIM::lattice().size().z)
+			throw MorpheusException("Invalid z_slice.", xPlot);
+		
 		for (int j=0; j<xPlot.nChildNode(); j++) {
 			XMLNode xPlotChild = xPlot.getChildNode(j);
 			string node_name = xPlotChild.getName();
@@ -1126,23 +1138,23 @@ void Gnuplotter::init(const Scope* scope) {
     
 		for (uint i=0;i<plots.size();i++) {
 			if (plots[i].cells) {
-				plots[i].cell_painter->init(scope);
+				plots[i].cell_painter->init(scope, plots[i].z_slice);
 				registerInputSymbols( plots[i].cell_painter->getInputSymbols() );
 			}
 			if (plots[i].label_painter) {
-				plots[i].label_painter->init(scope);
+				plots[i].label_painter->init(scope, plots[i].z_slice);
 				registerInputSymbols( plots[i].label_painter->getInputSymbols() );
 			}
 			if (plots[i].arrow_painter) {
-				plots[i].arrow_painter->init(scope);
+				plots[i].arrow_painter->init(scope, plots[i].z_slice);
 				registerInputSymbols( plots[i].arrow_painter->getInputSymbols() );
 			}
 			if (plots[i].vector_field_painter) {
-				plots[i].vector_field_painter->init(scope);
+				plots[i].vector_field_painter->init(scope, plots[i].z_slice);
 				registerInputSymbols( plots[i].vector_field_painter->getInputSymbols() );
 			}
 			if (plots[i].field) {
-				plots[i].field_painter->init(scope);
+				plots[i].field_painter->init(scope, plots[i].z_slice);
 				registerInputSymbols( plots[i].field_painter->getInputSymbols() );
 			}
 		}
@@ -1498,8 +1510,8 @@ void Gnuplotter::analyse(double time) {
 			command << plots[i].cell_painter->getPaletteCmd() << endl;
 			command << "unset contour;\n";
 			
-			if (cell_opacity.isDefined() && cell_opacity() < 1.0 && cell_opacity() >= 0)
-				command << "set style fill transparent solid " << cell_opacity() << " noborder;\n";
+			if (plots[i].cell_painter->getOpacity() < 1.0)
+				command << "set style fill transparent solid " << plots[i].cell_painter->getOpacity() << " noborder;\n";
 			//command << "set cbrange ["<< plots[i].cell_painter->getMinVal() << ":"<< plots[i].cell_painter->getMaxVal() << "]" << endl;
 			command << "set style line 40 lc rgb \"black\" lw " << cell_contour_width << "\n";
 			if ( ! decorate)
@@ -1518,8 +1530,8 @@ void Gnuplotter::analyse(double time) {
 				else 
 					command << "set xlabel '" << time << " " /*<< SIM::getTimeScaleUnit() */ << "' offset 0," << (using_splot ? "0.1" : "2") << ";\n";
 
-				if (plots[i].cell_painter->getSlice() > 0)
-					command << "set title '" << plot_title << " (z-slice: " << plots[i].cell_painter->getSlice() << ")' offset 0,-0.5;\n";
+				if (plots[i].z_slice > 0)
+					command << "set title '" << plot_title << " (z-slice: " << plots[i].z_slice << ")' offset 0,-0.5;\n";
 				else
 					command << "set title '" << plot_title << "' offset 0,-0.5;\n";
 			}

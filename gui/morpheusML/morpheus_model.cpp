@@ -358,6 +358,18 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		a.match_path ="MorpheusModel/CellTypes/CellType/System/@solver";
 		a.target_path="MorpheusModel/CellTypes/CellType/System/@solver";
 		fixes.append(a);
+		a.match_path ="MorpheusModel/Analysis/Gnuplotter/Plot/Field/@slice";
+		a.target_path="MorpheusModel/Analysis/Gnuplotter/Plot/@slice";
+		a.operation = AutoFix::MOVE;
+		fixes.append(a);
+		a.match_path ="MorpheusModel/Analysis/Gnuplotter/Plot/Cells/@slice";
+		a.target_path="MorpheusModel/Analysis/Gnuplotter/Plot/@slice";
+		a.operation = AutoFix::MOVE;
+		fixes.append(a);
+		a.match_path ="MorpheusModel/Analysis/Gnuplotter/Terminal/@opacity";
+		a.target_path="MorpheusModel/Analysis/Gnuplotter/Plot/Cells/@opacity";
+		a.operation = AutoFix::MOVE;
+		fixes.append(a);
 
 	}
 	else if (morpheus_file_version == 3) {
