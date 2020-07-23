@@ -1,4 +1,4 @@
-<MorpheusModel version="3">
+<MorpheusModel version="4">
     <Description>
         <Title>Example-PredatorPrey</Title>
         <Details>Example showing Predator-prey model by Rosenzweig.
@@ -14,15 +14,15 @@ Illustrates how to
 - log and plot data as time course</Details>
     </Description>
     <Global>
-        <Variable symbol="N" value="0.1"/>
-        <Variable symbol="P" value="0.5"/>
-        <System solver="runge-kutta" time-step="0.1">
-            <Constant symbol="a" value="0.5" name="halftime"/>
-            <Constant symbol="r" value="0.1" name="growth rate"/>
-            <Constant symbol="c" value="0.1" name="consumption rate"/>
-            <Constant symbol="b" value="0.05" name="conversion rate"/>
-            <Constant symbol="m" value="0.01" name="mortality rate"/>
-            <Constant symbol="K" value="0.8" name="Carrying capacity"/>
+        <Variable value="0.1" symbol="N"/>
+        <Variable value="0.5" symbol="P"/>
+        <System time-step="0.1" solver="Runge-Kutta [fixed, O(4)]">
+            <Constant name="halftime" value="0.5" symbol="a"/>
+            <Constant name="growth rate" value="0.1" symbol="r"/>
+            <Constant name="consumption rate" value="0.1" symbol="c"/>
+            <Constant name="conversion rate" value="0.05" symbol="b"/>
+            <Constant name="mortality rate" value="0.01" symbol="m"/>
+            <Constant name="Carrying capacity" value="0.8" symbol="K"/>
             <DiffEqn symbol-ref="N">
                 <Expression>r*N*(1-N/K) - c*N / (a+N)*P
 </Expression>
@@ -46,7 +46,7 @@ Illustrates how to
     </Global>
     <Space>
         <Lattice class="linear">
-            <Size symbol="size" value="1, 0, 0"/>
+            <Size value="1, 0, 0" symbol="size"/>
             <Neighborhood>
                 <Order>1</Order>
             </Neighborhood>
@@ -55,7 +55,7 @@ Illustrates how to
     </Space>
     <Time>
         <StartTime value="0"/>
-        <StopTime symbol="stoptime" value="5000"/>
+        <StopTime value="5000" symbol="stoptime"/>
         <TimeSymbol symbol="time"/>
     </Time>
     <Analysis>
@@ -94,5 +94,6 @@ Illustrates how to
                 </Plot>
             </Plots>
         </Logger>
+        <DependencyGraph include-tags="#untagged" format="svg" reduced="false"/>
     </Analysis>
 </MorpheusModel>

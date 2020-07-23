@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="3">
+<MorpheusModel version="4">
     <Description>
         <Details>- VectorField is changed according to the cell velocity
 - Cells move in a persistent way
@@ -14,10 +14,10 @@
             <Size symbol="size" value="300,300,0"/>
             <!--    <Disabled>
         <BoundaryConditions>
-            <Condition boundary="x" type="noflux"/>
-            <Condition boundary="y" type="noflux"/>
-            <Condition boundary="-x" type="noflux"/>
-            <Condition boundary="-y" type="noflux"/>
+            <Condition type="noflux" boundary="x"/>
+            <Condition type="noflux" boundary="y"/>
+            <Condition type="noflux" boundary="-x"/>
+            <Condition type="noflux" boundary="-y"/>
         </BoundaryConditions>
     </Disabled>
 -->
@@ -33,7 +33,7 @@
         <VectorField symbol="v" value="0.0, 0.0, 0.0"/>
         <Constant symbol="cell" value="0.0"/>
         <ConstantVector symbol="velocity" value="0.0, 0.0, 0.0"/>
-        <System solver="runge-kutta" time-step="1.0">
+        <System time-step="1.0" solver="Runge-Kutta [fixed, O(4)]">
             <VectorRule symbol-ref="v">
                 <Expression>if(cell, v.x+alpha*velocity.x, v.x-delta*v.x),
 if(cell, v.y+alpha*velocity.y, v.y-delta*v.y),
@@ -51,26 +51,27 @@ if(cell, v.y+alpha*velocity.y, v.y-delta*v.y),
                 <Velocity symbol-ref="velocity"/>
             </MotilityReporter>
             <VolumeConstraint target="100" strength="1"/>
-            <SurfaceConstraint target="1" mode="aspherity" strength="1"/>
+            <SurfaceConstraint target="1" strength="1" mode="aspherity"/>
             <PersistentMotion decay-time="30" strength="2.0"/>
             <DirectedMotion direction="v" strength="2"/>
         </CellType>
     </CellTypes>
     <CellPopulations>
-        <Population size="1" type="cell">
-            <InitRectangle mode="regular" random-offset="20" number-of-cells="20">
-                <Dimensions size="9*size/10" origin="size/10"/>
+        <Population type="cell" size="1">
+            <InitRectangle number-of-cells="20" random-offset="20" mode="regular">
+                <Dimensions origin="size/10" size="9*size/10"/>
             </InitRectangle>
         </Population>
     </CellPopulations>
     <Analysis>
         <Gnuplotter time-step="50" decorate="false">
             <Plot>
-                <VectorField coarsening="6" value="3*v" style="8" color="black"/>
-                <Cells value="cell.id"/>
+                <VectorField style="8" coarsening="6" color="black" value="3*v"/>
+                <Cells value="cell.id" opacity="0.5"/>
             </Plot>
-            <Terminal opacity="0.5" name="png"/>
+            <Terminal name="png"/>
         </Gnuplotter>
+        <DependencyGraph format="svg" include-tags="#untagged" reduced="false"/>
     </Analysis>
     <CPM>
         <Interaction>

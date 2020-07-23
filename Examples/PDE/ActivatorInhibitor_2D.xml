@@ -1,21 +1,21 @@
-<MorpheusModel version="3">
+<MorpheusModel version="4">
     <Description>
         <Title>Example-ActivatorInhibitor-2D</Title>
         <Details></Details>
     </Description>
     <Global>
-        <Field symbol="a" value="rand_norm(0.5,0.1)" name="activator">
+        <Field name="activator" value="rand_norm(0.5,0.1)" symbol="a">
             <Diffusion rate="0.02"/>
         </Field>
-        <Field symbol="i" value="0.1" name="inhibitor">
+        <Field name="inhibitor" value="0.1" symbol="i">
             <Diffusion rate="1"/>
         </Field>
-        <System solver="runge-kutta" time-step="5" name="Meinhardt">
-            <Constant symbol="rho" value="0.001"/>
-            <Constant symbol="rho_a" value="0.001"/>
-            <Constant symbol="mu_i" value="0.03"/>
-            <Constant symbol="mu_a" value="0.02"/>
-            <Constant symbol="kappa" value="0.10"/>
+        <System name="Meinhardt" time-step="5" solver="Runge-Kutta [fixed, O(4)]">
+            <Constant value="0.001" symbol="rho"/>
+            <Constant value="0.001" symbol="rho_a"/>
+            <Constant value="0.03" symbol="mu_i"/>
+            <Constant value="0.02" symbol="mu_a"/>
+            <Constant value="0.10" symbol="kappa"/>
             <DiffEqn symbol-ref="a">
                 <Expression>(rho/i)*((a^2)/(1 + kappa*a^2)) - mu_a * a + rho_a</Expression>
             </DiffEqn>
@@ -26,7 +26,7 @@
     </Global>
     <Space>
         <Lattice class="square">
-            <Size symbol="size" value="150 150 0"/>
+            <Size value="150, 150, 0" symbol="size"/>
             <NodeLength value="1"/>
             <BoundaryConditions>
                 <Condition boundary="x" type="periodic"/>
@@ -46,10 +46,10 @@
         <TimeSymbol symbol="time"/>
     </Time>
     <Analysis>
-        <Gnuplotter time-step="500" decorate="false">
+        <Gnuplotter decorate="false" time-step="500">
             <Terminal size="400 400 0" name="png"/>
             <Plot>
-                <Field symbol-ref="a" min="0"/>
+                <Field min="0" symbol-ref="a"/>
             </Plot>
         </Gnuplotter>
         <Logger time-step="250">
@@ -79,7 +79,7 @@
                 </Plot>
             </Plots>
             <Restriction>
-                <Slice value="size.y/2" axis="y"/>
+                <Slice axis="y" value="size.y/2"/>
             </Restriction>
         </Logger>
         <Logger time-step="100">
@@ -98,8 +98,9 @@
                 </SurfacePlot>
             </Plots>
             <Restriction>
-                <Slice value="size.y/2" axis="y"/>
+                <Slice axis="y" value="size.y/2"/>
             </Restriction>
         </Logger>
+        <DependencyGraph include-tags="#untagged" format="svg" reduced="false"/>
     </Analysis>
 </MorpheusModel>

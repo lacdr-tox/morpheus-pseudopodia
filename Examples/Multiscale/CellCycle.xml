@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="3">
+<MorpheusModel version="4">
     <Description>
         <Title>Example-CellCycle</Title>
         <Details>ODE model of Xenopus oocyte cell cycle adopted from:
@@ -9,10 +9,10 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
     <Global/>
     <Space>
         <Lattice class="hexagonal">
-            <Size symbol="size" value="250 250 0"/>
+            <Size value="250, 250, 0" symbol="size"/>
             <BoundaryConditions>
-                <Condition boundary="x" type="periodic"/>
-                <Condition boundary="y" type="periodic"/>
+                <Condition type="periodic" boundary="x"/>
+                <Condition type="periodic" boundary="y"/>
             </BoundaryConditions>
             <Neighborhood>
                 <Order>1</Order>
@@ -27,11 +27,11 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
         <RandomSeed value="3445"/>
     </Time>
     <CellTypes>
-        <CellType class="biological" name="cells">
-            <Property symbol="CDK1" value="0" name="Cyclin-dependent kinase 1"/>
-            <Property symbol="Plk1" value="0" name="Polo-like kinase 1"/>
-            <Property symbol="APC" value="0" name="Anaphase-promoting complex"/>
-            <System solver="runge-kutta" time-scaling="20" time-step="4e-2">
+        <CellType name="cells" class="biological">
+            <Property value="0" name="Cyclin-dependent kinase 1" symbol="CDK1"/>
+            <Property value="0" name="Polo-like kinase 1" symbol="Plk1"/>
+            <Property value="0" name="Anaphase-promoting complex" symbol="APC"/>
+            <System time-step="4e-2" solver="Runge-Kutta [fixed, O(4)]" time-scaling="20">
                 <DiffEqn symbol-ref="CDK1">
                     <Expression>α1 - β1 * CDK1 * (APC^n / (K^n + APC^n))</Expression>
                 </DiffEqn>
@@ -41,22 +41,22 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
                 <DiffEqn symbol-ref="APC">
                     <Expression>α3*(1- APC) * ((Plk1^n) / (K^n + Plk1^n)) - β3*APC</Expression>
                 </DiffEqn>
-                <Constant symbol="n" value="8" name="Hill coefficient"/>
-                <Constant symbol="K" value="0.5" name="Michaelis constant"/>
-                <Constant symbol="α1" value="0.1"/>
-                <Constant symbol="α2" value="3.0"/>
-                <Constant symbol="α3" value="3.0"/>
-                <Constant symbol="β1" value="3.0"/>
-                <Constant symbol="β2" value="1.0"/>
-                <Constant symbol="β3" value="1.0"/>
+                <Constant value="8" name="Hill coefficient" symbol="n"/>
+                <Constant value="0.5" name="Michaelis constant" symbol="K"/>
+                <Constant value="0.1" symbol="α1"/>
+                <Constant value="3.0" symbol="α2"/>
+                <Constant value="3.0" symbol="α3"/>
+                <Constant value="3.0" symbol="β1"/>
+                <Constant value="1.0" symbol="β2"/>
+                <Constant value="1.0" symbol="β3"/>
             </System>
-            <Property symbol="p" value="0" name="portion"/>
-            <Property symbol="d" value="0" name="divisions"/>
-            <Property symbol="c" value="0" name="division timeout"/>
-            <Property symbol="cc" value="1" name="cellcount"/>
-            <Property symbol="Vt" value="25000" name="Target volume"/>
+            <Property value="0" name="portion" symbol="p"/>
+            <Property value="0" name="divisions" symbol="d"/>
+            <Property value="0" name="division timeout" symbol="c"/>
+            <Property value="1" name="cellcount" symbol="cc"/>
+            <Property value="25000" name="Target volume" symbol="Vt"/>
             <VolumeConstraint target="Vt" strength="1"/>
-            <SurfaceConstraint target="1.0" mode="aspherity" strength="1"/>
+            <SurfaceConstraint mode="aspherity" target="1.0" strength="1"/>
             <Event>
                 <Condition>CDK1&lt;0.2</Condition>
                 <Rule symbol-ref="c">
@@ -81,7 +81,7 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
     </CellTypes>
     <CPM>
         <Interaction default="0">
-            <Contact type1="cells" type2="cells" value="-20"/>
+            <Contact value="-20" type1="cells" type2="cells"/>
         </Interaction>
         <MonteCarloSampler stepper="edgelist">
             <MCSDuration value="5e-5"/>
@@ -99,7 +99,7 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
     <CellPopulations>
         <Population size="0" type="cells">
             <InitCellObjects mode="order">
-                <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
+                <Arrangement displacements="1, 1, 1" repetitions="1, 1, 1">
                     <Sphere radius="40" center="125,100,0"/>
                 </Arrangement>
             </InitCellObjects>
@@ -131,7 +131,7 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
             </Output>
             <Plots>
                 <Plot time-step="-1">
-                    <Style style="points" line-width="4.0"/>
+                    <Style line-width="4.0" style="points"/>
                     <Terminal terminal="png"/>
                     <X-axis>
                         <Symbol symbol-ref="time"/>
@@ -143,7 +143,7 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
                     </Y-axis>
                 </Plot>
                 <Plot time-step="-1">
-                    <Style style="points" line-width="4.0"/>
+                    <Style line-width="4.0" style="points"/>
                     <Terminal terminal="png"/>
                     <X-axis>
                         <Symbol symbol-ref="CDK1"/>
@@ -160,5 +160,6 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
                 <Celltype celltype="cells"/>
             </Restriction>
         </Logger>
+        <DependencyGraph include-tags="#untagged" reduced="false" format="svg"/>
     </Analysis>
 </MorpheusModel>

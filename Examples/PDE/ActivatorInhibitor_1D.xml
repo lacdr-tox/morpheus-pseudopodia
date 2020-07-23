@@ -1,31 +1,31 @@
-<MorpheusModel version="3">
+<MorpheusModel version="4">
     <Description>
         <Title>Example-ActivatorInhibitor1D</Title>
         <Details></Details>
     </Description>
     <Global>
-        <Field symbol="a" value="rand_norm(0.5,0.1)" name="activator">
+        <Field name="activator" value="rand_norm(0.5,0.1)" symbol="a">
             <Diffusion rate="0.02"/>
         </Field>
-        <Field symbol="i" value="0.1" name="inhibitor">
+        <Field name="inhibitor" value="0.1" symbol="i">
             <Diffusion rate="1"/>
         </Field>
-        <System solver="runge-kutta" time-step="1">
+        <System time-step="1" solver="Runge-Kutta [fixed, O(4)]">
             <DiffEqn symbol-ref="a">
                 <Expression>(rho*a^2) / i - mu_a * a + rho_a</Expression>
             </DiffEqn>
             <DiffEqn symbol-ref="i">
                 <Expression>(rho*a^2) - mu_i * i</Expression>
             </DiffEqn>
-            <Constant symbol="rho_a" value="0.01"/>
-            <Constant symbol="mu_i" value="0.03"/>
-            <Constant symbol="mu_a" value="0.02"/>
-            <Constant symbol="rho" value="0.001"/>
+            <Constant value="0.01" symbol="rho_a"/>
+            <Constant value="0.03" symbol="mu_i"/>
+            <Constant value="0.02" symbol="mu_a"/>
+            <Constant value="0.001" symbol="rho"/>
         </System>
     </Global>
     <Space>
         <Lattice class="linear">
-            <Size symbol="size" value="100 0 0"/>
+            <Size value="100, 0, 0" symbol="size"/>
             <BoundaryConditions>
                 <Condition boundary="x" type="periodic"/>
             </BoundaryConditions>
@@ -56,7 +56,7 @@
                 <TextOutput/>
             </Output>
             <Plots>
-                <Plot time-step="250" title="space plot">
+                <Plot title="space plot" time-step="250">
                     <Style style="lines" line-width="3.0"/>
                     <Terminal terminal="png"/>
                     <X-axis>
@@ -70,7 +70,7 @@
                         <Time mode="current"/>
                     </Range>
                 </Plot>
-                <Plot time-step="-1" title="time-space plot">
+                <Plot title="time-space plot" time-step="-1">
                     <Style style="points"/>
                     <Terminal terminal="png"/>
                     <X-axis>
@@ -85,5 +85,6 @@
                 </Plot>
             </Plots>
         </Logger>
+        <DependencyGraph include-tags="#untagged" format="svg" reduced="false"/>
     </Analysis>
 </MorpheusModel>

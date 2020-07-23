@@ -1,31 +1,31 @@
-<MorpheusModel version="3">
+<MorpheusModel version="4">
     <Description>
         <Title>Example-TuringPatterns</Title>
         <Details>
 Miyazawa, Okamoto and Kondo, Blending of animal colour patterns by hybridization, Nature Communications, 2010</Details>
     </Description>
     <Global>
-        <Field symbol="u" value="4.1+rand_uni(0,1)">
+        <Field value="4.1+rand_uni(0,1)" symbol="u">
             <Diffusion rate="1"/>
         </Field>
-        <Field symbol="v" value="4.84+rand_uni(0,1)">
+        <Field value="4.84+rand_uni(0,1)" symbol="v">
             <Diffusion rate="20"/>
         </Field>
-        <System solver="runge-kutta" time-step="0.25" name="Miyazawa">
+        <System name="Miyazawa" time-step="0.25" solver="Runge-Kutta [fixed, O(4)]">
             <Function symbol="A">
                 <Expression>0.07 + ((0.07 * l.y)/ s.y)</Expression>
             </Function>
-            <Constant symbol="B" value="0.08"/>
+            <Constant value="0.08" symbol="B"/>
             <Function symbol="C">
                 <Expression>-0.1 + ((0.5 * l.x)/ s.x)</Expression>
             </Function>
-            <Constant symbol="D" value="0.03"/>
-            <Constant symbol="E" value="0.10"/>
-            <Constant symbol="F" value="0.12"/>
-            <Constant symbol="G" value="0.06"/>
-            <Constant symbol="R" value="20.0"/>
-            <Constant symbol="synU_max" value="0.23"/>
-            <Constant symbol="synV_max" value="0.50"/>
+            <Constant value="0.03" symbol="D"/>
+            <Constant value="0.10" symbol="E"/>
+            <Constant value="0.12" symbol="F"/>
+            <Constant value="0.06" symbol="G"/>
+            <Constant value="20.0" symbol="R"/>
+            <Constant value="0.23" symbol="synU_max"/>
+            <Constant value="0.50" symbol="synV_max"/>
             <Function symbol="s_u">
                 <Expression>max( 0, min( synU_max, A()*u-B*v+C()))</Expression>
             </Function>
@@ -42,7 +42,7 @@ Miyazawa, Okamoto and Kondo, Blending of animal colour patterns by hybridization
     </Global>
     <Space>
         <Lattice class="square">
-            <Size symbol="s" value="512 512 0"/>
+            <Size value="512, 512, 0" symbol="s"/>
             <NodeLength value="1"/>
             <BoundaryConditions>
                 <Condition boundary="x" type="noflux"/>
@@ -62,13 +62,13 @@ Miyazawa, Okamoto and Kondo, Blending of animal colour patterns by hybridization
         <TimeSymbol symbol="time"/>
     </Time>
     <Analysis>
-        <Gnuplotter time-step="2" decorate="false">
+        <Gnuplotter decorate="false" time-step="2">
             <Terminal persist="true" name="png"/>
             <Plot>
                 <Field symbol-ref="u">
                     <ColorMap>
-                        <Color value="1" color="black"/>
-                        <Color value="0.0" color="white"/>
+                        <Color color="black" value="1"/>
+                        <Color color="white" value="0.0"/>
                     </ColorMap>
                 </Field>
             </Plot>
@@ -81,7 +81,7 @@ Miyazawa, Okamoto and Kondo, Blending of animal colour patterns by hybridization
                 <TextOutput file-format="csv"/>
             </Output>
             <Restriction>
-                <Slice value="s.x/2" axis="x"/>
+                <Slice axis="x" value="s.x/2"/>
             </Restriction>
             <Plots>
                 <Plot title="slice at half of x extension" time-step="-1">
@@ -115,5 +115,6 @@ Miyazawa, Okamoto and Kondo, Blending of animal colour patterns by hybridization
                 </SurfacePlot>
             </Plots>
         </Logger>
+        <DependencyGraph include-tags="#untagged" format="svg" reduced="false"/>
     </Analysis>
 </MorpheusModel>

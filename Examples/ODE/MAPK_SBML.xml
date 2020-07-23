@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="3">
+<MorpheusModel version="4">
     <Description>
         <Title>BIOMD0000000010</Title>
         <Details>Imported SBML model: http://www.ebi.ac.uk/biomodels-main/BIOMD0000000010
@@ -9,7 +9,7 @@ Kholodenko BN, Negative feedback and ultrasensitivity can bring about oscillatio
     <Global/>
     <Space>
         <Lattice class="linear">
-            <Size symbol="size" value="1 0 0"/>
+            <Size value="1, 0, 0" symbol="size"/>
             <Neighborhood>
                 <Order>1</Order>
             </Neighborhood>
@@ -18,68 +18,68 @@ Kholodenko BN, Negative feedback and ultrasensitivity can bring about oscillatio
     </Space>
     <Time>
         <StartTime value="0"/>
-        <StopTime symbol="stop" value="1.0"/>
-        <TimeSymbol symbol="time" name="time"/>
+        <StopTime value="1.0" symbol="stop"/>
+        <TimeSymbol name="time" symbol="time"/>
     </Time>
     <CellTypes>
         <CellType class="biological" name="sbml_ct">
-            <System solver="runge-kutta-adaptive" time-scaling="4000" time-step="stop">
-                <Constant symbol="V1" value="2.5"/>
-                <Constant symbol="Ki" value="9"/>
-                <Constant symbol="n" value="1"/>
-                <Constant symbol="K1" value="10"/>
-                <DiffEqn symbol-ref="MKKK" name="gained from reactions">
+            <System time-scaling="4000" time-step="stop" solver="Dormand-Prince [adaptive, O(5)]">
+                <Constant value="2.5" symbol="V1"/>
+                <Constant value="9" symbol="Ki"/>
+                <Constant value="1" symbol="n"/>
+                <Constant value="10" symbol="K1"/>
+                <DiffEqn name="gained from reactions" symbol-ref="MKKK">
                     <Expression> - V1 * MKKK / ((1 + pow(MAPK_PP / Ki, n)) * (K1 + MKKK)) + V2 * MKKK_P / (KK2 + MKKK_P)</Expression>
                 </DiffEqn>
-                <DiffEqn symbol-ref="MKKK_P" name="gained from reactions">
+                <DiffEqn name="gained from reactions" symbol-ref="MKKK_P">
                     <Expression>V1 * MKKK / ((1 + pow(MAPK_PP / Ki, n)) * (K1 + MKKK)) - V2 * MKKK_P / (KK2 + MKKK_P)</Expression>
                 </DiffEqn>
-                <Constant symbol="V2" value="0.25"/>
-                <Constant symbol="KK2" value="8"/>
-                <Constant symbol="k3" value="0.025"/>
-                <Constant symbol="KK3" value="15"/>
-                <DiffEqn symbol-ref="MKK" name="gained from reactions">
+                <Constant value="0.25" symbol="V2"/>
+                <Constant value="8" symbol="KK2"/>
+                <Constant value="0.025" symbol="k3"/>
+                <Constant value="15" symbol="KK3"/>
+                <DiffEqn name="gained from reactions" symbol-ref="MKK">
                     <Expression> - k3 * MKKK_P * MKK / (KK3 + MKK) + V6 * MKK_P / (KK6 + MKK_P)</Expression>
                 </DiffEqn>
-                <DiffEqn symbol-ref="MKK_P" name="gained from reactions">
+                <DiffEqn name="gained from reactions" symbol-ref="MKK_P">
                     <Expression>k3 * MKKK_P * MKK / (KK3 + MKK) - uVol * k4 * MKKK_P * MKK_P / (KK4 + MKK_P) + uVol * V5 * MKK_PP / (KK5 + MKK_PP) - V6 * MKK_P / (KK6 + MKK_P)</Expression>
                 </DiffEqn>
-                <Constant symbol="k4" value="0.025"/>
-                <Constant symbol="KK4" value="15"/>
-                <DiffEqn symbol-ref="MKK_PP" name="gained from reactions">
+                <Constant value="0.025" symbol="k4"/>
+                <Constant value="15" symbol="KK4"/>
+                <DiffEqn name="gained from reactions" symbol-ref="MKK_PP">
                     <Expression>k4 * MKKK_P * MKK_P / (KK4 + MKK_P) - V5 * MKK_PP / (KK5 + MKK_PP)</Expression>
                 </DiffEqn>
-                <Constant symbol="V5" value="0.75"/>
-                <Constant symbol="KK5" value="15"/>
-                <Constant symbol="V6" value="0.75"/>
-                <Constant symbol="KK6" value="15"/>
-                <Constant symbol="k7" value="0.025"/>
-                <Constant symbol="KK7" value="15"/>
-                <DiffEqn symbol-ref="MAPK" name="gained from reactions">
+                <Constant value="0.75" symbol="V5"/>
+                <Constant value="15" symbol="KK5"/>
+                <Constant value="0.75" symbol="V6"/>
+                <Constant value="15" symbol="KK6"/>
+                <Constant value="0.025" symbol="k7"/>
+                <Constant value="15" symbol="KK7"/>
+                <DiffEqn name="gained from reactions" symbol-ref="MAPK">
                     <Expression> - k7 * MKK_PP * MAPK / (KK7 + MAPK) + V10 * MAPK_P / (KK10 + MAPK_P)</Expression>
                 </DiffEqn>
-                <DiffEqn symbol-ref="MAPK_P" name="gained from reactions">
+                <DiffEqn name="gained from reactions" symbol-ref="MAPK_P">
                     <Expression> k7 * MKK_PP * MAPK / (KK7 + MAPK) - k8 * MKK_PP * MAPK_P / (KK8 + MAPK_P) + uVol * V9 * MAPK_PP / (KK9 + MAPK_PP) - V10 * MAPK_P / (KK10 + MAPK_P)</Expression>
                 </DiffEqn>
-                <Constant symbol="k8" value="0.025"/>
-                <Constant symbol="KK8" value="15"/>
-                <DiffEqn symbol-ref="MAPK_PP" name="gained from reactions">
+                <Constant value="0.025" symbol="k8"/>
+                <Constant value="15" symbol="KK8"/>
+                <DiffEqn name="gained from reactions" symbol-ref="MAPK_PP">
                     <Expression>k8 * MKK_PP * MAPK_P / (KK8 + MAPK_P) - V9 * MAPK_PP / (KK9 + MAPK_PP)</Expression>
                 </DiffEqn>
-                <Constant symbol="V9" value="0.5"/>
-                <Constant symbol="KK9" value="15"/>
-                <Constant symbol="V10" value="0.5"/>
-                <Constant symbol="KK10" value="15"/>
+                <Constant value="0.5" symbol="V9"/>
+                <Constant value="15" symbol="KK9"/>
+                <Constant value="0.5" symbol="V10"/>
+                <Constant value="15" symbol="KK10"/>
             </System>
-            <Constant symbol="uVol" value="1" name="compartment size"/>
-            <Property symbol="MKKK" value="90" name="Mos"/>
-            <Property symbol="MKKK_P" value="10" name="Mos-P"/>
-            <Property symbol="MKK" value="280" name="Mek1"/>
-            <Property symbol="MKK_P" value="10" name="Mek1-P"/>
-            <Property symbol="MKK_PP" value="10" name="Mek1-PP"/>
-            <Property symbol="MAPK" value="280" name="Erk2"/>
-            <Property symbol="MAPK_P" value="10" name="Erk2-P"/>
-            <Property symbol="MAPK_PP" value="10" name="Erk2-PP"/>
+            <Constant name="compartment size" value="1" symbol="uVol"/>
+            <Property name="Mos" value="90" symbol="MKKK"/>
+            <Property name="Mos-P" value="10" symbol="MKKK_P"/>
+            <Property name="Mek1" value="280" symbol="MKK"/>
+            <Property name="Mek1-P" value="10" symbol="MKK_P"/>
+            <Property name="Mek1-PP" value="10" symbol="MKK_PP"/>
+            <Property name="Erk2" value="280" symbol="MAPK"/>
+            <Property name="Erk2-P" value="10" symbol="MAPK_P"/>
+            <Property name="Erk2-PP" value="10" symbol="MAPK_PP"/>
         </CellType>
     </CellTypes>
     <CellPopulations>
@@ -123,5 +123,6 @@ Kholodenko BN, Negative feedback and ultrasensitivity can bring about oscillatio
                 </Plot>
             </Plots>
         </Logger>
+        <DependencyGraph include-tags="#untagged" format="svg" reduced="false"/>
     </Analysis>
 </MorpheusModel>
