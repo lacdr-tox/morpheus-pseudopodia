@@ -76,6 +76,7 @@ private:
     QToolButton* interactive_stop_button;
 
     QStackedWidget *editorStack;
+	QWidget *no_model_widget;
     QDockWidget* documentsDock;
     QTreeWidget *modelList;
     QListWidget *clipBoard;

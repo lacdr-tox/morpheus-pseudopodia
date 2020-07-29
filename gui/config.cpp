@@ -328,22 +328,18 @@ int config::openModel(QString filepath) {
 		QMessageBox::critical(qApp->activeWindow(),"Error opening morpheus model","Unknown error");
 		return -1; 
 	}
-	int close_model_idx =-1;
+
 	// substitude the last model if it was created from scratch and is still unchanged
 	if ( ! conf->openModels.isEmpty() && conf->openModels.back()->isEmpty()) {
-		close_model_idx = conf->openModels.size()-1;
+		closeModel(conf->openModels.size()-1,false);
 	}
 	
     conf->openModels.push_back(m);
     int new_index = conf->openModels.size()-1;
+// 	qDebug() << "Added model " << new_index;
     addRecentFile(m->xml_file.path);
     emit conf->modelAdded(new_index);
 	
-	if (close_model_idx>=0) {
-		conf->openModels[close_model_idx]->close();
-		emit conf->modelClosing(close_model_idx);
-		conf->openModels.removeAt(close_model_idx);
-	}
 
     return new_index;
 }
@@ -351,10 +347,9 @@ int config::openModel(QString filepath) {
 int config::importModel(SharedMorphModel model)
 {
 	config* conf = getInstance();
-	int close_model_idx =-1;
 	// substitude the last model if it was created from scratch and is still unchanged
 	if ( ! conf->openModels.isEmpty() && conf->openModels.back()->isEmpty()) {
-		close_model_idx = conf->openModels.size()-1;
+		closeModel(conf->openModels.size()-1, false);
 	}
 	
 	model->setParent(conf);
@@ -362,12 +357,6 @@ int config::importModel(SharedMorphModel model)
 	int new_index = conf->openModels.size()-1;
 	emit conf->modelAdded(new_index);
 	
-	if (close_model_idx>=0) {
-		conf->openModels[close_model_idx]->close();
-		emit conf->modelClosing(close_model_idx);
-		conf->openModels.removeAt(close_model_idx);
-	}
-
 	return new_index;
 }
 
@@ -410,7 +399,6 @@ int config::createModel(QString xml_path)
     int id = conf->openModels.size();
     conf->openModels.push_back(m);
     emit conf->modelAdded(id);
-//     switchModel(id);
 
     return id;
 }
@@ -419,35 +407,41 @@ int config::createModel(QString xml_path)
 
 bool config::closeModel(int index, bool create_model)
 {
-    config* conf = getInstance();
-    if (index == -1) index = conf->current_model;
+// 	qDebug() << "Closing Model" << index;
+	config* conf = getInstance();
+	if (index == -1) index = conf->current_model;
 	if (index >= conf->openModels.size()) return false;
-    if (conf->openModels[index]->close()) {
-        emit conf->modelClosing(index);
-        conf->openModels.removeAt(index);
-        if (conf->current_model < conf->openModels.size())
-            conf->switchModel(conf->current_model);
-        else if (conf->current_model>0)
-            conf->switchModel(conf->current_model-1);
-        else {
-            if (create_model)
-                createModel();
-        }
-    }
-    else
-        return false;
-    return true;
+	if (conf->openModels[index]->close()) {
+		emit conf->modelClosing(index);
+		conf->openModels.removeAt(index);
+		
+		if (conf->openModels.size()==0) {
+			conf->switchModel(-1);
+			if (create_model)
+				conf->switchModel(createModel());
+		}
+		else if (index == conf->current_model) {
+			// pick activate alternative model
+			if (conf->current_model < conf->openModels.size())
+				conf->switchModel(conf->current_model);
+			else
+				conf->switchModel(conf->current_model-1);
+		}
+		
+	}
+	else
+		return false;
+	return true;
 }
 
 //------------------------------------------------------------------------------
 
 void config::switchModel(int index) {
-    config* conf = config::getInstance();
-    if (index == conf->current_model) return;
-	qDebug() << "Switch to model " << index;
-    conf->current_model = index;
-    if (index>=0)
-        emit conf->modelSelectionChanged(conf->current_model);
+	config* conf = config::getInstance();
+// 	qDebug() << "Switch from model" << conf->current_model << "to model " << index;
+	if (index == conf->current_model) return;
+	conf->current_model = index;
+	emit conf->modelSelectionChanged(conf->current_model);
 }
 
 

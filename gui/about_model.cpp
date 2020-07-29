@@ -309,10 +309,9 @@ void AboutModel::setGraphState(GraphState state, std::function<void()> ready_fun
 		onLoadConnect = connect(webGraph, &WebViewer::loadFinished,
 					[=](bool success ){ 
 						disconnect(onLoadConnect); 
-						qDebug() << "Graph loading finished" << (success ? "successfully" : "failing") << "for" << webGraph->url();
+						qDebug() << "Model graph loading finished" << (success ? "successfully" : "failing") << "(" << webGraph->url() << ")";
 						ready_fun();
 					});
-		qDebug() << "Setting URL" << url;
 		webGraph->load(url);
 	}
 	
@@ -325,7 +324,7 @@ void AboutModel::setGraphState(GraphState state, std::function<void()> ready_fun
 		{GraphState::FAILED,"FAILED"}
 	};
 	
-	qDebug() << "Graph state was set to" <<state_map[graph_state];
+// 	qDebug() << "Graph state was set to" <<state_map[graph_state];
 }
 
 void AboutModel::update_graph()

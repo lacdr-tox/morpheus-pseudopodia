@@ -92,7 +92,7 @@ void DocuDock::openHelpLink(const QUrl& url) {
 
 void DocuDock::setCurrentElement(QStringList xPath)
 {
-// 	qDebug() << xPath;
+	qDebug() << xPath;
 	auto key_index = MorpheusML_index;
 	QString help_key = "MorpheusML";
 	xPath.pop_front();
@@ -147,8 +147,11 @@ void DocuDock::setCurrentIndex(const QModelIndex& idx)
 void DocuDock::setCurrentURL(const QUrl& url) {
 	if (help_view->url() != url) {
 		help_view->setUrl(url);
-		qDebug() << url;
+		qDebug() << "Setting Docu"<< url;
 	}
+	else 
+		qDebug() << "Docu"<< url << "already set";
+	
 }
 
 

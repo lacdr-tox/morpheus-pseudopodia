@@ -79,9 +79,9 @@ private:
 	QTreeView* model_tree_view; /*!< TreeWidget in which the xml-nodes will be shown.*/
 	TagFilterSortProxyModel* model_tree_filter;
 	CheckBoxList* filter_tag_list;
-	QPushButton* filter_button;
+	QAction* model_tree_filter_action;
 	QSet<QString> filter_tags;
-	QPushButton* sort_button;
+	QAction* model_tree_sort_action;
 	struct { int column; Qt::SortOrder order; } sort_state;
 	QSplitter* splitter; /*!< Splitter which divide the view of the widget. */
 	domNodeEditor* node_editor;

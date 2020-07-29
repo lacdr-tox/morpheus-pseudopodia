@@ -186,7 +186,7 @@ void MainWindow::createMenuBar()
     QAction *fileReload= new QAction(QThemedIcon("document-revert",QIcon(":/document-revert.png")),tr("Reload"), this);
     fileReload->setShortcut(QKeySequence(Qt::Key_F5));
     fileReload->setStatusTip(tr("Reload model from last file"));
-	connect(fileOpen, &QAction::triggered, [=](){
+	connect(fileReload, &QAction::triggered, [=](){
 		 if ( current_model &&  ! current_model->xml_file.path.isEmpty() ) {
 			QString path = current_model->xml_file.path;
 			if (config::closeModel(model_index.model,false)) {
@@ -282,7 +282,7 @@ void MainWindow::createMenuBar()
     QAction *fileClose = fileMenu->addAction(QThemedIcon("document-close", QIcon(":/document-close.png")), tr("Close"));
     fileClose->setShortcut(QKeySequence::Close);
     fileClose->setStatusTip(tr("Close current model"));
-	connect(fileClose, &QAction::triggered, [=](){ config::closeModel(model_index.model); });
+	connect(fileClose, &QAction::triggered, [=](){ config::closeModel(model_index.model,true); });
 
 
     QAction *appQuit = fileMenu->addAction(QThemedIcon("application-exit", QIcon(":/application-exit.png")), tr("Quit"));
@@ -510,6 +510,11 @@ void MainWindow::createMainWidgets()
     editorStack = new QStackedWidget();
     editorStack->setFrameStyle(QFrame::StyledPanel | QFrame::Panel | QFrame::Sunken);
 	
+	no_model_widget = new QWidget();
+	no_model_widget->setLayout(new QVBoxLayout());
+	no_model_widget->layout()->addWidget(new QLabel("no model selected!"));
+	editorStack->addWidget(no_model_widget);
+	
     sweeper = new parameterSweeper();
     editorStack->addWidget(sweeper);
 
@@ -545,7 +550,16 @@ void MainWindow::createMainWidgets()
 
 void MainWindow::selectModel(int index, int part)
 {
-	if (index<0) return;
+// 	qDebug() << "Selecting model " << index << "of" << config::getOpenModels().size() << ". Current is" << model_index.model;
+	if (index<0) {
+		model_index.model = -1;
+		current_model = SharedMorphModel();
+		modelList->blockSignals(true);
+		modelList->setCurrentItem(modelList->topLevelItem(-1));
+		modelList->blockSignals(false);
+		editorStack->setCurrentWidget(no_model_widget);
+		return;
+	}
 	if (model_index.model == index && (model_index.part==part || part == -1)) {
 		showCurrentModel();
 		return;
@@ -766,7 +780,7 @@ void MainWindow::modelActionTriggerd (QAction *act)
     }
 
     else if (act == closeModelAction) {
-        config::closeModel(model_popup_index.model);
+        config::closeModel(model_popup_index.model, true);
     }
 
 /*    else if (act == mailAttachAction) {
@@ -820,7 +834,7 @@ void MainWindow::syncModelList (int m) {
 			}
 		}
 	}
-	qDebug() << "Sync model list for model " << m;
+// 	qDebug() << "Sync model list for model " << m;
 	// In fact we just need to enable/disable on the basis of parts data.
 // 	modelList->topLevelItem(m)->takeChildren();
 	SharedMorphModel model = config::getOpenModels()[m];
@@ -921,6 +935,7 @@ void MainWindow::storeSettings(){
 void MainWindow::addModel(int index) {
     SharedMorphModel model = config::getOpenModels()[index];
 
+// 	qDebug() << "Adding model " << index;
 	QTreeWidgetItem* c = new QTreeWidgetItem(QStringList(model->xml_file.name));
 	c->setIcon(0,QThemedIcon("text-x-generic",QIcon(":/text-generic.png")));
 	c->setIcon(1,QThemedIcon("edit-delete",QIcon(":/edit-delete.png")));
@@ -961,6 +976,8 @@ void MainWindow::addModel(int index) {
 //------------------------------------------------------
 
 void MainWindow::removeModel(int index) {
+// 	qDebug() << "Removing model" << index << "from View (current is"<< model_index.model << ")";
+	if (index == model_index.model) selectModel(-1);
     SharedMorphModel model = config::getOpenModels()[index];
     disconnect(model,SIGNAL(modelPartAdded(int)),this,SLOT(syncModelList()));
     disconnect(model,SIGNAL(modelPartRemoved(int)),this,SLOT(syncModelList()));
@@ -970,12 +987,10 @@ void MainWindow::removeModel(int index) {
 	editorStack->removeWidget(modelAbout[model]);
 	modelAbout[model]->deleteLater();
 	modelAbout.remove(model);
-
     modelList->takeTopLevelItem(index);
-//     if (model_index.model == index) {
-//         model_index.model = -1;
-// 		config::switchModel(model_index.model);
-//     }
+    if (model_index.model >= index) {
+        model_index.model -= 1;
+    }
 }
 
 void MainWindow::showCurrentModel() {

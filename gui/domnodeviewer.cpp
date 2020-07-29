@@ -90,22 +90,17 @@ void domNodeViewer::createLayout()
 	
 	QWidget *leftWid = new QWidget(this);
 	leftWid->setLayout(new QVBoxLayout(this));
-// 	leftWid->setContentsMargins(0, 0, 0, 0);
 	leftWid->layout()->setContentsMargins(0, 10, 4, 0);
 	leftWid->layout()->setSpacing(0);
 	
-	auto filter_row = new QHBoxLayout();
-	filter_row->setContentsMargins(10, 0, 10, 0);
-	filter_row->setSpacing(8);
+	
+	/// TOOLBAR /// 
+	auto filter_row = new QToolBar("View",this);
 	
 	// Sort Button
-	filter_row->addStretch(2);
-	sort_button = new QPushButton(QIcon::fromTheme("view-sort-ascending"),"sort", this);
-	sort_button->setCheckable(true);
-	sort_button->setFlat(true);
-	sort_state.column = 0;
-	sort_state.column = Qt::AscendingOrder;
-	connect(sort_button, &QPushButton::toggled, 
+	model_tree_sort_action = new QAction(QIcon::fromTheme("view-sort-ascending"),"sort", this);
+	model_tree_sort_action->setCheckable(true);
+	connect(model_tree_sort_action, &QAction::toggled, 
 		[this](bool enabled){ 
 			if (enabled) {
 				this->model_tree_view->setSortingEnabled(true);
@@ -119,10 +114,10 @@ void domNodeViewer::createLayout()
 			} 
 		}
 	);
-	filter_row->addWidget(sort_button);
+	filter_row->addAction(model_tree_sort_action);
+	filter_row->addSeparator();
 	
-	// Filter edit
-	filter_row->addSpacing(8);
+	// Filter Tag Box
 	filter_tag_list = new CheckBoxList(this);
 	filter_tag_list->addItem("#untagged",true);
 	filter_tag_list->setData(QStringList() << "#untagged");
@@ -130,31 +125,30 @@ void domNodeViewer::createLayout()
 	connect(filter_tag_list, &CheckBoxList::currentTextChanged, model_tree_filter, &TagFilterSortProxyModel::setFilterTags);
 	
 	// Filter Button
-	filter_button = new QPushButton(QThemedIcon("view-filter",QIcon(":/view_filter.png")),"tags",this);
-	filter_button->setCheckable(true);
-	filter_button->setFlat(true);
-	filter_button->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
-	filter_row->addWidget(filter_button);
-	connect(filter_button, &QPushButton::toggled, [this](bool state) {
+	model_tree_filter_action = new QAction(QThemedIcon("view-filter",QIcon(":/view_filter.png")),"tags",this);
+	model_tree_filter_action->setCheckable(true);
+	connect(model_tree_filter_action, &QAction::toggled, [this](bool state) {
 		disconnect(model_tree_filter, nullptr, this, SLOT(selectInsertedItem(const QModelIndex & , int , int )));
 		model_tree_filter->setFilteringEnabled(state);
 		connect(model_tree_filter, SIGNAL(rowsInserted( const QModelIndex & , int , int)), this, SLOT(selectInsertedItem(const QModelIndex & , int , int )),Qt::QueuedConnection);
 	});
 	
-	leftWid->layout()->addItem(filter_row);
+	filter_row->addAction(model_tree_filter_action);
+
+	leftWid->layout()->addWidget(filter_row);
 	leftWid->layout()->addWidget(model_tree_view);
 	
+	/// Right Widget ///
+
 	QWidget *rightWid = new QWidget(this);
 	rightWid->setLayout(new QVBoxLayout(rightWid));
 	rightWid->layout()->setContentsMargins(4, 10, 0, 0);
 	rightWid->layout()->setSpacing(8);
-// 	rightWid->setContentsMargins(0, 0, 0, 0);
 	rightWid->layout()->addWidget(node_editor);
 	rightWid->layout()->addWidget(new QLabel("Symbols"));
 	rightWid->layout()->addWidget(symbol_list_wid);
 	rightWid->layout()->addWidget(new QLabel("Plugins"));
 	rightWid->layout()->addWidget(plugin_tree_widget);
-    //vl->addStretch();
 
     lFont.setFamily( lFont.defaultFamily() );
     lFont.setWeight( QFont::Light );
@@ -237,9 +231,10 @@ void domNodeViewer::setModelPart(int part) {
 		}
 		model_tree_view->setRootIndex(view_index);
 		model_tree_view->setCurrentIndex(view_index);
-		model_tree_view->setSortingEnabled(sort_button->isChecked());
+		model_tree_view->setSortingEnabled(model_tree_sort_action->isChecked());
 		updateTagList();
-		model_tree_filter->setFilteringEnabled(filter_button->isChecked());
+		model_tree_filter->setFilteringEnabled(model_tree_filter_action->isChecked());
+		setTreeItem(view_index);
 	}
 	else {
 		qDebug() << "Requested model part " << part << " is not enabled";
