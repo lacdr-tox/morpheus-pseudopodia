@@ -421,6 +421,7 @@ bool config::closeModel(int index, bool create_model)
 {
     config* conf = getInstance();
     if (index == -1) index = conf->current_model;
+	if (index >= conf->openModels.size()) return false;
     if (conf->openModels[index]->close()) {
         emit conf->modelClosing(index);
         conf->openModels.removeAt(index);

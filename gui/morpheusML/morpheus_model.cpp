@@ -168,15 +168,17 @@ QString MorphModel::getDependencyGraph(GRAPH_TYPE type)
 		case DOT: ext_string="dot"; break;
 	}
 	QString graph_file = "dependency_graph."+ext_string;
+	QString model_graph = "model_graph."+ext_string;
 	QString graph_file_fallback = "dependency_graph.dot";
+	QString model_graph_fallback = "model_graph.dot";
 	
 	// If the model did not change the model since the last rendering, just take the old rendering.
 	if (dep_graph_model_edit_stamp == rootNodeContr->getModelDescr().edits) {
-		if (temp_folder.exists(graph_file)) {
-			return temp_folder.absoluteFilePath(graph_file);
+		if (temp_folder.exists(model_graph)) {
+			return temp_folder.absoluteFilePath(model_graph);
 		}
-		if (temp_folder.exists(graph_file_fallback)) {
-			return temp_folder.absoluteFilePath(graph_file_fallback);
+		if (temp_folder.exists(model_graph_fallback)) {
+			return temp_folder.absoluteFilePath(model_graph_fallback);
 		}
 	}
 	else {
@@ -249,13 +251,15 @@ QString MorphModel::getDependencyGraph(GRAPH_TYPE type)
 	
 	if (temp_folder.exists(graph_file)) {
 		dep_graph_model_edit_stamp = rootNodeContr->getModelDescr().edits;
-		return temp_folder.absoluteFilePath(graph_file);
+		temp_folder.rename(graph_file, model_graph);
+		return temp_folder.absoluteFilePath(model_graph);
 	}
 	else if (temp_folder.exists(graph_file_fallback)){
 		
 		// Fallback in case there is no graphviz lib available
 		dep_graph_model_edit_stamp = rootNodeContr->getModelDescr().edits;
-		return temp_folder.absoluteFilePath(graph_file_fallback);
+		temp_folder.rename(graph_file_fallback, model_graph_fallback);
+		return temp_folder.absoluteFilePath(model_graph_fallback);
 	}
 	qDebug() << "Expected graph file does not exist " << temp_folder.absoluteFilePath(graph_file);
 	qDebug() << process.readAllStandardOutput();
