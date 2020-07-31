@@ -80,10 +80,11 @@ void WebViewer::reset() {
 }
 
 bool WebViewer::event(QEvent * ev) {
+	// Intercept the creation of ToolTips
 	if (ev->type() == QEvent::ToolTip) {
-		// Intercept the creation of ToolTips
 		return true;
 	}
+	// Add Event filter to implement zooming
 	if (ev->type() == QEvent::ChildAdded) {
 		QChildEvent *child_ev = static_cast<QChildEvent*>(ev);
 		QWidget *w = qobject_cast<QWidget*>(child_ev->child());
@@ -91,9 +92,6 @@ bool WebViewer::event(QEvent * ev) {
 // 			qDebug()<< ev->type() << "Installing Event filter to " << w->metaObject()->className();
 			child_ = w;
 			w->installEventFilter(this);
-// 			auto pal = w->palette();
-// 			pal.setColor(QPalette::Foreground, QColor("black"));
-// 			w->setPalette(pal);
 		}
 	}
 
@@ -103,40 +101,29 @@ bool WebViewer::event(QEvent * ev) {
 bool WebViewer::eventFilter(QObject *obj, QEvent *ev)
 {
 	// filter the required events from the painter widget
-// 	if (obj == child_) {
-		if (ev->type() == QEvent::Wheel) {
-			QWheelEvent *we = static_cast<QWheelEvent*>(ev);
-			if (we->modifiers() == Qt::ControlModifier) {
-				wheelEvent(we);
-				double factor = 0.002;
-				qDebug() << "Changing Zoom Factor" << zoomFactor() << " -> " << zoomFactor() * (1 + we->angleDelta().y() * factor);
-				setZoomFactor(zoomFactor() * (1 + we->angleDelta().y() * factor));
-				we->accept();
-				return true;
-			}
+	if (ev->type() == QEvent::Wheel) {
+		QWheelEvent *we = static_cast<QWheelEvent*>(ev);
+		if (we->modifiers() == Qt::ControlModifier) {
+			wheelEvent(we);
+			double factor = 0.002;
+			if (we->angleDelta().y()>0)
+				factor = 1 + we->angleDelta().y() * factor;
+			else
+				factor = 1.0/(1.0 - we->angleDelta().y() * factor);
+// 				qDebug() << "Changing Zoom Factor" << zoomFactor() << " -> " << zoomFactor() *(factor);
+			setZoomFactor(zoomFactor() * factor);
+			we->accept();
+			return true;
 		}
-// 	}
+	}
 
 	return false;
 }
 
 
 bool WebViewer::debug(bool state) {
-// 	this->page()->settings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, state);
 	return false;
 }
 
 #endif
-
-
-// ZoomFilter::ZoomFilter(WebViewer* view) :QObject(view), view(view) {};
-// bool ZoomFilter::eventFilter(QObject *obj, QEvent *event) {
-// 	if (event->type() == QEvent::Wheel ) {
-// 		auto wheel = qobject_cast<QWheelEvent>(event);
-// 		
-// 		return
-// 	}
-// 	else
-// 		return QObject::eventFilter(obj,event);
-// }
 

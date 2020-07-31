@@ -65,6 +65,8 @@ void domNodeViewer::createLayout()
 	model_tree_view->setModel(model_tree_filter);
 	node_editor = new domNodeEditor(this);
 
+	/// Symbol List ///
+	
     symbol_list_wid = new QTreeWidget(this);
     symbol_list_wid->setAlternatingRowColors(true);
     symbol_list_wid->setColumnCount(2);
@@ -74,11 +76,12 @@ void domNodeViewer::createLayout()
     symbol_list_wid->setColumnWidth(0, 200);
     symbol_list_wid->sortByColumn(0, Qt::AscendingOrder);
 
+	/// Model Component List ///
 	
     plugin_tree_widget = new QTreeWidget(this);
     plugin_tree_widget->setAlternatingRowColors(true);
     plugin_tree_widget->setColumnCount(2);
-    plugin_tree_widget->setHeaderLabels(QStringList() << "Plugin" << "Category");
+    plugin_tree_widget->setHeaderLabels(QStringList() << "Component" << "Category");
     plugin_tree_widget->setColumnWidth(0, 200);
     plugin_tree_widget->setRootIsDecorated(false);
     plugin_tree_widget->setSortingEnabled(true);
@@ -95,7 +98,61 @@ void domNodeViewer::createLayout()
 	
 	
 	/// TOOLBAR /// 
-	auto filter_row = new QToolBar("View",this);
+	
+	auto model_toolbar = new QToolBar("View",this);
+	// Add Button
+	model_tree_add_action = new QAction(QIcon::fromTheme("list-add"),"add",this);
+	auto addMenu = new QMenu(this);
+	model_tree_add_action->setMenu(addMenu);
+// 	connect(addMenu, &QMenu::aboutToShow,
+// 			[this]() {
+// 				auto model_index = model_tree_filter->mapToSource(model_tree_view->currentIndex());
+// 				if (!model_index.isValid())
+// 					model_index = model_tree_filter->mapToSource(model_tree_view->rootIndex());
+// 				nodeController *contr = model->indexToItem(model_index);
+// 				if (!contr) { qDebug() << "Invalid current model index"; return;}
+// 				qDebug() << "Creating Popup for " << contr->getName();
+// 				QStringList allChilds = contr->getAddableChilds(true);
+// 				QStringList addableChilds = contr->getAddableChilds(false);
+// 				auto addMenu = model_tree_add_action->menu();
+// 				addMenu->clear();
+// 				if (allChilds.isEmpty()) {
+// 					addMenu->addAction(new QAction("none"));
+// 					addMenu->actions()[0]->setEnabled(false);
+// 				}
+// 				else {
+// 					for(int i = 0; i < allChilds.size(); i++) {
+// 						if (! addableChilds.contains(allChilds.at(i)))
+// 							addMenu->addAction(new QAction(style()->standardIcon(QStyle::SP_MessageBoxWarning),allChilds.at(i)));
+// 						else 
+// 							addMenu->addAction(new QAction(allChilds.at(i)));
+// 					}
+// 				}
+// 			}
+// 	);
+	connect(addMenu, &QMenu::triggered, [this](QAction* action){
+		auto model_index = model_tree_filter->mapToSource(model_tree_view->currentIndex());
+		if (!model_index.isValid())
+					model_index = model_tree_filter->mapToSource(model_tree_view->rootIndex());
+		model->insertNode(model_index, action->text());
+	});
+	model_toolbar->addAction(model_tree_add_action);
+	
+	// Remove Button
+	model_tree_remove_action = new QAction(QIcon::fromTheme("list-remove"),"remove",this);
+	model_tree_remove_action->setShortcut(QKeySequence(QKeySequence::Delete));
+	connect(model_tree_remove_action, &QAction::triggered, [this](){
+		if (current_index.isValid()) {
+			QMessageBox::StandardButton r = QMessageBox::question(this,
+						"Remove node",
+						QString("Are you sure?\t"),
+						QMessageBox::Yes | QMessageBox::No
+						);
+			if (r == QMessageBox::Yes)
+				model->removeNode(current_index.parent(), current_index.row());
+		}
+	});
+	model_toolbar->addAction(model_tree_remove_action);
 	
 	// Sort Button
 	model_tree_sort_action = new QAction(QIcon::fromTheme("view-sort-ascending"),"sort", this);
@@ -114,28 +171,32 @@ void domNodeViewer::createLayout()
 			} 
 		}
 	);
-	filter_row->addAction(model_tree_sort_action);
-	filter_row->addSeparator();
+	model_toolbar->addAction(model_tree_sort_action);
+	model_toolbar->addSeparator();
 	
 	// Filter Tag Box
 	filter_tag_list = new CheckBoxList(this);
 	filter_tag_list->addItem("#untagged",true);
 	filter_tag_list->setData(QStringList() << "#untagged");
-	filter_row->addWidget(filter_tag_list);
+	filter_tag_list->setEnabled(false);
+	model_toolbar->addWidget(filter_tag_list);
 	connect(filter_tag_list, &CheckBoxList::currentTextChanged, model_tree_filter, &TagFilterSortProxyModel::setFilterTags);
+	model_tree_filter->setFilterTags(QStringList() << "#untagged");
 	
 	// Filter Button
 	model_tree_filter_action = new QAction(QThemedIcon("view-filter",QIcon(":/view_filter.png")),"tags",this);
 	model_tree_filter_action->setCheckable(true);
 	connect(model_tree_filter_action, &QAction::toggled, [this](bool state) {
 		disconnect(model_tree_filter, nullptr, this, SLOT(selectInsertedItem(const QModelIndex & , int , int )));
+		filter_tag_list->setEnabled(state);
 		model_tree_filter->setFilteringEnabled(state);
+		
 		connect(model_tree_filter, SIGNAL(rowsInserted( const QModelIndex & , int , int)), this, SLOT(selectInsertedItem(const QModelIndex & , int , int )),Qt::QueuedConnection);
 	});
 	
-	filter_row->addAction(model_tree_filter_action);
+	model_toolbar->addAction(model_tree_filter_action);
 
-	leftWid->layout()->addWidget(filter_row);
+	leftWid->layout()->addWidget(model_toolbar);
 	leftWid->layout()->addWidget(model_tree_view);
 	
 	/// Right Widget ///
@@ -145,9 +206,9 @@ void domNodeViewer::createLayout()
 	rightWid->layout()->setContentsMargins(4, 10, 0, 0);
 	rightWid->layout()->setSpacing(8);
 	rightWid->layout()->addWidget(node_editor);
-	rightWid->layout()->addWidget(new QLabel("Symbols"));
+	rightWid->layout()->addWidget(new QLabel("Model Symbols"));
 	rightWid->layout()->addWidget(symbol_list_wid);
-	rightWid->layout()->addWidget(new QLabel("Plugins"));
+	rightWid->layout()->addWidget(new QLabel("Model Components"));
 	rightWid->layout()->addWidget(plugin_tree_widget);
 
     lFont.setFamily( lFont.defaultFamily() );
@@ -276,37 +337,31 @@ void domNodeViewer::setTreeItem( const QModelIndex& index)
 {
 // 	qDebug() << "selecting new Item " << index;
 	
-	model_tree_view->blockSignals(true);
 	QModelIndex view_index = index;
 	if (index.model() == model) {
 		qDebug() << "setTreeItem: Got a source index";
 		view_index = model_tree_filter->mapFromSource(index);
 	}
-// 	else {
-// 		if (index.isValid()) {
-// 			qDebug() << "setTreeItem: Got a view index";
-// 			view_index = index;
-// 		}
-// 		else {
-// 			qDebug() << "setTreeItem: Got an invalid index";
-// 			view_index = model_tree_view->rootIndex();
-// 		}
-// 	}
+
 	bool within_part = false;
 	QModelIndex exp_idx = view_index;
 	while (exp_idx.isValid()) {
 		if (exp_idx == model_tree_view->rootIndex()) {
 			within_part = true;
+			break;
 		}
 		model_tree_view->expand(exp_idx);
 		exp_idx = exp_idx.parent();
 	}
 	if (!within_part) return;
 	
+	model_tree_view->blockSignals(true);
 	// Make item visible
 	if (model_tree_view->currentIndex() != view_index) {
 		model_tree_view->setCurrentIndex(view_index);
 	}
+	model_tree_view->blockSignals(false);
+	current_index = model_tree_filter->mapToSource(view_index);
 	
 	// Select the proper editor
     nodeController* node = view_index.data(MorphModel::NodeRole).value<nodeController*>();
@@ -317,7 +372,17 @@ void domNodeViewer::setTreeItem( const QModelIndex& index)
 	node_editor->setNode(node,model);
 	
 	// Always update the list of available symbols 
-	symbol_list_wid->setSortingEnabled(false);
+	updateSymbolList();
+
+	// Update the list of available Plugins
+	updateNodeActions();
+
+    emit nodeSelected(node);
+	emit xmlElementSelected(node->getXPath());
+}
+
+void domNodeViewer::updateSymbolList() {
+// 	symbol_list_wid->setSortingEnabled(false);
 	symbol_list_wid->clear();
 	QMap<QString,QString> sym_names = model->rootNodeContr->getModelDescr().getSymbolNames("cpmDoubleSymbolRef");
 	QMap<QString,QString> vsym_names = model->rootNodeContr->getModelDescr().getSymbolNames("cpmVectorSymbolRef");
@@ -366,25 +431,32 @@ void domNodeViewer::setTreeItem( const QModelIndex& index)
 		}
 	}
 	symbol_list_wid->setSortingEnabled(true);
+}
 
-	// Update the list of available Plugins
+void domNodeViewer::updateNodeActions() {
+	auto node = current_index.data(MorphModel::NodeRole).value<nodeController*>();
+	
+	model_tree_remove_action->setEnabled(node->isDeletable());
+	
 	plugin_tree_widget->clear();
+	auto addMenu = model_tree_add_action->menu();
+	addMenu->clear();
 	QStringList allChilds = node->getAddableChilds(true);
 	QStringList addableChilds = node->getAddableChilds(false);
 	for(int i = 0; i < allChilds.size(); i++)
 	{
 		QTreeWidgetItem* trWItem = new QTreeWidgetItem(plugin_tree_widget, QStringList() << allChilds.at(i)  << node->childInformation(allChilds.at(i)).type->pluginClass);
+		trWItem->setFont(1, lFont);
 		if (! addableChilds.contains(allChilds.at(i))) {
 			trWItem->setIcon(0,style()->standardIcon(QStyle::SP_MessageBoxWarning));
 			trWItem->setToolTip(0,"This node will disable an existing node!");
+			addMenu->addAction(new QAction(style()->standardIcon(QStyle::SP_MessageBoxWarning),allChilds.at(i)));
 		}
-		trWItem->setFont(1, lFont);
+		else {
+			addMenu->addAction(new QAction(allChilds.at(i)));
+		}
 	}
 	plugin_tree_widget->sortByColumn(1, Qt::AscendingOrder);
-	model_tree_view->blockSignals(false);
-
-    emit nodeSelected(node);
-	emit xmlElementSelected(node->getXPath());
 }
 
 //------------------------------------------------------------------------------

@@ -158,8 +158,8 @@ bool MorpheusXML::saveAsDialog()
 		file.close();
 		this->path = QFileInfo(fileName).filePath();
 		this->name = QFileInfo(fileName).fileName();
-		qDebug() << "1. FileDialog/path = " << QFileInfo(fileName).dir().path() << endl;
-		qDebug() << "2. Writing of XML-file completed!" << endl;
+// 		qDebug() << "1. FileDialog/path = " << QFileInfo(fileName).dir().path();
+// 		qDebug() << "2. Writing of XML-file completed!";
 		QSettings().setValue("FileDialog/path", QFileInfo(fileName).dir().path());
 		return true;
 	}

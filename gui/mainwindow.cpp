@@ -223,7 +223,7 @@ void MainWindow::createMenuBar()
 				config::addRecentFile(current_model->xml_file.path);
 				current_model->rootNodeContr->saved();
 				modelList->topLevelItem(model_index.model)->setText(0, current_model->xml_file.name);
-				qDebug() << "Save As: " << current_model->xml_file.name << endl;
+				qDebug() << "Saved as " << current_model->xml_file.name << endl;
 				this->setWindowTitle(tr("Morpheus - %1").arg(  current_model->xml_file.name ) );
 			}
 		}
@@ -444,18 +444,48 @@ void MainWindow::createMainWidgets()
 	connect(modelList, &QTreeWidget::clicked, [=](const QModelIndex& /*index*/) { modelListChanged(modelList->currentItem());});
 	connect(modelList, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(activatePart(QModelIndex)) );
 
+	// Model popup menu
     modelMenu = new QMenu();
-    showModelXMLAction = modelMenu->addAction(QThemedIcon("text-xml",QIcon(":/text-xml.png")),"Show XML");
+	auto show_xml_action = new QAction(QThemedIcon("text-xml",QIcon(":/text-xml.png")),"Show XML");
+	connect(show_xml_action, &QAction::triggered, 
+		[this](){
+			XMLTextDialog dia( config::getOpenModels()[model_popup_index.model]->getXMLText() , this);
+			dia.exec();
+	});
+	modelMenu->addAction(show_xml_action);
+	
     modelMenu->addSeparator();
-//     addModelPartMenu = modelMenu->addMenu(QThemedIcon("list-add",QIcon(":/list-add.png")),"Add");
-    removeModelPartAction = modelMenu->addAction(QThemedIcon("list-remove",QIcon(":/list-remove.png")),"Remove");
+
+	removeModelPartAction = modelMenu->addAction(QThemedIcon("list-remove",QIcon(":/list-remove.png")),"Remove");
+	connect(removeModelPartAction, &QAction::triggered,[this](){
+		auto popup_model = config::getOpenModels()[model_popup_index.model];
+		QMessageBox msgBox;
+		msgBox.setInformativeText(QString("Do you want to delete %1 ?").arg(popup_model->parts[model_popup_index.part].label));
+		msgBox.setStandardButtons( QMessageBox::Ok | QMessageBox::Cancel);
+		msgBox.setDefaultButton(QMessageBox::Cancel);
+		msgBox.move(this->cursor().pos());
+		if (msgBox.exec() == QMessageBox::Ok) {
+			popup_model->removePart(model_popup_index.part);
+		}
+	});
+	
     copyModelPartAction = modelMenu->addAction(QThemedIcon("edit-copy",QIcon(":/edit-copy.png")),"Copy");
+	connect(copyModelPartAction, &QAction::triggered,[this](){
+		copyNodeAction(config::getOpenModels()[model_popup_index.model]->parts[model_popup_index.part].element->cloneXML());
+	});
+	
     pasteModelPartAction = modelMenu->addAction(QThemedIcon("edit-paste",QIcon(":/edit-paste.png")),"Paste");
+	connect(pasteModelPartAction, &QAction::triggered,[this](){
+		config::getOpenModels()[model_popup_index.model]->addPart(config::getNodeCopies().first().cloneNode(true));
+	});
     modelMenu->addSeparator();
+	
     closeModelAction =  modelMenu->addAction(QThemedIcon("dialog-close",style()->standardIcon(QStyle::SP_DialogCloseButton)),"Close");
+	connect(closeModelAction, &QAction::triggered, [this](){
+		config::closeModel(model_popup_index.model, true);
+	});
     //modelMenu->addSeparator();
     //mailAttachAction =  modelMenu->addAction(QThemedIcon("mail-send",QIcon(":/mail-attach.png")),"Send by mail");
-    connect(modelMenu, SIGNAL(triggered(QAction*)), this, SLOT( modelActionTriggerd (QAction*)));
  
     // Navigation & other Dock Widgets
 
@@ -771,60 +801,6 @@ void MainWindow::showModelListMenu(QPoint p)
 
 //------------------------------------------------------------------------------
 
-void MainWindow::modelActionTriggerd (QAction *act)
-{
-    SharedMorphModel popup_model = config::getOpenModels()[model_popup_index.model];
-//    qDebug() << "MainWindow::modelListMenuTriggerd: " << act->text();
-    if (act == copyModelPartAction) {
-        copyNodeAction(popup_model->parts[model_popup_index.part].element->cloneXML());
-    }
-
-    else if (act == closeModelAction) {
-        config::closeModel(model_popup_index.model, true);
-    }
-
-/*    else if (act == mailAttachAction) {
-	    
-	    // Save model to temporary directory
-	    QString tempfilepath = QDesktopServices::storageLocation( QDesktopServices::TempLocation )+"/"+QString( current_model->xml_file.name )+".xml";
-	    current_model->xml_file.save( tempfilepath );
-	    qDebug() << "Saved model to temporary file: " << tempfilepath << endl;
-	    
-	    // open email client
-	    QDesktopServices::openUrl(QUrl("mailto:walter@deback.net?subject=Morpheus model&body=See attachment.&attachment=\""+tempfilepath+"\""));
-	    
-    }
-*/
-    else if (act == showModelXMLAction) {
-        XMLTextDialog* dia = new XMLTextDialog( popup_model->getXMLText() , this);
-        dia->exec();
-        delete dia;
-    }
-
-    else if (act == removeModelPartAction) {
-        QMessageBox msgBox;
-        msgBox.setInformativeText(QString("Do you want to delete %1 ?").arg(popup_model->parts[model_popup_index.part].label));
-        msgBox.setStandardButtons( QMessageBox::Ok | QMessageBox::Cancel);
-        msgBox.setDefaultButton(QMessageBox::Cancel);
-        msgBox.move(this->cursor().pos());
-        int i = msgBox.exec();
-
-        if(i == QMessageBox::Ok)
-        {
-            popup_model->removePart(model_popup_index.part);
-			QTreeWidgetItem* model_item = modelList->invisibleRootItem()->child(model_popup_index.model);
-		
-// 			modelList->setCurrentItem(model_item->child(model_index.part));
-			selectModel(model_popup_index.model,model_popup_index.part);
-        }
-    }
-
-    else if (act == pasteModelPartAction)
-    {
-        popup_model->addPart(config::getNodeCopies().first().cloneNode(true));
-    }
-}
-
 void MainWindow::syncModelList (int m) {
 	if (m==-1) {
 		const QList<SharedMorphModel >&  models = config::getOpenModels();
@@ -839,17 +815,37 @@ void MainWindow::syncModelList (int m) {
 // 	modelList->topLevelItem(m)->takeChildren();
 	SharedMorphModel model = config::getOpenModels()[m];
 
+	QTreeWidgetItem* modelItem = modelList->topLevelItem(m);
 	for (int part=0; part < model->parts.size(); part++) {
-		QTreeWidgetItem* part_item = modelList->topLevelItem(m)->child(part);
+		QTreeWidgetItem* part_item = modelItem->child(part);
 		if ( ! part_item ) {
 			part_item = new QTreeWidgetItem(QStringList(model->parts[part].label));
-			modelList->topLevelItem(m)->addChild(part_item );
+			modelItem->addChild(part_item );
 		}
 		if ( model->parts[part].enabled) {
 			part_item->setDisabled(false);
 			part_item->setForeground(0,style()->standardPalette().brush(QPalette::WindowText));
 		}
 		else {
+			if (m==model_index.model && part == model_index.part) {
+				// current part was deactivated
+				int new_part = 0;
+				for (int i=part; i<model->parts.size(); i++) {
+					if (model->parts[i].enabled) {
+						new_part = i;
+						break;
+					}
+				}
+				if (new_part==0) {
+					for (int i=part; i>=0; i--) {
+						if (model->parts[i].enabled) {
+							new_part = i;
+							break;
+						}
+					}
+				}
+				selectModel(model_index.model, new_part);
+			}
 			part_item->setDisabled(true);
 			part_item->setForeground(0,style()->standardPalette().brush(QPalette::Disabled,QPalette::WindowText));
 		}

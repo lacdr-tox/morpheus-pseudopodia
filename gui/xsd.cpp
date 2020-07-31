@@ -228,7 +228,7 @@ QSharedPointer<XSD::SimpleTypeInfo>  XSD::parseSimpleType(QDomNode xsdNode) {
 			}
 		}
 		else if (xrestriction.firstChildElement().isNull()) {
-			qDebug() << "Empty restriction in XSD type definition of type " << info->name;
+// 			qDebug() << "Empty restriction in XSD type definition of type " << info->name;
 		}
 		else {
 			throw QString("Invalid restriction '%1' in XSD type definition of type '%2'.")
