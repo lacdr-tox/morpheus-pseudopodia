@@ -76,6 +76,7 @@ private:
     QToolButton* interactive_stop_button;
 
     QStackedWidget *editorStack;
+	QWidget *no_model_widget;
     QDockWidget* documentsDock;
     QTreeWidget *modelList;
     QListWidget *clipBoard;
@@ -144,7 +145,6 @@ private slots:
 	void activatePart(QModelIndex);
 	void showCurrentModel();
     void showModelListMenu(QPoint p); /*!< Opens the menu for copying or deleting the existing tab at position 'p'. */
-	void modelActionTriggerd (QAction*); /*!< Calls the right function to transform the given Action from tabMenu. */
 
 // 	void jobQueueChanged(const QModelIndex & index);
 //     void showJobQueueMenu(QPoint p);

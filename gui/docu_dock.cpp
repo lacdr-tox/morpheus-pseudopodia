@@ -147,8 +147,11 @@ void DocuDock::setCurrentIndex(const QModelIndex& idx)
 void DocuDock::setCurrentURL(const QUrl& url) {
 	if (help_view->url() != url) {
 		help_view->setUrl(url);
-		qDebug() << url;
+// 		qDebug() << "Setting Docu"<< url;
 	}
+// 	else 
+// 		qDebug() << "Docu"<< url << "already set";
+	
 }
 
 

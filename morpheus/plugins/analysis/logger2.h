@@ -404,6 +404,7 @@ public:
 	void finish() override;
 	
 	const vector< PluginParameter_Shared<double, XMLReadableSymbol> >& getInputs() const { return inputs;};
+	const SymbolAccessor<double> getInput(const string& symbol) const;
 	string getInputsDescription(const string& s) const;
 	int addWriter(shared_ptr<LoggerWriterBase> writer);
 	const vector<shared_ptr<LoggerWriterBase> >& getWriters() const { return writers; };

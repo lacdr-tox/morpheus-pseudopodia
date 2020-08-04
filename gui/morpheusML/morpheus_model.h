@@ -81,8 +81,8 @@ public:
 	bool activatePart(int idx);
     bool addPart(QString name);
     bool addPart(QDomNode xml);
-    void removePart(QString name);
-	void removePart(int idx);
+    QSharedPointer<nodeController> removePart(QString name);
+	QSharedPointer<nodeController> removePart(int idx);
     QList<MorphModelPart> parts; /*!< Keeps the model parts for the editor */
     
     /// Find the node given by @p path. If the node does not exist, create it if @p create.

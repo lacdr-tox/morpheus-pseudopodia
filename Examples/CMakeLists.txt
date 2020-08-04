@@ -46,7 +46,7 @@ SET(EXAMPLE_SOURCES
 	Miscellaneous/GameOfLife.xml
 	Miscellaneous/GameOfLife_Global.xml
 	Miscellaneous/FrenchFlag.xml
-	Miscellaneous/ParticleAggregation.xml
+# 	Miscellaneous/ParticleAggregation.xml
 	Miscellaneous/ShellCA.xml
 
 )

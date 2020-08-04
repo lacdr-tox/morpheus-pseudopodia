@@ -21,9 +21,19 @@
 #include "widgets/checkboxlist.h"
 #include "widgets/webviewer.h"
 #include <QFutureWatcher>
+#include <functional>
 
 class AboutModel : public QWidget {
 	Q_OBJECT
+	
+	enum class GraphState {
+		EMPTY,
+		PENDING,
+		PENDING_EMPTY,
+		UPTODATE,
+		OUTDATED,
+		FAILED
+	} graph_state;
 	
 	SharedMorphModel model;
 	QLineEdit* title;
@@ -40,9 +50,11 @@ class AboutModel : public QWidget {
 	QCheckBox* reduced;
 	QPushButton* save_btn;
 	QMetaObject::Connection onLoadConnect;
-	QString lastGraph;
+	QString current_graph;
 	
 	QFutureWatcher<QString> waitForGraph;
+	void setGraphState(GraphState state, std::function<void()> ready);
+	
 	
 public:
 	AboutModel(SharedMorphModel model, QWidget* parent = NULL);

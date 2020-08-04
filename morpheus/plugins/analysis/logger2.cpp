@@ -220,6 +220,17 @@ void Logger::init(const Scope* scope){
     }
 };
 
+const SymbolAccessor<double> Logger::getInput(const string& symbol) const {
+	if (! writers.empty() && dynamic_pointer_cast<LoggerTextWriter>(writers.front()) ) {
+		const auto& writer = dynamic_pointer_cast<LoggerTextWriter>(writers.front());
+		for (auto& p : writer->getSymbols()) {
+			if (p->name() == symbol) 
+				return p;
+		}
+	}
+	return SymbolAccessor<double> ();
+}
+
 string  Logger::getInputsDescription(const string& s) const {
 	if (! writers.empty() && dynamic_pointer_cast<LoggerTextWriter>(writers.front()) ) {
 		const auto& writer = dynamic_pointer_cast<LoggerTextWriter>(writers.front());
@@ -1384,6 +1395,42 @@ void LoggerLinePlot::plot()
 // 				string palette = gnuplot->set_palette( int(axes.cb.palette()) );
 // 				replace_substring(palette, "\\ \n", " ");
 // 				ss << palette;
+			}
+			else {
+				if (logger.getInput( axes.cb.symbol() )->flags().integer ) {
+					int i = 0;
+					std::map <double, string > color_template;
+					color_template[i++]="red";
+					color_template[i++]="yellow";
+					color_template[i++]="dark-green";
+					color_template[i++]="blue";
+					color_template[i++]="orange";
+					color_template[i++]="light-coral";
+					color_template[i++]="turquoise";
+					color_template[i++]="dark-magenta";
+					color_template[i++]="spring-green";
+					color_template[i++]="light-blue";
+					
+					// make a 
+					int fsize = color_template.size();
+					int count= 20;
+					if (axes.cb.min.isDefined() && axes.cb.max.isDefined())
+						count = abs(axes.cb.max(SymbolFocus::global) - axes.cb.min(SymbolFocus::global)) +1;
+					
+					
+					ss << "set palette defined (";
+					for ( i = 0;;) {
+						ss << i << " '" << color_template[i % fsize] << "' ";
+						i++; 
+						if (i > count) break;
+						ss << ", ";
+					}
+					ss << ");\n";
+					int min = 0;
+					if (axes.cb.min.isDefined())
+						min = axes.cb.min(SymbolFocus::global);
+					ss << "set cbrange["<< min << ":" << min+count << "];\n";
+				}
 			}
 			if( axes.cb.palette_reverse() )
 				ss << "set palette negative;\n";

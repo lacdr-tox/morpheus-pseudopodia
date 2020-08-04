@@ -203,7 +203,7 @@ void DependencyGraph::parse_scope(const Scope* scope)
 			continue;
 		if ( exclude_plugins.count( tsl->XMLName() ) )
 			continue;
-		if (include_tags_option.isDefined() && !tsl->isTagged(include_tags) )
+		if (/*include_tags_option.isDefined() &&*/ !tsl->isTagged(include_tags) )
 			continue;
 			
 		if ( dynamic_cast<CPMSampler*>(tsl)) {

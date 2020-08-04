@@ -33,7 +33,7 @@
 					<xs:group ref="SystemPlugins" />
 				</xs:all>
 				<xs:attribute name="time-scaling" type="cpmDouble" use="optional" default="1.0" />
-				<xs:attribute name="solver" type="morphSolver" use="required" default="Dormand-Prince [adative, O(5)]"/>
+				<xs:attribute name="solver" type="morphSolver" use="required" default="Dormand-Prince [adaptive, O(5)]"/>
 				<xs:attribute name="solver-eps" type="cpmDouble" use="optional" default="1e-4"/>
 			</xs:extension>
 		</xs:complexContent>

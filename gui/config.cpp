@@ -328,18 +328,18 @@ int config::openModel(QString filepath) {
 		QMessageBox::critical(qApp->activeWindow(),"Error opening morpheus model","Unknown error");
 		return -1; 
 	}
-    // substitude the last model if it was created from scratch and is still unchanged
-    if ( ! conf->openModels.isEmpty() && conf->openModels.back()->isEmpty()) {
-        conf->openModels.back()->close();
-        emit conf->modelClosing(conf->openModels.size()-1);
-        conf->openModels.pop_back();
-		  conf->current_model = -1;
-    }
+
+	// substitude the last model if it was created from scratch and is still unchanged
+	if ( ! conf->openModels.isEmpty() && conf->openModels.back()->isEmpty()) {
+		closeModel(conf->openModels.size()-1,false);
+	}
+	
     conf->openModels.push_back(m);
     int new_index = conf->openModels.size()-1;
+// 	qDebug() << "Added model " << new_index;
     addRecentFile(m->xml_file.path);
     emit conf->modelAdded(new_index);
-//     switchModel(new_index);
+	
 
     return new_index;
 }
@@ -349,17 +349,14 @@ int config::importModel(SharedMorphModel model)
 	config* conf = getInstance();
 	// substitude the last model if it was created from scratch and is still unchanged
 	if ( ! conf->openModels.isEmpty() && conf->openModels.back()->isEmpty()) {
-		conf->openModels.back()->close();
-		emit conf->modelClosing(conf->openModels.size()-1);
-
-		conf->openModels.pop_back();
+		closeModel(conf->openModels.size()-1, false);
 	}
+	
 	model->setParent(conf);
 	conf->openModels.push_back(model);
 	int new_index = conf->openModels.size()-1;
 	emit conf->modelAdded(new_index);
-// 	switchModel(new_index);
-
+	
 	return new_index;
 }
 
@@ -402,7 +399,6 @@ int config::createModel(QString xml_path)
     int id = conf->openModels.size();
     conf->openModels.push_back(m);
     emit conf->modelAdded(id);
-//     switchModel(id);
 
     return id;
 }
@@ -411,34 +407,41 @@ int config::createModel(QString xml_path)
 
 bool config::closeModel(int index, bool create_model)
 {
-    config* conf = getInstance();
-    if (index == -1) index = conf->current_model;
-    if (conf->openModels[index]->close()) {
-        emit conf->modelClosing(index);
-        conf->openModels.removeAt(index);
-        if (conf->current_model < conf->openModels.size())
-            conf->switchModel(conf->current_model);
-        else if (conf->current_model>0)
-            conf->switchModel(conf->current_model-1);
-        else {
-            if (create_model)
-                createModel();
-        }
-    }
-    else
-        return false;
-    return true;
+// 	qDebug() << "Closing Model" << index;
+	config* conf = getInstance();
+	if (index == -1) index = conf->current_model;
+	if (index >= conf->openModels.size()) return false;
+	if (conf->openModels[index]->close()) {
+		emit conf->modelClosing(index);
+		conf->openModels.removeAt(index);
+		
+		if (conf->openModels.size()==0) {
+			conf->switchModel(-1);
+			if (create_model)
+				conf->switchModel(createModel());
+		}
+		else if (index == conf->current_model) {
+			// pick activate alternative model
+			if (conf->current_model < conf->openModels.size())
+				conf->switchModel(conf->current_model);
+			else
+				conf->switchModel(conf->current_model-1);
+		}
+		
+	}
+	else
+		return false;
+	return true;
 }
 
 //------------------------------------------------------------------------------
 
 void config::switchModel(int index) {
-    config* conf = config::getInstance();
-    if (index == conf->current_model) return;
-	qDebug() << "Switch to model " << index;
-    conf->current_model = index;
-    if (index>=0)
-        emit conf->modelSelectionChanged(conf->current_model);
+	config* conf = config::getInstance();
+// 	qDebug() << "Switch from model" << conf->current_model << "to model " << index;
+	if (index == conf->current_model) return;
+	conf->current_model = index;
+	emit conf->modelSelectionChanged(conf->current_model);
 }
 
 
@@ -646,19 +649,19 @@ QHelpEngine* config::getHelpEngine(bool lock)
 						<< QApplication::applicationDirPath() + "/appdoc"
 						<< QApplication::applicationDirPath() + "/../share/morpheus"
 						<< QApplication::applicationDirPath() + "/../../Resources/doc"; // for Mac app bundle
-			QString path;
+			QString help_path;
 			for(const QString& p:  doc_path) {
 	// 			qDebug() << "Testing "  << p + "morpheus.qhc";
 				if (QFile::exists(p+"/morpheus.qch"))
-					path = QDir(p).canonicalPath();
+					help_path = QDir(p).canonicalPath()+"/morpheus.qch";
 			}
 			
-			if (path.isEmpty()) {
+			if (help_path.isEmpty()) {
 				qDebug() << "Help engine setup failed. Unable to locate 'morpheus.qch'.";
 				conf->helpEngine = new QHelpEngine("");
 			}
 			else {
-				qDebug() << "Documentation located at "  << path + "/morpheus.qch";
+				qDebug() << "Documentation located at "  << help_path;
 				QDir data_path(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation));
 				data_path.mkpath("data/Morpheus");
 				QString docu_collection = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)+"/data/Morpheus/morpheus.qhc";
@@ -666,9 +669,13 @@ QHelpEngine* config::getHelpEngine(bool lock)
 				if (conf->helpEngine->setupData() == false) {
 					qDebug() << "Help engine setup failed";
 				}
-				if (!conf->helpEngine->registerDocumentation(path + "/morpheus.qch")) {
-					qDebug() << "Unable to register documentation";
-					qDebug() << conf->helpEngine->error();
+				QString docu_name = "org.morpheus.UserDocu";
+				qDebug() << conf->helpEngine->registeredDocumentations();
+				if (!conf->helpEngine->registeredDocumentations().contains(docu_name)) {
+					if (!conf->helpEngine->registerDocumentation(help_path)) {
+						qDebug() << "Unable to register documentation";
+						qDebug() << conf->helpEngine->error();
+					}
 				}
 			}
 		}

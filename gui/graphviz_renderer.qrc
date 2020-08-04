@@ -4,6 +4,6 @@
 		<file alias="d3-graphviz.min.js">data/js/d3-graphviz.min_2.6.1.js</file>
 		<file alias="d3.min.js">data/js/d3.v5.min.js</file>
 		<file alias="viz.js">data/js/viz_1.8.2.js</file>
-		<file alias="model_graph_renderer.html">data/model_graph_renderer.html</file>
+<!-- 		<file alias="model_graph_renderer.html">data/model_graph_renderer.html</file> -->
 	</qresource>
 </RCC> 

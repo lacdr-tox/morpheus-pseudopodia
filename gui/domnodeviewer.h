@@ -77,11 +77,11 @@ private:
     map<QAction, QString> action_names;
 
 	QTreeView* model_tree_view; /*!< TreeWidget in which the xml-nodes will be shown.*/
+	QModelIndex current_index;
 	TagFilterSortProxyModel* model_tree_filter;
 	CheckBoxList* filter_tag_list;
-	QPushButton* filter_button;
+	QAction *model_tree_add_action, *model_tree_remove_action, *model_tree_filter_action, *model_tree_sort_action;
 	QSet<QString> filter_tags;
-	QPushButton* sort_button;
 	struct { int column; Qt::SortOrder order; } sort_state;
 	QSplitter* splitter; /*!< Splitter which divide the view of the widget. */
 	domNodeEditor* node_editor;
@@ -93,6 +93,8 @@ private:
 
     void createLayout(); /*!< Creates the sub-widgets and their layout */
     void createMenu(); /*!< Adds actions to the treeMenu and tableMenu.*/
+	void updateSymbolList();
+	void updateNodeActions();
     QMenu *treeMenu; /*!< Menu which appears, when requesting a context-menu over the treewidget. */
     QAction *addNodeAction, *copyNodeAction, *copyXPathAction, *pasteNodeAction, *cutNodeAction, *removeNodeAction;
     QAction *sweepNodeAction, *disableNodeAction;

@@ -1,6 +1,7 @@
 #include "about_model.h"
 #include <QtConcurrent/QtConcurrent>
 
+
 AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent)
 {
 	this->model = model;
@@ -81,7 +82,7 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	web_render = false;
 	qDebug() << "Using GraphViz renderer.";
 #endif
-	
+	graph_state = GraphState::EMPTY;
 	auto frame = new QFrame();
 	frame->setLayout(new QBoxLayout(QBoxLayout::Down));
 	frame->layout()->addWidget(webGraph);
@@ -93,20 +94,20 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 	webGraph->show();
 	
 	connect(&waitForGraph, &QFutureWatcher<QString>::finished, this, &AboutModel::graphReady);
-	lastGraph = "";
+	   current_graph = "";
 };
 
 void AboutModel::update()
 {
-	qDebug()<<"UPDATE" ;
+// 	qDebug()<<"UPDATE" ;
 	
 	title->blockSignals(true);
-	description->blockSignals(true);
-	reduced->blockSignals(true);
-	excludeS->blockSignals(true);
-	
 	title->setText(model->getModelDescr().title);
+	title->blockSignals(false);
+	
+	description->blockSignals(true);
 	description->setText(model->getModelDescr().details);
+	description->blockSignals(false);
 	
 	model->getRoot()->setStealth(true);
 	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
@@ -124,11 +125,19 @@ void AboutModel::update()
 	auto tags = model->getRoot()->subtreeTags();
 	tags.removeDuplicates();
 	tags.sort();
+	tags.prepend("#untagged");
+	
+	if (!dg->attribute("include-tags")->isActive()) {
+		update_include_tags(tags);
+		qtl = tags;
+	}
 	
 	for (auto tag : tags) {
 		includeTags->addItem(tag, qtl.contains(tag));
 	}
+	includeTags->updateText();
 	
+	excludeS->blockSignals(true);
 	excludeS->clear();
 	QMap<QString,QString> qsm = model->getModelDescr().getSymbolNames("cpmDoubleSymbolRef");
 	qsm.unite(model->getModelDescr().getSymbolNames("cpmVectorSymbolRef"));
@@ -139,77 +148,68 @@ void AboutModel::update()
 			continue;
 		excludeS->addItem(plug,qsl.contains(plug));
 	}
+	excludeS->blockSignals(false);
 	
+	excludeP->blockSignals(true);
 	excludeP->clear();
 	auto qpm = model->getModelDescr().pluginNames;
 	for(auto& plug:qpm.keys()) {
 		excludeP->addItem(plug,qpl.contains(plug));
 	}
+	excludeP->setData(qpl);
+	excludeP->blockSignals(false);
 	
+	reduced->blockSignals(true);
 	if(dg->attribute("reduced")->get() == "true") {
 		reduced->setCheckState(Qt::Checked);
 	}
 	else {
 		reduced->setCheckState(Qt::Unchecked);
 	}
-	excludeP->setData(qpl);
-	
-	title->blockSignals(false);
-	description->blockSignals(false);
 	reduced->blockSignals(false);
-	excludeS->blockSignals(false);
+
 	// at least delay the update until the widget shows up
 	QMetaObject::invokeMethod(this,"update_graph",Qt::QueuedConnection);
 // 	update_graph();
 }
 
-void AboutModel::update_graph()
-{
-	if (!isVisible()) return;
-	qDebug() << "updating graph";
-	MorphModel::GRAPH_TYPE type = web_render ? MorphModel::DOT : MorphModel::SVG;
-	if (webGraph->url().fileName() == "model_graph_renderer.html") {
-		// webGraph->evaluateJS("setGenerating();", [](const QVariant& r){});
+void AboutModel::setGraphState(GraphState state, std::function<void()> ready_fun  = [](){}) {
+	// Workaround for crashing chrome page on external links
+	if (webGraph->url().scheme() == "chrome-error") {
+		webGraph->reset();
+		graph_state=GraphState::EMPTY;
 	}
-	else if (webGraph->url().fileName() == "model_graph_viewer.html") {
-		webGraph->evaluateJS("setGenerating();", [](const QVariant& r){});
+	
+	bool set_url = false;;
+	
+	MorphModel::GRAPH_TYPE render_type = web_render ? MorphModel::DOT : MorphModel::SVG;
+	QUrl url = QUrl("qrc:///model_graph_viewer.html");
+	
+	if ( webGraph->url() != url ) {
+		graph_state=GraphState::EMPTY;
 	}
-	else {
-		QUrl url = (type== MorphModel::DOT)  ? QUrl("qrc:///model_graph_renderer.html") : QUrl("qrc:///model_graph_viewer.html");
-// 		onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [this](bool){
-// 					qDebug() << "Graph loading finished!";
-// 					webGraph->evaluateJS("setGenerating();", [](const QVariant& r){});
-// 					disconnect(onLoadConnect);
-// 				});
-		webGraph->setUrl(url);
-		onLoadConnect = 
-			connect(webGraph, &WebViewer::loadFinished, 
-				[type,this](bool){
-					QFuture<QString> graph_returned = QtConcurrent::run( model.data(), &MorphModel::getDependencyGraph, type );
-	waitForGraph.setFuture(graph_returned);
-					disconnect(onLoadConnect);
-				}
-			);
-		return;
-	}
-	QFuture<QString> graph_returned = QtConcurrent::run( model.data(), &MorphModel::getDependencyGraph, type );
-	waitForGraph.setFuture(graph_returned);
-}
-
-void AboutModel::graphReady() {
-	auto graph = waitForGraph.result();
-	if (!graph.isEmpty()) {
-		qDebug() << "Showing dependency graph: " << QString(graph);
-		
-		// Workaround for crashing chrome page on external links
-		if (webGraph->url().scheme() == "chrome-error") {
-			webGraph->reset();
+	
+	if (state==GraphState::PENDING) {
+		if (graph_state != GraphState::EMPTY) {
+			webGraph->evaluateJS("setGenerating();", [](const QVariant& r){});
+			ready_fun();
+			graph_state = GraphState::PENDING;
 		}
+		else {
+			MorphModel::GRAPH_TYPE type = web_render ? MorphModel::DOT : MorphModel::SVG;
+// 			QUrl url = (type==MorphModel::DOT)  ? QUrl("qrc:///model_graph_renderer.html") : QUrl("qrc:///model_graph_viewer.html");
+			current_graph="";
+			set_url=true;
+			graph_state = GraphState::PENDING_EMPTY;
+		}
+	}
+	
+	if (state==GraphState::UPTODATE) {
+		// apply the current graph
+		if (current_graph.endsWith("dot")) {
+			render_type = MorphModel::DOT;
 			
-		if (graph.endsWith("dot")) {
-			url = "qrc:///model_graph_renderer.html";
-			
-			QFile dotsource(graph);
+			QFile dotsource(current_graph);
 			QString dot;
 			if (dotsource.exists()) {
 				dotsource.open(QIODevice::ReadOnly);
@@ -217,78 +217,230 @@ void AboutModel::graphReady() {
 				dotsource.close();
 			}
 			
-			QString command;
-			
 			if (dot.isEmpty()) {
-				command= "setFailed();";
+				if (graph_state == GraphState::PENDING_EMPTY || graph_state == GraphState::EMPTY || graph_state == GraphState::FAILED) {
+					state = GraphState::FAILED;
+				}
+				else {
+					state = GraphState::OUTDATED;
+				}
 			}
-			else /*if (dot != lastGraph)*/ {
+			else {
 // 				qDebug()<<"UPDATE GRAPH";
-				lastGraph = dot;
 				dot = dot.replace(QRegularExpression("[\r\n\t]+")," ").trimmed();
 				if (webGraph->url() != url ) {
-					command = QString("setGraph('")+ dot + "');";
+					ready_fun = [ready_fun, dot, this](){ 
+						webGraph->evaluateJS(QString("setDotGraph('")+ dot + "');", [](const QVariant& r){});
+						ready_fun();
+					};
 				}
 				else {
-					command = QString("transitionGraph('") + dot + "');";
+					webGraph->evaluateJS(QString("setDotGraph('")+ dot + "');", [](const QVariant& r){});
+					ready_fun();
 				}
+				graph_state = GraphState::UPTODATE;
 			}
-			if (webGraph->url() != url ) {
-				webGraph->setUrl(url);
-				onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [command,this](bool){
-//					qDebug() << "Graph loading finished!";
-					webGraph->evaluateJS(command, [](const QVariant& r){});
-					disconnect(onLoadConnect);
-				});
-			}
-			else {
-				webGraph->evaluateJS(command, [](const QVariant& r){});
-//				qDebug() << "Graph loading finished!";
-			}
-// 				webGraph->show();
+			
 		}
-		else if (graph.endsWith("png") || graph.endsWith("svg")) {
+		else if (current_graph.endsWith("svg") || current_graph.endsWith("png")) {
+			render_type = MorphModel::SVG;
+			QString graph_url = "file://";
+			if (graph_url.startsWith("/"))
+				graph_url+=current_graph;
+			else
+				graph_url+="/"+current_graph;
+			
 			if (webGraph->supportsJS()) {
-				url = "qrc:///model_graph_viewer.html";
-
-				QString command = "setGraph('file://";
-				if (!graph.startsWith("/")) command+="/";
-				command += graph + "');";
-				
+				QString command = QString("setGraph('%1');").arg(graph_url);
 				if ( webGraph->url() == url ) {
 					webGraph->evaluateJS(command, [](const QVariant& r){});
+					ready_fun();
 				}
 				else {
-					onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [command,this](bool){
-						qDebug() << "Graph loading finished!";
+					set_url=true;
+					ready_fun = [this,command,ready_fun](){
 						webGraph->evaluateJS(command, [](const QVariant& r){});
-						disconnect(onLoadConnect);
-					});
-					webGraph->setUrl(url);
+						ready_fun();
+					};
 				}
-				lastGraph = graph;
 			}
 			else {
-				if (graph.startsWith("/"))
-					webGraph->setUrl(QString("file://")+graph);
-				else
-					webGraph->setUrl(QString("file:///")+graph);
+				set_url = true;
+				url = graph_url;
 			}
-
-		}
-	}
-	else {
-		if (webGraph->url().fileName()=="model_graph_renderer.html") {
-			webGraph->evaluateJS("setFailed();", [](const QVariant& r){});
-		}
-		else if (webGraph->url().fileName()=="model_graph_viewer.html") {
-			webGraph->evaluateJS("setFailed();", [](const QVariant& r){});
+			graph_state = GraphState::UPTODATE;
 		}
 		else {
-			webGraph->setUrl(QUrl("qrc:///graph_failed.html"));
+			state=GraphState::FAILED;
 		}
-		qDebug() << "Morpheus did not provide a dependency graph rendering!!" << graph;
 	}
+	
+	if (state==GraphState::OUTDATED) {
+		if (graph_state==GraphState::EMPTY) {
+			graph_state = GraphState::EMPTY;
+		}
+		else if ( graph_state == GraphState::PENDING_EMPTY || graph_state == GraphState::FAILED) {
+			state = GraphState::FAILED;
+		}
+		else {
+			webGraph->evaluateJS("setOutdated();", [](const QVariant& r){});
+			ready_fun();
+			graph_state=GraphState::OUTDATED;
+		}
+	}
+	
+	if (state==GraphState::FAILED) {
+		if (graph_state!=GraphState::EMPTY) {
+			webGraph->evaluateJS("setFailed();", [](const QVariant& r){});
+			ready_fun();
+		}
+		else {
+// 			url = "qrc:///graph_failed.html";
+			set_url=true;
+			ready_fun = [this,ready_fun](){ webGraph->evaluateJS("setFailed()", [](const QVariant& r){}); ready_fun(); };
+		}
+		graph_state=state;
+	}
+// 	else {
+// 		qDebug() << "setGraphState() not implemented " << int(graph_state);
+// 	}
+	
+	if (set_url) {
+		onLoadConnect = connect(webGraph, &WebViewer::loadFinished,
+					[=](bool success ){ 
+						disconnect(onLoadConnect); 
+						qDebug() << "Model graph loading finished" << (success ? "successfully" : "failing") << "(" << webGraph->url() << ")";
+						ready_fun();
+					});
+		webGraph->load(url);
+	}
+	
+	QMap<GraphState,QString> state_map = {
+		{GraphState::EMPTY, "EMPTY"},
+		{GraphState::PENDING,"PENDING"},
+		{GraphState::PENDING_EMPTY,"PENDING_EMPTY"},
+		{GraphState::UPTODATE,"UPTODATE"},
+		{GraphState::OUTDATED,"OUTDATED"},
+		{GraphState::FAILED,"FAILED"}
+	};
+	
+// 	qDebug() << "Graph state was set to" <<state_map[graph_state];
+}
+
+void AboutModel::update_graph()
+{
+	if (!isVisible()) return;
+	
+	qDebug() << "updating graph";
+	MorphModel::GRAPH_TYPE type = web_render ? MorphModel::DOT : MorphModel::SVG;
+	setGraphState(GraphState::PENDING,
+		[this, type](){
+		QFuture<QString> graph_returned = QtConcurrent::run( model.data(), &MorphModel::getDependencyGraph, type );
+		waitForGraph.setFuture(graph_returned);
+	});
+}
+
+void AboutModel::graphReady() {
+	auto graph = waitForGraph.result();
+	
+	if (graph.isEmpty()) {
+		qDebug() << "Morpheus did not provide a dependency graph rendering!!" << graph;
+		setGraphState(GraphState::OUTDATED);
+	}
+	else {
+		qDebug() << "Showing dependency graph: " << QString(graph);
+		current_graph = graph;
+		setGraphState(GraphState::UPTODATE);
+		
+// 		// Workaround for crashing chrome page on external links
+// 		if (webGraph->url().scheme() == "chrome-error") {
+// 			webGraph->reset();
+// 		}
+// 			
+// 		if (graph.endsWith("dot")) {
+// 			url = "qrc:///model_graph_renderer.html";
+// 			
+// 			QFile dotsource(graph);
+// 			QString dot;
+// 			if (dotsource.exists()) {
+// 				dotsource.open(QIODevice::ReadOnly);
+// 				dot  = dotsource.readAll();
+// 				dotsource.close();
+// 			}
+// 			
+// 			QString command;
+// 			
+// 			if (dot.isEmpty()) {
+// 				command= "setFailed();";
+// 			}
+// 			else /*if (dot != lastGraph)*/ {
+// // 				qDebug()<<"UPDATE GRAPH";
+// 				            current_graph = dot;
+// 				dot = dot.replace(QRegularExpression("[\r\n\t]+")," ").trimmed();
+// 				if (webGraph->url() != url ) {
+// 					command = QString("setGraph('")+ dot + "');";
+// 				}
+// 				else {
+// 					command = QString("transitionGraph('") + dot + "');";
+// 				}
+// 			}
+// 			if (webGraph->url() != url ) {
+// 				webGraph->setUrl(url);
+// 				onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [command,this](bool){
+// //					qDebug() << "Graph loading finished!";
+// 					webGraph->evaluateJS(command, [](const QVariant& r){});
+// 					disconnect(onLoadConnect);
+// 				});
+// 			}
+// 			else {
+// 				webGraph->evaluateJS(command, [](const QVariant& r){});
+// //				qDebug() << "Graph loading finished!";
+// 			}
+// // 				webGraph->show();
+// 		}
+// 		else if (graph.endsWith("png") || graph.endsWith("svg")) {
+// 			if (webGraph->supportsJS()) {
+// 				url = "qrc:///model_graph_viewer.html";
+// 
+// 				QString command = "setGraph('file://";
+// 				if (!graph.startsWith("/")) command+="/";
+// 				command += graph + "');";
+// 				
+// 				if ( webGraph->url() == url ) {
+// 					webGraph->evaluateJS(command, [](const QVariant& r){});
+// 				}
+// 				else {
+// 					onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [command,this](bool){
+// 						qDebug() << "Graph loading finished!";
+// 						webGraph->evaluateJS(command, [](const QVariant& r){});
+// 						disconnect(onLoadConnect);
+// 					});
+// 					webGraph->setUrl(url);
+// 				}
+// 				current_graph = graph;
+// 			}
+// 			else {
+// 				if (graph.startsWith("/"))
+// 					webGraph->setUrl(QString("file://")+graph);
+// 				else
+// 					webGraph->setUrl(QString("file:///")+graph);
+// 			}
+// 
+// 		}
+	}
+// 	else {
+// 		setGraphState(GraphState::FAILED);
+// 		if (webGraph->url().fileName()=="model_graph_renderer.html") {
+// 			webGraph->evaluateJS("setFailed();", [](const QVariant& r){});
+// 		}
+// 		else if (webGraph->url().fileName()=="model_graph_viewer.html") {
+// 			webGraph->evaluateJS("setFailed();", [](const QVariant& r){});
+// 		}
+// 		else {
+// 			webGraph->setUrl(QUrl("qrc:///graph_failed.html"));
+// 		}
+// 		qDebug() << "Morpheus did not provide a dependency graph rendering!!" << graph;
+// 	}
 	// run mopsi on it
 	// reload the resulting dependency_graph.png/svg
 	// display an error, id something went wrong.
@@ -327,7 +479,7 @@ void AboutModel::svgOut()
 		);
 	}
 	else {
-		QString fileName = lastGraph.split("/").last();
+		QString fileName = current_graph.split("/").last();
 		fileName.prepend(QDir::currentPath()+"/");
 		QString format;
 		if (fileName.endsWith("svg")) {
@@ -345,7 +497,7 @@ void AboutModel::svgOut()
 		if (QFile::exists(fileName))
 			QFile::remove(fileName);
 		
-		QFile::copy(lastGraph, fileName);
+		QFile::copy(current_graph, fileName);
 	}
 }
 
@@ -416,14 +568,9 @@ void AboutModel::update_reduced(int state)
 void AboutModel::update_include_tags(QStringList includes) {
 	model->getRoot()->setStealth(true);
 	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
-	if (includes.isEmpty()) {
-		dg->attribute("include-tags")->set("");
-		dg->attribute("include-tags")->setActive(false);
-	}
-	else {
-		dg->attribute("include-tags")->setActive(true);
-		dg->attribute("include-tags")->set(includes.join(","));
-	}
+
+	dg->attribute("include-tags")->setActive(true);
+	dg->attribute("include-tags")->set(includes.join(","));
+
 	model->getRoot()->setStealth(false);
-		
 }

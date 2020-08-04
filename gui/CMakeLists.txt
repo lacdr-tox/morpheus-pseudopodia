@@ -187,32 +187,32 @@ ELSE()
 	LIST(JOIN EXAMPLES_FILES "\n" EXAMPLES_RC_FILES)
 ENDIF()
 
-configure_file(ext_files.rc.in ext_files.rc @ONLY)
+configure_file(ext_files.rc.in ext_files.qrc @ONLY)
 
 # compile the resources
-SET( RESOURCES link_data.qrc ${CMAKE_CURRENT_BINARY_DIR}/ext_files.rc)
+SET( RESOURCES link_data.qrc ${CMAKE_CURRENT_BINARY_DIR}/ext_files.qrc)
 IF(MORPHEUS_GRAPHVIZ STREQUAL "WebRenderer")
 	LIST(APPEND RESOURCES graphviz_renderer.qrc)
 	set_property(SOURCE about_model.cpp APPEND PROPERTY COMPILE_DEFINITIONS GRAPHVIZ_WEB_RENDERER=1 )
 ENDIF()
 
-QT5_ADD_RESOURCES( RESOURCES_RCC ${RESOURCES} OPTIONS "--compress" "8" )
 
-
-IF( MINGW )
+IF( WIN32 )
 	SET( ICON_RESOURCE icons/win/morpheus.rc )
 	ADD_CUSTOM_COMMAND( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/icon.o
 		COMMAND windres.exe ARGS -i ${CMAKE_CURRENT_SOURCE_DIR}/${ICON_RESOURCE} -o ${CMAKE_CURRENT_BINARY_DIR}/icon.o
 	DEPENDS ${ICON_RESOURCE} )
-	SET( SOURCES ${SOURCES} ${CMAKE_CURRENT_BINARY_DIR}/icon.o )
+	LIST(APPEND SOURCES ${CMAKE_CURRENT_BINARY_DIR}/icon.o )
 ENDIF( )
 
 
 ### run moc and rcc over the headers and resource files
 SET(CMAKE_AUTOMOC ON)
+SET(CMAKE_AUTORCC ON)
+SET(CMAKE_AUTORCC_OPTIONS "--compress" "8")
 SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-ADD_EXECUTABLE( MorpheusGUI WIN32 ${SOURCES} ${RESOURCES_RCC} )
+ADD_EXECUTABLE( MorpheusGUI WIN32 ${SOURCES} ${RESOURCES} )
 set_target_properties(MorpheusGUI PROPERTIES RUNTIME_OUTPUT_NAME ${GUI_EXEC_NAME})
 add_subdirectory(appdoc)
 

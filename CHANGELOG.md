@@ -10,9 +10,14 @@
 
 ### MorpheusML
   * The space symbol (Space/SpaceSymbol) now always provides the location in orthogonal coordinates, also on hexagonal lattices.
-  * AddCell accepts Count as the number of cells to be placed.
+  * AddCell accepts Count instead of Condition as the number of cells to be placed.
   * ClusterTracker can cluster cells of multiple cell types.
-  * Logger gained support for conditional logging using Logger/Restrictions/@condition
+  * Logger
+    * gained support for conditional logging using Logger/Restrictions/@condition
+    * learned to use discrete colors for integer data
+  * Gnuplotter
+    * allows to set a z-slice per Plot and also Arrows and Labels follow the z-slize filter.
+    * cell opacity moved to Plot/Cells/@opacity
   * Added Populations InitVectorProperty with optional spherical notation
   * Lattice size now can also be specified through expressions
   * Contact energies now support expressions with access to symbols of involved cells
@@ -20,7 +25,7 @@
     * XSD parser supports extension of complexTypes
     * Plugins are extension of base types
     * Registration of plugins as members of <xs:all> groups
-  * Added **tags** and **Annotation** nodes to all plugins
+  * Added **@tags** and **Annotation** nodes to all model components
 
 ### Simulator
   * Performance improvements for Mappers and Reporters using OpenMP parallelization

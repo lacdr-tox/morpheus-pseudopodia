@@ -100,6 +100,10 @@ void parameterSweeper::selectModel(int index) {
 		model->disconnect( SIGNAL(dataChanged(QModelIndex,QModelIndex)));
 		model->disconnect( SIGNAL(layoutChanged()));
     }
+    if (index<0) {
+		model = SharedMorphModel();
+		return;
+	}
     model = config::getOpenModels()[index];
 	sweep_name->setText(model->rootNodeContr->getModelDescr().title + "_sweep");
 	param_sweep_view->setModel(&model->param_sweep);

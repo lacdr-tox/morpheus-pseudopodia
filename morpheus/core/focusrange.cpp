@@ -593,11 +593,25 @@ void FocusRange::init_range(Granularity granularity, multimap< FocusRangeAxis, i
 					dim.erase(find(dim.begin(), dim.end(), FocusRangeAxis::Z) );
 				}
 			break;
-			case FocusRangeDescriptor::IT_Cell : 
-				if (restrictions.count(FocusRangeAxis::X) || restrictions.count(FocusRangeAxis::Y) || restrictions.count(FocusRangeAxis::Z)) {
+			case FocusRangeDescriptor::IT_Cell :
+				
+				if (restrictions.count(FocusRangeAxis::X) || restrictions.count(FocusRangeAxis::Y)) {
 					// just collect those cells which occupy some nodes in the restricted area
 					cerr << "Missing implementation" << endl;
 					assert(0);
+				}
+				if (restrictions.count(FocusRangeAxis::Z)) {
+					int z_slice = restrictions.lower_bound(FocusRangeAxis::Z)->second;
+					for (auto cell_id = range->cell_range.begin(); cell_id!=range->cell_range.end(); ) {
+						const auto& cell_nodes = CPM::getCell(*cell_id).getNodes();
+						if (cell_nodes.empty() || cell_nodes.begin()->z > z_slice || cell_nodes.rbegin()->z < z_slice) {
+							// drop cell ...
+							 cell_id = range->cell_range.erase(cell_id);
+						}
+						else {
+							cell_id++;
+						}
+					}
 				}
 				break;
 		}

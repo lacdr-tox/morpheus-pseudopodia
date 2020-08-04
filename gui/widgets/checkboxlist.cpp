@@ -168,7 +168,7 @@ void CheckBoxListDelegate::setModelData(QWidget *editor, QAbstractItemModel *mod
 
     //set model data
     QMap<int,QVariant> data;
-//     data.insert(Qt::DisplayRole,myEditor->text());
+    data.insert(Qt::DisplayRole, index.data(Qt::DisplayRole));
     data.insert(Qt::UserRole,value);
     model->setItemData(index,data);
 }

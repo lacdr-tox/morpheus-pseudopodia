@@ -168,16 +168,22 @@ QString MorphModel::getDependencyGraph(GRAPH_TYPE type)
 		case DOT: ext_string="dot"; break;
 	}
 	QString graph_file = "dependency_graph."+ext_string;
+	QString model_graph = "model_graph."+ext_string;
 	QString graph_file_fallback = "dependency_graph.dot";
+	QString model_graph_fallback = "model_graph.dot";
 	
 	// If the model did not change the model since the last rendering, just take the old rendering.
 	if (dep_graph_model_edit_stamp == rootNodeContr->getModelDescr().edits) {
-		if (temp_folder.exists(graph_file)) {
-			return temp_folder.absoluteFilePath(graph_file);
+		if (temp_folder.exists(model_graph)) {
+			return temp_folder.absoluteFilePath(model_graph);
 		}
-		if (temp_folder.exists(graph_file_fallback)) {
-			return temp_folder.absoluteFilePath(graph_file_fallback);
+		if (temp_folder.exists(model_graph_fallback)) {
+			return temp_folder.absoluteFilePath(model_graph_fallback);
 		}
+	}
+	else {
+		temp_folder.remove(graph_file);
+		temp_folder.remove(graph_file_fallback);
 	}
 	
 	QString model_file = temp_folder.absoluteFilePath("model.xml.gz");
@@ -245,13 +251,16 @@ QString MorphModel::getDependencyGraph(GRAPH_TYPE type)
 	
 	if (temp_folder.exists(graph_file)) {
 		dep_graph_model_edit_stamp = rootNodeContr->getModelDescr().edits;
-		return temp_folder.absoluteFilePath(graph_file);
+		temp_folder.remove(model_graph);
+		temp_folder.rename(graph_file, model_graph);
+		return temp_folder.absoluteFilePath(model_graph);
 	}
 	else if (temp_folder.exists(graph_file_fallback)){
-		
 		// Fallback in case there is no graphviz lib available
 		dep_graph_model_edit_stamp = rootNodeContr->getModelDescr().edits;
-		return temp_folder.absoluteFilePath(graph_file_fallback);
+		temp_folder.remove(model_graph_fallback);
+		temp_folder.rename(graph_file_fallback, model_graph_fallback);
+		return temp_folder.absoluteFilePath(model_graph_fallback);
 	}
 	qDebug() << "Expected graph file does not exist " << temp_folder.absoluteFilePath(graph_file);
 	qDebug() << process.readAllStandardOutput();
@@ -304,7 +313,8 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 // 		fix_version=5;
 		MorphModel::AutoFix a;
 		a.operation = AutoFix::MOVE;
-		a.match_path = "MorpheusModel/CellTypes/CellType/AddCell/Condition"; a.target_path = "MorpheusModel/CellTypes/CellType/AddCell/Count"; fixes.append(a);
+		a.match_path = "MorpheusModel/CellTypes/CellType/AddCell/Condition"; a.target_path = "MorpheusModel/CellTypes/CellType/AddCell/Count";
+		fixes.append(a);
 
 		QStringList prefixes;
 		prefixes << "MorpheusModel/Global/" 
@@ -352,6 +362,18 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		fixes.append(a);
 		a.match_path ="MorpheusModel/CellTypes/CellType/System/@solver";
 		a.target_path="MorpheusModel/CellTypes/CellType/System/@solver";
+		fixes.append(a);
+		a.match_path ="MorpheusModel/Analysis/Gnuplotter/Plot/Field/@slice";
+		a.target_path="MorpheusModel/Analysis/Gnuplotter/Plot/@slice";
+		a.operation = AutoFix::MOVE;
+		fixes.append(a);
+		a.match_path ="MorpheusModel/Analysis/Gnuplotter/Plot/Cells/@slice";
+		a.target_path="MorpheusModel/Analysis/Gnuplotter/Plot/@slice";
+		a.operation = AutoFix::MOVE;
+		fixes.append(a);
+		a.match_path ="MorpheusModel/Analysis/Gnuplotter/Terminal/@opacity";
+		a.target_path="MorpheusModel/Analysis/Gnuplotter/Plot/Cells/@opacity";
+		a.operation = AutoFix::MOVE;
 		fixes.append(a);
 
 	}
@@ -1025,7 +1047,10 @@ QVariant MorphModel::headerData( int section, Qt::Orientation orientation, int r
 
 nodeController* MorphModel::indexToItem(const QModelIndex& idx) const {
 	if (idx.isValid()) {
-		if (idx.model() != this) return nullptr;
+		if (idx.model() != this) {
+			qDebug() << "Cannot convert index from wrong model!";
+			return nullptr;
+		}
 		return static_cast< nodeController* >(idx.internalPointer());
 	}
 	else {
@@ -1151,7 +1176,17 @@ QSharedPointer<nodeController> MorphModel::removeNode(const QModelIndex &parent,
 		qDebug() << "MorphModel::removeNode out of bounds " << indexToItem(parent)->childs[row]->name << "["<<row<<"]";
 		return QSharedPointer<nodeController>();
 	}
-    beginRemoveRows(parent, row, row);
+	if (parent == itemToIndex(getRoot())) {
+		auto node = index(row,0,parent).data(MorphModel::NodeRole).value<nodeController*>();
+		int part_id = MorphModelPart::all_parts_index[node->getName()];
+		if (parts.at(part_id).enabled) {
+			qDebug() << "Forwarding part removal" << part_id;
+			return removePart(part_id);
+		}
+	}
+
+// 	qDebug() << "removing Node" << index(row,0,parent).data(MorphModel::NodeRole).value<nodeController*>()->getName();
+	beginRemoveRows(parent, row, row);
 	// --> the row of the view might not be identical to the row in the model !
 	auto child = QSharedPointer<nodeController>(indexToItem(parent)->removeChild( row ));
 	endRemoveRows();
@@ -1355,21 +1390,24 @@ bool MorphModel::addPart(QDomNode xml) {
     return true;
 }
 
-void MorphModel::removePart(QString part) {
+QSharedPointer<nodeController> MorphModel::removePart(QString part) {
 	if (!MorphModelPart::all_parts_index.contains(part))
-		return;
-	removePart(MorphModelPart::all_parts_index.value(part));
+		return nullptr;
+	return removePart(MorphModelPart::all_parts_index.value(part));
 }
 
-void MorphModel::removePart(int idx) {
+QSharedPointer<nodeController> MorphModel::removePart(int idx) {
 	if (idx<0 || idx>=parts.size())
-		return;
+		return nullptr;
 	if (parts[idx].enabled) {
 		parts[idx].enabled = false;
-		parts[idx].element = NULL;
-		removeNode(itemToIndex(rootNodeContr),parts[idx].element_index.row());
+		parts[idx].element = nullptr;
 		emit modelPartRemoved(parts[idx].element_index.row());
+		auto node = removeNode(itemToIndex(rootNodeContr),parts[idx].element_index.row());
+		return node;
 	}
+	return nullptr;
+	
 }
 
 void MorphModel::loadModelParts() {

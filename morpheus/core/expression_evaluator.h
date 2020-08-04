@@ -186,8 +186,8 @@ template <class T>
 class ThreadedExpressionEvaluator {
 public:
 	ThreadedExpressionEvaluator(const string& expression, const Scope* scope, bool partial_spec = false) { 
+		base_evaluator = make_unique<ExpressionEvaluator<T>> (expression, scope, partial_spec);
 		evaluators.resize( omp_get_max_threads(), nullptr );
-		evaluators[0] = new ExpressionEvaluator<T> (expression, scope, partial_spec);
 	};
 	~ThreadedExpressionEvaluator() {
 		for (auto evaluator : evaluators) {
@@ -197,6 +197,7 @@ public:
 	}
 	
 	void setLocalsTable(const vector<EvaluatorVariable>& locals) { 
+		base_evaluator->setLocalsTable(locals);
 		for (auto evaluator : evaluators) 
 			if (evaluator)
 				evaluator->setLocalsTable(locals);
@@ -204,34 +205,37 @@ public:
 
 	uint addNameSpaceScope(const string& ns_name, const Scope* scope) {
 		uint id=0;
+		base_evaluator->addNameSpaceScope(ns_name, scope);
 		for (auto& evaluator : evaluators)
 			if (evaluator)
 				id = evaluator->addNameSpaceScope(ns_name, scope);
 		return id;
 	}
-	set<Symbol> getNameSpaceUsedSymbols(uint ns_id) const { return evaluators[0]->getNameSpaceUsedSymbols(ns_id); }
+	set<Symbol> getNameSpaceUsedSymbols(uint ns_id) const { return base_evaluator->getNameSpaceUsedSymbols(ns_id); }
 	void setNameSpaceFocus(uint ns_id, const SymbolFocus& f) const { getEvaluator()->setNameSpaceFocus(ns_id, f); }
 	void setNotation(VecNotation notation) {
+		base_evaluator->setNotation(notation);
 		for (auto e :evaluators) {
 			if (e) e->setNotation(notation);
 		}
 	};
 	void setLocals(const double* data) const { getEvaluator()->setLocals(data); }
-	int getLocalsCount() const { return evaluators[0]->getLocalsCount(); } 
+	int getLocalsCount() const { return base_evaluator->getLocalsCount(); } 
 	
 	void init() { 
+		base_evaluator->init();
 		for (auto evaluator : evaluators)
 			if (evaluator)
 				evaluator->init();
 	}
-	const string& getDescription() const { return evaluators[0]->getDescription(); };
-	const SymbolBase::Flags& flags() const { return evaluators[0]->flags(); }
-	Granularity getGranularity() const { return evaluators[0]->getGranularity(); };
-	const string& getExpression() const { return evaluators[0]->getExpression(); };
+	const string& getDescription() const { return base_evaluator->getDescription(); };
+	const SymbolBase::Flags& flags() const { return base_evaluator->flags(); }
+	Granularity getGranularity() const { return base_evaluator->getGranularity(); };
+	const string& getExpression() const { return base_evaluator->getExpression(); };
 
 	typename TypeInfo<T>::SReturn get(const SymbolFocus& focus) const { return getEvaluator()->get(focus); };
 	typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& focus) const { return getEvaluator()->safe_get(focus); };
-	set<SymbolDependency> getDependSymbols() const { return evaluators[0]->getDependSymbols(); };
+	set<SymbolDependency> getDependSymbols() const { return base_evaluator->getDependSymbols(); };
 private:
 	ExpressionEvaluator<T>* getEvaluator() const {
 		uint t = omp_get_thread_num();
@@ -243,11 +247,12 @@ private:
 // 			}
 			
 // 			if (!evaluators[t])
-				evaluators[t] = new ExpressionEvaluator<T>( *evaluators[0] );
+				evaluators[t] = new ExpressionEvaluator<T>( *base_evaluator );
 // 			mutex.unlock();
 		}
 		return evaluators[t];
 	}
+	unique_ptr<ExpressionEvaluator<T>> base_evaluator;
 	mutable vector< ExpressionEvaluator<T>* > evaluators;
 	mutable GlobalMutex mutex;
 };
