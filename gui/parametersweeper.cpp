@@ -97,8 +97,9 @@ void parameterSweeper::updateJobCount()
 
 void parameterSweeper::selectModel(int index) {
     if (model) {
-		model->disconnect( SIGNAL(dataChanged(QModelIndex,QModelIndex)));
-		model->disconnect( SIGNAL(layoutChanged()));
+		model->param_sweep.disconnect( SIGNAL(dataChanged(QModelIndex,QModelIndex)));
+		model->param_sweep.disconnect( SIGNAL(layoutChanged()));
+		preset_random_seed->disconnect( SIGNAL(toggled(bool)));
     }
     if (index<0) {
 		model = SharedMorphModel();
@@ -113,6 +114,9 @@ void parameterSweeper::selectModel(int index) {
 
 	connect(&model->param_sweep, SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(updateJobCount()));
 	connect(&model->param_sweep, SIGNAL(layoutChanged()), this, SLOT(updateJobCount()));
+	preset_random_seed -> setChecked(model->param_sweep.presetRandomSeeds());
+	connect(preset_random_seed, &QCheckBox::toggled, &model->param_sweep, &ParamSweepModel::setPresetRandomSeeds);
+	
 	updateJobCount();
 }
 
@@ -210,19 +214,6 @@ void parameterSweeper::submitSweep()
 		QMessageBox(QMessageBox::Warning,QString("Action denied"),QString("No valid parameter sets defined!!"));
 		return;
 	}
-
-	if (preset_random_seed->isChecked())  {
-		 // pick the random seed attribute
-		 nodeController* seed = model->rootNodeContr->firstActiveChild("Time")->firstActiveChild("RandomSeed");
-		 if (!seed) { seed = model->rootNodeContr->firstActiveChild("Time")->insertChild("RandomSeed"); }
-		 auto seed_value = seed->attribute("value");
-		 if (seed_value) {
-			parameters.push_back(seed_value);
-			for (auto& set : parameter_sets) {
-				set.push_back(QString::number(qrand()));
-			}
-		 }
-	 }
 
 	jobSummary summary(parameters, parameter_sets, sweep_name->text());
 	summary.exec();

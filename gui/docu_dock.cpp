@@ -179,8 +179,8 @@ void DocuDock::setRootOfHelpIndex()
 	QModelIndex root = toc_model->index(0,0);
 	label_documentation->setText(root.data().toString() + " Documentation");
 	int rows = toc_model->rowCount(root);
-	qDebug() << help_engine->error();
-	qDebug() << "I am getting the Docu " << rows ;
+// 	qDebug() << help_engine->error();
+// 	qDebug() << "I am getting the Docu " << rows ;
 	int modules_row = -1;
 	for (uint row=0; row<rows; row++) {
 // 		qDebug() << "Checking help section " << row <<  root.child(row,0).data(Qt::DisplayRole);

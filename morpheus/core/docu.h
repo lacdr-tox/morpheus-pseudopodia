@@ -443,10 +443,10 @@ Sets the duration of a simulation and controls the pseudo-random number generato
 \b TimeSymbol specifies a symbol to refer to the current time, e.g. in \ref ML_Event conditions.
 
 \b RandomSeed specifies a seed for the pseudo-random number generator.
-A user-specified seed allows to reproduce stochastic simulation results, including \ref ML_CPM. 
-For multithreaded simulations, note that each thread receives its own seed, based on that one specified by the user. 
-This implies that for exact reproduction of simulation results, the RandomSeed as well as the number of parallel threads must be equal to the original simulation.
-Deactivated \b RandomSeed will initialize the pseudo-random number generator based on the processor's time stamp and hence yields different simulation results in subsequent runs.
+A user-specified seed allows to reproduce stochastic simulation results, including \ref ML_CPM. <br/>
+\b Note: For multithreaded simulations, note that each thread is seeded sperately based on the that user specified seed (\ref Parallelization). This implies that for reproducing simulations, the RandomSeed as well as the number of parallel threads must be conserved.
+<br/>
+If \b RandomSeed is unspecified the the pseudo-random number generator willl initialize based on the system's time stamp and hence yields different simulation results in subsequent runs.
 
 \b StopCondition provides a condition to terminate the simulation.
 This is handy within automated parameter exploration via parameter sweeps.
@@ -728,10 +728,10 @@ Morpheus currently applies a static scheduling scheme, which means that the sche
 
 The final scheme can be found in a simulation log.
 
-In the initialization phase, all symbols are registered, the plugins and their interdependencies are analysed and a <b>dependency tree</b> is constructed. Using the dependency tree, a schedule is constructed along the following guidelines. 
+In the initialization phase, all symbols are registered, the plugins and their interdependencies are analysed and a **model graph** is constructed. Using the model graph, a schedule is constructed along the following guidelines. 
 
 - \b Correctness: Update time steps must be fine-grained enough.
-- \b Order: Sequential order must obey the order in the directed acyclic dependency graph (DAG), which is constructed by opening up potential closed loops.
+- \b Order: Sequential order must obey the order in the directed acyclic model graph (DAG), which is constructed by opening up potential closed loops.
 - \b Validity: Updates must be performed frequently enough to provide the latest input values for other plugins.
 - \b Efficiency: Updates are not scheduled more often than the plugins' output is required.
 
@@ -759,8 +759,9 @@ The \b sequential update scheme will look as follows:
 \defgroup Parallelization
 \ingroup Concepts
 
-Morpheus employs \b OpenMP as the workload-sharing construct. CPM computation, however, does not yet make use of OpenMP.
-Use the environmental variable \b OMP_NUM_THREADS to adjust the number of usable threads.
+Morpheus employs [OpenMP](https://www.openmp.org/specifications/) as the workload-sharing construct. CPM computation, however, does not yet make use of OpenMP.
+
+In the GUI use the **threads per job** settings and in a shell the environment variable \b `OMP_NUM_THREADS` to adjust the number of usable threads.
 
 **/
 

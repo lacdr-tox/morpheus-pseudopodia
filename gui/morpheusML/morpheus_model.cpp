@@ -291,6 +291,8 @@ void MorphModel::initModel()
 	temp_folder.cd(name);
 	
 	loadModelParts();
+	
+	param_sweep.setRandomSeedRoot(rootNodeContr->firstActiveChild("Time"));
 }
 
 

@@ -4,6 +4,7 @@
 ParamSweepModel::ParamSweepModel ( QObject* parent ) : QAbstractItemModel ( parent )
 {
 	root_item = QSharedPointer<ParamItem>(new ParamItem(NULL,NULL));
+	preset_random_seeds = false;
 }
 
 
@@ -120,9 +121,25 @@ void ParamSweepModel::createJobList( QList< AbstractAttribute* >& params, QList<
 			allJobs.erase(base_job_entry++);
 		}
 	}
+	
+	if (preset_random_seeds && !allJobs.empty())  {
+		// pick the random seed attribute
+		nodeController* seed = random_seed_root->firstActiveChild("RandomSeed");
+		if (!seed) { seed = random_seed_root->insertChild("RandomSeed"); }
+		auto seed_value = seed->attribute("value");
+		if (seed_value) {
+			params.append(seed_value);
+			for (auto& set : allJobs) {
+				set.append(QString::number(qrand()));
+			}
+		 }
+		 else {
+			 qDebug() << "Unable to set RandomSeed value!";
+		 }
+	 }
 
-	for (auto cps=allJobs.cbegin(); cps!= allJobs.cend(); cps++) {
-		values.append(*cps);
+	for (const auto& set : allJobs) {
+		values.append(set);
 	}
 }
 
@@ -138,6 +155,7 @@ void ParamSweepModel::clear()
 	beginResetModel();
 	root_item = QSharedPointer<ParamItem>( new ParamItem(NULL,NULL) );
 	endResetModel();
+	preset_random_seeds = false;
 }
 
 
@@ -320,6 +338,10 @@ void ParamSweepModel::removeAttribute ( AbstractAttribute* attr )
 		qDebug() << "ParamSweeper::removeAttribute : Unable to find attribute " << attr->getXMLPath();
 }
 
+
+void ParamSweepModel::setPresetRandomSeeds(bool enabled) {
+	preset_random_seeds = enabled;
+}
 
 
 QStringList ParamSweepModel::mimeTypes () const {

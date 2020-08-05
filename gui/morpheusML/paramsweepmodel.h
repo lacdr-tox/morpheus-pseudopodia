@@ -57,37 +57,42 @@ class ParamSweepModel : public QAbstractItemModel
 Q_OBJECT
 public:
 	explicit ParamSweepModel ( QObject* parent = 0 );
-// 	~ParamSweepModel ();
 
 	AbstractAttribute* getAttribute( const QModelIndex& index );
-	virtual QVariant data ( const QModelIndex& index, int role = Qt::DisplayRole ) const;
-	virtual int columnCount ( const QModelIndex& parent = QModelIndex() ) const;
-	virtual int rowCount ( const QModelIndex& parent = QModelIndex() ) const;
-	virtual QModelIndex parent ( const QModelIndex& child ) const;
-	virtual QModelIndex index ( int row, int column, const QModelIndex& parent = QModelIndex() ) const;
-    virtual bool setData ( const QModelIndex& index, const QVariant& value, int role = Qt::EditRole );
-	virtual QVariant headerData ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const;
+	QVariant data ( const QModelIndex& index, int role = Qt::DisplayRole ) const override;
+	int columnCount ( const QModelIndex& parent = QModelIndex() ) const override;
+	int rowCount ( const QModelIndex& parent = QModelIndex() ) const override;
+	QModelIndex parent ( const QModelIndex& child ) const override;
+	QModelIndex index ( int row, int column, const QModelIndex& parent = QModelIndex() ) const override;
+    bool setData ( const QModelIndex& index, const QVariant& value, int role = Qt::EditRole ) override;
+	QVariant headerData ( int section, Qt::Orientation orientation, int role = Qt::DisplayRole ) const override;
 
-	virtual QMimeData* mimeData ( const QModelIndexList& indexes ) const;
-	virtual QStringList mimeTypes() const;
-	virtual Qt::DropActions supportedDropActions() const;
-	virtual Qt::ItemFlags flags ( const QModelIndex& index ) const;
-    virtual bool dropMimeData ( const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent );
+	QMimeData* mimeData ( const QModelIndexList& indexes ) const override;
+	QStringList mimeTypes() const override;
+	Qt::DropActions supportedDropActions() const override;
+	Qt::ItemFlags flags ( const QModelIndex& index ) const override;
+    bool dropMimeData ( const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent ) override;
 
 	bool contains(AbstractAttribute *attr) const;
 	void clear();
 	QByteArray store() const;
 	bool restore( const QByteArray& data, nodeController* modelRootNode );
+	bool presetRandomSeeds() const { return preset_random_seeds; }
+	/// Provide the root Element for the RandomSeed/@value
+	void setRandomSeedRoot(nodeController* root) {random_seed_root = root;};
 	void createJobList(QList<AbstractAttribute*>& params, QList<QStringList>& values) const;
 	
 private:
 // 	SharedMorphModel model;
 	QSharedPointer<ParamItem> root_item;
+	bool preset_random_seeds;
+	nodeController* random_seed_root;
 	ParamItem* indexToItem(const QModelIndex& index) const;
 	QModelIndex itemToIndex(ParamItem* item, int col=0) const;
 public slots:
 	void addAttribute(AbstractAttribute *item);
 	void removeAttribute(AbstractAttribute *item);
+	void setPresetRandomSeeds(bool enabled);
 	
 };
 
