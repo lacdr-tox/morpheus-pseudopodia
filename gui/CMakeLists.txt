@@ -212,11 +212,12 @@ SET(CMAKE_AUTORCC ON)
 SET(CMAKE_AUTORCC_OPTIONS "--compress" "8")
 SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+add_subdirectory(appdoc)
 ADD_EXECUTABLE( MorpheusGUI WIN32 ${SOURCES} ${RESOURCES} )
 set_target_properties(MorpheusGUI PROPERTIES RUNTIME_OUTPUT_NAME ${GUI_EXEC_NAME})
-add_subdirectory(appdoc)
 
 ADD_DEPENDENCIES(MorpheusGUI xmlSchema AppDoc)
+# SET_PROPERTY(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/ext_files.qrc PROPERTIES DEPENDS AppDoc)
 	
 get_target_property( res AppDoc RESOURCE)
 set_property( TARGET MorpheusGUI APPEND PROPERTY RESOURCE ${res})

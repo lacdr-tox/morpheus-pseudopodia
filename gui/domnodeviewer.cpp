@@ -12,7 +12,11 @@ bool TagFilterSortProxyModel::filterAcceptsRow(int source_row, const QModelIndex
 	if (tags.size()==1 && tags[0] == "*") {
 		return true;
 	}
+#if QT_VERSION >= 0x056000
 	return tags.toSet().intersects(filter_tags);
+#else
+	return ! tags.toSet().intersect(filter_tags).isEmpty();
+#endif
 };
 
 void TagFilterSortProxyModel::setFilterTags(QStringList tag_list) {
@@ -450,10 +454,10 @@ void domNodeViewer::updateNodeActions() {
 		if (! addableChilds.contains(allChilds.at(i))) {
 			trWItem->setIcon(0,style()->standardIcon(QStyle::SP_MessageBoxWarning));
 			trWItem->setToolTip(0,"This node will disable an existing node!");
-			addMenu->addAction(new QAction(style()->standardIcon(QStyle::SP_MessageBoxWarning),allChilds.at(i)));
+			addMenu->addAction(new QAction(style()->standardIcon(QStyle::SP_MessageBoxWarning),allChilds.at(i),this));
 		}
 		else {
-			addMenu->addAction(new QAction(allChilds.at(i)));
+			addMenu->addAction(new QAction(allChilds.at(i),this));
 		}
 	}
 	plugin_tree_widget->sortByColumn(1, Qt::AscendingOrder);

@@ -1394,13 +1394,13 @@ bool MorphModel::addPart(QDomNode xml) {
 
 QSharedPointer<nodeController> MorphModel::removePart(QString part) {
 	if (!MorphModelPart::all_parts_index.contains(part))
-		return nullptr;
+		return QSharedPointer<nodeController>();
 	return removePart(MorphModelPart::all_parts_index.value(part));
 }
 
 QSharedPointer<nodeController> MorphModel::removePart(int idx) {
 	if (idx<0 || idx>=parts.size())
-		return nullptr;
+		return QSharedPointer<nodeController>();
 	if (parts[idx].enabled) {
 		parts[idx].enabled = false;
 		parts[idx].element = nullptr;
@@ -1408,7 +1408,7 @@ QSharedPointer<nodeController> MorphModel::removePart(int idx) {
 		auto node = removeNode(itemToIndex(rootNodeContr),parts[idx].element_index.row());
 		return node;
 	}
-	return nullptr;
+	return QSharedPointer<nodeController>();
 	
 }
 

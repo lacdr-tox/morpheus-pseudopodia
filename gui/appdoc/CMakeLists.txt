@@ -73,7 +73,17 @@ ADD_CUSTOM_COMMAND(
 
 # configure_file(${CMAKE_CURRENT_SOURCE_DIR}/morpheus.qhcp.in ${QT_HELP_COLLECTION_PROJECT} @ONLY)
 
-
+IF( Qt5_VERSION VERSION_LESS "5.6")
+	get_property(qhelpgenerator TARGET Qt5::qcollectiongenerator PROPERTY IMPORTED_LOCATION)
+	get_filename_component(qthelptooldir ${qhelpgenerator} DIRECTORY)
+ADD_CUSTOM_COMMAND(
+	OUTPUT  ${QT_HELP_COMPRESSED}
+	COMMAND ${qthelptooldir}/qhelpgenerator ${QT_HELP_PROJECT} -o ${QT_HELP_COMPRESSED}
+	DEPENDS ${QT_HELP_PROJECT}
+	WORKING_DIRECTORY ${QT_DOC_FOLDER}
+	COMMENT "Assembling in-application documentation with qhelpgenerator" VERBATIM
+)
+ELSE()
 ADD_CUSTOM_COMMAND(
 	OUTPUT  ${QT_HELP_COMPRESSED}
 	COMMAND $<TARGET_FILE:Qt5::qhelpgenerator> ${QT_HELP_PROJECT} -o ${QT_HELP_COMPRESSED}
@@ -81,7 +91,7 @@ ADD_CUSTOM_COMMAND(
 	WORKING_DIRECTORY ${QT_DOC_FOLDER}
 	COMMENT "Assembling in-application documentation with qhelpgenerator" VERBATIM
 )
-
+ENDIF()
 #ADD_CUSTOM_COMMAND(
 #	OUTPUT  ${QT_HELP_COLLECTION}
 #	COMMAND $<TARGET_FILE:Qt5::qhelpgenerator> ${QT_HELP_COLLECTION_PROJECT} -o ${QT_HELP_COLLECTION}

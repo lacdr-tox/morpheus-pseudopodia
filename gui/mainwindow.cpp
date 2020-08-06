@@ -446,7 +446,7 @@ void MainWindow::createMainWidgets()
 
 	// Model popup menu
     modelMenu = new QMenu();
-	auto show_xml_action = new QAction(QThemedIcon("text-xml",QIcon(":/text-xml.png")),"Show XML");
+	auto show_xml_action = new QAction(QThemedIcon("text-xml",QIcon(":/text-xml.png")),"Show XML", this);
 	connect(show_xml_action, &QAction::triggered, 
 		[this](){
 			XMLTextDialog dia( config::getOpenModels()[model_popup_index.model]->getXMLText() , this);
