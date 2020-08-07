@@ -342,6 +342,9 @@ void domNodeViewer::setTreeItem( const QModelIndex& index)
 // 	qDebug() << "selecting new Item " << index;
 	
 	QModelIndex view_index = index;
+	if (!view_index.isValid()) {
+		view_index = model_tree_view->rootIndex();
+	}
 	if (index.model() == model) {
 		qDebug() << "setTreeItem: Got a source index";
 		view_index = model_tree_filter->mapFromSource(index);
