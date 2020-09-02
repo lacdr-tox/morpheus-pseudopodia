@@ -2,31 +2,41 @@
 #include <QtConcurrent/QtConcurrent>
 
 
-AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent)
+AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QSplitter(Qt::Vertical, parent)
 {
 	this->model = model;
-	QBoxLayout *central = new QBoxLayout(QBoxLayout::Down);
-	this->setLayout(central);
+	this->setHandleWidth(5);
+	this->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
+	auto w_top = new QWidget();
+	QBoxLayout *descr_lay = new QBoxLayout(QBoxLayout::Down);
+	w_top->setLayout(descr_lay);
+	this->addWidget(w_top);
 	
 	auto l_title = new QLabel(this);
 	l_title->setText("Title: ");
-	central->addWidget(l_title);
+	descr_lay->addWidget(l_title);
 	
 	title = new QLineEdit(this);
 	title->setText(model->getModelDescr().title);
 	connect(title,SIGNAL(textChanged(QString)),this, SLOT(assignTitle(QString)));
-	central->addWidget(title);
+	descr_lay->addWidget(title);
 	
 	auto l_descr = new QLabel(this);
 	l_descr->setText("Description:");
-	central->addWidget(l_descr);
+	descr_lay->addWidget(l_descr);
 	
 	description = new QTextEdit(this);
 	description->setReadOnly(false);
 	description->setText(model->getModelDescr().details);
 	connect(description,SIGNAL(textChanged()),this, SLOT(assignDescription()));
-	central->addWidget(description);
+	descr_lay->addWidget(description);
 	
+	auto w_bottom = new QWidget();
+	QBoxLayout *central = new QBoxLayout(QBoxLayout::Down);
+	w_bottom->setLayout(central);
+	w_bottom->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+	this->addWidget(w_bottom);
 	auto layset= new QBoxLayout(QBoxLayout::Direction::LeftToRight);
 	auto include_tags_label = new QLabel("incl. tags");
 	include_tags_label->setAlignment(Qt::AlignRight);
@@ -92,6 +102,9 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QWidget(parent
 // 	style->setProperty(Style::S)
 	central->addWidget(frame,4);
 	webGraph->show();
+	
+	setStretchFactor(1, 1);
+	setStretchFactor(2, 3);
 	
 	connect(&waitForGraph, &QFutureWatcher<QString>::finished, this, &AboutModel::graphReady);
 	   current_graph = "";

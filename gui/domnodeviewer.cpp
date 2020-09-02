@@ -30,7 +30,6 @@ void TagFilterSortProxyModel::setFilteringEnabled(bool enabled)
 	invalidateFilter();
 }
 
-
 //------------------------------------------------------------------------------
 
 domNodeViewer::domNodeViewer(QWidget* parent): QWidget(parent)
@@ -49,10 +48,16 @@ domNodeViewer::~domNodeViewer()
 
 //------------------------------------------------------------------------------
 
+class MorpheusTreeView : public QTreeView {
+public:
+	MorpheusTreeView(QWidget * parent = nullptr) : QTreeView(parent) {};
+	QModelIndex indexAt(const QPoint & point) const override { auto idx = QTreeView::indexAt(point); if (!idx.isValid()) return rootIndex(); return idx;};
+};
+
 void domNodeViewer::createLayout()
 {
 
-    model_tree_view = new QTreeView();
+    model_tree_view = new MorpheusTreeView();
     model_tree_view->setContextMenuPolicy(Qt::CustomContextMenu);
     model_tree_view->setUniformRowHeights(true);
     model_tree_view->setSelectionMode(QAbstractItemView::SingleSelection);

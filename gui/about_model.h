@@ -14,8 +14,8 @@
 
 
 #include <QWidget>
-#include <QGraphicsScene>
-#include <QtSvg/QGraphicsSvgItem>
+// #include <QGraphicsScene>
+// #include <QtSvg/QGraphicsSvgItem>
 #include <QListView>
 #include "config.h"
 #include "widgets/checkboxlist.h"
@@ -23,7 +23,7 @@
 #include <QFutureWatcher>
 #include <functional>
 
-class AboutModel : public QWidget {
+class AboutModel : public QSplitter {
 	Q_OBJECT
 	
 	enum class GraphState {
