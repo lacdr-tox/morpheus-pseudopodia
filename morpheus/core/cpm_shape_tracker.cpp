@@ -147,7 +147,6 @@ void AdaptiveCPMShapeTracker::reset(AdaptiveCPMShapeTracker* other) {
 				for (; ui != other->_interfaces.end(); ++ui,++i) {
 					if (ui->first == i->first) {
 						i->second = ui->second;
-						++i;
 					}
 					else {
 						brute_force_copy = true;

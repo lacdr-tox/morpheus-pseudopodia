@@ -101,12 +101,12 @@ public:
 // 	vector<int> dataIndex() const;
 	
 private:
-	FocusRangeIterator(shared_ptr<const FocusRangeDescriptor> data, uint index = 0);
+	FocusRangeIterator(const FocusRangeDescriptor *data, uint index = 0);
 	
 	void setIndex(int index);
 
 	// Range Descriptor
-	shared_ptr<const FocusRangeDescriptor> data;
+	const FocusRangeDescriptor *data;
 	
 	///State
 	uint idx; uint cell; VINT pos; 
@@ -151,10 +151,10 @@ public:
 
 	size_t size() { if (!data) return 0; else return data->size; };
 	SymbolFocus operator[] (size_t index) {
-		return *FocusRangeIterator(data,index);
+		return *FocusRangeIterator(data.get(),index);
 	}
-	FocusRangeIterator begin() const { return FocusRangeIterator(data, 0); };
-	FocusRangeIterator end() const { return FocusRangeIterator(data, data ? data->size : 0); };
+	FocusRangeIterator begin() const { return FocusRangeIterator(data.get(), 0); };
+	FocusRangeIterator end() const { return FocusRangeIterator(data.get(), data ? data->size : 0); };
 
 	/// Number of dimensions
 	int dimensions() const { if (!data) return 0; else return data->data_axis.size(); };

@@ -2,7 +2,7 @@
 #include "celltype.h"
 #include "membrane_property.h"
 
-FocusRangeIterator::FocusRangeIterator(shared_ptr<const FocusRangeDescriptor> data, uint index) : data(data) {
+FocusRangeIterator::FocusRangeIterator(const FocusRangeDescriptor *data, uint index) : data(data) {
 	setIndex(index);
 };
 

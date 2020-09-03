@@ -161,7 +161,7 @@ void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 						for (auto focus: input_range) {
 							mapper->addVal(input(focus),thread);
 						}
-						output.symbol->set(*out_focus,mapper->get());
+						output.symbol->set(*out_focus,mapper->get(thread));
 						mapper->reset(thread);
 					}
 				}
