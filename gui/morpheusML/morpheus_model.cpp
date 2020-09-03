@@ -1146,7 +1146,7 @@ QModelIndex MorphModel::insertNode(const QModelIndex &parent, QString child, int
 	
 		if ( ! contr )
 			throw ModelException(ModelException::InvalidNodeIndex,QString("MorphModel::insertNode: Request to insert into invalid index!"));
-		if (!contr->getAddableChilds().contains(child))
+		if (!contr->getAddableChilds(true).contains(child))
 			throw ModelException(ModelException::UndefinedNode,QString("MorphModel::insertNode: Requested node %1 cannot be inserted!").arg(child));
 		prepareActivationOrInsert(contr, child);
 		
