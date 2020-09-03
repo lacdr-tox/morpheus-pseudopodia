@@ -487,14 +487,23 @@ void AdaptiveCPMShapeTracker::trackEllipse(const VINT pos, int dir) {
 	
 EllipsoidShape AdaptiveCPMShapeTracker::computeEllipsoid3D(const valarray<double> &I, int N) {
 	EllipsoidShape es;
-//  cout << "helper: LengthConstraint::calcLengthHelper3D(const std::vector<double> &I, int N)\n";
-	if(N<=1) {
-		for (uint i=0; i<3; i++) {
-			es.lengths.push_back(N);
-			es.axes.push_back(VDOUBLE(0,0,0));
- 		}
+	if (N<2)
+	{
+		if (N==1) {
+			es.lengths.push_back( 1 );
+			es.lengths.push_back( 1 );
+			es.axes.push_back(VDOUBLE());
+			es.axes.push_back(VDOUBLE());
+		}
+		else {
+			es.lengths.push_back( 0 );
+			es.lengths.push_back( 0 );
+		}
+		es.axes.push_back(VDOUBLE());
+		es.axes.push_back(VDOUBLE());
+		es.eccentricity = 0;
 		return es;
-	} // gives nan otherwise
+	}
 	
 	// From of the inertia tensor (principal moments of inertia) we compute the eigenvalues and
 	// obtain the cell length by assuming the cell was an ellipsoid
@@ -502,6 +511,7 @@ EllipsoidShape AdaptiveCPMShapeTracker::computeEllipsoid3D(const valarray<double
 	eigen_m << I[Ell_XX], I[Ell_XY], I[Ell_XZ],
 	           I[Ell_XY], I[Ell_YY], I[Ell_YZ],
 	           I[Ell_XZ], I[Ell_YZ], I[Ell_ZZ];
+	           
 	Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigensolver(eigen_m);
 	if (eigensolver.info() != Eigen::Success) {
 		cerr << "Cell::calcLengthHelper3D: Computing eigenvalues was not successfull!" << endl;
@@ -509,17 +519,18 @@ EllipsoidShape AdaptiveCPMShapeTracker::computeEllipsoid3D(const valarray<double
 
 	Eigen::Vector3f eigen_values = eigensolver.eigenvalues();
 	Eigen::Matrix3f EV = eigensolver.eigenvectors();
+		
 	Eigen::Matrix3f Am;
 	Am << -1,  1,  1,
 	       1, -1,  1,
 	       1,  1, -1;
-	Eigen::Array3f axis_lengths = ((Am * eigen_values).array() * (2.5/double(N))).sqrt();
+	Eigen::Array3f axis_lengths = 2.0*((Am * eigen_values).array() * (2.5/double(N))).sqrt();
 	Eigen::Vector3i sorted_indices;
 	for (uint i=0; i<3; i++) {
 		es.lengths.push_back(axis_lengths(i));
 		es.axes.push_back(VDOUBLE(EV(0,i),EV(1,i),EV(2,i)).norm());
 	}
-	// sorting axes by length
+	// sort axes by length
 	bool done=false;
 	while (!done) {
 		for (uint i=0;1;i++) {
@@ -527,34 +538,17 @@ EllipsoidShape AdaptiveCPMShapeTracker::computeEllipsoid3D(const valarray<double
 				swap(es.lengths[i],es.lengths[i+1]);
 				swap(es.axes[i],es.axes[i+1]);
 			}
-			if (i==2) {
+			if (i==1) {
 				done=true;
 				break;
 			}
 		}
-	} 
-	 // axes with correct size 
-// 	double f[3];
-// 	if (lambda[2]>0) 
-// 		 f[2]=sqrt(lambda[2]*5./(A[0]*A[0]+A[1]*A[1])/double(N)); 
-// 	else if (lambda[1]>0) 
-// 		 f[1]=sqrt(lambda[1]*5./(A[0]*A[0]+A[2]*A[2])/double(N)); 
-// 	else 
-// 		 f[0]=sqrt(lambda[0]*5./(A[1]*A[1]+A[2]*A[2])/double(N));
-// 	 //double l = A[2]*f; 
-// 	 
-// 	// NOTE: test whether f's are correct
-// 	es.lengths.push_back( A[2]*f[2] );
-// 	es.lengths.push_back( A[1]*f[1] );
-// 	es.lengths.push_back( A[0]*f[0] );
-
+	}
 	return es;
 };
-	
+
 EllipsoidShape AdaptiveCPMShapeTracker::computeEllipsoid2D(const valarray<double> &I, int N) {
 	EllipsoidShape es;
-//	cout << "helper: LengthConstraint::calcLengthHelper2D(const std::vector<double> &I, int N)\n";
-	
 	if (N<2){
 		if (N==1) {
 			es.lengths.push_back( 1 );
@@ -572,32 +566,40 @@ EllipsoidShape AdaptiveCPMShapeTracker::computeEllipsoid2D(const valarray<double
 			es.eccentricity = 0;
 			return es;
 		}
-		
 	}
 	
-	// long axis
-	double lambda_b = 0.5 * (I[Ell_XX] + I[Ell_YY]) + 0.5 * sqrt( sqr(I[Ell_XX] - I[Ell_YY]) + 4 * sqr(I[Ell_XY]));
-    double lambda_a = 0.5 * (I[Ell_XX] + I[Ell_YY]) - 0.5 * sqrt( sqr(I[Ell_XX] - I[Ell_YY]) + 4 * sqr(I[Ell_XY]));
-    
-	// TODO: is this the radius or diameter ?
-	VDOUBLE major_axis = VDOUBLE(I[Ell_XY], lambda_a-I[Ell_XX], 0);
-	double major_length = 4*sqrt(lambda_b/double(N));
+	// From of the inertia tensor (principal moments of inertia) we compute the eigenvalues and
+	// obtain the cell length by assuming the cell was an ellipsoid
+	Eigen::Matrix2f eigen_m;
+	eigen_m << I[Ell_XX], I[Ell_XY], 
+			   I[Ell_XY], I[Ell_YY];
 
-	// short axis
-	
-	// TODO: is this the radius or diameter?
-	VDOUBLE minor_axis = VDOUBLE(I[Ell_XY], lambda_b-I[Ell_XX], 0);
-	double minor_length = 4*sqrt(lambda_a/double(N));
-	
-	double eccentricity = sqrt( 1 - (lambda_a / lambda_b) );
-	
-    es.axes.push_back( major_axis );
-    es.axes.push_back( minor_axis );
-	
-	es.lengths.push_back( major_length );
-	es.lengths.push_back( minor_length );
-	es.eccentricity = eccentricity;
+	Eigen::SelfAdjointEigenSolver<Eigen::Matrix2f> eigensolver(eigen_m);
+	if (eigensolver.info() != Eigen::Success) {
+		cerr << "Cell::calcLengthHelper2D: Computing eigenvalues was not successfull!" << endl;
+	}
 
+	Eigen::Vector2f eigen_values = eigensolver.eigenvalues();
+	Eigen::Matrix2f EV = eigensolver.eigenvectors();	
+	
+	double l0 = 4*sqrt(eigen_values(1)/double(N));
+	double l1 = 4*sqrt(eigen_values(0)/double(N));
+	
+	if (l0>l1)
+	{
+		es.lengths.push_back(l0);
+		es.lengths.push_back(l1);
+		es.axes.push_back(VDOUBLE(2.*EV(0,0),2.*EV(1,0),0).norm());
+		es.axes.push_back(VDOUBLE(2.*EV(0,1),2.*EV(1,1),0).norm());
+		es.eccentricity  = sqrt( 1 - (eigen_values(0) / eigen_values(1)) );
+	} else
+	{
+		es.lengths.push_back(l1);
+		es.lengths.push_back(l0);
+		es.axes.push_back(VDOUBLE(2.*EV(0,1),2.*EV(1,1),0).norm());
+		es.axes.push_back(VDOUBLE(2.*EV(0,0),2.*EV(1,0),0).norm());
+		es.eccentricity  = sqrt( 1 - (eigen_values(1) / eigen_values(0)) );
+	}
 	return es;
 }
 
