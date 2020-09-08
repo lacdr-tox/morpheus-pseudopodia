@@ -1,10 +1,10 @@
 class Morpheus < Formula
   desc "Modelling environment for Multi-Cellular Systems Biology"
   homepage "https://morpheus.gitlab.io"
-  url "https://gitlab.com/morpheus.lab/morpheus/-/archive/v2.2.0-beta2/morpheus-v2.2.0-beta2.tar.gz"
-  sha256 "b99b8cba61d206c084882f066d04914cee03eab706e55f3c161445f8d929d981"
-  version "2.1.92"
-
+  url "https://gitlab.com/morpheus.lab/morpheus/-/archive/v2.2.0-beta3/morpheus-v2.2.0-beta3.tar.gz"
+  sha256 "039ecaecdce0baeb567fe271fa4545b8b5131f78eeadf281f1752630582b4275"
+  version "2.1.93"
+  license "BSD-3-clause"
   head "https://gitlab.com/morpheus.lab/morpheus.git", :branch => "develop"
 
   depends_on "boost" => :build
@@ -15,6 +15,7 @@ class Morpheus < Formula
   depends_on "libtiff"
   depends_on "qt"
   depends_on "libomp" => :recommended
+  depends_on "ffmpeg" => :recommended
 
   uses_from_macos "bzip2"
   uses_from_macos "libxml2"
