@@ -85,12 +85,27 @@ config::config() : QObject(), helpEngine(NULL) {
 		QSqlDriverPlugin *sqlPlugin  = qobject_cast<QSqlDriverPlugin *>(plugin);
 		if (!sqlPlugin ) throw;
 		db = QSqlDatabase::addDatabase(sqlPlugin->create("QSQLITE"));*/
+		QString data_base_file_name = "morpheus.db.sqlite";
+		// The data location has been changed between qt4 and qt5, thus we have to migrate the old data base manually
+// 		QDir job_db_path(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)+"/data/Morpheus/Morpheus");
+		QDir old_location = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)+"/data/Morpheus/Morpheus";
+		QDir old_location2 = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)+"/Morpheus/Morpheus";
+		QDir current_location = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation); // provides on Windows ~/AppData/Local/Morpheus
+		current_location.mkpath(current_location.path());
 		
-		// The data location has been changed between qt4 and qt5, thus we have to manually retain the old behaviour here
-		QDir job_db_path(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)+"/data/Morpheus/Morpheus");
-		job_db_path.mkpath(job_db_path.path());
-		db.setDatabaseName(job_db_path.filePath("morpheus.db.sqlite"));
-		qDebug() << "SQLite database path: " << db.databaseName();
+		if (! QFile::exists(current_location.filePath(data_base_file_name))) {
+			if (QFile::exists(old_location.filePath(data_base_file_name))) {
+				QFile::copy(old_location.filePath(data_base_file_name), current_location.filePath(data_base_file_name) );
+				qDebug() << "Migrating job db to " << current_location.filePath(data_base_file_name);
+			}
+			else if (QFile::exists(old_location2.filePath(data_base_file_name))) {
+				QFile::copy(old_location2.filePath(data_base_file_name), current_location.filePath(data_base_file_name) );
+				qDebug() << "Migrating job db to " << current_location.filePath(data_base_file_name);
+			}
+		}
+		
+		db.setDatabaseName(current_location.filePath("morpheus.db.sqlite"));
+		qDebug() << "SQLite database path: "<< current_location  << data_base_file_name;
 		
 		if (!db.open()) throw;
 	}
