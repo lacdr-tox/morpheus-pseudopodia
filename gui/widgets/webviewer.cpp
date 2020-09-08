@@ -29,6 +29,7 @@ WebViewer::WebViewer(QWidget* parent) : QWebView(parent) {
 	// this->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessFileUrls, true);
 	this->page()->setNetworkAccessManager(config::getNetwork());
 	this->page()->setLinkDelegationPolicy(QWebPage::DelegateExternalLinks);
+	setContextMenuPolicy(Qt::NoContextMenu);
 }
 
 bool WebViewer::debug(bool state) {
@@ -67,6 +68,7 @@ bool AdaptiveWebPage::acceptNavigationRequest(const QUrl& url, QWebEnginePage::N
 }
 
 WebViewer::WebViewer(QWidget* parent): QWebEngineView(parent) {
+	setContextMenuPolicy(Qt::NoContextMenu);
 	reset();
 }
 
