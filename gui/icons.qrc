@@ -1,0 +1,127 @@
+<RCC>
+<!-- 	 root Ressources -->
+	<qresource prefix="/">
+		<file alias="no_announcement.html">data/no_announcement.html</file>
+		<file alias="morpheusgui.gif">data/morpheusgui.gif</file>
+		<file alias="model_graph_viewer.css">data/model_graph_viewer.css</file>
+		<file alias="model_graph_viewer.html">data/model_graph_viewer.html</file>
+		<file alias="morpheus-running.png">icons/512x512/morpheus-running.png</file>
+		<file alias="morpheus.png">icons/512x512/morpheus.png</file>
+		<file alias="logo.png">icons/48x48/morpheus.png</file>
+		<file alias="morpheus-sweep.png">icons/512x512/morpheus-sweep.png</file>
+	</qresource>
+<!-- 	Data type symbols -->
+	<qresource prefix="/icons/">
+		<file alias="string.png">icons/16x16/string_type.png</file>
+		<file alias="float.png">icons/16x16/float_type.png</file>
+		<file alias="ufloat.png">icons/16x16/ufloat_type.png</file>
+		<file alias="int.png">icons/16x16/int_type.png</file>
+		<file alias="uint.png">icons/16x16/uint_type.png</file>
+		<file alias="unknown_type.png">icons/16x16/unknown_type.png</file>
+	</qresource>
+<!-- 		MORPHEUS FALLBACK ICONS -->
+	<qresource prefix="/icons/">
+		<file alias="applications-science.png">icons/fallback/48x48/applications-science.png</file>
+		<file alias="debug.png">icons/fallback/48x48/debug.png</file>
+		<file alias="terminal.png">icons/fallback/48x48/terminal.png</file>
+		<file alias="movie.png">icons/fallback/48x48/movie.png</file>
+		<file alias="document-import.png">icons/fallback/16x16/document-import.png</file>
+		<file alias="utilities-terminal.png">icons/fallback/16x16/utilities-terminal.png</file>
+		<file alias="text-xml.png">icons/fallback/16x16/text-xml.png</file>
+		<file alias="edit-delete.png">icons/fallback/16x16/edit-delete.png</file>
+		<file alias="text-x-generic.png">icons/fallback/16x16/text-x-generic.png</file>
+		<file alias="unknown.png">icons/fallback/16x16/unknown.png</file>
+		<file alias="go-previous.png">icons/fallback/16x16/go-previous.png</file>
+		<file alias="document-close.png">icons/fallback/16x16/document-close.png</file>
+		<file alias="edit-cut.png">icons/fallback/16x16/edit-cut.png</file>
+		<file alias="go-next.png">icons/fallback/16x16/go-next.png</file>
+		<file alias="application-exit.png">icons/fallback/16x16/application-exit.png</file>
+		<file alias="view-filter.png">icons/fallback/16x16/view-filter.png</file>
+		<file alias="process-completed.png">icons/fallback/16x16/process-completed.png</file>
+		<file alias="process-pending.png">icons/fallback/16x16/process-pending.png</file>
+		<file alias="process-stop.png">icons/fallback/16x16/process-stop.png</file>
+		<file alias="process-working.png">icons/fallback/16x16/process-working.png</file>
+		<file alias="edit-paste.png">icons/fallback/16x16/edit-paste.png</file>
+		<file alias="media-seek-forward.png">icons/fallback/16x16/seek.png</file>
+		<file alias="document-revert.png">icons/fallback/16x16/document-revert.png</file>
+		<file alias="settings.png">icons/fallback/16x16/settings.png</file>
+		<file alias="list-add.png">icons/fallback/16x16/list-add.png</file>
+		<file alias="folder.png">icons/fallback/16x16/folder.png</file>
+		<file alias="mail-attach.png">icons/fallback/16x16/mail-attach.png</file>
+		<file alias="edit-copy.png">icons/fallback/16x16/edit-copy.png</file>
+		<file alias="list-remove.pn">icons/fallback/16x16/list-remove.png</file>
+		<file alias="media-playback-start.png">icons/fallback/22x22/start.png</file>
+		<file alias="media-playback-stop.png">icons/fallback/22x22/stop.png</file>
+		<file alias="process-completed.svg">icons/fallback/scalable/process-completed.svg</file>
+		<file alias="process-pending.svg">icons/fallback/scalable/process-pending.svg</file>
+		<file alias="process-stopped.svg">icons/fallback/scalable/process-stop.svg</file>
+		<file alias="process-working.svg">icons/fallback/scalable/process-working.svg</file>
+	</qresource>
+	<!-- 		MORPHEUS THEME ICONS -->
+	<qresource prefix="/themes/McMojave">
+<!-- light -->
+		<file>icons/McMojave/index.theme</file>
+		<file alias="status/symbolic/process-error-symbolic.svg">icons/McMojave/status/symbolic/process-error-symbolic.svg</file>
+		<file alias="status/symbolic/process-stopped-symbolic.svg">icons/McMojave/status/symbolic/process-stop-symbolic.svg</file>
+		<file alias="status/symbolic/process-working-symbolic.svg">icons/McMojave/status/symbolic/process-working-symbolic.svg</file>
+		<file alias="status/symbolic/process-pending-symbolic.svg">icons/McMojave/status/symbolic/tools-timer-symbolic.svg</file>
+		<file alias="status/symbolic/process-completed-symbolic.svg">icons/McMojave/status/symbolic/process-completed-symbolic.svg</file>
+		<file alias="places/22/folder.svg">icons/McMojave/places/22/folder.svg</file>
+		<file alias="actions/16/edit-cut.svg">icons/McMojave/actions/16/edit-cut.svg</file>
+		<file alias="actions/16/view-filter.svg">icons/McMojave/actions/16/view-filter.svg</file>
+		<file alias="actions/16/media-playback-stop.svg">icons/McMojave/actions/16/media-playback-stop.svg</file>
+		<file alias="actions/16/edit-copy.svg">icons/McMojave/actions/16/edit-copy.svg</file>
+		<file alias="actions/16/go-previous.svg">icons/McMojave/actions/16/go-previous.svg</file>
+		<file alias="actions/16/document-import.svg">icons/McMojave/actions/16/document-import.svg</file>
+		<file alias="actions/16/application-exit.svg">icons/McMojave/actions/16/application-exit.svg</file>
+		<file alias="actions/16/go-next.svg">icons/McMojave/actions/16/go-next.svg</file>
+		<file alias="actions/16/list-add.svg">icons/McMojave/actions/16/list-add.svg</file>
+		<file alias="actions/16/document-revert.svg">icons/McMojave/actions/16/document-revert.svg</file>
+		<file alias="actions/16/edit-delete.svg">icons/McMojave/actions/16/edit-delete.svg</file>
+		<file alias="actions/16/list-remove.svg">icons/McMojave/actions/16/list-remove.svg</file>
+		<file alias="actions/16/mail-attachment.svg">icons/McMojave/actions/16/mail-attachment.svg</file>
+		<file alias="actions/16/media-playback-start.svg">icons/McMojave/actions/16/media-playback-start.svg</file>
+		<file alias="actions/16/settings.svg">icons/McMojave/actions/16/settings.svg</file>
+		<file alias="actions/16/document-close.svg">icons/McMojave/actions/16/document-close.svg</file>
+		<file alias="actions/16/media-seek-forward.svg">icons/McMojave/actions/16/media-seek-forward.svg</file>
+		<file alias="actions/16/configure.svg">icons/McMojave/actions/16/configure.svg</file>
+		<file alias="actions/16/edit-paste.svg">icons/McMojave/actions/16/edit-paste.svg</file>
+		<file alias="actions/16/preferences-other.svg">icons/McMojave/actions/16/preferences-other.svg</file>
+		<file alias="apps/symbolic/utilities-terminal.svg">icons/McMojave/apps/symbolic/utilities-terminal.svg</file>
+		<file alias="mimes/48/text-x-generic.svg">icons/McMojave/mimes/48/text-x-generic.svg</file>
+		<file alias="mimes/48/text-xml.svg">icons/McMojave/mimes/48/text-xml.svg</file>
+	</qresource>
+<!-- dark -->
+	<qresource prefix="/themes/McMojave-dark">
+		<file alias="index.theme">icons/McMojave-dark/index.theme</file>
+		<file alias="status/symbolic/process-error-symbolic.svg">icons/McMojave-dark/status/symbolic/process-error-symbolic.svg</file>
+		<file alias="status/symbolic/process-stopped-symbolic.svg">icons/McMojave-dark/status/symbolic/process-stop-symbolic.svg</file>
+		<file alias="status/symbolic/process-working-symbolic.svg">icons/McMojave-dark/status/symbolic/process-working-symbolic.svg</file>
+		<file alias="status/symbolic/process-pending-symbolic.svg">icons/McMojave-dark/status/symbolic/tools-timer-symbolic.svg</file>
+		<file alias="status/symbolic/process-completed-symbolic.svg">icons/McMojave-dark/status/symbolic/process-completed-symbolic.svg</file>
+		<file alias="places/22/folder.svg">icons/McMojave-dark/places/22/folder.svg</file>
+		<file alias="actions/16/edit-cut.svg">icons/McMojave-dark/actions/16/edit-cut.svg</file>
+		<file alias="actions/16/view-filter.svg">icons/McMojave-dark/actions/16/view-filter.svg</file>
+		<file alias="actions/16/media-playback-stop.svg">icons/McMojave-dark/actions/16/media-playback-stop.svg</file>
+		<file alias="actions/16/edit-copy.svg">icons/McMojave-dark/actions/16/edit-copy.svg</file>
+		<file alias="actions/16/go-previous.svg">icons/McMojave-dark/actions/16/go-previous.svg</file>
+		<file alias="actions/16/document-import.svg">icons/McMojave-dark/actions/16/document-import.svg</file>
+		<file alias="actions/16/application-exit.svg">icons/McMojave-dark/actions/16/application-exit.svg</file>
+		<file alias="actions/16/go-next.svg">icons/McMojave-dark/actions/16/go-next.svg</file>
+		<file alias="actions/16/list-add.svg">icons/McMojave-dark/actions/16/list-add.svg</file>
+		<file alias="actions/16/document-revert.svg">icons/McMojave-dark/actions/16/document-revert.svg</file>
+		<file alias="actions/16/edit-delete.svg">icons/McMojave-dark/actions/16/edit-delete.svg</file>
+		<file alias="actions/16/list-remove.svg">icons/McMojave-dark/actions/16/list-remove.svg</file>
+		<file alias="actions/16/mail-attachment.svg">icons/McMojave-dark/actions/16/mail-attachment.svg</file>
+		<file alias="actions/16/media-playback-start.svg">icons/McMojave-dark/actions/16/media-playback-start.svg</file>
+		<file alias="actions/16/settings.svg">icons/McMojave-dark/actions/16/settings.svg</file>
+		<file alias="actions/16/document-close.svg">icons/McMojave-dark/actions/16/document-close.svg</file>
+		<file alias="actions/16/media-seek-forward.svg">icons/McMojave-dark/actions/16/media-seek-forward.svg</file>
+		<file alias="actions/16/configure.svg">icons/McMojave-dark/actions/16/configure.svg</file>
+		<file alias="actions/16/edit-paste.svg">icons/McMojave-dark/actions/16/edit-paste.svg</file>
+		<file alias="actions/16/preferences-other.svg">icons/McMojave-dark/actions/16/preferences-other.svg</file>
+		<file alias="apps/symbolic/utilities-terminal.svg">icons/McMojave-dark/apps/symbolic/utilities-terminal.svg</file>
+		<file alias="mimes/48/text-x-generic.svg">icons/McMojave-dark/mimes/48/text-x-generic.svg</file>
+		<file alias="mimes/48/text-xml.svg">icons/McMojave-dark/mimes/48/text-xml.svg</file>
+	</qresource>
+</RCC>

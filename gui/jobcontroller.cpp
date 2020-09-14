@@ -52,7 +52,7 @@ JobView::JobView()
 	connect(open_output_action, SIGNAL(triggered(bool)), SLOT(openOutputFolder()));
 	sim_tools->addAction(open_output_action);
 
-    open_terminal_action = new QAction(QThemedIcon("utilities-terminal",QIcon(":/terminal.png")),"Terminal", this);
+    open_terminal_action = new QAction(QThemedIcon("utilities-terminal",QIcon(":/icons/utilities-terminal.png")),"Terminal", this);
 #ifdef Q_WS_MAC
     open_terminal_action->setEnabled(false);
 #endif
@@ -60,7 +60,7 @@ JobView::JobView()
 	sim_tools->addAction(open_terminal_action);
 
     sim_tools->addSeparator();
-    make_movie_action = new QAction(QThemedIcon("movie",QIcon(":/movie.png")),"Create movie",this);
+    make_movie_action = new QAction(QThemedIcon("movie",QIcon(":/icons/movie.png")),"Create movie",this);
     connect(make_movie_action, SIGNAL(triggered(bool)), SLOT(makeMovie()));
     sim_tools->addAction(make_movie_action);
 

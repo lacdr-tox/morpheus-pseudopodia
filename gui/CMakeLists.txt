@@ -187,10 +187,10 @@ ELSE()
 	LIST(JOIN EXAMPLES_FILES "\n" EXAMPLES_RC_FILES)
 ENDIF()
 
-configure_file(ext_files.rc.in ext_files.qrc @ONLY)
+configure_file(generated_files.qrc.in generated_files.qrc @ONLY)
 
 # compile the resources
-SET( RESOURCES link_data.qrc ${CMAKE_CURRENT_BINARY_DIR}/ext_files.qrc)
+SET( RESOURCES icons.qrc ${CMAKE_CURRENT_BINARY_DIR}/generated_files.qrc)
 IF(MORPHEUS_GRAPHVIZ STREQUAL "WebRenderer")
 	LIST(APPEND RESOURCES graphviz_renderer.qrc)
 	set_property(SOURCE about_model.cpp APPEND PROPERTY COMPILE_DEFINITIONS GRAPHVIZ_WEB_RENDERER=1 )
@@ -203,7 +203,7 @@ IF( WIN32 )
 		COMMAND windres.exe ARGS -i ${CMAKE_CURRENT_SOURCE_DIR}/${ICON_RESOURCE} -o ${CMAKE_CURRENT_BINARY_DIR}/icon.o
 	DEPENDS ${ICON_RESOURCE} )
 	LIST(APPEND SOURCES ${CMAKE_CURRENT_BINARY_DIR}/icon.o )
-ENDIF( )
+ENDIF()
 
 
 ### run moc and rcc over the headers and resource files

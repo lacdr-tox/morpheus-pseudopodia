@@ -26,10 +26,10 @@ JobQueueView::JobQueueView ( QWidget* parent) : QSplitter ( parent )
 	jobQueueTreeView->setColumnWidth(0,200);
 
 	jobQueueMenu = new QMenu();
-	jobQueueMenu->addAction(QThemedIcon("list-remove",QIcon(":/list-remove.png")),"Remove");
+	jobQueueMenu->addAction(QThemedIcon("list-remove",QIcon(":/icons:list-remove.png")),"Remove");
 	//jobQueueMenu->addAction(QThemedIcon("media-playback-start",QIcon(":/start.png")),"Continue");
-	jobQueueMenu->addAction(QThemedIcon("media-playback-stop",QIcon(":/stop.png")),"Stop");
-	jobQueueMenu->addAction(QThemedIcon("system-run",QIcon(":/debug.png")),"Debug");
+	jobQueueMenu->addAction(QThemedIcon("media-playback-stop",QIcon(":/icons/media-playback-stop.png")),"Stop");
+	jobQueueMenu->addAction(QThemedIcon("system-run",QIcon(":/icons/debug.png")),"Debug");
 	jobQueueMenu->addSeparator();
 
 	jobQueueGroupingMenu = new QMenu();

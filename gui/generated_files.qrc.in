@@ -6,6 +6,4 @@
 	<qresource prefix="/examples/">
   @EXAMPLES_RC_FILES@
 	</qresource>
-	
-	
 </RCC> 

@@ -240,23 +240,24 @@ QVariant ParamSweepModel::data ( const QModelIndex& index, int role ) const
 		if (index.column() == 1) {
 			ParamItem* item = indexToItem(index);
 			if ( item->attribute() ) {
+				qDebug() << "Using Icon fallback paths" << QIcon::fallbackSearchPaths();
 				if (item->type() == "UnsignedDouble") {
-					return QIcon(":/ufloat.png");
+					return QIcon(":/icons/ufloat.png");
 				}
-				else if (item->type() == "Double") {
-					return QIcon(":/float.png");
+				else if (item->type() == "Double" || item->type() == "MathExpression" ) {
+					return QIcon(":/icons/float.png");
 				}
 				else if (item->type() == "UnsignedInteger") {
-					return QIcon(":/uint.png");
+					return QIcon(":/icons/uint.png");
 				}
 				else if (item->type() == "Integer") {
-					return QIcon(":/int.png");
+					return QIcon(":/icons/int.png");
 				}
 				else if (item->type() == "String") {
-					return QIcon(":/string.png");
+					return QIcon(":/icons/string.png");
 				}
 				else {
-					return QIcon(":/unknown_type.png");
+					return QIcon(":/icons/unknown_type.png");
 				}
 			}
 		}

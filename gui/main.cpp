@@ -74,6 +74,8 @@ int main(int argc, char *argv[])
 
 	QStringList libpaths = QApplication::libraryPaths();
 	qDebug() << "Using library Path (should include Qt plugins dir): " << libpaths;
+	QIcon::setFallbackSearchPaths({{":/icons/"}});
+	qDebug() << "Using Icon fallback paths" << QIcon::fallbackSearchPaths();
 
 	QCoreApplication::setOrganizationName("Morpheus");
     QCoreApplication::setOrganizationDomain("morpheus.org");
