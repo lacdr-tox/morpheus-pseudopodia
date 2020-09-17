@@ -328,16 +328,33 @@ IF( "${MORPHEUS_OS}" STREQUAL "UNIX")
 	
 ELSEIF("${MORPHEUS_OS}" STREQUAL "APPLE")
 
-	IF(MORPHEUS_RELEASE_BUNLDE)	
-		set_target_properties(MorpheusGUI PROPERTIES
-			MACOSX_BUNDLE TRUE
-			MACOSX_FRAMEWORK_IDENTIFIER org.tu-dresdem.Morpheus.ExecutableTarget )
-	ENDIF()
+	# IF(MORPHEUS_RELEASE_BUNLDE)
+	## We create an installation suitible for homebrew deployment. 
+	## morpheus simulator is installed in a the bin folder,
+	## the GUI app is installed as MorpheusGUI in a bin/MorpheusGUI.app subfolder to avoid issues with resolving the morpheus executable.
+	## Thus, morpheus simulator can run from the command line, and the gui app can be integrated via "ln -s /usr/local/bin/MorpheusGUI.app /Applications/"
+	
+	## Info.plist
+	SET(MACOSX_GUI_COPYRIGHT "LICENSE.rtf")
+	SET(MACOSX_BUNDLE_VERSION "${PROJECT_VERSION}")
+	SET(MACOSX_BUNDLE_SHORT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+	configure_file(${PROJECT_SOURCE_DIR}/packaging/mac/Info.plist.in Info.plist)
+	
+	set_target_properties(MorpheusGUI PROPERTIES
+		MACOSX_BUNDLE TRUE
+		MACOSX_FRAMEWORK_IDENTIFIER org.tu-dresden.Morpheus.ExecutableTarget
+		MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_BINARY_DIR}/Info.plist
+		RUNTIME_OUTPUT_NAME MorpheusGUI)
+	set_property( TARGET MorpheusGUI 
+		APPEND PROPERTY 
+		RESOURCE icons/mac/Morpheus.icns ${PROJECT_SOURCE_DIR}/${MACOSX_GUI_COPYRIGHT})
 	INSTALL( TARGETS MorpheusGUI 
 	         RUNTIME DESTINATION bin
 	         BUNDLE DESTINATION bin
-	         RESOURCE DESTINATION share/morpheus
+	         RESOURCE DESTINATION bin/MorpheusGUI.app/Contents/Resources
 	)
+	# ENDIF()
+
 ELSEIF("${MORPHEUS_OS}" STREQUAL "WIN32")
 	INSTALL( TARGETS MorpheusGUI
 	         RUNTIME DESTINATION .

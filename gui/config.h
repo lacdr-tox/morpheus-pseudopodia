@@ -26,11 +26,11 @@
 #include <QtSql/QSqlTableModel>
 
 
-#if QT_VERSION < 0x040600
-    inline QIcon QThemedIcon(QString a, QIcon b) { return b; };
-#else
-    inline QIcon QThemedIcon(QString a, QIcon b) { return QIcon::fromTheme(a,b); };
-#endif
+// #if QT_VERSION < 0x040600
+//     inline QIcon QThemedIcon(QString a, QIcon b) { return b; };
+// #else
+//     inline QIcon QThemedIcon(QString a, QIcon b) { return QIcon::fromTheme(a,b); };
+// #endif
 
 #include "morpheusML/morpheus_model.h"
 #include "network_access.h"

@@ -6,15 +6,14 @@
 	<string>NSApplication</string>
 	<key>NSHighResolutionCapable</key>
 	<string>True</string>
-
 	<key>CFBundleExecutable</key>
-	<string>Morpheus</string>
+	<string>MorpheusGUI</string>
 	<key>CFBundleVersion</key>
 	<string>@MACOSX_BUNDLE_VERSION@</string>
 	<key>CFBundleIdentifier</key>
 	<string>de.tu-dresden.Morpheus</string>
 	<key>CFBundleName</key>
-	<string>Morpheus</string>
+	<string>MorpheusGUI</string>
 	<key>CFBundleIconFile</key>
 	<string>Morpheus.icns</string>
 	<key>CFBundlePackageType</key>
@@ -23,9 +22,9 @@
 	<string>@MACOSX_BUNDLE_SHORT_VERSION@</string>
 	<key>CFBundleSignature</key>
 	<string>ttxt</string>
-	<key>CFBundleDocumentTypes</key>
 	<key>NSHumanReadableCopyright</key>
 	<string>@MACOSX_GUI_COPYRIGHT@</string>
+	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleTypeMIMETypes</key>

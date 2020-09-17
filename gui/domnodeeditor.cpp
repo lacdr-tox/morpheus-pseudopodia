@@ -50,7 +50,7 @@ domNodeEditor::domNodeEditor(QWidget* parent) : QWidget(parent)
     tableMenu = new QMenu();
 	sweepAttribAction = new QAction("ParamSweep",tableMenu);
 	sweepAttribAction->setCheckable(true);
-	sweepAttribAction->setIcon(QThemedIcon("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)));
+	sweepAttribAction->setIcon( QIcon::fromTheme("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)));
 	tableMenu->addAction(sweepAttribAction);
 	QObject::connect(tableMenu, SIGNAL(triggered(QAction*)), this, SLOT(doContextMenuAction(QAction*)));
 
@@ -213,13 +213,13 @@ void domNodeEditor::setAttributeEditor(nodeController* node)
 		
 		QTableWidgetItem *tmp_header = new QTableWidgetItem(attrName);
 		if (model->isSweeperAttribute(tmp_attr))
-			tmp_header->setIcon(QThemedIcon("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)));
+			tmp_header->setIcon( QIcon::fromTheme("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)));
 		map_rowToAttribute[row] = tmp_attr;
 
 		tmp_item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsEditable | Qt::ItemIsSelectable);
 
 // 		tmp_header->setBackgroundColor(QStyle:: QColor(239, 235, 231, 255));
-		tmp_header->setBackgroundColor(this->palette().alternateBase().color());
+		tmp_header->setBackgroundColor(attribute_editor->palette().alternateBase().color());
 		
 		if (tmp_attr->isRequired()) {
 			tmp_header->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
@@ -328,7 +328,7 @@ void domNodeEditor::doContextMenuAction(QAction* action) {
         AbstractAttribute *attr = map_rowToAttribute[table_popup_row];
         if (sweepAttribAction->isChecked()) {
             model->addSweeperAttribute(attr);
-            attribute_editor->item(table_popup_row,0)->setIcon(QThemedIcon("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)));
+            attribute_editor->item(table_popup_row,0)->setIcon( QIcon::fromTheme("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)));
         }
         else {
             model->removeSweeperAttribute(attr);

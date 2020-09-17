@@ -99,7 +99,6 @@ void domNodeViewer::createLayout()
 
 
     splitter = new QSplitter(this);
-	
 	QWidget *leftWid = new QWidget(this);
 	leftWid->setLayout(new QVBoxLayout(this));
 	leftWid->layout()->setContentsMargins(0, 10, 4, 0);
@@ -109,6 +108,7 @@ void domNodeViewer::createLayout()
 	/// TOOLBAR /// 
 	
 	auto model_toolbar = new QToolBar("View",this);
+	model_toolbar->setIconSize(QSize(24,24));
 	// Add Button
 	model_tree_add_action = new QAction(QIcon::fromTheme("list-add"),"add",this);
 	auto addMenu = new QMenu(this);
@@ -193,7 +193,7 @@ void domNodeViewer::createLayout()
 	model_tree_filter->setFilterTags(QStringList() << "#untagged");
 	
 	// Filter Button
-	model_tree_filter_action = new QAction(QThemedIcon("view-filter",QIcon(":/view_filter.png")),"tags",this);
+	model_tree_filter_action = new QAction(QIcon::fromTheme("view-filter",QIcon(":/icons/view_filter.png")),"tags",this);
 	model_tree_filter_action->setCheckable(true);
 	connect(model_tree_filter_action, &QAction::toggled, [this](bool state) {
 		disconnect(model_tree_filter, nullptr, this, SLOT(selectInsertedItem(const QModelIndex & , int , int )));
@@ -230,6 +230,8 @@ void domNodeViewer::createLayout()
 	
     splitter->addWidget(leftWid);
     splitter->addWidget(rightWid);
+	splitter->setCollapsible(0,false);
+	splitter->setCollapsible(1,false);
 
     QHBoxLayout *hl = new QHBoxLayout(this);
     hl->addWidget(splitter);
@@ -248,20 +250,20 @@ void domNodeViewer::createLayout()
 void domNodeViewer::createMenu()
 {
     treeMenu = new QMenu();
-    addNodeAction = treeMenu->addAction(QThemedIcon("list-add",QIcon(":/list-add")),"Add");
-    copyNodeAction = treeMenu->addAction(QThemedIcon("edit-copy",QIcon(":/edit-copy.png")),"Copy");
-	copyXPathAction = treeMenu->addAction(QThemedIcon("edit-copy",QIcon(":/edit-copy.png")),"Copy XPath");
-    pasteNodeAction = treeMenu->addAction(QThemedIcon("edit-paste",QIcon(":/edit-paste.png")),"Paste");
+    addNodeAction = treeMenu->addAction(QIcon::fromTheme("list-add",QIcon(":/icons/list-add")),"Add");
+    copyNodeAction = treeMenu->addAction(QIcon::fromTheme("edit-copy",QIcon(":/icons/edit-copy.png")),"Copy");
+	copyXPathAction = treeMenu->addAction(QIcon::fromTheme("edit-copy",QIcon(":/icons/edit-copy.png")),"Copy XPath");
+    pasteNodeAction = treeMenu->addAction(QIcon::fromTheme("edit-paste",QIcon(":/icons/edit-paste.png")),"Paste");
     pasteNodeAction->setMenu(new QMenu()); // Placeholder for the submenu of paste codes ...
-    cutNodeAction = treeMenu->addAction(QThemedIcon("list-cut",QIcon(":/edit-cut.png")),"Cut");
-    removeNodeAction = treeMenu->addAction(QThemedIcon("list-remove",QIcon(":/list-remove")),"Remove");
+    cutNodeAction = treeMenu->addAction(QIcon::fromTheme("list-cut",QIcon(":/icons/edit-cut.png")),"Cut");
+    removeNodeAction = treeMenu->addAction(QIcon::fromTheme("list-remove",QIcon(":/icons/list-remove")),"Remove");
 
     treeMenu->addSeparator();
 
-    disableNodeAction = treeMenu->addAction(QThemedIcon("media-playback-pause",style()->standardIcon(QStyle::SP_MediaPause) ),"Disable");
+    disableNodeAction = treeMenu->addAction(QIcon::fromTheme("media-playback-pause",style()->standardIcon(QStyle::SP_MediaPause) ),"Disable");
     disableNodeAction->setCheckable(true);
 
-    sweepNodeAction = treeMenu->addAction(QThemedIcon("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)),"ParamSweep");
+    sweepNodeAction = treeMenu->addAction(QIcon::fromTheme("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)),"ParamSweep");
     sweepNodeAction->setCheckable(true);
 
     QObject::connect(treeMenu, SIGNAL(triggered(QAction*)), this, SLOT(doContextMenuAction(QAction*)));

@@ -18,6 +18,7 @@ int main(int argc, char *argv[])
 	// Properly initialize X11 multithreading. Fixes problems when x-forwarding the gui to a remote computer.
 	QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 	QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
+	QGuiApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 	
 	// Only allow a single instance of Morpheus
 #ifdef WIN32
@@ -76,6 +77,14 @@ int main(int argc, char *argv[])
 	qDebug() << "Using library Path (should include Qt plugins dir): " << libpaths;
 	QIcon::setFallbackSearchPaths({{":/icons/"}});
 	qDebug() << "Using Icon fallback paths" << QIcon::fallbackSearchPaths();
+
+	auto os = QSysInfo::productType();
+	if (os=="osx" || os=="macOS" || os=="ios" || os=="windows" || os=="winrt" ) {
+		if (a.palette("QWidget").color(QPalette::Base).lightness()>127)
+			QIcon::setThemeName("McMojave");
+		else 
+			QIcon::setThemeName("McMojave-dark");
+	}
 
 	QCoreApplication::setOrganizationName("Morpheus");
     QCoreApplication::setOrganizationDomain("morpheus.org");

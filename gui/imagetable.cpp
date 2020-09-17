@@ -25,7 +25,7 @@ ImageTableDialog::ImageTableDialog(QString currdir, QWidget* parent )
     l_columns_info = new QLabel(dialog);
     l_columns_info->setText("0 = best guess");
 
-    bt_filename = new QPushButton(QThemedIcon("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), "Browse...", dialog);
+    bt_filename = new QPushButton(QIcon::fromTheme("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), "Browse...", dialog);
 
     sb_columns = new QSpinBox(dialog);
     sb_columns->setMinimum(0);

@@ -49,7 +49,7 @@
 		<file alias="folder.png">icons/fallback/16x16/folder.png</file>
 		<file alias="mail-attach.png">icons/fallback/16x16/mail-attach.png</file>
 		<file alias="edit-copy.png">icons/fallback/16x16/edit-copy.png</file>
-		<file alias="list-remove.pn">icons/fallback/16x16/list-remove.png</file>
+		<file alias="list-remove.png">icons/fallback/16x16/list-remove.png</file>
 		<file alias="media-playback-start.png">icons/fallback/22x22/start.png</file>
 		<file alias="media-playback-stop.png">icons/fallback/22x22/stop.png</file>
 		<file alias="process-completed.svg">icons/fallback/scalable/process-completed.svg</file>
@@ -58,70 +58,110 @@
 		<file alias="process-working.svg">icons/fallback/scalable/process-working.svg</file>
 	</qresource>
 	<!-- 		MORPHEUS THEME ICONS -->
-	<qresource prefix="/themes/McMojave">
+	<qresource>
 <!-- light -->
 		<file>icons/McMojave/index.theme</file>
-		<file alias="status/symbolic/process-error-symbolic.svg">icons/McMojave/status/symbolic/process-error-symbolic.svg</file>
-		<file alias="status/symbolic/process-stopped-symbolic.svg">icons/McMojave/status/symbolic/process-stop-symbolic.svg</file>
-		<file alias="status/symbolic/process-working-symbolic.svg">icons/McMojave/status/symbolic/process-working-symbolic.svg</file>
-		<file alias="status/symbolic/process-pending-symbolic.svg">icons/McMojave/status/symbolic/tools-timer-symbolic.svg</file>
-		<file alias="status/symbolic/process-completed-symbolic.svg">icons/McMojave/status/symbolic/process-completed-symbolic.svg</file>
-		<file alias="places/22/folder.svg">icons/McMojave/places/22/folder.svg</file>
-		<file alias="actions/16/edit-cut.svg">icons/McMojave/actions/16/edit-cut.svg</file>
-		<file alias="actions/16/view-filter.svg">icons/McMojave/actions/16/view-filter.svg</file>
-		<file alias="actions/16/media-playback-stop.svg">icons/McMojave/actions/16/media-playback-stop.svg</file>
-		<file alias="actions/16/edit-copy.svg">icons/McMojave/actions/16/edit-copy.svg</file>
-		<file alias="actions/16/go-previous.svg">icons/McMojave/actions/16/go-previous.svg</file>
-		<file alias="actions/16/document-import.svg">icons/McMojave/actions/16/document-import.svg</file>
-		<file alias="actions/16/application-exit.svg">icons/McMojave/actions/16/application-exit.svg</file>
-		<file alias="actions/16/go-next.svg">icons/McMojave/actions/16/go-next.svg</file>
-		<file alias="actions/16/list-add.svg">icons/McMojave/actions/16/list-add.svg</file>
-		<file alias="actions/16/document-revert.svg">icons/McMojave/actions/16/document-revert.svg</file>
-		<file alias="actions/16/edit-delete.svg">icons/McMojave/actions/16/edit-delete.svg</file>
-		<file alias="actions/16/list-remove.svg">icons/McMojave/actions/16/list-remove.svg</file>
-		<file alias="actions/16/mail-attachment.svg">icons/McMojave/actions/16/mail-attachment.svg</file>
-		<file alias="actions/16/media-playback-start.svg">icons/McMojave/actions/16/media-playback-start.svg</file>
-		<file alias="actions/16/settings.svg">icons/McMojave/actions/16/settings.svg</file>
-		<file alias="actions/16/document-close.svg">icons/McMojave/actions/16/document-close.svg</file>
-		<file alias="actions/16/media-seek-forward.svg">icons/McMojave/actions/16/media-seek-forward.svg</file>
-		<file alias="actions/16/configure.svg">icons/McMojave/actions/16/configure.svg</file>
-		<file alias="actions/16/edit-paste.svg">icons/McMojave/actions/16/edit-paste.svg</file>
-		<file alias="actions/16/preferences-other.svg">icons/McMojave/actions/16/preferences-other.svg</file>
-		<file alias="apps/symbolic/utilities-terminal.svg">icons/McMojave/apps/symbolic/utilities-terminal.svg</file>
-		<file alias="mimes/48/text-x-generic.svg">icons/McMojave/mimes/48/text-x-generic.svg</file>
-		<file alias="mimes/48/text-xml.svg">icons/McMojave/mimes/48/text-xml.svg</file>
+		<file>icons/McMojave/status/symbolic/dialog-error-symbolic.svg</file>
+		<file>icons/McMojave/status/symbolic/dialog-information-symbolic.svg</file>
+		<file>icons/McMojave/status/symbolic/dialog-question-symbolic.svg</file>
+		<file>icons/McMojave/status/symbolic/dialog-warning-symbolic.svg</file>
+		<file alias="icons/McMojave/status/symbolic/process-synchronizing-symbolic.svg">icons/McMojave/status/symbolic/emblem-synchronizing-symbolic.svg</file>
+		<file>icons/McMojave/status/symbolic/process-error-symbolic.svg</file>
+		<file>icons/McMojave/status/symbolic/process-stop-symbolic.svg</file>
+		<file>icons/McMojave/status/symbolic/process-working-symbolic.svg</file>
+		<file alias="icons/McMojave/status/symbolic/process-pending-symbolic.svg">icons/McMojave/status/symbolic/tools-timer-symbolic.svg</file>
+		<file>icons/McMojave/status/symbolic/process-completed-symbolic.svg</file>
+		<file>icons/McMojave/actions/16/application-exit.svg</file>
+		<file>icons/McMojave/actions/16/configure.svg</file>
+		<file>icons/McMojave/actions/16/edit-copy.svg</file>
+		<file>icons/McMojave/actions/16/edit-cut.svg</file>
+		<file>icons/McMojave/actions/16/edit-delete.svg</file>
+		<file>icons/McMojave/actions/16/edit-paste.svg</file>
+		<file>icons/McMojave/actions/16/dialog-apply.svg</file>
+		<file>icons/McMojave/actions/16/dialog-cancel.svg</file>
+		<file>icons/McMojave/actions/16/dialog-close.svg</file>
+		<file>icons/McMojave/actions/16/document-close.svg</file>
+		<file>icons/McMojave/actions/16/document-import.svg</file>
+		<file>icons/McMojave/actions/16/document-new.svg</file>
+		<file>icons/McMojave/actions/16/document-open.svg</file>
+		<file>icons/McMojave/actions/16/document-revert.svg</file>
+		<file>icons/McMojave/actions/16/document-save.svg</file>
+		<file>icons/McMojave/actions/16/document-save-as.svg</file>
+		<file>icons/McMojave/actions/16/go-next.svg</file>
+		<file>icons/McMojave/actions/16/go-previous.svg</file>
+		<file>icons/McMojave/actions/16/list-add.svg</file>
+		<file>icons/McMojave/actions/16/list-remove.svg</file>
+		<file>icons/McMojave/actions/16/mail-attachment.svg</file>
+		<file>icons/McMojave/actions/16/media-playback-pause.svg</file>
+		<file>icons/McMojave/actions/16/media-playback-start.svg</file>
+		<file>icons/McMojave/actions/16/media-playback-stop.svg</file>
+		<file>icons/McMojave/actions/16/media-seek-forward.svg</file>
+		<file>icons/McMojave/actions/16/preferences-other.svg</file>
+		<file>icons/McMojave/actions/16/settings.svg</file>
+		<file>icons/McMojave/actions/16/view-filter.svg</file>
+		<file>icons/McMojave/actions/16/view-sort-ascending.svg</file>
+		<file>icons/McMojave/actions/symbolic/document-open-symbolic.svg</file>
+		<file>icons/McMojave/actions/symbolic/document-save-symbolic.svg</file>
+		<file>icons/McMojave/actions/symbolic/media-playback-pause-symbolic.svg</file>
+		<file>icons/McMojave/actions/symbolic/media-playback-start-symbolic.svg</file>
+		<file>icons/McMojave/actions/symbolic/media-playback-stop-symbolic.svg</file>
+		<file>icons/McMojave/places/22/folder.svg</file>
+		<file>icons/McMojave/apps/symbolic/system-run.svg</file>
+		<file>icons/McMojave/apps/symbolic/utilities-terminal.svg</file>
+		<file>icons/McMojave/mimes/48/text-x-generic.svg</file>
+		<file>icons/McMojave/mimes/48/text-xml.svg</file>
 	</qresource>
 <!-- dark -->
-	<qresource prefix="/themes/McMojave-dark">
-		<file alias="index.theme">icons/McMojave-dark/index.theme</file>
-		<file alias="status/symbolic/process-error-symbolic.svg">icons/McMojave-dark/status/symbolic/process-error-symbolic.svg</file>
-		<file alias="status/symbolic/process-stopped-symbolic.svg">icons/McMojave-dark/status/symbolic/process-stop-symbolic.svg</file>
-		<file alias="status/symbolic/process-working-symbolic.svg">icons/McMojave-dark/status/symbolic/process-working-symbolic.svg</file>
-		<file alias="status/symbolic/process-pending-symbolic.svg">icons/McMojave-dark/status/symbolic/tools-timer-symbolic.svg</file>
-		<file alias="status/symbolic/process-completed-symbolic.svg">icons/McMojave-dark/status/symbolic/process-completed-symbolic.svg</file>
-		<file alias="places/22/folder.svg">icons/McMojave-dark/places/22/folder.svg</file>
-		<file alias="actions/16/edit-cut.svg">icons/McMojave-dark/actions/16/edit-cut.svg</file>
-		<file alias="actions/16/view-filter.svg">icons/McMojave-dark/actions/16/view-filter.svg</file>
-		<file alias="actions/16/media-playback-stop.svg">icons/McMojave-dark/actions/16/media-playback-stop.svg</file>
-		<file alias="actions/16/edit-copy.svg">icons/McMojave-dark/actions/16/edit-copy.svg</file>
-		<file alias="actions/16/go-previous.svg">icons/McMojave-dark/actions/16/go-previous.svg</file>
-		<file alias="actions/16/document-import.svg">icons/McMojave-dark/actions/16/document-import.svg</file>
-		<file alias="actions/16/application-exit.svg">icons/McMojave-dark/actions/16/application-exit.svg</file>
-		<file alias="actions/16/go-next.svg">icons/McMojave-dark/actions/16/go-next.svg</file>
-		<file alias="actions/16/list-add.svg">icons/McMojave-dark/actions/16/list-add.svg</file>
-		<file alias="actions/16/document-revert.svg">icons/McMojave-dark/actions/16/document-revert.svg</file>
-		<file alias="actions/16/edit-delete.svg">icons/McMojave-dark/actions/16/edit-delete.svg</file>
-		<file alias="actions/16/list-remove.svg">icons/McMojave-dark/actions/16/list-remove.svg</file>
-		<file alias="actions/16/mail-attachment.svg">icons/McMojave-dark/actions/16/mail-attachment.svg</file>
-		<file alias="actions/16/media-playback-start.svg">icons/McMojave-dark/actions/16/media-playback-start.svg</file>
-		<file alias="actions/16/settings.svg">icons/McMojave-dark/actions/16/settings.svg</file>
-		<file alias="actions/16/document-close.svg">icons/McMojave-dark/actions/16/document-close.svg</file>
-		<file alias="actions/16/media-seek-forward.svg">icons/McMojave-dark/actions/16/media-seek-forward.svg</file>
-		<file alias="actions/16/configure.svg">icons/McMojave-dark/actions/16/configure.svg</file>
-		<file alias="actions/16/edit-paste.svg">icons/McMojave-dark/actions/16/edit-paste.svg</file>
-		<file alias="actions/16/preferences-other.svg">icons/McMojave-dark/actions/16/preferences-other.svg</file>
-		<file alias="apps/symbolic/utilities-terminal.svg">icons/McMojave-dark/apps/symbolic/utilities-terminal.svg</file>
-		<file alias="mimes/48/text-x-generic.svg">icons/McMojave-dark/mimes/48/text-x-generic.svg</file>
-		<file alias="mimes/48/text-xml.svg">icons/McMojave-dark/mimes/48/text-xml.svg</file>
+	<qresource>
+		<file>icons/McMojave-dark/index.theme</file>
+		<file>icons/McMojave-dark/status/symbolic/dialog-error-symbolic.svg</file>
+		<file>icons/McMojave-dark/status/symbolic/dialog-information-symbolic.svg</file>
+		<file>icons/McMojave-dark/status/symbolic/dialog-question-symbolic.svg</file>
+		<file>icons/McMojave-dark/status/symbolic/dialog-warning-symbolic.svg</file>
+		<file alias="icons/McMojave/status/symbolic/process-synchronizing-symbolic.svg">icons/McMojave/status/symbolic/emblem-synchronizing-symbolic.svg</file>
+		<file>icons/McMojave-dark/status/symbolic/process-error-symbolic.svg</file>
+		<file>icons/McMojave-dark/status/symbolic/process-stop-symbolic.svg</file>
+		<file>icons/McMojave-dark/status/symbolic/process-working-symbolic.svg</file>
+		<file alias="icons/McMojave/status/symbolic/process-pending-symbolic.svg">icons/McMojave/status/symbolic/tools-timer-symbolic.svg</file>
+		<file>icons/McMojave-dark/status/symbolic/process-completed-symbolic.svg</file>
+		<file>icons/McMojave-dark/actions/16/application-exit.svg</file>
+		<file>icons/McMojave-dark/actions/16/configure.svg</file>
+		<file>icons/McMojave-dark/actions/16/edit-copy.svg</file>
+		<file>icons/McMojave-dark/actions/16/edit-cut.svg</file>
+		<file>icons/McMojave-dark/actions/16/edit-delete.svg</file>
+		<file>icons/McMojave-dark/actions/16/edit-paste.svg</file>
+		<file>icons/McMojave-dark/actions/16/dialog-apply.svg</file>
+		<file>icons/McMojave-dark/actions/16/dialog-cancel.svg</file>
+		<file>icons/McMojave-dark/actions/16/dialog-close.svg</file>
+		<file>icons/McMojave-dark/actions/16/document-close.svg</file>
+		<file>icons/McMojave-dark/actions/16/document-import.svg</file>
+		<file>icons/McMojave-dark/actions/16/document-new.svg</file>
+		<file>icons/McMojave-dark/actions/16/document-open.svg</file>
+		<file>icons/McMojave-dark/actions/16/document-revert.svg</file>
+		<file>icons/McMojave-dark/actions/16/document-save.svg</file>
+		<file>icons/McMojave-dark/actions/16/document-save-as.svg</file>
+		<file>icons/McMojave-dark/actions/16/go-next.svg</file>
+		<file>icons/McMojave-dark/actions/16/go-previous.svg</file>
+		<file>icons/McMojave-dark/actions/16/list-add.svg</file>
+		<file>icons/McMojave-dark/actions/16/list-remove.svg</file>
+		<file>icons/McMojave-dark/actions/16/mail-attachment.svg</file>
+		<file>icons/McMojave-dark/actions/16/media-playback-pause.svg</file>
+		<file>icons/McMojave-dark/actions/16/media-playback-start.svg</file>
+		<file>icons/McMojave-dark/actions/16/media-playback-stop.svg</file>
+		<file>icons/McMojave-dark/actions/16/media-seek-forward.svg</file>
+		<file>icons/McMojave-dark/actions/16/preferences-other.svg</file>
+		<file>icons/McMojave-dark/actions/16/settings.svg</file>
+		<file>icons/McMojave-dark/actions/16/view-filter.svg</file>
+		<file>icons/McMojave-dark/actions/16/view-sort-ascending.svg</file>
+		<file>icons/McMojave-dark/actions/symbolic/document-open-symbolic.svg</file>
+		<file>icons/McMojave-dark/actions/symbolic/document-save-symbolic.svg</file>
+		<file>icons/McMojave-dark/actions/symbolic/media-playback-pause-symbolic.svg</file>
+		<file>icons/McMojave-dark/actions/symbolic/media-playback-start-symbolic.svg</file>
+		<file>icons/McMojave-dark/actions/symbolic/media-playback-stop-symbolic.svg</file>
+		<file>icons/McMojave-dark/places/22/folder.svg</file>
+		<file>icons/McMojave-dark/apps/symbolic/system-run.svg</file>
+		<file>icons/McMojave-dark/apps/symbolic/utilities-terminal.svg</file>
+		<file>icons/McMojave-dark/mimes/48/text-x-generic.svg</file>
+		<file>icons/McMojave-dark/mimes/48/text-xml.svg</file>
 	</qresource>
 </RCC>

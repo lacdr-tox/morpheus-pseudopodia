@@ -26,10 +26,10 @@ JobQueueView::JobQueueView ( QWidget* parent) : QSplitter ( parent )
 	jobQueueTreeView->setColumnWidth(0,200);
 
 	jobQueueMenu = new QMenu();
-	jobQueueMenu->addAction(QThemedIcon("list-remove",QIcon(":/icons:list-remove.png")),"Remove");
+	jobQueueMenu->addAction( QIcon::fromTheme("list-remove",QIcon(":/icons:list-remove.png")),"Remove");
 	//jobQueueMenu->addAction(QThemedIcon("media-playback-start",QIcon(":/start.png")),"Continue");
-	jobQueueMenu->addAction(QThemedIcon("media-playback-stop",QIcon(":/icons/media-playback-stop.png")),"Stop");
-	jobQueueMenu->addAction(QThemedIcon("system-run",QIcon(":/icons/debug.png")),"Debug");
+	jobQueueMenu->addAction( QIcon::fromTheme("media-playback-stop",QIcon(":/icons/media-playback-stop.png")),"Stop");
+	jobQueueMenu->addAction( QIcon::fromTheme("system-run",QIcon(":/icons/debug.png")),"Debug");
 	jobQueueMenu->addSeparator();
 
 	jobQueueGroupingMenu = new QMenu();
@@ -86,7 +86,7 @@ void JobQueueView::selectStatus(QListWidgetItem * message_item) {
 
 void JobQueueView::addCriticalMessage ( QString message, int job_id )
 {
-	QListWidgetItem* item = new QListWidgetItem(QThemedIcon("dialog-error",QIcon(":/stop.png")),message);
+	QListWidgetItem* item = new QListWidgetItem( QIcon::fromTheme("dialog-error-symbolic",QIcon::fromTheme("dialog-error")),message);
 	item->setData(Qt::UserRole,job_id);
 	jobQueueStatusText->addItem(item);
 	if (jobQueueStatusText->count()> maxMessageItems)

@@ -51,5 +51,6 @@ private:
     bool is_range;
 	QString pattern;
     void setValidator(); /*!< Sets the matching validator on the editor-object. */
+	mutable QPalette palette_invalid, palette_normal;
 };
 #endif // ATTRCONTROLLER_H

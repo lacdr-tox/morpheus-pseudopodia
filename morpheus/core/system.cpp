@@ -111,6 +111,8 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 				getXMLAttribute(xNode,"symbol", eqn->symbol_name); 
 				vec_evals.push_back(eqn);
 			}
+			else if (xml_tag_name == "Annotation") {
+			}
 			else {
 				p = PluginFactory::CreateInstance(xml_tag_name);			
 				if (! p.get()) 
