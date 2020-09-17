@@ -137,7 +137,7 @@ QVariant JobViewModel::data( const QModelIndex & index, int role ) const {
 						r = QVariant(item->name);
 			}
 			if (role == Qt::DecorationRole)
-				r =  QVariant(QThemedIcon("folder",QIcon::fromTheme("folder")));
+				r =  QVariant(QIcon::fromTheme("folder", QIcon(":/icons/folder.png")));
 		}
 		if (index.column() == 1) {
 			if (role == Qt::DisplayRole && current_grouping == SWEEP) {

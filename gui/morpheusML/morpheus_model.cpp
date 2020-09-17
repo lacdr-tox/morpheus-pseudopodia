@@ -114,7 +114,7 @@ QAbstractItemModel(parent), xml_file(model)
 	if (!edits.empty()) 
 		QMessageBox::warning(qApp->activeWindow(),
 			"Auto Fixes",
-			QString("Your Morpheus model was upgraded to the current version %1.\nSee the FixBoard for details.\nModel elements that could not be converted were removed.").arg(morpheus_ml_version) );
+			QString("Your Morpheus model was upgraded to the current version %1.\nSee the FixBoard for details.").arg(morpheus_ml_version) );
 }
 
 MorphModel::~MorphModel()
@@ -999,13 +999,13 @@ QVariant MorphModel::data(const QModelIndex &index, int role) const {
 	else if (role==Qt::DecorationRole && index.column() == 0) {
 		nodeController * node = indexToItem(index);
 		if ( node->isDisabled() /*&& ! node->isInheritedDisabled()*/) {
-			return QThemedIcon("media-pause",QApplication::style()->standardIcon(QStyle::SP_MediaPause));
+			return QIcon::fromTheme("media-pause",QApplication::style()->standardIcon(QStyle::SP_MediaPause));
 		}
 		if ( isSweeperAttribute( node->textAttribute())  ) {
-			return QThemedIcon("media-seek-forward",QApplication::style()->standardIcon(QStyle::SP_MediaSeekForward));
+			return QIcon::fromTheme("media-seek-forward",QApplication::style()->standardIcon(QStyle::SP_MediaSeekForward));
 		}
 		if ( node->attribute("value") && isSweeperAttribute( node->attribute("value")) ) {
-			return QThemedIcon("media-seek-forward",QApplication::style()->standardIcon(QStyle::SP_MediaSeekForward));
+			return QIcon::fromTheme("media-seek-forward",QApplication::style()->standardIcon(QStyle::SP_MediaSeekForward));
 		}
 	}
 	else if (role == NodeRole) {

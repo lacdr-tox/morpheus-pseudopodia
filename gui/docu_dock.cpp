@@ -31,11 +31,11 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	
 	auto tb = new QToolBar();
 
-	b_back = new QAction(QThemedIcon("go-previous", style()->standardIcon(QStyle::SP_ArrowLeft)),"Back",this);
+	b_back = new QAction( QIcon::fromTheme("go-previous", style()->standardIcon(QStyle::SP_ArrowLeft)),"Back",this);
 	tb->addAction(b_back);
 	b_back->setEnabled(false);
 
-	b_forward = new QAction(QThemedIcon("go-next", style()->standardIcon(QStyle::SP_ArrowRight)),"Fwd",this);
+	b_forward = new QAction( QIcon::fromTheme("go-next", style()->standardIcon(QStyle::SP_ArrowRight)),"Fwd",this);
 	tb->addAction(b_forward);
 	b_forward->setEnabled(false);
 	

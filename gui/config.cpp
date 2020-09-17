@@ -663,7 +663,7 @@ QHelpEngine* config::getHelpEngine(bool lock)
 			doc_path <<  QApplication::applicationDirPath()
 						<< QApplication::applicationDirPath() + "/appdoc"
 						<< QApplication::applicationDirPath() + "/../share/morpheus"
-						<< QApplication::applicationDirPath() + "/../../Resources/doc"; // for Mac app bundle
+						<< QApplication::applicationDirPath() + "/../Resources"; // for Mac app bundle
 			QString help_path;
 			for(const QString& p:  doc_path) {
 	// 			qDebug() << "Testing "  << p + "morpheus.qhc";

@@ -169,7 +169,7 @@ void MainWindow::createMenuBar()
     menubar = new QMenuBar();
     QMenu *fileMenu = menubar->addMenu(tr("&File"));
 
-    QAction *fileNew = new QAction(QThemedIcon("document-new", style()->standardIcon(QStyle::SP_FileDialogNewFolder)), tr("New"), this);
+    QAction *fileNew = new QAction(QIcon::fromTheme("document-new", style()->standardIcon(QStyle::SP_FileDialogNewFolder)), tr("New"), this);
     fileNew->setShortcut(QKeySequence::New);
     fileNew->setStatusTip(tr("Create a new model-file"));
 	connect(fileNew, &QAction::triggered, [](){config::createModel();} );
@@ -177,13 +177,13 @@ void MainWindow::createMenuBar()
 
     fileMenu->addSeparator();
 
-    QAction *fileOpen = new QAction( QThemedIcon("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), tr("Open..."), this);
+    QAction *fileOpen = new QAction( QIcon::fromTheme("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), tr("Open..."), this);
     fileOpen->setShortcut(QKeySequence::Open);
     fileOpen->setStatusTip(tr("Open existing model from file"));
 	connect(fileOpen, &QAction::triggered, [=](){loadXMLFile();} );
     fileMenu->addAction(fileOpen);
 
-    QAction *fileReload= new QAction(QThemedIcon("document-revert",QIcon(":/document-revert.png")),tr("Reload"), this);
+    QAction *fileReload= new QAction(QIcon::fromTheme("document-revert",QIcon(":/icons/document-revert.png")),tr("Reload"), this);
     fileReload->setShortcut(QKeySequence(Qt::Key_F5));
     fileReload->setStatusTip(tr("Reload model from last file"));
 	connect(fileReload, &QAction::triggered, [=](){
@@ -197,7 +197,7 @@ void MainWindow::createMenuBar()
     fileMenu->addAction(fileReload);
 
 	if (SBMLImporter::supported) {
-		QAction *importSBML= new QAction(QThemedIcon("document-import",QIcon(":/document-import.png")),tr("Import SBML"), this);
+		QAction *importSBML= new QAction(QIcon::fromTheme("document-import",QIcon(":/document-import.png")),tr("Import SBML"), this);
 		importSBML->setStatusTip(tr("Import an SBML model into a new Celltype of the current model"));
 		connect(importSBML, &QAction::triggered, [=](){
 			if (current_model) {
@@ -213,7 +213,7 @@ void MainWindow::createMenuBar()
 
     fileMenu->addSeparator();
 
-    QAction *fileSaveAs = new QAction(QThemedIcon("document-save-as",style()->standardIcon(QStyle::SP_DialogSaveButton) ), tr("Save As..."), this);
+    QAction *fileSaveAs = new QAction(QIcon::fromTheme("document-save-as",style()->standardIcon(QStyle::SP_DialogSaveButton) ), tr("Save As..."), this);
     fileSaveAs->setShortcut(QKeySequence::SaveAs);
     fileSaveAs->setStatusTip(tr("Save model to file"));
 	connect(fileSaveAs, &QAction::triggered, [=](){
@@ -230,7 +230,7 @@ void MainWindow::createMenuBar()
 	});
     fileMenu->addAction(fileSaveAs);
 
-    QAction *fileSave = new QAction(QThemedIcon("document-save",style()->standardIcon(QStyle::SP_DialogSaveButton) ), tr("Save"), this);
+    QAction *fileSave = new QAction(QIcon::fromTheme("document-save",style()->standardIcon(QStyle::SP_DialogSaveButton) ), tr("Save"), this);
     fileSave->setShortcut(QKeySequence::Save);
     fileSave->setStatusTip(tr("Save model to file"));
 	connect(fileSave, &QAction::triggered, [=](){
@@ -272,27 +272,27 @@ void MainWindow::createMenuBar()
 
     fileMenu->addSeparator();
 
-    QAction *act_settings = fileMenu->addAction(QThemedIcon("document-properties", QIcon(":/settings.png")), "Settings");
+    QAction *act_settings = fileMenu->addAction(QIcon::hasThemeIcon("preferences-other") ? QIcon::fromTheme("preferences-other") : QIcon::fromTheme("configure", QIcon(":/settings.png")), "Settings");
     act_settings->setShortcut(QKeySequence::Preferences);
     act_settings->setStatusTip(tr("Open settings dialog"));
 	connect(act_settings, &QAction::triggered, [&](){settingsDialog settingsDia; settingsDia.exec();} );
 
     fileMenu->addSeparator();
     
-    QAction *fileClose = fileMenu->addAction(QThemedIcon("document-close", QIcon(":/document-close.png")), tr("Close"));
+    QAction *fileClose = fileMenu->addAction( QIcon::fromTheme("document-close", QIcon(":/document-close.png")), tr("Close"));
     fileClose->setShortcut(QKeySequence::Close);
     fileClose->setStatusTip(tr("Close current model"));
 	connect(fileClose, &QAction::triggered, [=](){ config::closeModel(model_index.model,true); });
 
 
-    QAction *appQuit = fileMenu->addAction(QThemedIcon("application-exit", QIcon(":/application-exit.png")), tr("Quit"));
+    QAction *appQuit = fileMenu->addAction( QIcon::fromTheme("application-exit", QIcon(":/application-exit.png")), tr("Quit"));
     appQuit->setShortcut(QKeySequence::Quit);
     appQuit->setStatusTip(tr("Quit Morpheus"));
 	connect(appQuit, &QAction::triggered, [=](){ config::getDatabase().close(); this->close(); });
 
     QMenu *examplesMenu = menubar->addMenu(tr("Examples"));
 
-// 	QMenu* examplesMenu = fileMenu->addMenu(QThemedIcon("applications-science",QIcon(":/applications-science.png")),tr("&Examples"));
+// 	QMenu* examplesMenu = fileMenu->addMenu( QIcon::fromTheme("applications-science",QIcon(":/applications-science.png")),tr("&Examples"));
 	QDir ex_dir(":/examples");
 	QStringList ex_categories_sl = ex_dir.entryList();
 	QMap<int, QString> ex_categories;
@@ -382,14 +382,18 @@ void MainWindow::createMenuBar()
 
     QToolBar *toolbar = new QToolBar("Main Toolbar",this);
     toolbar->setObjectName("Main Toolbar");
-
+    toolbar->setIconSize(QSize(24,24));
     toolbar->addAction(fileOpen);
     QToolButton* tbutton = (QToolButton*) toolbar->widgetForAction(fileOpen);
     tbutton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+//	if ((QSysInfo::productType() == "osx" || QSysInfo::productType() == "windows") && QIcon::hasThemeIcon("document-open-symbolic"))
+//		tbutton->setIcon(QIcon::fromTheme("document-open-symbolic"));
 
     toolbar->addAction(fileSave);
     tbutton = (QToolButton*) toolbar->widgetForAction(fileSave);
     tbutton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+//	if ((QSysInfo::productType() == "osx" || QSysInfo::productType() == "windows") && QIcon::hasThemeIcon("document-save-symbolic"))
+//		tbutton->setIcon(QIcon::fromTheme("document-save-symbolic"));
 
     toolbar->addSeparator();
 
@@ -399,8 +403,11 @@ void MainWindow::createMenuBar()
 	cb_resource->setFocusPolicy(Qt::ClickFocus);
 
     toolbar->addWidget(cb_resource);
-
-    QAction *simStart = new QAction(QThemedIcon("media-playback-start" ,style()->standardIcon(QStyle::SP_MediaPlay)), tr("&Start"), toolbar);
+	
+	
+    QAction *simStart = new QAction( QIcon::fromTheme("media-playback-start"), tr("&Start"), toolbar);
+	if ((QSysInfo::productType() == "osx" || QSysInfo::productType() == "windows") && QIcon::hasThemeIcon("media-playback-start-symbolic"))
+		simStart->setIcon(QIcon::fromTheme("media-playback-start-symbolic"));
     simStart->setShortcut(QKeySequence(Qt::Key_F8));
     simStart->setStatusTip(tr("Start morpheus simulation with current model"));
 	connect(simStart, &QAction::triggered, [=](){startSimulation();} );
@@ -408,7 +415,9 @@ void MainWindow::createMenuBar()
     tbutton = (QToolButton*) toolbar->widgetForAction(simStart);
     tbutton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
-    QAction *simStop = new QAction(QThemedIcon("media-playback-stop", style()->standardIcon(QStyle::SP_MediaStop) ), tr("&Stop"), toolbar);
+    QAction *simStop = new QAction(QIcon::fromTheme("media-playback-stop"), tr("&Stop"), toolbar);
+	if ((QSysInfo::productType() == "osx" || QSysInfo::productType() == "windows") && QIcon::hasThemeIcon("media-playback-stop-symbolic"))
+		simStop->setIcon(QIcon::fromTheme("media-playback-stop-symbolic"));
     simStop->setShortcut(QKeySequence(Qt::Key_F9));
     simStop->setStatusTip(tr("Terminate current morpheus simulation"));
 	connect(simStop, &QAction::triggered, [=](){stopSimulation();} );
@@ -446,7 +455,7 @@ void MainWindow::createMainWidgets()
 
 	// Model popup menu
     modelMenu = new QMenu();
-	auto show_xml_action = new QAction(QThemedIcon("text-xml",QIcon(":/text-xml.png")),"Show XML", this);
+	auto show_xml_action = new QAction(QIcon::fromTheme("text-xml",QIcon(":/icons/text-xml.png")),"Show XML", this);
 	connect(show_xml_action, &QAction::triggered, 
 		[this](){
 			XMLTextDialog dia( config::getOpenModels()[model_popup_index.model]->getXMLText() , this);
@@ -456,7 +465,7 @@ void MainWindow::createMainWidgets()
 	
     modelMenu->addSeparator();
 
-	removeModelPartAction = modelMenu->addAction(QThemedIcon("list-remove",QIcon(":/list-remove.png")),"Remove");
+	removeModelPartAction = modelMenu->addAction(QIcon::fromTheme("list-remove",QIcon(":/icons/list-remove.png")),"Remove");
 	connect(removeModelPartAction, &QAction::triggered,[this](){
 		auto popup_model = config::getOpenModels()[model_popup_index.model];
 		QMessageBox msgBox;
@@ -469,18 +478,18 @@ void MainWindow::createMainWidgets()
 		}
 	});
 	
-    copyModelPartAction = modelMenu->addAction(QThemedIcon("edit-copy",QIcon(":/edit-copy.png")),"Copy");
+    copyModelPartAction = modelMenu->addAction(QIcon::fromTheme("edit-copy",QIcon(":/icons/edit-copy.png")),"Copy");
 	connect(copyModelPartAction, &QAction::triggered,[this](){
 		copyNodeAction(config::getOpenModels()[model_popup_index.model]->parts[model_popup_index.part].element->cloneXML());
 	});
 	
-    pasteModelPartAction = modelMenu->addAction(QThemedIcon("edit-paste",QIcon(":/edit-paste.png")),"Paste");
+    pasteModelPartAction = modelMenu->addAction(QIcon::fromTheme("edit-paste",QIcon(":/icons/edit-paste.png")),"Paste");
 	connect(pasteModelPartAction, &QAction::triggered,[this](){
 		config::getOpenModels()[model_popup_index.model]->addPart(config::getNodeCopies().first().cloneNode(true));
 	});
     modelMenu->addSeparator();
 	
-    closeModelAction =  modelMenu->addAction(QThemedIcon("dialog-close",style()->standardIcon(QStyle::SP_DialogCloseButton)),"Close");
+    closeModelAction =  modelMenu->addAction(QIcon::fromTheme("dialog-close",style()->standardIcon(QStyle::SP_DialogCloseButton)),"Close");
 	connect(closeModelAction, &QAction::triggered, [this](){
 		config::closeModel(model_popup_index.model, true);
 	});
@@ -510,7 +519,7 @@ void MainWindow::createMainWidgets()
     fixBoard = new QListWidget();
     fixBoard->setAlternatingRowColors(true);
 	fixBoard->setContextMenuPolicy( Qt::ActionsContextMenu );
-	QAction* fixBoardCopyAction = new QAction(QThemedIcon("edit-copy",QIcon(":/edit-copy.png")),"Copy",fixBoard);
+	QAction* fixBoardCopyAction = new QAction(QIcon::fromTheme("edit-copy",QIcon(":/edit-copy.png")),"Copy",fixBoard);
 	connect(fixBoardCopyAction, SIGNAL(triggered(bool)), this, SLOT(fixBoardCopyNode()));
 	fixBoard->addAction(fixBoardCopyAction);
     connect(fixBoard,SIGNAL(doubleClicked(QModelIndex)),this, SLOT(fixBoardClicked(QModelIndex)));
@@ -933,8 +942,8 @@ void MainWindow::addModel(int index) {
 
 // 	qDebug() << "Adding model " << index;
 	QTreeWidgetItem* c = new QTreeWidgetItem(QStringList(model->xml_file.name));
-	c->setIcon(0,QThemedIcon("text-x-generic",QIcon(":/text-generic.png")));
-	c->setIcon(1,QThemedIcon("edit-delete",QIcon(":/edit-delete.png")));
+	c->setIcon(0,QIcon::fromTheme("text-x-generic",QIcon(":/icons/text-generic.png")));
+	c->setIcon(1,QIcon::fromTheme("edit-delete",QIcon(":/icons/edit-delete.png")));
 	QFont f (c->font(0));
 	f.setBold(true);
 	c->setFont(0,f);

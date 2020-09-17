@@ -42,17 +42,18 @@ JobView::JobView()
     sim_header->addStretch();
 	QToolBar *sim_tools = new QToolBar();
 	sim_tools->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+	sim_tools->setIconSize(QSize(24,24));
 	
-	stop_action = new QAction(QThemedIcon("media-playback-stop", style()->standardIcon(QStyle::SP_MediaStop) ),"Stop",sim_tools);
+	stop_action = new QAction(QIcon::fromTheme("media-playback-stop-symbolic", QIcon::fromTheme("media-playback-stop", style()->standardIcon(QStyle::SP_MediaStop))),"Stop",sim_tools);
 	connect(stop_action,SIGNAL(triggered(bool)),this,SLOT(stopJob()));
 	sim_tools->addAction(stop_action);
 	sim_tools->addSeparator();
 	
-	open_output_action = new QAction(QThemedIcon("folder",style()->standardIcon(QStyle::SP_DirIcon)),"Output Folder",sim_tools);
+	open_output_action = new QAction(QIcon::fromTheme("folder",style()->standardIcon(QStyle::SP_DirIcon)),"Output Folder",sim_tools);
 	connect(open_output_action, SIGNAL(triggered(bool)), SLOT(openOutputFolder()));
 	sim_tools->addAction(open_output_action);
 
-    open_terminal_action = new QAction(QThemedIcon("utilities-terminal",QIcon(":/icons/utilities-terminal.png")),"Terminal", this);
+    open_terminal_action = new QAction(QIcon::fromTheme("utilities-terminal",QIcon(":/icons/utilities-terminal.png")),"Terminal", this);
 #ifdef Q_WS_MAC
     open_terminal_action->setEnabled(false);
 #endif
@@ -60,7 +61,7 @@ JobView::JobView()
 	sim_tools->addAction(open_terminal_action);
 
     sim_tools->addSeparator();
-    make_movie_action = new QAction(QThemedIcon("movie",QIcon(":/icons/movie.png")),"Create movie",this);
+    make_movie_action = new QAction(QIcon::fromTheme("movie",QIcon(":/icons/movie.png")),"Create movie",this);
     connect(make_movie_action, SIGNAL(triggered(bool)), SLOT(makeMovie()));
     sim_tools->addAction(make_movie_action);
 

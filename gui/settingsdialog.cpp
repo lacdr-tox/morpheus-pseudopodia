@@ -69,7 +69,7 @@ void settingsDialog::createGeneralTab(QTabWidget *tabWid)
     QLabel *lb_outputDir = new QLabel("Output directory: ", general);
     le_general_outputDir = new QLineEdit(general);
     le_general_outputDir->setText(app.general_outputDir);
-    QPushButton *bt_outputDir = new QPushButton(QThemedIcon("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)),"", general);
+    QPushButton *bt_outputDir = new QPushButton(QIcon::fromTheme("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)),"", general);
 #ifdef MORPHEUS_FEEDBACK
 	QLabel *lb_feedback = new QLabel("Permit usage feedback: ", general);
 	cb_feedback = new QCheckBox(general);
@@ -185,7 +185,7 @@ void settingsDialog::createLocalTab(QTabWidget *tabWid)
     QLabel *lb_executable = new QLabel("Simulator executable: ", local);
     le_local_executable = new QLineEdit(local);
     le_local_executable->setText(  app.local_executable );
-	QPushButton *bt_executable = new QPushButton(QThemedIcon("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), "Browse...", local);
+	QPushButton *bt_executable = new QPushButton(QIcon::fromTheme("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), "Browse...", local);
 	bt_executable->setText("");
 	connect(bt_executable,SIGNAL(clicked(bool)),SLOT(openFileDialogExecutable()));
 
@@ -197,7 +197,7 @@ void settingsDialog::createLocalTab(QTabWidget *tabWid)
     le_local_GnuPlot_executable->setText(  (app.local_GnuPlot_executable.isEmpty()?gnuplot_exec:app.local_GnuPlot_executable) );
 	le_local_GnuPlot_executable->setEnabled(cb_local_GnuPlotExecutable->checkState() == Qt::Checked);
 	connect(cb_local_GnuPlotExecutable,SIGNAL(toggled(bool)),le_local_GnuPlot_executable, SLOT(setEnabled(bool)));
-	QPushButton *bt_GnuPlot_executable = new QPushButton(QThemedIcon("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), "Browse...", local);
+	QPushButton *bt_GnuPlot_executable = new QPushButton(QIcon::fromTheme("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), "Browse...", local);
 	bt_GnuPlot_executable->setText("");
 	connect(bt_GnuPlot_executable,SIGNAL(clicked(bool)),SLOT(openFileDialogGnuPlotExecutable()));
 	bt_GnuPlot_executable->setEnabled(cb_local_GnuPlotExecutable->checkState() == Qt::Checked);
@@ -212,7 +212,7 @@ void settingsDialog::createLocalTab(QTabWidget *tabWid)
     le_local_FFmpeg_executable->setText(  (app.local_FFmpeg_executable.isEmpty()?ffmpeg_exec:app.local_FFmpeg_executable) );
     le_local_FFmpeg_executable->setEnabled(cb_local_FFmpegExecutable->checkState() == Qt::Checked);
     connect(cb_local_FFmpegExecutable,SIGNAL(toggled(bool)),le_local_FFmpeg_executable, SLOT(setEnabled(bool)));
-    QPushButton *bt_FFmpeg_executable = new QPushButton(QThemedIcon("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), "Browse...", local);
+    QPushButton *bt_FFmpeg_executable = new QPushButton(QIcon::fromTheme("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), "Browse...", local);
     bt_FFmpeg_executable->setText("");
     connect(bt_FFmpeg_executable,SIGNAL(clicked(bool)),SLOT(openFileDialogFFmpegExecutable()));
     bt_FFmpeg_executable->setEnabled(cb_local_FFmpegExecutable->checkState() == Qt::Checked);
@@ -221,7 +221,7 @@ void settingsDialog::createLocalTab(QTabWidget *tabWid)
 
     QLabel *lb_localSim = new QLabel("Check simulator: ", local);
     lb_localSimStatus = new QLabel(local);
-    lb_localSimStatus->setPixmap(QThemedIcon("dialog-question" ,style()->standardIcon(QStyle::SP_MessageBoxQuestion)).pixmap(24));
+    lb_localSimStatus->setPixmap(QIcon::fromTheme("dialog-question" ,style()->standardIcon(QStyle::SP_MessageBoxQuestion)).pixmap(24));
     lb_localSimRev = new QLabel("", local);
 
     QPushButton *bt_checkLocal = new QPushButton("Test", local);
@@ -344,11 +344,11 @@ void settingsDialog::createRemoteTab(QTabWidget *tabWid)
 
     QLabel *lb_remoteConnection = new QLabel("Check connection: ", remote);
     lb_remoteConnectionStatus = new QLabel(remote);
-    lb_remoteConnectionStatus->setPixmap(QThemedIcon("dialog-question" ,style()->standardIcon(QStyle::SP_MessageBoxQuestion)).pixmap(24));
+    lb_remoteConnectionStatus->setPixmap(QIcon::fromTheme("dialog-question-symbolic", QIcon::fromTheme("dialog-question" ,style()->standardIcon(QStyle::SP_MessageBoxQuestion))).pixmap(24));
 
     QLabel *lb_remoteSim = new QLabel("Check simulator: ", remote);
     lb_remoteSimStatus = new QLabel(remote);
-    lb_remoteSimStatus->setPixmap(QThemedIcon("dialog-question" ,style()->standardIcon(QStyle::SP_MessageBoxQuestion)).pixmap(24));
+    lb_remoteSimStatus->setPixmap(QIcon::fromTheme("dialog-question-symbolic", QIcon::fromTheme("dialog-question" ,style()->standardIcon(QStyle::SP_MessageBoxQuestion))).pixmap(24));
     lb_remoteSimRev = new QLabel("", remote);
 
 
@@ -621,12 +621,12 @@ void settingsDialog::checkLocal()
 
     if(version_revision.startsWith("Version"))
     {
-        lb_localSimStatus->setPixmap(QThemedIcon("dialog-apply" ,style()->standardIcon(QStyle::SP_DialogApplyButton)).pixmap(24));
+        lb_localSimStatus->setPixmap(QIcon::fromTheme("dialog-apply" ,style()->standardIcon(QStyle::SP_DialogApplyButton)).pixmap(24));
         lb_localSimRev->setText(version_revision.trimmed());
     }
     else
     {
-        lb_localSimStatus->setPixmap(QThemedIcon("dialog-cancel" ,style()->standardIcon(QStyle::SP_DialogCancelButton)).pixmap(24));
+        lb_localSimStatus->setPixmap(QIcon::fromTheme("dialog-cancel" ,style()->standardIcon(QStyle::SP_DialogCancelButton)).pixmap(24));
         lb_localSimRev->setText("unknown version/revision");
     }
 
@@ -684,8 +684,8 @@ void settingsDialog::checkRemote()
 
     if (ssh.checkConnection(resource,username))
     {
-        lb_remoteConnectionStatus->setPixmap(QThemedIcon("dialog-apply" ,style()->standardIcon(QStyle::SP_DialogApplyButton)).pixmap(24));
-		lb_remoteSimStatus->setPixmap(QThemedIcon("dialog-apply" ,style()->standardIcon(QStyle::SP_DialogApplyButton)).pixmap(24));
+        lb_remoteConnectionStatus->setPixmap(QIcon::fromTheme("dialog-apply" ,style()->standardIcon(QStyle::SP_DialogApplyButton)).pixmap(24));
+		lb_remoteSimStatus->setPixmap(QIcon::fromTheme("dialog-apply" ,style()->standardIcon(QStyle::SP_DialogApplyButton)).pixmap(24));
 	}
 //         QString version("");
 //         cout << "COMMAND: " << "processProxy.sh -a version -e " << executable.toStdString() << endl;
@@ -726,8 +726,8 @@ void settingsDialog::checkRemote()
 //     }
     else
     {
-		lb_remoteConnectionStatus->setPixmap(QThemedIcon("dialog-cancel" ,style()->standardIcon(QStyle::SP_DialogCancelButton)).pixmap(24));
-		lb_remoteSimStatus->setPixmap(QThemedIcon("dialog-cancel" ,style()->standardIcon(QStyle::SP_DialogCancelButton)).pixmap(24));
+		lb_remoteConnectionStatus->setPixmap(QIcon::fromTheme("dialog-cancel" ,style()->standardIcon(QStyle::SP_DialogCancelButton)).pixmap(24));
+		lb_remoteSimStatus->setPixmap(QIcon::fromTheme("dialog-cancel" ,style()->standardIcon(QStyle::SP_DialogCancelButton)).pixmap(24));
 		lb_remoteSimRev->setText(ssh.getLastError());
 	}
 }

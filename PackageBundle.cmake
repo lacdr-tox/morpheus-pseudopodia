@@ -1,25 +1,26 @@
 
-#Bundle Name 
+#Bundle Name
 SET(CPACK_BUNDLE_NAME "${CPACK_PACKAGE_NAME}")
 SET(CPACK_DMG_VOLUME_NAME "${CPACK_PACKAGE_NAME}_${PROJECT_VERSION}~b${MORPHEUS_REVISION}")
 
 SET(MACOSX_BUNDLE_VERSION "${PROJECT_VERSION}")
 SET(MACOSX_BUNDLE_SHORT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
 
-## License
+## License and Icons
 SET(MACOSX_GUI_COPYRIGHT "LICENSE.rtf")
+
+## Info.plist
+configure_file(packaging/mac/Info.plist.in Morpheus.app/Contents/Info.plist)
+INSTALL(DIRECTORY ${CURRENT_BINARY_DIR}/Morpheus.app
+		DESTINATION .
+		COMPONENT BUNDLE_EXTRAS
+		EXCLUDE_FROM_ALL)
+		
+
 install(FILES ${CPACK_RESOURCE_FILE_LICENSE}
-        DESTINATION share/morpheus
+		gui/icons/mac/Morpheus.icns
+        DESTINATION Morpheus.app/Contents/Resources
         COMPONENT BUNDLE_EXTRAS
         EXCLUDE_FROM_ALL
-) 
+)
 
-## Bundle Startup
-SET(CPACK_BUNDLE_ICON "${PROJECT_SOURCE_DIR}/gui/icons/mac/icon.icns")
-configure_file(${PROJECT_SOURCE_DIR}/packaging/mac/Info.plist.in Info.plist)
-SET(CPACK_BUNDLE_PLIST "Info.plist")
-SET(CPACK_BUNDLE_STARTUP_COMMAND "${PROJECT_SOURCE_DIR}/packaging/mac/startup.sh")
-
-# SET(CPACK_BUNDLE_APPLE_CERT_APP )
-# SET(CPACK_DMG_BACKGROUND_IMAGE )
-	
