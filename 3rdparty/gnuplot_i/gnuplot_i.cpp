@@ -13,6 +13,7 @@
 #include <set>                 // for std::set
 #include <cstdio>               // for FILE, fputs(), fflush(), popen()
 #include <cstdlib>              // for getenv()
+#include <boost/dll/runtime_symbol_info.hpp>  // for program path
 #include "gnuplot_i.h"
 
 
@@ -361,14 +362,11 @@ bool Gnuplot::get_program_path()
     // second: look in PATH for Gnuplot
     //
 
+    std::list<std::string> ls;
     char *path;
     // Retrieves a C string containing the value of the environment variable PATH
     path = getenv("PATH");
 	
-    if (path != NULL)
-    {
-        std::list<std::string> ls;
-
         //split path (one long string) into list ls of strings
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__)
         stringtok(ls,path,";");
@@ -378,11 +376,17 @@ bool Gnuplot::get_program_path()
 	string path_sep = "/";
 #endif
 
+    auto exec_path = boost::dll::program_location().string();
+    exec_path.resize(exec_path.find_last_of(path_sep));
+    std::cout << exec_path << std::endl;
+	
+    ls.push_front(exec_path);
+
         // scan list for Gnuplot program files
         for (std::list<std::string>::const_iterator i = ls.begin(); i != ls.end(); ++i)
         {
             tmp = (*i) + path_sep + Gnuplot::m_sGNUPlotFileName;
-            // cout << "Checking path for gnuplot " << tmp << endl;
+            cout << "Checking path for gnuplot " << tmp << endl;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__)
             if ( Gnuplot::file_exists(tmp,0) ) // check existence
 #elif defined(unix) || defined(__unix) || defined(__unix__) || defined(__APPLE__)
@@ -393,12 +397,10 @@ bool Gnuplot::get_program_path()
                 return true;
             }
         }
-    }
 
-
-	Gnuplot::m_sGNUPlotPath = "";
-	tmp = "Can't find gnuplot neither in PATH (" + string(path) + ") nor in \"" + Gnuplot::m_sGNUPlotPath + "\"";
-	throw GnuplotException(tmp);
+    Gnuplot::m_sGNUPlotPath = "";
+    tmp = "Can't find gnuplot neither in PATH (" + string(path) + ") nor in \"" + Gnuplot::m_sGNUPlotPath + "\"";
+    throw GnuplotException(tmp);
     return false;
 }
 

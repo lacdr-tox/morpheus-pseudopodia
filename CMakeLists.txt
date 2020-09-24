@@ -39,13 +39,22 @@ ELSEIF(APPLE)
 	MESSAGE(STATUS "Compiling for platform OSX.")
 	## Make sure HomeBrew library path is there 
 	SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L /usr/local/lib")
+	## Switch to Release Build Mode
+	OPTION(MORPHEUS_RELEASE_BUNDLE "Build Mac Application Bundle of morpheus." TRUE)
+	IF (MORPHEUS_RELEASE_BUNDLE) 
+		SET(MORPHEUS_BUNDLE_DIR "Morpheus.app")
+ 		#SET( CMAKE_BUILD_TYPE "RELEASE" )
+		IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+			SET(CMAKE_INSTALL_PREFIX "~/Applications" CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
+		ENDIF()
+	ENDIF()
 ELSEIF(WIN32)
 	SET(MORPHEUS_OS "WIN32")
 	SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -DWIN32")
 	MESSAGE(STATUS "Compiling for platform WIN32.")
 ELSE()
 	SET(MORPHEUS_OS "UNKNOWN")
-	MESSAGE(STATUS "Compiling for unknown platform2. Assuming WIN32")
+	MESSAGE(STATUS "Compiling for unknown platform. Assuming WIN32")
 	SET(WIN32 TRUE)
 ENDIF()
 
@@ -55,11 +64,6 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 SET(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_SHARED_LINKER_FLAGS} -fPIC")
 
-## Switch to Release Build Mode
-OPTION(MORPHEUS_RELEASE_BUNDLE "Build the release bundle of morpheus only." OFF)
-IF (MORPHEUS_RELEASE_BUNDLE) 
- 	SET( CMAKE_BUILD_TYPE "RELEASE" )
-ENDIF()
 
 OPTION(MORPHEUS_TESTS "Enable testing" OFF)
 
@@ -139,7 +143,7 @@ IF(MORPHEUS_GUI)
 ENDIF()
 
 
-INCLUDE(InstallRequiredSystemLibraries)
+# INCLUDE(InstallRequiredSystemLibraries)
 
 MESSAGE(STATUS "Configuring Generators for packaging Morpheus")
 INCLUDE(Package.cmake)

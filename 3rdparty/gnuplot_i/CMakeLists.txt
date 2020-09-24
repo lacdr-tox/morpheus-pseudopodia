@@ -1,4 +1,6 @@
 add_library(gnuplot_interface gnuplot_i.cpp)
+Find_PACKAGE(Boost 1.6.10 COMPONENTS filesystem REQUIRED)
+target_link_libraries_patched(gnuplot_interface PRIVATE Boost::headers )
 IF ( ${MORPHEUS_OS} STREQUAL "WIN32")
 	target_link_libraries( gnuplot_interface )
 ENDIF ()
