@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="CellTypePlugins">
+		<xs:choice>
+			<xs:element name="MechanicalLink"	type="MechanicalLink"/>
+		</xs:choice>
+	</xs:group>
+	
+	<xs:complexType name="MechanicalLink">
+		<xs:annotation>
+			<xs:appinfo>Motility</xs:appinfo>
+		</xs:annotation>
+		<xs:attribute name="target-volume" type="cpmMathExpression"  use="required" />
+		<xs:attribute name="strength" type="cpmMathExpression"  use="required" />
+		<xs:attribute name="link-probability" type="cpmDouble"  use="required" />
+		<xs:attribute name="max-bond-stretch" type="cpmDouble"  use="required" />
+	</xs:complexType>
+
+</xs:schema>
