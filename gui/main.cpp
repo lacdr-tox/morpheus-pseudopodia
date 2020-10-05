@@ -24,8 +24,8 @@ int main(int argc, char *argv[])
 #ifdef WIN32
 	//QString app_path = QFileInfo(QApplication::applicationFilePath()).canonicalPath();
 	QString app_path = ".";
-	QApplication::addLibraryPath(app_path);
-	QApplication::addLibraryPath(app_path + "/plugins");
+	// QApplication::addLibraryPath(app_path);
+	// QApplication::addLibraryPath(app_path + "/PlugIns");
 #endif
 #ifdef USE_SINGLE_APP
 	QtSingleApplication a(argc, argv);
@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 	// Handle no gui command line options
 	QStringList args = QApplication::arguments();
 	args.pop_front();
-	 
+	
 	 if ( ! args.empty() && args[0] == "--convert" ) {
 		if (! SBMLImporter::supported) {
 			cout << "Cannot convert the SBML file. Morpheus GUI was compiled without SBML support";

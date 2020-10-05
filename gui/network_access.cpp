@@ -31,7 +31,7 @@ QRCNetworkReply::QRCNetworkReply(QObject* parent, const QNetworkRequest &request
 // 		mimeType = "text/css";
 	setHeader(QNetworkRequest::ContentTypeHeader, mimeType);
 	setHeader(QNetworkRequest::ContentLengthHeader, QByteArray::number(df.size()));
-	qDebug() << QString(":") + path << " : " << df.size();
+//	qDebug() << QString(":") + path << " : " << df.size();
 	
 	QTimer::singleShot(0, this, SIGNAL(metaDataChanged()));
 // 	QTimer::singleShot(0, this, SIGNAL(readyRead()));
