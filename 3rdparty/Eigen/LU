@@ -28,7 +28,11 @@
 #include "src/LU/FullPivLU.h"
 #include "src/LU/PartialPivLU.h"
 #ifdef EIGEN_USE_LAPACKE
+#ifdef EIGEN_USE_MKL
+#include "mkl_lapacke.h"
+#else
 #include "src/misc/lapacke.h"
+#endif
 #include "src/LU/PartialPivLU_LAPACKE.h"
 #endif
 #include "src/LU/Determinant.h"
@@ -38,6 +42,10 @@
 // SSE version doesn't compile when AVX is enabled
 #if defined EIGEN_VECTORIZE_SSE && !defined EIGEN_VECTORIZE_AVX
   #include "src/LU/arch/Inverse_SSE.h"
+#endif
+
+#if defined EIGEN_VECTORIZE_NEON
+  #include "src/LU/arch/Inverse_NEON.h"
 #endif
 
 #include "src/Core/util/ReenableStupidWarnings.h"

@@ -112,14 +112,6 @@ add_subdirectory(icons)
 #	ENDIF()
 #ENDIF()
 
-##  check whether the required sqlite plugin is available (if fails if the Variable ends eith NOTFOUND)
-# if( ( CMAKE_VERSION VERSION_GREATER "2.8.4") AND (NOT "${MORPHEUS_OS}" STREQUAL "WIN32") )
-# 	if (NOT QT_QSQLITE_PLUGIN_RELEASE)
-# 		message(FATAL_ERROR "QT SQLITE plugin not found. Install libqt4-sql-sqlite package .. ${MORPHEUS_OS}" )
-# 	ENDIF()
-# ENDIF()
-
-
 
 ### set the source, headers and resources
 SET( SOURCES ${SOURCES}
@@ -222,12 +214,6 @@ ADD_DEPENDENCIES(MorpheusGUI xmlSchema AppDoc)
 get_target_property( res AppDoc RESOURCE)
 set_property( TARGET MorpheusGUI APPEND PROPERTY RESOURCE ${res})
 
-#IF (MORPHEUS_RELEASE_BUNDLE)
-#  set_property( TARGET MorpheusGUI APPEND PROPERTY MACOSX_BUNDLE TRUE)
-#ENDIF()
-
-# dump_target_properties(MorpheusGUI)
-
 # IF (MORPHEUS_STATIC_BUILD)
 # 	SET_TARGET_PROPERTIES(${GUI_EXEC_NAME} PROPERTIES LINK_SEARCH_START_STATIC 1)
 # 	SET_TARGET_PROPERTIES(${GUI_EXEC_NAME} PROPERTIES LINK_SEARCH_END_STATIC 1)
@@ -236,17 +222,11 @@ set_property( TARGET MorpheusGUI APPEND PROPERTY RESOURCE ${res})
 INCLUDE_DIRECTORIES( ${ZLIB_INCLUDE_DIR}) 
 
 ### create executable and link to Qt libraries and external libraries
-# qt5_use_modules(MorpheusGUI Widgets Xml Sql Svg Help Network)
-
 TARGET_LINK_LIBRARIES(MorpheusGUI Qt5::Widgets Qt5::Xml Qt5::Sql Qt5::Svg Qt5::Help Qt5::Network qtsingleapp ${ZLIB_LIBRARY} )
 
 IF( WIN32 )
 	IF( CMAKE_COMPILER_IS_GNUCXX )
-		# SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows")
-		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mconsole")
-	ENDIF()
-	IF(MORPHEUS_STATIC_BUILD)
-		TARGET_LINK_LIBRARIES(MorpheusGUI wsock32 ws2_32 )
+		target_compile_options(MorpheusGUI PRIVATE $<IF:$<CONFIG:Release>,-mwindows,-mconsole>)
 	ENDIF()
 ENDIF()
 
@@ -393,12 +373,12 @@ ELSEIF("${MORPHEUS_OS}" STREQUAL "APPLE")
 		endmacro()
 
 		install_qt5_plugin("Qt5::QSQLiteDriverPlugin" QT_PLUGINS ${BUNDLE_PREFIX})
-		install_qt5_plugin("Qt5::QCocoaIntegrationPlugin" QT_PLUGINS ${BUNDLE_PREFIX})
 		install_qt5_plugin("Qt5::QSvgIconPlugin" QT_PLUGINS ${BUNDLE_PREFIX})
 		install_qt5_plugin("Qt5::QSvgPlugin" QT_PLUGINS ${BUNDLE_PREFIX})
 		install_qt5_plugin("Qt5::QSvgPlugin" QT_PLUGINS ${BUNDLE_PREFIX})
 		install_qt5_plugin("Qt5::QTiffPlugin" QT_PLUGINS ${BUNDLE_PREFIX})
 		if (APPLE)
+			install_qt5_plugin("Qt5::QCocoaIntegrationPlugin" QT_PLUGINS ${BUNDLE_PREFIX})
 			install_qt5_plugin("Qt5::QMacStylePlugin" QT_PLUGINS ${BUNDLE_PREFIX})
 		elseif (UNIX)
 			install_qt5_plugin("Qt5::QXdgDesktopPortalThemePlugin" QT_PLUGINS ${BUNDLE_PREFIX})
@@ -411,53 +391,41 @@ ELSEIF("${MORPHEUS_OS}" STREQUAL "APPLE")
 			COMPONENT Morpheus_GUI_SC
 			EXCLUDE_FROM_ALL)
 
-		#QtWebEngine has addiditional requirements
-		# dump_target_properties(Qt5::WebEngineCore)
-		get_target_property(qt_webengine_dirs Qt5::WebEngineCore INTERFACE_INCLUDE_DIRECTORIES )
-		macro(install_qwebengine_res _type _rel_path _search_dirs )
-			set(res)
-			foreach(dir ${${_search_dirs}})
-				if(EXISTS ${dir}/${_rel_path})
-					set(res ${dir}/${_rel_path})
-				endif()
-			endforeach()
-			if(res)
-				if(${_type} STREQUAL "PROGRAM")
-					INSTALL(PROGRAMS ${res} 
-						DESTINATION ${INSTALL_RUNTIME_DIR} 
-						COMPONENT Morpheus_GUI_SC
-						EXCLUDE_FROM_ALL)
-				elseif(${_type} STREQUAL "RESOURCE")
-					INSTALL(FILES ${res} 
-						DESTINATION ${INSTALL_RESOURCE_DIR} 
-						COMPONENT Morpheus_GUI_SC
-						EXCLUDE_FROM_ALL)
+		IF ( USE_QWebEngine )
+			#QtWebEngine has addiditional requirements
+			# dump_target_properties(Qt5::WebEngineCore)
+			get_target_property(qt_webengine_dirs Qt5::WebEngineCore INTERFACE_INCLUDE_DIRECTORIES )
+			macro(install_qwebengine_res _type _rel_path _search_dirs )
+				set(res)
+				foreach(dir ${${_search_dirs}})
+					if(EXISTS ${dir}/${_rel_path})
+						set(res ${dir}/${_rel_path})
+					endif()
+				endforeach()
+				if(res)
+					if(${_type} STREQUAL "PROGRAM")
+						INSTALL(PROGRAMS ${res} 
+							DESTINATION ${INSTALL_RUNTIME_DIR} 
+							COMPONENT Morpheus_GUI_SC
+							EXCLUDE_FROM_ALL)
+					elseif(${_type} STREQUAL "RESOURCE")
+						INSTALL(FILES ${res} 
+							DESTINATION ${INSTALL_RESOURCE_DIR} 
+							COMPONENT Morpheus_GUI_SC
+							EXCLUDE_FROM_ALL)
+					else()
+						MESSAGE(FATAL_ERROR "Invalid resource type ${_type}")
+					endif()
 				else()
-					MESSAGE(FATAL_ERROR "Invalid resource type ${_type}")
+					message(SEND_ERROR "Unable to locate QWebengine resource ${_rel_path}" )
 				endif()
-			else()
-				message(SEND_ERROR "Unable to locate QWebengine resource ${_rel_path}" )
-			endif()
-		endmacro()
+			endmacro()
 
-		install_qwebengine_res(PROGRAM Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess qt_webengine_dirs)
-		install_qwebengine_res(RESOURCE Resources/qtwebengine_resources.pak qt_webengine_dirs)
-		install_qwebengine_res(RESOURCE Resources/qtwebengine_resources_100p.pak qt_webengine_dirs)
-		install_qwebengine_res(RESOURCE Resources/qtwebengine_resources_200p.pak qt_webengine_dirs)
-
-		Find_PROGRAM(GNUPLOT_EXECUTABLE NAMES gnuplot HINTS ENV GNUPLOT REQUIRED)
-		IF(IS_SYMLINK ${GNUPLOT_EXECUTABLE})
-			SET(GNUPLOT_SYMEX ${GNUPLOT_EXECUTABLE})
-			FILE(READ_SYMLINK ${GNUPLOT_EXECUTABLE} GNUPLOT_EXECUTABLE)
-			IF(NOT IS_ABSOLUTE ${GNUPLOT_EXECUTABLE})
-				get_filename_component(dir "${GNUPLOT_SYMEX}" DIRECTORY)
-				set(GNUPLOT_EXECUTABLE "${dir}/${GNUPLOT_EXECUTABLE}")
-			endif()
-		ENDIF()
-		INSTALL(PROGRAMS ${GNUPLOT_EXECUTABLE} 
-			DESTINATION ${INSTALL_RUNTIME_DIR} 
-			COMPONENT Morpheus_GUI_SC
-			EXCLUDE_FROM_ALL)
+			install_qwebengine_res(PROGRAM Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess qt_webengine_dirs)
+			install_qwebengine_res(RESOURCE Resources/qtwebengine_resources.pak qt_webengine_dirs)
+			install_qwebengine_res(RESOURCE Resources/qtwebengine_resources_100p.pak qt_webengine_dirs)
+			install_qwebengine_res(RESOURCE Resources/qtwebengine_resources_200p.pak qt_webengine_dirs)
+		endif()
 
 		set(APPS "\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${MORPHEUS_BUNDLE_DIR}")
 		# Directories to look for dependencies
@@ -495,18 +463,145 @@ ELSEIF("${MORPHEUS_OS}" STREQUAL "APPLE")
 	ENDIF()
 
 ELSEIF("${MORPHEUS_OS}" STREQUAL "WIN32")
+	set(BUNDLE_PREFIX ".")
+	set(INSTALL_RUNTIME_DIR "${BUNDLE_PREFIX}")
+	set(INSTALL_RESOURCE_DIR "${BUNDLE_PREFIX}")
+
+	# set_property( TARGET MorpheusGUI 
+		# APPEND PROPERTY 
+		# RESOURCE ${BUNDLE_RESOURCES})
+
 	INSTALL( TARGETS MorpheusGUI
-	         RUNTIME DESTINATION .
-	         RESOURCE DESTINATION .
-		 COMPONENT Morpheus_GUI
+			 COMPONENT Morpheus_GUI
+			 RUNTIME DESTINATION "${INSTALL_RUNTIME_DIR}"
+			 RESOURCE DESTINATION "${INSTALL_RESOURCE_DIR}"
+			 )
+		
+	## Add all dependencies in the Morpheus_GUI_SC COMPONENT
+	# based on code from CMake's QtDialog/CMakeLists.txt
+	macro(install_qt5_plugin _qt_plugin_name _qt_plugins_var _prefix)
+		get_target_property(_qt_plugin_path "${_qt_plugin_name}" LOCATION)
+		if(EXISTS "${_qt_plugin_path}")
+		get_filename_component(_qt_plugin_file "${_qt_plugin_path}" NAME)
+		get_filename_component(_qt_plugin_type "${_qt_plugin_path}" PATH)
+		get_filename_component(_qt_plugin_type "${_qt_plugin_type}" NAME)
+		set(_qt_plugin_dest "${_prefix}/PlugIns/${_qt_plugin_type}")
+		install(FILES "${_qt_plugin_path}"
+			DESTINATION "${_qt_plugin_dest}" 
+			COMPONENT Morpheus_GUI
+			EXCLUDE_FROM_ALL)
+		set(${_qt_plugins_var}
+			"${${_qt_plugins_var}};\$ENV{DEST_DIR}\${CMAKE_INSTALL_PREFIX}/${_qt_plugin_dest}/${_qt_plugin_file}")
+		else()
+		message(FATAL_ERROR "QT plugin ${_qt_plugin_name} not found")
+		endif()
+	endmacro()
+
+	install_qt5_plugin("Qt5::QSQLiteDriverPlugin" QT_PLUGINS ${BUNDLE_PREFIX})
+	install_qt5_plugin("Qt5::QSvgIconPlugin" QT_PLUGINS ${BUNDLE_PREFIX})
+	install_qt5_plugin("Qt5::QSvgPlugin" QT_PLUGINS ${BUNDLE_PREFIX})
+	install_qt5_plugin("Qt5::QTiffPlugin" QT_PLUGINS ${BUNDLE_PREFIX})
+	install_qt5_plugin("Qt5::QGenericEnginePlugin" QT_PLUGINS ${BUNDLE_PREFIX})
+	
+	if (APPLE)
+		install_qt5_plugin("Qt5::QCocoaIntegrationPlugin" QT_PLUGINS ${BUNDLE_PREFIX})
+		install_qt5_plugin("Qt5::QMacStylePlugin" QT_PLUGINS ${BUNDLE_PREFIX})
+	elseif(WIN32)
+		install_qt5_plugin("Qt5::QWindowsIntegrationPlugin" QT_PLUGINS ${BUNDLE_PREFIX})
+		install_qt5_plugin("Qt5::QWindowsVistaStylePlugin" QT_PLUGINS ${BUNDLE_PREFIX})
+	elseif(UNIX)
+		install_qt5_plugin("Qt5::QXdgDesktopPortalThemePlugin" QT_PLUGINS ${BUNDLE_PREFIX})
+	else()
+	endif()
+	
+	file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/qt.conf"
+			"[Paths]\nPlugins = PlugIns\n")
+	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/qt.conf"
+			DESTINATION "${INSTALL_RESOURCE_DIR}" 
+		COMPONENT Morpheus_GUI
+		EXCLUDE_FROM_ALL)
+
+		
+	IF ( USE_QWebEngine )
+		#QtWebEngine has addiditional requirements
+		# dump_target_properties(Qt5::WebEngineCore)
+		get_target_property(qt_webengine_dirs Qt5::WebEngineCore INTERFACE_INCLUDE_DIRECTORIES )
+		macro(install_qwebengine_res _type _rel_path _search_dirs )
+			set(res)
+			foreach(dir ${${_search_dirs}})
+				if(EXISTS ${dir}/${_rel_path})
+					set(res ${dir}/${_rel_path})
+				endif()
+			endforeach()
+			if(res)
+				if(${_type} STREQUAL "PROGRAM")
+					INSTALL(PROGRAMS ${res} 
+						DESTINATION ${INSTALL_RUNTIME_DIR} 
+						COMPONENT Morpheus_GUI
+						EXCLUDE_FROM_ALL)
+				elseif(${_type} STREQUAL "RESOURCE")
+					INSTALL(FILES ${res} 
+						DESTINATION ${INSTALL_RESOURCE_DIR} 
+						COMPONENT Morpheus_GUI
+						EXCLUDE_FROM_ALL)
+				else()
+					MESSAGE(FATAL_ERROR "Invalid resource type ${_type}")
+				endif()
+			else()
+				message(SEND_ERROR "Unable to locate QWebengine resource ${_rel_path}" )
+			endif()
+		endmacro()
+
+		install_qwebengine_res(PROGRAM Helpers/QtWebEngineProcess.app/Contents/MacOS/QtWebEngineProcess qt_webengine_dirs)
+		install_qwebengine_res(RESOURCE Resources/qtwebengine_resources.pak qt_webengine_dirs)
+		install_qwebengine_res(RESOURCE Resources/qtwebengine_resources_100p.pak qt_webengine_dirs)
+		install_qwebengine_res(RESOURCE Resources/qtwebengine_resources_200p.pak qt_webengine_dirs)
+	endif()
+
+	set(APPS "\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${MORPHEUS_BUNDLE_PREFIX}")
+	# Directories to look for dependencies
+	set(DIRS "${CMAKE_BINARY_DIR}")
+
+	# Path used for searching by FIND_XXX(), with appropriate suffixes added
+	LIST(APPEND CMAKE_PREFIX_PATH "C:/msys64/mingw64" "${CMAKE_SYSROOT_LINK}")
+	if(CMAKE_PREFIX_PATH)
+			foreach(dir ${CMAKE_PREFIX_PATH})
+				list(APPEND DIRS "${dir}/bin" "${dir}/lib")
+		endforeach()
+	endif()
+	# Append Qt's lib folder which is two levels above Qt5Widgets_DIR
+	#list(APPEND BUNDLE_DIRS "${Qt5Widgets_DIR}/../..")
+	
+	INSTALL(CODE "
+		SET(EXECUTABLES \"${APPS}/morpheus-gui.exe\")
+		#MESSAGE(\"CPACK: - Searching binaries in ${APPS}/..\")
+		#file(GLOB_RECURSE EXECUTABLES \"\${APPS}/*.exe\")
+		#file(GLOB_RECURSE DLLS \"${APPS}/*.dll\")
+		message(\"CPACK:   - APPS: \${EXECUTABLES}\")
+		message(\"CPACK:   - QT_PLUGINS: ${QT_PLUGINS}\")
+		message(\"CPACK:   - DIRS: ${DIRS}\")
+		LIST(APPEND EXECUTABLES \"${QT_PLUGINS}\")
+		file(GET_RUNTIME_DEPENDENCIES
+			RESOLVED_DEPENDENCIES_VAR deps_resolved
+			UNRESOLVED_DEPENDENCIES_VAR deps_unresolved
+			EXECUTABLES \${EXECUTABLES}
+			DIRECTORIES ${DIRS})
+		foreach(dep \${deps_resolved})
+			if( dep MATCHES \"C:[/\\\\]Windows.*\")
+				# do not install system libraries
+			else()
+				MESSAGE(\"CPACK:  - adding \${dep}\")
+				file(INSTALL \"\${dep}\"
+				DESTINATION \"${APPS}/${INSTALL_RUNTIME_DIR}\")
+			endif()
+		endforeach()
+		# MESSAGE(\"CPACK:  - Resolved dependencies \${deps_resolved}\")
+		# MESSAGE(\"CPACK:  - Unresolved dependencies \${deps_unresolved}\")
+		"
+		COMPONENT Morpheus_GUI
+		EXCLUDE_FROM_ALL
 	)
-	find_library(LIB_WINPTHREAD "libwinpthread-1" PATHS ${QT_BINARY_DIR} )
-	# INSTALL( FILES ${QT_BINARY_DIR}/QtCore4.dll ${QT_BINARY_DIR}/QtGui4.dll ${QT_BINARY_DIR}/QtCLucene4.dll ${QT_BINARY_DIR}/QtHelp4.dll ${QT_BINARY_DIR}/QtNetwork4.dll ${QT_BINARY_DIR}/QtWebKit4.dll ${QT_BINARY_DIR}/QtXml4.dll ${QT_BINARY_DIR}/QtSvg4.dll ${QT_BINARY_DIR}/QtSql4.dll ${LIB_WINPTHREAD} DESTINATION .)
-	# if ( NOT ${LIBSBML_STATIC} ) 
-	#	GET_FILENAME_COMPONENT(LIBSBML_LIB_PATH ${LIBSBML_LIBRARY} DIRECTORY)
-	#	INSTALL( FILES ${LIBSBML_LIB_PATH}/../bin/libsbml.dll  ${LIBSBML_LIB_PATH}/../bin/libxml2.dll DESTINATION .)
-	#ENDIF()
-	#INSTALL (FILES ${QT_QSQLITE_PLUGIN_RELEASE} DESTINATION sqldrivers )
+	
 ENDIF()
 
 SET(LIBSBML_FOUND ${LIBSBML_FOUND} PARENT_SCOPE)

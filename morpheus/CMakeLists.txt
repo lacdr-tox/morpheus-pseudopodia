@@ -20,7 +20,10 @@ CHECK_TYPE_SIZE(uint UINT)
 ###########################
 
 ADD_EXECUTABLE(MorpheusSIM "")
-SET_TARGET_PROPERTIES(MorpheusSIM PROPERTIES  OUTPUT_NAME ${MORPHEUS_EXEC_NAME} )
+SET_TARGET_PROPERTIES(MorpheusSIM PROPERTIES  
+		OUTPUT_NAME ${MORPHEUS_EXEC_NAME} 
+		INTERPROCEDURAL_OPTIMIZATION TRUE
+		)
 ADD_LIBRARY(MorpheusCore OBJECT ""  )
 TARGET_INCLUDE_DIRECTORIES(MorpheusCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
 
@@ -177,79 +180,74 @@ ENDIF()
 
 IF  ( WIN32 )
 	INSTALL(TARGETS MorpheusSIM RUNTIME DESTINATION . COMPONENT Morpheus )
-	Find_PROGRAM(GNUPLOT_EXECUTABLE NAMES gnuplot.exe gnuplotw.exe HINTS ${GNUPLOT_ROOT}/bin ENV GNUPLOT_ROOT REQUIRED)
-	INSTALL(PROGRAMS ${GNUPLOT_EXECUTABLE} DESTINATION . COMPONENT Morpheus_EXTRA EXCLUDE_FROM_ALL)
-
-	if ( MINGW )
-	#find_library(LIB_STDCXX "libstdc++-6" )
-	#find_library(LIB_GCC_S_DW2 "libgcc_s_dw2-1")
-	#find_library(LIB_OPENMP "libgomp-1")
-	#find_library(LIB_PTHREAD "pthreadGC-3")
-	# INSTALL( FILES ${LIB_STDCXX} ${LIB_GCC_S_DW2} ${LIB_OPENMP} ${LIB_PTHREAD} DESTINATION . )
 	
-	#	IF (GRAPHVIZ_FOUND)
-	#	SET(GRAPHVIZ_RUNTIME
-	#		${GRAPHVIZ_ROOT}/bin/config6
-	#		${GRAPHVIZ_ROOT}/bin/libexpat.dll
-	#		${GRAPHVIZ_ROOT}/bin/ltdl.dll
-	#		${GRAPHVIZ_ROOT}/bin/zlib1.dll
-	#		${GRAPHVIZ_ROOT}/lib/release/dll/ann.dll
-	#		${GRAPHVIZ_ROOT}/lib/release/dll/cdt.dll
-	#		${GRAPHVIZ_ROOT}/lib/release/dll/cgraph.dll
-	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvc.dll
-	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_core.dll
-	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_dot_layout.dll
-	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_gd.dll
-	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_gdiplus.dll
-	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_neato_layout.dll
-	#		${GRAPHVIZ_ROOT}/lib/release/dll/gvplugin_pango.dll
-	#		${GRAPHVIZ_ROOT}/lib/release/dll/Pathplan.dll
-	#		${GRAPHVIZ_ROOT}/lib/release/dll/vmalloc.dll
-	#	)
-	#	INSTALL(FILES ${GRAPHVIZ_RUNTIME} DESTINATION . COMPONENT GraphViz)
-	#ENDIF()
+	Find_PROGRAM(GNUPLOT_EXECUTABLE NAMES gnuplot.exe HINTS ${GNUPLOT_ROOT}/bin ENV GNUPLOT_ROOT REQUIRED)
+	INSTALL(PROGRAMS ${GNUPLOT_EXECUTABLE}
+		DESTINATION . 
+		COMPONENT Morpheus
+		EXCLUDE_FROM_ALL)
 	
-	#	SET(GNUPLOT_ROOT "" CACHE PATH "Set root directory to search for Gnuplot" )
-	#	MARK_AS_ADVANCED(GNUPLOT_ROOT)
+	set(APPS "\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${MORPHEUS_BUNDLE_PREFIX}")
 	
-	#message(STATUS "Gnuplot Path is ${GNUPLOT_ROOT}")
-	#SET(GNUPLOT_LIBRARIES 
-	#	${GNUPLOT_ROOT}/freetype6.dll
-	#	${GNUPLOT_ROOT}/intl.dll
-	#	${GNUPLOT_ROOT}/libcairo-2.dll
-	#	${GNUPLOT_ROOT}/libexpat-1.dll
-	#	${GNUPLOT_ROOT}/libfontconfig-1.dll
-	#	${GNUPLOT_ROOT}/libgd-2-733361a31aab.dll
-	#	${GNUPLOT_ROOT}/libglib-2.0-0.dll
-	#	${GNUPLOT_ROOT}/libgmodule-2.0-0.dll
-	#	${GNUPLOT_ROOT}/libgobject-2.0-0.dll
-	#	${GNUPLOT_ROOT}/libgthread-2.0-0.dll
-	#	${GNUPLOT_ROOT}/libiconv-2.dll
-	#	${GNUPLOT_ROOT}/libjpeg-8.dll
-	#	${GNUPLOT_ROOT}/libpango-1.0-0.dll
-	#	${GNUPLOT_ROOT}/libpangocairo-1.0-0.dll
-	#	${GNUPLOT_ROOT}/libpangoft2-1.0-0.dll
-	#	${GNUPLOT_ROOT}/libpangowin32-1.0-0.dll
-	#	${GNUPLOT_ROOT}/libpng14-14.dll
-	#	${GNUPLOT_ROOT}/lua51.dll
-	#	${GNUPLOT_ROOT}/wxbase28_gcc_custom.dll
-	#	${GNUPLOT_ROOT}/wxmsw28_core_gcc_custom.dll
-	#	${GNUPLOT_ROOT}/zlib1.dll
-	#)
-	#INSTALL(FILES ${GNUPLOT_LIBRARIES} DESTINATION . COMPONENT GnuPlot)
-	#INSTALL(FILES ${GNUPLOT_ROOT}/gnuplot.exe DESTINATION . COMPONENT GnuPlot)
-	ENDIF(MINGW)
+	# Directories to look for dependencies
+	set(DIRS "${CMAKE_BINARY_DIR}")
+	# Path used for searching by FIND_XXX(), with appropriate suffixes added
+	LIST(APPEND CMAKE_PREFIX_PATH "C:/msys64/mingw64")
+	if(CMAKE_PREFIX_PATH)
+		foreach(dir ${CMAKE_PREFIX_PATH})
+			list(APPEND DIRS "${dir}/bin" "${dir}/lib")
+		endforeach()
+	endif()
+	#Append Qt's lib folder which is two levels above Qt5Widgets_DIR
+	list(APPEND DIRS "${Qt5Widgets_DIR}/../..")
+	
+	INSTALL(CODE "
+		SET(EXECUTABLES \"${APPS}/morpheus.exe;${APPS}/gnuplot.exe\")
+		#MESSAGE(\"CPACK: - Searching binaries in ${APPS}/..\")
+		message(\"CPACK:  - APPS: \${EXECUTABLES}\")
+		message(\"CPACK:  - DIRS: ${DIRS}\")
+		file(GET_RUNTIME_DEPENDENCIES
+			RESOLVED_DEPENDENCIES_VAR deps_resolved
+			UNRESOLVED_DEPENDENCIES_VAR deps_unresolved
+			EXECUTABLES \${EXECUTABLES}
+			DIRECTORIES ${DIRS})
+		foreach(dep \${deps_resolved})
+			if( dep MATCHES \"C:[/\\\\]Windows.*\" )
+				# do not install system libraries
+			else()
+				MESSAGE(\"CPACK:  - adding \${dep}\")
+				file(INSTALL \"\${dep}\"
+				DESTINATION \"${APPS}/${INSTALL_RUNTIME_DIR}\")
+			endif()
+		endforeach()
+		# MESSAGE(\"CPACK:  - Resolved dependencies \${deps_resolved}\")
+		# MESSAGE(\"CPACK:  - Unresolved dependencies \${deps_unresolved}\")
+		"
+		COMPONENT Morpheus
+		EXCLUDE_FROM_ALL
+	)
+	
 		
 ELSEIF(APPLE)
 	IF (MORPHEUS_RELEASE_BUNDLE)
-		INSTALL(TARGETS MorpheusSIM RUNTIME DESTINATION ${MORPHEUS_BUNDLE_DIR}/Contents/MacOS COMPONENT Morpheus )
-		Find_PROGRAM(GNUPLOT_SYMEX NAMES gnuplot HINTS ENV GNUPLOT REQUIRED)
-                FILE(READ_SYMLINK ${GNUPLOT_SYMEX} GNUPLOT_EXECUTABLE)
-                IF(NOT IS_ABSOLUTE ${GNUPLOT_EXECUTABLE})
-                        get_filename_component(dir "${GNUPLOT_SYMEX}" DIRECTORY)
-                        set(GNUPLOT_EXECUTABLE "${dir}/${GNUPLOT_EXECUTABLE}")
-                endif()
-		INSTALL(PROGRAMS ${GNUPLOT_EXECUTABLE} DESTINATION ${MORPHEUS_BUNDLE_DIR}/Contents/MacOS COMPONENT Morpheus_SC EXCLUDE_FROM_ALL)
+		SET(INSTALL_RUNTIME_DIR "${MORPHEUS_BUNDLE_DIR}/Contents/MacOS" )
+		INSTALL(TARGETS MorpheusSIM 
+			RUNTIME DESTINATION ${INSTALL_RUNTIME_DIR}
+			COMPONENT Morpheus 
+		)
+		Find_PROGRAM(GNUPLOT_EXECUTABLE NAMES gnuplot HINTS ENV GNUPLOT REQUIRED)
+		IF(IS_SYMLINK ${GNUPLOT_EXECUTABLE})
+			SET(GNUPLOT_SYMEX ${GNUPLOT_EXECUTABLE})
+			FILE(READ_SYMLINK ${GNUPLOT_EXECUTABLE} GNUPLOT_EXECUTABLE)
+			IF(NOT IS_ABSOLUTE ${GNUPLOT_EXECUTABLE})
+				get_filename_component(dir "${GNUPLOT_SYMEX}" DIRECTORY)
+				set(GNUPLOT_EXECUTABLE "${dir}/${GNUPLOT_EXECUTABLE}")
+			endif()
+		ENDIF()
+		INSTALL(PROGRAMS ${GNUPLOT_EXECUTABLE} 
+			DESTINATION ${INSTALL_RUNTIME_DIR} 
+			COMPONENT Morpheus_SC
+			EXCLUDE_FROM_ALL)
 
 	ELSE()
 		INSTALL(TARGETS MorpheusSIM RUNTIME DESTINATION bin COMPONENT Morpheus )

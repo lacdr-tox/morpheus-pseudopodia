@@ -17,20 +17,24 @@ JobViewModel::JobViewModel(JobQueue* jobs, QObject *parent) :
 //    qDebug() << "JobViewModel::JobViewModel";
 	
 //     if (QIcon::hasThemeIcon("process-working")) icon_for_state[ProcessInfo::RUN] = QIcon::fromTheme("process-working");
-	if (QIcon::hasThemeIcon("process-working-symbolic")) icon_for_state[ProcessInfo::RUN] = QIcon::fromTheme("process-working-symbolic");
-	else icon_for_state[ProcessInfo::RUN] = QIcon(":/icons/process-working.svg");
+	// if (QIcon::hasThemeIcon("process-working-symbolic")) icon_for_state[ProcessInfo::RUN] = QIcon::fromTheme("process-working-symbolic");
+	// else 
+		icon_for_state[ProcessInfo::RUN] = QIcon(":/icons/process-working.svg");
 	
 // 	if (QIcon::hasThemeIcon("process-completed")) icon_for_state[ProcessInfo::DONE] = QIcon::fromTheme("process-completed");
-	if (QIcon::hasThemeIcon("process-completed-symbolic")) icon_for_state[ProcessInfo::DONE] = QIcon::fromTheme("process-completed-symbolic");
-	else icon_for_state[ProcessInfo::DONE] = QIcon(":/icons/process-completed.svg");
+	// if (QIcon::hasThemeIcon("process-completed-symbolic")) icon_for_state[ProcessInfo::DONE] = QIcon::fromTheme("process-completed-symbolic");
+	// else 
+		icon_for_state[ProcessInfo::DONE] = QIcon(":/icons/process-completed.svg");
 	
 // 	if (QIcon::hasThemeIcon("process-stop")) icon_for_state[ProcessInfo::EXIT] = QIcon::fromTheme("process-stop");
-	if (QIcon::hasThemeIcon("process-stopped-symbolic")) icon_for_state[ProcessInfo::EXIT] = QIcon::fromTheme("process-stopped-symbolic");
-	else icon_for_state[ProcessInfo::EXIT] = QIcon(":/icons/process-stopped.svg");
+	// if (QIcon::hasThemeIcon("process-stopped-symbolic")) icon_for_state[ProcessInfo::EXIT] = QIcon::fromTheme("process-stopped-symbolic");
+	// else 
+		icon_for_state[ProcessInfo::EXIT] = QIcon(":/icons/process-stopped.svg");
 	
 // 	if (QIcon::hasThemeIcon("process-pending")) icon_for_state[ProcessInfo::PEND] = QIcon::fromTheme("process-pending");
-	if (QIcon::hasThemeIcon("process-pending-symbolic")) icon_for_state[ProcessInfo::PEND] = QIcon::fromTheme("process-pending-symbolic");
-	else icon_for_state[ProcessInfo::PEND] = QIcon(":/icons/process-pending.svg");
+	// if (QIcon::hasThemeIcon("process-pending-symbolic")) icon_for_state[ProcessInfo::PEND] = QIcon::fromTheme("process-pending-symbolic");
+	// else 
+		icon_for_state[ProcessInfo::PEND] = QIcon(":/icons/process-pending.svg");
 
 	updateLayout();
 	

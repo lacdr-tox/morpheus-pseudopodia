@@ -336,6 +336,73 @@ void Gnuplot::setLogfile(string filename)
 
 //----------------------------------------------------------------------------------
 //
+// Get Path of the executable
+//
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__)
+size_t getExecutablePathName_c(char* pathName, size_t pathNameCapacity)
+{
+	// TODO Should use GetModuleFileNameW here
+	return GetModuleFileNameA(NULL, pathName, pathNameCapacity);
+}
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+size_t getExecutablePathName_c(char* pathName, size_t pathNameCapacity)
+{
+	uint32_t pathNameSize = 0;
+	_NSGetExecutablePath(NULL, &pathNameSize);
+	if (pathNameSize > pathNameCapacity)
+// 		return 0;
+		pathNameSize = pathNameCapacity;
+
+	if (!_NSGetExecutablePath(pathName, &pathNameSize))
+	{
+		char real[PATH_MAX];
+
+		if (realpath(pathName, real) != NULL)
+		{
+			pathNameSize = strlen(real);
+			strncpy(pathName, real, pathNameSize);
+		}
+		return pathNameSize;
+	}
+	return 0;
+}
+#elif defined(unix) || defined(__unix) || defined(__unix__) || defined(__linux__) 
+#include <unistd.h>
+size_t getExecutablePathName_c(char* pathName, size_t pathNameCapacity)
+{
+	size_t pathNameSize = readlink("/proc/self/exe", pathName, pathNameCapacity - 1);
+	pathName[pathNameSize]='\0';
+	return pathNameSize;
+}
+#else
+  #error provide your own implementation
+#endif
+
+std::string getExecutablePathName()
+{
+	static int pathNameCapacity = 256;
+	const int pathNameCapacityMax = 2048;
+	size_t pathNameSize=0;
+	string pathName;
+	while(pathNameCapacity<=pathNameCapacityMax && pathNameSize==0) {
+		char pathBuffer[pathNameCapacity];
+		pathNameSize = getExecutablePathName_c(pathBuffer,pathNameCapacity);
+		if (pathNameSize) {
+			pathBuffer[pathNameSize]='\0';
+			pathName = pathBuffer;
+			break;
+		}
+		pathNameCapacity*=2;
+	}
+	return pathName;
+}
+
+
+
+//----------------------------------------------------------------------------------
+//
 // Find out if a command lives in m_sGNUPlotPath or in PATH
 //
 bool Gnuplot::get_program_path()
@@ -376,11 +443,11 @@ bool Gnuplot::get_program_path()
 	string path_sep = "/";
 #endif
 
-    auto exec_path = boost::dll::program_location().string();
-    exec_path.resize(exec_path.find_last_of(path_sep));
-    std::cout << exec_path << std::endl;
-	
-    ls.push_front(exec_path);
+	auto exec_path = getExecutablePathName();
+	auto last_sep = exec_path.find_last_of(path_sep);
+	if (last_sep != string::npos)  exec_path.resize(last_sep);
+
+	ls.push_front(exec_path);
 
         // scan list for Gnuplot program files
         for (std::list<std::string>::const_iterator i = ls.begin(); i != ls.end(); ++i)
