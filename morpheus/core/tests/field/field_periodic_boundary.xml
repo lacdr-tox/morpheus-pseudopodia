@@ -1,0 +1,92 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MorpheusModel version="4">
+    <Description>
+        <Details>Test a 3 dimensional Field set to gradients depending on spatial position with periodic boundaries.
+Expect:
+a_a = 6
+a_s = 36</Details>
+        <Title>Test_Field_periodic_boundary</Title>
+    </Description>
+    <Space>
+        <Lattice class="cubic">
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+            <Size symbol="size" value="5,5,5"/>
+            <BoundaryConditions>
+                <Condition type="periodic" boundary="x"/>
+                <Condition type="periodic" boundary="y"/>
+                <Condition type="periodic" boundary="z"/>
+            </BoundaryConditions>
+        </Lattice>
+        <SpaceSymbol symbol="space"/>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="0"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <Analysis>
+        <DependencyGraph format="svg" reduced="false" include-tags="#untagged"/>
+        <!--    <Disabled>
+        <Gnuplotter time-step="1.0">
+            <Plot slice="2">
+                <Field symbol-ref="f"/>
+            </Plot>
+            <Terminal name="png"/>
+            <Plot slice="2">
+                <Field symbol-ref="fn_a"/>
+            </Plot>
+            <Plot slice="2">
+                <Field symbol-ref="fn_s"/>
+            </Plot>
+        </Gnuplotter>
+    </Disabled>
+-->
+        <!--    <Disabled>
+        <Logger time-step="1.0">
+            <Input>
+                <Symbol symbol-ref="a_a"/>
+                <Symbol symbol-ref="a_s"/>
+            </Input>
+            <Output>
+                <TextOutput/>
+            </Output>
+            <Plots>
+                <Plot>
+                    <Style style="points"/>
+                    <Terminal terminal="png"/>
+                    <X-axis>
+                        <Symbol symbol-ref="time"/>
+                    </X-axis>
+                    <Y-axis>
+                        <Symbol symbol-ref="a_a"/>
+                        <Symbol symbol-ref="a_s"/>
+                    </Y-axis>
+                </Plot>
+            </Plots>
+        </Logger>
+    </Disabled>
+-->
+    </Analysis>
+    <Global>
+        <Field symbol="f" value="space.x + space.y + space.z"/>
+        <Field name="average of neighbors" symbol="fn_a" value="0.0"/>
+        <Field name="sum of neighbors" symbol="fn_s" value="0.0"/>
+        <NeighborhoodReporter>
+            <Input value="f"/>
+            <Output mapping="average" symbol-ref="fn_a"/>
+            <Output mapping="sum" symbol-ref="fn_s"/>
+        </NeighborhoodReporter>
+        <Mapper>
+            <Input value="fn_s"/>
+            <Output mapping="average" symbol-ref="a_s"/>
+        </Mapper>
+        <Mapper>
+            <Input value="fn_a"/>
+            <Output mapping="average" symbol-ref="a_a"/>
+        </Mapper>
+        <Variable name="average of avarage neihbor values" symbol="a_a" value="0.0"/>
+        <Variable name="average of summed neighbor values" symbol="a_s" value="0.0"/>
+    </Global>
+</MorpheusModel>
