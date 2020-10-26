@@ -151,10 +151,11 @@ void domNodeViewer::createLayout()
 	model_tree_remove_action = new QAction(QIcon::fromTheme("list-remove"),"remove",this);
 	model_tree_remove_action->setShortcut(QKeySequence(QKeySequence::Delete));
 	connect(model_tree_remove_action, &QAction::triggered, [this](){
+		auto current_index = model_tree_filter->mapToSource(model_tree_view->currentIndex());
 		if (current_index.isValid()) {
 			QMessageBox::StandardButton r = QMessageBox::question(this,
 						"Remove node",
-						QString("Are you sure?\t"),
+						QString("Are you sure to remove node '%1'?\t").arg(current_index.siblingAtColumn(0).data(Qt::DisplayRole).toString()),
 						QMessageBox::Yes | QMessageBox::No
 						);
 			if (r == QMessageBox::Yes)
@@ -375,7 +376,7 @@ void domNodeViewer::setTreeItem( const QModelIndex& index)
 		model_tree_view->setCurrentIndex(view_index);
 	}
 	model_tree_view->blockSignals(false);
-	current_index = model_tree_filter->mapToSource(view_index);
+// 	current_index = model_tree_filter->mapToSource(view_index);
 	
 	// Select the proper editor
     nodeController* node = view_index.data(MorphModel::NodeRole).value<nodeController*>();
@@ -448,13 +449,16 @@ void domNodeViewer::updateSymbolList() {
 }
 
 void domNodeViewer::updateNodeActions() {
-	auto node = current_index.data(MorphModel::NodeRole).value<nodeController*>();
-	
-	model_tree_remove_action->setEnabled(node->isDeletable());
-	
+	auto node = model_tree_view->currentIndex().data(MorphModel::NodeRole).value<nodeController*>();
 	plugin_tree_widget->clear();
 	auto addMenu = model_tree_add_action->menu();
 	addMenu->clear();
+	if (!node) {
+		model_tree_remove_action->setEnabled(false);
+		return;
+	}
+	model_tree_remove_action->setEnabled(node->isDeletable());
+	
 	QStringList allChilds = node->getAddableChilds(true);
 	QStringList addableChilds = node->getAddableChilds(false);
 	for(int i = 0; i < allChilds.size(); i++)

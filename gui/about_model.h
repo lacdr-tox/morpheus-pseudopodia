@@ -59,7 +59,6 @@ class AboutModel : public QSplitter {
 public:
 	AboutModel(SharedMorphModel model, QWidget* parent = NULL);
 	void update();
-    virtual void resizeEvent(QResizeEvent* event);
 
 signals:
 	void nodeSelected(QString path);

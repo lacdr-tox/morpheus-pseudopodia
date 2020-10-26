@@ -77,7 +77,7 @@ private:
     map<QAction, QString> action_names;
 
 	QTreeView* model_tree_view; /*!< TreeWidget in which the xml-nodes will be shown.*/
-	QModelIndex current_index;
+// 	QModelIndex current_index;
 	TagFilterSortProxyModel* model_tree_filter;
 	CheckBoxList* filter_tag_list;
 	QAction *model_tree_add_action, *model_tree_remove_action, *model_tree_filter_action, *model_tree_sort_action;

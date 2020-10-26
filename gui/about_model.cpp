@@ -514,13 +514,6 @@ void AboutModel::svgOut()
 	}
 }
 
-
-void AboutModel::resizeEvent(QResizeEvent* event)
-{
-    QWidget::resizeEvent(event);
-}
-
-
 void AboutModel::assignTitle(QString title)
 {
 	nodeController *node = model->find(QStringList() << "Description" << "Title");
