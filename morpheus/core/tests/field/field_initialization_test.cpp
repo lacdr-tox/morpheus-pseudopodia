@@ -22,7 +22,7 @@ TEST (FieldInitialisation, Spatial) {
 	mean = SIM::findGlobalSymbol<double>("mean") -> get(SymbolFocus::global);
 	mass = SIM::findGlobalSymbol<double>("mass") -> get(SymbolFocus::global);
 	EXPECT_DOUBLE_EQ(s, 5);
-	EXPECT_DOUBLE_EQ(size,VDOUBLE(5,5,0));
+	EXPECT_EQ(size,VDOUBLE(5,5,0));
 	EXPECT_DOUBLE_EQ(mean,0.5);
 	EXPECT_DOUBLE_EQ(mass,0.5 * 5 * 5);
 }

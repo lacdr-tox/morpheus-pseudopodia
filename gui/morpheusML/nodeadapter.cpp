@@ -40,7 +40,7 @@ void LatticeStructureAdapter::structureChanged()
 	if (!a_size) { qDebug() << "Size Attribute already destroyed in LatticeStructureAdapter::structureChanged()"; return; }
 	
 	int dimensions = getDimensions(a_structure->get());
-	QStringList lengths = a_size->get().split(QRegExp("[, ]"),QString::SkipEmptyParts);
+	QStringList lengths = a_size->get().split(QRegExp(","),QString::SkipEmptyParts);
 // 	qDebug() << "Got lattice size " << lengths << " and dimensions " << dimensions;
 	
 	bool changed = false;
@@ -54,7 +54,7 @@ void LatticeStructureAdapter::structureChanged()
 
 	for (uint dim=0; dim<3; dim++) {
 		if (dim < dimensions) {
-			if (lengths[dim].toInt() < 1) {
+			if (lengths[dim].trimmed() == "0") {
 				lengths[dim] = stored_lengths[dim];
 				changed = true;
 			}
