@@ -89,16 +89,16 @@ std::size_t getPeakRSS( )
 	getrusage( RUSAGE_SELF, &rusage );
 	
 	// HACK WdB: use statm file instead of getrusage (which does not work properly) HACK
-	int tSize = 0, resident = 0, share = 0;
-	std::ifstream buffer("/proc/self/statm");
-    buffer >> tSize >> resident >> share;
-	buffer.close();
+// 	int tSize = 0, resident = 0, share = 0;
+// 	std::ifstream buffer("/proc/self/statm");
+//     buffer >> tSize >> resident >> share;
+// 	buffer.close();
 	
 #if defined(__APPLE__) && defined(__MACH__)
 	return (std::size_t)rusage.ru_maxrss;
 #else
-	//return (std::size_t)(rusage.ru_maxrss * 1024L); // WdB HACK
-	return (std::size_t)(resident * 1024L);
+	return (std::size_t)(rusage.ru_maxrss * 1024L); // WdB HACK
+// 	return (std::size_t)(resident * 1024L);
 #endif
 
 #else

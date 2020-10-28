@@ -374,7 +374,8 @@ class TimeStepListener : virtual public Plugin
 		/// The current time of the process
 		double currentTime() const { return valid_time;} 
 		/// System time spent processing this plugin [ms]
-		double execSysTime() { return execute_systemtime / 1000; }
+		double execSysTime() const { return execute_systemtime; }
+		double execClockTime() const { return execute_clocktime; }
 
 		/// Time step adjustable time step
 		bool isAdjustable() { return is_adjustable; }
@@ -429,6 +430,7 @@ private:
 		double time_step;
 		/// time needed for execution (measured in milliseconds)
 		double execute_systemtime;
+		double execute_clocktime;
 		set<SymbolDependency> leaf_input_symbols;
 		std::chrono::high_resolution_clock highc;
 };

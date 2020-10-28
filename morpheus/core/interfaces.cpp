@@ -1,6 +1,7 @@
 #include "interfaces.h"
 #include "time_scheduler.h"
 #include "plugin_parameter.h"
+#include "time.h"
 
 
 Plugin::Plugin() : plugin_name(""), local_scope(nullptr) {}
@@ -145,6 +146,7 @@ TimeStepListener::TimeStepListener(TimeStepListener::XMLSpec spec) : xml_spec(sp
 	time_step = -1;
 	latest_time_step = -1;
 	execute_systemtime = 0;
+	execute_clocktime = 0;
 }
 
 set<SymbolDependency> TimeStepListener::getLeafDependSymbols() {
@@ -279,16 +281,53 @@ void TimeStepListener::init(const Scope* scope)
 void TimeStepListener::prepareTimeStep_internal(double max_time)
 {
 	auto start = highc.now();
+#ifdef _POSIX_CPUTIME
+	timespec cstart;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cstart);
+#else
+	auto cstart = std::clock();
+#endif
+	
 	prepared_time_step = min(time_step>0 ? time_step : SIM::getStopTime() - valid_time , max_time-valid_time);
 	prepareTimeStep_impl(prepared_time_step);
-	execute_systemtime += chrono::duration_cast<chrono::microseconds>(highc.now()-start).count();
+	
+#ifdef _POSIX_CPUTIME
+	timespec cstop;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cstop);
+	double dt = difftime(cstart.tv_sec, cstop.tv_sec) + (cstop.tv_nsec-cstart.tv_nsec)*1e-6;
+	if (dt > 0) { execute_clocktime += dt; }
+#else
+	auto cstop = std::clock();
+	if (cstop-cstart > 0) { execute_clocktime += (1000.0 * (cstop-cstart)) / CLOCKS_PER_SEC; }
+#endif
+	
+	execute_systemtime += chrono::duration_cast<chrono::microseconds>(highc.now()-start).count()  * 1e-3;
 }
 
 void TimeStepListener::executeTimeStep_internal()
 {
 	auto start = highc.now();
+#ifdef _POSIX_CPUTIME
+	timespec cstart;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cstart);
+#else
+	auto cstart = std::clock();
+#endif
+	
 	executeTimeStep_impl();
-	execute_systemtime += chrono::duration_cast<chrono::microseconds>(highc.now()-start).count();
+
+#ifdef _POSIX_CPUTIME
+	timespec cstop;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cstop);
+	double dt = difftime(cstart.tv_sec, cstop.tv_sec) + (cstop.tv_nsec-cstart.tv_nsec)*1e-6;
+	if (dt > 0) { execute_clocktime += dt; }
+#else
+	auto cstop = std::clock();
+	if (cstop-cstart > 0) {
+		execute_clocktime += (1000.0 * (cstop-cstart)) / CLOCKS_PER_SEC;
+	}
+#endif
+	execute_systemtime += chrono::duration_cast<chrono::microseconds>(highc.now()-start).count() * 1e-3;
 	
 	latest_time_step = SIM::getTime();
 	if (prepared_time_step>=0) {

@@ -561,7 +561,7 @@ void TimeScheduler::finish()
 	std::sort(ts.all_listeners.begin(),ts.all_listeners.end(),[](TimeStepListener* a, TimeStepListener* b) { return a->execSysTime()>b->execSysTime(); } );
 	for (uint i=0; i<ts.all_listeners.size(); i++) {
 
-		cout << "  + " << setw(6) << (ts.all_listeners[i]->execSysTime()/ts.execTime)*100.0 <<"%" << " = " << setw(8) << ts.all_listeners[i]->execSysTime() << "[ms] | ";
+		cout << "  + " << setw(6) << (ts.all_listeners[i]->execSysTime()/ts.execTime)*100.0 <<"%" << " = " << setprecision(1) << setw(8) << ts.all_listeners[i]->execSysTime() << " (" << setw(8) << ts.all_listeners[i]->execClockTime() <<") [ms] | ";
 		
 		cout << ts.all_listeners[i]->XMLName();
 		if ( ! ts.all_listeners[i]->getFullName().empty() )
