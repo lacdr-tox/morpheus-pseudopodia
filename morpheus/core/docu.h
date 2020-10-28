@@ -201,10 +201,10 @@ Environment for tightly coupled \ref ML_Rule and \ref ML_DiffEqn. Expressions wi
   - \b Fixed schemes: integration step size, given in system time.
   - \b Adaptive schemes: Coupling interval given in system time, i.e. maximum step size without coupling to other processes.
 
-- \b time-scaling (optional): scales the dynamics of \b ML_System relative to the simulation time. The time within the system runs prefactored with the \b time-scaling.
+- \b time-scaling (optional): scales the dynamics of the \ref ML_System relative to the simulation time. The time within the system runs prefactored with the \b time-scaling.
 
 
-Note: Systems define their own \ref Scope. This implies that values of symbols defined within a System are not accessible outside of the System. Multiple Systems can be defined within the same parental Scope, easing modular model development.
+\b Note: Systems define their own \ref Scope. This implies that values of symbols defined within a System are not accessible outside of the System. Multiple Systems can be defined within the same parental Scope, easing modular model development.
 
 **/
 /**

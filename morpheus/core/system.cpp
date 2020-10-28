@@ -343,10 +343,14 @@ void System::computeContextToBuffer()
 {
 	FocusRange range(target_granularity, target_scope);
 	if (range.size() > 50) {
+		ExceptionCatcher expression_catcher;
 #pragma omp parallel for schedule(static)
 		for (auto focus = range.begin(); focus<range.end(); ++focus) {
-			computeToBuffer(*focus);
+			expression_catcher.Run([=]{
+				computeToBuffer(*focus);
+			});
 		}
+		expression_catcher.Rethrow();
 	}
 	else {
 		for (const auto& focus :range ) {

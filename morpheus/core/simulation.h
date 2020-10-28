@@ -56,6 +56,7 @@ class VectorField_Layer;
 #include "scope.h"
 #include "scales.h"
 #include "cpm.h"
+#include <mutex>
 // #include "cpm_layer.h"
 // #include "cell_update.h"
 
@@ -103,6 +104,36 @@ private:
 	string _expression;
 };
 
+
+class ExceptionCatcher {
+private:
+	std::exception_ptr Ptr;
+	std::mutex         Lock;
+public:
+	ExceptionCatcher(): Ptr(nullptr) {}
+	
+	template <typename Function, typename... Parameters>
+	void Run(Function f, Parameters... params)
+	{
+		try 
+		{
+			f(params...);
+		}
+		catch (...)
+		{
+			CaptureException();
+		}
+	}
+	
+	void Rethrow(){
+		if(this->Ptr) std::rethrow_exception(this->Ptr);
+	}
+	
+	void CaptureException() { 
+		std::unique_lock<std::mutex> guard(this->Lock);
+		this->Ptr = std::current_exception(); 
+	}
+};
 
 namespace SIM {
 	/// Simulation title as defined by XML

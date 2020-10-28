@@ -49,6 +49,7 @@ void FunctionPlugin::loadFromXML ( const XMLNode Node, Scope* scope)
 	// register the symbol in the parental scope
 	symbol.init();
 	accessor = make_shared<Symbol>(this);
+	accessor->setXMLPath(getXMLPath(stored_node));
 	scope->registerSymbol(accessor);
 }
 
@@ -124,6 +125,7 @@ void VectorFunction::loadFromXML ( const XMLNode Node, Scope* scope)
 	description = this->plugin_name;
 	symbol.init();
 	accessor = make_shared<Symbol>(this);
+	accessor->setXMLPath(getXMLPath(stored_node));
 	scope->registerSymbol(accessor);
 	
 	evaluator = make_shared<ThreadedExpressionEvaluator<VDOUBLE> >(raw_expression(), scope, false);
