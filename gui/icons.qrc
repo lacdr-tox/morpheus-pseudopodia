@@ -58,8 +58,7 @@
 		<file alias="process-working.svg">icons/fallback/scalable/process-working.svg</file>
 	</qresource>
 	<!-- 		MORPHEUS THEME ICONS -->
-	<qresource>
-<!-- light -->
+<!--	<qresource>
 		<file>icons/McMojave/index.theme</file>
 		<file>icons/McMojave/status/symbolic/dialog-error-symbolic.svg</file>
 		<file>icons/McMojave/status/symbolic/dialog-information-symbolic.svg</file>
@@ -111,7 +110,6 @@
 		<file>icons/McMojave/mimes/48/text-x-generic.svg</file>
 		<file>icons/McMojave/mimes/48/text-xml.svg</file>
 	</qresource>
-<!-- dark -->
 	<qresource>
 		<file>icons/McMojave-dark/index.theme</file>
 		<file>icons/McMojave-dark/status/symbolic/dialog-error-symbolic.svg</file>
@@ -163,5 +161,107 @@
 		<file>icons/McMojave-dark/apps/symbolic/utilities-terminal.svg</file>
 		<file>icons/McMojave-dark/mimes/48/text-x-generic.svg</file>
 		<file>icons/McMojave-dark/mimes/48/text-xml.svg</file>
+	</qresource>-->
+	<qresource>
+		<file>icons/EX-Impression/index.theme</file>
+		<file>icons/EX-Impression/16/actions/application-exit.svg</file>
+		<file>icons/EX-Impression/16/actions/configure.svg</file>
+		<file>icons/EX-Impression/16/actions/dialog-apply.svg</file>
+		<file>icons/EX-Impression/16/actions/dialog-cancel.svg</file>
+		<file>icons/EX-Impression/16/actions/dialog-close.svg</file>
+		<file>icons/EX-Impression/16/actions/document-close.svg</file>
+		<file>icons/EX-Impression/16/actions/document-import.svg</file>
+		<file>icons/EX-Impression/16/actions/document-new.svg</file>
+		<file>icons/EX-Impression/16/actions/document-open.svg</file>
+		<file>icons/EX-Impression/16/actions/document-revert.svg</file>
+		<file>icons/EX-Impression/16/actions/document-save-as.svg</file>
+		<file>icons/EX-Impression/16/actions/document-save.svg</file>
+		<file>icons/EX-Impression/16/actions/edit-copy.svg</file>
+		<file>icons/EX-Impression/16/actions/edit-cut.svg</file>
+		<file>icons/EX-Impression/16/actions/edit-delete.svg</file>
+		<file>icons/EX-Impression/16/actions/edit-paste.svg</file>
+		<file>icons/EX-Impression/16/actions/go-next.svg</file>
+		<file>icons/EX-Impression/16/actions/go-previous.svg</file>
+		<file>icons/EX-Impression/16/actions/list-add.svg</file>
+		<file>icons/EX-Impression/16/actions/list-remove.svg</file>
+		<file>icons/EX-Impression/16/actions/mail-attachment.svg</file>
+		<file>icons/EX-Impression/16/actions/media-playback-pause.svg</file>
+		<file>icons/EX-Impression/16/actions/media-playback-start.svg</file>
+		<file>icons/EX-Impression/16/actions/media-playback-stop.svg</file>
+		<file>icons/EX-Impression/16/actions/media-seek-forward.svg</file>
+		<file>icons/EX-Impression/16/actions/preferences-other.svg</file>
+		<file>icons/EX-Impression/16/actions/settings.svg</file>
+		<file>icons/EX-Impression/16/actions/view-filter.svg</file>
+		<file>icons/EX-Impression/16/actions/view-sort-ascending.svg</file>
+		<file>icons/EX-Impression/16/places/folder.svg</file>
+		<file>icons/EX-Impression/symbolic/actions/document-open-symbolic.svg</file>
+		<file>icons/EX-Impression/symbolic/actions/document-save-symbolic.svg</file>
+		<file>icons/EX-Impression/symbolic/actions/media-playback-pause-symbolic.svg</file>
+		<file>icons/EX-Impression/symbolic/actions/media-playback-start-symbolic.svg</file>
+		<file>icons/EX-Impression/symbolic/actions/media-playback-stop-symbolic.svg</file>
+		<file>icons/EX-Impression/symbolic/apps/system-run.svg</file>
+		<file>icons/EX-Impression/symbolic/apps/utilities-terminal.svg</file>
+		<file>icons/EX-Impression/symbolic/status/dialog-error-symbolic.svg</file>
+		<file>icons/EX-Impression/symbolic/status/dialog-information-symbolic.svg</file>
+		<file>icons/EX-Impression/symbolic/status/dialog-question-symbolic.svg</file>
+		<file>icons/EX-Impression/symbolic/status/dialog-warning-symbolic.svg</file>
+		<file>icons/EX-Impression/symbolic/status/process-completed-symbolic.svg</file>
+		<file>icons/EX-Impression/symbolic/status/process-error-symbolic.svg</file>
+		<file>icons/EX-Impression/symbolic/status/process-stop-symbolic.svg</file>
+		<file>icons/EX-Impression/symbolic/status/process-working-symbolic.svg</file>
+		<file>icons/EX-Impression/symbolic/status/tools-timer-symbolic.svg</file>
+		<file>icons/EX-Impression/48/mimes/text-x-generic.svg</file>
+		<file>icons/EX-Impression/48/mimes/text-xml.svg</file>
+	</qresource>
+	<qresource>
+		<file>icons/EX-Impression-dark/index.theme</file>
+		<file>icons/EX-Impression-dark/16/actions/application-exit.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/configure.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/dialog-apply.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/dialog-cancel.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/dialog-close.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/document-close.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/document-import.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/document-new.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/document-open.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/document-revert.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/document-save-as.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/document-save.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/edit-copy.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/edit-cut.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/edit-delete.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/edit-paste.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/go-next.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/go-previous.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/list-add.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/list-remove.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/mail-attachment.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/media-playback-pause.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/media-playback-start.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/media-playback-stop.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/media-seek-forward.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/preferences-other.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/settings.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/view-filter.svg</file>
+		<file>icons/EX-Impression-dark/16/actions/view-sort-ascending.svg</file>
+		<file>icons/EX-Impression-dark/16/places/folder.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/actions/document-open-symbolic.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/actions/document-save-symbolic.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/actions/media-playback-pause-symbolic.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/actions/media-playback-start-symbolic.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/actions/media-playback-stop-symbolic.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/apps/system-run.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/apps/utilities-terminal.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/status/dialog-error-symbolic.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/status/dialog-information-symbolic.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/status/dialog-question-symbolic.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/status/dialog-warning-symbolic.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/status/process-completed-symbolic.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/status/process-error-symbolic.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/status/process-stop-symbolic.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/status/process-working-symbolic.svg</file>
+		<file>icons/EX-Impression-dark/symbolic/status/tools-timer-symbolic.svg</file>
+		<file>icons/EX-Impression-dark/48/mimes/text-x-generic.svg</file>
+		<file>icons/EX-Impression-dark/48/mimes/text-xml.svg</file>
 	</qresource>
 </RCC>

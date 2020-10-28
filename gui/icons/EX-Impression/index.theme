@@ -1,0 +1,46 @@
+[Icon Theme]
+Name=Ex-Impression
+
+Comment=Ex-Impression icon theme for linux.
+Example=folder
+
+# Directory list
+Directories=16/actions,16/places,symbolic/actions,symbolic/apps,symbolic/places,symbolic/status,48/mimes,
+
+[16/actions]
+Size=16
+Context=Actions
+Type=Fixed
+
+[symbolic/actions]
+Size=16
+Context=Actions
+MinSize=16
+MaxSize=512
+Type=Scalable
+
+[16/places]
+Size=22
+Context=Actions
+Type=Fixed
+
+[symbolic/apps]
+Size=16
+Contex=Apps
+MinSize=16
+MaxSize=512
+Type=Scalable
+
+[symbolic/status]
+Size=16
+Context=Status
+MinSize=16
+MaxSize=512
+Type=Scalable
+
+[48/mimes]
+Size=48
+Context=MimeTypes
+MinSize=16
+MaxSize=512
+Type=Scalable

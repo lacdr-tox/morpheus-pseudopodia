@@ -81,9 +81,9 @@ int main(int argc, char *argv[])
 	auto os = QSysInfo::productType();
 	if (os=="osx" || os=="macOS" || os=="ios" || os=="windows" || os=="winrt" ) {
 		if (a.palette("QWidget").color(QPalette::Base).lightness()>127)
-			QIcon::setThemeName("McMojave");
+			QIcon::setThemeName("EX-Impression");
 		else 
-			QIcon::setThemeName("McMojave-dark");
+			QIcon::setThemeName("EX-Impression-dark");
 	}
 
 	QCoreApplication::setOrganizationName("Morpheus");
