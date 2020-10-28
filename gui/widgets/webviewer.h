@@ -78,7 +78,7 @@ public:
 	}
 	
 	bool canGoBack() const { return this->history()->canGoBack(); };
-	bool canGoForward() const { return this->history()->canGoForward(); };
+	bool canGoForward() const { return this->history()->ca nGoForward(); };
 	
 	bool debug(bool state);
 
@@ -87,6 +87,14 @@ signals:
 	
 protected:
 	void wheelEvent(QWheelEvent *event) override;
+	bool event(QEvent * event) {
+		// Intercept the creation of ToolTips
+		if (event->type() == QEvent::ToolTip) {
+			return true;
+		}
+		return QWebView::event(event);
+	}
+	
 };
 #elif defined USE_QWebEngine
 

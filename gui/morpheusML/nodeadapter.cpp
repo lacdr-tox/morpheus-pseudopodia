@@ -54,7 +54,7 @@ void LatticeStructureAdapter::structureChanged()
 
 	for (uint dim=0; dim<3; dim++) {
 		if (dim < dimensions) {
-			if (lengths[dim].trimmed() == "0") {
+			if (lengths[dim].toDouble() == 0) {
 				lengths[dim] = stored_lengths[dim];
 				changed = true;
 			}

@@ -565,11 +565,11 @@ void config::ClipBoardChanged() {
 
 //------------------------------------------------------------------------------
 void config::openExamplesWebsite(){
-	QDesktopServices::openUrl(QUrl("http://morpheus.gitlab.io/#examples"));
+	QDesktopServices::openUrl(QUrl("https://morpheus.gitlab.io/#examples"));
 }
 //------------------------------------------------------------------------------
 void config::openMorpheusWebsite(){
-	QDesktopServices::openUrl(QUrl("http://morpheus.gitlab.io"));
+	QDesktopServices::openUrl(QUrl("https://morpheus.gitlab.io"));
 }
 
 //------------------------------------------------------------------------------
@@ -619,7 +619,7 @@ void config::aboutPlatform()
 					"<p align='center'>Version "+QString(MORPHEUS_VERSION_STRING)+", revision " + QString(MORPHEUS_REVISION_STRING) + "<br><br>"
 					"Developed by Jörn Starruß and Walter de Back<br>"
 					"Copyright 2009-"+ QString::number( date.year() )+", Technische Universität Dresden.<br><br>"
-					"More information:<br><a href=\"http://imc.zih.tu-dresden.de/wiki/morpheus\">http://imc.zih.tu-dresden.de/wiki/morpheus</a></p><br>"
+					"More information:<br><a href=\"https://morpheus.gitlab.io\">morpheus.gitlab.io</a></p><br>"
 					"<p align='center'>Disclaimer:<br><font size=\"2\">Non-commercial use: Morpheus (the Software) is distributed for academic use and cannot be used for commercial gain without explicitly written agreement by the Developers. No warranty: The Software is provided \"as is\" without warranty of any kind, either express or implied, including without limitation any implied warranties of condition, uninterrupted use, merchantability, fitness for a particular purpose, or non-infringement. No liability: The Developers do not accept any liability for any direct, indirect, incidential, special, exemplary or consequential damages arising in any way out of the use of the Software.</font></p>";
 
 //     QString title = "Morpheus: Modeling environment for multiscale and multicellular systems biology";
