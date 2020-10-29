@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## Release 2.2.0
 
 ### GUI
   * Introduced an Interactive Configurable Model Graph
