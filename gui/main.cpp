@@ -12,6 +12,70 @@
 #include <QWebEngineUrlScheme>
 #endif
 
+class uriOpenEventFilter : public QObject
+{
+	Q_OBJECT
+	
+signals:
+	void uriOpenProgress(const QUrl& uri, int progress);
+	
+private slots:
+	void uriFetchFinished() {
+		auto model_id = config::openModel(m_tmp_file_path);
+		if (model_id<0)) {
+			qDebug() << "Could not open model " << m_tmp_file_path;
+			return;
+		}
+		auto model = config::getOpenModels()[model_id];
+		// process tasks 
+	}
+	
+protected:
+	bool eventFilter(QObject *obj, QEvent *event) override
+	{
+		if (event->type() == QEvent::FileOpen)
+		{
+			QFileOpenEvent* fileEvent = static_cast<QFileOpenEvent*>(event);
+			if (!fileEvent->url().isEmpty())
+			{
+				// either download the file referred
+				// handle process tasks ...
+				m_uri = fileEvent->url().toString();
+				parseUri(m_uri);
+				auto net = config::getNetwork();
+				if (net) {
+					emit uriOpenProgress(m_file_url,0);
+					auto reply = net->get(QNetworkRequest(m_file_url));
+					connect(reply, &QNetworkReply::finished, this, &uriOpenEventFilter::uriFetchFinished);
+					connect(reply, &QNetworkReply::downloadProgress,
+							[=](qint64 bytesReceived, qint64 bytesTotal) { 
+								this->uriOpenProgress(this->m_file_url, (bytesReceived*100)/bytesTotal) ;
+							});
+				}
+				
+	//             emit urlOpened(m_lastUrl);
+			}
+			else if (!fileEvent->file().isEmpty())
+			{
+				/*auto model_id =*/ config::openModel(fileEvent->file());
+			}
+
+			return false;
+		}
+
+		return false;
+	}
+	
+private:
+	void parseUri(const QUrl& uri) {
+		m_file_url = uri;
+		m_file_url.setScheme("https");
+		m_tmp_file_path = QDesktopServices;
+	}
+	QUrl m_file_url;
+	QString m_tmp_file_path;
+	QUrl m_uri;
+};
 
 int main(int argc, char *argv[])
 {
