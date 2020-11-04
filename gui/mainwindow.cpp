@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "uri_handler.h"
 #include <QtConcurrent/QtConcurrentRun>
 #ifdef USE_QWebEngine
 	#include "network_schemes.h"
@@ -12,40 +13,11 @@
 
 
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)//, ui(new Ui::MainWindow)
+MainWindow::MainWindow(const QCommandLineParser& cmd_line) : QMainWindow(nullptr)//, ui(new Ui::MainWindow)
 {
-
-// THIS CODE BLOCK NEEDS TO BE UNCOMMENTED ONLY WHEN BUILDING MORPHEUS A MAC BUNDLE
-/*
-#if defined(Q_OS_MAC)
- QDir dir (QApplication::applicationDirPath());
- dir.cdUp();
- dir.cdUp();
- dir.cd("plugins");
- QStringList libpaths_before = QApplication::libraryPaths();
- QApplication::setLibraryPaths( QStringList( dir.absolutePath() ) );
-
- QStringList libpaths = QApplication::libraryPaths();
- qDebug() << "(Mac only) Library Path (incl. plugins): " << libpaths;
-#endif
-*/
-// 	QStringList libpaths = QApplication::libraryPaths();
-// 	qDebug() << "Using library Path (should include Qt plugins dir): " << libpaths;
-// 
-// 	QCoreApplication::setOrganizationName("Morpheus");
-//     QCoreApplication::setOrganizationDomain("morpheus.org");
-//     QCoreApplication::setApplicationName("Morpheus");
-//     QApplication::setWindowIcon(QIcon(":/morpheus.png") );
     QWidget::setWindowTitle(tr("Morpheus"));
     QWidget::setAcceptDrops(true);
 
-// #if defined USE_QWebEngine  && QTCORE_VERSION >= 0x051200
-// 	QWebEngineUrlScheme scheme(HelpNetworkScheme::scheme());
-// 	scheme.setSyntax(QWebEngineUrlScheme::Syntax::HostAndPort);
-// 	scheme.setDefaultPort(80);
-// 	scheme.setFlags(QWebEngineUrlScheme::LocalScheme | QWebEngineUrlScheme::LocalAccessAllowed);
-// 	QWebEngineUrlScheme::registerScheme(scheme);
-// #endif
 
     createMainWidgets();
     createMenuBar();
@@ -62,23 +34,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)//, ui(new Ui::Main
     connect(config::getJobQueue(), SIGNAL(processChanged(int)), this, SLOT(jobStatusChanged(int)));
 //     connect(permanentStatus,SIGNAL(clicked()),this,SLOT(statusBarTriggered()));
 
-    QStringList args = QApplication::arguments();
     model_index.model = -1;
     model_index.part = -1;
-	for (int i=1; i<args.size(); i++) {
-		if(args.at(i) == "--clear")
-		{
-			QSettings settings;
-			settings.remove("jobs");
-		}
-		else
-		{
-			if (QFileInfo( args.at(i) ).isFile()  ) {
-				config::openModel( args.at(i));
-			}
-		}
-	}
-		
+
+	// uri_handler may process the arg urls here
+	uri_handler = new uriOpenHandler(this);
+	handleCmdLine(cmd_line,false);
 
     if (config::getOpenModels().isEmpty()) {
 		config::createModel();
@@ -88,22 +49,51 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)//, ui(new Ui::Main
 	connect(sweeper, SIGNAL(attributeDoubleClicked(AbstractAttribute*)), this, SLOT(selectAttribute(AbstractAttribute*)));
 }
 
-void MainWindow::handleMessage(const QString& message){
-	QStringList arguments = message.split(' ');
-	QString path=arguments.at(0);	
-	for(uint i=1; i<arguments.size(); i++){
-		if(!arguments.at(i).startsWith("--")){
-			QString filename = path+"/"+arguments.at(i);
-// 			qDebug() << "Message open file" << filename;
-			if (QFile::exists( filename )  ) {
-				config::openModel( filename );
-			}
+void MainWindow::handleMessage(const QString& message) {
+	QStringList arguments = message.split("@@");
+	qDebug() << arguments;
+	QCommandLineParser cmd_line;
+	parseCmdLine(cmd_line, arguments);
+	if (cmd_line.isSet("convert"))
+		handleSBMLConvert(cmd_line.value("convert"));
+	else 
+		handleCmdLine(cmd_line);
+}
+
+
+void MainWindow::handleCmdLine(const QCommandLineParser& cmd_line, bool tasks_only) {
+	QDir current_path(".");
+	if (cmd_line.isSet("model-path")) {
+		current_path.setPath( cmd_line.value("model-path") );
+	}
+	QStringList files_urls = cmd_line.values("url");
+	files_urls.append( cmd_line.positionalArguments() );
+	for (int i=0; i<files_urls.size(); i++) {
+		auto url = files_urls[i];
+		if (url.contains(":")) {
+			uri_handler->processUri(QUrl(url));
+		}
+		else {
+			config::openModel( current_path.filePath(url) );
 		}
 	}
 	
+	QStringList imports = cmd_line.values("import");
+	for (int i=0; i<imports.size(); i++) {
+		auto url = imports[i];
+		if (url.contains(":")) {
+			uri_handler->processUri(QString("morpheus://import?url=%1").arg(url));
+		}
+		else { 
+			uri_handler->processUri(QString("morpheus://import?url=file://%1").arg(url));
+		}
+	}
+	
+	if (!tasks_only) {
+		// also allow manipulation of the morpheus GUI configuration
+	}
 
 }
-
 //------------------------------------------------------------------------------
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
@@ -112,35 +102,23 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 	
 	if( event->mimeData()->hasFormat("text/plain") ||
 		event->mimeData()->hasFormat("text/uri-list") ){
-	
-        for (const QUrl& url: event->mimeData()->urls()) {
-			QString fileName = url.toLocalFile();
-			QFileInfo file(fileName);
-			qDebug() << "Filename = " << fileName << endl;
-			if(file.exists()){
-				// TODO: should actually check the MIME type, but not sure how
-				QStringList tokens = fileName.split(".");
-				qDebug() << "Tokens = " << tokens << endl;
-				if( tokens[ tokens.size()-1 ] == "xml" ){
-					qDebug() << "ACCEPTED!! = " << fileName << endl;
-					event->acceptProposedAction();
-					return;
-				}
-			}
+		// Check for valid urls
+		for (const QUrl& url: event->mimeData()->urls()) {
+			if ( ! uriOpenHandler::isValidUrl(url)) return;
 		}
+		event->acceptProposedAction();
 	}
 }
 
 void MainWindow::dropEvent(QDropEvent *event)
 {
-	for (const QUrl& url: event->mimeData()->urls()) {
-		QString fileName = url.toLocalFile();
-		QFile file(fileName);
-		if(file.exists()){
-			config::openModel( fileName );
+	if( event->mimeData()->hasFormat("text/plain") ||
+		event->mimeData()->hasFormat("text/uri-list") ){
+		for (const QUrl& url: event->mimeData()->urls()) {
+			uri_handler->processUri(url);
 		}
+		event->acceptProposedAction();
 	}
-	event->acceptProposedAction();
 }
 
 //------------------------------------------------------------------------------

@@ -14,12 +14,17 @@
   # install/uninstall Desktop item
   SET(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
     "CreateShortCut \\\"$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Morpheus Website.lnk\\\" \\\"https:\\\\\\\\morpheus.gitlab.io\\\" \n
-     WriteRegStr HKCU \\\"Software\\\\Morpheus\\\\Morpheus\\\\local\\\" \\\"executable\\\" \\\"$INSTDIR\\\\morpheus.exe\\\"
+     WriteRegStr HKCU \\\"Software\\\\Morpheus\\\\Morpheus\\\\local\\\" \\\"executable\\\" \\\"$INSTDIR\\\\morpheus.exe\\\" \n
+     WriteRegStr HKCU \\\"Software\\\\Classes\\\\morpheus\\\\shell\\\\open\\\\command\\\\(Default)\\\" \\\"$INSTDIR\\\\morpheus-gui.exe \\\\\\\"%1\\\\\\\"  \\\"
+     WriteRegStr HKCU \\\"Software\\\\Classes\\\\morpheus\\\\DefaultIcon\\\\(Default)\\\"  \\\"$INSTDIR\\\\morpheus-gui.exe,1\\\"
+     
   ")
   # CreateShortCut \\\"$DESKTOP\\\\${M_APP_NAME}.lnk\\\" \\\"$INSTDIR\\\\${GUI_EXEC_NAME}\\\" \n
   SET(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
     "Delete \\\"$DESKTOP\\\\${CPACK_PACKAGE_NAME}.lnk\\\" \n
-	 Delete \\\"$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Morpheus Website.lnk\\\"
+	 Delete \\\"$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Morpheus Website.lnk\\\" \n
+	 DeleteRegKey HKCU \\\"Software\\\\Morpheus\\\" \n
+	 DeleteRegKey HKCU \\\"Software\\\\Classes\\\\morpheus\\\"
     ")
 
   # name as it appears in the Add/Remove Software panel

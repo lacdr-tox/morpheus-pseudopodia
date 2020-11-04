@@ -149,6 +149,7 @@ SET( SOURCES ${SOURCES}
     settingsdialog.cpp 
     sshproxy.cpp 
     synchronizer.cpp 
+    uri_handler.cpp
     xmlpreview.cpp 
     xsd.cpp
     widgets/checkboxlist.cpp

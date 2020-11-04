@@ -21,6 +21,7 @@
 
 // #include "xsd.h"
 #include "config.h"
+#include "uri_handler.h"
 #include "job_queue.h"
 #include "parametersweeper.h"
 
@@ -51,7 +52,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = 0); /*!< This constructor creates the whole GUI, with all widgets and objects. */
+    MainWindow(const QCommandLineParser& cmd_line); /*!< This constructor creates the whole GUI, with all widgets and objects. */
     ~MainWindow();
 
     void readSettings(); /*!< Restores the window-geometry from QSettings. */
@@ -101,6 +102,8 @@ private:
     XMLTextDialog *tabXMLPreview; /*!< Widget that is used to show the xml-structure of the current state of model. */
     // jobController *myJobController; /*!< Widget that is used to start, stop and remove simulation-jobs. */
     parameterSweeper *sweeper; /*!< Widget that is used to do parametersweeps. */
+    
+    uriOpenHandler *uri_handler;
 
     void initConfig();
     /*!<
@@ -125,6 +128,7 @@ private:
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void dropEvent(QDropEvent *event);
+	void handleCmdLine(const QCommandLineParser& cmd_line, bool tasks_only=true);
 	
 public slots:
     void selectModel(int index, int part = -1);

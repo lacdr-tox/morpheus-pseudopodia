@@ -22,6 +22,7 @@ public:
 	MorpheusXML();
 	MorpheusXML(QString path);
 	MorpheusXML(QDomDocument model);
+	MorpheusXML(QByteArray data);
 
     QString path;  /*! full path of the file */
     QString name;  /*! plain filename */

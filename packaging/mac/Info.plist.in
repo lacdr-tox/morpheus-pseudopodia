@@ -52,7 +52,6 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>morpheus</string>
-				<string>morph</string>
 			</array>
 		</dict>
 	</array>

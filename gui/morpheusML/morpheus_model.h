@@ -43,8 +43,11 @@ public:
     explicit MorphModel(QObject *parent = 0);
     /*!< Creates an empty model from scratch */
     explicit MorphModel( QString filePath, QObject *parent = 0);
-    /*!< Creates a model description from file @param filepath. */
+	/*!< Creates a model description from file @param filepath. */
+	explicit MorphModel( QByteArray data, QObject *parent = 0);
+    /*!< Creates a model description from readable device @param data. */
     explicit MorphModel( QDomDocument content, QObject *parent = 0);
+	/*!< Creates a model description from xml model description @param content. */
 	
     ~MorphModel();
     /*!< Creates a model description from file @param filepath. */
@@ -121,7 +124,7 @@ private:
 	int dep_graph_model_edit_stamp;
 	ParamSweepModel param_sweep;
 
-	void initModel();
+	void initModel(bool from_scratch = false);
 	void loadModelParts();
 	
 	void prepareActivationOrInsert(nodeController* node, QString name);
