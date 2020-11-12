@@ -232,26 +232,47 @@ VDOUBLE Hex_Lattice::orth_distance(const VDOUBLE& a, const VDOUBLE& b) const {
 	VDOUBLE c;
 	if (boundaries[Boundary::px] == Boundary::periodic  || boundaries[Boundary::py] == Boundary::periodic ) {
 
-		// Wrapping values to hex coordinates
-		VDOUBLE k(a.x - 0.5 * a.y / sin_60, a.y / sin_60, 0.0);
-		VDOUBLE l(b.x - 0.5 * b.y / sin_60, b.y / sin_60, 0.0);
-
+// 		// due to the tilted y-axis of the grid we have to fiddle with x-shifts on y-boundary wrapping
+		VDOUBLE k(a);
+		VDOUBLE l(b);
+		const double x_shift = 0.5*orth_size.y/sin_60;
+		if (boundaries[Boundary::py] == Boundary::periodic && (k.y > orth_size.y || k.y<0)) {
+			auto div = fdiv(k.y, orth_size.y);
+			k.y -= div * orth_size.y;
+			k.x -= div * x_shift;
+		}
+		if (boundaries[Boundary::py] == Boundary::periodic && (l.y > orth_size.y || l.y<0)) {
+			auto div = fdiv(l.y, orth_size.y);
+			l.y -= div * orth_size.y;
+			l.x -= div * x_shift;
+		}
+		if (boundaries[Boundary::px] == Boundary::periodic && (k.x > orth_size.x || k.x<0)) {
+			k.x = fmod(k.x, orth_size.x);
+		}
+		if (boundaries[Boundary::px] == Boundary::periodic && (l.x > orth_size.x || l.x<0)) {
+			l.x = fmod(l.x, orth_size.x);
+		}
+		
 		// calculate their distance
-		c = k-l;
-
-		if (boundaries[Boundary::py] == Boundary::periodic  && (abs(2*c.y) > _size.y)) {
-			c.y= fmod(c.y, _size.y);
-			if ( 2*c.y > _size.y) c.y -= _size.y;
-			if ( 2*c.y < -_size.y) c.y += _size.y;
+		c = l-k;
+		
+		if (boundaries[Boundary::py] == Boundary::periodic) {
+			if ( 2*c.y > orth_size.y) {
+				c.y -= orth_size.y;
+				c.x -= x_shift;
+			}
+			else if ( 2*c.y < -orth_size.y) {
+				c.y += orth_size.y;
+				c.x += x_shift;
+			}
 		}
 
-		if (boundaries[Boundary::px] == Boundary::periodic  && (abs(2*c.x) > _size.x)) {
-			c.x= fmod(c.x, _size.x);
-			if ( 2*c.x > _size.x) c.x -= _size.x;
-			if ( 2*c.x < -_size.x) c.x += _size.x;
+		if (boundaries[Boundary::px] == Boundary::periodic) {
+			if ( 2*c.x > orth_size.x) c.x -= orth_size.x;
+			if ( 2*c.x < -orth_size.x) c.x += orth_size.x;
 		}
 		// Wrapping back to orth coordinates  this might not really be the minimal distance but don't care
-		c = to_orth(c);
+// 		c = to_orth(c);
 
 	}
 	else {
