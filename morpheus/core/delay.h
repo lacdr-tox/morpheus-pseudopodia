@@ -2,7 +2,7 @@
 #define DELAY_H
 
 #include "property.h"
-
+#include <boost/circular_buffer.hpp>
 /**
 \defgroup ML_DelayVariable DelayVariable
 \ingroup ML_Global

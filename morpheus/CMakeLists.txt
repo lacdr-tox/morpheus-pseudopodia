@@ -50,18 +50,14 @@ ENDIF()
 ## External Package dependencies
 ################################
 
-FIND_PACKAGE(Boost REQUIRED)
-IF (Boost_FOUND) 
-	SET(HAVE_BOOST 1)
-ELSE()
-	MESSAGE(STATUS "Unable to detect Boost library. Turning off Delay support.")
-ENDIF()
-TARGET_INCLUDE_DIRECTORIES(MorpheusCore PUBLIC ${Boost_INCLUDE_DIR})
+# set(Boost_USE_STATIC_LIBS ON)
+FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
+SET(HAVE_BOOST 1)
+TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC Boost::boost Boost::program_options)
 
 
 FIND_PACKAGE(ZLIB REQUIRED)
 FIND_PACKAGE(TIFF REQUIRED)
-
 TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC ${ZLIB_LIBRARY} ${TIFF_LIBRARY} ${TIFF_LIBRARY})
 
 IF(MORPHEUS_STATIC_BUILD)

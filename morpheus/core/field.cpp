@@ -128,32 +128,40 @@ void PDE_Layer::loadFromXML(const XMLNode xNode, const Scope* scope)
 	getXMLAttribute(xNode, "time-step", max_time_step);
 
 	getXMLAttribute(xNode,"value", initial_expression);
+	string symbol_name;
+	getXMLAttribute(xNode, "symbol", symbol_name);
+	auto val_override = scope->value_overrides().find(symbol_name);
+	if ( val_override != scope->value_overrides().end()) {
+		initial_expression = val_override->second;
+		scope->value_overrides().erase(val_override);
+	}
+	else {
+		// TODO :: Integrate the tiff format into the data reading / writing infrastructure
+		XMLNode xTiffreader = xNode.getChildNode("TIFFReader");
+		if ( ! xTiffreader.isEmpty() ) {
+			shared_ptr<Plugin> p = PluginFactory::CreateInstance(string(xTiffreader.getName()));
+			if(!p)
+				throw MorpheusException("Unknown Initialization Plugin.", xTiffreader);
+			p->loadFromXML(xTiffreader, const_cast<Scope*>(scope));
+			plugins.push_back(p);
+			
+		}
+	// 		// parse for all PDE Initializers and run them
+	// 		for (int i=0; i < xInit.nChildNode(); i++) {
+	// 			XMLNode xInitPDENode = xInit.getChildNode(i);
+	// 			// assume its an initilizer
+	// 			shared_ptr<Plugin> p = PluginFactory::CreateInstance(string(xInitPDENode.getName()));
+	// 			if (!p) 
+	// 				throw MorpheusException("Unknown Initialization Plugin.", xInitPDENode);
+	// 			p->loadFromXML(xInitPDENode);
+	// 			plugins.push_back(p);
+	// 		}
+	// 	}
 
- 	// TODO :: Integrate the tiff format into the data reading / writing infrastructure
-	XMLNode xTiffreader = xNode.getChildNode("TIFFReader");
-	if ( ! xTiffreader.isEmpty() ) {
-		shared_ptr<Plugin> p = PluginFactory::CreateInstance(string(xTiffreader.getName()));
-		if(!p)
-			throw MorpheusException("Unknown Initialization Plugin.", xTiffreader);
-		p->loadFromXML(xTiffreader, const_cast<Scope*>(scope));
-		plugins.push_back(p);
-		
- 	}
-// 		// parse for all PDE Initializers and run them
-// 		for (int i=0; i < xInit.nChildNode(); i++) {
-// 			XMLNode xInitPDENode = xInit.getChildNode(i);
-// 			// assume its an initilizer
-// 			shared_ptr<Plugin> p = PluginFactory::CreateInstance(string(xInitPDENode.getName()));
-// 			if (!p) 
-// 				throw MorpheusException("Unknown Initialization Plugin.", xInitPDENode);
-// 			p->loadFromXML(xInitPDENode);
-// 			plugins.push_back(p);
-// 		}
-// 	}
-
-	XMLNode xData = xNode.getChildNode("Data");
-	if ( ! xData.isEmpty()) {
-		restoreData(xData);
+		XMLNode xData = xNode.getChildNode("Data");
+		if ( ! xData.isEmpty()) {
+			restoreData(xData);
+		}
 	}
 
 	if ( diffusion_rate>0 ) {

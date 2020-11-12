@@ -47,7 +47,7 @@
 
 // draws in the memory and random header
 #include "config.h"
-
+#include <boost/property_tree/ptree.hpp>
 // due to non-linearity of the dependencies, we need forward declarations
 class PDE_Layer;
 class VectorField_Layer;
@@ -173,6 +173,7 @@ namespace SIM {
 	Scope* getGlobalScope();
 	
 	void wipe();
+	boost::property_tree::ptree& getPerfLogger();
 	
 	/// \brief Find a globally accessible Symbol (global scope)
 	template <class S>

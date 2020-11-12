@@ -1,5 +1,7 @@
 #include "uri_handler.h"
 #include "sbml_import.h"
+#include "widgets/webviewer.h"
+
 bool parseCmdLine(QCommandLineParser& parser, const QStringList& arguments) {
 	parser.setApplicationDescription("Modelling environment for multicellular systems biology");
 	parser.addHelpOption();
@@ -10,6 +12,7 @@ bool parseCmdLine(QCommandLineParser& parser, const QStringList& arguments) {
 		{ {"url","u"}, "Open model referred by the URL. May also include processing instructions.", "url"},
 		{ "model-path", "Base path to load local models", "path" }
 	} );
+	parser.addOptions(WebViewer::commandLineOptions());
 	parser.addPositionalArgument("model", "Open local model file or url");
 	
 	parser.process(arguments);

@@ -8,11 +8,14 @@
 #include "simulation_p.h"
 #include "cpm_p.h"
 #include "rss_stat.h"
+#include <boost/program_options.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 namespace SIM {
 	
 	string dep_graph_format = "dot";
 	bool generate_symbol_graph_and_exit = false;
+	bool generate_performance_stats = false;
 	int numthreads = omp_get_max_threads();
 	
 	unique_ptr<LatticePlugin> lattice_plugin = nullptr;
@@ -48,40 +51,49 @@ int main(int argc, char *argv[]) {
 	try {
 #endif
 	
-    double init0 = get_wall_time();
+    double init_rt0 = get_wall_time();
+	double init_cpu0  = get_cpu_time();
 	if (init(argc, argv)) {
 	
-		double init1 = get_wall_time();
+		double init_rt1 = get_wall_time();
+		double init_cpu1  = get_cpu_time();
+		
+		auto& perf_json = getPerfLogger();
+		boost::property_tree::ptree initialisation;
+		initialisation.add("name", "initialisation");
+		initialisation.add("runtime",  to_str(init_rt1 - init_rt0));
+		initialisation.add("cputime",  to_str(init_cpu1 - init_cpu0));
+		perf_json.add_child("component",initialisation);
+		
+		TimeScheduler::compute();
+		
 		size_t initMem = getCurrentRSS();
 		
-		//  Start Timers
-		double wall0 = get_wall_time();
-		double cpu0  = get_cpu_time();
-
-		TimeScheduler::compute();
+		finalize();
 		
 		//  Stop timers
 		double wall1 = get_wall_time();
 		double cpu1  = get_cpu_time();
-
-		finalize();
-
-
+		
 		cout << "\n=== Simulation finished ===\n";
-		string init_time = prettyFormattingTime( init1 - init0 );
-		string cpu_time = prettyFormattingTime( cpu1 - cpu0 );
-		string wall_time = prettyFormattingTime( wall1 - wall0 );
+		string init_time = prettyFormattingTime( init_rt1 - init_rt0 );
+		string cpu_time = prettyFormattingTime( cpu1 - init_cpu0 );
+		string wall_time = prettyFormattingTime( wall1 - init_rt0 );
 		size_t peakMem = getPeakRSS();
 		
 		cout << "Init Time   = " << init_time << "\n";
 		cout << "Wall Time   = " << wall_time << "\n";
 		cout << "CPU Time    = " << cpu_time  << " (" << numthreads << " threads)\n\n";
-		cout << "Memory peak = " << prettyFormattingBytes(peakMem) << "\n";
+// 		cout << "Memory peak = " << prettyFormattingBytes(peakMem) << "\n";
 		
-		ofstream fout("performance.txt", ios::out);
-		fout << "Threads\tInit(s)\tCPU(s)\tWall(s)\tMem(Mb)\n";
-		fout << numthreads << "\t" << (init1-init0) << "\t" << (cpu1-cpu0) << "\t" << (wall1-wall0) << "\t" << (double(peakMem)/(1024.0*1024.0)) << "\n";
-		fout.close();
+		perf_json.add("runtime", wall1 - init_rt0);
+		perf_json.add("cputime", cpu1 - init_cpu0);
+// 		perf_json.add("memory", to_str(peakMem));
+		perf_json.add("ompthreads", to_str(omp_get_max_threads()));
+		
+		if (generate_performance_stats) {
+			boost::property_tree::write_json("performance.json", perf_json);
+		}
 	}
 
 #ifndef NO_CORE_CATCH
@@ -102,7 +114,7 @@ int main(int argc, char *argv[]) {
 		exception = true;
 		cerr << "\n" << e.what()<< "\n";
 	}
-	catch (std::runtime_error& e) {
+	catch (std::exception& e) {
 		exception = true;
 		cerr << e.what() << endl; 
 	}
@@ -115,7 +127,16 @@ int main(int argc, char *argv[]) {
 	if (exception) {
 		cerr.flush();
 		if (SIM::generate_symbol_graph_and_exit) {
-			createDepGraph();
+			try {
+				createDepGraph();
+			}
+			catch(const string& e) {
+				cerr << "Unable to generate Model Graph.\n" << e << endl;
+			}
+			catch(...) {
+				cerr << "Unable to generate Model Graph.\n" << endl;
+			}
+
 		}
 		
 		return -1;
@@ -278,7 +299,7 @@ void splash(bool show_usage) {
     cout << " Options:  " << endl;
     cout << " -file [XML-FILE]      Run simulator with XML configuration file" << endl;
 	cout << " -outdir [PATH]        Set the output directory" << endl;
-	cout << " -[KEY]=[VALUE]        Override the value of Constant symbols from the Global section" << endl;
+	cout << " -P [Symbol]=[VALUE]   Override the initial values of symbols from the \"Global\" section" << endl;
     cout << " -version              Show release version" << endl;
     cout << " -revision             Show SVN revision number" << endl;
 	cout << " -gnuplot-version      Show version of GnuPlot used" << endl;
@@ -299,31 +320,70 @@ void splash(bool show_usage) {
 
 
 bool init(int argc, char *argv[]) {
+	const bool allow_single_dash_long_options = true;
+	const bool allow_symbol_override_options = true;
+	namespace po = boost::program_options;
 
-	std::map<std::string, std::string> cmd_line = ParseArgv(argc,argv);
+	po::options_description desc(
+		"                         <<  M O R P H E U S  >>\n"
+		"   Modeling environment for multi-scale and multicellular systems biology\n"
+		"        Copyright 2009-2020, Technische Universität Dresden, Germany\n"
+		"                 Version " 
+		MORPHEUS_VERSION_STRING
+		", Revision "
+		MORPHEUS_REVISION_STRING
+		"\n\nOptions:                   (single dash long option names available for backward compatibility)"
+	);
+	
+	desc.add_options()
+		("version,v", "Print morpheus version.")
+		("revision,r", "Print morpheus revision.")
+		("gnuplot-path", po::value<std::string>(),"Set path to gnuplot executable.")
+		("gnuplot-version","Print gnuplot version.")
+		("file,f", po::value<std::string>(),"MorpheuML model to simulate.")
+		("set,set-symbol,s", po::value<std::vector<std::string>>(), "Override initial value of global symbol. Use assignment syntax [symbol=value].")
+		("perf-stats", "Generate performance stats in json format.")
+		("outdir", po::value<std::string>(), "override output directory.")
+		("symbol-graph,model-graph", po::value<std::string>()->implicit_value("dot"), "Generate the model graph in the given format [dot,svg,pdf,png].")
+		("help,h", "show this help page.");
+	
+	// positional option is treated as a model
+	po::positional_options_description pos_desc;
+	pos_desc.add("file",1);
+	
+	int style = po::command_line_style::unix_style;
+	if (allow_single_dash_long_options) style |=  po::command_line_style::allow_long_disguise;
+	auto cmd_line_parser = po::command_line_parser(argc, argv).options(desc).style(style).positional(pos_desc);
+	if (allow_symbol_override_options) cmd_line_parser.allow_unregistered();
 
-// 	for (map<string,string>::const_iterator it = cmd_line.begin(); it != cmd_line.end(); it++ ) {
-// 		cout << "option " << it->first << " -> " << it->second << endl;
-// 	}
-	if (cmd_line.find("revision") != cmd_line.end()) {
+	po::variables_map cmd_line;
+	auto parsed_cmd_line = cmd_line_parser.run();
+	po::store(parsed_cmd_line, cmd_line);
+	po::notify(cmd_line);
+
+	if (cmd_line.count("help") ) {
+		desc.print(cout);
+		return false;
+	}
+	
+	if (cmd_line.count("revision") ) {
 		cout << "Revision: " <<  MORPHEUS_REVISION_STRING  << endl;
 		return false;
 	}
 
-	if (cmd_line.find("version") != cmd_line.end()) {
+	if (cmd_line.count("version")) {
 		cout << "Version: " << MORPHEUS_VERSION_STRING << endl;
 		return false;
 	}
 
-	if (cmd_line.find("gnuplot-path") != cmd_line.end()) {
-		Gnuplot::set_GNUPlotPath(cmd_line["gnuplot-path"]);
-		cmd_line.erase(cmd_line.find("gnuplot-path"));
+	if (cmd_line.count("gnuplot-path")) {
+		Gnuplot::set_GNUPlotPath(cmd_line["gnuplot-path"].as<string>());
 	}
 	
-	if (cmd_line.find("gnuplot-version") != cmd_line.end()) {
+	if (cmd_line.count("gnuplot-version")) {
 		string version;
 		try {
-		version = Gnuplot::version();
+			version = Gnuplot::version();
 		}
 		catch (GnuplotException &e) {
 			throw string(e.what());
@@ -332,39 +392,30 @@ bool init(int argc, char *argv[]) {
 		return false;
 	}
 
-	if (cmd_line.find("symbol-graph") != cmd_line.end()) {
+	if (cmd_line.count("symbol-graph")) {
 		generate_symbol_graph_and_exit = true;
-		if ( ! cmd_line["symbol-graph"].empty()) {
-			dep_graph_format = cmd_line["symbol-graph"];
-		}
-		cmd_line.erase(cmd_line.find("symbol-graph"));
+		dep_graph_format = cmd_line["symbol-graph"].as<string>();
 	}
 	else {
 		generate_symbol_graph_and_exit = false;
 	}
 
 	struct stat filestatus;
-	if (cmd_line.find("outdir") != cmd_line.end()) {
-		output_directory = cmd_line["outdir"];
+	if (cmd_line.count("outdir")) {
+		output_directory = cmd_line["outdir"].as<string>();
 		if ( access( output_directory.c_str(), R_OK | W_OK) != 0) {
 			throw  string("Error: output directory '") + output_directory + "' does not exist or is not writable.";
 		}
 		cout << "Setting output directory " << output_directory << endl;
-		cmd_line.erase(cmd_line.find("outdir"));
 	}
 
-	if ( argc  == 1 ) {
-        splash( true );
-        cout << "No arguments specified." << endl;
+	if ( cmd_line.count("file")  != 1 ) {
+        cout << "Error: Single morpheus model must be specified." << endl;
+		desc.print(cout);
         return false;
     }
 
-
-// TODO Handling missing file( a file parameter must be provided and the file must exist)
-
-	string filename = cmd_line["file"];
-	cmd_line.erase(cmd_line.find("file"));
-
+	string filename = cmd_line["file"].as<string>();
 	int filenotexists = stat( filename.c_str(), &filestatus );
 	if ( filenotexists > 0 || filename.empty() ) {
 		throw  string("Error: file '") + filename + "' does not exist.";
@@ -372,13 +423,41 @@ bool init(int argc, char *argv[]) {
 	else if ( filestatus.st_size == 0 ) {
 		throw  string("Error: file '") + filename + "' is empty.";
 	}
+	
+	generate_performance_stats = cmd_line.count("stats");
 
-	map<string,string> overrides;
+	
 	// Attach global overrides to the global scope
-	for (map<string,string>::const_iterator it = cmd_line.begin(); it != cmd_line.end(); it++ ) {
-		if (it->first == "file" ) continue;
-		overrides[it->first] = it->second;
+	map<string,string> overrides;
+	if (allow_symbol_override_options) {
+		vector<string> unrecognized = collect_unrecognized(parsed_cmd_line.options, po::exclude_positional);
+		for (auto& param : unrecognized) {
+			boost::replace_all(param,"\""," ");
+			int s_idx = param.find_first_not_of("-");
+			int idx = param.find_first_of("=", s_idx);
+			if (idx == string::npos || idx <= s_idx || idx >= param.size()-1) {
+				throw string ("Invalid parameter override ") +  param;
+			}
+			overrides[boost::trim_copy(param.substr(s_idx,idx-s_idx))] = boost::replace_all_copy(param.substr(idx+1, param.size()-idx-1),"\""," ");
+		}
 	}
+	if (cmd_line.count("set")) {
+		vector<string> params = cmd_line["parameter"].as<vector<string>>();
+		for (auto& param : params) {
+			boost::replace_all(param,"\""," ");
+			int idx=param.find_first_of("=");
+			if (idx == string::npos || idx == 0 || idx >= param.size()-1) {
+				throw string ("Invalid parameter override ") +  param;
+			}
+			overrides[boost::trim_copy(param.substr(0,idx))] = param.substr(idx+1, param.size()-idx-1);
+		}
+	}
+	
+// 	cout << "registered overrides: ";
+// 	for ( const auto& o : overrides ) {
+// 		cout << o.first << " = " << o.second << "; ";
+// 	}
+// 	cout << endl;
  
 	try {
 		init(readFile(filename), overrides);
@@ -418,7 +497,7 @@ bool init(string model, map<string,string> overrides) {
 	global_scope = unique_ptr<Scope>(new Scope());
 	// Attach global overrides to the global scope
 	for (const auto& param : overrides ) {
-		if (param.first == "file") continue;
+// 		if (param.first == "file") continue;
 		getGlobalScope()->value_overrides()[param.first] = param.second;
 	}
 	current_scope = global_scope.get();
@@ -428,7 +507,10 @@ bool init(string model, map<string,string> overrides) {
 	// try to match cmd line options with symbol names and adjust values accordingly
 	// check that global overrides have been used
 	for ( const auto& override: global_scope->value_overrides() ) {
-		cout << "Warning: Command line override " << override.first << "=" << override.second << " not used!" << endl;
+		cout << "Error: Command line override " << override.first << "=" << override.second << " not used!" << endl;
+	}
+	if (! global_scope->value_overrides().empty()) {
+		return false;
 	}
 
 	return true;
@@ -717,6 +799,17 @@ void wipe()
 	
 	global_scope = unique_ptr<Scope>(new Scope());
 	current_scope = global_scope.get();
+}
+
+boost::property_tree::ptree& getPerfLogger() {
+	static boost::property_tree::ptree perf_logger;
+	return perf_logger;
+// 	static auto perf_logger =
+// 		shared_ptr<boost::property_tree::ptree>(new boost::property_tree::ptree(), [](boost::property_tree::ptree *that) {
+// 			boost::property_tree::write_json("performance.json", *that);
+// 			delete that;
+// 		});
+// 	return *perf_logger;
 }
 
 Lattice::Structure getLatticeStructure() {

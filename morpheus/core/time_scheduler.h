@@ -16,7 +16,7 @@
 #include "scales.h"
 #include "expression_evaluator.h"
 #include "interfaces.h"
-// #include "function.h"
+#include <boost/property_tree/json_parser.hpp>
 
 /** 
  * \page Scheduling Scheduling

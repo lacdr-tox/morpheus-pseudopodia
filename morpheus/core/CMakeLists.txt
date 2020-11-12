@@ -36,7 +36,7 @@ SET(morpheus_core_src
 	time_scheduler.cpp
 	vector_equation.cpp
 	xml_functions.cpp
-	parse_arg.cpp
+# 	parse_arg.cpp
 	rss_stat.cpp
 	simulation.cpp
 )

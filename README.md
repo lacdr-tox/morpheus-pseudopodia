@@ -43,7 +43,7 @@ build tools required:
   - git
 
 Libraries required (debian package notation):
-  - zlib1g-dev libtiff-dev graphviz-dev libboost-dev
+  - zlib1g-dev libtiff-dev graphviz-dev libboost-dev libboost-program-options-dev
   - qttools5-dev libqt5sql5-sqlite libqt5svg5-dev (qtwebengine5-dev | libqt5webkit5-dev)
   - optional: libsbml5-dev
 
@@ -65,12 +65,12 @@ Runtime dependencies:
 
 To install all dependencies on Ubuntu 16.04 and 18.04 run:
 ```  
-sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libboost-dev libtiff5-dev libsbml5-dev qttools5-dev libqt5svg5-dev qtwebengine5-dev libqt5sql5-sqlite gnuplot  
+sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libboost-dev libboost-program-options-dev libtiff5-dev libsbml5-dev qttools5-dev libqt5svg5-dev qtwebengine5-dev libqt5sql5-sqlite gnuplot  
 ```
 
 To install all dependencies on Ubuntu 20.04 run:
 ```  
-sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libboost-dev libtiff5-dev libsbml5-dev qttools5-dev libqt5svg5-dev qtwebengine5-dev libqt5sql5-sqlite libsbml5-dev gnuplot  
+sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libboost-dev libboost-program-options-dev libtiff5-dev libsbml5-dev qttools5-dev libqt5svg5-dev qtwebengine5-dev libqt5sql5-sqlite libsbml5-dev gnuplot  
 ```
 
 ## Building/Installing on other systems
@@ -90,7 +90,7 @@ Additionaly, use the Morpheus [Research Resource Identifier (RRID)](https://scic
 Include the version number or commit hash for reproducability. Valid examples are:
 
 > Morpheus, RRID:SCR_014975  
-> Morpheus, v1.9.2, RRID:SCR_014975  
+> Morpheus, v2.2.0, RRID:SCR_014975  
 > Morpheus, e45739bc, RRID:SCR_014975
 
 # Contributors
@@ -98,6 +98,7 @@ Include the version number or commit hash for reproducability. Valid examples ar
 - Jörn Starruß, TU Dresden, Germany
 - Walter de Back, TU Dresden, Germany
 - Fabian Rost, MPI PKS, Dresden, Germany
+- Cedric Unverricht, TU-Dresden, Germany
 - Gerhard Burger, Leiden University, the Netherlands
 - Margriet Palm, Leiden University, the Netherlands
 - Emanuel Cura Costa, IFLySiB, La Plata, Argentina

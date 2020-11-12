@@ -95,7 +95,6 @@ int main(int argc, char *argv[])
 	scheme.setFlags(QWebEngineUrlScheme::LocalScheme | QWebEngineUrlScheme::LocalAccessAllowed);
 	QWebEngineUrlScheme::registerScheme(scheme);
 #endif
-
 	
 	
 // Create main windows
@@ -112,11 +111,13 @@ int main(int argc, char *argv[])
 	
 	// These action handlers respond to internal model links openend via QDesktopServices::openUrl().
 	auto uri_handler = new uriOpenHandler(&a);
-	QDesktopServices::setUrlHandler("morph", uri_handler, "processUri");
+// 	QDesktopServices::setUrlHandler("morph", uri_handler, "processUri");
 	QDesktopServices::setUrlHandler("morpheus", uri_handler, "processUri");
 	
 	// This responds to externally triggered uri open events.
 	a.installEventFilter(uri_handler);
 	
-	return a.exec();
+	auto r = a.exec();
+	QDesktopServices::unsetUrlHandler("morpheus");
+	return r;
 }

@@ -322,12 +322,13 @@ The \b class attribute determines the structure of the regular lattice:
 - cubic: 3D
 
 \b Size determines the size of the lattice in (x,y,z). A symbol can be specified to refer to the lattice size.
+   \b NOTE: Contrary to other places, size is given in nodes. Thus for \b hexagonal lattices the actual (othogonal) height is 0.866*size.y .
 
 \b NodeLength specifies the physical length of a lattice node. 
 
 \b BoundaryConditions specify the type of boundary condition for each boundary:
-- periodic (a.k.a. wrapped). Default.
-- noflux (a.k.a. Neumann)
+- periodic (a.k.a. wrapped).
+- noflux (a.k.a. Neumann),  Default
 - constant (a.k.a. Dirichlet)
 Left and right boundaries are denoted as -x and x, respectively, and for y and z alike.
 

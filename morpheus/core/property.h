@@ -15,7 +15,6 @@
 #include "interfaces.h"
 #include "cell.h"
 #include "celltype.h"
-#include <boost/circular_buffer.hpp>
 #include <functional>
 #include <assert.h>
 
@@ -390,9 +389,15 @@ void Container<T>::loadFromXML(XMLNode node, Scope* scope)
 			}
 			break;
 		}
-		case Mode::Variable : 
+		case Mode::Variable : {
 			_accessor = make_shared<VariableSymbol<T>>(this);
+			auto val_override = scope->value_overrides().find(symbol());
+			if ( val_override != scope->value_overrides().end()) {
+				value.read(val_override->second);
+				scope->value_overrides().erase(val_override);
+			}
 			break;
+		}
 		case Mode::CellProperty : 
 			auto ct =  scope->getCellType();
 			if (!ct)

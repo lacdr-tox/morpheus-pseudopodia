@@ -179,7 +179,8 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 	if ( !halo_output.empty()) {
 		//  draw in the membrane mapper ...
 		vector<VINT> neighbor_offsets = CPM::getSurfaceNeighborhood().neighbors();
-
+		ExceptionCatcher exception_catcher;
+		
 #pragma omp parallel
 		{
 			// There might also be boolean input, that we cannot easily handle this way. But works for concentrations and rates, i.e. all continuous quantities.
@@ -197,6 +198,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 			}
 #pragma omp for schedule(static)
 			for ( int i=0; i<cells.size(); i++) {
+				exception_catcher.Run([&](){
 	// 		for ( auto cell_id : cells) {
 				// Create halo of nodes surrounding the cell
 				SymbolFocus cell_focus(cells[i]);
@@ -229,7 +231,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 				if (halo_nodes.empty() ) {
 					cout << "MembraneReporter refuses to report on cell " << cell_focus.cellID() << " because it has no surface" << endl;
 					cout << "Cell "<< cell_focus.cellID() << " Cell size was " << cell_focus.cell().nNodes() << endl;
-					continue;
+					return;
 				}
 				
 				
@@ -325,9 +327,11 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 						}
 					}
 				}
+			
+			});
 			}
 		}
-
+		exception_catcher.Rethrow();
 		// Post hoc writing of global output 
 		for (auto const& out : halo_output) {
 			if (out->symbol.granularity() == Granularity::Global) {
@@ -338,6 +342,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 	
 	if ( !interf_output.empty()) {
 		// Assume cell granularity
+		ExceptionCatcher exception_catcher;
 #pragma omp parallel
 		{
 			int thread = omp_get_thread_num();
@@ -346,6 +351,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 			}
 #pragma omp for schedule(static)
 			for (int c=0; c<cells.size(); c++) {
+				exception_catcher.Run([&](){
 				SymbolFocus cell_focus(cells[c]);
 				
 				// Expose local symbols to input
@@ -361,7 +367,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 					for (auto const& out : interf_output) {
 						out->symbol.set(cell_focus, 0.0);
 					}
-					continue;
+					return;
 				}
 				
 				uint i=0;
@@ -390,8 +396,10 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 						out->mapper->reset(thread);
 					}
 				}
+			});
 			}
 		}
+		exception_catcher.Rethrow();
 		// Post hoc writing of global output 
 		for (auto const& out : interf_output) {
 			if (out->symbol.granularity() == Granularity::Global) {

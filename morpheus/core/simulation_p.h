@@ -36,7 +36,6 @@
 #endif
 
 #include "version.h"
-#include "parse_arg.h"
 #include "interfaces.h"
 #include "random_functions.h"
 #include "lattice_plugin.h"

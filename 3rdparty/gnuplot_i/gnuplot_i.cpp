@@ -453,7 +453,7 @@ bool Gnuplot::get_program_path()
         for (std::list<std::string>::const_iterator i = ls.begin(); i != ls.end(); ++i)
         {
             tmp = (*i) + path_sep + Gnuplot::m_sGNUPlotFileName;
-            cout << "Checking path for gnuplot " << tmp << endl;
+//             cout << "Checking path for gnuplot " << tmp << endl;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__)
             if ( Gnuplot::file_exists(tmp,0) ) // check existence
 #elif defined(unix) || defined(__unix) || defined(__unix__) || defined(__APPLE__)
