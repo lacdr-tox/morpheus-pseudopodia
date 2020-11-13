@@ -20,6 +20,10 @@
 #include <iomanip>
 #include <iterator>
 #include <algorithm>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string/trim.hpp>
+#include <boost/algorithm/string/join.hpp>
+
 
 
 #define c_array_size( a )  (sizeof(a)/sizeof(a[0]))
@@ -98,9 +102,13 @@ string remove_spaces(string& str);
 string replace_spaces(string& str, char replacement='_');
 bool replace_substring(std::string& str, const std::string& from, const std::string& to);
 vector<string> tokenize(const string& str, const string& delimiters = " ", bool drop_empty_tokens = false);
-string join(const vector<string>& strings, string delim);
-string join(const std::set<string>& strings, string delim);
-string join(const std::multiset<string>& strings, string delim);
+
+using boost::join;
+using boost::replace_all;
+using boost::trim;
+// string join(const vector<string>& strings, string delim);
+// string join(const std::set<string>& strings, string delim);
+// string join(const std::multiset<string>& strings, string delim);
 
 string& lower_case(string& a);
 string lower_case(const char* a);

@@ -42,5 +42,18 @@
 			<string>Default</string>
 		</dict>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Simulator</string>
+			<key>CFBundleURLName</key>
+			<string>de.tu-dresden.Morpheus.MorpheusURI</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>morpheus</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

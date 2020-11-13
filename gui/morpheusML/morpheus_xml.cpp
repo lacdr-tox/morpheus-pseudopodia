@@ -20,6 +20,20 @@ MorpheusXML::MorpheusXML(QDomDocument model) {
     xmlDocument = model;
 };
 
+
+MorpheusXML::MorpheusXML(QByteArray data) {
+    name = getNewModelName();
+    path ="";
+    is_plain_model = false;
+	is_zipped = false;
+	QString error_msg;
+	int error_line;
+	int error_column;
+    if (!xmlDocument.setContent(data,&error_msg,&error_line,&error_column)) {
+		throw QString("Unable to create internal DOM structure.!\n\n%1 at line %2, column %3.").arg(error_msg).arg(error_line).arg(error_column);
+	}
+};
+
 //------------------------------------------------------------------------------
 
 MorpheusXML::MorpheusXML(QString xmlFile) {

@@ -1,4 +1,5 @@
 #include "sbml_converter.h"
+#include "sbml/xml/XMLError.h"
 #include "sbml/extension/SBMLExtensionRegistry.h"
 #include "sbml/conversion/SBMLConverterRegistry.h"
 
@@ -211,22 +212,45 @@ void  SBMLImporter::replaceDelays(ASTNode* math) {
 
 SharedMorphModel SBMLImporter::importSBML() {
 	QScopedPointer<SBMLImporter> importer(new SBMLImporter(nullptr, config::getModel()));
+
+	int ret;
+	do {
+		ret = importer->exec();
+		if (ret==QDialog::Accepted) {
+			if (importer->import()) {
+				break;
+			}
+		} 
+		else 
+			break;
+	} while (1);
 	
-	if (QDialog::Accepted == importer->exec()) {
-		if (importer->haveNewModel())
-			return importer->getMorpheusModel();
-		else
-			return nullptr;
-	}
-	else
-		return nullptr;
+	return nullptr;
+}
+
+SharedMorphModel SBMLImporter::importSBML(QByteArray data, bool global) {
+	QScopedPointer<SBMLImporter> importer(new SBMLImporter(nullptr, config::getModel()));
+
+	importer->path->setEnabled(false);
+	int ret;
+	do {
+		ret = importer->exec();
+		if (ret==QDialog::Accepted) {
+			if (importer->import(data)) {
+				break;
+			}
+		} 
+		else 
+			break;
+	} while (1);
+	
+	return nullptr;
 }
 
 SharedMorphModel SBMLImporter::importSEDMLTest(QString file) {
 	QScopedPointer<SBMLImporter> importer(new SBMLImporter(nullptr, SharedMorphModel()));
-	
 	if (importer->readSEDML(file))
-		return nullptr;
+		return importer->getMorpheusModel();
 	else
 		return nullptr;
 }
@@ -337,7 +361,7 @@ SBMLImporter::SBMLImporter(QWidget* parent, SharedMorphModel current_model) : QD
 	bottom->addStretch(1);
 	
 	auto ok = new QPushButton( "Import", this );
-	connect( ok, SIGNAL(clicked()), SLOT(import()) );
+	connect( ok, SIGNAL(clicked()), SLOT(accept()) );
 	bottom->layout()->addWidget(ok);
 
 	auto cancel = new QPushButton( "Cancel", this );
@@ -363,11 +387,16 @@ void SBMLImporter::fileDialog()
 }
 
 
-void SBMLImporter::import()
-{
+bool SBMLImporter::import(QByteArray data) {
 	try {
-		if (readSBML(path->text(), into_celltype->itemData(into_celltype->currentIndex()).toString()))
-			accept();
+		if (data.size() ==0) {
+			readSBML(path->text(), into_celltype->itemData(into_celltype->currentIndex()).toString());
+		}
+		else {
+			readSBML(data, into_celltype->itemData(into_celltype->currentIndex()).toString());
+		}
+// 			accept();
+		return true;
 	}
 	catch (SBMLConverterException e) {
 		qDebug() << "Unable to import SBML due to " <<  s2q(e.type2name())<< " "<< s2q(e.what());
@@ -381,6 +410,7 @@ void SBMLImporter::import()
 		qDebug() << "Unable to import SBML due to unknown error";
 		QMessageBox::critical (this,"SBML Import Error", QString("Unable to import %1 due to an unknown error:").arg(path->text()),QMessageBox::Ok);
 	}
+	return false;
 }
 
 bool SBMLImporter::readSBMLTest(QString sbml_file)
@@ -518,9 +548,47 @@ bool SBMLImporter::readSEDML(QString file)
 	return true;
 }
 
+bool SBMLImporter::readSBML(QString sbml_file, QString target_code) {
+	if ( ! QFileInfo(sbml_file).exists() ) {
+		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, sbml_file.toStdString());
+	}
+	SBMLDocument* sbml_doc = nullptr;
+	if (! sbml_doc)
+		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read file.");
+	if (sbml_doc->getNumErrors() > 0) {
+		if (sbml_doc->getError(0)->getErrorId() == XMLFileUnreadable) {
+			throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read file.");
+		}
+		else if (sbml_doc->getError(0)->getErrorId() == XMLFileOperationError) {
+		// Handle case of other file operation error here.
+		}
+	}
+	
+	return readSBML(sbml_doc, target_code);
+	
+	delete sbml_doc;
+}
 
+bool SBMLImporter::readSBML(QByteArray sbml_data, QString target_code) {
+	SBMLDocument* sbml_doc = nullptr;
+	sbml_doc = readSBMLFromString(sbml_data.toStdString().c_str());
+	
+	if (! sbml_doc)
+		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read file.");
+	if (sbml_doc->getNumErrors() > 0) {
+		if (sbml_doc->getError(0)->getErrorId() == XMLFileUnreadable) {
+			throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read file.");
+		}
+		else if (sbml_doc->getError(0)->getErrorId() == XMLFileOperationError) {
+		// Handle case of other file operation error here.
+		}
+	}
+  
+	return readSBML(sbml_doc, target_code);
+	delete sbml_doc;
+}
 
-bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
+bool SBMLImporter::readSBML(SBMLDocument* sbml_doc, QString target_code)
 {
 	compartments.clear();
 	species.clear();
@@ -534,13 +602,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 	constants.insert("pi");
 	constants.insert("exponentiale");
 	
-	if ( ! QFileInfo(sbml_file).exists() ) {
-		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, sbml_file.toStdString());
-	}
-	SBMLDocument* sbml_doc =0;
-	sbml_doc = readSBMLFromFile(sbml_file.toStdString().c_str());
-	if (! sbml_doc)
-		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read file.");
+
 	
 	if (SBMLExtensionRegistry::isPackageEnabled("comp"))
 	{

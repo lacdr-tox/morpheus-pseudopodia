@@ -23,6 +23,7 @@ CPMSampler::CPMSampler() :
 	
 	metropolis_yield.setXMLPath("MonteCarloSampler/MetropolisKinetics/yield");
 	metropolis_yield.setDefault("0");
+	metropolis_yield.setLocalsTable({{"dir",EvaluatorCache::LocalSymbolDesc::VECTOR}});
 	registerPluginParameter(metropolis_yield);
 };
 
@@ -185,6 +186,8 @@ bool CPMSampler::evalCPMUpdate(const CPM::Update& update)
 		// TODO crawl through the neighborhood for CPM::Update::Neighborhood energy changes, if any CPMEnergy requires that
 	}
 	// the magic Metropolis Kinetics with Boltzmann probability ...
+	VDOUBLE dir = update.focus().pos() - update.source().pos();
+	metropolis_yield.setLocals(&dir.x);
 	dE = dInteraction + dCell + metropolis_yield(update.focus()); //metropolis_yield(update.focus);
 
 	if (dE <= 0)

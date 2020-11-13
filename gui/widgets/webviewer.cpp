@@ -127,5 +127,24 @@ bool WebViewer::debug(bool state) {
 	return false;
 }
 
+QList<QCommandLineOption>  WebViewer::commandLineOptions() { 
+	QList<QCommandLineOption> options;
+	
+	
+	QCommandLineOption option("remote-debugging-port", "Activate Qt WebEngine developer tools.","remote-port");
+	option.setFlags(QCommandLineOption::HiddenFromHelp);
+	options.append(option);
+	
+	QCommandLineOption option1("enable-logging", "Activate Qt WebEngine logging.");
+	option1.setFlags(QCommandLineOption::HiddenFromHelp);
+	options.append(option1);
+	
+	QCommandLineOption option2("log-level", "Set Qt WebEngine logging level.", "level");
+	option2.setFlags(QCommandLineOption::HiddenFromHelp);
+	options.append(option2);
+	
+	return options;
+};
+
 #endif
 

@@ -100,11 +100,13 @@ class SBMLImporter: public QDialog {
 	Q_OBJECT
 public:
 	SBMLImporter(QWidget* parent, SharedMorphModel current_model);
+	
 	SharedMorphModel getMorpheusModel() { return model;};
 	bool haveNewModel() { return model_created; };
 // the interface for making this feature puggable
 	static const bool supported = true;
  	static SharedMorphModel importSBML();
+	static SharedMorphModel importSBML(QByteArray data, bool global = true);
 	static SharedMorphModel importSEDMLTest(QString file);
 	static SharedMorphModel importSBMLTest(QString file);
 private:
@@ -167,10 +169,15 @@ private:
 	QMap<QString,QString> concentration_map, amount_map;
 	bool have_events = false;
 
+	/// Use Dialog data to import the SBML file. @p data will override the SBML model in the Dialog.
+	bool import(QByteArray data = QByteArray());
+	
 	/** Read an SBML file and convert it using the @target_code
 	 *  The @p target_code is a comma separated string: (new|current),(global|celltype){,celltype name}
 	 */
 	bool readSBML(QString sbml_file, QString target_code);
+	bool readSBML(QByteArray sbml_data, QString target_code);
+	bool readSBML(SBMLDocument* sbml_doc, QString target_code);
 	/// Read an SBML test model from the suite and use the settings file.
 	bool readSBMLTest(QString file);
 	/// Read an SBML test from the suite via a SEDML file.
@@ -189,7 +196,6 @@ private:
 	void applyTags(nodeController* node);
 
 private slots:
-	void import();
 	void fileDialog();
 };
 

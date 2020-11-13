@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QUrl>
+#include <QCommandLineOption>
 
 #ifdef USE_QTextBrowser
 
@@ -34,6 +35,7 @@ public:
 	bool debug(bool state) { return false; };
 	
 	QVariant loadResource(int type, const QUrl &name) override;
+	static QList<QCommandLineOption> commandLineOptions() { return QList<QCommandLineOption>(); };
 
 signals:
 	void linkClicked(const QUrl& url);
@@ -81,6 +83,8 @@ public:
 	bool canGoForward() const { return this->history()->ca nGoForward(); };
 	
 	bool debug(bool state);
+	
+	static QList<QCommandLineOption> commandLineOptions() { return QList<QCommandLineOption>(); };
 
 signals:
 	void loadFinished(bool ok);
@@ -140,6 +144,8 @@ public:
 	bool canGoForward() const { return this->history()->canGoForward(); };
 	
 	bool debug(bool state);
+	
+	static QList<QCommandLineOption> commandLineOptions();
 	
 signals:
 	void linkClicked(const QUrl& url);

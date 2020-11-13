@@ -41,16 +41,29 @@
 #define LOGGER_H
 
 #include <ostream>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+
+class JsonTree : public boost::property_tree::ptree
+{
+public:
+	
+	JsonTree(std::string filename) : filename(filename) {};
+	void flush() const  { boost::property_tree::write_json(filename, *this); };
+	~JsonTree() { flush(); };
+private:
+	std::string filename;
+};
 
 class Logger
 {
 
 public:
-    Logger(string filename="",bool critical=false);
+    Logger(std::string filename="",bool critical=false);
     ~Logger();
 	template <typename T>
 	inline Logger& operator<<(const T& v) {
-		
+		os << v;
 		return *this;
 	}
 private: 

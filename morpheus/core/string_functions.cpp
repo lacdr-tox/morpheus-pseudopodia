@@ -130,38 +130,38 @@ vector<string> tokenize(const string& str, const string& delimiters, bool drop_e
 	return tokens;
 }
 
-string join(const vector<string>& strings, string delim) {
-	string res;
-	if (strings.size()==0)
-		return res;
-	res = strings.front();
-    for (int i=1; i<strings.size() ;i++) {
-		res.append(delim).append(strings[i]);
-	}
-	return res;
-}
-
-string join(const set<string>& strings, string delim) {
-	string res;
-	if (strings.size()==0)
-		return res;
-	res = *strings.begin();
-	for (set<string>::const_iterator i=++strings.begin(); i!=strings.end(); i++) {
-		res.append(delim).append(*i);
-	}
-	return res;
-}
-
-string join(const multiset<string>& strings, string delim) {
-	string res;
-	if (strings.size()==0)
-		return res;
-	res = *strings.begin();
-	for (set<string>::const_iterator i=++strings.begin(); i!=strings.end(); i++) {
-		res.append(delim).append(*i);
-	}
-	return res;
-}
+// string join(const vector<string>& strings, string delim) {
+// 	string res;
+// 	if (strings.size()==0)
+// 		return res;
+// 	res = strings.front();
+//     for (int i=1; i<strings.size() ;i++) {
+// 		res.append(delim).append(strings[i]);
+// 	}
+// 	return res;
+// }
+// 
+// string join(const set<string>& strings, string delim) {
+// 	string res;
+// 	if (strings.size()==0)
+// 		return res;
+// 	res = *strings.begin();
+// 	for (set<string>::const_iterator i=++strings.begin(); i!=strings.end(); i++) {
+// 		res.append(delim).append(*i);
+// 	}
+// 	return res;
+// }
+// 
+// string join(const multiset<string>& strings, string delim) {
+// 	string res;
+// 	if (strings.size()==0)
+// 		return res;
+// 	res = *strings.begin();
+// 	for (set<string>::const_iterator i=++strings.begin(); i!=strings.end(); i++) {
+// 		res.append(delim).append(*i);
+// 	}
+// 	return res;
+// }
 
 string& lower_case(string& a) {
 	transform(a.begin(), a.end(), a.begin(), (int(*)(int))std::tolower);

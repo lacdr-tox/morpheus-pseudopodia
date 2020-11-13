@@ -29,26 +29,7 @@ const QMap<QString,int> MorphModelPart::all_parts_index = model_part_indices();
 MorphModel::MorphModel(QObject *parent) :
     QAbstractItemModel(parent)
 {
-    sweep_lock = false;
-
-    //XML in datenstruktur einlesen (nodeController)+
-	// xml_file by default contains an empty model ...
-	try {
-		rootNodeContr = new nodeController(xml_file.xmlDocument.documentElement());
-		rootNodeContr->setParent(this);
-		
-		rootNodeContr->attribute("version")->set(QString::number(morpheus_ml_version));
-		// Now we clear the history of changes ...
-		rootNodeContr->saved();
-		rootNodeContr->clearTrackedChanges();
-		initModel();
-	}
-	catch (QString& error) {
-		qDebug() << "Error creating MorpheusModel from plain template ... ";
-		qDebug() << error;
-		rootNodeContr = nullptr;
-		throw error;
-	}
+	initModel(true);
 }
 
 //------------------------------------------------------------------------------
@@ -56,34 +37,32 @@ MorphModel::MorphModel(QObject *parent) :
 MorphModel::MorphModel(QString xmlFile, QObject *parent)
 try : QAbstractItemModel(parent),  xml_file(xmlFile) 
 {
-    sweep_lock = false;
-
 	if (xml_file.xmlDocument.documentElement().nodeName() != "MorpheusModel")
         throw ModelException(ModelException::UndefinedNode, QString("File \"%1\" has wrong wrong root node '%2'.\nExpected 'MorpheusModel'!").arg(xmlFile,xml_file.xmlDocument.nodeName()));
 
-    QList<MorphModelEdit> edits = applyAutoFixes(xml_file.xmlDocument);
-
-    //XML in datenstruktur einlesen (nodeController)
-    rootNodeContr = new nodeController(xml_file.xmlDocument.documentElement());
-	rootNodeContr->setParent(this);
-	connect(rootNodeContr, &nodeController::dataChanged, [this](nodeController* node) {
-		if (!node) return;
-		auto idx = itemToIndex(node);
-		auto idx_last = index(idx.row(), 2, idx.parent());
-		emit dataChanged(idx, idx_last, QVector<int>() << Qt::DisplayRole << MorphModel::TagsRole);
-	});
-
-    ModelDescriptor& desc = const_cast<ModelDescriptor&>(rootNodeContr->getModelDescr());
-    for (int i=0; i<edits.size();i++) {
-        desc.auto_fixes.append(edits[i]);
-        desc.change_count++;
-    }
+//     QList<MorphModelEdit> edits = applyAutoFixes(xml_file.xmlDocument);
+// 
+//     //XML in datenstruktur einlesen (nodeController)
+//     rootNodeContr = new nodeController(xml_file.xmlDocument.documentElement());
+// 	rootNodeContr->setParent(this);
+// 	connect(rootNodeContr, &nodeController::dataChanged, [this](nodeController* node) {
+// 		if (!node) return;
+// 		auto idx = itemToIndex(node);
+// 		auto idx_last = index(idx.row(), 2, idx.parent());
+// 		emit dataChanged(idx, idx_last, QVector<int>() << Qt::DisplayRole << MorphModel::TagsRole);
+// 	});
+// 
+//     ModelDescriptor& desc = const_cast<ModelDescriptor&>(rootNodeContr->getModelDescr());
+//     for (int i=0; i<edits.size();i++) {
+//         desc.auto_fixes.append(edits[i]);
+//         desc.change_count++;
+//     }
 
     initModel();
-	if (!edits.empty()) 
-		QMessageBox::warning(qApp->activeWindow(),
-			"Auto Fixes",
-			QString("Your Morpheus model was upgraded to the current version %1.\nSee the FixBoard for details.\nModel elements that could not be converted were removed.").arg(morpheus_ml_version) );
+// 	if (!edits.empty()) 
+// 		QMessageBox::warning(qApp->activeWindow(),
+// 			"Auto Fixes",
+// 			QString("Your Morpheus model was upgraded to the current version %1.\nSee the FixBoard for details.").arg(morpheus_ml_version) );
 }
 catch (QString e) {
 	throw ModelException(ModelException::FileIOError, e);
@@ -92,30 +71,78 @@ catch (QString e) {
 MorphModel::MorphModel(QDomDocument model, QObject *parent) :
 QAbstractItemModel(parent), xml_file(model)
 {
-	sweep_lock = false;
-
 	if (xml_file.xmlDocument.documentElement().nodeName() != "MorpheusModel")
 		throw ModelException(ModelException::UndefinedNode, QString("Imported Document has wrong wrong root node '%1'.\nExpected 'MorpheusModel'!").arg(xml_file.xmlDocument.documentElement().nodeName()));
-
-	QList<MorphModelEdit> edits = applyAutoFixes(xml_file.xmlDocument);
-
-	// Create XML node controller tree by creating a node for the xml document's root
-	rootNodeContr = new nodeController(xml_file.xmlDocument.documentElement());
-	rootNodeContr->setParent(this);
-
-	ModelDescriptor& desc = const_cast<ModelDescriptor&>(rootNodeContr->getModelDescr());
-	for (int i=0; i<edits.size();i++) {
-		desc.auto_fixes.append(edits[i]);
-		desc.change_count++;
-	}
-    
+	
 	initModel();
+}
 
-	if (!edits.empty()) 
+
+MorphModel::MorphModel(QByteArray data, QObject *parent) :
+QAbstractItemModel(parent), xml_file(data)
+{
+	if (xml_file.xmlDocument.documentElement().nodeName() != "MorpheusModel")
+		throw ModelException(ModelException::UndefinedNode, QString("Document has wrong wrong root node '%1'.\nExpected 'MorpheusModel'!").arg(xml_file.xmlDocument.documentElement().nodeName()));
+	
+	initModel();
+}
+
+void MorphModel::initModel(bool from_scratch)
+{
+	QList<MorphModelEdit> edits;
+	if (!from_scratch) {
+		edits = applyAutoFixes(xml_file.xmlDocument);
+		// Create XML node controller tree by creating a node for the xml document's root
+		rootNodeContr = new nodeController(xml_file.xmlDocument.documentElement());
+	}
+	else {
+		try {
+			rootNodeContr = new nodeController(xml_file.xmlDocument.documentElement());
+			rootNodeContr->attribute("version")->set(QString::number(morpheus_ml_version));
+			// Now we clear the history of changes ...
+			rootNodeContr->saved();
+			rootNodeContr->clearTrackedChanges();
+		}
+		catch (QString& error) {
+			qDebug() << "Error creating MorpheusModel from plain template ... ";
+			qDebug() << error;
+			rootNodeContr = nullptr;
+			throw error;
+		}
+		
+	}
+	rootNodeContr->setParent(this);
+	loadModelParts();
+	
+	sweep_lock = false;
+	param_sweep.setRandomSeedRoot(rootNodeContr->firstActiveChild("Time"));
+	
+	temp_folder = QDir::temp();
+	QString name_patt = "morpheus_%1";
+	int id = 0;
+	QString name;
+	do {
+		name = name_patt.arg(QString().setNum(id));
+		id ++;
+		if (id>10000) break;
+	} while (temp_folder.exists(name));
+	temp_folder.mkpath(name);
+	temp_folder.cd(name);
+	
+	
+
+	if (!edits.empty()) {
+		ModelDescriptor& desc = const_cast<ModelDescriptor&>(rootNodeContr->getModelDescr());
+		for (int i=0; i<edits.size();i++) {
+			desc.auto_fixes.append(edits[i]);
+			desc.change_count++;
+		}
 		QMessageBox::warning(qApp->activeWindow(),
 			"Auto Fixes",
-			QString("Your Morpheus model was upgraded to the current version %1.\nSee the FixBoard for details.").arg(morpheus_ml_version) );
+			QString("Your Morpheus model %2 was upgraded to the current version %1.\nSee the FixBoard for details.").arg(morpheus_ml_version).arg(xml_file.name) );
+	}
 }
+
 
 MorphModel::~MorphModel()
 {
@@ -271,30 +298,6 @@ QByteArray MorphModel::getXMLText() const {
 	rootNodeContr->synchDOM();
 	return xml_file.domDocToText();
 }
-
-void MorphModel::initModel()
-{
-	temp_folder = QDir::temp();
-
-	QString name_patt = "morpheus_%1";
-	
-	int id = 0;
-	QString name;
-	
-	do {
-		name = name_patt.arg(QString().setNum(id));
-		id ++;
-		if (id>10000) break;
-	} while (temp_folder.exists(name));
-	
-	temp_folder.mkpath(name);
-	temp_folder.cd(name);
-	
-	loadModelParts();
-	
-	param_sweep.setRandomSeedRoot(rootNodeContr->firstActiveChild("Time"));
-}
-
 
 //------------------------------------------------------------------------------
 

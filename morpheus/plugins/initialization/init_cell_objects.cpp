@@ -117,7 +117,7 @@ public:
 			in_distance.z = min(pos.z, size.z-pos.z);
 		}
 
-		inside = (out_distance.abs() == 0);
+		inside = (out_distance.abs_sqr() == 0);
 		if (inside) {
 			// Distance from the boundary
 			VDOUBLE dist = (2*in_distance)/size;
