@@ -237,12 +237,12 @@ VDOUBLE Hex_Lattice::orth_distance(const VDOUBLE& a, const VDOUBLE& b) const {
 		VDOUBLE l(b);
 		const double x_shift = 0.5*orth_size.y/sin_60;
 		if (boundaries[Boundary::py] == Boundary::periodic && (k.y > orth_size.y || k.y<0)) {
-			auto div = fdiv(k.y, orth_size.y);
+			auto div = floor(k.y/orth_size.y);
 			k.y -= div * orth_size.y;
 			k.x -= div * x_shift;
 		}
 		if (boundaries[Boundary::py] == Boundary::periodic && (l.y > orth_size.y || l.y<0)) {
-			auto div = fdiv(l.y, orth_size.y);
+			auto div = floor(l.y/orth_size.y);
 			l.y -= div * orth_size.y;
 			l.x -= div * x_shift;
 		}

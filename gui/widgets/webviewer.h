@@ -56,6 +56,7 @@ private:
 #include <QWebView>
 #include <QWebFrame>
 #include <QWebHistory>
+#include <QEvent>
 
 class WebViewer : public QWebView {
 
@@ -80,7 +81,7 @@ public:
 	}
 	
 	bool canGoBack() const { return this->history()->canGoBack(); };
-	bool canGoForward() const { return this->history()->ca nGoForward(); };
+	bool canGoForward() const { return this->history()->canGoForward(); };
 	
 	bool debug(bool state);
 	
