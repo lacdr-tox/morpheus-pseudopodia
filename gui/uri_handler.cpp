@@ -49,32 +49,13 @@ int handleSBMLConvert(QString arg) {
 }
 
 
-// namespace bopt = boost::program_options;
-// 
-// bopt::variables_map parseCMDArgs(int argc, char *argv[]) {
-// 	
-// 	bopt::options_description desc("Supported options");
-// 	desc.add_options()
-// 		("convert", bopt::value<string>(), "SBML model to converted to MorpheusML")
-// 		("import", bopt::value<string>(), "SBML model to be imported")
-// 		("url", bopt::value<vector<string>>(),"Url or path referring to a model. May also include processing instructions.")
-// 		("help,h", "show this help page.");
-// 	
-// 	// all positional options are treated as url referring a model
-// 	bopt::positional_options_description pos_desc;
-// 	pos_desc.add("url",-1);
-// 	
-// 	bopt::variables_map opts;
-// 	bopt::store(bopt::command_line_parser(argc, argv).options(desc).positional(pos_desc).run(), opts);
-// 	bopt::notify(opts);
-// 	return opts;
-// }
 
 
 bool uriOpenHandler::isValidUrl(const QUrl& url) {
 	if ( url.scheme() == "morpheus" || url.fileName().endsWith(".xml") || url.fileName().endsWith(".xml.gz") || url.fileName().endsWith(".xmlz") ) return true;
 	else return false;
 }
+
 
 void uriOpenHandler::processUri(const QUrl &uri) {
 	// either download the file referred
