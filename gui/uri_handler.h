@@ -6,6 +6,7 @@
 
 
 bool parseCmdLine(QCommandLineParser& parser, const QStringList& arguments);
+
 int handleSBMLConvert(QString arg);
 
 class uriOpenHandler : public QObject
@@ -33,7 +34,7 @@ protected:
 private:
 
 	struct URITask {
-		enum Task { Open, Import, Process };
+		enum Task { Open, Import, Process, None };
 		QUrl m_uri;
 		QUrl m_model_url;
 		Task method;

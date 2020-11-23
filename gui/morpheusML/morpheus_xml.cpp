@@ -146,10 +146,11 @@ bool MorpheusXML::save(QString fileName, bool zip) const {
 
 bool MorpheusXML::saveAsDialog()
 {
-	QString directory = ".";
+	QString directory = "."; 
 	if ( QSettings().contains("FileDialog/path") ) {
 		directory = QSettings().value("FileDialog/path").toString();
 	}
+	if (!name.isEmpty()) directory += QString("/") + name;
 	QString fileName = QFileDialog::getSaveFileName(nullptr, "Select xml-file to save configuration!", directory, "Morpheus Model (*.xml);;Compressed Morpheus Model (*.xml.gz)");
 	if (fileName.isEmpty())
 		return false;

@@ -80,6 +80,9 @@ void uriOpenHandler::processUri(const QUrl &uri) {
 	// either download the file referred
 	// handle process tasks ...
 	URITask task = parseUri(uri);
+	if (task.method == URITask::None) {
+		return;
+	}
 	if (task.m_model_url.isLocalFile()) {
 		auto model_id = config::openModel(task.m_model_url.path());
 		if (model_id<0) {
@@ -108,25 +111,58 @@ void uriOpenHandler::processUri(const QUrl &uri) {
 }
 
 void uriOpenHandler::processTask(URITask task) {
+	if (!task.model) return;
+	
+	auto global = task.model->find({"MorpheusModel","Global"},true)->getChilds();
+	for ( auto par = task.parameter_overrides.cbegin(); par != task.parameter_overrides.cend(); par++ ) {
+		bool found = false;
+		for (auto& comp : global) {
+			if ( comp->attribute("symbol") && comp->attribute("symbol")->get() == par.key() ) {
+				if ( comp->attribute("value")) { 
+					comp->attribute("value")->set(par.value() );
+					found = true;
+				}
+			}
+		}
+		if (found) 
+			qDebug() << "Overriding parameter " << par.key() << " = " << par.value();
+		else 
+			qDebug() << "Overriding parameter " << par.key() << " failed ";
+	}
 }
 	
 void uriOpenHandler::uriFetchFinished(URITask task, QNetworkReply* reply) {
+
+	if (reply->error() != QNetworkReply::NoError) {
+		QMessageBox::critical(nullptr,"URL open", QString("Failed to fetch the URL.\n%1").arg(reply->errorString()));
+			qDebug() << "unable to import " << reply->request().url();
+		return;
+	}
+
 	auto data = reply->readAll();
 	qDebug() << "Received " << data.size() << " bytes from " << task.m_model_url;
 	
 	//
-	int model_id;
+	int model_id = -1;
 	if (task.method == URITask::Import) {
 		task.model = SBMLImporter::importSBML(data);
 		if (! task.model) {
+			QMessageBox::critical(nullptr,"URL open", QString("Failed to import the SBML model '%1' to MorpheusML.").arg(task.m_model_url.toString()));
 			qDebug() << "unable to import " << reply->request().url();
 			return;
 		}
+		task.model->xml_file.name = task.m_model_url.fileName();
 		model_id = config::importModel(task.model);
 		
 	}
 	else if (task.method == URITask::Open ) {
 		task.model = SharedMorphModel( new MorphModel(data));
+		if (! task.model) {
+			QMessageBox::critical(nullptr,"URL open", QString("Failed to open the MorpheusML model '%1'.").arg(task.m_model_url.toString()));
+			qDebug() << "unable to open " << reply->request().url();
+			return;
+		}
+		task.model->xml_file.name = task.m_model_url.fileName();
 		model_id = config::importModel(task.model);
 	}
 	
@@ -168,50 +204,59 @@ uriOpenHandler::URITask uriOpenHandler::parseUri(const QUrl& uri)
 	}
 	else if (uri.scheme() == "morpheus") {
 		// unpack the uri here
-		if (uri.hasQuery()) {
-			QUrlQuery query(uri);
-			if (uri.fileName() == "importSBML") {
-				if (query.hasQueryItem("url")) {
-					task.m_model_url = query.queryItemValue("url");
-				}
-				else {
+		QUrlQuery query(uri);
+		if (uri.host().isEmpty()) {
+			if (uri.fileName() == "importSBML" || uri.fileName() == "import") {
+				if ( ! query.hasQueryItem("url")) {
+					QMessageBox::critical(nullptr,"URL open", QString("Failed to import the SBML model. No 'url' parameter specified."));
 					qDebug() << "Missing url for import SBML from schema";
+					task.method = URITask::URITask::None;
+					return task;
 				}
+				task.m_model_url = query.queryItemValue("url");
+				query.removeAllQueryItems("url");
 				task.method = URITask::Import;
 			}
 			else if (uri.fileName() == "process" || uri.fileName() == "open") {
-				if (query.hasQueryItem("url")) {
-					task.m_model_url = query.queryItemValue("url");
-				}
-				else {
+				
+				if ( ! query.hasQueryItem("url")) {
+					QMessageBox::critical(nullptr,"URL open", QString("Failed to open MorpheusML model. No 'url' parameter specified."));
 					qDebug() << "Missing url for import SBML from schema";
+					task.method = URITask::URITask::None;
+					return task;
 				}
+				task.m_model_url = query.queryItemValue("url");
+				query.removeAllQueryItems("url");
 				task.method = URITask::Open;
 			}
 			else {
 				task.m_model_url = uri;
-				task.m_model_url.setScheme("https");
-				task.m_model_url.setQuery("");
+				task.m_model_url.setScheme("file");
 				task.method = URITask::Open;
-				// assume it's an https file link and 
 			}
-			
-			// parse Parameter overrides
-			auto items = query.queryItems();
-			for (const auto& item : items) {
-				if (item.first.startsWith("Param_")) {
-					task.parameter_overrides[item.first.mid(6)] = item.second;
-				}
-			}
-			
 		}
-		else  {
+		else {
+			// assume it's an https model link
 			task.m_model_url = uri;
 			task.m_model_url.setScheme("https");
 			task.method = URITask::Open;
 		}
+		
+		if (! query.isEmpty()) {
+			// extract Parameter overrides
+			auto items = query.queryItems();
+			for (auto item = items.begin(); item != items.end(); ) {
+				if ( (item->first.startsWith("P(") || item->first.startsWith("p(") ) && item->first.endsWith(")")) {
+					task.parameter_overrides[item->first.mid(2,item->first.size()-3)] = item->second;
+					item = items.erase(item);
+				}
+				else {
+					item++;
+				}
+			}
+			query.setQueryItems(items);
+		}
 	}
-	
 	
 	return task;
 }
