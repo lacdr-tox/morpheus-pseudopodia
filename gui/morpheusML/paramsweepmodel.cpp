@@ -240,7 +240,6 @@ QVariant ParamSweepModel::data ( const QModelIndex& index, int role ) const
 		if (index.column() == 1) {
 			ParamItem* item = indexToItem(index);
 			if ( item->attribute() ) {
-				qDebug() << "Using Icon fallback paths" << QIcon::fallbackSearchPaths();
 				if (item->type() == "UnsignedDouble") {
 					return QIcon(":/icons/ufloat.png");
 				}

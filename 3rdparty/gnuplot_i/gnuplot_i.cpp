@@ -13,7 +13,7 @@
 #include <set>                 // for std::set
 #include <cstdio>               // for FILE, fputs(), fflush(), popen()
 #include <cstdlib>              // for getenv()
-#include <boost/dll/runtime_symbol_info.hpp>  // for program path
+// #include <boost/dll/runtime_symbol_info.hpp>  // for program path
 #include "gnuplot_i.h"
 
 

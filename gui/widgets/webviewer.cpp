@@ -132,15 +132,21 @@ QList<QCommandLineOption>  WebViewer::commandLineOptions() {
 	
 	
 	QCommandLineOption option("remote-debugging-port", "Activate Qt WebEngine developer tools.","remote-port");
+#if QT_VERSION >= QT_VERSION_CHECK(5, 8, 0)
 	option.setFlags(QCommandLineOption::HiddenFromHelp);
+#endif
 	options.append(option);
 	
 	QCommandLineOption option1("enable-logging", "Activate Qt WebEngine logging.");
+#if QT_VERSION >= QT_VERSION_CHECK(5, 8, 0)
 	option1.setFlags(QCommandLineOption::HiddenFromHelp);
+#endif
 	options.append(option1);
 	
 	QCommandLineOption option2("log-level", "Set Qt WebEngine logging level.", "level");
+#if QT_VERSION >= QT_VERSION_CHECK(5, 8, 0)
 	option2.setFlags(QCommandLineOption::HiddenFromHelp);
+#endif
 	options.append(option2);
 	
 	return options;

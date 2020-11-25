@@ -75,8 +75,6 @@ int main(int argc, char *argv[])
 
 	QStringList libpaths = QApplication::libraryPaths();
 	qDebug() << "Using library Path (should include Qt plugins dir): " << libpaths;
-	QIcon::setFallbackSearchPaths({{":/icons/"}});
-	qDebug() << "Using Icon fallback paths" << QIcon::fallbackSearchPaths();
 
 	auto os = QSysInfo::productType();
 	if (os=="osx" || os=="macOS" || os=="ios" || os=="windows" || os=="winrt" ) {
@@ -88,12 +86,16 @@ int main(int argc, char *argv[])
 
     QApplication::setWindowIcon(QIcon(":/morpheus.png") );
 
-#if (defined USE_QWebEngine) &&  (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
+#if (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
+	QIcon::setFallbackSearchPaths({{":/icons/"}});
+	qDebug() << "Using Icon fallback paths" << QIcon::fallbackSearchPaths();
+#if (defined USE_QWebEngine)  
 	QWebEngineUrlScheme scheme(HelpNetworkScheme::scheme());
 	scheme.setSyntax(QWebEngineUrlScheme::Syntax::HostAndPort);
 	scheme.setDefaultPort(80);
 	scheme.setFlags(QWebEngineUrlScheme::LocalScheme | QWebEngineUrlScheme::LocalAccessAllowed);
 	QWebEngineUrlScheme::registerScheme(scheme);
+#endif
 #endif
 	
 	
@@ -103,7 +105,7 @@ int main(int argc, char *argv[])
 	w->show();
 #ifdef USE_SINGLE_APP
 	QObject::connect(&a, SIGNAL(messageReceived(const QString&)),
-					 w.get(), SLOT(handleMessage(const QString&)));
+					 w.data(), SLOT(handleMessage(const QString&)));
 #endif
 	
 	w->move(300, 200);

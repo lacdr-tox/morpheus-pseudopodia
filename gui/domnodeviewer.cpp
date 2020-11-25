@@ -155,7 +155,7 @@ void domNodeViewer::createLayout()
 		if (current_index.isValid()) {
 			QMessageBox::StandardButton r = QMessageBox::question(this,
 						"Remove node",
-						QString("Are you sure to remove node '%1'?\t").arg(current_index.siblingAtColumn(0).data(Qt::DisplayRole).toString()),
+						QString("Are you sure to remove node '%1'?\t").arg(current_index.sibling(current_index.row(),0).data(Qt::DisplayRole).toString()),
 						QMessageBox::Yes | QMessageBox::No
 						);
 			if (r == QMessageBox::Yes)
