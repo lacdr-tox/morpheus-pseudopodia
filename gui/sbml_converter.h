@@ -111,6 +111,7 @@ public:
 	static SharedMorphModel importSBMLTest(QString file);
 private:
 	QLineEdit* path;
+	QPushButton *path_dlg;
 	QComboBox* into_celltype;
 	QLineEdit* tag;
 

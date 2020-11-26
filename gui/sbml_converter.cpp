@@ -218,7 +218,7 @@ SharedMorphModel SBMLImporter::importSBML() {
 		ret = importer->exec();
 		if (ret==QDialog::Accepted) {
 			if (importer->import()) {
-				break;
+				return importer->getMorpheusModel();
 			}
 		} 
 		else 
@@ -230,14 +230,16 @@ SharedMorphModel SBMLImporter::importSBML() {
 
 SharedMorphModel SBMLImporter::importSBML(QByteArray data, bool global) {
 	QScopedPointer<SBMLImporter> importer(new SBMLImporter(nullptr, config::getModel()));
-
+	qDebug() << QString(data);
 	importer->path->setEnabled(false);
+	importer->path->setText("webdata ...");
+	importer->path_dlg->setEnabled(false);
 	int ret;
 	do {
 		ret = importer->exec();
 		if (ret==QDialog::Accepted) {
 			if (importer->import(data)) {
-				break;
+				return importer->getMorpheusModel();
 			}
 		} 
 		else 
@@ -302,10 +304,10 @@ SBMLImporter::SBMLImporter(QWidget* parent, SharedMorphModel current_model) : QD
 	path_label->setBuddy(path);
 	grid_layout->addWidget(path,1,1);
 	
-	QPushButton * file_dlg = new QPushButton(this);
-	file_dlg->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
-	connect(file_dlg,SIGNAL(clicked(bool)),this,SLOT(fileDialog()));
-	grid_layout->addWidget(file_dlg,1,2);
+	path_dlg = new QPushButton(this);
+	path_dlg->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
+	connect(path_dlg,SIGNAL(clicked(bool)),this,SLOT(fileDialog()));
+	grid_layout->addWidget(path_dlg,1,2);
 	
 	into_celltype  = new QComboBox(this);
 	into_celltype->addItem("Global (new model)", "new,global");
@@ -389,7 +391,7 @@ void SBMLImporter::fileDialog()
 
 bool SBMLImporter::import(QByteArray data) {
 	try {
-		if (data.size() ==0) {
+		if (data.isEmpty()) {
 			readSBML(path->text(), into_celltype->itemData(into_celltype->currentIndex()).toString());
 		}
 		else {
@@ -552,7 +554,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code) {
 	if ( ! QFileInfo(sbml_file).exists() ) {
 		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, sbml_file.toStdString());
 	}
-	SBMLDocument* sbml_doc = nullptr;
+	SBMLDocument* sbml_doc = readSBMLFromFile(sbml_file.toStdString().c_str());
 	if (! sbml_doc)
 		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read file.");
 	if (sbml_doc->getNumErrors() > 0) {
@@ -570,14 +572,15 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code) {
 }
 
 bool SBMLImporter::readSBML(QByteArray sbml_data, QString target_code) {
+	qDebug() << "Reading SBML from data stream \n" << QString(sbml_data).toStdString().c_str();
 	SBMLDocument* sbml_doc = nullptr;
-	sbml_doc = readSBMLFromString(sbml_data.toStdString().c_str());
+	sbml_doc = readSBMLFromString(QString(sbml_data).toStdString().c_str());
 	
 	if (! sbml_doc)
-		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read file.");
+		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read stream.");
 	if (sbml_doc->getNumErrors() > 0) {
 		if (sbml_doc->getError(0)->getErrorId() == XMLFileUnreadable) {
-			throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read file.");
+			throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read stream.");
 		}
 		else if (sbml_doc->getError(0)->getErrorId() == XMLFileOperationError) {
 		// Handle case of other file operation error here.
@@ -690,35 +693,56 @@ bool SBMLImporter::readSBML(SBMLDocument* sbml_doc, QString target_code)
 
 	// Setup target scope
 	
+	struct { 
+		nodeController* parent = nullptr;
+		int first = -1;
+		int last =-1;
+		bool notify=false;
+	} insertion;
+	
+	target_scope = nullptr;
+	
 	if (target[1]=="global" )  {
-		morph_model->addPart("Global");
 		target_scope = morph_model->rootNodeContr->firstActiveChild("Global");
+		if (!target_scope) {
+			morph_model->addPart("Global");
+			target_scope = morph_model->rootNodeContr->firstActiveChild("Global");
+		}
+		else {
+			insertion.notify = true;
+		}
 		if (!target_scope) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Target scope could not be created.");
+		insertion.parent = target_scope;
+		insertion.first = target_scope->activeChilds().size();
 	}
 	else /* (target[2]=="celltype") */ {
-		auto cts_part_idx = MorphModelPart::all_parts_index["CellTypes"];
-		if (!morph_model->parts[cts_part_idx].enabled) {
-			morph_model->activatePart(cts_part_idx);
-			// Reuse the default celltype created
-			target_scope = morph_model->parts[cts_part_idx].element->firstActiveChild("CellType");
-			if (target_scope) {
-				target_scope->attribute("name")->set(target[2]);
-				target_scope->attribute("class")->set("biological");
-			}
-		}
-		else { // Try to find an existing celltyoe
-			
+		auto celltypes_scope = morph_model->rootNodeContr->firstActiveChild("CellTypes");
+		// try to find existing celltype
+		if (celltypes_scope) {
 			target_scope = morph_model->rootNodeContr->find(QStringList() << "CellTypes" << QString("CellType[name=%1]").arg(target[2]));
-		}
-		if (!target_scope) { // create CellType from scratch
-			target_scope = morph_model->rootNodeContr->firstActiveChild("CellTypes")->insertChild("CellType");
-			if (!target_scope) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Target scope could not be created.");
 			
+		}
+		if (target_scope) {
+			insertion.parent = target_scope;
+			insertion.first = target_scope->activeChilds().size();
+		}
+		else {
+			if (!celltypes_scope) {
+				morph_model->addPart("CellTypes");
+				celltypes_scope = morph_model->rootNodeContr->firstActiveChild("CellTypes");
+				if (!celltypes_scope) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Target scope could not be created.");
+				target_scope = celltypes_scope->firstActiveChild("CellType");
+			}
+			else {
+				target_scope = celltypes_scope->insertChild("CellType");
+			}
+			if (!target_scope) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Target scope could not be created.");
 			target_scope->attribute("name")->set(target[2]);
 			target_scope->attribute("class")->set("biological");
-		}
-		
-		if (target[0] == "new") {
+			insertion.notify = true;
+			insertion.parent = target_scope;
+			insertion.first = target_scope->activeChilds().size();
+			// Add a corresponding cell population
 			morph_model->addPart("CellPopulations");
 			auto population = morph_model->rootNodeContr->firstActiveChild("CellPopulations")->firstActiveChild("Population");
 			population->attribute("size")->set("1");
@@ -727,9 +751,8 @@ bool SBMLImporter::readSBML(SBMLDocument* sbml_doc, QString target_code)
 	}
 	
 	// Setup target system 
-	
 	target_system = target_scope->insertChild("System");
-	target_system->attribute("solver")->set("adaptive45");
+	target_system->attribute("solver")->set("Dormand-Prince [adaptive, O(5)]");
 	applyTags(target_system);
 
 	auto stop_symbol_attr = morph_model->rootNodeContr->firstActiveChild("Time")->firstActiveChild("StopTime")->attribute("symbol");
@@ -921,19 +944,23 @@ bool SBMLImporter::readSBML(SBMLDocument* sbml_doc, QString target_code)
 	SBMLDocument_free(sbml_doc);
 
 	morph_model->rootNodeContr->clearTrackedChanges();
+	model_created = (target[0] == "new");
 
 	// Create notifications for assumed default values
-	if (target[0] == "new") {
+	if (model_created) {
 		morph_model->rootNodeContr->trackNextChange();
 		morph_model->rootNodeContr->firstActiveChild("Time")->firstActiveChild("StopTime")->attribute("value")->set("100.0");
+		model = morph_model;
 	}
 
 	for (int i=0; i<conversion_messages.size(); i++) {
 		morph_model->rootNodeContr->trackInformation(conversion_messages[i]);
 	}
+	if (insertion.notify) {
+		insertion.last = insertion.parent->activeChilds().size()-1;
+		model->notifyNodeInsertion(insertion.parent, insertion.first, insertion.last);
+	}
 	
-	model = morph_model;
-	model_created = (target[0] == "new");
 	return true;
 	
 };
@@ -1045,6 +1072,7 @@ void SBMLImporter::addSBMLSpecies(Model* sbml_model)
 			specie.node->attribute("value")->set(init_value);
 		}
 	}
+	
 };
 
 void SBMLImporter::addSBMLParameters(Model* sbml_model)

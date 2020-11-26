@@ -362,6 +362,12 @@ int config::openModel(QString filepath) {
 int config::importModel(SharedMorphModel model)
 {
 	config* conf = getInstance();
+	
+	int index = conf->openModels.indexOf(model);
+	if ( index >= 0) {
+		return index;
+	}
+	
 	// substitude the last model if it was created from scratch and is still unchanged
 	if ( ! conf->openModels.isEmpty() && conf->openModels.back()->isEmpty()) {
 		closeModel(conf->openModels.size()-1, false);
@@ -369,10 +375,10 @@ int config::importModel(SharedMorphModel model)
 	
 	model->setParent(conf);
 	conf->openModels.push_back(model);
-	int new_index = conf->openModels.size()-1;
-	emit conf->modelAdded(new_index);
+	index = conf->openModels.size()-1;
+	emit conf->modelAdded(index);
 	
-	return new_index;
+	return index;
 }
 
 

@@ -203,12 +203,8 @@ QSharedPointer<XSD::SimpleTypeInfo>  XSD::parseSimpleType(QDomNode xsdNode) {
 			else {
 				info->default_val = info->value_set.first();
 				info->pattern = info->value_set.join("|");
-				info->pattern.replace("[","\\[");
-				info->pattern.replace("]","\\]");
-				info->pattern.replace("(","\\(");
-				info->pattern.replace(")","\\)");
-				info->pattern.replace(".","\\.");
-				info->pattern.replace("+","\\+");
+				QString escape = "\\";
+				info->pattern.replace(QRegExp("([\\[\\]\\(\\)\\.\\+])"), escape + "\\1");
 				info->pattern.prepend("^(").append(")$");
 				
 			}
@@ -748,12 +744,8 @@ void XSD::registerEnumValue(QString simple_type, QString value)
 		// --> update pattern !!
 		QStringList enums = simple_types[simple_type]->value_set;
 		QString pattern = enums.join("|");
-		pattern.replace("[","\\[");
-		pattern.replace("]","\\]");
-		pattern.replace("(","\\(");
-		pattern.replace(")","\\)");
-		pattern.replace(".","\\.");
-		pattern.replace("+","\\+");
+		QString escape = "\\";
+		pattern.replace(QRegExp("([\\[\\]\\(\\)\\.\\+])"), escape + "\\1");
 		simple_types[simple_type]->pattern =pattern;
 		simple_types[simple_type]->validator.setRegExp(QRegExp(pattern));
 	}
@@ -795,17 +787,13 @@ void XSD::removeEnumValue(QString simple_type, QString value)
 			if(enums.size() != 0)
 			{
 				pattern = enums.join("|");
-				pattern.replace("[","\\[");
-				pattern.replace("]","\\]");
-				pattern.replace("(","\\(");
-				pattern.replace(")","\\)");
-				pattern.replace(".","\\.");
-				pattern.replace("+","\\+");
+				QString escape = "\\";
+				pattern.replace(QRegExp("([\\[\\]\\(\\)\\.\\+])"), escape + "\\1");
 				simple_types[simple_type]->pattern = pattern.prepend("^(").append(")$");
 			}
 			else
 			{
-				simple_types[simple_type]->pattern = "^(...)$";
+				pattern = "^(...)$";
 			}
 			simple_types[simple_type]->pattern = pattern;
 			simple_types[simple_type]->validator.setRegExp(QRegExp(pattern));

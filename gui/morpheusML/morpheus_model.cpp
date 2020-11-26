@@ -1209,6 +1209,12 @@ void MorphModel::setDisabled(const QModelIndex &node_index, bool disable) {
 	}
 }
 
+void MorphModel::notifyNodeInsertion(nodeController* parent, int first_row, int last_row) {
+	auto parent_idx = itemToIndex(parent);
+	beginInsertRows(parent_idx, first_row, last_row);
+	endInsertRows();
+}
+
 // ------------------------------------------------------------------------------
 
 QStringList MorphModel::mimeTypes () const {

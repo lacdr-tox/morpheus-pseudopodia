@@ -137,7 +137,12 @@ void uriOpenHandler::uriFetchFinished(URITask task, QNetworkReply* reply) {
 		
 	}
 	else if (task.method == URITask::Open ) {
-		task.model = SharedMorphModel( new MorphModel(data));
+		try {
+			task.model = SharedMorphModel( new MorphModel(data));
+		}
+		catch (...) {
+			task.model = nullptr;
+		}
 		if (! task.model) {
 			QMessageBox::critical(nullptr,"URL open", QString("Failed to open the MorpheusML model '%1'.").arg(task.m_model_url.toString()));
 			qDebug() << "unable to open " << reply->request().url();

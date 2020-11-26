@@ -76,6 +76,8 @@ public:
 
     QModelIndex insertNode(const QModelIndex& parent, QDomNode child, int pos = -1);
     QModelIndex insertNode(const QModelIndex& parent, QString child, int pos = -1);
+	void notifyNodeInsertion(nodeController* parent, int first_row, int last_row);
+	/*!< notify the model that a node and it's children have altered */
 	void setDisabled(const QModelIndex &node, bool disabled);
 
     // bool removeRows ( int row, int count, const QModelIndex & parent = QModelIndex() );
@@ -141,6 +143,7 @@ public slots:
     /*!< Adds an attribute to the parameter sweeper list */
     void removeSweeperAttribute(AbstractAttribute* attr);
     /*!< Removes an attribute from the parameter sweeper list */
+
 
 signals:
     void modelPartAdded(int idx);
