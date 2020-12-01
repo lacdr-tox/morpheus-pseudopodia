@@ -15,22 +15,18 @@
   SET(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
     "CreateShortCut \\\"$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Morpheus Website.lnk\\\" \\\"https:\\\\\\\\morpheus.gitlab.io\\\" \n
      WriteRegStr HKCU \\\"Software\\\\Morpheus\\\\Morpheus\\\\local\\\" \\\"executable\\\" \\\"$INSTDIR\\\\morpheus.exe\\\" \n
-     WriteRegStr HKCU \\\"Software\\\\Classes\\\\morpheus\\\" \\\"URL:Morpheus Model Ressource Protocol\\\" \n
-     WriteRegStr HKCU \\\"Software\\\\Classes\\\\morpheus\\\\Shell\\\" \\\"open\\\" \n
-     WriteRegStr HKCU \\\"Software\\\\Classes\\\\morpheus\\\\Shell\\\\open\\\\command\\\" \\\"$INSTDIR\\\\morpheus-gui.exe \\\\\\\"%1\\\\\\\"  \\\"
-     WriteRegStr HKCU \\\"Software\\\\Classes\\\\morpheus\\\\DefaultIcon\\\"  \\\"$INSTDIR\\\\morpheus-gui.exe,1\\\"
-     
+     WriteRegStr HKCU \\\"Software\\\\Classes\\\\morpheus\\\" \\\"\\\" \\\"URL:Morpheus Model Ressource Protocol\\\" \n
+     WriteRegStr HKCU \\\"Software\\\\Classes\\\\morpheus\\\" \\\"URL Protocol\\\" \\\"\\\" \n
+     WriteRegStr HKCU \\\"Software\\\\Classes\\\\morpheus\\\\Shell\\\" \\\"\\\" \\\"open\\\" \n
+     WriteRegStr HKCU \\\"Software\\\\Classes\\\\morpheus\\\\Shell\\\\open\\\\command\\\" \\\"\\\" \\\"$INSTDIR\\\\morpheus-gui.exe %1  \\\"
+     WriteRegStr HKCU \\\"Software\\\\Classes\\\\morpheus\\\\DefaultIcon\\\" \\\"\\\" \\\"$INSTDIR\\\\morpheus-gui.exe,1\\\"
   ")
   # CreateShortCut \\\"$DESKTOP\\\\${M_APP_NAME}.lnk\\\" \\\"$INSTDIR\\\\${GUI_EXEC_NAME}\\\" \n
   SET(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
     "Delete \\\"$DESKTOP\\\\${CPACK_PACKAGE_NAME}.lnk\\\" \n
-	 Delete \\\"$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Morpheus Website.lnk\\\" \n
-	 DeleteRegKey HKCU \\\"Software\\\\Morpheus\\\" \n
-	 DeleteRegKey HKCU \\\"Software\\\\Classes\\\\morpheus\\\\Shell\\\\open\\\\command\\\"
-	 DeleteRegKey HKCU \\\"Software\\\\Classes\\\\morpheus\\\\Shell\\\\open\\\"
-	 DeleteRegKey HKCU \\\"Software\\\\Classes\\\\morpheus\\\\Shell\\\"
-	 DeleteRegKey HKCU \\\"Software\\\\Classes\\\\morpheus\\\\DefaultIcon\\\"
-	 DeleteRegKey HKCU \\\"Software\\\\Classes\\\\morpheus\\\"
+	Delete \\\"$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Morpheus Website.lnk\\\" \n
+	DeleteRegKey HKCU \\\"Software\\\\Morpheus\\\" \n
+	DeleteRegKey HKCU \\\"Software\\\\Classes\\\\morpheus\\\"
     ")
 
   # name as it appears in the Add/Remove Software panel

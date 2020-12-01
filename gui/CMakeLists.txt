@@ -510,6 +510,14 @@ ELSEIF("${MORPHEUS_OS}" STREQUAL "WIN32")
 	elseif(WIN32)
 		install_qt5_plugin("Qt5::QWindowsIntegrationPlugin" QT_PLUGINS ${BUNDLE_PREFIX})
 		install_qt5_plugin("Qt5::QWindowsVistaStylePlugin" QT_PLUGINS ${BUNDLE_PREFIX})
+		find_file(LIBSSL_DLL NAMES libssl-1_1.dll libssl-1_1-x64.dll DOC "Dynamic SSL library" REQUIRED)
+		find_file(LIBCRYPTO_DLL NAMES libcrypto-1_1.dll libcrypto-1_1-x64.dll DOC "Dynamic Crypto library" REQUIRED)
+		install(FILES ${LIBSSL_DLL} ${LIBCRYPTO_DLL}
+			DESTINATION .
+			COMPONENT Morpheus_GUI
+			EXCLUDE_FROM_ALL)
+		# get_filename_component(LIB_SSL_DLL_FILENAME ${LIBSSL_DLL} NAME)
+		# list(APPEND QT_PLUgins "\$ENV{DEST_DIR}\${CMAKE_INSTALL_PREFIX}/${LIBSSL_DLL_FILENAME}" )
 	elseif(UNIX)
 		install_qt5_plugin("Qt5::QXdgDesktopPortalThemePlugin" QT_PLUGINS ${BUNDLE_PREFIX})
 	else()
@@ -590,6 +598,7 @@ ELSEIF("${MORPHEUS_OS}" STREQUAL "WIN32")
 		foreach(dep \${deps_resolved})
 			if( dep MATCHES \"C:[/\\\\]Windows.*\")
 				# do not install system libraries
+				# MESSAGE(\"CPACK:  - not adding \${dep}\")
 			else()
 				MESSAGE(\"CPACK:  - adding \${dep}\")
 				file(INSTALL \"\${dep}\"
