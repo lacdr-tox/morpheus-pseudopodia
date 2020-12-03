@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 	QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
 	QGuiApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 	
-	QCoreApplication::setOrganizationName("TU-Dresden");
+	QCoreApplication::setOrganizationName("Morpheus");
 	QCoreApplication::setOrganizationDomain("morpheus.org");
 	QCoreApplication::setApplicationName("Morpheus");
 	QCoreApplication::setApplicationVersion(MORPHEUS_VERSION_STRING);
