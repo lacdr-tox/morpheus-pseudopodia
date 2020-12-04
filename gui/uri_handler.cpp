@@ -148,7 +148,16 @@ void uriOpenHandler::uriFetchFinished(URITask task, QNetworkReply* reply) {
 			qDebug() << "unable to open " << reply->request().url();
 			return;
 		}
-		task.model->xml_file.name = task.m_model_url.fileName();
+		qDebug() << reply->header(QNetworkRequest::ContentDispositionHeader);
+		auto disposition = reply->header(QNetworkRequest::ContentDispositionHeader).toString();
+		QRegExp fn_reg("filename=\\\"(.*)\\\"");
+		fn_reg.setMinimal(true);
+		if (fn_reg.indexIn(disposition) >= 0) {
+			task.model->xml_file.name = fn_reg.cap(1);
+		}
+		else {
+			task.model->xml_file.name = task.m_model_url.fileName();
+		}
 		model_id = config::importModel(task.model);
 	}
 	
