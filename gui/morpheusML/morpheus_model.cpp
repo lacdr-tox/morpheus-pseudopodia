@@ -1244,6 +1244,21 @@ QMimeData* MorphModel::mimeData(const QModelIndexList &indexes) const {
 
 //------------------------------------------------------------------------------
 
+bool MorphModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const {
+	if (data->formats().contains(IndexListMimeData::indexList)) {
+		const IndexListMimeData* tree_data = qobject_cast<const IndexListMimeData*>(data);
+		QModelIndex move_index = tree_data->getIndexList().front();
+		nodeController* move_contr = indexToItem(move_index);
+		return indexToItem(parent)->canInsertChild(move_contr,row);
+	}
+	else if (data->hasText()) {
+		QDomDocument doc;
+		doc.setContent(data->text());
+		return indexToItem(parent)->canInsertChild(doc.documentElement().nodeName(),row);
+	}
+	return false;
+}
+
 bool MorphModel::dropMimeData( const QMimeData * data, Qt::DropAction action, int row, int column, const QModelIndex & new_parent ) {
 	if (action == Qt::MoveAction) {
 		if (data->formats().contains(IndexListMimeData::indexList)) {

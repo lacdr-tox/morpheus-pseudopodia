@@ -52,6 +52,19 @@ class MorpheusTreeView : public QTreeView {
 public:
 	MorpheusTreeView(QWidget * parent = nullptr) : QTreeView(parent) {};
 	QModelIndex indexAt(const QPoint & point) const override { auto idx = QTreeView::indexAt(point); if (!idx.isValid()) return rootIndex(); return idx;};
+protected:
+	void dragMoveEvent ( QDragMoveEvent * event ) override {
+		auto pos = indexAt(event->pos());
+		if (pos == rootIndex())  {
+			if (model()->canDropMimeData(event->mimeData(), event->proposedAction() , model()->rowCount(pos), 0, pos )) {
+				event->acceptProposedAction();
+			}
+			else { event->ignore(); }
+		}
+		else {
+			QTreeView::dragMoveEvent(event);
+		}
+	};
 };
 
 void domNodeViewer::createLayout()

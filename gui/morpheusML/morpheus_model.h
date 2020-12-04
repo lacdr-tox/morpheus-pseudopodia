@@ -72,6 +72,7 @@ public:
 	 Qt::DropActions supportedDragActions() const override { return Qt::CopyAction | Qt::MoveAction; } 
     QStringList mimeTypes () const override;
     QMimeData* mimeData(const QModelIndexList &indexes) const override;
+	bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const override;
     bool dropMimeData( const QMimeData * data, Qt::DropAction action, int row, int column, const QModelIndex & parent ) override;
 
     QModelIndex insertNode(const QModelIndex& parent, QDomNode child, int pos = -1);
