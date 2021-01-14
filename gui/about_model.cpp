@@ -473,23 +473,36 @@ void AboutModel::svgOut()
 	
 	
 	if (web_render) {
-		QString fileName="dependency-graph.svg";
-		QString format = "Scalable Vector Graphics (*.svg)";
+		QString fileName="model-graph.svg";
+// 		fileName="model-graph";
+		QString format = "Scalable Vector Graphics (*.svg);;Portable Network Graphics (*.png)";
 		fileName = QFileDialog::getSaveFileName(this,tr("Save Image"), fileName , format);
-		
-		webGraph->evaluateJS("retSVG()",  
-			[=](const QVariant& r){
-				qDebug() << "saving SVG";
-				QFile qf(fileName);
-				qf.open(QIODevice::WriteOnly);
-				QTextStream out(&qf);
-				out<<"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
-				out<< r.toString()
-					.replace(QRegularExpression("</a>\\n"),"")
-					.replace(QRegularExpression("<a\\s.*?>"),"");
-				qf.close();
-			} 
-		);
+		if (!fileName.isEmpty()) {
+			if (fileName.endsWith(".png")) {
+				QImage image(webGraph->size()*2,QImage::Format_ARGB32);
+				QPainter img_p(&image);
+				img_p.setTransform(QTransform::fromScale(2,2));
+				webGraph->render(&img_p);
+				img_p.end();
+				image.save(fileName);
+			}
+			else {
+				webGraph->evaluateJS("retSVG()",  
+					[=](const QVariant& r){
+						qDebug() << "saving SVG";
+						QFile qf(fileName);
+						qf.open(QIODevice::WriteOnly);
+						QTextStream out(&qf);
+						out<<"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
+						out<< r.toString()
+							.replace(QRegularExpression("</a>\\n"),"")
+							.replace(QRegularExpression("<a\\s.*?>"),"");
+						qf.close();
+					}
+					
+				);
+			}
+		}
 	}
 	else {
 		QString fileName = current_graph.split("/").last();
