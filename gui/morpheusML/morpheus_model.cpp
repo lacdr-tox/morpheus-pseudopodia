@@ -194,12 +194,12 @@ QString MorphModel::getDependencyGraph(GRAPH_TYPE type)
 		case SVG: ext_string="svg"; break;
 		case DOT: ext_string="dot"; break;
 	}
-	QString graph_file = "dependency_graph."+ext_string;
-	QString model_graph = "model_graph."+ext_string;
-	QString graph_file_fallback = "dependency_graph.dot";
-	QString model_graph_fallback = "model_graph.dot";
+	QString graph_file = "model_graph."+ext_string;
+	QString model_graph = "ModelGraph."+ext_string;
+	QString graph_file_fallback = "model_graph.dot";
+	QString model_graph_fallback = "ModelGraph.dot";
 	
-	// If the model did not change the model since the last rendering, just take the old rendering.
+	// If the model did not change since the last rendering, just take the old rendering.
 	if (dep_graph_model_edit_stamp == rootNodeContr->getModelDescr().edits) {
 		if (temp_folder.exists(model_graph)) {
 			return temp_folder.absoluteFilePath(model_graph);
@@ -258,13 +258,13 @@ QString MorphModel::getDependencyGraph(GRAPH_TYPE type)
 	
 	QStringList arguments;
 	if ( ! config::getApplication().local_GnuPlot_executable.isEmpty() )
-		arguments << "-gnuplot-path" << config::getApplication().local_GnuPlot_executable;
+		arguments << "--gnuplot-path" << config::getApplication().local_GnuPlot_executable;
 #ifdef Q_OS_WIN32
 	else if ( ! config::getPathToExecutable("gnuplot").isEmpty())
-		arguments << "-gnuplot-path" << config::getPathToExecutable("gnuplot");
+		arguments << "--gnuplot-path" << config::getPathToExecutable("gnuplot");
 #endif
 	
-	arguments << "-symbol-graph" << ext_string << model_file;
+	arguments << "--model-graph" << ext_string << model_file;
 
     process.setWorkingDirectory(temp_folder.absolutePath());
 	process.setStandardOutputFile(temp_folder.absoluteFilePath("model.out"));
@@ -378,6 +378,10 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		fixes.append(a);
 		a.match_path ="MorpheusModel/Analysis/Gnuplotter/Terminal/@opacity";
 		a.target_path="MorpheusModel/Analysis/Gnuplotter/Plot/Cells/@opacity";
+		a.operation = AutoFix::MOVE;
+		fixes.append(a);
+		a.match_path ="MorpheusModel/Analysis/DependencyGraph";
+		a.target_path="MorpheusModel/Analysis/ModelGraph";
 		a.operation = AutoFix::MOVE;
 		fixes.append(a);
 

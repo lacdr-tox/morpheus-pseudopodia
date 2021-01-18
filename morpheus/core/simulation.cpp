@@ -344,7 +344,7 @@ bool init(int argc, char *argv[]) {
 		("set,set-symbol,s", po::value<std::vector<std::string>>(), "Override initial value of global symbol. Use assignment syntax [symbol=value].")
 		("perf-stats", "Generate performance stats in json format.")
 		("outdir", po::value<std::string>(), "override output directory.")
-		("symbol-graph,model-graph", po::value<std::string>()->implicit_value("dot"), "Generate the model graph in the given format [dot,svg,pdf,png].")
+		("model-graph,symbol-graph", po::value<std::string>()->implicit_value("dot"), "Generate the model graph in the given format [dot,svg,pdf,png].")
 		("help,h", "show this help page.");
 	
 	// positional option is treated as a model
@@ -395,6 +395,10 @@ bool init(int argc, char *argv[]) {
 	if (cmd_line.count("symbol-graph")) {
 		generate_symbol_graph_and_exit = true;
 		dep_graph_format = cmd_line["symbol-graph"].as<string>();
+	}
+	else if (cmd_line.count("model-graph")) {
+		generate_symbol_graph_and_exit = true;
+		dep_graph_format = cmd_line["model-graph"].as<string>();
 	}
 	else {
 		generate_symbol_graph_and_exit = false;
@@ -537,7 +541,7 @@ void createDepGraph() {
 	shared_ptr<AnalysisPlugin> dep_graph_writer;
 	
 	for (uint i=0;i<analysers.size();i++) {
-		if (analysers[i]->XMLName() == "DependencyGraph") {
+		if (analysers[i]->XMLName() == "ModelGraph") {
 			dep_graph_writer = analysers.at(i);
 			dep_graph_writer->setParameter("format", dep_graph_format);
 			
@@ -545,12 +549,13 @@ void createDepGraph() {
 		}
 	}
 	if (!dep_graph_writer) {
-		dep_graph_writer = dynamic_pointer_cast<AnalysisPlugin>(PluginFactory::CreateInstance("DependencyGraph"));
+		dep_graph_writer = dynamic_pointer_cast<AnalysisPlugin>(PluginFactory::CreateInstance("ModelGraph"));
 		if (!dep_graph_writer) {
-			cerr << "Unable to create instance for DependencyGraph Plugin." << endl;
+			cerr << "Unable to create instance for ModelGraph Plugin." << endl;
 			return;
 		}
 		dep_graph_writer->setParameter("format",dep_graph_format);
+		dep_graph_writer->loadFromXML(XMLNode::createXMLTopNode("ModelGraph"), SIM::getGlobalScope());
 		dep_graph_writer->init(getGlobalScope());
 	}
 	dep_graph_writer->analyse(0);

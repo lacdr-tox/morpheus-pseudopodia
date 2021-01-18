@@ -3,14 +3,14 @@
 	
 	<xs:group name="AnalysisPlugins">
         <xs:all>
-			<xs:element name="DependencyGraph" 			type="DependencyGraph"	minOccurs="0"	maxOccurs="unbounded" />
+			<xs:element name="ModelGraph" 			type="ModelGraph"	minOccurs="0"	maxOccurs="unbounded" />
 		</xs:all>
 	</xs:group>
 	
-	<xs:complexType name="DependencyGraph">
+	<xs:complexType name="ModelGraph">
 		<xs:attribute name="format" use="required" type="GraphVizFormat" />
 		<xs:attribute name="exclude-symbols" use="optional" type="cpmString" />
-		<xs:attribute name="exclude-plugins" use="optional" type="cpmString" />
+<!-- 		<xs:attribute name="exclude-plugins" use="optional" type="cpmString" /> -->
 		<xs:attribute name="include-tags" use="optional" type="cpmString" default="#untagged" />
 		<xs:attribute name="reduced" use="optional" type="cpmBoolean" default="false"/>
 	</xs:complexType>

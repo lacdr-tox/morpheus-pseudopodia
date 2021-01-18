@@ -77,7 +77,7 @@ class DependencyGraph: public AnalysisPlugin {
 	string dotName(const string& a );
 
 public:
-	DECLARE_PLUGIN("DependencyGraph");
+	DECLARE_PLUGIN("ModelGraph");
 	
 	DependencyGraph();
 	void init(const Scope* scope) override;

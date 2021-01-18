@@ -1,7 +1,11 @@
 #include "dependency_graph.h"
 #include "core/cpm_sampler.h"
 
-REGISTER_PLUGIN(DependencyGraph);
+// REGISTER_PLUGIN(DependencyGraph);
+Plugin* DependencyGraph::createInstance() { return new DependencyGraph(); } \
+bool DependencyGraph::factory_registration = 
+	Plugin::getFactory().Register( DependencyGraph::FactoryName(), DependencyGraph::createInstance )
+	&& Plugin::getFactory().Register( "DependencyGraph", DependencyGraph::createInstance );
 
 DependencyGraph::DependencyGraph() : AnalysisPlugin()
 {
@@ -18,10 +22,10 @@ DependencyGraph::DependencyGraph() : AnalysisPlugin()
 	reduced.setXMLPath("reduced");
 	reduced.setDefault("false");
 	registerPluginParameter(reduced);
-	exclude_plugins_string.setXMLPath("exclude-plugins");
+// 	exclude_plugins_string.setXMLPath("exclude-plugins");
 	exclude_symbols_string.setXMLPath("exclude-symbols");
 	include_tags_option.setXMLPath("include-tags");
-	registerPluginParameter(exclude_plugins_string);
+// 	registerPluginParameter(exclude_plugins_string);
 	registerPluginParameter(exclude_symbols_string);
 	registerPluginParameter(include_tags_option);
 }
@@ -44,6 +48,7 @@ void DependencyGraph::analyse(double time)
 	
 	// setting up filters
 	exclude_plugins.insert(this->XMLName());
+	exclude_plugins.insert("DependencyGraph");
 	if (exclude_plugins_string.isDefined()) {
 		vector<string> excludes = tokenize(exclude_plugins_string(),"|,");
 		for (string e : excludes) {
@@ -76,15 +81,20 @@ void DependencyGraph::analyse(double time)
 	dot << "labelloc=\"t\";";
 	dot << "label=\"Global\";";
 	dot << ""<< graphstyle.at("background") << "\n";
-	parse_scope(SIM::getGlobalScope());
-	if (scope_info[SIM::getGlobalScope()->getID()]->definitions.str().empty() 
-		&& SIM::getGlobalScope()->getSubScopes().empty())
-	{
-		dot << "empty \n";
+	if (SIM::getGlobalScope()) {
+		parse_scope(SIM::getGlobalScope());
+		if (scope_info[SIM::getGlobalScope()->getID()]->definitions.str().empty() 
+			&& SIM::getGlobalScope()->getSubScopes().empty())
+		{
+			dot << "empty \n";
+		}
+		else { 
+			dot << "node["<< graphstyle.at("node") <<"]\n";
+			write_scope(SIM::getGlobalScope(), dot);
+		}
 	}
-	else { 
-		dot << "node["<< graphstyle.at("node") <<"]\n";
-		write_scope(SIM::getGlobalScope(), dot);
+	else {
+		dot << "empty \n";
 	}
 	dot << "}" << endl;
 	for (const auto& line : links )  {
@@ -92,10 +102,12 @@ void DependencyGraph::analyse(double time)
 	}
 	dot << "}" << endl;
 	
+	string graph_name = "model_graph";
+	
 	if (format() ==OutFormat::DOT) {
 		//cout << "Rendering Dependency Graph as DOT" << endl;
 	
-		ofstream out("dependency_graph.dot");
+		ofstream out(graph_name+".dot");
 		out << dot.str();
 		out.close();
 		return;
@@ -103,7 +115,7 @@ void DependencyGraph::analyse(double time)
 
 #ifndef HAVE_GRAPHVIZ
 	cout << "No support for graph rendering. Falling back to dot output." << endl;
-	ofstream out("dependency_graph.dot");
+	ofstream out(graph_name+".dot");
 	out << dot.str();
 	out.close();
 	return;
@@ -126,15 +138,15 @@ void DependencyGraph::analyse(double time)
 	switch (format()) {
 		case OutFormat::PNG :
 			// cout << "Rendering Dependency Graph as PNG" << endl;
-			gvRenderFilename(gvc, g, "png", "dependency_graph.png");
+			gvRenderFilename(gvc, g, "png", (graph_name+".png").c_str());
 			break;
 		case OutFormat::SVG :
 			// cout << "Rendering Dependency Graph as SVG" << endl;
-			gvRenderFilename(gvc, g, "svg", "dependency_graph.svg");
+			gvRenderFilename(gvc, g, "svg", (graph_name+".svg").c_str());
 			break;
 		case OutFormat::PDF :
 			//cout << "Rendering Dependency Graph as PDF" << endl;
-			gvRenderFilename(gvc, g, "pdf", "dependency_graph.pdf");
+			gvRenderFilename(gvc, g, "pdf", (graph_name+".pdf").c_str());
 			break;
 		case OutFormat::DOT :
 			// already written
@@ -192,7 +204,17 @@ string DependencyGraph::dotName(const string& a ) {
 
 void DependencyGraph::parse_scope(const Scope* scope)
 {
+	assert(scope);
+	if ( ! scope ) {
+		cout << "Missing information for null scope!" << endl;
+		return;
+	}
+	if ( ! scope_info[scope->getID()] ) {
+		cout << "Missing information for scope " << scope->getName() << endl;
+		return;
+	}
 	auto& info = *scope_info[scope->getID()];
+	
 	// Parse the TimeStepListeners, register their dependencies and collect their links
 	auto tsls = scope->getTSLs();
 	
@@ -237,7 +259,7 @@ void DependencyGraph::parse_scope(const Scope* scope)
 				bool have_dep = false;
 				for (const auto& dep : dependencies) {
 					if (exclude_plugins.count(dep.first->XMLName()))
-						 continue;
+						continue;
 					if (include_tags_option.isDefined() && !dep.first->isTagged(include_tags) )
 						continue;
 					// draw a line to the first CellType CPM plugin to linke it's CPM box
@@ -333,9 +355,9 @@ void DependencyGraph::parse_scope(const Scope* scope)
 		auto cpm_dep = scope->ct_component->cpmDependSymbols();
 		bool found_valid_cpm_plugin = false;
 		for (auto dep : cpm_dep) {
-			if ( exclude_plugins.count( dep.first->XMLName() ) > 0)
-				continue;
 			if (include_tags_option.isDefined() && !dep.first->isTagged(include_tags) )
+				continue;
+			if ( exclude_plugins.count( dep.first->XMLName() ) > 0)
 				continue;
 			found_valid_cpm_plugin = true;
 			break;

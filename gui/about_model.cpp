@@ -50,9 +50,6 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QSplitter(Qt::
 
 	includeTags = new CheckBoxList();
 	connect(includeTags, &CheckBoxList::currentTextChanged,[=](QStringList includes) { update_include_tags(includes); update_graph();});
-	
-	excludeP = new CheckBoxList();
-	connect(excludeP, &CheckBoxList::currentTextChanged,[=](QStringList excludes) {update_plugin_excludes(excludes);update_graph();});
 
 	excludeS = new CheckBoxList();
 	connect(excludeS, &CheckBoxList::currentTextChanged, [=](QStringList excludes) {update_excludes(excludes);update_graph();} );
@@ -73,9 +70,6 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QSplitter(Qt::
 	layset->addWidget(includeTags,3);
 	layset->addWidget(include_tags_label,1,Qt::AlignLeft);
 	layset->addStretch(1);
-// 	layset->addWidget(ql_plugins);
-// 	layset->addWidget(excludeP,3);
-// 	layset->addStretch(1);
 	layset->addWidget(excludeS,3);
 	layset->addWidget(ql_symbols,1,Qt::AlignLeft);
 	layset->addStretch(2);
@@ -123,7 +117,7 @@ void AboutModel::update()
 	description->blockSignals(false);
 	
 	model->getRoot()->setStealth(true);
-	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
+	auto dg = model->find(QStringList() << "Analysis" << "ModelGraph",true);
 	model->getRoot()->setStealth(false);
 	
 	QStringList qtl = dg->attribute("include-tags")->get().split(",", QString::SplitBehavior::SkipEmptyParts);
@@ -131,8 +125,6 @@ void AboutModel::update()
 
 	QStringList qsl = dg->attribute("exclude-symbols")->get().split(",", QString::SplitBehavior::SkipEmptyParts);
 	for (auto& key : qsl) key = key.trimmed();
-	QStringList qpl = dg->attribute("exclude-plugins")->get().split(",", QString::SplitBehavior::SkipEmptyParts);
-	for (auto& key : qpl) key = key.trimmed();
 	
 	includeTags->clear();
 	auto tags = model->getRoot()->subtreeTags();
@@ -162,15 +154,6 @@ void AboutModel::update()
 		excludeS->addItem(plug,qsl.contains(plug));
 	}
 	excludeS->blockSignals(false);
-	
-	excludeP->blockSignals(true);
-	excludeP->clear();
-	auto qpm = model->getModelDescr().pluginNames;
-	for(auto& plug:qpm.keys()) {
-		excludeP->addItem(plug,qpl.contains(plug));
-	}
-	excludeP->setData(qpl);
-	excludeP->blockSignals(false);
 	
 	reduced->blockSignals(true);
 	if(dg->attribute("reduced")->get() == "true") {
@@ -357,107 +340,14 @@ void AboutModel::graphReady() {
 	auto graph = waitForGraph.result();
 	
 	if (graph.isEmpty()) {
-		qDebug() << "Morpheus did not provide a dependency graph rendering!!" << graph;
+		qDebug() << "Morpheus did not provide a model graph rendering!!" << graph;
 		setGraphState(GraphState::OUTDATED);
 	}
 	else {
-		qDebug() << "Showing dependency graph: " << QString(graph);
+		qDebug() << "Showing model graph: " << QString(graph);
 		current_graph = graph;
 		setGraphState(GraphState::UPTODATE);
-		
-// 		// Workaround for crashing chrome page on external links
-// 		if (webGraph->url().scheme() == "chrome-error") {
-// 			webGraph->reset();
-// 		}
-// 			
-// 		if (graph.endsWith("dot")) {
-// 			url = "qrc:///model_graph_renderer.html";
-// 			
-// 			QFile dotsource(graph);
-// 			QString dot;
-// 			if (dotsource.exists()) {
-// 				dotsource.open(QIODevice::ReadOnly);
-// 				dot  = dotsource.readAll();
-// 				dotsource.close();
-// 			}
-// 			
-// 			QString command;
-// 			
-// 			if (dot.isEmpty()) {
-// 				command= "setFailed();";
-// 			}
-// 			else /*if (dot != lastGraph)*/ {
-// // 				qDebug()<<"UPDATE GRAPH";
-// 				            current_graph = dot;
-// 				dot = dot.replace(QRegularExpression("[\r\n\t]+")," ").trimmed();
-// 				if (webGraph->url() != url ) {
-// 					command = QString("setGraph('")+ dot + "');";
-// 				}
-// 				else {
-// 					command = QString("transitionGraph('") + dot + "');";
-// 				}
-// 			}
-// 			if (webGraph->url() != url ) {
-// 				webGraph->setUrl(url);
-// 				onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [command,this](bool){
-// //					qDebug() << "Graph loading finished!";
-// 					webGraph->evaluateJS(command, [](const QVariant& r){});
-// 					disconnect(onLoadConnect);
-// 				});
-// 			}
-// 			else {
-// 				webGraph->evaluateJS(command, [](const QVariant& r){});
-// //				qDebug() << "Graph loading finished!";
-// 			}
-// // 				webGraph->show();
-// 		}
-// 		else if (graph.endsWith("png") || graph.endsWith("svg")) {
-// 			if (webGraph->supportsJS()) {
-// 				url = "qrc:///model_graph_viewer.html";
-// 
-// 				QString command = "setGraph('file://";
-// 				if (!graph.startsWith("/")) command+="/";
-// 				command += graph + "');";
-// 				
-// 				if ( webGraph->url() == url ) {
-// 					webGraph->evaluateJS(command, [](const QVariant& r){});
-// 				}
-// 				else {
-// 					onLoadConnect = connect(webGraph, &WebViewer::loadFinished, [command,this](bool){
-// 						qDebug() << "Graph loading finished!";
-// 						webGraph->evaluateJS(command, [](const QVariant& r){});
-// 						disconnect(onLoadConnect);
-// 					});
-// 					webGraph->setUrl(url);
-// 				}
-// 				current_graph = graph;
-// 			}
-// 			else {
-// 				if (graph.startsWith("/"))
-// 					webGraph->setUrl(QString("file://")+graph);
-// 				else
-// 					webGraph->setUrl(QString("file:///")+graph);
-// 			}
-// 
-// 		}
 	}
-// 	else {
-// 		setGraphState(GraphState::FAILED);
-// 		if (webGraph->url().fileName()=="model_graph_renderer.html") {
-// 			webGraph->evaluateJS("setFailed();", [](const QVariant& r){});
-// 		}
-// 		else if (webGraph->url().fileName()=="model_graph_viewer.html") {
-// 			webGraph->evaluateJS("setFailed();", [](const QVariant& r){});
-// 		}
-// 		else {
-// 			webGraph->setUrl(QUrl("qrc:///graph_failed.html"));
-// 		}
-// 		qDebug() << "Morpheus did not provide a dependency graph rendering!!" << graph;
-// 	}
-	// run mopsi on it
-	// reload the resulting dependency_graph.png/svg
-	// display an error, id something went wrong.
-	
 }
 
 void AboutModel::openLink(const QUrl& url)
@@ -470,7 +360,6 @@ void AboutModel::openLink(const QUrl& url)
 
 void AboutModel::svgOut()
 {
-	
 	
 	if (web_render) {
 		QString fileName="model-graph.svg";
@@ -544,7 +433,7 @@ void AboutModel::assignDescription()
 void AboutModel::update_excludes(QStringList qsl)
 {
 	model->getRoot()->setStealth(true);
-	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
+	auto dg = model->find(QStringList() << "Analysis" << "ModelGraph",true);
 	if (qsl.isEmpty()) {
 		dg->attribute("exclude-symbols")->set("");
 		dg->attribute("exclude-symbols")->setActive(false);
@@ -556,20 +445,11 @@ void AboutModel::update_excludes(QStringList qsl)
 	model->getRoot()->setStealth(false);
 }
 
-void AboutModel::update_plugin_excludes(QStringList qsl)
-{
-	model->getRoot()->setStealth(true);
-	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
-	dg->attribute("exclude-plugins")->setActive(true);
-	dg->attribute("exclude-plugins")->set(qsl.join(","));
-	model->getRoot()->setStealth(false);
-}
-
 
 void AboutModel::update_reduced(int state)
 {
 	model->getRoot()->setStealth(true);
-	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
+	auto dg = model->find(QStringList() << "Analysis" << "ModelGraph",true);
 	dg->attribute("reduced")->setActive(true);
 	if (reduced->checkState() != state)
 		reduced->setCheckState(static_cast<Qt::CheckState>(state));
@@ -586,7 +466,7 @@ void AboutModel::update_reduced(int state)
 
 void AboutModel::update_include_tags(QStringList includes) {
 	model->getRoot()->setStealth(true);
-	auto dg = model->find(QStringList() << "Analysis" << "DependencyGraph",true);
+	auto dg = model->find(QStringList() << "Analysis" << "ModelGraph",true);
 
 	dg->attribute("include-tags")->setActive(true);
 	dg->attribute("include-tags")->set(includes.join(","));

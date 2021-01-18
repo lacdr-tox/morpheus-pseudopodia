@@ -45,7 +45,6 @@ class AboutModel : public QSplitter {
 	QUrl url;
 	QFrame* webFrame;
 	CheckBoxList* includeTags;
-	CheckBoxList* excludeP;
 	CheckBoxList* excludeS;
 	QCheckBox* reduced;
 	QPushButton* save_btn;
@@ -71,7 +70,6 @@ private slots:
 	void openLink(const QUrl&);
 	void svgOut();
 	void update_excludes(QStringList qsl);
-	void update_plugin_excludes(QStringList qsl);
 	void update_include_tags(QStringList includes);
 	void update_reduced(int);
 };
