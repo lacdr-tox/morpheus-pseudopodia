@@ -1,5 +1,9 @@
 
 cmake_minimum_required(VERSION 3.3.0...3.13.4)
+IF (APPLE AND MORPHEUS_RELEASE_BUNDLE) 
+	## 10.12 went out of support on Oct 2019
+	SET(CMAKE_OSX_DEPLOYMENT_TARGET 10.13 CACHE STRING "Minimum version of the target platform" FORCE)
+ENDIF()
 
 PROJECT(morpheus VERSION 2.2.0)
 # SET(MORPHEUS_BETA 3)
