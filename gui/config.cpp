@@ -108,7 +108,58 @@ config::config() : QObject(), helpEngine(NULL) {
 		qDebug() << "SQLite database path: "<< current_location  << data_base_file_name;
 		
 		if (!db.open()) throw;
+		db.exec("PRAGMA synchronous=NORMAL");
+			
+		// Check Database Version
+		if (db.tables().contains("VersionHistory")) {
+			QSqlQuery query;
+			query.prepare("SELECT top 1 * FROM TABLE VersionHistory order by Version");
+			query.exec();
+			query.first();
+			int cdb_version = query.value(0).toInt();
+			if (cdb_version != data_base_version) {
+				if (cdb_version < data_base_version) {
+					qDebug() << "SQLite database has version "<< cdb_version <<". Expected version " << data_base_version << ".";
+					throw QString("Mismatching database version");
+				}
+				else {
+					qDebug() << "SQLite database has version "<< cdb_version <<". Expected version " << data_base_version << ".";
+					throw QString("Mismatching database version");
+				}
+			}
+		} 
+		else {
+			QSqlQuery query;
+			query.prepare(
+			"CREATE TABLE VersionHistory ("
+				"version INTEGER PRIMARY KEY NOT NULL,"
+				"upgraded DATE NOT NULL )"
+			);
+			bool ok = query.exec();
+			if( !ok ){
+				qDebug() << "Creating SQL table VersionHistory failed: " << query.lastError();
+				throw query.lastError().text();
+			}
+			qDebug() << "Successfully created version history database";
+			query.prepare( QString("INSERT INTO VersionHistory ( version , upgraded ) VALUES( %1 , date('now') )").arg(data_base_version) );
+			ok = query.exec();
+			if( !ok ){
+				qDebug() << "Setting current database version in table VersionHistory failed: " << query.lastError();
+				throw query.lastError().text();
+			}
+			qDebug() << "Successfully set default database version";
+			
+		}
 	}
+	catch (const QString& e) {
+		QMessageBox::critical(0,
+			"Invalid database",
+			QString("Invalid SQL database connection.\n")+e +"\nClick Cancel to exit.",
+			QMessageBox::Cancel );
+		throw("Unable to create database connection");
+		qApp->exit();
+	}
+	
 	catch (...) {
 		QMessageBox::critical(0,
 			qApp->tr("Invalid database"),
@@ -126,7 +177,6 @@ config::config() : QObject(), helpEngine(NULL) {
 		qApp->quit();
 	} */
 	
-	db.exec("PRAGMA synchronous=NORMAL");
 	if ( ! db.tables().contains("jobs")) {
 		qDebug() << "creating Job DataBase";
 		QSqlQuery query;

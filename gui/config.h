@@ -91,8 +91,8 @@ public:
     struct modelIndex {
         int model; int part;
     };
-
-
+	// Current version of the data base
+	static const int data_base_version = 1;
     //static const int MaxRecentFiles = config::app.preference_max_recent_files; /*!< Number of the maximal shown recent files in the menubar of morpheus-gui. */
     static const int MaxNodeCopies = 5; /*!< Number of the maximal copied nodes stored in config. */
 
