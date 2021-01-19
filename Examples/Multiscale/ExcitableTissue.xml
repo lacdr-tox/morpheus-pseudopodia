@@ -55,7 +55,7 @@
                 </Cells>
             </Plot>
         </Gnuplotter>
-        <DependencyGraph format="svg" reduced="false" include-tags="#untagged"/>
+        <ModelGraph format="svg" reduced="false" include-tags="#untagged"/>
     </Analysis>
     <CellTypes>
         <CellType name="cells" class="biological">

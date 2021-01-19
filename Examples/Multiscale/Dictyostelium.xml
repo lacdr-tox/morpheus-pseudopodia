@@ -165,6 +165,6 @@ phase
                 </Cells>
             </Plot>
         </Gnuplotter>
-        <DependencyGraph include-tags="signal" reduced="true" format="svg" exclude-symbols="is_amoeba"/>
+        <ModelGraph include-tags="signal" reduced="true" format="svg" exclude-symbols="is_amoeba"/>
     </Analysis>
 </MorpheusModel>

@@ -113,6 +113,6 @@
                 </Plot>
             </Plots>
         </Logger>
-        <DependencyGraph reduced="false" include-tags="#untagged" format="svg"/>
+        <ModelGraph reduced="false" include-tags="#untagged" format="svg"/>
     </Analysis>
 </MorpheusModel>

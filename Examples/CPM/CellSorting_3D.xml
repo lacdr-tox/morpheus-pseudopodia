@@ -156,6 +156,6 @@ Graner and Glazier, Simulation of biological cell sorting using a two-dimensiona
             <Channel exclude-medium="true" symbol-ref="cell.id"/>
             <Channel exclude-medium="true" symbol-ref="cell.type"/>
         </TiffPlotter>
-        <DependencyGraph reduced="false" exclude-plugins="Gnuplotter, Logger, TiffPlotter" include-tags="#untagged" format="svg"/>
+        <ModelGraph reduced="true" include-tags="#untagged" format="svg"/>
     </Analysis>
 </MorpheusModel>

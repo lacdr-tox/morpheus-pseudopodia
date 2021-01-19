@@ -96,6 +96,6 @@
                 </Cells>
             </Plot>
         </Gnuplotter>
-        <DependencyGraph format="svg" reduced="false" exclude-plugins="Gnuplotter" include-tags="#untagged"/>
+        <ModelGraph format="svg" reduced="true"  include-tags="#untagged"/>
     </Analysis>
 </MorpheusModel>

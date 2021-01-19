@@ -56,6 +56,6 @@ if((s == 0 and sum >= y and sum &lt;= z ), 1, 0))
                 </Field>
             </Plot>
         </Gnuplotter>
-        <DependencyGraph format="svg" reduced="true" include-tags="#untagged"/>
+        <ModelGraph format="svg" reduced="true" include-tags="#untagged"/>
     </Analysis>
 </MorpheusModel>

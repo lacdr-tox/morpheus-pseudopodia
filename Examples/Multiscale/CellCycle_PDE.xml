@@ -190,6 +190,6 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
     </Disabled>
 -->
         </Logger>
-        <DependencyGraph format="svg" reduced="false" include-tags="#untagged"/>
+        <ModelGraph format="svg" reduced="false" include-tags="#untagged"/>
     </Analysis>
 </MorpheusModel>

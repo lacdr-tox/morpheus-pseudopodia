@@ -71,7 +71,7 @@ if(cell, v.y+alpha*velocity.y, v.y-delta*v.y),
             </Plot>
             <Terminal name="png"/>
         </Gnuplotter>
-        <DependencyGraph format="svg" include-tags="#untagged" reduced="false"/>
+        <ModelGraph format="svg" include-tags="#untagged" reduced="false"/>
     </Analysis>
     <CPM>
         <Interaction>

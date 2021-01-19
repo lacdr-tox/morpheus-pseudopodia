@@ -92,6 +92,6 @@ http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004280</D
             <Channel exclude-medium="true" no-outline="true" symbol-ref="cell.id"/>
             <Channel symbol-ref="act"/>
         </TiffPlotter>
-        <DependencyGraph format="svg" include-tags="#untagged" reduced="false"/>
+        <ModelGraph format="svg" include-tags="#untagged" reduced="false"/>
     </Analysis>
 </MorpheusModel>

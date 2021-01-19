@@ -135,6 +135,6 @@ http://dx.doi.org/10.1098/rsif.2012.0766
             <Plot minimum="0" maximum="1.0" terminal="png"/>
             <Column celltype="cells" symbol-ref="tau"/>
         </HistogramLogger>
-        <DependencyGraph include-tags="#untagged" format="svg" reduced="false"/>
+        <ModelGraph include-tags="#untagged" format="svg" reduced="false"/>
     </Analysis>
 </MorpheusModel>

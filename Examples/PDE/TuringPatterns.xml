@@ -115,6 +115,6 @@ Miyazawa, Okamoto and Kondo, Blending of animal colour patterns by hybridization
                 </SurfacePlot>
             </Plots>
         </Logger>
-        <DependencyGraph include-tags="#untagged" format="svg" reduced="false"/>
+        <ModelGraph include-tags="#untagged" format="svg" reduced="false"/>
     </Analysis>
 </MorpheusModel>

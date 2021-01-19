@@ -61,7 +61,7 @@ VTK filed can be viewed with external tools such as ParaView  (https://www.parav
             <Channel symbol-ref="u"/>
             <Channel symbol-ref="v"/>
         </TiffPlotter>
-        <DependencyGraph reduced="false" include-tags="#untagged" format="svg"/>
+        <ModelGraph reduced="false" include-tags="#untagged" format="svg"/>
         <VtkPlotter mode="binary" time-step="0.5">
             <Channel symbol-ref="u"/>
             <Channel symbol-ref="v"/>

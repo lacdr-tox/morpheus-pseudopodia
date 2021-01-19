@@ -101,6 +101,6 @@
                 <Slice axis="y" value="size.y/2"/>
             </Restriction>
         </Logger>
-        <DependencyGraph include-tags="#untagged" format="svg" reduced="false"/>
+        <ModelGraph include-tags="#untagged" format="svg" reduced="false"/>
     </Analysis>
 </MorpheusModel>

@@ -180,6 +180,6 @@ PDE Equation:
                 <Celltype celltype="cells"/>
             </Restriction>
         </Logger>
-        <DependencyGraph format="svg" reduced="false" include-tags="#untagged"/>
+        <ModelGraph format="svg" reduced="false" include-tags="#untagged"/>
     </Analysis>
 </MorpheusModel>

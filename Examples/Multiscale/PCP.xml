@@ -145,6 +145,6 @@
             <Column symbol-ref="polC.phi" celltype="cells"/>
             <Plot terminal="png" minimum="0.0"/>
         </HistogramLogger>
-        <DependencyGraph format="svg" reduced="false" include-tags="#untagged"/>
+        <ModelGraph format="svg" reduced="false" include-tags="#untagged"/>
     </Analysis>
 </MorpheusModel>

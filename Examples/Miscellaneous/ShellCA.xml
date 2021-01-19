@@ -55,6 +55,6 @@
                 </SurfacePlot>
             </Plots>
         </Logger>
-        <DependencyGraph format="svg" reduced="false" include-tags="#untagged"/>
+        <ModelGraph format="svg" reduced="false" include-tags="#untagged"/>
     </Analysis>
 </MorpheusModel>

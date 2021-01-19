@@ -166,6 +166,6 @@ James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: 
             <Channel no-outline="true" symbol-ref="cell.id" celltype="cells"/>
             <Channel symbol-ref="CDK1" celltype="cells"/>
         </TiffPlotter>
-        <DependencyGraph format="svg" reduced="false" exclude-symbols="cell.id" include-tags="#untagged"/>
+        <ModelGraph format="svg" reduced="false" exclude-symbols="cell.id" include-tags="#untagged"/>
     </Analysis>
 </MorpheusModel>

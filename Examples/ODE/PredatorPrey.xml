@@ -94,6 +94,6 @@ Illustrates how to
                 </Plot>
             </Plots>
         </Logger>
-        <DependencyGraph include-tags="#untagged" format="svg" reduced="false"/>
+        <ModelGraph include-tags="#untagged" format="svg" reduced="false"/>
     </Analysis>
 </MorpheusModel>

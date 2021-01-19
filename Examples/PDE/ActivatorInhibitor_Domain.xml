@@ -53,6 +53,6 @@
                 <Field min="0" symbol-ref="a"/>
             </Plot>
         </Gnuplotter>
-        <DependencyGraph include-tags="#untagged" format="svg" reduced="false"/>
+        <ModelGraph include-tags="#untagged" format="svg" reduced="false"/>
     </Analysis>
 </MorpheusModel>

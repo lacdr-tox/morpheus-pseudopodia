@@ -141,6 +141,6 @@ Shows how to manipulate PropertyVectors (x,z,y) using the VectorRule. An express
             </Plots>
             <Restriction/>
         </Logger>
-        <DependencyGraph format="svg" include-tags="#untagged" reduced="true"/>
+        <ModelGraph format="svg" include-tags="#untagged" reduced="true"/>
     </Analysis>
 </MorpheusModel>
