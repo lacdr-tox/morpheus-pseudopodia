@@ -65,6 +65,7 @@ Multiple \b Output elements can be specified:
 #include "core/interfaces.h"
 #include "core/celltype.h"
 #include "core/focusrange.h"
+#include "core/data_mapper.h"
 
 class NeighborhoodVectorReporter : public ReporterPlugin
 {
@@ -72,7 +73,6 @@ class NeighborhoodVectorReporter : public ReporterPlugin
 	private:
 		CellType* celltype;
 		enum InputModes{ INTERFACES, CELLS };
-		enum OutputMode{ AVERAGE, SUM, DISCRETE };
 		
 		PluginParameter2<VDOUBLE,XMLEvaluator> input;
 		PluginParameter2<InputModes, XMLNamedValueReader,DefaultValPolicy> scaling;
@@ -84,7 +84,7 @@ class NeighborhoodVectorReporter : public ReporterPlugin
 		
 		
 		PluginParameter2<VDOUBLE,XMLWritableSymbol, RequiredPolicy> output;
-		PluginParameter2<OutputMode,XMLNamedValueReader, RequiredPolicy> output_mode;
+		PluginParameter2<VectorDataMapper::Mode, XMLNamedValueReader, RequiredPolicy> output_mode;
 
 		void reportCelltype(CellType* celltype);
 		void reportGlobal();

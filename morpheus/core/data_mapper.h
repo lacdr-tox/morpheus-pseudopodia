@@ -172,74 +172,82 @@ public:
 			values[slot][value] += weight;
 	}
 		
-	double get(int slot=thread()) override { 
-		const auto& vmap = values[slot];
-
-		if (vmap.size()==1)
-			return vmap.begin()->first;
-		
-		int max_occ=0; int max_occ_cnt=0; double max_occ_value=0;
-		for (const auto& v : vmap) {
-			if (v.second>max_occ) {
-				max_occ = v.second;
-				max_occ_cnt = 1;
-				max_occ_value= v.first;
-			}
-			else if (v.second == max_occ)
-				max_occ_cnt++;
-		}
-		
-// 		if (max_occ_cnt<2)
-		return max_occ_value;
-		
-// 		int selection = getRandomUint(max_occ_cnt);
-// 		max_occ_cnt = 0;
-// 		for (const auto& v : vmap) {
-// 			if (v.second==max_occ) {
-// 				if (max_occ_cnt == selection)
-// 					return v.first;
-// 				max_occ_cnt++;
-// 			}
-// 		}
-// 		return 0;
-		
-	}
+	double get(int slot=thread()) override;
     void reset(int slot=thread()) override { values[slot].clear(); };
 	DataMapper*  clone() override { return new DataMapperDiscrete(*this); };
-	double getCollapsed() override {
-		
-		int max_occ=0; int max_occ_cnt=0; double max_occ_value=0;
-		for (const auto vmap : values) {
-			for (const auto& v : vmap) {
-				if (v.second>max_occ) {
-					max_occ = v.second;
-					max_occ_cnt = 1;
-					max_occ_value = v.first;
-				}
-				else if (v.second == max_occ)
-					max_occ_cnt++;
-			}
-		}
-		
-// 		if (max_occ_cnt<2)
-		// first occ dominates
-		return max_occ_value;
-		
-// 		int selection = getRandomUint(max_occ_cnt);
-// 		max_occ_cnt = 0;
-// 		for (const auto vmap : values) {
-// 			for (const auto& v : vmap) {
-// 				if (v.second==max_occ) {
-// 					if (max_occ_cnt == selection)
-// 						return v.first;
-// 					max_occ_cnt++;
-// 				}
-// 			}
-// 		}
-// 		return 0;
-	}
+	double getCollapsed() override;
 private:
 	vector< map<double,double> >values;
 };
+
+
+class VectorDataMapper {
+public:
+	enum Mode{ AVERAGE, SUM, DISCRETE };
+	virtual void addVal(VDOUBLE value, int slot=thread()) = 0;
+	virtual void addValW(VDOUBLE value, double weight, int slot=thread()) = 0;
+	virtual VDOUBLE get(int slot=thread()) = 0;
+	virtual VDOUBLE getCollapsed() = 0;
+	virtual void reset(int slot=thread()) = 0;
+	static shared_ptr<VectorDataMapper> create(Mode mode);
+	static std::map<std::string, VectorDataMapper::Mode> getModeNames();
+	VectorDataMapper::Mode getMode() const { return mode; }
+	virtual ~VectorDataMapper() {}
+protected:
+	static inline int thread() { return omp_get_thread_num(); }
+	VectorDataMapper(VectorDataMapper::Mode mode) : mode(mode) {};
+private:
+	VectorDataMapper::Mode mode;
+};
+
+class VectorAverageMapper : public VectorDataMapper {
+public:
+	VectorAverageMapper() : VectorDataMapper(VectorDataMapper::AVERAGE) { sum.resize(omp_get_max_threads(),VDOUBLE(0,0,0)); count.resize(omp_get_max_threads(),0); };
+	void addVal(VDOUBLE value, int slot=thread()) override { sum[slot] += value; count[slot] += 1; }
+	void addValW(VDOUBLE value, double weight, int slot=thread()) override { sum[slot] += value * weight; count[slot] += weight; };
+	virtual VDOUBLE get(int slot=thread()) override { return count[slot]>0 ? sum[slot]/count[slot] : VDOUBLE(); };
+	virtual VDOUBLE getCollapsed() override { 
+		double all_count=std::accumulate(count.begin(), count.end(), 0.0); 
+		VDOUBLE all_sum = std::accumulate(sum.begin(), sum.end(), VDOUBLE(0,0,0));
+		return all_count>0 ? all_sum/all_count : VDOUBLE(0,0,0);
+	}
+	virtual void reset(int slot=thread()) override { sum[slot]=VDOUBLE(0,0,0); count[slot]=0; };
+private:
+	vector<VDOUBLE> sum;
+	vector<double> count;
+};
+
+class VectorSumMapper : public VectorDataMapper {
+public:
+	VectorSumMapper() : VectorDataMapper(VectorDataMapper::SUM) { sum.resize(omp_get_max_threads(),VDOUBLE(0,0,0)); };
+	void addVal(VDOUBLE value, int slot=thread()) override { sum[slot] += value; }
+	void addValW(VDOUBLE value, double weight, int slot=thread()) override { sum[slot] += value * weight; };
+	virtual VDOUBLE get(int slot=thread()) override { return sum[slot]; };
+	virtual VDOUBLE getCollapsed() override { return std::accumulate(sum.begin(), sum.end(), VDOUBLE(0,0,0)); }
+	virtual void reset(int slot=thread()) override { sum[slot]=VDOUBLE(0,0,0); };
+private:
+	vector<VDOUBLE> sum;
+};
+
+
+class VectorDiscreteMapper : public VectorDataMapper {
+public:
+	VectorDiscreteMapper() : VectorDataMapper(VectorDataMapper::DISCRETE) { 
+		values.resize(omp_get_max_threads());
+	};
+	void addVal(VDOUBLE value, int slot=thread()) override { values[slot][value]++; } 
+	void addValW(VDOUBLE value, double weight, int slot=thread()) override { 
+		values[slot][value] += weight;
+	}
+		
+	VDOUBLE get(int slot=thread()) override;
+	
+    void reset(int slot=thread()) override { values[slot].clear(); };
+	
+	VDOUBLE getCollapsed() override;
+private:
+	vector< map<VDOUBLE, double, less_VDOUBLE > > values;
+};
+
 
 #endif // DATAMAPPER_H
