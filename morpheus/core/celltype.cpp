@@ -124,6 +124,11 @@ void CellType::loadFromXML(const XMLNode xCTNode, Scope* scope) {
 		local_scope->registerSymbol(  make_shared<CellInterfaceLengthSymbol>("cell.surface"));
 		local_scope->registerSymbol(      make_shared<CellOrientationSymbol>("cell.orientation"));
 	}
+	
+	string tags_string;
+	getXMLAttribute(xCTNode, "tags", tags_string, false);
+	auto tags_split = tokenize(tags_string," \t,", true);
+	xml_tags.insert(tags_split.begin(), tags_split.end());
 }
 
 
@@ -140,6 +145,7 @@ void CellType::loadPlugins()
 			if (! p.get()) 
 				throw(string("Unknown plugin " + xml_tag_name));
 			
+			p->setInheritedTags(xml_tags);
 			p->loadFromXML(xNode,local_scope);
 			
 			if ( dynamic_pointer_cast< CPM_Energy >(p) ) { energies.push_back(dynamic_pointer_cast< CPM_Energy >(p) );}
@@ -414,7 +420,11 @@ void CellType::loadPopulationFromXML(const XMLNode xNode) {
 				cp.pop_initializers.push_back(dynamic_pointer_cast<Population_Initializer>( p ));
 				cp.pop_initializers.back()->loadFromXML(xcpNode,local_scope);
 			}
+			else if (p) {
+				cp.other_plugins.push_back(p);
+			}
 			else {
+				
 				throw MorpheusException(string("Could not create instance for plugin ") + xcpNode.getName(), xcpNode);
 			}
 		}

@@ -268,6 +268,7 @@ private:
 	string name;
 	XMLNode stored_node;
 	Scope* local_scope;
+	set<string> xml_tags;
 
 protected:
 	// Plugins sorted by interface
@@ -288,6 +289,7 @@ protected:
 		vector<CPM::CELL_ID> cells;
 		vector<InitPropertyDesc> property_initializers;
 		vector< shared_ptr<Population_Initializer> > pop_initializers;
+		vector< shared_ptr<Plugin> > other_plugins;
 	};
 	vector<CellPopDesc> cell_populations;
 	

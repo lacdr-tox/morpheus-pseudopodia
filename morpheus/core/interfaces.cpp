@@ -55,6 +55,8 @@ bool Plugin::isTagged(const set< string >& tags) const
 	return false;
 }
 
+void Plugin::setInheritedTags(const set< string >& tags) { xml_tags.insert(tags.begin(),tags.end()); } 
+
 void Plugin::registerPluginParameter(PluginParameterBase& parameter ) {
 	plugin_parameters2.push_back(&parameter);
 }
@@ -139,6 +141,10 @@ void Plugin::init(const Scope* scope)
 set< SymbolDependency > Plugin::getDependSymbols() const { return input_symbols; }
 
 set< SymbolDependency > Plugin::getOutputSymbols() const { return output_symbols; }
+
+
+class Annotation : public Plugin  { public: DECLARE_PLUGIN("Annotation"); };
+REGISTER_PLUGIN(Annotation);
 
 TimeStepListener::TimeStepListener(TimeStepListener::XMLSpec spec) : xml_spec(spec)
 {

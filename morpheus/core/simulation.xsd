@@ -110,11 +110,12 @@
 	
 	<xs:complexType name="CellType">
 		<xs:all>
+			<xs:element name="Annotation" type="morphText" minOccurs="0" />
 			<xs:group  ref="CellTypePlugins"/>
 		</xs:all>
 		<xs:attribute name="class" type="cpmCelltypeClass"  use="required" default="biological"/>
 		<xs:attribute name="name" type="cpmCellTypeDef"  use="required" />
-<!-- 		<xs:attribute name="subtype" type="cpmCellTypeRef"  use="optional" /> -->
+		<xs:attribute name="tags"	type="morphTags"			use="optional" />
 	</xs:complexType>
 	
     <xs:simpleType name="cpmCelltypeClass">
@@ -135,6 +136,7 @@
 	<xs:complexType name="Population">
 		<xs:all minOccurs="0" maxOccurs="unbounded">
 			<xs:group ref="PopulationInitPlugins"/>
+			<xs:element name="Annotation" type="morphText" minOccurs="0" />
 			<xs:element name="Cell" type="cpmCell" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="InitProperty" type="cpmPopulationProperty"  minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="InitVectorProperty" type="cpmPopulationVectorProperty"  minOccurs="0" maxOccurs="unbounded"/>
@@ -263,11 +265,13 @@ To exactly reproduce simulation results, choose the same random seed. Note that 
 				</xs:annotation>
 				<xs:complexType>					
 					<xs:attribute name="value" type="cpmInteger" use="required"/>
+					<xs:all>
+						<xs:element name="Annotation" type="morphText" minOccurs="0" />
+					</xs:all>
 				</xs:complexType>
 			</xs:element>
 			
 			<xs:element name="TimeSymbol">
-			
 				<xs:annotation>
 					<xs:documentation>Specifies the symbol used for simulation time.</xs:documentation>
 				</xs:annotation>
@@ -278,6 +282,7 @@ To exactly reproduce simulation results, choose the same random seed. Note that 
 			</xs:element>
 			
 			<xs:element name="StartTime" minOccurs="1" type="cpmTime" default ="0">
+				
 				<xs:annotation>
 					<xs:documentation>Initial time of the simulation.</xs:documentation>
 				</xs:annotation>
@@ -293,6 +298,7 @@ To exactly reproduce simulation results, choose the same random seed. Note that 
 				</xs:annotation>
 				<xs:complexType>
 					<xs:all>
+						<xs:element name="Annotation" type="morphText" minOccurs="0" />
 						<xs:element name="Condition" type="cpmMathExpression" />
 					</xs:all>
 				</xs:complexType>
@@ -349,6 +355,7 @@ Note:
 </xs:documentation>
 				</xs:annotation>	
 		<xs:all>
+			<xs:element name="Annotation" type="morphText" minOccurs="0" />
 			<xs:element name="SpaceSymbol" minOccurs="1" >
 				<xs:annotation>
 					<xs:documentation>Symbol representing the current lattice position.</xs:documentation>

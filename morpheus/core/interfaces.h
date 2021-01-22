@@ -208,6 +208,7 @@ class Plugin {
 		
 		/// Test if one of @p tags is set for the plugin
 		bool isTagged(const set< string >& tags) const;
+		void setInheritedTags(const set< string >& tags);
 		
 		/// \brief Register a PluginParameter for automatic treatment
 		/// Loading from XML, initialisation and dependency tracking is done automatically

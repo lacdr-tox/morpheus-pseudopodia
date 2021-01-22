@@ -13,12 +13,19 @@
 	
 	
 	<xs:complexType name="cpmTime">
+		<xs:all>
+			<xs:element name="Annotation" type="morphText" minOccurs="0" />
+		</xs:all>
 		<xs:attribute name="value" type="cpmUnsignedDouble" use="required" default="0" />
 		<!--<xs:attribute name="unit" type="cpmTimeUnit" use="optional" default="sec"/>-->
 		<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="optional" />
+
 	</xs:complexType> 
 	
 	<xs:complexType name="cpmLength">
+		<xs:all>
+			<xs:element name="Annotation" type="morphText" minOccurs="0" />
+		</xs:all>
 		<xs:attribute name="value" type="cpmUnsignedDouble" use="required" />
 <!-- 		<xs:attribute name="unit" type="cpmLengthUnit" use="optional" default="micron"/> -->
 		<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="optional" />
