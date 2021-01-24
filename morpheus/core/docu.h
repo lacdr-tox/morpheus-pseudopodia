@@ -757,6 +757,14 @@ The \b sequential update scheme will look as follows:
 **/
 
 /**
+\defgroup Tagging Component tagging
+\ingroup Concepts
+
+Model components may be tagged by a set of comma-separated custom tags. Tagging has no effect on the model itself but rather allows to group components logically. 
+
+The graphical user interface supports filtering the model views by a subgroup of given tags.  Any component that has no tag defined is referred to by the logical group \b \#untagged.
+
+/**
 \defgroup Parallelization
 \ingroup Concepts
 

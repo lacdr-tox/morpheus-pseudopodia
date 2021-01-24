@@ -114,7 +114,7 @@ void init() {
  * system. 
  * 
  * The simplest base class is
- *  - \ref Plugin
+ *  - Plugin
  * 
  * You may pick a single one to interact with the time stepping (see \ref Scheduling)
  *  - \ref TimeStepListener
@@ -145,11 +145,13 @@ void init() {
  * 
  */
 
+/** \defgroup Plugins Plugins 
+ \defgroup PluginsByInterface by Interface
+  \ingroup Plugins
+*/
 
-
-/** \defgroup Plugins Plugins */
-
-/** \brief Abstract plugin base class
+/** 
+ * \brief Abstract plugin base class
  * 
  * This class provides basic framework integration namely the
  *   - infrastructure for plugin factory registration
@@ -162,8 +164,6 @@ void init() {
  * \remark
  *    Take care that you call the inherited methods first when overriding them in your plugin.
  *    Else, plugin integration will fail.
- * \defgroup PluginsByInterface by Interface
- * \ingroup Plugins
  */
 class Plugin {
 	private:

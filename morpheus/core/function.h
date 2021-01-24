@@ -12,9 +12,9 @@
 /**
 \defgroup ML_Function Function
 \ingroup ML_Global ML_CellType
+\ingroup MathExpressions Symbols
 \ingroup ML_System ML_Event
 \ingroup ML_Contact ML_Analysis
-\ingroup MathExpressions Symbols
 
 \brief Parametric Function declaration.
 

@@ -297,7 +297,7 @@ public:
 
 /** @brief TriggeredSystem can be used to apply a System to an individual element of a context.
  * 
- *  The scopes of the assignments do not have to be identical, but the focus @f used in the trigger(const SymbolFocus& f)  method must define a single element in all scopes (i.e. must define the smallest granularity).
+ *  The scopes of the assignments do not have to be identical, but the focus @p f used in the trigger(const SymbolFocus& f)  method must define a single element in all scopes (i.e. must define the smallest granularity).
  */
 class TriggeredSystem: public System {
 public:

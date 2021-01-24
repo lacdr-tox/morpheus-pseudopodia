@@ -10,33 +10,31 @@
 //////
 
 /** 
- * \defgroup ML_Mapper Mapper
+ * \defgroup ML_VectorMapper VectorMapper
 \ingroup ML_Global
 \ingroup ML_CellType
 \ingroup ReporterPlugins
 
-\brief Map data from a spatial context into another symbol, usually reducing spatial resolution by a mapping function.
-
-(formerly known as CellReporter)
+\brief Map vector data from a spatial context into another symbol, usually reducing spatial resolution by a mapping function.
 
 \section Description
 
 A \b VectorMapper defines how data within a spatial context, e.g. a cell, a cell population or at global scope, can be mapped to a symbol with a different spatial granularity (i.e. resolution). Note that defining a \n Mapper within a \ref ML_CellType also restricts the mapping to the spatial range occupied by the respectiv cell population.
 
 A single \b Input element must be specified:
-- \b value: input variable (e.g. \ref ML_VectorProperty or \ref ML_VectorField) or a respective expression.
+- \b value: input variable (e.g. \ref ML_PropertyVector or \ref ML_VectorField) or a respective expression.
 
 That information can be written to an output symbol, if necessary, reduced in spatial granularity by means of the \b mapping statistics.
 If the output granularity is sufficient, i.e. when writing to a \ref ML_Field, no \b mapping function needs to be specified.
 
 Multiple \b Output elements can be specified:
 - \b mapping: statistic used for data mapping (if needed)
-- \b symbol-ref: ouput symbol (referencing e.g. a \ref ML_VectorVariable or a \ref ML_VectorProperty
+- \b symbol-ref: ouput symbol (referencing e.g. a \ref ML_VariableVector or a \ref ML_PropertyVector
 
 \section Example
 
 Compute the average velocity of a cell population.
-(Assume 'vel' refers to a \ref ML_VectorProperty containing the cell velocity (\ref ML_MotilityReporter) and  'avg_vel' global \ref ML_VectorVariable)
+(Assume 'vel' refers to a \ref ML_PropertyVector containing the cell velocity (\ref MotilityReporter) and  'avg_vel' global \ref ML_VariableVector)
 \verbatim
 <VectorMapper>
 	<Input value="vel" />
