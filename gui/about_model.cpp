@@ -120,27 +120,44 @@ void AboutModel::update()
 	auto dg = model->find(QStringList() << "Analysis" << "ModelGraph",true);
 	model->getRoot()->setStealth(false);
 	
-	QStringList qtl = dg->attribute("include-tags")->get().split(",", QString::SplitBehavior::SkipEmptyParts);
-	for (auto& key : qtl) key = key.trimmed();
 
 	QStringList qsl = dg->attribute("exclude-symbols")->get().split(",", QString::SplitBehavior::SkipEmptyParts);
 	for (auto& key : qsl) key = key.trimmed();
 	
-	includeTags->clear();
 	auto tags = model->getRoot()->subtreeTags();
 	tags.removeDuplicates();
 	tags.sort();
 	tags.prepend("#untagged");
 	
+	QStringList active_tags;
 	if (!dg->attribute("include-tags")->isActive()) {
-		update_include_tags(tags);
-		qtl = tags;
+		active_tags = includeTags->currentData().toStringList();
+	}
+	else {
+		active_tags = dg->attribute("include-tags")->get().split(",", QString::SplitBehavior::SkipEmptyParts);
+		for (auto& key : active_tags) key = key.trimmed();
 	}
 	
 	for (auto tag : tags) {
-		includeTags->addItem(tag, qtl.contains(tag));
+		int index = includeTags->findText(tag);
+		if (index == -1) {
+			// add a newly created tag and auto enable
+			includeTags->addItem(tag, true);
+		}
+		else {
+			includeTags->setItemData(index, active_tags.contains(tag),Qt::UserRole);
+		}
+	}
+	for (int indx =0; indx < includeTags->count(); indx++ ) {
+		QString tag = includeTags->itemData(indx, Qt::DisplayRole).toString();
+		// Remove all Items for tags that are no more
+		if (! tags.contains( tag ) ) {
+			includeTags->removeItem(indx);
+			indx--;
+		}
 	}
 	includeTags->updateText();
+	update_include_tags(includeTags->currentData().toStringList());
 	
 	excludeS->blockSignals(true);
 	excludeS->clear();

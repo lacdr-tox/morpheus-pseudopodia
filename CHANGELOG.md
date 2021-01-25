@@ -7,6 +7,7 @@
   * Support Tagging, Filtering and Sorting of Model Components
   * Switched to Qt5
   * Support reading and writing (gz) compressed models
+  * Support for morpheus://... url scheme, that allows loading ressources from the web
 
 ### MorpheusML
   * The space symbol (Space/SpaceSymbol) now always provides the location in orthogonal coordinates, also on hexagonal lattices.
@@ -19,6 +20,7 @@
     * allows to set a z-slice per Plot and also Arrows and Labels follow the z-slize filter.
     * cell opacity moved to Plot/Cells/@opacity
   * Added Populations InitVectorProperty with optional spherical notation
+  * Added VectorMapper as a counterpart to the scalar Mapper
   * Lattice size now can also be specified through expressions
   * Contact energies now support expressions with access to symbols of involved cells
   * Rework of XSD specifcation
@@ -32,6 +34,7 @@
   * Support reading (gz) compressed models
   * Added Test system for full XML models
   * Restructured CMake build to make use of targets and boosted requrements to cmake>=3.3.0
+  * Build system now supports building on Windows MSys2, Mac Homebrew, and 
 
 ### Bug Fixes
   * Fix cell property initialization override priority (InitProperty takes highest priority)

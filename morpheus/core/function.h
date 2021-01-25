@@ -75,9 +75,9 @@ Scalar or dot product of two vector parameters
 /**
 \defgroup ML_VectorFunction VectorFunction
 \ingroup ML_Global ML_CellType
+\ingroup MathExpressions Symbols
 \ingroup ML_System ML_Event
 \ingroup ML_Analysis
-\ingroup MathExpressions Symbols
 
 Symbol that defines a relation between vector \ref Symbols from the \ref Scope of the VectorFunction definition and other *Function*s to a scalar result.
 

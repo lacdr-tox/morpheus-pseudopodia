@@ -29,12 +29,12 @@ This may include a verbal model description, change history or references.
 This data only serves as information for users and does not affect the simulation itself. 
 
 \section Example
-\verbatim
+~~~~~~~~~~.xml
 <Description>
 	<Title>Your Model Name</Title>
 	<Details>Your annotations, change log and references.</Details>
 </Description>
-\endverbatim
+~~~~~~~~~~
 **/
 
 // ============================================================
@@ -53,19 +53,19 @@ Section to include mathematical variabes and equations in the global \ref Scope.
 
 \section Examples
 - Globally defined constant 'e' and a variable 'v'. These symbols can be overwritten in subscopes, in which case the global values act as defaults.
-\verbatim
+~~~~~~~~~~.xml
 <Global>
 	<Constant symbol="e" value="2.7182818284"/>
 	<Variable symbol="v" value="0.0"/>
 </Global>
-\endverbatim
+~~~~~~~~~~
 
 - ODE System without cellular context, see ODE/PredatorPrey example
-\verbatim
+~~~~~~~~~~.xml
 <Global>
 	<Variable symbol="R" value="0.5"/>
 	<Variable symbol="C" value="1.0"/>
-	<System solver="runge-kutta" time-step="0.1">
+	<System solver="Runge-Kutta [fixed, O(4)]" time-step="0.1">
 		<Constant symbol="r" value="0.1"/>
 		<Constant symbol="b" value="0.1"/>
 		<Constant symbol="c" value="0.5"/>
@@ -79,10 +79,10 @@ Section to include mathematical variabes and equations in the global \ref Scope.
 		</DiffEqn>
 	</System>
 </Global>
-\endverbatim
+~~~~~~~~~~
 
 - PDE reaction-diffusion System with two diffusive scalar fields 'a' and 'i'. See PDE/ActivatorInhibitor_2D example.
-\verbatim
+~~~~~~~~~~.xml
 <Global>
 	<Field symbol="a" value="rand_norm(0.5,0.1)" name="activator">
 		<Diffusion rate="0.02" />
@@ -90,7 +90,7 @@ Section to include mathematical variabes and equations in the global \ref Scope.
 	<Field symbol="i" value="0.1" name="inhibitor">
 		<Diffusion rate="1" />
 	</Field>
-	<System solver="runge-kutta" time-step="5" name="Meinhardt">
+	<System solver="Runge-Kutta [fixed, O(4)]" time-step="5" name="Meinhardt">
 		<Constant symbol="rho" value="0.001"/>
 		<Constant symbol="rho_a" value="0.001"/>
 		<Constant symbol="mu_i" value="0.03"/>
@@ -104,7 +104,7 @@ Section to include mathematical variabes and equations in the global \ref Scope.
 		</DiffEqn>
 	</System>
 </Global>
-\endverbatim
+~~~~~~~~~~
 
 **/
 
@@ -241,14 +241,15 @@ Environment for conditionally executed set of assignments.
 
 \section Example
 Set symbol "c" (e.g. assume it's a CellProperty) to 1 after 1000 simulation time units
-\verbatim
+
+~~~~~~~~~~.xml
 <Event trigger="on change" time-step="1">
     <Condition> time > 1000 </Condition>
     <Rule symbol-ref="c">
         <Expression>1</Expression>
     </Rule>
 </Event>
-\endverbatim
+~~~~~~~~~~
 **/
 
 
@@ -266,7 +267,7 @@ A \ref ML_SpaceSymbol can be used to create a symbol representing the current (x
 
 \section Examples
 Linear lattice with periodic boundary conditions. See example Miscellaneous/ShellCA.
-\verbatim
+~~~~~~~~~~.xml
 <Space>
 	<Lattice class="linear">
 		<Size value="100, 0, 0"/>
@@ -275,10 +276,10 @@ Linear lattice with periodic boundary conditions. See example Miscellaneous/Shel
 		</BoundaryConditions>
 	</Lattice>
 </Space>
-\endverbatim
+~~~~~~~~~~
 
 Hexagonal lattice. See example ODE/LateralSignalling.
-\verbatim
+~~~~~~~~~~.xml
 <Space>
 	<Lattice class="hexagonal">
 		<Size value="20 20 0"/>
@@ -288,10 +289,10 @@ Hexagonal lattice. See example ODE/LateralSignalling.
 		</BoundaryConditions>
 	</Lattice>
 </Space>
-\endverbatim
+~~~~~~~~~~
 
 Space specification with image-based domain. See example CPM/Crypt and note that mismatches of image size versus lattice size are partially resolved automatically, see \ref ML_Domain.
-\verbatim
+~~~~~~~~~~.xml
 <Space>
 	<Lattice class="square">
 		<Size symbol="size" value="600 600 0"/>
@@ -304,7 +305,7 @@ Space specification with image-based domain. See example CPM/Crypt and note that
 	</Lattice>
 	<SpaceSymbol symbol="l"/>
 </Space>
-\endverbatim
+~~~~~~~~~~
 **/
 
 // ============================================================
@@ -352,7 +353,7 @@ This resolution is equal for all MembraneProperties and for all cells. By conven
 
 Optionally, a \b Symbol can be specified to refer to the lattice discretization.
 
-\b SpaceSymbol can be specified to refer to the current location with respect to a membrane property. Positions are given as a vector (x,y,z) on the unit sphere / circle representing the membrane field.
+\b SpaceSymbol can be specified to refer to the current location with respect to a membrane property. Positions are given as a vector (x,y,z) or radial coords (r,φ,θ) on the unit sphere / circle representing the membrane field.
 This can be used to initialize membrane properties (see example below).
 
 
@@ -361,20 +362,18 @@ The resolution can have serious impact on computational performance, in particul
 
 \section Example
 To specify a membrane property with a lattice discretization of 100 and definition of symbols for the membrane size and location (from PCP example):
-\verbatim
+~~~~~~~~~~.xml
 <MembraneLattice>
 	<Resolution symbol="memsize" value="100"/>
 	<SpaceSymbol symbol="m"/>
 </MembraneLattice>
-\endverbatim
+~~~~~~~~~~
 
 Note that the symbols defined above can be used to initialize the membrane property, independent of the lattice discretization. 
-Here, using a sine wave, scaled between 0 and 1 by just referring to the x part of the current membrane position.
-\verbatim
-<InitProperty symbol-ref="membrane">
-	<Expression> 0.5*(m.x+1.0) </Expression>
-</InitProperty>
-\endverbatim
+Here, using a sine wave, scaled between 0 and 1 by just referring to the angle \b φ  of the membrane position relative to the cell center.
+~~~~~~~~~~.xml
+<MembraneProperty symbol-ref="membrane" value="0.5*(m.phi+1.0)" />
+~~~~~~~~~~
 
 
 **/
@@ -405,29 +404,29 @@ This symbol can then be used to make aspects dependent on space, such as a gradi
 
 \section Example
 To create a gradient along the x direction from 0 to 1, first specify a SpaceSymbol:
-\verbatim
+~~~~~~~~~~.xml
 <Space>
 	<Lattice class="square">
 		<Size symbol="size" value="20 20 0"/>
 	</Lattice>
 	<SpaceSymbol symbol="l" name="location"/>
 </Space>
-\endverbatim
+~~~~~~~~~~
 
 And then create a \ref ML_Field \f$f\f$ with location-dependent initial condition, using this symbol (see Example Miscellaneous/FrenchFlag):
-\verbatim
+~~~~~~~~~~.xml
 <Global>
-	<Field init-expression="l.x / size.x" symbol="f" >
+	<Field value="l.x / size.x" symbol="f" >
 	</Field>
 <Global>
-\endverbatim
+~~~~~~~~~~
 
 Or to render a parameter (mathematical term) spatially heterogeneous (see Example PDE/TuringPatterns):
-\verbatim
+~~~~~~~~~~.xml
 <Function symbol="A">
 	<Expression>0.07 + ((0.07 * l.y)/ size.y)</Expression>
 </Function>
-\endverbatim
+~~~~~~~~~~
 
 **/
 
@@ -457,7 +456,7 @@ Use the special value '-1' to never save simulation state (default) or '0' to sa
 
 
 \section Example
-\verbatim
+~~~~~~~~~~.xml
 <Time>
 	<StartTime value="0.0"/>
 	<StopTime value="1.0"/>
@@ -468,7 +467,7 @@ Use the special value '-1' to never save simulation state (default) or '0' to sa
 		<Condition> celltype.ct1.size == 0 </Condition>
 	</StopCondition>
 </Time>
-\endverbatim
+~~~~~~~~~~
 **/
 
 /**
@@ -654,27 +653,27 @@ When a symbol is declared in \b all CellType scopes (e.g. in all CellTypes), it 
 
 \section Examples
 In the following example, 'a=1' is declared in the Global scope, and 'b=2' is declared in the System scope. The global variable 'result' will yield '3'.
-\verbatim
+~~~~~~~~~~~~~~~{.xml}
 <Global>
 	<Constant symbol="a" value="1"/>
 	<Variable symbol="result" value="0"/>
 
-	<System solver="euler" time-step="1.0">
+	<System solver="Euler [fixed, O(1)]"]" time-step="1.0">
 		<Constant symbol="b" value="2"/>
 		<Rule symbol-ref="result">
 			<Expression>a+b</Expression>
 		</Rule>
 	</System>
 </Global>
-\endverbatim
+~~~~~~~~~~~~~~~
 ______
 In the following, the global constant 'a=1' is overwritten in System by the local constant 'a=2', such that 'result' will yield '4'.
-\verbatim
+~~~~~~~~~~~~~~~{.xml}
 <Global>
 	<Constant symbol="a" value="1"/>
 	<Variable symbol="result" value="0"/>
 
-	<System solver="euler" time-step="1.0">
+	<System solver="Euler [fixed, O(1)]"]" time-step="1.0">
 		<Constant symbol="a" value="2"/>
 		<Constant symbol="b" value="2"/>
 		<Rule symbol-ref="result">
@@ -682,14 +681,14 @@ In the following, the global constant 'a=1' is overwritten in System by the loca
 		</Rule>
 	</System>
 </Global>
-\endverbatim
+~~~~~~~~~~~~~~~
 ______
 Symbols can be re-used within different local scopes. Here, the symbol 'p' is used in different CellTypes. 
 In 'ct1', 'p' is a constant with value '0'. In 'ct2', 'p' is a constant with value '1.0'.
 In 'ct3', 'p' denote a cell-bound Property and in 'ct4' it represents a MembraneProperty.
 
 Because 'p' is defined in all CellTypes, it is automatically also available in the Global scope, e.g. for plotting domain-wide spatial maps. 
-\verbatim
+~~~~~~~~~~~~~~~{.xml}
 <CellTypes>
 	<CellType class="biological" name="ct1">
 		<Constant symbol="p" value="0"/>
@@ -706,18 +705,9 @@ Because 'p' is defined in all CellTypes, it is automatically also available in t
 		</MembraneProperty>
 	</CellType>
 </CellTypes>
-\endverbatim
+~~~~~~~~~~~~~~~
 
 **/
-
-/*
-\defgroup Interpreter
-\ingroup Concepts
-
-
-
-*/
-
 
 /**
 \defgroup Scheduling
@@ -757,12 +747,17 @@ The \b sequential update scheme will look as follows:
 **/
 
 /**
-\defgroup Tagging Component tagging
+\defgroup Tagging Tagging
 \ingroup Concepts
 
 Model components may be tagged by a set of comma-separated custom tags. Tagging has no effect on the model itself but rather allows to group components logically. 
 
+~~~~~~~~~~~~~~~{.xml}
+	<Field tags="chemotaxis, extra-cellular, phase:liquid" symbol="f" />
+~~~~~~~~~~~~~~~
+
 The graphical user interface supports filtering the model views by a subgroup of given tags.  Any component that has no tag defined is referred to by the logical group \b \#untagged.
+**/
 
 /**
 \defgroup Parallelization
