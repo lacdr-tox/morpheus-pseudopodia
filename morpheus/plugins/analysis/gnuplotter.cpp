@@ -242,7 +242,7 @@ void FieldPainter::plotData(ostream& out)
 	if (out_size.y < 2) out_size.y = 2;
 	for (out_pos.y=0; out_pos.y<out_size.y; out_pos.y+=1) {
 		
-		pos.y= out_pos.y*coarsening();
+		pos.y = min( size.y-1, out_pos.y*coarsening());
 			
 		if ( coarsening()>1) {
 			// reset the output buffer
@@ -821,11 +821,12 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 	VDOUBLE view_size = Gnuplotter::PlotSpec::size();
 	view_size -= VDOUBLE(0.01,0.01,0);
 	auto lattice = SIM::getLattice();
+	bool is_linear = lattice->getStructure() == Lattice::linear;
 	
 	// we assume that the neighbors are sorted either clockwise or anti-clockwise.
 	// we could also add a sorting step after the filtering of nodes belonging to the plane
 	vector<VINT> neighbors = SIM::lattice().getNeighborhoodByOrder(1).neighbors();
-	if( lattice->getStructure() == Lattice::linear ) {
+	if( is_linear ) {
 		neighbors.resize(4);
 		neighbors[0] = VINT( 1, 0, 0);
 		neighbors[1] = VINT( 0, 1, 0);
@@ -862,23 +863,28 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 		// get the proper position in the drawing area
 		VDOUBLE orth_pos  = cpm_layer->lattice().to_orth(pos);
 		cpm_layer->lattice().orth_resolve(orth_pos);
-		
+
 		const CPM::STATE& node = CPM::getNode(pos);
 		for (uint i = 0; i < plane_neighbors.size(); i++)
 		{
-			const CPM::STATE& neighborNode = CPM::getNode((pos + plane_neighbors[i]));
+			if ( is_linear && (pos + plane_neighbors[i]).y != 0) {
+				// virtual 1d neighbor
+			}
+			else {
+				const CPM::STATE& neighborNode = CPM::getNode((pos + plane_neighbors[i]));
 
-			if ( comp (neighborNode, node) ) {
-				VDOUBLE orth_nei = ((orth_pos + orth_neighbors[i]));
-				if ((orth_nei.x>=0) &&
-				    (orth_nei.x<=view_size.x) &&
-				    (orth_nei.y>=0 ) &&
-				    (orth_nei.y<=view_size.y) &&
-				    (orth_nei.z>=0) &&
-				    (orth_nei.z<=view_size.z))
-				{
-					// neighbor is outside of the drawing area
-					continue;
+				if ( comp (neighborNode, node) ) {
+					VDOUBLE orth_nei = ((orth_pos + orth_neighbors[i]));
+					if ((orth_nei.x>=0) &&
+						(orth_nei.x<=view_size.x) &&
+						(orth_nei.y>=0 ) &&
+						(orth_nei.y<=view_size.y) &&
+						(orth_nei.z>=0) &&
+						(orth_nei.z<=view_size.z))
+					{
+						// neighbor is outside of the drawing area
+						continue;
+					}
 				}
 			}
 			// create the edge
@@ -1577,7 +1583,7 @@ void Gnuplotter::analyse(double time) {
 					command << " matrix";
 					if (is_hexagonal) {
 						// half size pixel approximation for in hexagonal lattice data
-						command << " u (0.5*$1-0.25):(0.866025*$2):3";
+						command << " u (0.5*$1-0.25):(0.866*$2):3";
 					}
 					command << " w image pal not";
 				}
