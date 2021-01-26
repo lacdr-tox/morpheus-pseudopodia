@@ -128,6 +128,6 @@ http://dx.doi.org/10.1371/journal.pone.0024175
         </HistogramLogger>
     </Disabled>
 -->
-        <ModelGraph format="svg" reduced="false" exclude-symbols="cell,cell.center" exclude-plugins="Gnuplotter, CPM" include-tags="#untagged"/>
+        <ModelGraph format="svg" reduced="true" exclude-symbols="cell,cell.center" include-tags="#untagged"/>
     </Analysis>
 </MorpheusModel>

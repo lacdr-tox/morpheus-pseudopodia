@@ -115,12 +115,15 @@ config::config() : QObject(), helpEngine(NULL) {
 			QSqlQuery query;
 			query.prepare("SELECT * FROM VersionHistory ORDER BY version DESC");
 			bool ok=query.exec();
-			qDebug() << query.value(0) << query.value(1);
 			if( !ok ){
 				qDebug() << "Retrieval of database version failed: " << query.lastError();
 				throw query.lastError().text();
 			}
-			query.first();
+			ok = query.first();
+			if( !ok ){
+				qDebug() << "Retrieval of database version failed: " << query.lastError();
+				throw query.lastError().text();
+			}
 			int cdb_version = query.value(0).toInt();
 			if (cdb_version != data_base_version) {
 				if (cdb_version < data_base_version) {

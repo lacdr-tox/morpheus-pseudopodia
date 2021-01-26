@@ -205,6 +205,6 @@ Shows the following features of Morpheus:
                 </Plot>
             </Plots>
         </Logger>
-        <ModelGraph format="svg" exclude-plugins="Gnuplotter"/>
+        <ModelGraph format="svg" reduced="true" />
     </Analysis>
 </MorpheusModel>

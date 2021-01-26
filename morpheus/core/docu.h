@@ -753,7 +753,7 @@ The \b sequential update scheme will look as follows:
 Model components may be tagged by a set of comma-separated custom tags. Tagging has no effect on the model itself but rather allows to group components logically. 
 
 ~~~~~~~~~~~~~~~{.xml}
-	<Field tags="chemotaxis, extra-cellular, phase:liquid" symbol="f" />
+	<Field tags="chemotaxis, phase:liquid" symbol="f" />
 ~~~~~~~~~~~~~~~
 
 The graphical user interface supports filtering the model views by a subgroup of given tags.  Any component that has no tag defined is referred to by the logical group \b \#untagged.

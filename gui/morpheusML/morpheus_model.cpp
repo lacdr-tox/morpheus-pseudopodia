@@ -585,24 +585,24 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 				ed.edit_type = MorphModelEdit::NodeRename;
 				ed.info = QString("Renamed Root Element into ") + new_name;
 				edits.append(ed);
-				qDebug() << "AutoFix: Renamed Root Element " << search_path << " into "  << target_path;
+// 				qDebug() << "AutoFix: Renamed Root Element " << search_path << " into "  << target_path;
 			}
-			qDebug() << "Cannot move element to root node ";
+// 			qDebug() << "Cannot move element to root node ";
 		} 
 		else if (matches.size()) {
 			// moving the nodes in tree
-			qDebug() << "search "  << search_tags << " move " << target_tags ;
+// 			qDebug() << "search "  << search_tags << " move " << target_tags ;
 			
 			// Creating relative path for checking require_path
 			QStringList search_req_tags = search_tags;
 			while ( !search_req_tags.isEmpty() && !require_tags.isEmpty() && search_req_tags.front() == require_tags.front()) {
-				qDebug() << "Removed leading tag " << search_req_tags.front() << " for relative path";
+// 				qDebug() << "Removed leading tag " << search_req_tags.front() << " for relative path";
 				search_req_tags.pop_front();
 				require_tags.pop_front();
 			}
 			
 			while ( !search_tags.isEmpty() && !target_tags.isEmpty() && search_tags.front() == target_tags.front()) {
-				qDebug() << "Removed leading tag " << search_tags.front() << " for relative path";
+// 				qDebug() << "Removed leading tag " << search_tags.front() << " for relative path";
 				search_tags.pop_front();
 				target_tags.pop_front();
 			}
@@ -1017,10 +1017,6 @@ QVariant MorphModel::data(const QModelIndex &index, int role) const {
 	}
 	else if (role == NodeRole) {
 		return QVariant::fromValue(indexToItem(index));
-	}
-	else if (role == XPathRole) {
-		auto node = indexToItem(index);
-		return node ? QVariant(node->getXPath()) : QVariant(QStringList());
 	}
 	else if (role == XPathRole) {
 		auto node = indexToItem(index);
