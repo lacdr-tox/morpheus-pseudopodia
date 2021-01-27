@@ -3,7 +3,7 @@
 REGISTER_PLUGIN(ChangeCelltype);
 
 // TODO: What is the proper interface for MCSListeners?
-ChangeCelltype::ChangeCelltype() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_NONE) {
+ChangeCelltype::ChangeCelltype() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_OPTIONAL) {
 
 	condition.setXMLPath("Condition/text");
 	registerPluginParameter(condition);
@@ -28,11 +28,12 @@ void ChangeCelltype::loadFromXML(const XMLNode xNode, Scope* scope)
 
 void ChangeCelltype::init(const Scope* scope)
 {
+	if (CPM::getMCSDuration()>0)
+		setTimeStep( CPM::getMCSDuration() );
+	
 	InstantaneousProcessPlugin::init(scope);
 	celltype = scope->getCellType();
-	
-	setTimeStep( CPM::getMCSDuration() );
-	is_adjustable = false;
+	registerInputSymbols(condition.getDependSymbols());
 
 	triggers->init();
 

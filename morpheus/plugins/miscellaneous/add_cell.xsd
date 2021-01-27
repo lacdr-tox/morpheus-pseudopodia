@@ -16,7 +16,7 @@
 			<xs:all>
 				<xs:element name="Count" type="cpmMathExpression" />
 				<xs:element name="Distribution" type="cpmMathExpression" />
-				<xs:element name="Triggers" type="TriggeredSystem" />
+				<xs:element name="Triggers" type="TriggeredSystem" minOccurs="0" />
 			</xs:all>
 			<xs:attribute name="name" type="cpmString" use="optional" />
 			<xs:attribute name="overwrite" type="cpmBoolean" use="optional" default="false" />

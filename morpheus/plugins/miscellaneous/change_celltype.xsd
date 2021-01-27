@@ -15,10 +15,11 @@
 				</xs:annotation>
 				<xs:all>
 					<xs:element name="Condition" type="cpmMathExpression" />
-					<xs:element name="Triggers" type="TriggeredSystem" />
+					<xs:element name="Triggers" type="TriggeredSystem" minOccurs="0"/>
 				</xs:all>
 
 				<xs:attribute name="newCellType" type="cpmCellTypeRef" use="required" />
+				<xs:attribute name="time-step" type="cpmMathExpression" use="optional" />
 			</xs:extension>
 		</xs:complexContent>
     </xs:complexType>

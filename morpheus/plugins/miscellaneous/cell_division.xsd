@@ -16,7 +16,7 @@
 
 				<xs:all>
 					<xs:element name="Condition" type="cpmMathExpression" />
-					<xs:element name="Triggers" type="TriggeredSystem" minOccurs="0" maxOccurs="unbounded" />
+					<xs:element name="Triggers" type="TriggeredSystem" minOccurs="0" />
 				</xs:all>
 				
 				<xs:attribute name="division-plane" type="cpmDivisionMode" use="required"/>

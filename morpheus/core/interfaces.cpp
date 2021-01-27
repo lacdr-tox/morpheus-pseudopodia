@@ -276,6 +276,16 @@ void TimeStepListener::init(const Scope* scope)
 			setTimeStep(-1);
 		}
 	}
+	else if (xml_spec == XMLSpec::XML_OPTIONAL) {
+		if (xml_time_step.isMissing() || xml_time_step(SymbolFocus::global)<=0) {
+			is_adjustable = true;
+			setTimeStep(time_step);
+		}
+		else {
+			setTimeStep(xml_time_step(SymbolFocus::global));
+			is_adjustable = false;
+		}
+	}
 	else {
 		is_adjustable = true;
 		setTimeStep(time_step);
