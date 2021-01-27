@@ -108,8 +108,13 @@ void LatticePlugin::init(const Scope* scope)
 	lattice_desc.size = VINT(size(SymbolFocus::global));
 
 	// Override lattice size to fit at least the domain size
-	if (lattice_desc.domain->domainType() != Domain::none)
-		lattice_desc.size = max(lattice_desc.size, lattice_desc.domain->size());
+	if (lattice_desc.domain->domainType() != Domain::none) {
+		VINT domain_size = lattice_desc.domain->size();
+		if (lattice_desc.structure == LatticeDesc::hexagonal) {
+			domain_size.y = ceil(domain_size.y / 0.866);
+		}
+		lattice_desc.size = max(lattice_desc.size, domain_size );
+	}
 	
 	if (size_symbol_name.isDefined()) {
 		size_symbol->set(SymbolFocus::global, lattice_desc.size);
