@@ -232,7 +232,7 @@ class ConstantSymbol : public PrimitiveConstantSymbol<T> {
 		ConstantSymbol( Container<T>* parent ) : PrimitiveConstantSymbol<T>(parent->getSymbol(), "", T()), parent(parent), initialized(false) { };
 		std::string linkType() const override { return "ConstantLink"; }
 		void init() const { this->value = parent->getInitValue(SymbolFocus::global);  initialized = true;}
-		const string& description() const override { return parent->getName(); }
+		const string& description() const override { return parent->getDescription(); }
 		const std::string XMLPath() const override { return getXMLPath(parent->saveToXML()); };
 		typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const override { if ( !initialized) init(); return this->get(f); }
 	private:
@@ -255,7 +255,7 @@ class VariableSymbol : public PrimitiveVariableSymbol<T> {
 		VariableSymbol(Container<T>* parent ) : PrimitiveVariableSymbol<T>(parent->getSymbol(), "", T()), parent(parent), initialized(false) { };
 		std::string linkType() const override { return "VariableLink"; }
 		void init() const { this->value = parent->getInitValue(SymbolFocus::global); initialized = true; cout << "set init value " << this->name() << "=" << this->value << endl; }
-		const string& description() const override { return parent->getName(); }
+		const string& description() const override { return parent->getDescription(); }
 		const std::string XMLPath() const override { return getXMLPath(parent->saveToXML()); };
 		typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const override { if ( !initialized) init();  return this->get(f); }
 	private:
@@ -276,7 +276,7 @@ class PropertySymbol : public PrimitivePropertySymbol<T> {
 	public:
 		PropertySymbol(Container<T>* parent, const CellType* ct, uint pid) : PrimitivePropertySymbol<T>(parent->getSymbol(), ct, pid), parent(parent) { }
 		std::string linkType() const override { return "CellPropertyLink"; }
-		const string& description() const override { if (parent) return parent->getName();  return this->name();}
+		const string& description() const override { return parent->getDescription();}
 		const std::string XMLPath() const override { return getXMLPath(parent->saveToXML()); };
 // 		typename TypeInfo<T>::SReturn get(const SymbolFocus& f) const override { return getCellProperty(f)->value; }
 		typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const override {

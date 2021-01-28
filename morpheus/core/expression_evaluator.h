@@ -527,7 +527,7 @@ template <class T>
 const string& ExpressionEvaluator<T>::getDescription() const
 {
 	if (expr_is_symbol)
-		return symbol_val->description();
+		return symbol_val->description().empty() ? symbol_val->name() : symbol_val->description();
 	else 
 		return expression;
 }

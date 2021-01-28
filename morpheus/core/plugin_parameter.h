@@ -493,7 +493,7 @@ public:
 	void unsetPartialSpecDefault() { partial_spec_val_set = false; if (local_scope) init();}
 	
 	string name() const { RequirementPolicy::assertDefined(); return symbol_name; }
-	const string& description() const  { RequirementPolicy::assertDefined(); return _accessor->description(); }
+	const string& description() const  { RequirementPolicy::assertDefined(); return _accessor->description().empty() ? _accessor->name() : _accessor->description(); }
 	Granularity granularity() const { RequirementPolicy::assertDefined(); return _accessor->granularity(); }
 	bool isInteger() const { RequirementPolicy::assertDefined(); return _accessor->flags().integer; }
 	
