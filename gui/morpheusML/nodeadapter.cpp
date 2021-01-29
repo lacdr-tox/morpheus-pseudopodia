@@ -51,10 +51,11 @@ void LatticeStructureAdapter::structureChanged()
 		while (lengths.size()>3) lengths.removeLast();
 		changed = true;
 	}
-
+	QRegularExpression ZeroValue("^0+\\.?0*$");
 	for (uint dim=0; dim<3; dim++) {
+		auto zero = ZeroValue.match(lengths[dim].trimmed());
 		if (dim < dimensions) {
-			if (lengths[dim].toDouble() == 0) {
+			if ( zero.hasMatch() ) {
 				lengths[dim] = stored_lengths[dim];
 				changed = true;
 			}
@@ -62,7 +63,7 @@ void LatticeStructureAdapter::structureChanged()
 				stored_lengths[dim] = lengths[dim];
 		}
 		else {
-			if (lengths[dim].toInt() != 0) {
+			if ( ! zero.hasMatch() ) {
 				lengths[dim] = "0";
 				changed = true;
 			}
@@ -91,13 +92,14 @@ void LatticeStructureAdapter::sizeChanged()
 		while (lengths.size()>3) lengths.removeLast();
 		changed = true;
 	}
-	
+	QRegularExpression ZeroValue("^0+\\.?0*$");
 	for (uint dim=0; dim<3; dim++) {
 		if (dim < dimensions) {
 			stored_lengths[dim] = lengths[dim].trimmed();
 		}
 		else {
-			if (lengths[dim].toInt() != 0) {
+			auto zero = ZeroValue.match(lengths[dim].trimmed());
+			if ( ! zero.hasMatch() ) {
 				lengths[dim] = "0";
 				changed = true;
 			}
