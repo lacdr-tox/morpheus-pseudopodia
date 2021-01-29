@@ -61,7 +61,7 @@ public:
 	virtual const std::string XMLPath() const =0;  /// Path to XML declaration
 	virtual const Scope* scope() const =0; /// The scope the symbol is defined in
 	virtual Granularity granularity() const =0;
-	virtual void setScope(const Scope* scope) =0;
+	virtual void setScope(std::weak_ptr<const Scope> scope) =0;
 // 	virtual std::string baseName() const =0; ///  Identifier of the base symbol. Usually identical to name, but differs for derived symbols.
 	/** Dependencies of the symbol
 	 *  In case the symbols has implicite dependencies,
@@ -129,7 +129,7 @@ public:
 template <class T>
 class SymbolAccessorBase : public SymbolBase {
 public:
-	SymbolAccessorBase(const std::string& name) : SymbolBase(), symbol_name(name), _scope(nullptr) {}
+	SymbolAccessorBase(const std::string& name) : SymbolBase(), symbol_name(name) {}
 	/// Unique string identifier for a the data type
 	const std::string& type() const final { return TypeInfo<T>::name(); }
 	/// Name of the symbol
@@ -140,7 +140,7 @@ public:
 	/// Granularity of the symbol
 	Granularity granularity() const final { return flags().granularity; }
 	/// Scope the Symbol is registered in
-	const Scope* scope() const final { return _scope; };
+	const Scope* scope() const final { return _scope.expired() ? nullptr : _scope.lock().get(); };
 	/// Dependencies of implicite symbols (i.e. Functions, Mappings)
 	std::set<SymbolDependency> dependencies() const override { return std::set<SymbolDependency>(); };
 	
@@ -165,13 +165,13 @@ public:
 
 protected:
 	/// Scope the Symbol is registered in
-	void setScope(const Scope* scope) override { _scope = scope; }
+	void setScope(std::weak_ptr<const Scope> scope) override { _scope = scope; }
 	friend class Scope;
 	
 private:
 	std::string xml_path;
 	std::string symbol_name;
-	const Scope* _scope;
+	std::weak_ptr<const Scope> _scope;
 	Flags _flags;
 };
 

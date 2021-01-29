@@ -71,13 +71,13 @@ private:
 	QSplitter* splitter_tree_text;
 	QSplitter* splitter_output_preview;
 	QSplitter* splitter_params_output;
-	QStackedLayout *previewStack;
+	QStackedWidget *previewStack;
 	QGraphicsView* imagePreview;
 	QTimer image_resize_timer;
 	QTextEdit* textPreview;
     QAction *stop_action, *open_terminal_action, *open_output_action, *make_movie_action;
     QLabel *title;
-	QGroupBox *gr_params, *gr_preview;
+	QGroupBox *gr_params/*, *gr_preview*/;
 	QGroupBox* job_group_box;
     QListWidget *parameter_list;
 	QLabel *par_sweep_title;

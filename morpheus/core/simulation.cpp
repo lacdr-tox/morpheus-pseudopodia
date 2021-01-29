@@ -28,7 +28,7 @@ namespace SIM {
 	vector< shared_ptr<Plugin> > analysis_section_plugins;
 	vector< shared_ptr<Plugin> > global_section_plugins;
 
-	unique_ptr<Scope> global_scope;
+	shared_ptr<Scope> global_scope;
 	Scope* current_scope;
 
 	string morpheus_file_version;
@@ -498,7 +498,7 @@ bool init(string model, map<string,string> overrides) {
 		throw s.str();
 	}
 	
-	global_scope = unique_ptr<Scope>(new Scope());
+	global_scope = make_shared<Scope>();
 	// Attach global overrides to the global scope
 	for (const auto& param : overrides ) {
 // 		if (param.first == "file") continue;
@@ -704,7 +704,7 @@ void loadFromXML(const XMLNode xNode) {
 				}
 			}
 			catch (string er) {
-				cout << er << endl;
+				throw MorpheusException( er, xNode );
 			}
 		}
 	}
@@ -802,7 +802,7 @@ void wipe()
 	global_lattice.reset();
 	global_scope.reset();
 	
-	global_scope = unique_ptr<Scope>(new Scope());
+	global_scope = make_shared<Scope>();
 	current_scope = global_scope.get();
 }
 

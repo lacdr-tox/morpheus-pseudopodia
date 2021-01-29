@@ -48,7 +48,7 @@ public:
 	virtual ~CompositeSymbol_I() {};
 };
 
-class Scope {
+class Scope : public std::enable_shared_from_this<Scope> {
 public:
 	Scope();
 	~Scope();
@@ -215,9 +215,20 @@ public:
 	};
 	
 	void removeCellTypeAccessor(Symbol symbol) override {
-		for (auto& acc : celltype_accessors) {
-			if (acc == dynamic_pointer_cast<const SymbolAccessorBase< T > >(symbol)) 
-				acc = default_val;
+		if (symbol == default_val) {
+			default_val.reset();
+			for (auto& acc : celltype_accessors) {
+				if (acc == symbol) {
+					acc.reset();
+					this->flags().partially_defined = true;
+				}
+			}
+		}
+		else {
+			for (auto& acc : celltype_accessors) {
+				if (acc == symbol) 
+					acc = default_val;
+			}
 		}
 	};
 	

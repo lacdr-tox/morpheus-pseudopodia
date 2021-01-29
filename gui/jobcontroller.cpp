@@ -114,14 +114,15 @@ JobView::JobView()
 	textPreview->setWordWrapMode(QTextOption::WordWrap);
 
 	
-	previewStack= new QStackedLayout();
+	previewStack= new QStackedWidget();
 	previewStack->addWidget(imagePreview);
 	previewStack->addWidget(textPreview);
 
-	gr_preview = new QGroupBox("Preview");
-	gr_preview->setLayout(previewStack);
-	gr_preview->setMinimumWidth(250);
-	gr_preview->hide();
+// 	gr_preview = new QGroupBox("Preview");
+// 	gr_preview->setLayout(previewStack);
+// 	gr_preview->setMinimumWidth(250);
+// 	gr_preview->hide();
+	
 
 	splitter_tree_text = new QSplitter(this);
 	splitter_tree_text->setOrientation(Qt::Vertical);
@@ -130,7 +131,7 @@ JobView::JobView()
 
 	splitter_output_preview = new QSplitter(this);
 	splitter_output_preview->addWidget( splitter_tree_text );
-	splitter_output_preview->addWidget( gr_preview );
+	splitter_output_preview->addWidget( previewStack );
 	connect(splitter_output_preview,SIGNAL(splitterMoved(int,int)), this, SLOT(resizeGraphicsPreview()));
 	
 	
@@ -199,7 +200,7 @@ void JobView::setSweep(QList<int> job_ids) {
 		}
 		view_sweep = true;
 		gr_params->show();
-		gr_preview->hide();
+		previewStack->hide();
 		par_sweep_title->setVisible(false);
 		b_restore_sweep->setEnabled(true);
 		b_make_table->setEnabled(true);
@@ -207,7 +208,7 @@ void JobView::setSweep(QList<int> job_ids) {
 	else {
 		view_sweep = false;
 		gr_params->hide();
-		gr_preview->hide();
+		previewStack->hide();
 		b_restore_sweep->setEnabled(false);
 		b_make_table->setEnabled(false);
 		
@@ -228,7 +229,7 @@ void JobView::setJob(int job_id) {
 	view_sweep = false;
 	b_restore_sweep->setEnabled(false);
 	b_make_table->setEnabled(false);
-	gr_preview->hide();
+	previewStack->hide();
 	gr_params->hide();
 	te_output->clear();
 	text_shown = 0;
@@ -469,11 +470,11 @@ void JobView::previewSelectedFile(const QModelIndex & selected, const QModelInde
 			QGraphicsPixmapItem* item = new QGraphicsPixmapItem(QPixmap::fromImage(image));
 			item->setTransformationMode(Qt::SmoothTransformation);
 			imagePreview->scene()->addItem(item);
-			gr_preview->show();
+			previewStack->show();
 			previewStack->setCurrentWidget(imagePreview); 
 			emit imagePreviewChanged();
 		} else {
-			gr_preview->hide();
+			previewStack->hide();
 		}
 	}
 	else
@@ -486,7 +487,7 @@ void JobView::previewSelectedFile(const QModelIndex & selected, const QModelInde
             || file_name.endsWith(".err") || file_name.endsWith(".gp")  ||  file_name.endsWith(".csv"))
 			|| file_info.size() == 0 ){
 //			file_name.endsWith(".gz") || file_name.endsWith(".zip") || file_info.isExecutable() ){
-			gr_preview->hide();
+			previewStack->hide();
 			return;
 		}
 		
@@ -494,14 +495,14 @@ void JobView::previewSelectedFile(const QModelIndex & selected, const QModelInde
 			textPreview->setPlainText("<< File too large for preview (>10 Mb). >>");
 			textPreview->setWordWrapMode(QTextOption::NoWrap);
 			previewStack->setCurrentWidget(textPreview);
-			gr_preview->show();
+			previewStack->show();
 			return;
 		}
 		else if (file.open(QFile::ReadOnly | QFile::Text)){
 			textPreview->setPlainText(file.readAll());
 			textPreview->setWordWrapMode(QTextOption::NoWrap);
 			previewStack->setCurrentWidget(textPreview);
-			gr_preview->show();
+			previewStack->show();
 		}
 	}
 

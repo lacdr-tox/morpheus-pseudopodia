@@ -17,9 +17,9 @@ Scope::Scope(Scope* parent, string name, CellType * celltype) : parent(parent), 
 
 Scope::~Scope()  { 
 // 	cout << "Deleting scope " << name << endl;
-	for (auto& sym : symbols) {
-		sym.second->setScope(nullptr);
-	}
+// 	for (auto& sym : symbols) {
+// 		sym.second->setScope(nullptr);
+// 	}
 } 
 
 
@@ -68,13 +68,13 @@ void Scope::registerSymbol(Symbol const_symbol)
 		if (! comp) {
 			throw SymbolError(SymbolError::Type::InvalidDefinition, string("Redefinition of a symbol \"") + symbol->name() + "\" in scope \""  + this->name + "\"");
 		}
-		symbol->setScope(this);
+		symbol->setScope(shared_from_this());
 		comp->setDefaultValue(symbol);
 		return;
 	}
 
 	// Register the symbol
-	symbol->setScope(this);
+	symbol->setScope(shared_from_this());
 	symbols.insert( {symbol->name(), symbol} );
 	
 	// Forward symbols of spatial components to the parental scope
@@ -108,6 +108,11 @@ void Scope::registerSymbol(Symbol const_symbol)
 void Scope::removeSymbol(Symbol sym) {
 	auto it = symbols.find(sym->name());
 	if (it != symbols.end())  {
+		if (dynamic_pointer_cast<CompositeSymbol_I>(it->second) ) {
+			dynamic_pointer_cast<CompositeSymbol_I>(it->second)->removeCellTypeAccessor(sym);
+			
+		}
+		
 		symbols.erase(it);
 		if (dynamic_pointer_cast<const SymbolAccessorBase<VDOUBLE> >( sym)) {
 			symbols.erase(sym->name() + ".x");
@@ -209,7 +214,7 @@ void Scope::registerSubScopeSymbol(Scope *sub_scope, Symbol symbol) {
 		else {
 			throw string("Symbol type not implemented in CompositeSymbol ") + "\n" + symbol->type() + "!=" + TypeInfo<VDOUBLE>::name() + "!=" + TypeInfo<double>::name();
 		}
-		composite_sym_base->setScope(this);
+		composite_sym_base->setScope(shared_from_this());
 		composite_sym_i->addCellTypeAccessor(sub_scope_id, symbol);
 		composite_symbols[composite_sym_i->name()] = composite_sym_i;
 		registerSymbol(composite_sym_base);
