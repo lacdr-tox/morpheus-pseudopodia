@@ -31,6 +31,11 @@ abstractProcess::abstractProcess(SharedMorphModel model, int job_id, QString sub
 	localDir = config::getApplication().general_outputDir;
 	
 	QDir dir(localDir);
+	if (dir.exists(_info.sim_dir)) {
+		cout << "Output directory = " << outputDir.toStdString() << " Already exists!!" << endl;
+		emit criticalMessage("Output directory '("+QString(outputDir)+")' already exists. Not executing job.");
+		return;
+	}
 	dir.mkpath(_info.sim_dir);
 	dir.cd(_info.sim_dir);
 	outputDir = dir.absolutePath();

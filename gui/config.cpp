@@ -670,21 +670,21 @@ void config::aboutModel()
 
 void config::aboutPlatform()
 {
-//#ifndef MORPHEUS_SVN_REVISION
-//    #define MORPHEUS_SVN_REVISION "MORPHEUS_SVN_REVISION not defined"
-//#endif
 	
 	QDate date = QDate::currentDate();
 	
-	QString header = "<p align='center'>Morpheus<br>";
+	QString header = "<img style='float:left' src='qrc://logo.png'/> <h1 style='margin-right:40px' align='center'>Morpheus</h1>";
 
-
-	QString info  = "<p align='center'>Modeling and simulation environment for multi-scale and multicellular systems biology</p>"
-					"<p align='center'>Version "+QString(MORPHEUS_VERSION_STRING)+", revision " + QString(MORPHEUS_REVISION_STRING) + "<br><br>"
-					"Developed by Jörn Starruß and Walter de Back<br>"
+	QString info  = "<h3 align='center'>Modeling and simulation environment for multi-scale and multicellular systems biology</h3>"
+					"<p align='center'>Version "+QString(MORPHEUS_VERSION_STRING)+", revision " + QString(MORPHEUS_REVISION_STRING) + "<br/>"
+					"Resource identification: Morpheus (RRID:SCR_014975) <br/><br/>"
+					
+					"Developed by Jörn Starruß, Walter de Back, Lutz Brusch, Cedric Unverricht,<br/> Robert Müller and Diego Jahn<br/>"
 					"Copyright 2009-"+ QString::number( date.year() )+", Technische Universität Dresden.<br><br>"
-					"More information:<br><a href=\"https://morpheus.gitlab.io\">morpheus.gitlab.io</a></p><br>"
-					"<p align='center'>Disclaimer:<br><font size=\"2\">Non-commercial use: Morpheus (the Software) is distributed for academic use and cannot be used for commercial gain without explicitly written agreement by the Developers. No warranty: The Software is provided \"as is\" without warranty of any kind, either express or implied, including without limitation any implied warranties of condition, uninterrupted use, merchantability, fitness for a particular purpose, or non-infringement. No liability: The Developers do not accept any liability for any direct, indirect, incidential, special, exemplary or consequential damages arising in any way out of the use of the Software.</font></p>";
+					"More information:<br><a href=\"https://morpheus.gitlab.io\">morpheus.gitlab.io</a></p>"
+					"<p style='font-size:small'>"
+// 					"<b>Contributors</b><br/>Cedric Unverricht, Robert Müller, Diego Jahn, Gerhard Burger, Margriet Palm,  Osvaldo Chara, Martin Lunze<br/>"
+					"<b>Disclaimer</b><br/>Non-commercial use: Morpheus (the Software) is distributed for academic use and cannot be used for commercial gain without explicitly written agreement by the Developers. No warranty: The Software is provided \"as is\" without warranty of any kind, either express or implied, including without limitation any implied warranties of condition, uninterrupted use, merchantability, fitness for a particular purpose, or non-infringement. No liability: The Developers do not accept any liability for any direct, indirect, incidential, special, exemplary or consequential damages arising in any way out of the use of the Software.</p>";
 
 //     QString title = "Morpheus: Modeling environment for multiscale and multicellular systems biology";
 // 
@@ -700,17 +700,14 @@ void config::aboutPlatform()
 // 
 //     QString about = title +"\n\n" + copyright + "\n\n" + developers + "\n\n" + version + "\n\n" + version;
 
-    QMessageBox msgBox; //(QMessageBox::Information, "About Morpheus",about,QMessageBox::Ok);
-    
-    msgBox.setText(header);
-    msgBox.setInformativeText(info);
-    msgBox.setStandardButtons(QMessageBox::Ok);
-    msgBox.setDefaultButton(QMessageBox::Ok);    
-	msgBox.setTextFormat(Qt::RichText);
-	msgBox.setIconPixmap(QPixmap(":/logo.png"));
-    //msgBox.setParent(qApp->activeWindow());
-    msgBox.exec();
+	QMessageBox msgBox; //(QMessageBox::Information, "About Morpheus",about,QMessageBox::Ok);
 
+	msgBox.setText(header);
+	msgBox.setInformativeText(info);
+	msgBox.setStandardButtons(QMessageBox::Ok);
+	msgBox.setDefaultButton(QMessageBox::Ok);    
+	msgBox.setTextFormat(Qt::RichText);
+	msgBox.exec();
 }
 
 

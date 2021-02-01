@@ -61,7 +61,7 @@ bool AdaptiveWebPage::acceptNavigationRequest(const QUrl& url, QWebEnginePage::N
 	if (delegate_schemes.contains(url.scheme()) && type == QWebEnginePage::NavigationType::NavigationTypeLinkClicked) {
 // 		qDebug() << "Forwarding weblink on page " <<  this->url() << " to " << url << " as Signal";
 		emit linkClicked(url);
-		setUrl(url);
+// 		setUrl(url);
 		return false;
 	}
 	return QWebEnginePage::acceptNavigationRequest(url, type, isMainFrame);

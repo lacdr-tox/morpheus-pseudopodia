@@ -19,8 +19,9 @@ AnnouncementDialog::AnnouncementDialog(QWidget* parent)
 	
 	auto central_layout = new QVBoxLayout();
 	this->setLayout(central_layout);
-	this->setMinimumWidth(425);
-	this->setMinimumHeight(300);
+	this->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding);
+	this->setMinimumWidth(600);
+	this->setMinimumHeight(500);
 
 	web_view = new WebViewer(this);
 	connect(web_view, SIGNAL(linkClicked(const QUrl&)), this, SLOT(openLink(const QUrl&)));

@@ -9,7 +9,7 @@ Morpheus has been developed by Jörn Starruß and Walter de Back at the Center f
 
 # Looking for latest stable release?
 
-If you are looking for the latest stable release of Morpheus (v2), and do not necessarily need the source code, please download the precompiled packages for MS Windows, Mac OSX and Linux are available on the [download page](https://morpheus.gitlab.io/#download). 
+If you are looking for the latest stable release of Morpheus (v2.2), and do not necessarily need the source code, please download the precompiled packages for MS Windows, Mac OSX and Linux are available on the [download page](https://morpheus.gitlab.io/#download). 
 
 
 # Resources
@@ -19,7 +19,7 @@ Morpheus is actively supported and provides help for users and developers:
 - [User forum](https://groups.google.com/forum/#!forum/morpheus-users): Questions and answers on modeling with Morpheus
 - [Issue tracker](https://gitlab.com/morpheus.lab/morpheus/issues): Bug reports and feature requests
 
-Documentation for users as well as plugin developers here found on the [gitlab wiki](https://gitlab.com/morpheus.lab/morpheus/wikis/home) and on the on the [old wiki](https://imc.zih.tu-dresden.de/wiki/morpheus):
+Documentation for users as well as plugin developers here found on the [gitlab wiki](https://gitlab.com/morpheus.lab/morpheus/wikis/home):
 
 - [User manual](https://gitlab.com/morpheus.lab/morpheus/wikis/user-manual) (under construction)
 - [Plugin dev guide](https://gitlab.com/morpheus.lab/morpheus/wikis/dev-guide) (under construction)
@@ -63,19 +63,14 @@ Runtime dependencies:
 ## Building on Debian based systems
 
 
-To install all dependencies on Ubuntu 16.04 and 18.04 run:
+To install all dependencies on Ubuntu 16.04, 18.04 and 20.04 run:
 ```  
 sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libboost-dev libboost-program-options-dev libtiff5-dev libsbml5-dev qttools5-dev libqt5svg5-dev qtwebengine5-dev libqt5sql5-sqlite gnuplot  
 ```
 
-To install all dependencies on Ubuntu 20.04 run:
-```  
-sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libboost-dev libboost-program-options-dev libtiff5-dev libsbml5-dev qttools5-dev libqt5svg5-dev qtwebengine5-dev libqt5sql5-sqlite libsbml5-dev gnuplot  
-```
-
 ## Building/Installing on other systems
 
-On other distributions package names vary slightly. Consult the respective repositories to find corresponding package names that provide the libraries and their headers.
+On other Linux distributions package names vary slightly. Consult the respective repositories to find corresponding package names that provide the libraries and their headers. Morpheus also builds well under Mac homebrew and Windows MSys2 environments.
 
 
 # How to cite Morpheus
@@ -103,3 +98,4 @@ Include the version number or commit hash for reproducability. Valid examples ar
 - Margriet Palm, Leiden University, the Netherlands
 - Emanuel Cura Costa, IFLySiB, La Plata, Argentina
 - Osvaldo Chara, IFLySiB, La Plata, Argentina
+- Martin Lunze, Germany

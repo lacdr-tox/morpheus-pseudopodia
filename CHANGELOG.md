@@ -7,7 +7,7 @@
   * Support Tagging, Filtering and Sorting of Model Components
   * Switched to Qt5
   * Support reading and writing (gz) compressed models
-  * Support for morpheus://... url scheme, that allows loading ressources from the web
+  * Support for morpheus://... url scheme, that allows loading resources through url links
 
 ### MorpheusML
   * The space symbol (Space/SpaceSymbol) now always provides the location in orthogonal coordinates, also on hexagonal lattices.
@@ -32,9 +32,10 @@
 ### Simulator
   * Performance improvements for Mappers and Reporters using OpenMP parallelization
   * Support reading (gz) compressed models
+  * Provide performance statistics as json file using the --perf-stats option
   * Added Test system for full XML models
   * Restructured CMake build to make use of targets and boosted requrements to cmake>=3.3.0
-  * Build system now supports building on Windows MSys2, Mac Homebrew, and 
+  * Build system now supports building on Windows MSys2 and Mac Homebrew in addition to linux systems.
 
 ### Bug Fixes
   * Fix cell property initialization override priority (InitProperty takes highest priority)
