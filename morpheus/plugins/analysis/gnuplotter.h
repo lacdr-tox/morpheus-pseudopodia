@@ -40,7 +40,7 @@ Organized in Plots, several artistic representations can be selected:
   - VectorFields can be plotted by providing x and y components separately. 
 
 \subsection Attributes
-- \b time-step (optional): Frequency of plotting events. If unspecified, adopts to the frequency of input updates. Setting \b time-step<=0 will plot only the final state of the simulation.
+- \b time-step (optional): Frequency of plotting events. If unspecified, adopts to the frequency of input updates. Setting \b time-step=0 will plot only the final state of the simulation.
 - \b decorate (optional, true): Enables axis labels and legends.
 - \b log-commands (optional, false): Enables logging of data and plotting commands to disc. Allows to manually repeat and manipulate the plots.
 - \b file-numbering (optional, time): Set the numbering of the plot images to either be consecutive or based on simulation time.
@@ -54,6 +54,7 @@ Organized in Plots, several artistic representations can be selected:
 - \b Cells: Plot the spatial cell pattern restricted to a 2d scenario. Cell coloring is determined by the \b value attribute.
 - \b CellLabels: Put labels at the cell center according to the expression provided with the \b value attribute.
 - \b CellArrows: Put arrows at the cell center according to the expression provided with the \b value attribute.
+- \b CellLinks: Put a line connecting cell centers for each link created by \ref ML_MechanicalLink component.
 - \b Field: Plot a scalar field given by the expression in \b value. \b Coarsening will reduce the spatial data resolution.
 - \b VectorField: Plot a vector field given by the expression in \b value. \b Coarsening will reduce the spatial data resolution.
 
@@ -265,6 +266,21 @@ class CellPainter  {
 		static float getTransparentValue() { return transparency_value; };
 };
 
+class CellLinkPainter {
+	typedef vector<CPM::CELL_ID> LinkType;
+	SymbolAccessor<LinkType> bonds;
+	string color;
+	int z_slice;
+	
+public: 
+	CellLinkPainter();
+	void loadFromXML(const XMLNode node, const Scope* scope);
+	void init(const Scope* scope, int slice);
+	void plotData(ostream& );
+	string getColor() { return color; }
+	string getDescription() const;
+};
+
 class Gnuplotter : public AnalysisPlugin
 {
 	public:
@@ -284,19 +300,21 @@ class Gnuplotter : public AnalysisPlugin
 			PlotSpec();
 			static VDOUBLE size();
 			static VDOUBLE view_oversize();
-			bool field, cells, labels, arrows, vectors;
+			bool field, cells, labels, arrows, vectors, links;
 			int  z_slice;
 			shared_ptr<CellPainter> cell_painter;
 			shared_ptr<LabelPainter> label_painter;
 			shared_ptr<FieldPainter> field_painter;
 			shared_ptr<ArrowPainter> arrow_painter;
 			shared_ptr<VectorFieldPainter> vector_field_painter;
+			shared_ptr<CellLinkPainter> cell_link_painter;
 			string field_data_file;
 			string cells_data_file;
 			string membranes_data_file;
 			string labels_data_file;
 			string arrow_data_file;
 			string vector_field_file;
+			string link_data_file;
 			string title;
 		};
 		

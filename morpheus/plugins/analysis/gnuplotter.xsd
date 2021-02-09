@@ -34,6 +34,7 @@
 			<xs:element name="Cells" 		type="cpmCellPlotRef"		minOccurs="0"  maxOccurs="1"/>
 			<xs:element name="CellLabels" 		type="cpmLabelPlotRef"		minOccurs="0"  maxOccurs="1"/>
 			<xs:element name="CellArrows" 		type="cpmArrowPlotRef"		minOccurs="0"  maxOccurs="1"/>
+			<xs:element name="CellLinks"		type="cpmCellLinkPlot"	minOccurs="0"  maxOccurs="1" />
 			<xs:element name="VectorField" 	type="cpmVectorPlotRef"		minOccurs="0"  maxOccurs="1"/>
 			<xs:element name="Field" 		type="cpmFieldPlotRef"		minOccurs="0"  maxOccurs="1"/>
 		</xs:all>
@@ -45,16 +46,11 @@
 		</xs:attribute>
 	</xs:complexType>
 	
+	<xs:complexType name="cpmCellLinkPlot">
+		<xs:attribute name="color" type="cpmColors" use="required" default="black"/>
+	</xs:complexType>
+		
 	<xs:complexType name="cpmCellPlotRef">
-		<xs:annotation>
-			<xs:documentation>
-				Plots cells. Color can indicate cell type, cell ID, a property or membrane property. Colors can be specified by colormap.
-				
-				(Only) when (membrane) property is selected, you must provide a symbol-ref to this (membrane) property.
-			</xs:documentation>
-		</xs:annotation>
-		
-		
 		<xs:all>
 			<xs:element name="ColorMap" type="cpmColorMap" minOccurs="0"/>
 		</xs:all>
