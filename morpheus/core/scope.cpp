@@ -5,12 +5,12 @@
 
 int Scope::max_scope_id = 0;
 
-Scope::Scope() : parent(nullptr) , name("root"), ct_component(nullptr) { 
+Scope::Scope() : name("root"), parent(nullptr) , ct_component(nullptr) { 
 	scope_id = max_scope_id; 
 	max_scope_id++; 
 }
 
-Scope::Scope(Scope* parent, string name, CellType * celltype) : parent(parent), ct_component(celltype), name(name) { 
+Scope::Scope(Scope* parent, string name, CellType * celltype) : name(name), parent(parent), ct_component(celltype) { 
 	scope_id = max_scope_id; 
 	max_scope_id++;
 };
@@ -87,7 +87,7 @@ void Scope::registerSymbol(Symbol const_symbol)
 	}
 	
 	// Create read-only vector component symbols for vectors, i.e. VDOUBLE
-	if (dynamic_pointer_cast<SymbolAccessorBase<VDOUBLE> >( symbol)) {
+	if (symbol->type() == TypeInfo<VDOUBLE>::name()) {
         // register subelement accessors for sym.x ,sym .y , sym.z 
 		auto v_sym = dynamic_pointer_cast<SymbolAccessorBase<VDOUBLE> >( symbol);
 		auto derived = make_shared<VectorComponentAccessor>(v_sym,VectorComponentAccessor::Component::X);
@@ -114,7 +114,7 @@ void Scope::removeSymbol(Symbol sym) {
 		}
 		
 		symbols.erase(it);
-		if (dynamic_pointer_cast<const SymbolAccessorBase<VDOUBLE> >( sym)) {
+		if (sym->type() == TypeInfo<VDOUBLE>::name()) {
 			symbols.erase(sym->name() + ".x");
 			symbols.erase(sym->name() + ".y");
 			symbols.erase(sym->name() + ".z");
@@ -151,6 +151,7 @@ void Scope::registerSubScopeSymbol(Scope *sub_scope, Symbol symbol) {
 		throw  SymbolError(SymbolError::Type::InvalidDefinition, string("Scope:: Invalid registration of subscope symbol ") + symbol->name() +(" in non-root scope [")+ name +"].");
 	}
 	
+	shared_ptr<CompositeSymbol_I> composite_sym_i;
 	int sub_scope_id = sub_scope->ct_component->getID();
 	
 	auto it = symbols.find(symbol->name());
@@ -158,67 +159,35 @@ void Scope::registerSubScopeSymbol(Scope *sub_scope, Symbol symbol) {
 		if (it->second->type() != symbol->type()) {
 			throw SymbolError(SymbolError::Type::InvalidDefinition,string("Scope::registerSubScopeSymbol : Cannot register type incoherent sub-scope symbol \"")  + symbol->name() + "\"!"); 
 		}
+			
+		// if existing symbol is not a Composite yet, remove the old Symbol registration and replace it by a Composite Symbol with a default value
+		if (! dynamic_pointer_cast<CompositeSymbol_I>(it->second)) {
+			
+			composite_sym_i = symbol->makeComposite();
+			auto composite_sym = dynamic_pointer_cast<SymbolBase>(composite_sym_i);
+			if (!composite_sym) throw  SymbolError(SymbolError::Type::InvalidDefinition, string("Invalid composite symbol created ") + symbol->name() + " !!" );
+			
+			composite_sym_i->setDefaultValue(it->second);
+			composite_symbols[symbol->name()] = composite_sym_i;
+			
+			removeSymbol(it->second);
+			registerSymbol(composite_sym);
+		}
 		else {
-			shared_ptr<CompositeSymbol_I> composite_sym_i;
-			
-			// if existing symbol is not a Composite yet, remove the old Symbol registration and replace it by a Composite Symbol with a default value
-			if (! dynamic_pointer_cast<CompositeSymbol_I>(it->second)) {
-				if (dynamic_pointer_cast<const SymbolAccessorBase<double> >(symbol)) {
-					auto composite_sym = make_shared<CompositeSymbol<double> >(symbol->name(), dynamic_pointer_cast< const SymbolAccessorBase<double> >(it->second));
-					composite_sym_i = composite_sym;
-					composite_symbols[symbol->name()] = composite_sym;
-					
-					symbols.erase(it);
-					registerSymbol(composite_sym);
-				}
-				else if (dynamic_pointer_cast<const SymbolAccessorBase<VDOUBLE> >(symbol)){
-					auto composite_sym = make_shared<CompositeSymbol<VDOUBLE> >(symbol->name(), dynamic_pointer_cast<const SymbolAccessorBase<VDOUBLE> >(it->second) );
-					composite_sym_i = composite_sym;
-					composite_symbols[symbol->name()] = composite_sym;
-					
-					// Unregister derived symbols and the real one !!!
-					symbols.erase(it->first+".x");
-					symbols.erase(it->first+".y");
-					symbols.erase(it->first+".z");
-					symbols.erase(it->first+".phi");
-					symbols.erase(it->first+".theta");
-					symbols.erase(it->first+".abs");
-					symbols.erase(it);
-					registerSymbol(composite_sym);
-				}
-				else {
-					throw string("Composity symbol type not implemented in Scope ") + symbol->type();
-				}
-			}
-			else {
-				composite_sym_i = dynamic_pointer_cast<CompositeSymbol_I>(it->second);
-			}
-			
-			composite_sym_i->addCellTypeAccessor(sub_scope_id, symbol);
+			composite_sym_i = dynamic_pointer_cast<CompositeSymbol_I>(it->second);
 		}
 	}
 	else {
 		// Create a composite symbol
-		shared_ptr<CompositeSymbol_I> composite_sym_i;
-		shared_ptr<SymbolBase> composite_sym_base;
-		if (symbol->type() == TypeInfo<double>::name()) {
-			auto composite_sym = make_shared<CompositeSymbol<double> >(symbol->name());
-			composite_sym_i = composite_sym;
-			composite_sym_base = composite_sym;
-		}
-		else if (symbol->type() == TypeInfo<VDOUBLE>::name()){
-			auto composite_sym = make_shared<CompositeSymbol<VDOUBLE> >(symbol->name());
-			composite_sym_i = composite_sym;
-			composite_sym_base = composite_sym;
-		}
-		else {
-			throw string("Symbol type not implemented in CompositeSymbol ") + "\n" + symbol->type() + "!=" + TypeInfo<VDOUBLE>::name() + "!=" + TypeInfo<double>::name();
-		}
-		composite_sym_base->setScope(shared_from_this());
-		composite_sym_i->addCellTypeAccessor(sub_scope_id, symbol);
+		composite_sym_i = symbol->makeComposite();
+		auto composite_sym = dynamic_pointer_cast<SymbolBase>(composite_sym_i);
+		if (!composite_sym) throw  SymbolError(SymbolError::Type::InvalidDefinition, string("Invalid composite symbol created ") + symbol->name() + " !!" );
+		
+		composite_sym->setScope(shared_from_this());
 		composite_symbols[composite_sym_i->name()] = composite_sym_i;
-		registerSymbol(composite_sym_base);
+		registerSymbol(composite_sym);
 	}
+	composite_sym_i->addCellTypeAccessor(sub_scope_id, symbol);
 }
 
 void Scope::removeSubScopeSymbol(Symbol sym) {

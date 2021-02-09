@@ -48,6 +48,8 @@ Granularity& operator+=(Granularity& g, Granularity b);
 ostream& operator<<(ostream& out, Granularity g);
 
 class Scope;
+class CompositeSymbol_I;
+template <class T> class CompositeSymbol;
 class SymbolBase;
 using Symbol = std::shared_ptr<const SymbolBase> ;
 using SymbolDependency = Symbol;
@@ -114,6 +116,11 @@ public:
 		CellOrientation_symbol,
 		Temperature_symbol,
 		CellPosition_symbol;
+
+protected:
+	friend class Scope;
+	// provide an interface to create on demand a typed CompositeSymbol via interface
+	virtual shared_ptr<CompositeSymbol_I> makeComposite() const =0;
 };
 
 
@@ -164,9 +171,10 @@ public:
 	static shared_ptr<SymbolAccessorBase<T> > createVariable(const string& name, const string& description, const T& value);
 
 protected:
+	friend class Scope;
 	/// Scope the Symbol is registered in
 	void setScope(std::weak_ptr<const Scope> scope) override { _scope = scope; }
-	friend class Scope;
+	virtual shared_ptr<CompositeSymbol_I> makeComposite() const final { return make_shared<CompositeSymbol<T>>(symbol_name); };
 	
 private:
 	std::string xml_path;

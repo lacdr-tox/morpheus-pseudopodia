@@ -233,8 +233,8 @@ VDOUBLE Hex_Lattice::orth_distance(const VDOUBLE& a, const VDOUBLE& b) const {
 	if (boundaries[Boundary::px] == Boundary::periodic  || boundaries[Boundary::py] == Boundary::periodic ) {
 
 // 		// due to the tilted y-axis of the grid we have to fiddle with x-shifts on y-boundary wrapping
-		VDOUBLE k(a);
-		VDOUBLE l(b);
+		VDOUBLE k(b);
+		VDOUBLE l(a);
 		const double x_shift = 0.5*orth_size.y/sin_60;
 		if (boundaries[Boundary::py] == Boundary::periodic && (k.y > orth_size.y || k.y<0)) {
 			auto div = floor(k.y/orth_size.y);
