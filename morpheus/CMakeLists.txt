@@ -51,7 +51,9 @@ ENDIF()
 ## External Package dependencies
 ################################
 
-# set(Boost_USE_STATIC_LIBS ON)
+if (MORPHEUS_STATIC_BUILD)
+	set(Boost_USE_STATIC_LIBS ON)
+endif()
 FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
 SET(HAVE_BOOST 1)
 TARGET_LINK_LIBRARIES_PATCHED(MorpheusCore PUBLIC Boost::boost Boost::program_options)
