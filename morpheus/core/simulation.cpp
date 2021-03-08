@@ -428,7 +428,7 @@ bool init(int argc, char *argv[]) {
 		throw  string("Error: file '") + filename + "' is empty.";
 	}
 	
-	generate_performance_stats = cmd_line.count("stats");
+	generate_performance_stats = cmd_line.count("perf-stats");
 
 	
 	// Attach global overrides to the global scope

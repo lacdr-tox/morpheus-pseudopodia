@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Unreleased
+
+### Simulator
+  * Fix boost linking for static builds
+  * Fix writing performance statistics
+
 ## Release 2.2.0
 
 ### GUI
