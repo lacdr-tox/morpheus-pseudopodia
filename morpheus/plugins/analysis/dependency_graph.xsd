@@ -8,7 +8,7 @@
 	</xs:group>
 	
 	<xs:complexType name="ModelGraph">
-		<xs:attribute name="format" use="required" type="GraphVizFormat" />
+		<xs:attribute name="format" use="required" type="GraphVizFormat"  default="dot"/>
 		<xs:attribute name="exclude-symbols" use="optional" type="cpmString" />
 <!-- 		<xs:attribute name="exclude-plugins" use="optional" type="cpmString" /> -->
 		<xs:attribute name="include-tags" use="optional" type="cpmString" default="#untagged" />
@@ -17,10 +17,10 @@
 	
 	<xs:simpleType name="GraphVizFormat">
 		<xs:restriction base="cpmString">
+			<xs:enumeration value="dot"/>
 			<xs:enumeration value="svg"/>
 			<xs:enumeration value="png"/>
 			<xs:enumeration value="pdf"/>
-			<xs:enumeration value="dot"/>
 		</xs:restriction>
 	</xs:simpleType>
 </xs:schema>

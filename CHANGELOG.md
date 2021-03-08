@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## Release 2.2.1
+
 ### Simulator
   * Fix boost linking for static builds
   * Fix writing performance statistics
