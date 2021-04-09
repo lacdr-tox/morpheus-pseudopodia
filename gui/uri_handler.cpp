@@ -2,6 +2,7 @@
 #include "sbml_import.h"
 #include "widgets/webviewer.h"
 
+
 bool parseCmdLine(QCommandLineParser& parser, const QStringList& arguments) {
 	parser.setApplicationDescription("Modelling environment for multicellular systems biology");
 	parser.addHelpOption();
@@ -29,23 +30,28 @@ bool parseCmdLine(QCommandLineParser& parser, const QStringList& arguments) {
 }
 
 int handleSBMLConvert(QString arg) {
-		if (! SBMLImporter::supported) {
-			cout << "Cannot convert the SBML file. Morpheus GUI was compiled without SBML support";
-			return -1;
-		}
-		// No GUI conversion mode ...
-		QStringList model_names = arg.split(",");
-		auto morpheus_model = SBMLImporter::importSBMLTest( model_names[0] );
-		if ( ! morpheus_model) {
-			cerr << "Failed to convert the SBML model to Morpheus." << endl;
-			return -1;
-		}
+	// No GUI conversion mode ...
+	auto handler = new uriOpenHandler(qApp);
+	
+	/// create an URITask
+	uriOpenHandler::URITask task;
+	task.method = uriOpenHandler::URITask::Convert;
+	
+	QStringList model_names = arg.split(",");
+	QRegularExpression scheme("^\\w+:");
+	if (scheme.match(model_names[0].trimmed()).hasMatch()) {
+		task.m_model_url = model_names[0];
+	}
+	else {
+		task.m_model_url = QUrl::fromLocalFile( model_names[0].trimmed() );
+	}
 		
-		if (model_names.size()<2) {
-			model_names.append( model_names[0].left(5) + "-morpheus-v" + QString::number(morpheus_model->morpheus_ml_version) + ".xml" );
-		}
-		morpheus_model->xml_file.save( model_names[1], false);
-		return 0;
+	if (model_names.size()>1) {
+		task.output_file = model_names[1].trimmed();
+	}
+	
+	handler -> processTask(task, false);
+	return 0;
 }
 
 
@@ -56,42 +62,47 @@ bool uriOpenHandler::isValidUrl(const QUrl& url) {
 	else return false;
 }
 
+	
 
 void uriOpenHandler::processUri(const QUrl &uri) {
 	// either download the file referred
 	// handle process tasks ...
-	URITask task = parseUri(uri);
+	processTask( parseUri(uri), true);
+}
+	
+	
+void uriOpenHandler::processTask(URITask task, bool asynch) {
 	if (task.method == URITask::None) {
 		return;
 	}
+	qDebug() << "Processing " << task.m_model_url;
 	if (task.m_model_url.isLocalFile()) {
-		auto model_id = config::openModel(task.m_model_url.path());
-		if (model_id<0) {
-			qDebug() << "Could not open model " << task.m_model_url;
-			return;
-		}
-		task.model = config::getOpenModels()[model_id];
-		processTask(task);
+		processFile(task);
 	}
 	else {
-		// Load network ressources asynchronously
 		auto net = config::getNetwork();
 		if (net) {
-			emit uriOpenProgress(task.m_model_url,0);
 			auto reply = net->get(QNetworkRequest(task.m_model_url));
-			connect(reply, &QNetworkReply::finished, [=](){ this->uriFetchFinished(task, reply); });
-			connect(reply, &QNetworkReply::downloadProgress,
-					[=](qint64 bytesReceived, qint64 bytesTotal) { 
-// 						this->uriOpenProgress(task.m_model_url, (bytesReceived*100)/bytesTotal) ;
-					});
+			if (asynch) {
+				// Load network ressources asynchronously
+				connect(reply, &QNetworkReply::finished, this, [task, reply, this]() { processNetworkReply(task, reply); } );
+			}
+			else {
+				QEventLoop loop;
+				connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
+				QTimer::singleShot(30000, &loop, &QEventLoop::quit );
+				loop.exec();
+				processNetworkReply(task,reply);
+			}
 		}
 		else {
 			qDebug() << "Could not connect to the network to retrieve " << task.m_model_url;
+			return;
 		}
 	}
 }
 
-void uriOpenHandler::processTask(URITask task) {
+void uriOpenHandler::processOverrides(URITask& task) {
 	if (!task.model) return;
 	
 	auto global = task.model->find({"MorpheusModel","Global"},true)->getChilds();
@@ -111,16 +122,86 @@ void uriOpenHandler::processTask(URITask task) {
 			qDebug() << "Overriding parameter " << par.key() << " failed ";
 	}
 }
+
+bool uriOpenHandler::processFile(URITask& task) {
+	if (task.method == URITask::Import) {
+		task.model = SBMLImporter::importSBML(task.m_model_url.path());
+		if (! task.model) {
+// 			QMessageBox::critical(nullptr,"URL open", QString("Failed to import the SBML model '%1' to MorpheusML.").arg(task.m_model_url.toString()));
+// 			qDebug() << "unable to import " << task.m_model_url;
+			return false;
+		}
+		task.model->xml_file.name = task.m_model_url.fileName();
+		processOverrides(task);
+		config::importModel(task.model);
+		return true;
+	}
+	else if (task.method == URITask::Convert) {
+		// No GUI conversion mode ...
+		if (! SBMLImporter::supported) {
+			cout << "Cannot convert the SBML file. Morpheus GUI was compiled without SBML support";
+			return false;
+		}
+		task.model = SBMLImporter::convertSBML(task.m_model_url.path());
+		if (!task.model) return false;
+// 		QStringList model_names = arg.split(",");
+// 		auto morpheus_model = SBMLImporter::importSBMLTest( model_names[0] );
+// 		if ( ! morpheus_model) {
+// 			cerr << "Failed to convert the SBML model to Morpheus." << endl;
+// 			return;
+// 		}
+		auto filename = task.m_model_url.fileName();
+		if (task.output_file.isEmpty()) {
+			auto idx = filename.lastIndexOf('.');
+			if (idx<=0) idx=filename.length();
+			task.output_file = filename.left(idx) + "-morpheus-v" + QString::number(task.model->morpheus_ml_version) + ".xml" ;
+		}
+		
+		processOverrides(task);
+		task.model->xml_file.save( task.output_file, false);
+		return true;
+		
+	}
+	else if (task.method == URITask::Open ) {
+		auto model_id = config::openModel(task.m_model_url.path());
+		if (model_id<0) {
+			qDebug() << "Could not open model " << task.m_model_url;
+			return false;
+		}
+		task.model = config::getOpenModels()[model_id];
+		processOverrides(task);
+		return true;
+	}
+	return false;
+}
+
+
 	
-void uriOpenHandler::uriFetchFinished(URITask task, QNetworkReply* reply) {
+void uriOpenHandler::processNetworkReply(URITask task, QNetworkReply* reply) {
 
 	if (reply->error() != QNetworkReply::NoError) {
-		QMessageBox::critical(nullptr,"URL open", QString("Failed to fetch the URL.\n%1").arg(reply->errorString()));
-			qDebug() << "unable to import " << reply->request().url();
+		if (task.method == URITask::Convert) {
+			std::cout << "Failed to fetch the URL '" << task.m_model_url.toString().toStdString();
+		}
+		else {
+			QMessageBox::critical(nullptr,"URL open", QString("Failed to fetch the URL.\n%1").arg(reply->errorString()));
+				qDebug() << "unable to import " << reply->request().url();
+		}
 		return;
 	}
 
 	auto data = reply->readAll();
+	QString filename;
+// 	qDebug() << reply->header(QNetworkRequest::ContentDispositionHeader);
+	auto disposition = reply->header(QNetworkRequest::ContentDispositionHeader).toString();
+	QRegExp fn_reg("filename=\\\"(.*)\\\""); fn_reg.setMinimal(true);
+	if (fn_reg.indexIn(disposition) >= 0) {
+		filename = fn_reg.cap(1);
+	}
+	else {
+		filename= task.m_model_url.fileName();
+	}
+	
 	qDebug() << "Received " << data.size() << " bytes from " << task.m_model_url;
 	
 	//
@@ -133,7 +214,35 @@ void uriOpenHandler::uriFetchFinished(URITask task, QNetworkReply* reply) {
 			return;
 		}
 		task.model->xml_file.name = task.m_model_url.fileName();
+		processOverrides(task);
 		model_id = config::importModel(task.model);
+		
+	}
+	if (task.method == URITask::Convert) {
+		// No GUI conversion mode ...
+		if (! SBMLImporter::supported) {
+			cout << "Cannot convert the SBML file. Morpheus GUI was compiled without SBML support";
+			return;
+		}
+		
+		task.model = SBMLImporter::convertSBML(data);
+		
+// 		QStringList model_names = arg.split(",");
+// 		auto morpheus_model = SBMLImporter::importSBMLTest( model_names[0] );
+// 		if ( ! morpheus_model) {
+// 			cerr << "Failed to convert the SBML model to Morpheus." << endl;
+// 			return;
+// 		}
+		
+		if (task.output_file.isEmpty()) {
+			auto idx = filename.lastIndexOf('.');
+			if (idx<=0) idx=filename.length();
+			task.output_file = filename.left(idx) + "-morpheus-v" + QString::number(task.model->morpheus_ml_version) + ".xml" ;
+		}
+		
+		processOverrides(task);
+		task.model->xml_file.save( task.output_file, false);
+		return;
 		
 	}
 	else if (task.method == URITask::Open ) {
@@ -148,25 +257,11 @@ void uriOpenHandler::uriFetchFinished(URITask task, QNetworkReply* reply) {
 			qDebug() << "unable to open " << reply->request().url();
 			return;
 		}
-		qDebug() << reply->header(QNetworkRequest::ContentDispositionHeader);
-		auto disposition = reply->header(QNetworkRequest::ContentDispositionHeader).toString();
-		QRegExp fn_reg("filename=\\\"(.*)\\\"");
-		fn_reg.setMinimal(true);
-		if (fn_reg.indexIn(disposition) >= 0) {
-			task.model->xml_file.name = fn_reg.cap(1);
-		}
-		else {
-			task.model->xml_file.name = task.m_model_url.fileName();
-		}
+		task.model->xml_file.name = filename;
+		processOverrides(task);
 		model_id = config::importModel(task.model);
 	}
 	
-	if (model_id<0) {
-		qDebug() << "Could not open model " << task.m_model_url;
-		return;
-	}
-	
-	processTask(task);
 }
 	
 bool uriOpenHandler::eventFilter(QObject *obj, QEvent *event)
@@ -193,7 +288,7 @@ uriOpenHandler::URITask uriOpenHandler::parseUri(const QUrl& uri)
 {
 	URITask task;
 	task.m_uri = uri;
-	if (uri.scheme() == "https" || uri.scheme() == "https" || uri.scheme() == "file") {
+	if (uri.scheme() == "https" || uri.scheme() == "https" || uri.scheme() == "file" || uri.scheme() == "qrc") {
 		task.m_model_url = uri;
 		task.method = URITask::Open;
 	}

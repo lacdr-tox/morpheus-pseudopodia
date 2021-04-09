@@ -38,8 +38,10 @@ MainWindow::MainWindow(const QCommandLineParser& cmd_line) : QMainWindow(nullptr
     model_index.part = -1;
 
 	// uri_handler may process the arg urls here
-	uri_handler = new uriOpenHandler(this);
-	handleCmdLine(cmd_line,false);
+	QTimer::singleShot(500,[&cmd_line,this]() {
+		uri_handler = new uriOpenHandler(this);
+		handleCmdLine(cmd_line,false);
+	});
 
     if (config::getOpenModels().isEmpty()) {
 		config::createModel();
@@ -80,13 +82,18 @@ void MainWindow::handleCmdLine(const QCommandLineParser& cmd_line, bool tasks_on
 	
 	QStringList imports = cmd_line.values("import");
 	for (int i=0; i<imports.size(); i++) {
+		
 		auto url = imports[i];
-		if (url.contains(":")) {
-			uri_handler->processUri(QString("morpheus://import?url=%1").arg(url));
+		uriOpenHandler::URITask task;
+		task.method = uriOpenHandler::URITask::Import;
+		QRegularExpression scheme("^\\w{2,}:");
+		if (scheme.match(url).hasMatch()) {
+			task.m_model_url = url;
 		}
-		else { 
-			uri_handler->processUri(QString("morpheus://import?url=file://%1").arg(url));
+		else {
+			task.m_model_url = QUrl::fromLocalFile( url );
 		}
+		uri_handler->processTask(task, true);
 	}
 	
 	if (!tasks_only) {

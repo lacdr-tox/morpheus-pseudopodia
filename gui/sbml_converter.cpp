@@ -210,9 +210,9 @@ void  SBMLImporter::replaceDelays(ASTNode* math) {
 	}
 }
 
-SharedMorphModel SBMLImporter::importSBML() {
+SharedMorphModel SBMLImporter::importSBML(QString path) {
 	QScopedPointer<SBMLImporter> importer(new SBMLImporter(nullptr, config::getModel()));
-
+	importer->path->setText( path );
 	int ret;
 	do {
 		ret = importer->exec();
@@ -257,13 +257,30 @@ SharedMorphModel SBMLImporter::importSEDMLTest(QString file) {
 		return nullptr;
 }
 
-SharedMorphModel SBMLImporter::importSBMLTest(QString file) {
+SharedMorphModel SBMLImporter::convertSBML(QString file) {
 	QScopedPointer<SBMLImporter> importer(new SBMLImporter(nullptr, SharedMorphModel() ));
-	
-	if (importer->readSBMLTest(file)) 
-		return importer->getMorpheusModel();
-	else
+	QFileInfo info(file);
+	if ( ! info.exists() || !info.isReadable()) {
+		std::cout << "Unable to convert " << file.toUtf8().toStdString() << ".\n" << "File " << (info.exists() ? " is not readable." : " does not exist") << std::endl;
 		return nullptr;
+	}
+	
+	if (!importer->readSBMLTest(file)) 
+		return nullptr;
+	
+	return importer->getMorpheusModel();
+}
+
+SharedMorphModel SBMLImporter::convertSBML(QByteArray data) {
+	QScopedPointer<SBMLImporter> importer(new SBMLImporter(nullptr, SharedMorphModel() ));
+	if ( data.isEmpty() ) {
+		std::cout << "Unable to convert. No data provided"<< std::endl;
+		return nullptr;
+	}
+	if (!importer->readSBML(data,"new,global") )
+		return nullptr;
+		
+	return importer->getMorpheusModel();
 }
 
 SBMLImporter::SBMLImporter(QWidget* parent, SharedMorphModel current_model) : QDialog(parent)
@@ -418,7 +435,7 @@ bool SBMLImporter::import(QByteArray data) {
 bool SBMLImporter::readSBMLTest(QString sbml_file)
 {	
 	try {
-	if ( ! readSBML(sbml_file,QString("current,global")) )
+	if ( ! readSBML(sbml_file,QString("new,global")) )
 		return false;
 	}
 	catch (SBMLConverterException& e ) {
@@ -433,7 +450,7 @@ bool SBMLImporter::readSBMLTest(QString sbml_file)
 	
 	if (!settings_file.exists()) {
 		cout<< "Unable to find SBML Test settings file " << settings_file_name.toStdString() << endl;
-		return false;
+		return true;
 	}
 	
 	settings_file.open(QIODevice::ReadOnly);
@@ -516,7 +533,7 @@ bool SBMLImporter::readSEDML(QString file)
 	QDomDocument sed_doc(file);
 	QString  sbml_file = sed_doc.firstChildElement("listOfModels").firstChildElement("model").attribute("source");
 	
-	readSBML(sbml_file,QString("current,global"));
+	readSBML(sbml_file,QString("new,global"));
 	
 	
 	QMap<QString,QString> outputs;
@@ -567,12 +584,10 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code) {
 	}
 	
 	return readSBML(sbml_doc, target_code);
-	
-	delete sbml_doc;
 }
 
 bool SBMLImporter::readSBML(QByteArray sbml_data, QString target_code) {
-	qDebug() << "Reading SBML from data stream \n" << QString(sbml_data).toStdString().c_str();
+	qDebug() << "Reading SBML from data stream";
 	SBMLDocument* sbml_doc = nullptr;
 	sbml_doc = readSBMLFromString(QString(sbml_data).toStdString().c_str());
 	
@@ -588,7 +603,6 @@ bool SBMLImporter::readSBML(QByteArray sbml_data, QString target_code) {
 	}
   
 	return readSBML(sbml_doc, target_code);
-	delete sbml_doc;
 }
 
 bool SBMLImporter::readSBML(SBMLDocument* sbml_doc, QString target_code)
@@ -753,7 +767,7 @@ bool SBMLImporter::readSBML(SBMLDocument* sbml_doc, QString target_code)
 	// Setup target system 
 	target_system = target_scope->insertChild("System");
 	target_system->attribute("solver")->set("Dormand-Prince [adaptive, O(5)]");
-	applyTags(target_system);
+	applyTags(target_system);                
 
 	auto stop_symbol_attr = morph_model->rootNodeContr->firstActiveChild("Time")->firstActiveChild("StopTime")->attribute("symbol");
 	QString stop_symbol;
@@ -912,7 +926,7 @@ bool SBMLImporter::readSBML(SBMLDocument* sbml_doc, QString target_code)
 	if (have_events) {
 		target_system->attribute("time-step")->setActive(true);
 		target_system->attribute("time-step")->set("stop/30000");
-		target_system->attribute("solver")->set("runge-kutta-adaptive-BS");
+		target_system->attribute("solver")->set("Bogacki-Shampine [adaptive, O(3)]");
 	}
 	
 	

@@ -238,7 +238,7 @@ bool AbstractAttribute::set(QString att)
 	}
 	else
 	{
-		qDebug() << "Value: '" << value << "' for attribute: '" << this->name << "' from Node: '" << parentNode.nodeName() << "', isn't valid!";
+		qDebug() << "Value: '" << att << "' for attribute: '" << this->name << "' from Node: '" << parentNode.nodeName() << "', isn't valid!";
 		qDebug() << "Validation pattern is " << this->getPattern();
 		return false;
 	}

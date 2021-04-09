@@ -496,8 +496,8 @@ QList<MorphModelEdit>  MorphModel::applyAutoFixes(QDomDocument document) {
 		// TODO Allow to specify a target path, finished by / to keep the node name!
 	}
 
-	qDebug() << QString("Applying fixes from version %1 to %2").arg(morpheus_file_version).arg(fix_version);
-	qDebug() << "Number of AutoFix rules = " << fixes.size();
+// 	qDebug() << QString("Applying fixes from version %1 to %2").arg(morpheus_file_version).arg(fix_version);
+// 	qDebug() << "Number of AutoFix rules = " << fixes.size();
 	
 	for (int i=0; i<fixes.size(); i++) {
 // 		qDebug() << "Autofix rule nr. " << (i+1);

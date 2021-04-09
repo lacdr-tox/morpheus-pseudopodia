@@ -105,10 +105,12 @@ public:
 	bool haveNewModel() { return model_created; };
 // the interface for making this feature puggable
 	static const bool supported = true;
- 	static SharedMorphModel importSBML();
+ 	static SharedMorphModel importSBML(QString path = "");
 	static SharedMorphModel importSBML(QByteArray data, bool global = true);
 	static SharedMorphModel importSEDMLTest(QString file);
 	static SharedMorphModel importSBMLTest(QString file);
+	static SharedMorphModel convertSBML(QString file);
+	static SharedMorphModel convertSBML(QByteArray data);
 private:
 	QLineEdit* path;
 	QPushButton *path_dlg;
