@@ -156,7 +156,7 @@ void AboutModel::update()
 			indx--;
 		}
 	}
-	includeTags->updateText();
+// 	includeTags->updateText();
 	update_include_tags(includeTags->currentData().toStringList());
 	
 	excludeS->blockSignals(true);

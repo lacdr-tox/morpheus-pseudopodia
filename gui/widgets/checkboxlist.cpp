@@ -13,15 +13,12 @@ CheckBoxList::CheckBoxList(QWidget *widget ) : QComboBox(widget), m_DisplayText(
 	// it just cool to have it as defualt ;)
 	view()->setAlternatingRowColors(true);
 	view()->setCurrentIndex(QModelIndex());
+	connect(model(), &QAbstractItemModel::dataChanged, this, &CheckBoxList::updateText);
+	connect(model(), &QAbstractItemModel::rowsInserted, this, &CheckBoxList::updateText);
+	connect(model(), &QAbstractItemModel::rowsRemoved, this, &CheckBoxList::updateText);
 }
 
 CheckBoxList::~CheckBoxList(){}
-
-void CheckBoxList::hidePopup()
-{
-    QComboBox::hidePopup();
-    updateText();
-}
 
 bool CheckBoxList::eventFilter(QObject *object, QEvent *event)
 {
@@ -58,27 +55,25 @@ void CheckBoxList::paintEvent(QPaintEvent *)
     painter.drawControl(QStyle::CE_ComboBoxLabel, opt);
 }
 
+
 void CheckBoxList::setData(QStringList data)
 {
 	for(auto& elem:data)
 	{
 		elem = elem.trimmed();
 	}
+	model()->blockSignals(true);
 	for(int y = 0; y < model()->rowCount(); ++y)
     {
 		auto idx = model()->index(y,0);
 		if(data.contains(model()->data(idx,Qt::DisplayRole).toString())) {
-			model()->setData(idx, true,Qt::UserRole);
-			data.removeAll(model()->data(idx,Qt::DisplayRole).toString());
+			model()->setData(idx, true, Qt::UserRole);
 		}
 		else {
 			model()->setData(idx, false,Qt::UserRole);
 		}
     }
-    if(!data.empty())
-	{
-		qDebug()<<"CheckBoxList::SetData keys: "<<data<<" have not been found!";
-	}
+    model()->blockSignals(false);
     updateText();
 }
 
@@ -87,8 +82,9 @@ void CheckBoxList::updateText()
 	QStringList value;
 	for(int y = 0; y < model()->rowCount(); ++y)
 	{
-		if(model()->data(model()->index(y,0),Qt::UserRole).toBool()) {
-			value.append(model()->data(model()->index(y,0),Qt::DisplayRole).toString());
+		auto idx = model()->index(y,0);
+		if (model()->data(idx,Qt::UserRole).toBool()) {
+			value.append( idx.data(Qt::DisplayRole).toString());
 		}
 	}
     
@@ -96,6 +92,7 @@ void CheckBoxList::updateText()
 	
 	_current = value;
 	m_DisplayText = _current.join(", ");
+	repaint();
 	emit currentTextChanged(_current);
 }
 
@@ -112,8 +109,8 @@ QVariant CheckBoxList::currentData(int role) const
 	else if(role == Qt::DisplayRole){
 		return m_DisplayText;
 	}
-	else{
-		return false;
+	else {
+		return QComboBox::currentData(role);
 	}
 }
 
@@ -123,7 +120,7 @@ CheckBoxListDelegate::CheckBoxListDelegate(QObject* parent) : QAbstractItemDeleg
 void CheckBoxListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,const QModelIndex &index) const
 {
 	// Draw CheckBox views as visualisation
-    bool value = index.data(Qt::UserRole).toBool();
+    bool value = index.data(DataRole).toBool();
     QString text = index.data(Qt::DisplayRole).toString();
     const QStyle *style = QApplication::style();
     QStyleOptionButton opt;
@@ -141,36 +138,22 @@ QSize CheckBoxListDelegate::sizeHint(const QStyleOptionViewItem & option, const 
     return QSize(90,30);
 }
 
-bool CheckBoxListDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index) {
-	return false;
-}
-
 QWidget* CheckBoxListDelegate::createEditor(QWidget *parent,const QStyleOptionViewItem & option ,const QModelIndex & index ) const
 {
 	QCheckBox* edit = new QCheckBox(parent);
 	edit->setFocusPolicy(Qt::StrongFocus);
-	// this->connect(edit,SIGNAL(stateChanged()),this,SLOT(setModelData()));
-	connect(edit, &QPushButton::clicked, [=] {setModelData(edit,const_cast<QAbstractItemModel*>(index.model()),index);});
+	auto model = const_cast<QAbstractItemModel*>(index.model());
+	connect(edit, &QCheckBox::stateChanged, [=](bool state) {
+		model->setData(index, state, DataRole);
+	});
 	return edit;
 }
 
 void CheckBoxListDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
     QCheckBox* edit = static_cast<QCheckBox*>(editor);
-//     edit->setText(index.data(Qt::DisplayRole).toString());
-    edit->setChecked(index.data(Qt::UserRole).toBool());
-}
-
-void CheckBoxListDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,const QModelIndex &index) const
-{
-    QCheckBox *myEditor = static_cast<QCheckBox*>(editor);
-    bool value = myEditor->isChecked();
-
-    //set model data
-    QMap<int,QVariant> data;
-    data.insert(Qt::DisplayRole, index.data(Qt::DisplayRole));
-    data.insert(Qt::UserRole,value);
-    model->setItemData(index,data);
+    edit->setText(index.data(Qt::DisplayRole).toString());
+    edit->setChecked(index.data(DataRole).toBool());
 }
 
 void CheckBoxListDelegate::updateEditorGeometry(QWidget *editor,const QStyleOptionViewItem &option, const QModelIndex &index ) const
