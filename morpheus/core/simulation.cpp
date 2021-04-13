@@ -43,6 +43,10 @@ namespace SIM {
 	/// directory to write data to
 	string output_directory = ".";
 	
+
+	void print_node(const boost::property_tree::ptree& node, string indent, double runtime_total) {
+
+	}
 	
 int main(int argc, char *argv[]) {
 	bool exception = false;
@@ -60,7 +64,7 @@ int main(int argc, char *argv[]) {
 		
 		auto& perf_json = getPerfLogger();
 		boost::property_tree::ptree initialisation;
-		initialisation.add("name", "initialisation");
+		initialisation.add("name", "Initialisation");
 		initialisation.add("runtime",  to_str(init_rt1 - init_rt0));
 		initialisation.add("cputime",  to_str(init_cpu1 - init_cpu0));
 		perf_json.add_child("component",initialisation);
@@ -75,25 +79,65 @@ int main(int argc, char *argv[]) {
 		double wall1 = get_wall_time();
 		double cpu1  = get_cpu_time();
 		
-		cout << "\n=== Simulation finished ===\n";
+		double runtime = wall1 - init_rt0;
 		string init_time = prettyFormattingTime( init_rt1 - init_rt0 );
 		string cpu_time = prettyFormattingTime( cpu1 - init_cpu0 );
-		string wall_time = prettyFormattingTime( wall1 - init_rt0 );
+		string wall_time = prettyFormattingTime( runtime );
 		size_t peakMem = getPeakRSS();
-		
-		cout << "Init Time   = " << init_time << "\n";
-		cout << "Wall Time   = " << wall_time << "\n";
-		cout << "CPU Time    = " << cpu_time  << " (" << numthreads << " threads)\n\n";
-// 		cout << "Memory peak = " << prettyFormattingBytes(peakMem) << "\n";
 		
 		perf_json.add("runtime", wall1 - init_rt0);
 		perf_json.add("cputime", cpu1 - init_cpu0);
 // 		perf_json.add("memory", to_str(peakMem));
 		perf_json.add("ompthreads", to_str(omp_get_max_threads()));
 		
+		
 		if (generate_performance_stats) {
 			boost::property_tree::write_json("performance.json", perf_json);
 		}
+		else {
+			cout << "\n=======================================================";
+			cout << "\n    SCHEDULER PERFORMANCE STATISTICS";
+			cout << "\n=======================================================\n\n";
+			
+			string indent = "    ";
+			double runtime_total = runtime;
+			struct PerfEntry { string data; double runtime; };
+			vector<PerfEntry> entries;
+			for (auto child : perf_json) {
+				if (child.first == "component") {
+					auto node = child.second;
+					string name;
+					string inputs;
+					string outputs;
+					double cputime;
+					double runtime;
+					for (auto child : node) {
+						if (child.first == "name") name = child.second.data();
+						else if (child.first == "cputime") stringstream(child.second.data()) >> cputime;
+						else if (child.first == "runtime") stringstream(child.second.data()) >> runtime;
+						else if (child.first == "inputs") inputs = child.second.data();
+						else if (child.first == "outputs") outputs = child.second.data();
+					}
+					if (! name.empty()) {
+						stringstream entry;
+						entry << indent << "+ " << setprecision(1) << setw(5) << runtime/runtime_total << "% = " << setprecision(3) << setw(6) << runtime << "ms (" << cputime << ")  | " << name << " [" << inputs << ((inputs.empty()||outputs.empty())?"":" -> ") << outputs << "]";
+						
+						entries.push_back({entry.str(), runtime});
+					}
+				}
+			}
+			sort(entries.begin(), entries.end(), [](const PerfEntry& l, const PerfEntry r) { return l.runtime > r.runtime; });
+			for ( const auto& entry : entries) {
+				std::cout << entry.data << "\n";
+			}
+			cout << "\n======================================================" << endl;
+		}
+		cout << "\n=== Simulation finished ===\n";
+// 		cout << "Init Time   = " << init_time << "\n";
+		cout << "Wall Time   = " << wall_time << "\n";
+		cout << "CPU Time    = " << cpu_time  << " (" << numthreads << " threads)\n\n";
+// 		cout << "Memory peak = " << prettyFormattingBytes(peakMem) << "\n";
+		
 	}
 
 #ifndef NO_CORE_CATCH
