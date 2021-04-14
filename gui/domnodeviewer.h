@@ -80,7 +80,8 @@ private:
 // 	QModelIndex current_index;
 	TagFilterSortProxyModel* model_tree_filter;
 	CheckBoxList* filter_tag_list;
-	QAction *model_tree_add_action, *model_tree_remove_action, *model_tree_filter_action, *model_tree_sort_action;
+	QAction *model_tree_remove_action, *model_tree_filter_action, *model_tree_sort_action;
+	QMenu *addNodeMenu;
 	QSet<QString> filter_tags;
 	struct { int column; Qt::SortOrder order; } sort_state;
 	QSplitter* splitter; /*!< Splitter which divide the view of the widget. */
@@ -102,6 +103,7 @@ private:
     
     int table_popup_row; /*!< Number of the selected table-row. */
     QMenu *tableMenu; /*!< Menu which appears, when requesting a context-menu over the tablewidget. */
+    
     QAction *sweepAttribAction;
 
 private slots:

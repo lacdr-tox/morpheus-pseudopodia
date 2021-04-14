@@ -21,7 +21,7 @@ bool TagFilterSortProxyModel::filterAcceptsRow(int source_row, const QModelIndex
 	// check all child elements too for presence of a specified tag
 	auto child_count = sourceModel()->rowCount(row_index);
 	for (int i=0; i<child_count; i++) {
-		auto tags = sourceModel()->index(0,i,row_index).data(MorphModel::TagsRole).toStringList();
+		auto tags = sourceModel()->index(i,0,row_index).data(MorphModel::TagsRole).toStringList();
 		if (!tags.isEmpty()) {
 #if QT_VERSION >= 0x056000
 			if (tags.toSet().intersects(filter_tags)) return true;
@@ -137,42 +137,20 @@ void domNodeViewer::createLayout()
 	auto model_toolbar = new QToolBar("View",this);
 	model_toolbar->setIconSize(QSize(24,24));
 	// Add Button
-	model_tree_add_action = new QAction(QIcon::fromTheme("list-add"),"add",this);
-	auto addMenu = new QMenu(this);
-	model_tree_add_action->setMenu(addMenu);
-// 	connect(addMenu, &QMenu::aboutToShow,
-// 			[this]() {
-// 				auto model_index = model_tree_filter->mapToSource(model_tree_view->currentIndex());
-// 				if (!model_index.isValid())
-// 					model_index = model_tree_filter->mapToSource(model_tree_view->rootIndex());
-// 				nodeController *contr = model->indexToItem(model_index);
-// 				if (!contr) { qDebug() << "Invalid current model index"; return;}
-// 				qDebug() << "Creating Popup for " << contr->getName();
-// 				QStringList allChilds = contr->getAddableChilds(true);
-// 				QStringList addableChilds = contr->getAddableChilds(false);
-// 				auto addMenu = model_tree_add_action->menu();
-// 				addMenu->clear();
-// 				if (allChilds.isEmpty()) {
-// 					addMenu->addAction(new QAction("none"));
-// 					addMenu->actions()[0]->setEnabled(false);
-// 				}
-// 				else {
-// 					for(int i = 0; i < allChilds.size(); i++) {
-// 						if (! addableChilds.contains(allChilds.at(i)))
-// 							addMenu->addAction(new QAction(style()->standardIcon(QStyle::SP_MessageBoxWarning),allChilds.at(i)));
-// 						else 
-// 							addMenu->addAction(new QAction(allChilds.at(i)));
-// 					}
-// 				}
-// 			}
-// 	);
-	connect(addMenu, &QMenu::triggered, [this](QAction* action){
+
+	addNodeMenu = new QMenu(this);
+	connect(addNodeMenu, &QMenu::triggered, [this](QAction* action){
 		auto model_index = model_tree_filter->mapToSource(model_tree_view->currentIndex());
 		if (!model_index.isValid())
-					model_index = model_tree_filter->mapToSource(model_tree_view->rootIndex());
+			model_index = model_tree_filter->mapToSource(model_tree_view->rootIndex());
 		model->insertNode(model_index, action->text());
 	});
-	model_toolbar->addAction(model_tree_add_action);
+	auto add_button = new QPushButton(this);
+	add_button->setIcon(QIcon::fromTheme("list-add"));
+	add_button->setMenu(addNodeMenu);
+	add_button->setFlat(true);
+	model_toolbar->addWidget(add_button);
+// 	connect(add_button, &QPushButton::toggled, [](){ qDebug() << "Clicked add button"; });
 	
 	// Remove Button
 	model_tree_remove_action = new QAction(QIcon::fromTheme("list-remove"),"remove",this);
@@ -325,7 +303,7 @@ void domNodeViewer::setModelPart(QString part_name) {
 //------------------------------------------------------------------------------
 
 void domNodeViewer::setModelPart(int part) {
-	auto part_root = model->parts[part].element_index;
+	auto part_root = model->itemToIndex( model->parts[part].element );
 	if (model->parts[part].enabled && part_root.isValid()) {
 		auto view_index = model_tree_filter->mapFromSource(part_root);
 		if (!view_index.isValid()) {
@@ -481,8 +459,7 @@ void domNodeViewer::updateSymbolList() {
 void domNodeViewer::updateNodeActions() {
 	auto node = model_tree_view->currentIndex().data(MorphModel::NodeRole).value<nodeController*>();
 	plugin_tree_widget->clear();
-	auto addMenu = model_tree_add_action->menu();
-	addMenu->clear();
+	addNodeMenu->clear();
 	if (!node) {
 		model_tree_remove_action->setEnabled(false);
 		return;
@@ -498,10 +475,10 @@ void domNodeViewer::updateNodeActions() {
 		if (! addableChilds.contains(allChilds.at(i))) {
 			trWItem->setIcon(0,style()->standardIcon(QStyle::SP_MessageBoxWarning));
 			trWItem->setToolTip(0,"This node will disable an existing node!");
-			addMenu->addAction(new QAction(style()->standardIcon(QStyle::SP_MessageBoxWarning),allChilds.at(i),this));
+			addNodeMenu->addAction(new QAction(style()->standardIcon(QStyle::SP_MessageBoxWarning),allChilds.at(i),this));
 		}
 		else {
-			addMenu->addAction(new QAction(allChilds.at(i),this));
+			addNodeMenu->addAction(new QAction(allChilds.at(i),this));
 		}
 	}
 	plugin_tree_widget->sortByColumn(1, Qt::AscendingOrder);

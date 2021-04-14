@@ -25,7 +25,7 @@ struct MorphModelPart {
     QString label;
 	bool enabled;
     nodeController* element;
-    QModelIndex element_index;
+//     QModelIndex element_index;
 	static const QList<QString> all_parts_sorted;
 	static const QMap<QString,int> all_parts_index;
 };

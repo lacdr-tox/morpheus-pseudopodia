@@ -1390,10 +1390,10 @@ bool MorphModel::activatePart(int idx) {
 		return false;
 	auto& part = parts[idx];
 	if (!part.enabled) {
-		part.element_index = insertNode(QModelIndex(),part.label); //  TODO itemToIndex(rootNodeContr)
-		if (!part.element_index.isValid())
+		auto element_index = insertNode(QModelIndex(),part.label); //  TODO itemToIndex(rootNodeContr)
+		if (! element_index.isValid())
 			return false;
-		part.element = indexToItem(part.element_index);
+		part.element = indexToItem(element_index);
 		part.enabled = true;
 		emit modelPartAdded(idx);
 	}
@@ -1408,10 +1408,10 @@ bool MorphModel::addPart(QDomNode xml) {
 	int idx = MorphModelPart::all_parts_index.value(xml.nodeName());
 	auto& part = parts[idx];
 	if (!part.enabled) {
-		part.element_index = insertNode(itemToIndex(rootNodeContr),xml);
-		if (!part.element_index.isValid())
+		auto element_index = insertNode(itemToIndex(rootNodeContr),xml);
+		if (! element_index.isValid())
 			return false;
-		part.element = indexToItem(part.element_index);
+		part.element = indexToItem(element_index);
 		emit modelPartAdded(idx);
 	}
     return true;
@@ -1427,10 +1427,11 @@ QSharedPointer<nodeController> MorphModel::removePart(int idx) {
 	if (idx<0 || idx>=parts.size())
 		return QSharedPointer<nodeController>();
 	if (parts[idx].enabled) {
+		auto element_index = itemToIndex(parts[idx].element);
 		parts[idx].enabled = false;
 		parts[idx].element = nullptr;
-		emit modelPartRemoved(parts[idx].element_index.row());
-		auto node = removeNode(itemToIndex(rootNodeContr),parts[idx].element_index.row());
+		emit modelPartRemoved( idx );
+		auto node = removeNode(itemToIndex(rootNodeContr), element_index.row());
 		return node;
 	}
 	return QSharedPointer<nodeController>();
@@ -1452,7 +1453,6 @@ void MorphModel::loadModelParts() {
 		part.enabled = named_xml_parts.contains(part.label);
 		if (part.enabled) {
 			part.element = named_xml_parts[part.label];
-			part.element_index = itemToIndex(part.element);
 		}
 		parts.push_back(part);
 	}
