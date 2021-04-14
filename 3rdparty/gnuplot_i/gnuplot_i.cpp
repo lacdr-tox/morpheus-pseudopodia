@@ -151,7 +151,7 @@ std::set<std::string> Gnuplot::get_terminals()
 
 std::string Gnuplot::get_screen_terminal()
 {
-	std::vector<string> screen_terminals = {"qt","wxt","windows","aqua","x11"};
+	std::vector<string> screen_terminals = {"qt","windows","aqua","wxt","x11"};
 	auto terminals = get_terminals();
 	for (const auto& term : screen_terminals) {
 		if (terminals.find(term) != terminals.end()) {

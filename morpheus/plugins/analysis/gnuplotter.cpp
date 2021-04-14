@@ -971,6 +971,7 @@ Gnuplotter::Gnuplotter(): AnalysisPlugin(), gnuplot(NULL) {
 	
 	map<string, Terminal> term_map;
 	term_map["screen"] = Terminal::SCREEN;
+	term_map["windows"] = Terminal::SCREEN;
 	term_map["wxt"] = Terminal::SCREEN;
 	term_map["aqua"] = Terminal::SCREEN;
 	term_map["qt"] = Terminal::SCREEN;
