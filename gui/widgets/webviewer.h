@@ -115,6 +115,7 @@ Q_OBJECT
 public:
 	AdaptiveWebPage(QObject* parent = nullptr) : QWebEnginePage(parent) {};
 	void delegateScheme(QString scheme);
+	void javaScriptConsoleMessage(QWebEnginePage::JavaScriptConsoleMessageLevel level, const QString & message, int lineNumber, const QString & sourceID) override;
 	signals:
 		void linkClicked(const QUrl&);
 

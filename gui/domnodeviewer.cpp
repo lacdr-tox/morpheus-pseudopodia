@@ -13,10 +13,24 @@ bool TagFilterSortProxyModel::filterAcceptsRow(int source_row, const QModelIndex
 		return true;
 	}
 #if QT_VERSION >= 0x056000
-	return tags.toSet().intersects(filter_tags);
+	if (tags.toSet().intersects(filter_tags)) return true;
 #else
-	return ! tags.toSet().intersect(filter_tags).isEmpty();
+	if ( ! tags.toSet().intersect(filter_tags).isEmpty() ) return true;
 #endif
+	if (filter_tags.empty() ) return false;
+	// check all child elements too for presence of a specified tag
+	auto child_count = sourceModel()->rowCount(row_index);
+	for (int i=0; i<child_count; i++) {
+		auto tags = sourceModel()->index(0,i,row_index).data(MorphModel::TagsRole).toStringList();
+		if (!tags.isEmpty()) {
+#if QT_VERSION >= 0x056000
+			if (tags.toSet().intersects(filter_tags)) return true;
+#else
+			if ( ! tags.toSet().intersect(filter_tags).isEmpty() ) return true;
+#endif
+		}
+	}
+	return false;
 };
 
 void TagFilterSortProxyModel::setFilterTags(QStringList tag_list) {
@@ -199,12 +213,11 @@ void domNodeViewer::createLayout()
 	
 	// Filter Tag Box
 	filter_tag_list = new CheckBoxList(this);
-	filter_tag_list->addItem("#untagged",true);
-	filter_tag_list->setData(QStringList() << "#untagged");
 	filter_tag_list->setEnabled(false);
 	model_toolbar->addWidget(filter_tag_list);
+	
 	connect(filter_tag_list, &CheckBoxList::currentTextChanged, model_tree_filter, &TagFilterSortProxyModel::setFilterTags);
-	model_tree_filter->setFilterTags(QStringList() << "#untagged");
+	filter_tag_list->addItem("#untagged",true); 
 	
 	// Filter Button
 	model_tree_filter_action = new QAction(QIcon::fromTheme("view-filter",QIcon(":/icons/view_filter.png")),"tags",this);
@@ -285,14 +298,17 @@ void domNodeViewer::createMenu()
 
 void domNodeViewer::updateTagList() {
 	auto current_selection = filter_tag_list->currentData(Qt::UserRole).toStringList();
+	filter_tag_list->blockSignals(true);
 	filter_tag_list->clear();
 	auto tags = model->rootNodeContr->subtreeTags();
 	tags.removeDuplicates();
-	tags.prepend("#untagged");
 	tags.sort();
+	tags.prepend("#untagged");
 	for (auto tag : tags) {
 		filter_tag_list->addItem(tag, current_selection.contains(tag));
 	}
+	filter_tag_list->blockSignals(false);
+	model_tree_filter->setFilterTags(filter_tag_list->currentData(Qt::UserRole).toStringList());
 }
 
 void domNodeViewer::setModelPart(QString part_name) {
@@ -335,11 +351,12 @@ void domNodeViewer::setModel(SharedMorphModel mod, int part) {
 	
 	
 	QObject::connect(model_tree_view->selectionModel(), SIGNAL(currentChanged(QModelIndex,QModelIndex)), this, SLOT(setTreeItem( const QModelIndex& )));
-	QObject::connect(model_tree_filter, SIGNAL(rowsMoved ( const QModelIndex & , int , int , const QModelIndex & , int  )), this, SLOT(selectMovedItem(const QModelIndex & , int , int , const QModelIndex & , int )),Qt::QueuedConnection);
-	connect(model_tree_filter, SIGNAL(rowsInserted( const QModelIndex & , int , int)), this, SLOT(selectInsertedItem(const QModelIndex & , int , int )),Qt::QueuedConnection);
+	connect(model_tree_filter, &TagFilterSortProxyModel::rowsMoved, this, &domNodeViewer::selectMovedItem, Qt::QueuedConnection);
+	connect(model_tree_filter, &TagFilterSortProxyModel::rowsInserted, this, &domNodeViewer::selectInsertedItem, Qt::QueuedConnection);
 	setModelPart(part);
-	connect(model_tree_filter, &TagFilterSortProxyModel::dataChanged, this, &domNodeViewer::updateTagList );
-	connect(model_tree_filter, &TagFilterSortProxyModel::rowsRemoved, this, &domNodeViewer::updateTagList );
+	connect(model, &QAbstractItemModel::dataChanged, this, &domNodeViewer::updateTagList );
+	connect(model, &QAbstractItemModel::rowsInserted, this, &domNodeViewer::updateTagList );
+	connect(model, &QAbstractItemModel::rowsRemoved, this, &domNodeViewer::updateTagList );
 }
 
 void domNodeViewer::selectMovedItem(const QModelIndex & sourceParent, int sourceRow, int , const QModelIndex & destParent, int destRow) {

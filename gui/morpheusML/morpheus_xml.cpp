@@ -138,7 +138,7 @@ bool MorpheusXML::save(QString fileName, bool zip) const {
 		ts << domDocToText();
 		file.close();
 	}
-	qDebug() << "Saved to " << outputXML << endl;
+// 	qDebug() << "Saved to " << outputXML;
 	return true;
 }
 

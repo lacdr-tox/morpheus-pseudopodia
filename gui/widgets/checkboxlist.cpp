@@ -83,7 +83,7 @@ void CheckBoxList::updateText()
 	for(int y = 0; y < model()->rowCount(); ++y)
 	{
 		auto idx = model()->index(y,0);
-		if (model()->data(idx,Qt::UserRole).toBool()) {
+		if (idx.data(Qt::UserRole).toBool()) {
 			value.append( idx.data(Qt::DisplayRole).toString());
 		}
 	}

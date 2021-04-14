@@ -8,9 +8,9 @@ bool parseCmdLine(QCommandLineParser& parser, const QStringList& arguments) {
 	parser.addHelpOption();
 	parser.addVersionOption();
 	parser.addOptions( {
-		{ "convert", "Convert SBML model to MorpheusML", "model_file [, output_file]"},
-		{ "import", "Import SBML model", "model_file" },
-		{ {"url","u"}, "Open model referred by the URL. May also include processing instructions.", "url"},
+		{ "convert", "Convert SBML model to MorpheusML", "model_file/url [, output_file]"},
+		{ "import", "Import SBML model", "model_file/url" },
+		{ {"url","u"}, "Open model referred by the URL. May also include processing instructions.", "file/url"},
 		{ "model-path", "Base path to load local models", "path" }
 	} );
 	parser.addOptions(WebViewer::commandLineOptions());

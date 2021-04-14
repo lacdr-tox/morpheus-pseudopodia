@@ -123,7 +123,7 @@ void DocuDock::setCurrentElement(QStringList xPath)
 
 void DocuDock::setCurrentElement(QString name) {
 	if (!root_reset) {
-		qDebug() << "Deferring docu element selection " << name;
+// 		qDebug() << "Deferring docu element selection " << name;
 		element_on_reset = name;
 		return;
 	}
@@ -209,7 +209,7 @@ void DocuDock::setRootOfHelpIndex()
 			timer = new QTimer(this);
 			timer->setSingleShot(true);
 			connect(timer, &QTimer::timeout, [this]{ 
-				qDebug() << "setting deferred docu element " << element_on_reset;
+// 				qDebug() << "setting deferred docu element " << element_on_reset;
 				this->setCurrentElement(element_on_reset); 
 			} );
 		}

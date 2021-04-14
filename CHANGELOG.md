@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## GUI
+  * Fixed command line parsing of certain url/file references 
+  * Fixed checkbox lists on MacOS (issue #223)
+  * Reenable output of performance statistics, if no json stats are requested.
+  * Preserve XML Comments in MorpheusML models
+
 ## Release 2.2.1
 
 ### Simulator

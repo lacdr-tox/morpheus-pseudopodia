@@ -67,6 +67,12 @@ bool AdaptiveWebPage::acceptNavigationRequest(const QUrl& url, QWebEnginePage::N
 	return QWebEnginePage::acceptNavigationRequest(url, type, isMainFrame);
 }
 
+void AdaptiveWebPage::javaScriptConsoleMessage(QWebEnginePage::JavaScriptConsoleMessageLevel /*level*/, const QString& /*message*/, int /*lineNumber*/, const QString& /*sourceID*/)
+{
+	return;
+}
+
+
 WebViewer::WebViewer(QWidget* parent): QWebEngineView(parent) {
 	setContextMenuPolicy(Qt::NoContextMenu);
 	reset();

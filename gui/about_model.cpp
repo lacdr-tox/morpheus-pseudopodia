@@ -81,10 +81,10 @@ AboutModel::AboutModel(SharedMorphModel model, QWidget* parent) : QSplitter(Qt::
 	connect(webGraph, &WebViewer::linkClicked, this, &AboutModel::openLink);
 #ifdef GRAPHVIZ_WEB_RENDERER
 	web_render = true;
-	qDebug() << "Using Web Graph renderer.";
+// 	qDebug() << "Using Web Graph renderer.";
 #else
 	web_render = false;
-	qDebug() << "Using GraphViz renderer.";
+// 	qDebug() << "Using GraphViz renderer.";
 #endif
 	graph_state = GraphState::EMPTY;
 	auto frame = new QFrame();
@@ -344,7 +344,7 @@ void AboutModel::update_graph()
 {
 	if (!isVisible()) return;
 	
-	qDebug() << "updating graph";
+// 	qDebug() << "updating graph";
 	MorphModel::GRAPH_TYPE type = web_render ? MorphModel::DOT : MorphModel::SVG;
 	setGraphState(GraphState::PENDING,
 		[this, type](){
@@ -361,7 +361,7 @@ void AboutModel::graphReady() {
 		setGraphState(GraphState::OUTDATED);
 	}
 	else {
-		qDebug() << "Showing model graph: " << QString(graph);
+// 		qDebug() << "Showing model graph: " << QString(graph);
 		current_graph = graph;
 		setGraphState(GraphState::UPTODATE);
 	}
