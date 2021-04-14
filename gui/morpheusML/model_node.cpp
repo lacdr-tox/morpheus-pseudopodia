@@ -135,18 +135,18 @@ QObject(parent)
 				if ( node_type->child_info.children.contains(disabled_child.nodeName()) ) {
 					childs.push_back(new nodeController(this,node_type->child_info.children[disabled_child.nodeName()], child));
 				}
-				else {
-					MorphModelEdit e;
-					e.edit_type = MorphModelEdit::NodeRemove;
-					e.info = QString("Undefined disabled Node '%1' removed from Node '%2'.").arg(disabled_child.nodeName(),name);
-					e.xml_parent = xmlDataNode;
-					e.name = disabled_child.nodeName();
-					QTextStream s(&e.value);
-					disabled_child.save(s,4);
-					model_descr->auto_fixes.append(e);
-					xmlDataNode.removeChild(child);
-					i--;
-				}
+// 				else {
+// 					MorphModelEdit e;
+// 					e.edit_type = MorphModelEdit::NodeRemove;
+// 					e.info = QString("Undefined disabled Node '%1' removed from Node '%2'.").arg(disabled_child.nodeName(),name);
+// 					e.xml_parent = xmlDataNode;
+// 					e.name = disabled_child.nodeName();
+// 					QTextStream s(&e.value);
+// 					disabled_child.save(s,4);
+// 					model_descr->auto_fixes.append(e);
+// 					xmlDataNode.removeChild(child);
+// 					i--;
+// 				}
 			}
 			else if (child.nodeType() == QDomNode::ElementNode)
 			{
