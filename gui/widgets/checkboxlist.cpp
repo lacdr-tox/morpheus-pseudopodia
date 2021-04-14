@@ -115,10 +115,7 @@ QVariant CheckBoxList::currentData(int role) const
 }
 
 
-CheckBoxListDelegate::CheckBoxListDelegate(QObject* parent) : QAbstractItemDelegate(parent) {
-	QCheckBox box;
-	default_opt.initFrom(&box);
-}
+CheckBoxListDelegate::CheckBoxListDelegate(QObject* parent) : QAbstractItemDelegate(parent) {}
 
 void CheckBoxListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,const QModelIndex &index) const
 {
@@ -126,7 +123,8 @@ void CheckBoxListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     bool value = index.data(DataRole).toBool();
     QString text = index.data(Qt::DisplayRole).toString();
     const QStyle *style = QApplication::style();
-    QStyleOptionButton opt = default_opt;
+    QStyleOptionButton opt;
+	opt.initFrom(&proto_box);
     opt.state |= value ? QStyle::State_On : QStyle::State_Off;
     opt.state |= QStyle::State_Enabled;
     opt.text = text;
