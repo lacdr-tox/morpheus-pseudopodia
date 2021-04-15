@@ -1,6 +1,6 @@
 # ChangeLog
 
-## Unreleased
+## Release 2.2.2
 
 ## GUI
   * Fixed command line parsing of certain url/file references 

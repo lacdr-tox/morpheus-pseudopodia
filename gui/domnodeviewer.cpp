@@ -150,12 +150,10 @@ void domNodeViewer::createLayout()
 	add_button->setIcon(QIcon::fromTheme("list-add"));
 	add_button->setMenu(addNodeMenu);
 	add_button->setPopupMode(QToolButton::InstantPopup);
-	// add_button->setFlat(true);
 	model_toolbar->addWidget(add_button);
- 	// connect(add_button, &QToolButton::toggled, [](){ qDebug() << "Clicked add button"; });
 	
 	// Remove Button
-	model_tree_remove_action = new QAction(QIcon::fromTheme("list-remove"),"remove",this);
+	model_tree_remove_action = new QAction(QIcon::fromTheme("list-remove"),"Remove",this);
 	model_tree_remove_action->setShortcut(QKeySequence(QKeySequence::Delete));
 	connect(model_tree_remove_action, &QAction::triggered, [this](){
 		auto current_index = model_tree_filter->mapToSource(model_tree_view->currentIndex());
@@ -172,7 +170,7 @@ void domNodeViewer::createLayout()
 	model_toolbar->addAction(model_tree_remove_action);
 	
 	// Sort Button
-	model_tree_sort_action = new QAction(QIcon::fromTheme("view-sort-ascending"),"sort", this);
+	model_tree_sort_action = new QAction(QIcon::fromTheme("view-sort-ascending"),"Sort", this);
 	model_tree_sort_action->setCheckable(true);
 	connect(model_tree_sort_action, &QAction::toggled, 
 		[this](bool enabled){ 

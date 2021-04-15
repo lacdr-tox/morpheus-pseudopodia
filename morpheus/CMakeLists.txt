@@ -25,9 +25,9 @@ IF(HAVE_IPO)
 	SET_TARGET_PROPERTIES(MorpheusSIM PROPERTIES  INTERPROCEDURAL_OPTIMIZATION TRUE )
 ENDIF()
 
-target_compile_options(MorpheusSIM PUBLIC "-mavx")
 ADD_LIBRARY(MorpheusCore OBJECT ""  )
 TARGET_INCLUDE_DIRECTORIES(MorpheusCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/core)
+target_compile_options(MorpheusCore PUBLIC "-mavx")
 
 ###############################
 ## Internal target dependencies
