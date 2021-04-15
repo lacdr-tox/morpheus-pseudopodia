@@ -145,12 +145,14 @@ void domNodeViewer::createLayout()
 			model_index = model_tree_filter->mapToSource(model_tree_view->rootIndex());
 		model->insertNode(model_index, action->text());
 	});
-	auto add_button = new QPushButton(this);
+	auto add_button = new QToolButton(this);
+	add_button->setText("Add");
 	add_button->setIcon(QIcon::fromTheme("list-add"));
 	add_button->setMenu(addNodeMenu);
-	add_button->setFlat(true);
+	add_button->setPopupMode(QToolButton::InstantPopup);
+	// add_button->setFlat(true);
 	model_toolbar->addWidget(add_button);
-// 	connect(add_button, &QPushButton::toggled, [](){ qDebug() << "Clicked add button"; });
+ 	// connect(add_button, &QToolButton::toggled, [](){ qDebug() << "Clicked add button"; });
 	
 	// Remove Button
 	model_tree_remove_action = new QAction(QIcon::fromTheme("list-remove"),"remove",this);
