@@ -8,7 +8,7 @@ using namespace SIM;
 const float CellPainter::transparency_value = std::numeric_limits<float>::quiet_NaN();
 
 Gnuplotter::PlotSpec::PlotSpec() : 
-field(false), cells(false), labels(false), arrows(false), vectors(false), z_slice(0), title("") {};
+field(false), cells(false), labels(false), arrows(false), vectors(false), links(false), z_slice(0), title("") {};
 
 VDOUBLE Gnuplotter::PlotSpec::size()
 {
@@ -951,6 +951,51 @@ vector< vector<VDOUBLE> > CellPainter::polygons(vector<boundarySegment> v_snippe
 };
 
 
+CellLinkPainter::CellLinkPainter() {}
+
+void CellLinkPainter::loadFromXML(const XMLNode node, const Scope * scope) {
+	color = "black";
+	getXMLAttribute(node, "color", color);
+}
+
+void CellLinkPainter::init(const Scope* scope, int slice) {
+	try {
+		bonds = SIM::findGlobalSymbol<LinkType>("_mechanical_links",{});
+	}
+	catch (...) {
+		bonds = make_shared<PrimitiveConstantSymbol<LinkType>>("_mechanical_links","mechanical links", LinkType());
+	}
+	z_slice = slice;
+}
+
+
+void CellLinkPainter::plotData(std::ostream& out)
+{
+	const auto& cts = CPM::getCellTypes();
+	for (auto wct : cts) {
+		auto ct = wct.lock();
+		for (auto cell : ct->getCellIDs()) {
+			auto focus = SymbolFocus(cell);
+			const auto& vbonds = bonds->get(focus);
+			for (auto bond : vbonds) {
+				VDOUBLE center1 = focus.cell().getCenter();
+				VDOUBLE center2 = CPM::getCell(bond).getCenter();
+				SIM::lattice().orth_resolve (center1);
+				SIM::lattice().orth_resolve (center2);
+				VDOUBLE a = SIM::lattice().orth_distance(center2, center1);
+				out << center1.x << "\t" <<  center1.y << "\t" << a.x << "\t" << a.y << endl;
+			}
+		}
+	}
+}
+
+
+std::string CellLinkPainter::getDescription() const
+{ return "mechanical cell links";
+}
+
+
+
 int Gnuplotter::instances=0;
 
 REGISTER_PLUGIN(Gnuplotter);
@@ -1099,6 +1144,11 @@ void Gnuplotter::loadFromXML(const XMLNode xNode, Scope* scope)
 				plot.field_painter = shared_ptr<FieldPainter>(new FieldPainter());
 				plot.field_painter->loadFromXML(xPlotChild, scope);
 			}
+			else if (node_name == "CellLinks") {
+				plot.links = true;
+				plot.cell_link_painter = make_shared<CellLinkPainter>();
+				plot.cell_link_painter->loadFromXML(xPlotChild, scope);
+			}
 			
 		}
 		plots.push_back(plot);
@@ -1164,6 +1214,9 @@ void Gnuplotter::init(const Scope* scope) {
 				plots[i].field_painter->init(scope, plots[i].z_slice);
 				registerInputSymbols( plots[i].field_painter->getInputSymbols() );
 			}
+			if (plots[i].links) {
+				plots[i].cell_link_painter->init(scope, plots[i].z_slice);
+			}
 		}
 	}
 	catch (string e) {
@@ -1220,6 +1273,13 @@ void Gnuplotter::analyse(double time) {
 				sstr.str("");
 				sstr << "field" << plot_id << SIM::getTimeName() << ".log";
 				plots[i].field_data_file = sstr.str();
+			}
+			
+			if (plots[i].links) {
+				// write cell links
+				sstr.str("");
+				sstr << "links" << plot_id << SIM::getTimeName() << ".log";
+				plots[i].link_data_file = sstr.str();
 			}
 		}
 	}
@@ -1620,6 +1680,16 @@ void Gnuplotter::analyse(double time) {
 				command << "w vectors arrowstyle " << plots[i].arrow_painter->getStyle() << " notitle";
 			}
 			
+			if (plots[i].links) {
+				if(pipe_data)
+					command << ", '-' ";
+				else{
+					command << ", '" << outputDir << "/" << plots[i].link_data_file << "' ";
+				}
+				command << " u ($1):($2)"<< (using_splot ? "" : ":(0)") << ":3:4" <<  (using_splot ? "" : ":(0)")  << " ";
+				command << "w vectors " << /*"lc rgb \"" << plots[i].cell_link_painter->getColor() << "\" " <<*/ "arrowstyle 8 notitle";
+			}
+			
 			command << "\n" << endl;
 			
 			
@@ -1705,6 +1775,18 @@ void Gnuplotter::analyse(double time) {
 					ofstream out_file;
 					out_file.open(plots[i].arrow_data_file.c_str());
 					plots[i].arrow_painter->plotData(out_file);
+					out_file.close();
+				}
+			}
+			if (plots[i].links) {
+				if (pipe_data) {
+					plots[i].cell_link_painter->plotData(command);
+					command << "\ne" << endl;
+				}
+				else {
+					ofstream out_file;
+					out_file.open(plots[i].link_data_file.c_str());
+					plots[i].cell_link_painter->plotData(out_file);
 					out_file.close();
 				}
 			}
