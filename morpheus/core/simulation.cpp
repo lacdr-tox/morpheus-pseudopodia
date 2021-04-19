@@ -101,6 +101,8 @@ int main(int argc, char *argv[]) {
 			
 			string indent = "    ";
 			double runtime_total = runtime;
+			double runtime_scaling = (runtime > 10) ? 1 : 1000;
+			string runtime_unit = (runtime > 10) ? "s" : "ms";
 			struct PerfEntry { string data; double runtime; };
 			vector<PerfEntry> entries;
 			for (auto child : perf_json) {
@@ -120,7 +122,7 @@ int main(int argc, char *argv[]) {
 					}
 					if (! name.empty()) {
 						stringstream entry;
-						entry << indent << "+ " << setprecision(1) << setw(5) << runtime/runtime_total << "% = " << setprecision(3) << setw(6) << runtime << "ms (" << cputime << ")  | " << name << " [" << inputs << ((inputs.empty()||outputs.empty())?"":" -> ") << outputs << "]";
+						entry << std::fixed << setprecision(1) << indent << "+ " << setw(5) << round(runtime*10000/runtime_total)/100 << "% = " << setw(5) << runtime * runtime_scaling << runtime_unit << " ("<< setw(5) << cputime * runtime_scaling << ")  | " << name << " [" << inputs << ((inputs.empty()||outputs.empty())?"":" -> ") << outputs << "]";
 						
 						entries.push_back({entry.str(), runtime});
 					}
@@ -134,7 +136,7 @@ int main(int argc, char *argv[]) {
 		}
 		cout << "\n=== Simulation finished ===\n";
 // 		cout << "Init Time   = " << init_time << "\n";
-		cout << "Wall Time   = " << wall_time << "\n";
+		cout << "Wall Time   = " << wall_time  << "\n";
 		cout << "CPU Time    = " << cpu_time  << " (" << numthreads << " threads)\n\n";
 // 		cout << "Memory peak = " << prettyFormattingBytes(peakMem) << "\n";
 		
