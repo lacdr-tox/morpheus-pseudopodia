@@ -15,8 +15,8 @@ JobQueueView::JobQueueView ( QWidget* parent) : QSplitter ( parent )
 	connect( job_view_model, SIGNAL(rowsAboutToBeRemoved(const QModelIndex&,int,int)), this, SLOT(unselectJobs(const QModelIndex&,int,int)) );
 
 	jobQueueTreeView->setModel(job_view_model);
-// 	connect(jobQueueTreeView->selectionModel(),SIGNAL(currentChanged(const QModelIndex&, const QModelIndex&)), this, SLOT(selectJob(const QModelIndex&)));
-	connect(jobQueueTreeView,SIGNAL(clicked(const QModelIndex&)), this, SLOT(selectJob(const QModelIndex&)) );
+	connect(jobQueueTreeView->selectionModel(),SIGNAL(currentChanged(const QModelIndex&, const QModelIndex&)), this, SLOT(selectJob(const QModelIndex&)));
+// 	connect(jobQueueTreeView,SIGNAL(clicked(const QModelIndex&)), this, SLOT(selectJob(const QModelIndex&)) );
 
 	jobQueueTreeView->setSortingEnabled(true);
 	jobQueueTreeView->sortByColumn(0,Qt::AscendingOrder);

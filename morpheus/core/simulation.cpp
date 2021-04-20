@@ -101,8 +101,9 @@ int main(int argc, char *argv[]) {
 			
 			string indent = "    ";
 			double runtime_total = runtime;
-			double runtime_scaling = (runtime > 10) ? 1 : 1000;
-			string runtime_unit = (runtime > 10) ? "s" : "ms";
+			double runtime_scaling = (runtime > 2) ? 1 : 1000;
+			string runtime_unit = (runtime > 2) ? "s" : "ms";
+			int runtime_precision = 5-log10(runtime_total * runtime_scaling);
 			struct PerfEntry { string data; double runtime; };
 			vector<PerfEntry> entries;
 			for (auto child : perf_json) {
@@ -122,7 +123,7 @@ int main(int argc, char *argv[]) {
 					}
 					if (! name.empty()) {
 						stringstream entry;
-						entry << std::fixed << setprecision(1) << indent << "+ " << setw(5) << round(runtime*10000/runtime_total)/100 << "% = " << setw(5) << runtime * runtime_scaling << runtime_unit << " ("<< setw(5) << cputime * runtime_scaling << ")  | " << name << " [" << inputs << ((inputs.empty()||outputs.empty())?"":" -> ") << outputs << "]";
+						entry << std::fixed << setprecision(1)<< indent << "+ " << setw(5) << round(runtime*10000/runtime_total)/100 << "% = " << setw(5) << setprecision(runtime_precision) << runtime * runtime_scaling << runtime_unit << " ("<< setw(5) << cputime * runtime_scaling << ")  | " << name << " [" << inputs << ((inputs.empty()||outputs.empty())?"":" -> ") << outputs << "]";
 						
 						entries.push_back({entry.str(), runtime});
 					}
