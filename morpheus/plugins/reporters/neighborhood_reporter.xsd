@@ -24,14 +24,14 @@
 				<xs:all>
 					<xs:element name="Input" minOccurs="1">
 						<xs:complexType>
-							<xs:all>
+<!--							<xs:all>
 								<xs:element name="LocalSymbol" minOccurs="0"  maxOccurs="unbounded">
 									<xs:complexType>
 										<xs:attribute name="symbol-ref" type="cpmDoubleSymbolRef" use="required" />
 										<xs:attribute name="symbol" type="cpmDoubleSymbolDef" use="required"/>
 									</xs:complexType>
 								</xs:element>
-							</xs:all>
+							</xs:all>-->
 							<xs:attribute name="scaling" type="cpmNeighborsReporterInputMode" use="required" />
 							<xs:attribute name="value" type="cpmMathExpression" use="required" />
 							<xs:attribute name="noflux-cell-medium" type="cpmBoolean" use="optional" default="false" />

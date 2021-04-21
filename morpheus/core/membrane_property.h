@@ -71,7 +71,7 @@ private:
 	
 	static shared_ptr<const Lattice>  membrane_lattice;
 	static VINT size;
-	static string size_symbol;
+// 	static string size_symbol;
 	static uint resolution;
 	static string resolution_symbol;
 	static vector<double> node_sizes;

@@ -1073,13 +1073,13 @@ Gnuplotter::Gnuplotter(): AnalysisPlugin(), gnuplot(NULL) {
 	term.vectorized = true;
 	term.name = "svg";
 	term.extension = "svg";
-	term.font_size = 30;
+	term.font_size = 45;
 	terminal_defaults[Terminal::SVG]  = term;
 	
 	term.extension = "pdf";
 	term.name = "pdfcairo";
 	term.size = VINT(20,10,0);
-	term.font_size = 40;
+	term.font_size = 60;
 	term.line_width = 6;
 	terminal_defaults[Terminal::PDF]  = term;
 	
@@ -1834,7 +1834,7 @@ Gnuplotter::plotLayout Gnuplotter::getPlotLayout( uint plot_count, bool border )
 	layout.plot_aspect_ratio = plot_size.y / plot_size.x;
 // 	cout << "Plot size " << plot_size.x <<"x"<<plot_size.y<< " -> " << layout.plot_aspect_ratio << endl;
 	
-	layout.rows = max(1,int(floor(sqrt(plot_count/layout.plot_aspect_ratio))));
+	layout.rows = max(1,int(floor(sqrt(plot_count/layout.plot_aspect_ratio)+0.2)));
 	layout.cols = ceil(double(plot_count) / double(layout.rows));
 	layout.layout_aspect_ratio = (layout.plot_aspect_ratio * layout.rows) / layout.cols;
 	uint x_panel = 0;

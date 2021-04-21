@@ -324,17 +324,25 @@ void HistogramLogger::plotData(double time){
 
 	// set keys for histogram plot with more than 1 property
 	vector<string> titles;
-	titles.push_back("notitle");
 	if( columns.size() > 1 ){
 
 		ss << "set key top right;\n";
 
-		titles.clear();
 		for(uint i=0; i<columns.size(); i++){
 			stringstream tss;
-			tss << "title '" << ( columns[i]->label.isDefined() ?  columns[i]->label() :columns[i]->symbol.name()) << "'";
+			tss << "title '";
+			tss << Gnuplot::sanitize( 
+				columns[i]->label.isDefined() ?  
+					columns[i]->label() :
+					columns[i]->symbol.description().empty() ? 
+						columns[i]->symbol.name() :  
+						columns[i]->symbol.description() );
+			tss << "'";
 			titles.push_back( tss.str() );
 		}
+	}
+	else {
+		titles.push_back("notitle");
 	}
 
 	double shift = boxwidth;

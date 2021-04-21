@@ -11,7 +11,6 @@ REGISTER_PLUGIN(MembranePropertyPlugin);
 
 uint MembranePropertyPlugin::resolution = 0;
 string MembranePropertyPlugin::resolution_symbol("");
-string MembranePropertyPlugin::size_symbol = "MEMBRANE_SIZE";
 VINT MembranePropertyPlugin::size = VINT(0,0,0);
 vector<double> MembranePropertyPlugin::node_sizes;
 shared_ptr<const Lattice> MembranePropertyPlugin::membrane_lattice;
@@ -38,9 +37,10 @@ void MembranePropertyPlugin::loadMembraneLattice(const XMLNode& node, Scope* sco
 			scope->registerSymbol( SymbolAccessorBase<double>::createConstant(resolution_symbol, "Membrane Lattice Size",resolution) );
 	}
 	
-	if (getXMLAttribute(node,"MembraneLattice/SpaceSymbol/symbol",size_symbol) ) {
-		scope->registerSymbol(make_shared<MembraneSpaceSymbol>(size_symbol));
-	}
+	getXMLAttribute(node,"MembraneLattice/SpaceSymbol/symbol",SymbolBase::MembraneSpace_symbol);
+	// space symbol shall always be decalared.
+	scope->registerSymbol(make_shared<MembraneSpaceSymbol>(SymbolBase::MembraneSpace_symbol));
+
 	
 
 	if (SIM::getLatticeStructure() == Lattice::square || SIM::getLatticeStructure() == Lattice::hexagonal ) {

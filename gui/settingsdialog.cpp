@@ -604,6 +604,8 @@ void settingsDialog::checkLocal()
         QMessageBox::information((QWidget*)0, "Error", "Simulator does not return revision number!\n"+p.errorString());
         return;
     }
+    
+    version_revision.append("Path: ").append(executable).append("\n");
 
 	arguments = QStringList("--gnuplot-version");
 	if (le_local_GnuPlot_executable->isEnabled() && ! le_local_GnuPlot_executable->text().isEmpty()) {

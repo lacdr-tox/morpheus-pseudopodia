@@ -100,7 +100,7 @@ private:
 	CellType* celltype;
 	const Scope* scope;
 	
-	PluginParameter_Shared<double, XMLEvaluator, RequiredPolicy> input;
+	PluginParameter_Shared<double, XMLThreadsaveEvaluator, RequiredPolicy> input;
 	
 	struct OutputSpec {
 		PluginParameter_Shared<DataMapper::Mode, XMLNamedValueReader, OptionalPolicy> mapping;

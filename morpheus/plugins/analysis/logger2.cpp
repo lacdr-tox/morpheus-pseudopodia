@@ -236,7 +236,10 @@ string  Logger::getInputsDescription(const string& s) const {
 		const auto& writer = dynamic_pointer_cast<LoggerTextWriter>(writers.front());
 		for (const auto &i : writer->getSymbols()) {
 			if (i->name() == s) {
-				return Gnuplot::sanitize(i->description());
+				if (!i->description().empty())
+					return Gnuplot::sanitize(i->description());
+				else
+					return Gnuplot::sanitize(s);
 			}
 		}
 	}

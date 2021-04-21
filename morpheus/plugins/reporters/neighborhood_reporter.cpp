@@ -199,7 +199,6 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 #pragma omp for schedule(static)
 			for ( int i=0; i<cells.size(); i++) {
 				exception_catcher.Run([&](){
-	// 		for ( auto cell_id : cells) {
 				// Create halo of nodes surrounding the cell
 				SymbolFocus cell_focus(cells[i]);
 				if ( using_local_ns && local_ns_granularity != Granularity::MembraneNode) {
@@ -309,6 +308,7 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 						
 						if (using_local_ns) {
 							// Expose local symbols to input
+							cell_focus.setCell(cell_focus.cellID(),i);
 							input.setNameSpaceFocus(local_ns_id, cell_focus);
 						}
 						
@@ -316,14 +316,28 @@ void NeighborhoodReporter::reportCelltype(CellType* celltype) {
 						cell_mapper[f.cellID()].val += std::isnan(value) ? 0 : value ;
 						cell_mapper[f.cellID()].count ++;
 					}
+					for ( auto & cell_stat : cell_mapper ) {
+						cell_stat.second.val /= cell_stat.second.count;
+					}
 					
 					for ( const auto & out : halo_output) {
-						for ( const auto & cell_stat : cell_mapper ) {
-							out->mapper->addVal(cell_stat.second.val / cell_stat.second.count, thread);
+						if (out->membrane_acc) {
+							mapper->attachToCell(cell_focus.cellID());
+							for ( const auto & i :halo_nodes) {
+								SymbolFocus focus(i);
+								mapper->map(i, cell_mapper[focus.cellID()].val );
+							}
+							mapper->fillGaps();
+							mapper->copyData(out->membrane_acc->getField(cell_focus.cellID()));
 						}
-						if (out->symbol.granularity() == Granularity::Cell) {
-							out->symbol.set(cell_focus, out->mapper->get(thread));
-							out->mapper->reset(thread);
+						else {
+							for ( const auto & cell_stat : cell_mapper ) {
+								out->mapper->addVal(cell_stat.second.val, thread);
+							}
+							if (out->symbol.granularity() == Granularity::Cell) {
+								out->symbol.set(cell_focus, out->mapper->get(thread));
+								out->mapper->reset(thread);
+							}
 						}
 					}
 				}

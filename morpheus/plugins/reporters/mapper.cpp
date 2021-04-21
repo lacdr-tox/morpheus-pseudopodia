@@ -71,7 +71,7 @@ void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 		
 		if ( input->granularity() == Granularity::MembraneNode ) {
 			FocusRange range(Granularity::SurfaceNode, scope);
-			cout << "Membrane node size " << range.size() << endl;
+// 			cout << "Membrane node size " << range.size() << endl;
 			// Just write input to the output
 			for (const auto& focus : range) {
 				output.symbol->set(focus,input(focus));
