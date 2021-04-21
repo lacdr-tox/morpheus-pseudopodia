@@ -12,6 +12,8 @@
 
 ### Simulator
   * Reenable output of performance statistics, if no json stats are requested.
+  * Fixed logging MembraneProperties
+  * Fixed certain parallel **Mapper** modes
 
 ## Release 2.2.1
 
