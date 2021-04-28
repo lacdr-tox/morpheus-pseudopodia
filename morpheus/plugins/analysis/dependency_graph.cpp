@@ -174,7 +174,7 @@ string DependencyGraph::tslDotName(TimeStepListener* tsl)
 	std::replace( ts.begin(), ts.end(), '.', '_');
 	std::replace( ts.begin(), ts.end(), '-', '_');
 	
-	return tsl->XMLName() + "_" +  (reduced() || tsl->getFullName().empty() ? to_str(tsl->scope()->getID()) + "_" + ts :  to_str(hash<string>()(tsl->getFullName())) );
+	return tsl->XMLName() + "_" + to_str(tsl->scope()->getID()) + "_" + (reduced() || tsl->getFullName().empty() ?  "" :  to_str(hash<string>()(tsl->getFullName())) + "_" ) + ts;
 }
 
 string DependencyGraph::pluginDotName(Plugin* p) {
@@ -182,7 +182,7 @@ string DependencyGraph::pluginDotName(Plugin* p) {
 		return tslDotName(dynamic_cast<TimeStepListener*>(p));
 	}
 	else {
-		return p->XMLName() + "_" + (reduced() || p->getFullName().empty() ? to_str(p->scope()->getID()) : to_str(hash<string>()(p->getFullName())));
+		return p->XMLName() + "_" + to_str(p->scope()->getID()) + (reduced() || p->getFullName().empty() ? "" : string("_") + to_str(hash<string>()(p->getFullName())));
 	}
 }
 
