@@ -731,6 +731,7 @@ void SystemSolver::solve(const SymbolFocus& f, bool use_buffer, vector<double>* 
 	fetchSymbols(f);
 
 	switch (spec.method) {
+		case Method::Noop: break;
 		case Method::Euler: Euler(f, spec.time_step); break;
 		case Method::Heun : Heun(f, spec.time_step); break;
 		case Method::Runge_Kutta4 : RungeKutta(f, spec.time_step); break;

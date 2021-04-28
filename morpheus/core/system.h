@@ -130,6 +130,7 @@ class SystemSolver{
 
 	public:
 		enum class Method {
+			Noop,
 			Discrete,
 			Euler,
 			Heun,
@@ -139,7 +140,7 @@ class SystemSolver{
 			AdaptiveDP
 		};
 		struct Spec {
-			SystemSolver::Method method;
+			SystemSolver::Method method = Method::Noop;
 			double epsilon;
 			double time_scaling;
 			double time_step;

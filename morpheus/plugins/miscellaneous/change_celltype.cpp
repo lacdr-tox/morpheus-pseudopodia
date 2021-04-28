@@ -17,10 +17,10 @@ void ChangeCelltype::loadFromXML(const XMLNode xNode, Scope* scope)
 {
 	InstantaneousProcessPlugin::loadFromXML(xNode, scope);
 
-	triggers = shared_ptr<TriggeredSystem>(new TriggeredSystem);
 	celltype_new.init();
 
 	if (xNode.nChildNode("Triggers")) {
+		triggers = shared_ptr<TriggeredSystem>(new TriggeredSystem);
 		triggers->loadFromXML(xNode.getChildNode("Triggers"), const_cast<Scope*>(celltype_new()->getScope()));
 	}
 
@@ -35,7 +35,7 @@ void ChangeCelltype::init(const Scope* scope)
 	celltype = scope->getCellType();
 	registerInputSymbols(condition.getDependSymbols());
 
-	triggers->init();
+	if (triggers) triggers->init();
 
 }
 
@@ -50,7 +50,7 @@ void ChangeCelltype::executeTimeStep() {
 			&& condition( SymbolFocus(cells[i]) ) ){
 			
 			auto changed_cell = CPM::setCellType( cells[i], celltype_new_ID);
-			triggers->trigger(SymbolFocus(changed_cell));
+			if (triggers) triggers->trigger(SymbolFocus(changed_cell));
 		
 		}
 	}
