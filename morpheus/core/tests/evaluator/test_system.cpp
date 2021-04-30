@@ -30,7 +30,7 @@ const double rel_prec = 10e-6;
 
 TEST (System, Solver_Heun) {
 // 	SIM::wipe();
-	auto scope = new Scope();
+	auto scope = make_shared<Scope>();
 	auto time = make_shared<PrimitiveVariableSymbol<double>>(SymbolBase::Time_symbol,"time",0);
 	auto var_x = make_shared<PrimitiveVariableSymbol<double>>("x","x",ode_1_x_init);
 	auto const_lambda = make_shared<PrimitiveConstantSymbol<double>>("lambda","lambda",ode_1_lambda);
@@ -42,7 +42,7 @@ TEST (System, Solver_Heun) {
 	x_sys.addAttribute("solver","heun");
 // 	std::cout <<  x_sys.createXMLString() << endl;
 	auto sys = make_unique<System>(System::CONTINUOUS);
-	sys->loadFromXML(x_sys, scope);
+	sys->loadFromXML(x_sys, scope.get());
 	sys->setTimeStep(ode_1_time/1000);
 	sys->init();
 	
@@ -60,7 +60,7 @@ TEST (System, Solver_Heun) {
 
 TEST (System, Solver_RK4) {
 	SIM::wipe();
-	auto scope = new Scope();
+	auto scope = make_shared<Scope>();
 	auto time = make_shared<PrimitiveVariableSymbol<double>>(SymbolBase::Time_symbol,"time",0);
 	auto var_x = make_shared<PrimitiveVariableSymbol<double>>("x","x",ode_1_x_init);
 	auto const_lambda = make_shared<PrimitiveConstantSymbol<double>>("lambda","lambda",ode_1_lambda);
@@ -70,7 +70,7 @@ TEST (System, Solver_RK4) {
 	x_sys.addAttribute("solver","fixed4");
 	auto sys = make_unique<System>(System::CONTINUOUS);
 // 	std::cout <<  x_sys.createXMLString() << endl;
-	sys->loadFromXML(x_sys, scope);
+	sys->loadFromXML(x_sys, scope.get());
 	double time_step = ode_1_time/100;
 	sys->init();
 	sys->setTimeStep(time_step);
@@ -88,7 +88,7 @@ TEST (System, Solver_RK4) {
 
 TEST (System, Solver_RK45) {
 	SIM::wipe();
-	auto scope = new Scope();
+	auto scope = make_shared<Scope>();
 	auto time = make_shared<PrimitiveVariableSymbol<double>>(SymbolBase::Time_symbol,"time",0);
 	auto var_x = make_shared<PrimitiveVariableSymbol<double>>("x","x",ode_1_x_init);
 	auto const_lambda = make_shared<PrimitiveConstantSymbol<double>>("lambda","lambda",ode_1_lambda);
@@ -99,7 +99,7 @@ TEST (System, Solver_RK45) {
 	x_sys.addAttribute("solver-eps", to_cstr(rel_prec/10));
 // 	std::cout <<  x_sys.createXMLString() << endl;
 	auto sys = make_unique<System>(System::CONTINUOUS);
-	sys->loadFromXML(x_sys, scope);
+	sys->loadFromXML(x_sys, scope.get());
 	sys->setTimeStep(ode_1_time);
 	sys->init();
 	
@@ -116,7 +116,7 @@ TEST (System, Solver_RK45) {
 
 TEST (System, Solver_RK23) {
 	SIM::wipe();
-	auto scope = new Scope();
+	auto scope = make_shared<Scope>();
 	auto time = make_shared<PrimitiveVariableSymbol<double>>(SymbolBase::Time_symbol,"time",0);
 	auto var_x = make_shared<PrimitiveVariableSymbol<double>>("x","x",ode_1_x_init);
 	auto const_lambda = make_shared<PrimitiveConstantSymbol<double>>("lambda","lambda",ode_1_lambda);
@@ -127,7 +127,7 @@ TEST (System, Solver_RK23) {
 	x_sys.addAttribute("solver-eps", to_cstr(rel_prec/10));
 // 	std::cout <<  x_sys.createXMLString() << endl;
 	auto sys = make_unique<System>(System::CONTINUOUS);
-	sys->loadFromXML(x_sys, scope);
+	sys->loadFromXML(x_sys, scope.get());
 	sys->setTimeStep(ode_1_time);
 	sys->init();
 	

@@ -3,13 +3,15 @@
 #include "core/expression_evaluator.h"
 
 TEST (Scope, UndefinedSymbol) {
-	auto scope = make_unique<Scope>();
+	auto scope = make_shared<Scope>();
+	
 	auto variable_a = make_shared<PrimitiveVariableSymbol<double>>("a","a test a",3.0);
 	scope->registerSymbol(variable_a);
 	
 	bool symbol_undefined = false;
 	try {
 		auto k = scope->findSymbol<double>("b");
+		std::cout << scope->getName();
 	}
 	catch (SymbolError& e) {
 		if (e.type() == SymbolError::Type::Undefined) {
@@ -31,7 +33,7 @@ TEST (Scope, UndefinedSymbol) {
 }
 
 TEST (ExpressionEvaluator, Intialisation) {
-	auto scope = make_unique<Scope>();
+	auto scope = make_shared<Scope>();
 	auto cache = make_shared<EvaluatorCache>(scope.get());
 	auto variable_a = make_shared<PrimitiveVariableSymbol<double>>("a","a test a",3.0);
 	scope->registerSymbol(variable_a);
@@ -43,7 +45,7 @@ TEST (ExpressionEvaluator, Intialisation) {
 }
 
 TEST (ExpressionEvaluator, JoinedCache) {
-	auto scope = make_unique<Scope>();
+	auto scope = make_shared<Scope>();
 	auto cache = make_shared<EvaluatorCache>(scope.get());
 	auto variable_a = make_shared<PrimitiveVariableSymbol<double>>("a","a test a",3.0);
 	auto variable_b = make_shared<PrimitiveVariableSymbol<double>>("b","a test b",12.0);
@@ -63,7 +65,7 @@ TEST (ExpressionEvaluator, JoinedCache) {
 
 
 TEST (ExpressionEvaluator, VectorSymbols) {
-	auto scope = make_unique<Scope>();
+	auto scope = make_shared<Scope>();
 	auto cache = make_shared<EvaluatorCache>(scope.get());
 	auto variable_a = make_shared<PrimitiveVariableSymbol<VDOUBLE>>("a","a test a",VDOUBLE(1,2,2));
 	scope->registerSymbol(variable_a);
@@ -84,7 +86,7 @@ TEST (ExpressionEvaluator, VectorSymbols) {
 
 
 TEST (ExpressionEvaluator, ForeignScopeNamespaces) {
-	auto scope = make_unique<Scope>();
+	auto scope = make_shared<Scope>();
 	auto sub_scope = scope->createSubScope("sub");
 	auto cache = make_shared<EvaluatorCache>(scope.get());
 	auto sub_id = cache->addNameSpaceScope("sub", sub_scope);

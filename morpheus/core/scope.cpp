@@ -50,6 +50,15 @@ CellType* Scope::getCellType() const {
 
 void Scope::registerSymbol(Symbol const_symbol)
 {
+	shared_ptr<Scope> shared_this;
+	try {
+		shared_this = shared_from_this();
+	}
+	catch (const std::bad_weak_ptr &e) {
+		cerr << "Failed to register symbols to a non-shared_pointer Scope '" << name << "' !!" << endl;
+		cerr << "Use std::make_shared<Scope>() or Scope::createSubScope() to create share_pointer Scopes" << endl;
+		throw e;
+	}
 	auto symbol = const_pointer_cast<SymbolBase>(const_symbol);
     cout << "Registering Symbol " << symbol->name() << " of linktype " << symbol->linkType() << " in Scope " << this->getName() << endl;
 	
@@ -68,13 +77,13 @@ void Scope::registerSymbol(Symbol const_symbol)
 		if (! comp) {
 			throw SymbolError(SymbolError::Type::InvalidDefinition, string("Redefinition of a symbol \"") + symbol->name() + "\" in scope \""  + this->name + "\"");
 		}
-		symbol->setScope(shared_from_this());
+		symbol->setScope(shared_this);
 		comp->setDefaultValue(symbol);
 		return;
 	}
 
 	// Register the symbol
-	symbol->setScope(shared_from_this());
+	symbol->setScope(shared_this);
 	symbols.insert( {symbol->name(), symbol} );
 	
 	// Forward symbols of spatial components to the parental scope
@@ -182,8 +191,16 @@ void Scope::registerSubScopeSymbol(Scope *sub_scope, Symbol symbol) {
 		composite_sym_i = symbol->makeComposite();
 		auto composite_sym = dynamic_pointer_cast<SymbolBase>(composite_sym_i);
 		if (!composite_sym) throw  SymbolError(SymbolError::Type::InvalidDefinition, string("Invalid composite symbol created ") + symbol->name() + " !!" );
-		
-		composite_sym->setScope(shared_from_this());
+			shared_ptr<Scope> shared_this;
+		try {
+			shared_this = shared_from_this();
+		}
+		catch (const std::bad_weak_ptr &e) {
+			cerr << "Failed to register symbols to a non-shared_pointer Scope '" << name << "' !!" << endl;
+			cerr << "Use std::make_shared<Scope>() or Scope::createSubScope() to create share_pointer Scopes" << endl;
+			throw e;
+		}
+		composite_sym->setScope(shared_this);
 		composite_symbols[composite_sym_i->name()] = composite_sym_i;
 		registerSymbol(composite_sym);
 	}
