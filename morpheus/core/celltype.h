@@ -29,6 +29,8 @@ public:
 	Cell& cell(CPM::CELL_ID  cell_id) { assert( cell_id < cell_by_id.size() ); assert( cell_by_id[cell_id] ); return *cell_by_id[cell_id]; };
 	CPM::INDEX& index(CPM::CELL_ID cell_id) { assert( cell_id < cell_index_by_id.size()); return cell_index_by_id[cell_id]; }
 	CPM::INDEX emptyIndex();
+	int size() const;
+	void wipe();
 	
 private:
 	CPM::CELL_ID free_cell_name;
@@ -200,7 +202,7 @@ public:
 
 // and here comes some basic functionality for the celltype
 	CellType(uint ct_id);
-	virtual ~CellType() { /*for (auto cell : cell_ids) { storage.removeCell(cell); } cell_ids.clear();*/ };
+	virtual ~CellType();
 
 	virtual XMLNode saveToXML() const;
 	virtual void loadFromXML(const XMLNode Node, Scope* scope);

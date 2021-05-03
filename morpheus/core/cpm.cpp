@@ -13,6 +13,7 @@ namespace CPM {
 	
 // 	Time_Scale time_per_mcs("MCSDuration",1);
 	UpdateData global_update_data;
+	unique_ptr<CPM::Update> global_update;
 	
 	shared_ptr<LAYER> layer;
 	shared_ptr<CPMSampler> cpm_sampler;
@@ -483,7 +484,7 @@ bool executeCPMUpdate(const CPM::Update& update) {
 	return true;
 }
 
-CPM::Update& getGlobalUpdate() { static Update global_update(&global_update_data, layer); return global_update;}
+CPM::Update& getGlobalUpdate() { if (! global_update) global_update = make_unique<Update>(&global_update_data, layer); return *global_update; }
 
 const CPM::Update& createUpdate(VINT source, VINT direction, CPM::Update::Operation opx) {
 	
@@ -598,7 +599,9 @@ void setUpdate(CPM::Update& update) {
 void wipe() {
 	celltypes.clear();
 	celltype_names.clear();
+	CellType::storage.wipe();
 	cpm_sampler.reset();
+	global_update.reset();
 	layer.reset();
 }
 

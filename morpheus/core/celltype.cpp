@@ -72,6 +72,23 @@ shared_ptr<Cell> CellIndexStorage::removeCell(CPM::CELL_ID id)
 	return c;
 }
 
+int CellIndexStorage::size() const {
+	return used_cell_names.size();
+}
+
+void CellIndexStorage::wipe()
+{
+	if ( CellType::storage.size() != 0 ) {
+		cerr << string ("Warning!! Wiping cell storage although cells are present.");
+	}
+
+	cell_by_id.clear();
+	cell_index_by_id.clear();
+	used_cell_names.clear();
+	free_cell_name = 0;
+}
+
+
 
 using namespace SIM;
 // string CellType::XMLClassName() const { return string("abstract prototype"); };
@@ -85,6 +102,13 @@ CellType::CellType(uint ct_id) :  default_properties(_default_properties)
 {
 	id= ct_id;
 	name ="";
+};
+
+CellType::~CellType() {
+	for (auto cell : cell_ids) {
+		storage.removeCell(cell);
+	} 
+	cell_ids.clear(); 
 };
 
 CellType* CellType::createInstance(uint ct_id) {
