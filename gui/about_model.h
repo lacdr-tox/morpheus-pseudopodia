@@ -58,7 +58,7 @@ class AboutModel : public QSplitter {
 public:
 	AboutModel(SharedMorphModel model, QWidget* parent = NULL);
 	void update();
-
+	WebViewer* getView() { return webGraph;}
 signals:
 	void nodeSelected(QString path);
 	

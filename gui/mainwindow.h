@@ -84,6 +84,7 @@ private:
     QListWidget *fixBoard;
     QDockWidget* dwid_fixBoard;
 	DocuDock* docuDock;
+	QListWidget* pageList;
 	AnnouncementDialog* announcer;
 //     QTreeView* jobQueueView;
 // 	QListWidget* jobQueueStatusText;

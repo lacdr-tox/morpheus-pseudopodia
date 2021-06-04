@@ -784,7 +784,6 @@ void config::aboutHelp() {
 	QDialog* help_box = new QDialog(0,Qt::Dialog );
 
 	QHelpEngine* help = getHelpEngine();
-	qDebug() << help->linksForIdentifier ( "Chemotaxis" );
 
 	// "org.doxygen.Project"
 	help_box->setModal(true);

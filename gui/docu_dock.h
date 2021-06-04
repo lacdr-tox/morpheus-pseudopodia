@@ -23,6 +23,7 @@ class DocuDock : public QDockWidget
 
 public:
     DocuDock(QWidget* parent);
+	WebViewer* getHelpView() const { return help_view; }
 
 signals :
 	void elementDoubleClicked(QString element_name);

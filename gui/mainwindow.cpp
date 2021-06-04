@@ -7,10 +7,10 @@
 	#if QTCORE_VERSION >= 0x051200
 		#include <QWebEngineUrlScheme>
 	#endif
+// 	#define QWebEngineDebugger
 #endif
 
 // using namespace std;
-
 
 
 MainWindow::MainWindow(const QCommandLineParser& cmd_line) : QMainWindow(nullptr)//, ui(new Ui::MainWindow)
@@ -529,6 +529,26 @@ void MainWindow::createMainWidgets()
 	docuDock = new DocuDock(this);
 	docuDock->setObjectName("DocuDock");
 	addDockWidget(Qt::RightDockWidgetArea,docuDock,Qt::Vertical);
+
+#ifdef QWebEngineDebugger
+	auto debugger_dock = new QDockWidget("BrowserDebugger");
+	debugger_dock->setObjectName("BrowserDebuggerDock");
+	auto debugger = new WebViewer(this);
+	pageList = new QListWidget();
+#ifdef USE_QWebEngine
+	auto doku_page = new QListWidgetItem("Doku");
+	doku_page->setData(Qt::UserRole, QVariant::fromValue(qobject_cast<QWebEngineView*>(docuDock->getHelpView())->page()) ) ;
+	connect(pageList,&QListWidget::itemClicked,[debugger](QListWidgetItem* item) { qobject_cast<QWebEngineView*>(debugger)->page()->setInspectedPage( item->data(Qt::UserRole).value<QWebEnginePage*>()) ; }) ;
+	pageList->addItem(doku_page);
+#endif
+	auto debugger_widget = new QWidget(debugger_dock);
+	auto debugger_layout = new QVBoxLayout();
+	debugger_widget->setLayout(debugger_layout);
+	debugger_layout->addWidget(pageList,0);
+	debugger_layout->addWidget(debugger,4);
+	debugger_dock->setWidget(debugger_widget);
+	addDockWidget(Qt::LeftDockWidgetArea,debugger_dock,Qt::Vertical);	
+#endif
 	
     // The Core Editor Stack
     editorStack = new QStackedWidget();
@@ -948,6 +968,14 @@ void MainWindow::addModel(int index) {
 	modelAbout[model] =  new AboutModel(model);
 	editorStack->addWidget(modelAbout[model]);
 	connect(modelAbout[model], &AboutModel::nodeSelected, this, [this](QString path) { selectXMLPath(path, this->model_index.model); });
+	
+#ifdef QWebEngineDebugger
+	if (pageList) {
+		auto doku_page = new QListWidgetItem("Page");
+		doku_page->setData(Qt::UserRole, QVariant::fromValue(qobject_cast<QWebEngineView*>(modelAbout[model]->getView())->page()) ) ;
+		pageList->addItem(doku_page);
+	}
+#endif
 
 	syncModelList(index);
 
