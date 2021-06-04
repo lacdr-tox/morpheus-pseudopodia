@@ -7,16 +7,15 @@ TIFFReader::TIFFReader(){
 	registerPluginParameter( filename );
 
 	offset.setXMLPath("offset");
-	offset.setDefault("0 0 0");
 	registerPluginParameter( offset );
 	
 	keepIDs.setXMLPath("keepIDs");
 	keepIDs.setDefault("false");
 	registerPluginParameter( keepIDs );
 	
-	scaleToMax.setXMLPath("scaleToMax");
-	scaleToMax.setDefault("1.0");
-	registerPluginParameter( scaleToMax );
+	scaling.setXMLPath("scaleToMax");
+	scaling.setDefault("1.0");
+	registerPluginParameter( scaling );
 	
 	skipped_nodes=0;
 	created_nodes=0;
@@ -68,11 +67,7 @@ vector<CPM::CELL_ID>  TIFFReader::run(CellType* ct)
 bool TIFFReader::loadTIFF(){
 	
 	empty_state = CPM::getEmptyState().cell_id;
-
-	VINT offset_ = VINT( offset().x, (SIM::getLattice()->getDimensions() > 1 ? offset().y : 0), (SIM::getLattice()->getDimensions() >2 ? offset().z : 0));
-	if( offset_.abs() > 0 ){
-		cout << "TIFFReader::loadTIFF: Offset = " << offset_ << endl;
-	}
+	
 
 	TIFFSetWarningHandler(0);	
 	TIFF* tif = TIFFOpen(filename().c_str(), "r");
@@ -81,27 +76,46 @@ bool TIFFReader::loadTIFF(){
 		uint32 w, h;
 		unsigned short int numbits, numsamples;
 		size_t npixels;
-		uint32* raster8;
-		uint16* raster16;
-		float* raster32;
-		double* raster64;
+		uint8* raster8 = nullptr;
+		uint16* raster16 = nullptr;
+		float* raster32 = nullptr;
+		double* raster64 = nullptr;
 		
 		TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
 		TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
 		TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &numbits);
 		TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &numsamples);
 
-		cout << "TIFF Reader, Image size = " << w << " , " << h << "\n";
+		cout << "TIFF Reader, Image size = " << w << " , " << h << "; " << numsamples << " samples per pixel, " << numbits << " bits per sample. \n";
 		
+		if (numsamples != 1) {
+			cerr << "TIFFReader: Only grayscale images are supported";
+			exit(-1);
+			// TODO offer channel/sample id selection in xml
+		}
+		
+		VINT offset_ = offset.isDefined() ? offset() : VINT(0,0,0);
 		// check whether it fits within lattice
-		if ( w > SIM::getLattice()->size().x ) {
+		if ( offset_.x + w > SIM::getLattice()->size().x ) {
 			cerr << "TIFFReader: Image width (x) too large for the lattice! ("<< w <<" > "<<SIM::getLattice()->size().x<<")";
 			exit(-1);
 		}
-		if ( h > SIM::getLattice()->size().y ) {
+		if ( offset_.y + h > SIM::getLattice()->size().y ) {
 			cerr << "TIFFReader: Image height (y) too large for the lattice! ("<< h <<" > "<<SIM::getLattice()->size().y<<")";
 			exit(-1);
 		}
+		
+		if (offset.isMissing()) {
+			// centering 
+			offset_.x = (SIM::getLattice()->size().x - w) / 2;
+			offset_.y = (SIM::getLattice()->size().y - h) / 2;
+			offset_.z = 0;
+		}
+		
+		if( offset_.abs() > 0 ){
+			cout << "TIFFReader::loadTIFF: Offset = " << offset_ << endl;
+		}
+		
 		
 		// allocate memory for buffer
 		npixels = w * h;
@@ -110,7 +124,7 @@ bool TIFFReader::loadTIFF(){
 			case 8:
 			{
 				cout << "TIFFReader: TIFF image is 8 bit.\n";
-				raster8 = (uint32*) _TIFFmalloc(npixels * sizeof (uint32));
+				raster8 = (uint8*) _TIFFmalloc(TIFFScanlineSize(tif));
 				if( mode == TIFFReader::PDE )
 					cout << "TIFFReader: PDE values will be normalized to 1.0 (divided by 255)." << endl;
 				break;
@@ -154,7 +168,7 @@ bool TIFFReader::loadTIFF(){
 			}
 		}
 		
-		if (raster8 == NULL && raster16 == NULL && raster32 == NULL && raster64 == NULL) {
+		if ( ! (raster8 || raster16 || raster32 || raster64) ) {
  			return false;
  		}
  		
@@ -169,7 +183,7 @@ bool TIFFReader::loadTIFF(){
 			TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w1);
 			TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h1);
 			if (w1!=w || h1!=h){
-				cerr << "TIFFReader: Require identical sizes for images in a stack!" << endl;
+				cerr << "TIFFReader: Mismatching images sizes in tiff stack ("<<w<<"?="<<w1<<";"<<h<<"?="<<h1<<")!" << endl;
 				exit(-1);
 			}
 
@@ -177,40 +191,21 @@ bool TIFFReader::loadTIFF(){
 				
 				case 8:
 				{
-					
-					if (TIFFReadRGBAImage(tif, w, h, raster8, 0)) {
-						pos.y=h-1;
-						
-						for (uint i=0; i<npixels; i++, pos.x++) {
-							
-							if ( pos.x >= w ){
-								pos.x=0; 
-								pos.y--; 
+					for (uint32 row=0; row < h; row++) {
+						if( TIFFReadScanline( tif, raster8, row) < 0){
+							cerr << "TIFFReader: Error during reading TIFF image '" << filename() << "'." << endl;
+							exit(-1);
+						}
+						pos.y = row;
+						pos.x = 0; // TODO: Check whether scanline is necessarily equal to a x-row (if not, remove this line)
+						if (mode == CELLS) {
+							for(uint32 col=0; col < w; col++, pos.x++){
+								addNode( offset_+pos, (uint32) raster8[col]);
 							}
-							
-							if( numsamples == 1){
-								uint32 grey = raster8[i] & 0x00FFFFFF; // Remove alpha channel
-								
-								if ( ! (raster8[i] & 0xFF000000) ) 
-									continue; // skip fully transparent
-								
-								switch( mode ){
-									case CELLS:
-									{
-										addNode( offset_+pos, (uint32)grey );
-										break;
-									}
-									case PDE:
-									{
-										//NOTE: normalized to 1.0
-										pde_layer->set( offset_+pos, ((double)grey/255.0)*scaleToMax() );
-										break;
-									}
-								}
-							}
-							else if(numsamples == 3 ){
-								cerr << "TIFFReader: 8-bit RGB format not supported. Please convert the input image to 8-bit greyscale or 16-bit (RGB or greyscale).";
-								exit(-1);
+						}
+						else if ( mode==PDE ) {
+							for(uint32 col=0; col < w; col++, pos.x++){
+								pde_layer->set( offset_+pos, ((double)raster8[col]/255.0)*scaling() );
 							}
 						}
 					}
@@ -245,30 +240,11 @@ bool TIFFReader::loadTIFF(){
 									}
 									case PDE:
 									{
-										pde_layer->set( offset_+pos, double( (double)gray/(65535.0) )*scaleToMax() );
+										pde_layer->set( offset_+pos, double( (double)gray/(65535.0) )*scaling() );
 										break;
 									}
 								}
 
-							}
-							else if(numsamples == 3 ){
-								uint16 red		= static_cast<uint16*>(raster16)[col*numsamples+0];
-								uint16 green	= static_cast<uint16*>(raster16)[col*numsamples+1];
-								uint16 blue		= static_cast<uint16*>(raster16)[col*numsamples+2];
-// 								cout << red << " + " << green << " + " << blue << " = " << (uint16)(red+green+blue) << "\n";
-								
-								switch( mode ){
-									case CELLS:
-									{
-										addNode( offset_+pos, (uint16)(red+green+blue) );
-										break;
-									}
-									case PDE:
-									{
-										pde_layer->set( offset_+pos, double( (double)(red+green+blue)/(65535.0) )*scaleToMax() );
-										break;
-									}
-								}
 							}
 						}
 					}
@@ -307,10 +283,8 @@ bool TIFFReader::loadTIFF(){
 									}
 									case PDE:
 									{
-										float value = raster32[col];
-										if( scaleToMax.isDefined() )
-											value = (double)value*scaleToMax();
-										pde_layer->set( offset_+pos, (double)value );
+										double value = raster32[col] * scaling();
+										pde_layer->set( offset_+pos, value );
 										break;
 									}
 								}
@@ -353,8 +327,8 @@ bool TIFFReader::loadTIFF(){
 									case PDE:
 									{
 										double value = raster64[col];
-										if( scaleToMax.isDefined() )
-											value = (double)value*scaleToMax();
+										if( scaling.isDefined() )
+											value = (double)value*scaling();
 										pde_layer->set( offset_+pos, (double)value );
 										break;
 									}
@@ -368,10 +342,10 @@ bool TIFFReader::loadTIFF(){
 			pos.z++;
 		} while (TIFFReadDirectory(tif));
 		
-		if( numbits == 8 )
-			_TIFFfree(raster8);
-		else if( numbits == 16 )
-			_TIFFfree(raster16);
+		if (raster8 ) _TIFFfree(raster8 );
+		if (raster16) _TIFFfree(raster16);
+		if (raster32) _TIFFfree(raster32);
+		if (raster64) _TIFFfree(raster64);
 		TIFFClose(tif);
 	}
 	else{

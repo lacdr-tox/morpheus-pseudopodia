@@ -1,5 +1,11 @@
 # ChangeLog
 
+## Release 2.2.3
+
+### Simulator
+  * Fix loading 8-bit Tiff images
+  * Consistently center Tiff images when smaller than lattice size
+
 ## Release 2.2.2
 
 ### MorpheusML

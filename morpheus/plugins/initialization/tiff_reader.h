@@ -19,8 +19,9 @@
 #include <sys/time.h>
 
 /** \defgroup TIFFReader
- * \ingroup ML_Population
+\ingroup ML_Population
 \ingroup InitializerPlugins
+\ingroup ML_Field
 
 \section Description
 TIFFReader loads a configuration of a cell population or gradient field from a TIFF image file.
@@ -53,9 +54,9 @@ Required
 
 Optional
 --------
-- *offset* (default="0 0 0"): X,Y,Z Coordinates to shift TIFF image with respect to simulation lattice
-- *keepIDs* (default="false"): Boolean specifying whether to keep the cell IDs as given in TIFF image (only relevant for loading Cell configurations)
-- *scaleToMax* (default="1.0"): Decimal specifying how to scale the values in TIFF to gradient Field (only relavant for loading Fields).
+- *offset* (default=centering): X,Y,Z Coordinates to shift TIFF image with respect to simulation lattice. By default the offset centers the image if smaller than the lattice size.
+- *keepIDs* (default="false"): Boolean specifying whether to keep the cell IDs as given in TIFF image (only relevant for loading CellPopulations)
+- *scaling* (default="1.0"): Decimal specifying how to scale the values in TIFF to gradient Field (only relavant for loading Fields).
 
 \section Reference
 N.A. 
@@ -78,17 +79,18 @@ N.A.
 
 // loading a Field and scaling the concentrations by factor 100
 \verbatim
-<TIFFReader filename="image.tif" scaleToMax="100.0" />
+<TIFFReader filename="image.tif" scaling="100.0" />
 \endverbatim
 */
+
 
 class TIFFReader : public Population_Initializer, public Field_Initializer
 {
 private:
 	PluginParameter2<string, XMLValueReader, RequiredPolicy> filename;
-	PluginParameter2<VINT, XMLValueReader, DefaultValPolicy> offset;
+	PluginParameter2<VINT, XMLValueReader, OptionalPolicy> offset;
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> keepIDs;
-	PluginParameter2<double, XMLValueReader, DefaultValPolicy> scaleToMax;
+	PluginParameter2<double, XMLValueReader, DefaultValPolicy> scaling;
 	
 	enum { CELLS, PDE } mode;
 	

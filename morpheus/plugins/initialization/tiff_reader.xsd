@@ -23,7 +23,6 @@
 				<xs:attribute name="filename" use="required" type="cpmSystemFile" />
 				<xs:attribute name="offset" use="optional" type="cpmIntegerVector" default="0,0,0" />
 				<xs:attribute name="keep_ID" use="optional" type="cpmBoolean" default="false" />
-		<!-- 		<xs:attribute name="scale_to_max" use="optional" type="cpmDouble" default="1.0" /> -->
 		
 			</xs:extension>
 		</xs:complexContent>
@@ -37,9 +36,8 @@
 				</xs:annotation>
 
 				<xs:attribute name="filename" use="required" type="cpmSystemFile" />
-		<!-- 		<xs:attribute name="offset" use="optional" type="cpmIntegerVector" default="0,0,0" /> -->
-		<!-- 		<xs:attribute name="keep_ID" use="optional" type="cpmBoolean" default="false" /> -->
-				<xs:attribute name="scale_to_max" use="optional" type="cpmDouble" default="1.0" />
+				<xs:attribute name="offset" use="optional" type="cpmIntegerVector" default="0,0,0" />
+				<xs:attribute name="scaling" use="optional" type="cpmDouble" default="1.0" />
 			</xs:extension>
 		</xs:complexContent>
 		
