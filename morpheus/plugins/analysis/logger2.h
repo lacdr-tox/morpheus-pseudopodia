@@ -97,7 +97,7 @@ Specifies the details of the output file
 
 Restrict the data query to a certain slice, a cell type or certain cell IDs.
 
-- \b Slice: restrict query to slice (note: require node granularity)
+- \b Slice: restrict query to slice (note: requires node granularity)
   - \b axis  (required): x,y,z axis to slice
   - \b value (required): position along axis at which to slice the space (can be expression)
 
@@ -110,9 +110,9 @@ Restrict the data query to a certain slice, a cell type or certain cell IDs.
     - range of IDs with dash: "4-8", or
     - combination of list and range: "12-15, 24-28".
 
-- \b condition (optional, default=1): Condition used in addition to constraint the query to certain cells/nodes fullfilling the condition.
-- \b domain-only (optional, default=true): If the lattice is confined to a domaine, only query nodes within domain. if false, also include node outside of domain.
-- \b force-node-granularity (optional, default=false): granularity of automatically detected by default, but may be overridden if specified
+- \b condition (optional, default=1): condition used in addition to constraint the query to certain cells/nodes fulfilling the condition
+- \b domain-only (optional, default=true): if the lattice is confined to a domain, only query nodes within domain. If false, also include nodes outside of domain
+- \b force-node-granularity (optional, default=false): granularity of nodes is automatically detected by default, but may be overridden if specified
 
 \subsection Plots Plots (optional)
 

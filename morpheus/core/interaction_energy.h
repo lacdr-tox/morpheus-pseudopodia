@@ -20,7 +20,7 @@ specifies interaction energies \f$ J_{\sigma_1, \sigma_2} \f$ for different inte
 \defgroup ML_Contact Contact
 \ingroup ML_Interaction
 
-\brief Inter-celltype contact energies per lenght unit as defined in \ref ML_CPM ShapeSurface. 
+\brief Inter-celltype contact energies per length unit as defined in \ref ML_CPM ShapeSurface. 
 Contact energies can be constant values or expressions of global symbols or symbols of the involved cell types.
 
  - \b type1: name of one celltype involved in the interaction

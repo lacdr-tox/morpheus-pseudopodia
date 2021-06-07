@@ -19,7 +19,7 @@
 
 \section Description
 
-A \b VectorMapper defines how data within a spatial context, e.g. a cell, a cell population or at global scope, can be mapped to a symbol with a different spatial granularity (i.e. resolution). Note that defining a \n Mapper within a \ref ML_CellType also restricts the mapping to the spatial range occupied by the respectiv cell population.
+A \b VectorMapper defines how data within a spatial context, e.g. a cell, a cell population or at global scope, can be mapped to a symbol with a different spatial granularity (i.e. resolution). Note that defining a \n Mapper within a \ref ML_CellType also restricts the mapping to the spatial range occupied by the respective cell population.
 
 A single \b Input element must be specified:
 - \b value: input variable (e.g. \ref ML_PropertyVector or \ref ML_VectorField) or a respective expression.

@@ -9,3 +9,6 @@ build*
 # miscellaneous
 *.code-workspace
 .vscode
+
+# macOS
+.DS_Store

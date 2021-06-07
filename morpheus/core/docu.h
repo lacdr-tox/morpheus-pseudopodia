@@ -444,9 +444,9 @@ Sets the duration of a simulation and controls the pseudo-random number generato
 
 \b RandomSeed specifies a seed for the pseudo-random number generator.
 A user-specified seed allows to reproduce stochastic simulation results, including \ref ML_CPM. <br/>
-\b Note: For multithreaded simulations, note that each thread is seeded sperately based on the that user specified seed (\ref Parallelization). This implies that for reproducing simulations, the RandomSeed as well as the number of parallel threads must be conserved.
+\b Note: For multithreaded simulations, note that each thread is seeded separately based on that user specified seed (\ref Parallelization). This implies that for reproducing simulations, the RandomSeed as well as the number of parallel threads must be conserved.
 <br/>
-If \b RandomSeed is unspecified the the pseudo-random number generator willl initialize based on the system's time stamp and hence yields different simulation results in subsequent runs.
+If \b RandomSeed is unspecified the pseudo-random number generator will initialize based on the system's time stamp and hence yields different simulation results in subsequent runs.
 
 \b StopCondition provides a condition to terminate the simulation.
 This is handy within automated parameter exploration via parameter sweeps.
