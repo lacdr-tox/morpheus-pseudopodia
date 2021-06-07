@@ -39,9 +39,6 @@ void CPMSampler::loadFromXML(const XMLNode node, Scope* scope)
 	
 	interaction_energy = shared_ptr<InteractionEnergy>(new InteractionEnergy());
 	interaction_energy->loadFromXML(node.getChildNode("Interaction"), scope);
-
-	setTimeStep(mcs_duration.get());
-	is_adjustable = false;
 }
 
 void CPMSampler::init(const Scope* scope)
@@ -57,9 +54,11 @@ void CPMSampler::init(const Scope* scope)
 	if (update_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && update_neighborhood.order()>5) ) {
 		throw string("Update neighborhood is too large");
 	}
-
 	
 	ContinuousProcessPlugin::init(scope);
+	setTimeStep(mcs_duration.get());
+	is_adjustable = false;
+	
 	cell_layer = CPM::getLayer();
 	registerCellPositionOutput();
 	registerOutputSymbol(scope->findSymbol<double>(SymbolBase::CellVolume_symbol,true));

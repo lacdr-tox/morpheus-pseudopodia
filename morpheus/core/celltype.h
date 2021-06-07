@@ -314,7 +314,7 @@ public:
 	// Here we can make sure that the Medium has only one singe cell and disable node tracking
 	CPM::CELL_ID createCell(CPM::CELL_ID name) override;
 	virtual CPM::CELL_ID addCell(CPM::CELL_ID  cell_id) override;
-	virtual void removeCell(CPM::CELL_ID  cell_id) override;
+// 	virtual void removeCell(CPM::CELL_ID  cell_id) override;
 };
 
 

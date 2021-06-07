@@ -764,9 +764,9 @@ CPM::CELL_ID MediumCellType::addCell(CPM::CELL_ID cell_id) {
 	return cell_ids[0];
 }
 
-void MediumCellType::removeCell(CPM::CELL_ID cell_id) {
-	// We use just one cell and never remove it ...
-}
+// void MediumCellType::removeCell(CPM::CELL_ID cell_id) {
+// 	// We use just one cell and never remove it ...
+// }
 
 // CellMembraneAccessor CellType::findMembrane(string symbol, bool required) const
 // {
