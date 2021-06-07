@@ -26,7 +26,8 @@ void Field::loadFromXML(const XMLNode node, Scope * scope) {
 	scope->registerSymbol(accessor);
 }
 
-void Field::init(const Scope * scope) { 
+void Field::init(const Scope * scope) {
+	if (initialized) return;
 	if (initializing)
 		throw string("Unable to initialize field '") + symbol_name() + "'. Detected circular dependencies in initial value.";
 	initializing = true;
@@ -41,6 +42,7 @@ void Field::init(const Scope * scope) {
 	}
 	if (diffusion_plugin) diffusion_plugin->init(scope);
 	initializing = false;
+	initialized = true;
 }
 
 XMLNode Field::saveToXML() const {
@@ -54,20 +56,28 @@ REGISTER_PLUGIN(VectorField);
 VectorField::VectorField() : Plugin() {
 	registerPluginParameter(symbol_name);
 	symbol_name.setXMLPath("symbol");
+	initialized = false;
+	initializing = false;
 }
 
 void VectorField::loadFromXML(const XMLNode node, Scope * scope) {
 	Plugin::loadFromXML(node, scope);
 	
-	accessor = make_shared<Symbol>(symbol_name(), getDescription());
+	accessor = make_shared<Symbol>(this, symbol_name(), getDescription());
 	scope->registerSymbol(accessor);
 }
 
 void VectorField::init(const Scope * scope) {
+	if (initialized) return;
+	if (initializing)
+		throw string("Unable to initialize field '") + symbol_name() + "'. Detected circular dependencies in initial value.";
+	initializing = true;
 	auto field = make_shared<VectorField_Layer>(SIM::getLattice(), SIM::getNodeLength());
 	field->loadFromXML(stored_node, scope);
 	accessor->field = field;
 	field->init(scope);
+	initializing = false;
+	initialized = true;
 }
 
 XMLNode VectorField::saveToXML() const {

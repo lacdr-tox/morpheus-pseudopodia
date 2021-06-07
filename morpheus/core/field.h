@@ -216,7 +216,7 @@ private:
 class Field : public Plugin {
 public:
 	DECLARE_PLUGIN("Field");
-	Field(): Plugin() { symbol_name.setXMLPath("symbol"); registerPluginParameter(symbol_name); initializing=false; }
+	Field(): Plugin() { symbol_name.setXMLPath("symbol"); registerPluginParameter(symbol_name); initializing=false; initialized = false;}
 	void loadFromXML(const XMLNode node, Scope * scope) override;
 	XMLNode saveToXML() const override;
 	void init(const Scope * scope) override;
@@ -255,7 +255,7 @@ public:
 	};
 private:
 	shared_ptr<Symbol> accessor;
-	bool initializing;
+	bool initializing, initialized;
 	PluginParameter2<string, XMLValueReader, RequiredPolicy> symbol_name;
 	shared_ptr<Diffusion> diffusion_plugin;
 };
@@ -302,14 +302,18 @@ public:
 	
 	class Symbol : public SymbolRWAccessorBase<VDOUBLE> {
 	public:
-		Symbol(string name, string descr): SymbolRWAccessorBase<VDOUBLE>(name), descr(descr) {
+		Symbol(VectorField* parent, string name, string descr): SymbolRWAccessorBase<VDOUBLE>(name), descr(descr), parent(parent)
+		{
 			this->flags().granularity = Granularity::Node;
 		};
 		const string&  description() const override { return descr; }
 		std::string linkType() const override { return "VectorFieldLink"; }
 		
 		TypeInfo<VDOUBLE>::SReturn get(const SymbolFocus & f) const override { return field->get(f.pos()); }
-		TypeInfo<VDOUBLE>::SReturn safe_get(const SymbolFocus & f) const override{  return field->get(f.pos()); };
+		TypeInfo<VDOUBLE>::SReturn safe_get(const SymbolFocus & f) const override{  
+			if (! field) parent->init( SIM::getGlobalScope() );
+			return field->get(f.pos());
+		};
 		shared_ptr<VectorField_Layer> getField() const { return field; };
 		void set(const SymbolFocus & f, typename TypeInfo<VDOUBLE>::Parameter value) const override { field->set(f.pos(), value); }
 		void setBuffer(const SymbolFocus & f, TypeInfo<VDOUBLE>::Parameter value) const override { field->setBuffer(f.pos(), value); }
@@ -319,11 +323,13 @@ public:
 	private: 
 		string descr;
 		shared_ptr<VectorField_Layer> field;
+		VectorField* parent;
 		friend VectorField;
 	};
 	
 private: 
 	shared_ptr<Symbol> accessor;
+	bool initializing, initialized;
 	PluginParameter2<string, XMLValueReader, RequiredPolicy> symbol_name;
 };
 
