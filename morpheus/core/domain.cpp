@@ -91,14 +91,14 @@ void Domain::loadFromXML(const XMLNode xNode, Scope* scope, const LatticeDesc& l
 		type = circle;
 		getXMLAttribute(xNode, "Circle/diameter", diameter);
 		domain_size = VINT(diameter,diameter,1);
-		if (lattice_desc.structure == LatticeDesc::hexagonal)
+		if (lattice_desc.structure == Lattice::hexagonal)
 			domain_size.x*=sqrt(3);
 	}
 	else if (xNode.nChildNode("Hexagon")) {
 		type = hexagon;
 		getXMLAttribute(xNode, "Hexagon/diameter", diameter);
 		domain_size = VINT(diameter, sin(M_PI/3)*diameter, 1);
-		if (lattice_desc.structure == LatticeDesc::hexagonal)
+		if (lattice_desc.structure == Lattice::hexagonal)
 			domain_size.x*=1.5;
 	}
 	else {

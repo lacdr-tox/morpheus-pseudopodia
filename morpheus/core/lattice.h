@@ -30,6 +30,7 @@
 
 class Scope;
 class Lattice;
+struct LatticeDesc;
 template <class T> class Container;
 
 struct NeighborhoodDesc{
@@ -64,33 +65,16 @@ private:
 // 	friend class Lattice;
 };
 
-// Descriptor for Lattices
-struct LatticeDesc {
-	enum Structure { linear, square , hexagonal, cubic };
-	Structure structure;
-	VINT size;
-	NeighborhoodDesc default_neighborhood;
-	double node_length = 1;
-	map<Boundary::Codes,Boundary::Type> boundaries;
-	shared_ptr<Domain> domain = make_shared<Domain>();
-};
-
 class Lattice {
 public:
-
-	using Structure = LatticeDesc::Structure;
-	static const auto linear = Structure::linear;
-	static const auto square = Structure::square;
-	static const auto hexagonal = Structure::hexagonal;
-	static const auto cubic = Structure::cubic;
-
-	virtual string getXMLName() const =0;
+	enum Structure { linear, square , hexagonal, cubic };
 
 	Lattice();  /// Configure a Lattice from a XML node
 	Lattice(const LatticeDesc& desc);
 	static unique_ptr<Lattice> createLattice(const LatticeDesc& desc);
-	
 	virtual ~Lattice() {};
+	
+	virtual string getXMLName() const =0;
 
 //  Lattice extend
 	const VINT& size() const { return _size;}					 /// Size of the lattice
@@ -155,6 +139,18 @@ protected:
 	
 	friend class Domain;
 	
+};
+
+
+// Descriptor for Lattices
+struct LatticeDesc {
+	using Structure = Lattice::Structure;
+	Structure structure;
+	VINT size;
+	NeighborhoodDesc default_neighborhood;
+	double node_length = 1;
+	map<Boundary::Codes,Boundary::Type> boundaries;
+	shared_ptr<Domain> domain = make_shared<Domain>();
 };
 
 // #include "lattice_data_layer.h"

@@ -110,7 +110,7 @@ void LatticePlugin::init(const Scope* scope)
 	// Override lattice size to fit at least the domain size
 	if (lattice_desc.domain->domainType() != Domain::none) {
 		VINT domain_size = lattice_desc.domain->size();
-		if (lattice_desc.structure == LatticeDesc::hexagonal) {
+		if (lattice_desc.structure == Lattice::hexagonal) {
 			domain_size.y = ceil(domain_size.y / 0.866);
 		}
 		lattice_desc.size = max(lattice_desc.size, domain_size );
