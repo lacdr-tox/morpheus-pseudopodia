@@ -72,7 +72,7 @@ JobQueueView::JobQueueView ( QWidget* parent) : QSplitter ( parent )
 
 void JobQueueView::selectStatus(QListWidgetItem * message_item) {
 	QString message = message_item->text();	
-	QRegExp xml_path("XMLPath: ([\\w\\[\\]/]+)");
+	QRegExp xml_path("XMLPath: ([\\w\\d\\[\\]/]+)");
 	if (xml_path.indexIn(message) != -1) {
 // 		qDebug() << "Matched XMLPath is " << xml_path.cap(1);
 		JobQueue* job_queue = config::getJobQueue();

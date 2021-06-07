@@ -22,22 +22,25 @@ REGISTER_PLUGIN(Field);
 void Field::loadFromXML(const XMLNode node, Scope * scope) {
 	Plugin::loadFromXML(node, scope);
 	
-	accessor = make_shared<Symbol>(symbol_name(), this->getDescription());
+	accessor = make_shared<Symbol>(this, symbol_name(), this->getDescription());
 	scope->registerSymbol(accessor);
 }
 
 void Field::init(const Scope * scope) { 
-
+	if (initializing)
+		throw string("Unable to initialize field '") + symbol_name() + "'. Detected circular dependencies in initial value.";
+	initializing = true;
 	auto field = make_shared<PDE_Layer>(SIM::getLattice(), SIM::getNodeLength(), false);
 	field->loadFromXML(stored_node, scope);
-	accessor->field = field;
 	field->init();
-// 	if (accessor) accessor->field->init();
+	accessor->field = field;
+
 	// Create the diffusion wrapper
 	if (field->getDiffusionRate() > 0.0) {
 		diffusion_plugin = make_shared<Diffusion>(accessor);
 	}
 	if (diffusion_plugin) diffusion_plugin->init(scope);
+	initializing = false;
 }
 
 XMLNode Field::saveToXML() const {

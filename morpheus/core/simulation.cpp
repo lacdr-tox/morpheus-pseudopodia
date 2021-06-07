@@ -514,20 +514,20 @@ bool init(int argc, char *argv[]) {
 		init(readFile(filename), overrides);
 	}
 	catch (const string &e) {
-		cout << "Could not initialize model " << filename << endl;
-		cout << e << endl;
+		cerr << "Could not initialize model " << filename << "\n";
+		cerr << e << endl;
 		return false;
 	}
 	catch (const MorpheusException &e) {
-		cout << "Could not initialize model " << filename << endl;
-		cout << e.what() << endl;
-		cout << e.where() << endl;
+		cerr << "Could not initialize model " << filename << "\n";
+		cerr << e.what() << "\n";
+		cerr << "XMLPath: " << e.where() << endl;
 		return false;
 	}
 	
 	if (SIM::generate_symbol_graph_and_exit) {
 		createDepGraph();
-		cout << "Generated symbol dependency graph. Exiting." << endl;
+		cerr << "Generated symbol dependency graph. Exiting." << endl;
 		return false;
 	}
 
@@ -643,34 +643,6 @@ void loadFromXML(const XMLNode xNode) {
 	
 	lattice_plugin = make_unique<LatticePlugin>();
 	lattice_plugin->loadFromXML(xLattice, global_scope.get());
-	
-// 	if (xLattice.nChildNode("NodeLength"))
-// 		node_length.loadFromXML(xLattice.getChildNode("NodeLength"), global_scope.get());
-// 	try {
-// 		string lattice_code="cubic";
-// 		getXMLAttribute(xLattice, "class", lattice_code);
-// 		if (lattice_code=="cubic") {
-// 			global_lattice =  shared_ptr<Lattice>(new Cubic_Lattice(xLattice));
-// 		} else if (lattice_code=="square") {
-// 			global_lattice =  shared_ptr<Lattice>(new Square_Lattice(xLattice));
-// 		} else if (lattice_code=="hexagonal") {
-// 			global_lattice =  shared_ptr<Lattice>(new Hex_Lattice(xLattice));
-// 		} else if (lattice_code=="linear") {
-// 			global_lattice =  shared_ptr<Lattice>(new Linear_Lattice(xLattice));
-// 		}
-// 		else throw string("unknown Lattice type " + lattice_code);
-// 		if (! global_lattice)
-// 				throw string("Error creating Lattice type " + lattice_code);
-// 	}
-// 	catch (string e) {
-// 		throw MorpheusException(e,xLattice);
-// 	}
-// 	
-// 	lattice_size_symbol="";
-// 	if (getXMLAttribute(xLattice,"Size/symbol",lattice_size_symbol)) {
-// 		auto lattice_size = SymbolAccessorBase<VDOUBLE>::createConstant(lattice_size_symbol,"Lattice Size", global_lattice->size());
-// 		global_scope->registerSymbol( lattice_size );
-// 	}
 	
 	MembranePropertyPlugin::loadMembraneLattice(xSpace, global_scope.get());
 	

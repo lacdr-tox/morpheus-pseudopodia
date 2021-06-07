@@ -216,14 +216,17 @@ private:
 class Field : public Plugin {
 public:
 	DECLARE_PLUGIN("Field");
-	Field(): Plugin() { symbol_name.setXMLPath("symbol"); registerPluginParameter(symbol_name); }
+	Field(): Plugin() { symbol_name.setXMLPath("symbol"); registerPluginParameter(symbol_name); initializing=false; }
 	void loadFromXML(const XMLNode node, Scope * scope) override;
 	XMLNode saveToXML() const override;
 	void init(const Scope * scope) override;
 	
 	class Symbol : public SymbolRWAccessorBase<double> {
 	public:
-		Symbol(string name, string descr): SymbolRWAccessorBase<double>(name), descr(descr) {
+		Symbol(Field* parent, string name, string descr): 
+			SymbolRWAccessorBase<double>(name), descr(descr),
+			parent(parent)
+		{
 			this->flags().granularity = Granularity::Node;
 		};
 		const string&  description() const override { return descr; }
@@ -231,8 +234,10 @@ public:
 		std::string linkType() const override { return "FieldLink"; }
 		
 		TypeInfo<double>::SReturn get(const SymbolFocus & f) const override { return field->get(f.pos()); }
-		TypeInfo<double>::SReturn safe_get(const SymbolFocus & f) const override { 
-			field->init();
+		TypeInfo<double>::SReturn safe_get(const SymbolFocus & f) const override {
+			if (!field)
+				parent->init(SIM::getGlobalScope());
+			
 			return field->get(f.pos());
 			
 		};
@@ -245,10 +250,12 @@ public:
 	private: 
 		string descr;
 		shared_ptr<PDE_Layer> field;
+		Field* parent;
 		friend Field;
 	};
 private:
 	shared_ptr<Symbol> accessor;
+	bool initializing;
 	PluginParameter2<string, XMLValueReader, RequiredPolicy> symbol_name;
 	shared_ptr<Diffusion> diffusion_plugin;
 };
