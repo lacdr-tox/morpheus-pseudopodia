@@ -2,9 +2,15 @@
 
 ## Release 2.2.3
 
+### GUI
+  * Fixed model graph generator library that may have caused outdated model graphs.
+
 ### Simulator
+  * Added loop dependency detection in Field initialization
   * Fix loading 8-bit Tiff images
-  * Consistently center Tiff images when smaller than lattice size
+  * Consistently center Tiff image data when smaller than lattice size
+  * Fixed regression: Prevent rescheduling of the CPM sampler
+  * Fix build in debug mode
 
 ## Release 2.2.2
 
