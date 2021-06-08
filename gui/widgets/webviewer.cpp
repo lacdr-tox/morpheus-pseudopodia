@@ -29,7 +29,7 @@ WebViewer::WebViewer(QWidget* parent) : QWebView(parent) {
 	// this->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessFileUrls, true);
 	this->page()->setNetworkAccessManager(config::getNetwork());
 	this->page()->setLinkDelegationPolicy(QWebPage::DelegateExternalLinks);
-	setContextMenuPolicy(Qt::NoContextMenu);
+	this->setContextMenuPolicy(Qt::NoContextMenu);
 }
 
 bool WebViewer::debug(bool state) {
