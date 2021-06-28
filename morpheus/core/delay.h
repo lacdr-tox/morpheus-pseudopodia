@@ -82,7 +82,9 @@ public:
 		return get(f, SIM::getTime());
 	}
 	double get(const SymbolFocus& f, double time) const {
-		auto& history = getCellProperty(f)->value;
+		auto p = getCellProperty(f);
+		if (!p->initialized) p->init(f);
+		auto& history = p->value;
 		auto delay = parent->getDelay();
 		clearHistory(history, time);
 		if (time-delay<=SIM::getStartTime()) {
@@ -106,19 +108,16 @@ public:
 // 		cout << "Delay " << this->name() << " -> {" << time-delay << "," <<  r <<"}" << endl;
 		return r;
 	}
-	double safe_get(const SymbolFocus& f) const override {
-		auto p=getCellProperty(f); 
-		if (!p->initialized)
-			p->init(f);
-		return get(f);
-	}
-	void init() { 
+
+	/// Initialize all 
+	void init() override { 
 		DelayProperty* p = static_cast<DelayProperty*>(celltype->default_properties[property_id].get());
 		if (!p->initialized) 
 			try {
 				p->init(SymbolFocus::global);
 			} catch (...) { cout << "Warning: Could not initialize default property " << this->name() << " of CellType " << celltype->getName() << "." << endl;}
 	}
+	
 	void set(const SymbolFocus& f, double value) const override {
 		set(f, SIM::getTime(), value);
 	}

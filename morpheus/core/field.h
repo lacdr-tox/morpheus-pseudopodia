@@ -234,13 +234,12 @@ public:
 		std::string linkType() const override { return "FieldLink"; }
 		
 		TypeInfo<double>::SReturn get(const SymbolFocus & f) const override { return field->get(f.pos()); }
-		TypeInfo<double>::SReturn safe_get(const SymbolFocus & f) const override {
+		
+		void init() override {
 			if (!field)
 				parent->init(SIM::getGlobalScope());
-			
-			return field->get(f.pos());
-			
-		};
+		}
+		
 		shared_ptr<PDE_Layer> getField() const { return field; };
 		void set(const SymbolFocus & f, typename TypeInfo<double>::Parameter value) const override { field->set(f.pos(), value); };
 		void setBuffer(const SymbolFocus & f, TypeInfo<double>::Parameter value) const override { field->setBuffer(f.pos(), value); }
@@ -310,9 +309,8 @@ public:
 		std::string linkType() const override { return "VectorFieldLink"; }
 		
 		TypeInfo<VDOUBLE>::SReturn get(const SymbolFocus & f) const override { return field->get(f.pos()); }
-		TypeInfo<VDOUBLE>::SReturn safe_get(const SymbolFocus & f) const override{  
+		void init() override {  
 			if (! field) parent->init( SIM::getGlobalScope() );
-			return field->get(f.pos());
 		};
 		shared_ptr<VectorField_Layer> getField() const { return field; };
 		void set(const SymbolFocus & f, typename TypeInfo<VDOUBLE>::Parameter value) const override { field->set(f.pos(), value); }

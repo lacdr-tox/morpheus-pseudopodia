@@ -1,0 +1,103 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MorpheusModel version="4">
+    <Description>
+        <Details></Details>
+        <Title></Title>
+    </Description>
+    <Space>
+        <Lattice class="square">
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+            <Size symbol="size" value="10,10, 0.0"/>
+        </Lattice>
+        <SpaceSymbol symbol="space"/>
+        <MembraneLattice>
+            <Resolution value="26"/>
+            <SpaceSymbol symbol="mem"/>
+        </MembraneLattice>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="0"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <Analysis>
+        <ModelGraph include-tags="#untagged" format="dot" reduced="false"/>
+        <!--    <Disabled>
+        <Gnuplotter time-step="1.0">
+            <Plot>
+                <Field symbol-ref="x_rep"/>
+            </Plot>
+            <Terminal name="png"/>
+            <Plot>
+                <Cells flooding="false" value="m_x"/>
+            </Plot>
+        </Gnuplotter>
+    </Disabled>
+-->
+        <!--    <Disabled>
+        <Logger time-step="1.0">
+            <Input>
+                <Symbol symbol-ref="value"/>
+                <Symbol symbol-ref="expect"/>
+            </Input>
+            <Output>
+                <TextOutput/>
+            </Output>
+            <Disabled>
+                <Plots>
+                    <SurfacePlot>
+                        <Color-bar>
+                            <Symbol symbol-ref="x_rep"/>
+                        </Color-bar>
+                        <Terminal terminal="png"/>
+                    </SurfacePlot>
+                </Plots>
+            </Disabled>
+        </Logger>
+    </Disabled>
+-->
+    </Analysis>
+    <Global>
+        <Field symbol="x_rep" value="x + m_x"/>
+        <Constant symbol="x" value="0.0"/>
+        <Constant symbol="m_x" value="0.0"/>
+        <Constant symbol="expect" value="5*5*10/(size.x*size.y)"/>
+        <Variable symbol="value" value="0.0"/>
+        <Mapper>
+            <Input value="x_rep"/>
+            <Output symbol-ref="value" mapping="average"/>
+        </Mapper>
+    </Global>
+    <CellTypes>
+        <CellType name="cell" class="biological">
+            <MembraneProperty symbol="m_x" value="half(z)">
+                <Diffusion rate="0"/>
+            </MembraneProperty>
+            <Property symbol="x" value="1*y"/>
+            <Property symbol="y" value="half(f_y() + f_y)"/>
+            <Function symbol="f_y">
+                <Expression>cell.center.y</Expression>
+            </Function>
+            <Function symbol="half">
+                <Parameter symbol="x"/>
+                <Expression>x/2</Expression>
+            </Function>
+            <DelayProperty symbol="z" delay="1" value="12.0+2*time"/>
+        </CellType>
+    </CellTypes>
+    <CellPopulations>
+        <Population type="cell" size="1">
+            <InitCellObjects mode="distance">
+                <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
+                    <!--    <Disabled>
+        <Sphere center="0.0, 0.0, 0.0" radius="0.0"/>
+    </Disabled>
+-->
+                    <Box origin="3.0, 3.0, 0.0" size="5.0, 5.0, 0.0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+    </CellPopulations>
+</MorpheusModel>

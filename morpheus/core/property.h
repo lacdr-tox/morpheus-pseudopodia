@@ -177,9 +177,9 @@ template <class T, class V = T>
 class Property : public PrimitiveProperty<V> {
 public:
 	Property(Container<T>* parent, V value) :
-		PrimitiveProperty<V>(parent->getSymbol(), value), initialized(false), parent(parent) {};
+		PrimitiveProperty<V>(parent->getSymbol(), value), initialized(false), initializing(false), parent(parent) {};
 	
-	Property(const Property<T,V>& other) : PrimitiveProperty<V>(other), initialized(false), parent(other.parent) {}
+	Property(const Property<T,V>& other) : PrimitiveProperty<V>(other), initialized(false), initializing(false), parent(other.parent) {}
 	
 	shared_ptr<AbstractProperty> clone() const override {
 		return make_shared< Property<T,V> >(*this);
@@ -193,12 +193,19 @@ public:
 	
 	void init(const SymbolFocus& f) override {
 		if (! initialized) {
+// 			cout << "Initializing property " << this->symbol() << endl;
+			if (initializing) {
+				throw string("Detected circular dependencies in evaluation of symbol '") + this->symbol() + "'!";
+			}
+			else
+				initializing = true;
 			if (initializer)
 				this->value = initializer->get(f);
 			else
 				this->value = parent->getInitValue(f);
+			initializing = false;
+			initialized = true;
 		}
-		initialized = true;
 	};
 	
 	void assign(shared_ptr<Property<T,V>> other) {
@@ -214,7 +221,7 @@ public:
 	string XMLDataName() const override { return parent->XMLName()+"Data"; }
 
 // private:
-	bool initialized;
+	bool initialized; bool initializing;
 	shared_ptr<ExpressionEvaluator<V>> initializer;
 	Container<T>* parent;
 };
@@ -229,15 +236,14 @@ public:
 template <class T>
 class ConstantSymbol : public PrimitiveConstantSymbol<T> {
 	public:
-		ConstantSymbol( Container<T>* parent ) : PrimitiveConstantSymbol<T>(parent->getSymbol(), "", T()), parent(parent), initialized(false) { };
+		ConstantSymbol( Container<T>* parent ) : PrimitiveConstantSymbol<T>(parent->getSymbol(), "", T()), parent(parent) { };
 		std::string linkType() const override { return "ConstantLink"; }
-		void init() const { this->value = parent->getInitValue(SymbolFocus::global);  initialized = true;}
+		void init() override { this->value = parent->getInitValue(SymbolFocus::global); }
 		const string& description() const override { return parent->getDescription(); }
 		const std::string XMLPath() const override { return getXMLPath(parent->saveToXML()); };
-		typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const override { if ( !initialized) init(); return this->get(f); }
+		
 	private:
 		Container<T>* parent;
-		mutable bool initialized;
 		friend class Container<T>;
 };
 
@@ -252,15 +258,14 @@ class ConstantSymbol : public PrimitiveConstantSymbol<T> {
 template <class T>
 class VariableSymbol : public PrimitiveVariableSymbol<T> {
 	public:
-		VariableSymbol(Container<T>* parent ) : PrimitiveVariableSymbol<T>(parent->getSymbol(), "", T()), parent(parent), initialized(false) { };
+		VariableSymbol(Container<T>* parent ) : PrimitiveVariableSymbol<T>(parent->getSymbol(), "", T()), parent(parent) { };
 		std::string linkType() const override { return "VariableLink"; }
-		void init() const { this->value = parent->getInitValue(SymbolFocus::global); initialized = true; cout << "set init value " << this->name() << "=" << this->value << endl; }
+		void init() override { this->value = parent->getInitValue(SymbolFocus::global); }
 		const string& description() const override { return parent->getDescription(); }
 		const std::string XMLPath() const override { return getXMLPath(parent->saveToXML()); };
-		typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const override { if ( !initialized) init();  return this->get(f); }
+		
 	private:
 		Container<T>* parent;
-		mutable bool initialized;
 		friend class Container<T>;
 };
 
@@ -278,13 +283,15 @@ class PropertySymbol : public PrimitivePropertySymbol<T> {
 		std::string linkType() const override { return "CellPropertyLink"; }
 		const string& description() const override { return parent->getDescription();}
 		const std::string XMLPath() const override { return getXMLPath(parent->saveToXML()); };
-// 		typename TypeInfo<T>::SReturn get(const SymbolFocus& f) const override { return getCellProperty(f)->value; }
+		typename TypeInfo<T>::SReturn get(const SymbolFocus& f) const override { return getCellProperty(f)->value; }
 		typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const override {
-			auto p=getCellProperty(f); 
-			if (!p->initialized)  {
-				p->value = parent->getInitValue(f);
-				p->initialized = true;
+			if (!this->flags().initialized) {
+				this->safe_init();
 			}
+			
+			auto p=getCellProperty(f);
+			if (!p->initialized) p->init(f);
+				
 			return p->value;
 		}
 		
@@ -293,16 +300,20 @@ class PropertySymbol : public PrimitivePropertySymbol<T> {
 			p->initializer = initializer;
 		}
 		
-		void init() const { 
+		void init() override { 
 			assert(this->celltype->default_properties.size()>this->property_id);
+			
 			auto p = dynamic_pointer_cast<Property<T,T>>(this->celltype->default_properties[this->property_id]);
 			assert(p);
+			if (!p) throw string("Missing default property of symbol ") + this->name() + "!";
 			try { 
-				static_cast<Property<T,T>*>(this->celltype->default_properties[this->property_id].get())->value = parent->getInitValue(SymbolFocus::global);
-				static_cast<Property<T,T>*>(this->celltype->default_properties[this->property_id].get())->initialized = true;
-			} catch (...) { cout << "Warning: Could not initialize default property "<<  this->name() << " of celltype " << this->celltype->getName() << "." << endl; }
-			
+				p->init(SymbolFocus::global);
+			} catch (...) {
+				cout << "Warning: Could not initialize default property "<<  this->name() << " of celltype " << this->celltype->getName() << "." << endl;
+				p->initialized = true;
+			}
 		}
+		
 	protected:
 		/// Provide a Property<T,T> associated with the SymbolFocus @p f
 		Property<T,T>* getCellProperty(const SymbolFocus& f) const { 

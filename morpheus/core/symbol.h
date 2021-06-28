@@ -14,7 +14,7 @@
 
 #include "config.h"
 #include "traits.h"
-#include <stdexcept>
+#include "exceptions.h"
 #include "string_functions.h"
 #include "symbolfocus.h"
 #include "muParser/muParser.h"
@@ -54,7 +54,7 @@ class SymbolBase;
 using Symbol = std::shared_ptr<const SymbolBase> ;
 using SymbolDependency = Symbol;
 
-/// The type agnostic <b> symbol interface </b> to be stored in the factory ...
+/// The type agnostic <b> symbol interface provides meta-data and accesssors
 class SymbolBase : public std::enable_shared_from_this<SymbolBase> {
 public:
 	struct Flags;
@@ -86,6 +86,8 @@ public:
 		bool partially_defined;
 		bool integer;
 		bool function;
+		bool initialized;
+		bool initializing;
 		Flags() :
 		  granularity(Granularity::Global),
 		  time_const(false),
@@ -95,7 +97,9 @@ public:
 		  writable(false),
 		  partially_defined(false),
 		  integer(false), 
-		  function(false) {};
+		  function(false),
+		  initialized(false),
+		  initializing(false) {};
 	};
 	
 	virtual ~SymbolBase() {};
@@ -163,8 +167,25 @@ public:
 	 * Also take care that any dependend symbols are initialized. 
 	 * Use this method during the initialization phase.
 	 */
-	virtual typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const { return get(f); };
+	virtual typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const { 
+		if (!_flags.initialized) {
+			 safe_init();
+		}
+		return get(f);
+	};
 	
+	void safe_init() const {
+		if (_flags.initializing) {
+			throw MorpheusException(string("Detected circular dependencies in initalization of symbol '") + name() + "'.", XMLPath() );
+		}
+		auto m_this = const_cast<SymbolAccessorBase<T> *>(this);
+		m_this->_flags.initializing = true;
+		m_this->init();
+		m_this->_flags.initializing = false;
+		m_this->_flags.initialized = true;
+	}
+	/// Initialization method used to trigger the evaluation of the inital value. Does nothing by default.
+	virtual void init() {};
 	/// Static creator method for a constant symbol not associated with the XML, that may be registered in a scope.
 	static shared_ptr<SymbolAccessorBase<T> > createConstant(const string& name, const string& description, const T& value);
 	/// Static creator method for a variable symbol not associated with the XML, that may be registered in a scope.

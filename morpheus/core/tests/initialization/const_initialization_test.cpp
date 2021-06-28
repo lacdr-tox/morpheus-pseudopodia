@@ -47,3 +47,13 @@ TEST (ConstInit, UnorderedFunction) {
 	}
 	
 }
+
+TEST (FieldInit, UnorderedSubscope) {
+	auto file3 = ImportFile("field_subscope_initialization.xml");
+	auto model = TestModel(file3.getDataAsString());
+
+	model.run();
+	auto result = SIM::findGlobalSymbol<double>("value");
+	auto solution = SIM::findGlobalSymbol<double>("expect");
+	EXPECT_DOUBLE_EQ(result -> get(SymbolFocus::global), solution -> get(SymbolFocus::global));
+}

@@ -647,7 +647,7 @@ As stated above, symbols are inherited from the parental scope, but may be overw
 The type of the symbol (scalar / vector), however, has to be conserved. In this way, global symbols can be used as default values.
 
 Unlike the other scopes, the \ref ML_CellType scopes also represent spatial compartments. In order to adhere to intuitive modelling logics, we apply \b spatial \b scoping, such that symbols defined in a \ref ML_CellType scope can overwrite parental, i.e. global, symbols in the (dynamic) spatial region the celltype occupies. Therefore, a global symbol can be effectively composed of a global value and celltype specific values defined within the celltypes themselves. 
-Forwarding the global access to a symbol at a specific position through such a spatially structured model is what we call <b>spatial scoping</b>.
+Determining the value of a composite symbol at a specific position through the Cell/CellType occupancy of a specific position is what we call <b>spatial scoping</b>.
 
 When a symbol is declared in \b all CellType scopes (e.g. in all CellTypes), it also becomes available in the global scope (known as a virtual composite symbol).
 
@@ -658,7 +658,7 @@ In the following example, 'a=1' is declared in the Global scope, and 'b=2' is de
 	<Constant symbol="a" value="1"/>
 	<Variable symbol="result" value="0"/>
 
-	<System solver="Euler [fixed, O(1)]"]" time-step="1.0">
+	<System solver="Euler [fixed, O(1)]" time-step="1.0">
 		<Constant symbol="b" value="2"/>
 		<Rule symbol-ref="result">
 			<Expression>a+b</Expression>
@@ -673,7 +673,7 @@ In the following, the global constant 'a=1' is overwritten in System by the loca
 	<Constant symbol="a" value="1"/>
 	<Variable symbol="result" value="0"/>
 
-	<System solver="Euler [fixed, O(1)]"]" time-step="1.0">
+	<System solver="Euler [fixed, O(1)]" time-step="1.0">
 		<Constant symbol="a" value="2"/>
 		<Constant symbol="b" value="2"/>
 		<Rule symbol-ref="result">
@@ -753,7 +753,7 @@ The \b sequential update scheme will look as follows:
 Model components may be tagged by a set of comma-separated custom tags. Tagging has no effect on the model itself but rather allows to group components logically. 
 
 ~~~~~~~~~~~~~~~{.xml}
-	<Field tags="chemotaxis, phase:liquid" symbol="f" />
+	<Field tags="chemotaxis, phase::liquid" symbol="f" />
 ~~~~~~~~~~~~~~~
 
 The graphical user interface supports filtering the model views by a subgroup of given tags.  Any component that has no tag defined is referred to by the logical group \b \#untagged.

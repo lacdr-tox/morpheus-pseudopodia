@@ -321,51 +321,6 @@ string centerText(string in) {
 	return out;
 }
 
-void splash(bool show_usage) {
-
-    time_t t = time(0); // get time now
-    struct tm * now = localtime( & t );
-    int current_year = now->tm_year + 1900;
-
-	cout << endl;
-	cout << centerText("<<  M O R P H E U S  >>") << endl;
-	cout << centerText("Modeling environment for multi-scale and multicellular systems biology") << endl;
-    stringstream copyright;
-    copyright << "Copyright 2009-"<< current_year <<", Technische Universität Dresden, Germany";
-    cout << centerText( copyright.str() ) << endl;
-
-	stringstream version;
-	version << "Version " << MORPHEUS_VERSION_STRING;
-	version << ", Revision " << MORPHEUS_REVISION_STRING;
-    cout << centerText( version.str() ) << endl;
-
-    if( show_usage ){
-    cout << endl << endl;
-    cout << " Usage: "<< endl;
-    cout << "  morpheus [OPTIONS] " << endl << endl;
-    cout << " Options:  " << endl;
-    cout << " -file [XML-FILE]      Run simulator with XML configuration file" << endl;
-	cout << " -outdir [PATH]        Set the output directory" << endl;
-	cout << " -P [Symbol]=[VALUE]   Override the initial values of symbols from the \"Global\" section" << endl;
-    cout << " -version              Show release version" << endl;
-    cout << " -revision             Show SVN revision number" << endl;
-	cout << " -gnuplot-version      Show version of GnuPlot used" << endl;
-	cout << " -gnuplot-path [FILE]  Set the path to the GnuPlot executable" << endl;
-    cout << endl << endl;
-    }
-
-	cout << " External applications" << endl;
-	try {
-		cout << "  GnuPlot executable:   " <<  Gnuplot::get_GNUPlotPath() << endl;
-		cout << "  GnuPlot version:      " <<  Gnuplot::version() << endl;
-	}
-	catch (...) {
-		cout << "Morpheus cannot find/run GnuPlot executable" << endl;
-	}
-	cout << endl << endl;
-}
-
-
 bool init(int argc, char *argv[]) {
 	const bool allow_single_dash_long_options = true;
 	const bool allow_symbol_override_options = true;
@@ -676,6 +631,8 @@ void loadFromXML(const XMLNode xNode) {
 	
 	global_lattice = lattice_plugin->getLattice();
 	
+	CPM::init();
+	
 	// all model constituents are loaded. let's initialize them (i.e. interlink)
 	global_scope->init();
 	for (auto glob : global_section_plugins) {
@@ -699,7 +656,6 @@ void loadFromXML(const XMLNode xNode) {
 #endif
 	}
 
-	CPM::init();
 
 	xAnalysis = xNode.getChildNode("Analysis");
 	if ( ! xAnalysis.isEmpty() ) {

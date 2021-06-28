@@ -8,21 +8,47 @@ int ExpressionEvaluator<double>::expectedNumResults() const { return 1; }
 template <>
 double ExpressionEvaluator<double>::get(const SymbolFocus& focus, bool safe) const
 {
-	if (safe && !initialized)
+	if (!initialized)
 		const_cast<ExpressionEvaluator*>(this)->init();
+	
 	if (expr_is_const)
 		return const_val;
-	if (expr_is_symbol)
-		return safe || allow_partial_spec ? symbol_val->safe_get(focus) : symbol_val->get(focus);
 	
-	evaluator_cache->fetch(focus, safe || allow_partial_spec);
+	if (is_evaluating)
+		throw string("Recursive evaluation of expression '")+this->clean_expression+"'!" ;
+
+	is_evaluating = true;
 	
-	if (delay_const_expr_init) {
-		const_val = parser->Eval((void*)&focus);
-		expr_is_const = true;
-		return const_val;
+	double value;
+	if (safe || allow_partial_spec) {
+		try {
+			if (expr_is_symbol) {
+				value = symbol_val->safe_get(focus);
+			}
+			else {
+				evaluator_cache->fetch(focus, safe || allow_partial_spec);
+				value = parser->Eval((void*)&focus);
+			}
+		}
+		catch(...) {
+			is_evaluating = false;
+			throw;
+		}
 	}
-	return parser->Eval((void*)&focus);
+	else if (expr_is_symbol) {
+		value = symbol_val->get(focus);
+	}
+	else {
+		evaluator_cache->fetch(focus, safe || allow_partial_spec);
+		value = parser->Eval((void*)&focus);
+	}
+
+	if (delay_const_expr_init) {
+		const_val = value;
+		expr_is_const = true;
+	}
+	is_evaluating = false;
+	return value;
 }
 
 template <>
@@ -31,12 +57,19 @@ double ExpressionEvaluator<double>::plain_get(const SymbolFocus& focus) const
 	if (expr_is_const)
 		return const_val;
 	
+	if (is_evaluating)
+		throw string("Recursive evaluation of expression '")+this->clean_expression+"'!" ;
+	
+	is_evaluating = true;
+	double value = expr_is_symbol ? symbol_val->get(focus) : parser->Eval((void*)&focus);
+	
 	if (delay_const_expr_init) {
-		const_val = parser->Eval((void*)&focus);
+		const_val = value;
 		expr_is_const = true;
-		return const_val;
 	}
-	return parser->Eval((void*)&focus);
+	
+	is_evaluating = false;
+	return value;
 }
 
 
@@ -46,22 +79,42 @@ int ExpressionEvaluator<float>::expectedNumResults() const { return 1; }
 template <>
 float ExpressionEvaluator<float>::get(const SymbolFocus& focus, bool safe) const
 {
-	if (safe && !initialized)
-			const_cast<ExpressionEvaluator*>(this)->init();
+	if (!initialized)
+		const_cast<ExpressionEvaluator*>(this)->init();
+	
 	if (expr_is_const)
-		return const_val;;
+		return const_val;
 	
-	if (expr_is_symbol)
-		return safe || allow_partial_spec ? symbol_val->safe_get(focus) : symbol_val->get(focus);
+	if (is_evaluating)
+		throw string("Recursive evaluation of expression '")+this->clean_expression+"'!" ;
+
+	is_evaluating = true;
 	
-	evaluator_cache->fetch(focus, safe || allow_partial_spec);
+	float value;
+	if (expr_is_symbol) {
+		value = (safe || allow_partial_spec) ? symbol_val->safe_get(focus) : symbol_val->get(focus);
+	}
+	else if (!safe) {
+		evaluator_cache->fetch(focus, safe || allow_partial_spec);
+		value = parser->Eval((void*)&focus);
+	}
+	else {
+		try {
+			evaluator_cache->fetch(focus, safe || allow_partial_spec);
+			value = parser->Eval((void*)&focus);
+		}
+		catch (...) {
+			is_evaluating = false;
+			throw;
+		}
+	}
 	
 	if (delay_const_expr_init) {
-		const_val = parser->Eval((void*)&focus);
+		const_val = value;
 		expr_is_const = true;
-		return const_val;
 	}
-	return parser->Eval((void*)&focus);
+	is_evaluating = false;
+	return value;
 }
 
 template <>
@@ -70,12 +123,19 @@ float ExpressionEvaluator<float>::plain_get(const SymbolFocus& focus) const
 	if (expr_is_const)
 		return const_val;
 	
+	if (is_evaluating)
+		throw string("Recursive evaluation of expression '")+this->clean_expression+"'!" ;
+	
+	is_evaluating = true;
+	float value = expr_is_symbol ? symbol_val->get(focus) : parser->Eval((void*)&focus);
+	
 	if (delay_const_expr_init) {
-		const_val = parser->Eval((void*)&focus);
+		const_val = value;
 		expr_is_const = true;
-		return const_val;
 	}
-	return parser->Eval((void*)&focus);
+	
+	is_evaluating = false;
+	return value;
 }
 
 template <>
@@ -85,42 +145,68 @@ int ExpressionEvaluator<VDOUBLE>::expectedNumResults() const { return 3; }
 template <>
 VDOUBLE ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus, bool safe) const
 {
-	if (safe && !initialized)
+	if (!initialized)
 		const_cast<ExpressionEvaluator*>(this)->init();
 	
 	if (expr_is_const)
 		return const_val;
 	
-	if (expr_is_symbol)
-		VDOUBLE::from(symbol_val->get(focus), _notation);
+	if (is_evaluating)
+		throw string("Recursive evaluation of expression '")+this->clean_expression+"'!" ;
+
+	is_evaluating = true;
+	VDOUBLE value;
 	
-	VDOUBLE result;
-	evaluator_cache->fetch(focus, safe | allow_partial_spec);
-	if (expand_scalar_expr) {
-		evaluator_cache->setExpansionIndex(0);
-		result.x = parser->Eval((void*)&focus);
-		
-		evaluator_cache->setExpansionIndex(1);
-		result.y = parser->Eval((void*)&focus);
-		
-		evaluator_cache->setExpansionIndex(2);
-		result.z = parser->Eval((void*)&focus);
+	if (expr_is_symbol) {
+		value = (safe || allow_partial_spec) ? symbol_val->safe_get(focus) : symbol_val->get(focus);
+	}
+	else if (!safe) {
+		evaluator_cache->fetch(focus, safe || allow_partial_spec);
+		if (expand_scalar_expr) {
+			evaluator_cache->setExpansionIndex(0); value.x = parser->Eval((void*)&focus);
+			evaluator_cache->setExpansionIndex(1); value.y = parser->Eval((void*)&focus);
+			evaluator_cache->setExpansionIndex(2); value.z = parser->Eval((void*)&focus);
+		}
+		else {
+			int n;
+			double* results = parser->Eval(n,(void*)&focus);
+			if (n != expectedNumResults()) {
+				throw string("Wrong number of expressions in VectorExpression ") + this->expression;
+			}
+			value = VDOUBLE(results[0],results[1],results[2]);
+		}
 	}
 	else {
-		int n;
-		double* results = parser->Eval(n,(void*)&focus);
-		if (n != expectedNumResults()) {
-			cerr << "Wrong number of results " << n << " of 3 in VectorExpression " << this->expression << endl;
-			throw string("Wrong number of expressions in VectorExpression ") + this->expression;
+		try {
+			evaluator_cache->fetch(focus, safe || allow_partial_spec);
+			if (expand_scalar_expr) {
+				evaluator_cache->setExpansionIndex(0); value.x = parser->Eval((void*)&focus);
+				evaluator_cache->setExpansionIndex(1); value.y = parser->Eval((void*)&focus);
+				evaluator_cache->setExpansionIndex(2); value.z = parser->Eval((void*)&focus);
+			}
+			else {
+				int n;
+				double* results = parser->Eval(n,(void*)&focus);
+				if (n != expectedNumResults()) {
+					throw string("Wrong number of expressions in VectorExpression ") + this->expression;
+				}
+				value = VDOUBLE(results[0],results[1],results[2]);
+			}
 		}
-		result = VDOUBLE::from(VDOUBLE(results[0],results[1],results[2]), _notation);
+		catch (...) {
+			is_evaluating = false;
+			throw;
+		}
 	}
+	
+	value = VDOUBLE::from(value, _notation);
 	if (delay_const_expr_init) {
-		const_val = result;
+		const_val = value;
 		expr_is_const = true;
-		return const_val;
 	}
-	return result;
+	
+	is_evaluating = false;
+	return value;
 }
 
 template <>
@@ -129,32 +215,36 @@ VDOUBLE ExpressionEvaluator<VDOUBLE>::plain_get(const SymbolFocus& focus) const
 	if (expr_is_const)
 		return const_val;
 	
-	VDOUBLE result;
-	if (expand_scalar_expr) {
-		evaluator_cache->setExpansionIndex(0);
-		result.x = parser->Eval((void*)&focus);
-		
-		evaluator_cache->setExpansionIndex(1);
-		result.y = parser->Eval((void*)&focus);
-		
-		evaluator_cache->setExpansionIndex(2);
-		result.z = parser->Eval((void*)&focus);
+	if (is_evaluating)
+		throw string("Recursive evaluation of expression '")+this->clean_expression+"'!" ;
+	
+	is_evaluating = true;
+	VDOUBLE value;
+	if (expr_is_symbol) {
+		value = symbol_val->get(focus);
+	}
+	else if(expand_scalar_expr) {
+		evaluator_cache->fetch(focus, false);
+		evaluator_cache->setExpansionIndex(0); value.x = parser->Eval((void*)&focus);
+		evaluator_cache->setExpansionIndex(1); value.y = parser->Eval((void*)&focus);
+		evaluator_cache->setExpansionIndex(2); value.z = parser->Eval((void*)&focus);
 	}
 	else {
+		evaluator_cache->fetch(focus, false);
 		int n;
 		double* results = parser->Eval(n,(void*)&focus);
 		if (n != expectedNumResults()) {
-			cerr << "Wrong number of results " << n << " of 3 in VectorExpression " << this->expression << endl;
 			throw string("Wrong number of expressions in VectorExpression ") + this->expression;
 		}
-		result = VDOUBLE::from(VDOUBLE(results[0],results[1],results[2]), _notation);
+		value = VDOUBLE(results[0],results[1],results[2]);
 	}
+	value = VDOUBLE::from(value, _notation);
 	if (delay_const_expr_init) {
-		const_val = result;
+		const_val = value;
 		expr_is_const = true;
-		return const_val;
 	}
-	return result;
+	is_evaluating = false;
+	return value;
 }
 
 /* Implementation of math functions registered in the parser */

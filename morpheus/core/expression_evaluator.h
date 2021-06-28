@@ -140,6 +140,7 @@ private:
 	
 	unique_ptr<mu::Parser> parser;
 	SymbolBase::Flags expr_flags;
+	mutable bool is_evaluating;
 	bool expand_scalar_expr;
 	// the value cache
 	shared_ptr<EvaluatorCache> evaluator_cache;
@@ -277,6 +278,7 @@ ExpressionEvaluator< T >::ExpressionEvaluator(string expression, const Scope* sc
 	evaluator_cache = make_shared<EvaluatorCache>(scope, partial_spec);
 	expr_is_const = false;
 	expr_is_symbol = false;
+	is_evaluating = false;
 }
 
 template <class T>
@@ -292,6 +294,7 @@ ExpressionEvaluator< T >::ExpressionEvaluator(string expression, shared_ptr<Eval
 	scope = cache->getScope();
 	expr_is_const = false;
 	expr_is_symbol = false;
+	is_evaluating = false;
 }
 
 // How can you duplicate a set of ExpressionEvaluators that share the same cache?? this is required by systems.
@@ -315,6 +318,7 @@ ExpressionEvaluator<T>::ExpressionEvaluator(const ExpressionEvaluator<T> & other
 	expr_flags = other.expr_flags;
 	expand_scalar_expr = other.expand_scalar_expr;
 	depend_symbols = other.depend_symbols;
+	is_evaluating = false;
 	
 	
 	// explicit copies

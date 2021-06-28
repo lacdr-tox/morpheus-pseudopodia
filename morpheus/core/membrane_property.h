@@ -81,12 +81,22 @@ private:
 /// Container class holding membrane property data
 class MembraneProperty : public AbstractProperty {
 public:
-	MembraneProperty(MembranePropertyPlugin* parent, shared_ptr<PDE_Layer> membrane) : AbstractProperty(), initialized(false), parent(parent), membrane_pde(membrane) {};
+	MembraneProperty(MembranePropertyPlugin* parent, shared_ptr<PDE_Layer> membrane) : AbstractProperty(), membrane_pde(membrane), initialized(false), initializing(false), parent(parent) {};
 	const MembraneProperty& operator=(const MembraneProperty& other) { membrane_pde->data = other.membrane_pde->data; return *this; }
 	shared_ptr<AbstractProperty> clone() const override {
 		return make_shared<MembraneProperty>(parent,membrane_pde->clone());
 	};
-	void init(const SymbolFocus& f) override { if (!initialized)  { initialized = true; membrane_pde->init(f); } }
+	void init(const SymbolFocus& f) override { 
+		if (!initialized)  { 
+			if (initializing) {
+				throw string("Detected circular dependencies in intitialization of symbol '") + parent->getSymbol() + "'!";
+			}
+			initializing = true;
+			membrane_pde->init(f);
+			initializing = false;
+			initialized = true;
+		} 
+	}
 
 	const string& symbol() const override { return  parent->getSymbol(); };
 
@@ -127,7 +137,7 @@ public:
 	shared_ptr<PDE_Layer> membrane_pde;
 	
 private:
-	bool initialized;
+	bool initialized; bool initializing;
 	MembranePropertyPlugin* parent;
 	friend class MembranePropertySymbol;
 };
@@ -147,11 +157,30 @@ public:
 	
 	typename TypeInfo<double>::SReturn get(const SymbolFocus & f) const override { return getProperty(f)->membrane_pde->get(f.membrane_pos()); };
 	
-	typename TypeInfo<double>::SReturn safe_get(const SymbolFocus & f) const override { 
-		auto p = getProperty(f);
-		if (!p->initialized) p->init(f);
+	typename TypeInfo<double>::SReturn safe_get(const SymbolFocus& f) const override {
+		if (!this->flags().initialized) {
+			this->safe_init();
+		}
+		
+		auto p=getProperty(f); 
+		if (!p->initialized)  {
+			if (p->initializing) {
+				throw string("Detected circular dependencies in evaluation of symbol '") + this->name() + "'!";
+			}
+			p->initializing = true;
+			p->init(f);
+			p->initializing = false;
+			p->initialized = true;
+		}
 		return p->membrane_pde->get(f.membrane_pos());
-	};
+	}
+	
+	void init() override {
+		for ( auto cell_id : celltype->getCellIDs() ) {
+			SymbolFocus f(cell_id);
+			getProperty(f)->init(f);
+		}
+	}
 	
 	void set(const SymbolFocus & f, double val) const override { getProperty(f)->membrane_pde->set(f.membrane_pos(),val); };
 	

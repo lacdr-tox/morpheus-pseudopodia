@@ -242,7 +242,6 @@ public:
 		default_val = dynamic_pointer_cast<const SymbolAccessorBase<T> >(d);
 		for (auto& s : celltype_accessors) if (!s) s = default_val;
 		
-		
 		if (_description.empty())
 			_description = d->description();
 		combineFlags(default_val->flags());
@@ -251,19 +250,32 @@ public:
 	void init(int n_cts) override {
 		celltype_accessors.resize(n_cts, default_val);
 		this->flags().partially_defined = false;
-		for (auto& ct : celltype_accessors) { if ( !ct ) this->flags().partially_defined=true; }
+		for (auto& ct : celltype_accessors) { 
+			if ( !ct ) {
+				this->flags().partially_defined=true;
+			}
+		}
 		if (this->flags().partially_defined)
 			cout << "Symbol '" << this->name()  << "' is only partially defined " << endl;
 	}
 	
-	typename TypeInfo<T>::SReturn get(const SymbolFocus & f) const override {
-		assert(celltype_accessors[f.celltype()]);
-		return celltype_accessors[f.celltype()]->get(f);
+	void init() override {
+		if (default_val) default_val->safe_init();
+		for (auto& ct : celltype_accessors) { 
+			if ( ct ) ct->safe_init(); 
+		}
 	}
-	typename TypeInfo<T>::SReturn safe_get(const SymbolFocus & f) const override{
-		if (!celltype_accessors[f.celltype()])
-			throw SymbolError(SymbolError::Type::InvalidPartialSpec,"Symbol not defined in subscope");
-		return celltype_accessors[f.celltype()]->safe_get(f);
+	
+	typename TypeInfo<T>::SReturn get(const SymbolFocus & f) const override {
+		if ( !celltype_accessors[f.celltype()] ) {
+			if (default_val) {
+				celltype_accessors[f.celltype()] = default_val;
+			}
+			else {
+				throw SymbolError(SymbolError::Type::InvalidPartialSpec, string("Symbol '") + name() + "' not defined in CellType '" + to_str(f.celltype()) + "'");
+			}
+		}
+		return celltype_accessors[f.celltype()]->get(f);
 	}
 
 	vector<const Scope*> getSubScopes() const override {
@@ -295,7 +307,7 @@ private:
 	}
 	bool initialized=false;
 	
-	vector<SymbolAccessor<T> > celltype_accessors;
+	mutable vector<SymbolAccessor<T> > celltype_accessors;
 	string _description;
 	SymbolAccessor<T> default_val;
 };
@@ -332,17 +344,8 @@ public:
 		}
 		return 0;
 	};
-	typename TypeInfo<double>::SReturn safe_get(const SymbolFocus & f) const override {
-		switch(comp) {
-			case Component::X: return v_sym->safe_get(f).x;
-			case Component::Y: return v_sym->safe_get(f).y;
-			case Component::Z: return v_sym->safe_get(f).z;
-			case Component::PHI: return v_sym->safe_get(f).angle_xy();
-			case Component::THETA: return v_sym->safe_get(f).to_radial().y;
-			case Component::R: return v_sym->safe_get(f).abs();
-		}
-		return 0;
-	};
+	void init() override { v_sym->safe_init(); };
+
 private: 
 	Component comp;
 	SymbolAccessor<VDOUBLE> v_sym;
