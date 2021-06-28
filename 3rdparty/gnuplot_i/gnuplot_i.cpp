@@ -41,6 +41,8 @@ std::string Gnuplot::m_sGNUPlotFileName = "gnuplot";
 std::string Gnuplot::m_sGNUPlotPath = "";
 #endif
 
+bool Gnuplot::enabled = true;
+
 //----------------------------------------------------------------------------------
 //
 // define static member function: set Gnuplot path manual
@@ -77,6 +79,8 @@ std::string Gnuplot::get_GNUPlotPath() {
 string Gnuplot::get_gnuplot_out(const string& cmd, vector<string> args ) 
 {
 	// if gnuplot not available
+	if (!enabled) return "";
+	
 	if (!Gnuplot::get_program_path())
 	{
 		throw GnuplotException("Can't find gnuplot");
@@ -113,6 +117,7 @@ string Gnuplot::get_gnuplot_out(const string& cmd, vector<string> args )
 
 std::set<std::string> Gnuplot::get_terminals() 
 {
+	if (!enabled) return {};
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__)
 	std::set<std::string> fixed_terminals = {"wxt","windows","jpeg","svg","pngcairo","postscript","pdfcairo","gif"};
 	return fixed_terminals;
@@ -151,6 +156,8 @@ std::set<std::string> Gnuplot::get_terminals()
 
 std::string Gnuplot::get_screen_terminal()
 {
+	if (!enabled) return "";
+	
 	std::vector<string> screen_terminals = {"qt","windows","aqua","wxt","x11"};
 	auto terminals = get_terminals();
 	for (const auto& term : screen_terminals) {
@@ -269,6 +276,7 @@ Gnuplot::~Gnuplot()
 //
 Gnuplot& Gnuplot::cmd(const std::string &cmdstr)
 {
+	if (!enabled) return *this;
 	if (gnuplot_command_log)
 		fputs((cmdstr+"\n").c_str(), gnuplot_command_log.get());
 	if (process)
@@ -284,18 +292,19 @@ Gnuplot& Gnuplot::cmd(const std::string &cmdstr)
 //
 Gnuplot::Gnuplot()
 {
+	//
+	// open pipe
+	//
+	static int instance_counter=0;
+	instance_counter++;
+	if (!enabled) return;
+	
 	// if gnuplot not available
 	if (!Gnuplot::get_program_path())
 	{
 		cerr << "Can't find gnuplot. Please install gnuplot and adjust the PATH accordingly.";
 		throw GnuplotException("Can't find gnuplot");
 	}
-
-
-	//
-	// open pipe
-	//
-	static int instance_counter=0;
 	stringstream gnuplot_exec;
 	gnuplot_exec << "\"" << Gnuplot::m_sGNUPlotPath << "\" 2> gnuplot_error" << instance_counter << ".log";
     // std::string tmp = std::string("\"") + Gnuplot::m_sGNUPlotPath + "/" + Gnuplot::m_sGNUPlotFileName + "\" 2> gnuplot_error";
@@ -324,7 +333,6 @@ Gnuplot::Gnuplot()
         throw GnuplotException("Couldn't open connection to gnuplot");
     }
 
-	instance_counter++;
     return;
 }
 

@@ -342,6 +342,7 @@ bool init(int argc, char *argv[]) {
 		("revision,r", "Print morpheus revision.")
 		("gnuplot-path", po::value<std::string>(),"Set path to gnuplot executable.")
 		("gnuplot-version","Print gnuplot version.")
+		("no-gnuplot","Disable gnuplot support.")
 		("file,f", po::value<std::string>(),"MorpheuML model to simulate.")
 		("set,set-symbol,s", po::value<std::vector<std::string>>(), "Override initial value of global symbol. Use assignment syntax [symbol=value].")
 		("perf-stats", "Generate performance stats in json format.")
@@ -377,7 +378,11 @@ bool init(int argc, char *argv[]) {
 		cout << "Version: " << MORPHEUS_VERSION_STRING << endl;
 		return false;
 	}
-
+	
+	if (cmd_line.count("no-gnuplot")) {
+		Gnuplot::setEnabled(false);
+	}
+	
 	if (cmd_line.count("gnuplot-path")) {
 		Gnuplot::set_GNUPlotPath(cmd_line["gnuplot-path"].as<string>());
 	}

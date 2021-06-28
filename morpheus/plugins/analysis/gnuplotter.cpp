@@ -1156,8 +1156,8 @@ void Gnuplotter::loadFromXML(const XMLNode xNode, Scope* scope)
 }
 
 void Gnuplotter::init(const Scope* scope) {
+	if (!Gnuplot::isEnabled()) return;
 	AnalysisPlugin::init(scope);
-	
 	// Check gnuplot has cairo available
 	auto gnu_terminals = Gnuplot::get_terminals();
 	if (gnu_terminals.count("pngcairo")==0 ) {
@@ -1229,7 +1229,7 @@ void Gnuplotter::init(const Scope* scope) {
 
 void Gnuplotter::analyse(double time) {
 // 		binary=false; // override binary switch
-	if (plots.empty())
+	if (plots.empty() || !gnuplot)
 		return;
 	
 	if ( ! pipe_data ) {

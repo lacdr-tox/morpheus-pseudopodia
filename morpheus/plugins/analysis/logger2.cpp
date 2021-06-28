@@ -75,17 +75,16 @@ void Logger::loadFromXML(const XMLNode xNode, Scope* scope){
 	}
 
 	// plots
-	XMLNode xPlots = xNode.getChildNode("Plots");
-	for (uint i=0; i<xPlots.nChildNode("Plot"); i++) {
-// 		cout << "Logger::loadFromXML: Line " << i << endl;
-// 		cout << "Number of Y-axis Symbols = " << xPlots.getChildNode("Plot",0).getChildNode("Y-axis",0).nChildNode("Symbol") << endl;
-		shared_ptr<LoggerPlotBase> p( new LoggerLinePlot(*this, string("Plots/Plot[") + to_str(i) + "]") );
-		plots.push_back(p);
-	}
-	for (uint i=0; i<xPlots.nChildNode("SurfacePlot"); i++) {
-// 		cout << "Logger::loadFromXML: SurfacePlot " << i << endl;
-		shared_ptr<LoggerPlotBase> p( new LoggerMatrixPlot(*this, string("Plots/SurfacePlot[") + to_str(i) + "]") );
-		plots.push_back(p);
+	if (Gnuplot::isEnabled()) {
+		XMLNode xPlots = xNode.getChildNode("Plots");
+		for (uint i=0; i<xPlots.nChildNode("Plot"); i++) {
+			shared_ptr<LoggerPlotBase> p( new LoggerLinePlot(*this, string("Plots/Plot[") + to_str(i) + "]") );
+			plots.push_back(p);
+		}
+		for (uint i=0; i<xPlots.nChildNode("SurfacePlot"); i++) {
+			shared_ptr<LoggerPlotBase> p( new LoggerMatrixPlot(*this, string("Plots/SurfacePlot[") + to_str(i) + "]") );
+			plots.push_back(p);
+		}
 	}
 	
 	AnalysisPlugin::loadFromXML(xNode,scope);
