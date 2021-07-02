@@ -597,10 +597,11 @@ void setUpdate(CPM::Update& update) {
 }
 
 void wipe() {
-	celltypes.clear();
-	celltype_names.clear();
-	CellType::storage.wipe();
 	cpm_sampler.reset();
+	celltype_names.clear();
+	celltypes.clear();
+	
+	CellType::storage.wipe();
 	global_update.reset();
 	layer.reset();
 }

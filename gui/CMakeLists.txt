@@ -99,7 +99,7 @@ ENDIF()
 
 FIND_PACKAGE(ZLIB REQUIRED)
 
-add_subdirectory(icons)
+#add_subdirectory(icons)
 
 #OPTION(MORPHEUS_REMOTE "Enable support for remote computing resources. Depends on libSSH." OFF)
 

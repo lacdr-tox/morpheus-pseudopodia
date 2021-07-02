@@ -472,6 +472,7 @@ public:
 				_accessor = local_scope->findSymbol<ValType>(symbol_name, partial_spec_val);
 			else
 				_accessor = local_scope->findSymbol<ValType>(symbol_name);
+			_accessor->safe_init();
 		}
 	}
 	
@@ -552,6 +553,7 @@ public:
 			if (! local_scope)
 				throw string("PluginParameter missing scope");
 			_accessor = local_scope->findRWSymbol<ValType>(symbol_name);
+			_accessor->safe_init();
 		}
 	}
 	void setScope(const Scope* scope) { local_scope = scope; }
@@ -636,6 +638,7 @@ public:
 	const PluginParameter2& operator=( const PluginParameter2& ) = delete;
 	
 	void setXMLPath(string xml_path) { this->xml_path = xml_path; }
+	void SetFallbackXMLPath(string xml_path) { this->fallback_xml_path = xml_path; }
 	string XMLPath() const override { return this->xml_path; }
 	void loadFromXML(XMLNode node, const Scope* scope) override {
 		stored_node = node;
@@ -646,7 +649,14 @@ public:
 			}
 			
 			if (! getXMLAttribute(node, xml_path, raw_string,true)) {
-				XMLValueInterpreter<T, RequirementPolicy>::setMissing();
+				if (!fallback_xml_path.empty()) {
+					if (! getXMLAttribute(node, fallback_xml_path, raw_string,true)) {
+						XMLValueInterpreter<T, RequirementPolicy>::setMissing();
+					}
+				}
+				else {
+					XMLValueInterpreter<T, RequirementPolicy>::setMissing();
+				}
 			}
 			else {
 				XMLValueInterpreter<T, RequirementPolicy>::setStringVal(raw_string);
@@ -679,7 +689,7 @@ public:
 	set<SymbolDependency> getOutputSymbols() const override { return XMLValueInterpreter<T, RequirementPolicy>::getOutputSymbols(); } 
 
 private:
-	string xml_path;
+	string xml_path, fallback_xml_path;
 	XMLNode stored_node;
 };
 
