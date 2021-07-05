@@ -2,7 +2,7 @@
 
 JobView::JobView()
 {
-    te_output = new QTextEdit(this);
+    te_output = new QPlainTextEdit(this);
     te_output->setReadOnly(true);
    // te_output->setFont( QFont( "DejaVu Sans Mono" ) );
     QFont font("Monospace");
@@ -105,12 +105,12 @@ JobView::JobView()
 // 	QMovie* movie = new QMovie(this);
 //     qDebug() << "QMOVIE: SUPPORTED FORMATS: " << movie->supportedFormats();
 
-	textPreview = new QTextEdit();
+	textPreview = new QPlainTextEdit();
 	textPreview->setBackgroundRole(QPalette::Base);
 	textPreview->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 	textPreview->setReadOnly(true );
 	textPreview->setVisible(true);
-	textPreview->setFontFamily("Courier");
+// 	textPreview->setFontFamily("Courier");
 	textPreview->setWordWrapMode(QTextOption::WordWrap);
 
 	
@@ -310,7 +310,7 @@ void JobView::updateSweepData( QString filename ) {
         QString text_sweepsummary("");
         text_sweepsummary += in.readAll();
         sweepsummary.close();
-        te_output->setText(text_sweepsummary);
+        te_output->setPlainText(text_sweepsummary);
     }
     else{
         qDebug() << "JobView::updateSweepData: Could not open " << filename;
@@ -336,8 +336,9 @@ void JobView::updateJobData() {
 		
 		if (text_shown == 0)
 			te_output->setPlainText(output);
-		else 
-			te_output->append(output.right(output.size()-text_shown));
+		else {
+			te_output->appendPlainText(output.right(output.size()-text_shown));
+		}
 		text_shown = output.size();
 		
 		if (scroll_down)

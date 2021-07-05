@@ -63,7 +63,7 @@ private:
     SweepDetails current_sweep;
     bool view_sweep;
 
-    QTextEdit *te_output; /*!< Textedit which shows the output of the selected process. */
+    QPlainTextEdit *te_output; /*!< Textedit which shows the output of the selected process. */
     int text_shown;
     QFileSystemModel* dir_model;
 	QItemSelectionModel* selection_model;
@@ -74,7 +74,7 @@ private:
 	QStackedWidget *previewStack;
 	QGraphicsView* imagePreview;
 	QTimer image_resize_timer;
-	QTextEdit* textPreview;
+	QPlainTextEdit* textPreview;
     QAction *stop_action, *open_terminal_action, *open_output_action, *make_movie_action;
     QLabel *title;
 	QGroupBox *gr_params/*, *gr_preview*/;
