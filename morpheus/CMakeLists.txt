@@ -51,7 +51,7 @@ ENDIF()
 ## External Package dependencies
 ################################
 
-if (MORPHEUS_STATIC_BUILD)
+if (MORPHEUS_STATIC_BUILD OR NOT MORPHEUS_TESTS)
 	set(Boost_USE_STATIC_LIBS ON)
 endif()
 FIND_PACKAGE(Boost COMPONENTS program_options REQUIRED)
