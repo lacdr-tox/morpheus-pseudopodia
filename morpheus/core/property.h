@@ -195,7 +195,9 @@ public:
 		if (! initialized) {
 // 			cout << "Initializing property " << this->symbol() << endl;
 			if (initializing) {
-				throw string("Detected circular dependencies in evaluation of symbol '") + this->symbol() + "'!";
+				throw MorpheusException(
+					string("Detected circular dependencies in evaluation of symbol '") + this->symbol() + "'!", 
+					parent->getXMLNode());
 			}
 			else
 				initializing = true;

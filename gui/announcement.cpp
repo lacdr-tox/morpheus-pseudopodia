@@ -9,7 +9,7 @@ AnnouncementDialog::AnnouncementDialog(QWidget* parent)
 	QSettings settings;
 	settings.beginGroup("preferences");
 	service_url = settings.value("announcement_url", service_url).toString();
-	announcement_seen = settings.value("announcement_seen",-1).toInt();
+	announcement_seen = settings.value("announcement_seen",2).toInt();
 	uuid = settings.value("uuid", "").toString();
 	if (uuid.isEmpty()) {
 		uuid = QUuid::createUuid().toString().remove('{').remove('}');
@@ -80,7 +80,7 @@ void AnnouncementDialog::next() {
 }
 
 void AnnouncementDialog::setIndex(int idx) {
-	if (announcements.count(idx)) {
+	if (announcements.contains(idx)) {
 // 		qDebug() << "Setting announcement " << idx << " = " << announcements[idx];
 		announce_idx = idx;
 		web_view->setUrl(announcements[idx]);
@@ -118,34 +118,26 @@ void AnnouncementDialog::replyReceived()
 		setIndex(0);
 	}
 	else {
-		// TODO QT5 use QJsonDocument
-		// For now, we know how the document looks like :-))
-		// [{"id":1,"url":"imc.zih.tu-dresden.de/morpheus/announcement0.html"}]
-		QRegExp json_match("\"id\":(\\d+),\"url\":\"(.+)\"");
-		json_match.setMinimal(true);
-		QString data = reply->readAll();
-		int pos = 0;
-		while ((pos = json_match.indexIn(data,pos)) !=-1) {
-			auto res = json_match.capturedTexts();
-			announcements[res[1].toInt()] = res[2];
-			pos += json_match.matchedLength();
-// 				qDebug() << res[1] << " -> " << res[2];
-		}
-		
+		auto json_announcements = QJsonDocument::fromJson(reply->readAll());
+		for ( const auto& a : json_announcements.array() ) {
+			auto ao = a.toObject();
+			announcements[ao["id"].toInt()] = ao["url"].toString();
+			if (ao.contains("version")) {
+				if (ao["version"] == config::getVersion()) {
+					announcement_seen = max(ao["id"].toInt(), announcement_seen );
+				}
+			}
+		};
+
 		if ( announcements.isEmpty() ) {
 			announcements[0] = "qrc:///no_announcement.html";
 			setIndex(0);
 		} else {
 			auto it = announcements.lowerBound(announcement_seen);
-			if (it == announcements.end()) {
-// 				qDebug() << "All announcements seen";
+			if (it.key() == announcement_seen) it++;
+			if (it == announcements.end() ) {
 				have_new_announcements = false;
 				setIndex(announcements.count()-1);
-			}
-			else if (it+1 == announcements.end()) {
-// 				qDebug() << "All but one announcements seen";
-				have_new_announcements = false;
-				setIndex(it.key());
 			}
 			else {
 				have_new_announcements = true;

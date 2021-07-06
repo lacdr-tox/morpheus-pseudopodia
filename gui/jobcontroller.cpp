@@ -436,7 +436,7 @@ void JobView::openTerminal() {
 
 void JobView::fileClicked(QModelIndex idx) {
     QString file_name = dir_model->fileName(idx);
-	qDebug() << "fileClicked: " << QString(file_name);
+// 	qDebug() << "fileClicked: " << QString(file_name);
     if (file_name.endsWith(".xml") || file_name.endsWith(".xml.gz")) {
         if (QMessageBox::question(this, "Open Snapshot","Do you want to open the snapshot as a new model?", QMessageBox::Yes, QMessageBox::No ) == QMessageBox::Yes){
             config::openModel(dir_model->filePath(idx));
