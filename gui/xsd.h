@@ -86,7 +86,6 @@ public:
 		bool initialized;
 		
 		bool is_abstract;
-		bool is_scheduled;
 		QString pluginClass;
 		QString documentation;
 		
@@ -102,7 +101,6 @@ public:
 
     const static QStringList dynamicTypeDefs;
     const static QStringList dynamicTypeRefs;
-	const static QStringList scheduledTypes;
     void registerEnumValue(QString simple_type, QString value); /*!< Registers a new value for the given simpletype. */
     void removeEnumValue(QString simple_type, QString value); /*!< Removes the value from the given simpletype. */
 

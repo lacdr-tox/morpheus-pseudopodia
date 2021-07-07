@@ -11,11 +11,6 @@ const QStringList XSD::dynamicTypeDefs = QStringList() << "cpmCellTypeDef" << "c
 		<< "cpmWritableDoubleSymbolDef" <<  "cpmWritableDoubleVectorSymbolDef";
 const QStringList XSD::dynamicTypeRefs = QStringList() << "cpmCellTypeRef" << "cpmDoubleSymbolRef" << "cpmVectorSymbolRef" << "cpmQueueSymbolRef"
 		<<  "cpmWritableDoubleSymbolRef" << "cpmWritableDoubleVectorSymbolRef";
-const QStringList XSD::scheduledTypes = QStringList() <<  "Event" << "DiscreteSystem" << "System" << "CPMType" << "DelayProperty" << "Diffusion"
-		<< "VectorEquation" << "Equation" << "Mapper" << "NeighborhoodReporter" << "NeighborhoodVectorReporter" << "MotilityReporter"
-		<< "CellTracker" << "ContactLogger" << "Gnuplotter" << "Logger" << "External" << "HistogramLogger" << "VTKPlotter" << "TiffPlotter"
-		<< "CellDivision" << "AddCell" << "ChangeCellType" << "InsertMedium"
-		<< "Chemotaxis" << "DirectedMotion" << "FreezeMotion" << "HaptoTaxis" << "Protrusion" << "PersistentMotion";
 
 XSD::XSD() {
 
@@ -420,10 +415,6 @@ QSharedPointer<XSD::ComplexTypeInfo> XSD::parseComplexType(QDomNode xsdNode) {
 		info->content_type = ComplexTypeInfo::ComplexContent;
 	else
 		info->content_type = ComplexTypeInfo::SimpleContent;
-	
-	info->is_scheduled = scheduledTypes.contains(info->name);
-	
-	
 	
 	if (! init_phase) {
 		initComplexType(info);

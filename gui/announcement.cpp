@@ -119,11 +119,12 @@ void AnnouncementDialog::replyReceived()
 	}
 	else {
 		auto json_announcements = QJsonDocument::fromJson(reply->readAll());
+		auto my_version = QVersionNumber::fromString(config::getVersion());
 		for ( const auto& a : json_announcements.array() ) {
 			auto ao = a.toObject();
 			announcements[ao["id"].toInt()] = ao["url"].toString();
-			if (ao.contains("version")) {
-				if (ao["version"] == config::getVersion()) {
+			if (ao.contains("release")) {
+				if (QVersionNumber::fromString(ao["release"].toString()) <= my_version) {
 					announcement_seen = max(ao["id"].toInt(), announcement_seen );
 				}
 			}
