@@ -28,7 +28,7 @@ Symbol with a variable scalar field, mapped to a cell membrane that associates a
 
 A MembraneProperty is a circular (2D) or spherical (3D) lattice mapped to the surface nodes of a cell using polar coordinates.
 
-- \b value: initial condition for the scalar field. May be given as symbolic expression. Use the \b SpaceSymbol of the \ref ML_MembraneLattice to define spatial the distribution.
+- \b value: \b initial condition for the scalar field. May be given as a \ref MathExpressions. Use the \b SpaceSymbol of the \ref ML_MembraneLattice to define spatial the distribution.
 
 Optionally, a \b Diffusion rate may be specified.
 

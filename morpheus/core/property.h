@@ -52,7 +52,7 @@ Syntax is comma-separated as given by \b notation :
 \ingroup ML_CellType
 \ingroup Symbols
 
-Symbol with a variable scalar value. The initial value is given by a \ref MathExpressions.
+Symbol with a variable scalar value. The \b initial value is given by the \b value attribute as a \ref MathExpressions.
 **/
 /**
 \defgroup ML_VariableVector VariableVector
@@ -60,7 +60,7 @@ Symbol with a variable scalar value. The initial value is given by a \ref MathEx
 \ingroup ML_CellType
 \ingroup Symbols
 
-Symbol with a variable 3D vector value. The initial value is given by a \ref MathExpressions.
+Symbol with a variable 3D vector value. The \b initial value is given by the \b value attribute as a \ref MathExpressions.
 
 Syntax is comma-separated as given by \b notation :
   - orthogonal - x,y,z
@@ -73,7 +73,7 @@ Syntax is comma-separated as given by \b notation :
 \ingroup ML_Global
 \ingroup Symbols
 
-Symbol with a scalar value and a \b delay time until an assigned values become current. The initial value and history is given by a \ref MathExpressions.
+Symbol with a scalar value and a \b delay time until an assigned values become current. The \b initial value and \b history is given by the \b value attribute as a time dependent \ref MathExpressions.
 **/
 
 /**
@@ -82,7 +82,7 @@ Symbol with a scalar value and a \b delay time until an assigned values become c
 \ingroup Symbols
 
 
-Symbol with a cell-bound, variable scalar value. The initial value is given by a \ref MathExpressions and may contain stochasticity to create diversity.
+Symbol with a cell-bound, variable scalar value. The \b initial value is given by the \b value attribute as a \ref MathExpressions and may  depend on the \b cell.center and contain stochasticity to create population diversity.
 **/
 
 /**
@@ -91,7 +91,7 @@ Symbol with a cell-bound, variable scalar value. The initial value is given by a
 \ingroup Symbols
 
 
-Symbol with a cell-bound scalar value and a \b delay time until values become current. The initial value and history is given by a \ref MathExpressions
+Symbol with a cell-bound scalar value and a \b delay time until values become current. The \b initial value and \b history is given by the \b value attribute as a time dependent \ref MathExpressions
 **/
 
 /**
@@ -99,7 +99,7 @@ Symbol with a cell-bound scalar value and a \b delay time until values become cu
 \ingroup ML_CellType
 \ingroup Symbols
 
-Symbol with cell-bound, variable 3D vector value. The initial value and history is  given by a \ref MathExpressions.
+Symbol with cell-bound, variable 3D vector value. The \b initial value is given by the \b value attribute as a \ref MathExpressions and may  depend on the \b cell.center and contain stochasticity to create population diversity.
 
 Syntax is comma-separated as given by \b notation :
   - orthogonal - x,y,z

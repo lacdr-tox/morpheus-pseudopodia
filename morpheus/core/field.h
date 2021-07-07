@@ -43,8 +43,7 @@ A \b Field defines a variable scalar field, associating a scalar value to every 
 Spatio-temporal dynamics can be implemented explicitly by using an \ref ML_Equation, an \ref ML_Event or by using \ref ML_DiffEqn.
 In addition, homogeneous \b Diffusion can optionally be specified.
 
-
-- \b value: initial condition for the scalar field. May be given as expression, also depending on the  spatial position (see \ref ML_Space)
+- \b value: \b initial condition for the scalar field. May be given as \ref MathExpressions, also depending on the spatial position (see \ref ML_Space)
 
 \b BoundaryValue defines the value of the \ref ML_Field at the respective boundary.
 - \b boundary: specifies a boundery with either constant or no-flux boundary condition (\ref ML_Lattice)
@@ -74,7 +73,7 @@ Spatio-temporal dynamics can be implemented explicitly by using a \ref ML_Vector
 The \ref ML_Space symbol allows the initial expression to directly depend on the spatial position. 
 
 
-- \b value: initial condition for the vector field. May be given as expression.
+- \b value: \b initial condition for the vector field. May be given as space-dependent \ref MathExpressions.
 
 **/
 
