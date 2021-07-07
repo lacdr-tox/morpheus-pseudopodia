@@ -1,5 +1,16 @@
 # ChangeLog
 
+## Release 2.2.4
+
+### GUI
+  * Reduce memory consumption of text preview in the job view
+  
+### Simulator
+  * Rework circular reference detection in the initialisation cycle
+  * Fix color bar limits in Logger Plots
+  * Add command line option to skip any gnuplot tasks (thus does not choke on missing gnuplot)
+
+
 ## Release 2.2.3
 
 ### GUI
