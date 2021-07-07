@@ -1358,6 +1358,45 @@ void LoggerLinePlot::plot()
 		ss << "set grid;\n";
 	}
 
+	string min_x = "*";
+	string max_x = "*";
+	string min_y = "*";
+	string max_y = "*";
+	string min_cb = "*";
+	string max_cb = "*";
+	
+	ostringstream oss;
+	if( axes.x.min.isDefined() ){
+		oss.clear(); oss.str("");
+		oss << axes.x.min.get(SymbolFocus());
+		min_x = oss.str();
+	}
+	if( axes.x.max.isDefined() ){
+		oss.clear(); oss.str("");
+		oss << axes.x.max.get(SymbolFocus());
+		max_x = oss.str();
+	}
+	if( axes.y.min.isDefined() ){
+		oss.clear(); oss.str("");
+		oss << axes.y.min.get(SymbolFocus());
+		min_y = oss.str();
+	}
+	if( axes.y.max.isDefined() ){
+		oss.clear(); oss.str("");
+		oss << axes.y.max.get(SymbolFocus());
+		max_y = oss.str();
+	}
+	if( axes.cb.min.isDefined() ){
+		oss.clear(); oss.str("");
+		oss << axes.cb.min.get(SymbolFocus());
+		min_cb = oss.str();
+	}
+	if( axes.cb.max.isDefined() ){
+		oss.clear(); oss.str("");
+		oss << axes.cb.max.get(SymbolFocus());
+		max_cb = oss.str();
+	}
+	
 	if( !decorate() ){
 		ss << "unset xlabel;\n";
 		ss << "unset ylabel;\n";
@@ -1431,7 +1470,8 @@ void LoggerLinePlot::plot()
 					int min = 0;
 					if (axes.cb.min.isDefined())
 						min = axes.cb.min(SymbolFocus::global);
-					ss << "set cbrange["<< min << ":" << min+count << "];\n";
+					min_cb = to_str(min);
+					max_cb = to_str(min+count);
 				}
 			}
 			if( axes.cb.palette_reverse() )
@@ -1454,46 +1494,8 @@ void LoggerLinePlot::plot()
 		ss << "set log y;\n";
 	if(axes.cb.logarithmic())
 		ss << "set log cb;\n";
-
-	string min_x = "*";
-	string max_x = "*";
-	string min_y = "*";
-	string max_y = "*";
-	string min_cb = "*";
-	string max_cb = "*";
 	
-	ostringstream oss;
-	if( axes.x.min.isDefined() ){
-		oss.clear(); oss.str("");
-		oss << axes.x.min.get(SymbolFocus());
-		min_x = oss.str();
-	}
-	if( axes.x.max.isDefined() ){
-		oss.clear(); oss.str("");
-		oss << axes.x.max.get(SymbolFocus());
-		max_x = oss.str();
-	}
-	if( axes.y.min.isDefined() ){
-		oss.clear(); oss.str("");
-		oss << axes.y.min.get(SymbolFocus());
-		min_y = oss.str();
-	}
-	if( axes.y.max.isDefined() ){
-		oss.clear(); oss.str("");
-		oss << axes.y.max.get(SymbolFocus());
-		max_y = oss.str();
-	}
-	if( axes.cb.min.isDefined() ){
-		oss.clear(); oss.str("");
-		oss << axes.cb.min.get(SymbolFocus());
-		min_cb = oss.str();
-	}
-	if( axes.cb.max.isDefined() ){
-		oss.clear(); oss.str("");
-		oss << axes.cb.max.get(SymbolFocus());
-		max_cb = oss.str();
-	}
-
+	ss << "set cbrange["<< min_cb << ":" << max_cb << "];\n";
 
 
     // Style
