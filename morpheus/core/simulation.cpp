@@ -336,7 +336,7 @@ bool init(int argc, char *argv[]) {
 		MORPHEUS_REVISION_STRING
 		"\n\nOptions:                   (single dash long option names available for backward compatibility)"
 	);
-	
+
 	desc.add_options()
 		("version,v", "Print morpheus version.")
 		("revision,r", "Print morpheus revision.")
@@ -347,7 +347,7 @@ bool init(int argc, char *argv[]) {
 		("set,set-symbol,s", po::value<std::vector<std::string>>(), "Override initial value of global symbol. Use assignment syntax [symbol=value].")
 		("perf-stats", "Generate performance stats in json format.")
 		("outdir", po::value<std::string>(), "override output directory.")
-		("model-graph,symbol-graph", po::value<std::string>()->implicit_value("dot"), "Generate the model graph in the given format [dot,svg,pdf,png].")
+		("model-graph", po::value<std::string>()->implicit_value("dot"), "Generate the model graph in the given format [dot,svg,pdf,png].")
 		("help,h", "show this help page.");
 	
 	// positional option is treated as a model
@@ -453,7 +453,7 @@ bool init(int argc, char *argv[]) {
 		}
 	}
 	if (cmd_line.count("set")) {
-		vector<string> params = cmd_line["parameter"].as<vector<string>>();
+		vector<string> params = cmd_line["set"].as<vector<string>>();
 		for (auto& param : params) {
 			boost::replace_all(param,"\""," ");
 			int idx=param.find_first_of("=");
