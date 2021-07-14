@@ -1,6 +1,8 @@
 # project(libSBML)
 SET(LIBSBML_BINARY_DIR ${CMAKE_BINARY_DIR}/3rdparty )
 
+SET(LIBSBML_STATIC TRUE)
+SET(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX} )
 # Prefind all required libraries
 find_package(LibXml2 REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -60,7 +62,7 @@ IF (WIN32)
     LIST(APPEND LIBSBML_STATIC_DEPENDENCY_LIBRARIES ${LIBICONV_LIBRARY} ${LIBCHARSET_LIBRARY} ${LIBLZMA_LIBRARIES})
 ENDIF()
 
-IF( TRUE ) 
+IF( LIBSBML_STATIC ) 
 	# the best way would be to create a libSBMLConfig.cmake script that can be used by FindPackage()
 	# here we create a GLOBAL target 
               
