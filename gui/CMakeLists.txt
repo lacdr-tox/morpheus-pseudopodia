@@ -48,46 +48,23 @@ ENDIF()
 ######################################
 ## Find or Build SBML               ##
 ######################################
+SET(LIBSBML_FOUND FALSE)
 
 IF ( NOT BUILD_LIBSBML )
     # Find on platform
     message(STATUS "Find libSBML on the platform.")
-    If (LIBSBML_STATIC OR MORPHEUS_STATIC_BUILD)
-        set(STD_LIB_SUFFIX ${CMAKE_FIND_LIBRARY_SUFFIXES})
-        set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
-        FIND_PACKAGE(libSBML)
-        set(CMAKE_FIND_LIBRARY_SUFFIXES ${STD_LIB_SUFFIX})
-    ELSE()
-        FIND_PACKAGE(libSBML)
-    ENDIF()
+	FIND_PACKAGE(libSBML)
 ENDIF()
 
 # Build locally
 IF ( NOT LIBSBML_FOUND OR BUILD_LIBSBML )
     message(STATUS "Building libSBML internally ...")
     SET(BUILD_LIBSBML TRUE CACHE BOOL "Build libSBML from source")
+    SET(LIBSBML_STATIC TRUE CACHE BOOL "Link the libSBML Library statically." FORCE)
     add_subdirectory(${CMAKE_SOURCE_DIR}/3rdparty/libSBML ${CMAKE_BINARY_DIR}/3rdparty/libSBML)
-    SET(LIBSBML_FOUND TRUE CACHE BOOL "libSBML found" FORCE)
-    # TODO ADD libxml2 to be a package dependency or to bundle the library
-    SET(LIBSBML_STATIC TRUE CACHE STRING "Link the libSBML Library statically." FORCE)
-    If (LIBSBML_STATIC)
-        SET(LIBSBML_LIBRARY ${LIBSBML_STATIC_LIBRARIES} CACHE STRING "libSBML libraries" FORCE) 
-    ELSE() 
-        SET(LIBSBML_LIBRARY ${LIBSBML_SHARED_LIBRARIES} CACHE STRING "libSBML libraries" FORCE) 
-        # TODO Also install the  LIBSBML_SHARED_LIBRARIES
-    ENDIF()
 ELSE()
     SET(BUILD_LIBSBML FALSE CACHE BOOL "Build libSBML from source")
 ENDIF()
-
-
-#
-# ##  check whether the required sqlite plugin is available (if fails if the Variable ends eith NOTFOUND)
-# if( ( CMAKE_VERSION VERSION_GREATER "2.8.4") AND (NOT "${MORPHEUS_OS}" STREQUAL "WIN32") )
-# 	if (NOT QT_QSQLITE_PLUGIN_RELEASE)
-# 		message(FATAL_ERROR "QT SQLITE plugin not found. Install libqt4-sql-sqlite package .. ${MORPHEUS_OS}" )
-# 	ENDIF()
-#ENDIF()
 
 IF(LIBSBML_FOUND AND MORPHEUS_SBML)
 	SET(SOURCES ${SOURCES} sbml_converter.cpp)
@@ -245,13 +222,12 @@ ELSE()
 ENDIF()
 
 IF(LIBSBML_FOUND AND MORPHEUS_SBML)
-	INCLUDE_DIRECTORIES(${LIBSBML_INCLUDE_DIR})
-	ADD_DEFINITIONS(-DHAVE_LIBSBML)
-    ADD_DEFINITIONS( ${LIBSBML_DEFINITIONS} )
-	TARGET_LINK_LIBRARIES(MorpheusGUI ${LIBSBML_LIBRARY})
-	IF(BUILD_LIBSBML)
-        ADD_DEPENDENCIES(MorpheusGUI libSBML)
-	ENDIF()
+	#INCLUDE_DIRECTORIES(${LIBSBML_INCLUDE_DIR})
+	target_compile_definitions(MorpheusGUI PUBLIC "HAVE_LIBSBML")
+	TARGET_LINK_LIBRARIES_PATCHED(MorpheusGUI SBML::SBML)
+	#IF(BUILD_LIBSBML)
+        #ADD_DEPENDENCIES(MorpheusGUI libSBML)
+	#ENDIF()
 	
 # 	IF (LIBSBML_STATIC OR MORPHEUS_STATIC_BUILD) 
 # 		MESSAGE(STATUS "Searching SBML dependencies for static linking")

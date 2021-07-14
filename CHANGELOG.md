@@ -9,6 +9,7 @@
   * Rework circular reference detection in the initialisation cycle
   * Fix color bar limits in Logger Plots
   * Add command line option to skip any gnuplot tasks (thus does not choke on missing gnuplot)
+  * Fix command line parameter override using "--set" option
 
 
 ## Release 2.2.3
