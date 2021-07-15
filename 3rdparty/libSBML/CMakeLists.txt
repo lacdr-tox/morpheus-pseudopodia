@@ -39,6 +39,9 @@ IF (APPLE)
 ENDIF()
 IF(${BZIP2_FOUND})
     LIST(APPEND sbml_cmake_args -DWITH_BZIP2=TRUE)
+    if (NOT BZIP2_INCLUDE_DIRS)
+	    SET(BZIP2_INCLUDE_DIRS "/usr/include")
+    endif()
     LIST(APPEND sbml_cache_args -DLIBBZ_INCLUDE_DIR:STRING=${BZIP2_INCLUDE_DIRS} -DLIBBZ_LIBRARY:STRING=${BZIP2_LIBRARIES})
 ELSE()
     LIST(APPEND sbml_cmake_args -DWITH_BZIP2=FALSE)
@@ -59,7 +62,7 @@ ExternalProject_Add( libSBML
   #Import depenency definitions into project cache
   CMAKE_CACHE_ARGS ${sbml_cache_args}
   INSTALL_COMMAND make DESTDIR= install
-  EXCLUDE_FROM_ALL TRUE
+  #  EXCLUDE_FROM_ALL TRUE
 )
 
 
@@ -88,8 +91,8 @@ ENDIF()
 IF( LIBSBML_STATIC ) 
 	# the best way would be to create a libSBMLConfig.cmake script that can be used by FindPackage()
 	# here we create a GLOBAL target 
-	#SET(LIBSBML_LIBRARY ${LIBSBML_STATIC_LIBRARY} CACHE STRING "libSBML library" FORCE)
-	#SET(LIBSBML_INCLUDE_DIR "${LIBSBML_BINARY_DIR}/include" CACHE PATH "libSBML include directory" FORCE)
+	SET(LIBSBML_LIBRARY ${LIBSBML_STATIC_LIBRARY} CACHE STRING "libSBML library" FORCE)
+	SET(LIBSBML_INCLUDE_DIR "${LIBSBML_BINARY_DIR}/include" CACHE PATH "libSBML include directory" FORCE)
     
 	ADD_LIBRARY(SBML::SBML STATIC IMPORTED GLOBAL)
 	## Let SBML::SBML depend on the custom target building SBML
