@@ -55,6 +55,7 @@ private:
     void startNewBundle();
     void retractBundle();
     void decrementActinLevelAt(VINT pos) const;
+    void setRetractingIfStuck();
     void growBundle();
     void setRetracting(RetractionMethod retractionMethod);
     void addPosToBundle(const VDOUBLE &pos);

@@ -106,9 +106,9 @@ void Pseudopodia::executeTimeStep() {
     assert(pseudopods.size() == cells.size()); // We don't handle cell death or proliferation
     for (auto &it : pseudopods) {
         assert(CPM::cellExists(it.first));
-        if (CPM::getCell(it.first).getNodes().empty()
+        if (CPM::getCell(it.first).getNodes().empty())
             //FIXME HACK 0.0 is the default, we want to wait for a real moving direction
-            || movingDirection(SymbolFocus(it.first)) == 0.0)
+            // || movingDirection(SymbolFocus(it.first)) == 0.0)
             continue;
         int test = 0;
 

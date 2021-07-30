@@ -17,6 +17,19 @@ static VDOUBLE RandomVonMisesRangePoint(VDOUBLE mu, double kappa, double range) 
 
     return {theta, 0.0, 1.0};
 }
+    
+const char* magic(Pseudopod::State s) {
+    const std::map<Pseudopod::State, const char*> MyEnumStrings {
+        { Pseudopod::State::INIT, "INIT" },
+        { Pseudopod::State::GROWING, "GROWING" },
+        { Pseudopod::State::TOUCHING, "TOUCHING" },
+        { Pseudopod::State::RETRACTING, "RETRACTING" },
+        { Pseudopod::State::INACTIVE, "INACTIVE" },
+        { Pseudopod::State::PULLING, "PULLING" }
+    };
+    auto it = MyEnumStrings.find(s);
+    return it == MyEnumStrings.end() ? "Out of range" : it->second;
+}
 
 static VDOUBLE RandomVonMisesPoint(VDOUBLE mu, double kappa) {
     return RandomVonMisesRangePoint(mu, kappa, 2 * M_PI);
@@ -74,16 +87,21 @@ void Pseudopod::setRetracting(RetractionMethod retractionMethod) {
     }
 }
 
+void Pseudopod::setRetractingIfStuck() {
+    if (timeNoExtension_ > timeNoExtensionLimit_) {
+        cout << "long time without extension" << endl;
+        setRetracting(RetractionMethod::FORWARD);
+        //state_ = State::PULLING;
+    }
+}
+
+
 void Pseudopod::growBundle() {
     assert(timeLeftForGrowth_ > 0);
     if (getRandom01() > extendprob_) {
         // No extension this time
         timeNoExtension_++;
-        if (timeNoExtension_ > timeNoExtensionLimit_) {
-            cout << "long time without extension" << endl;
-            setRetracting(RetractionMethod::FORWARD);
-            //state_ = State::PULLING;
-        }
+	setRetractingIfStuck();
         return;
     }
 
@@ -95,7 +113,11 @@ void Pseudopod::growBundle() {
     auto newPosCellId = _cpm_layer->get(VINT(newBundlePosition)).cell_id;
     if (newPosCellId != cellId) {
         //newBundlePosition is not in this cell
-        if(newPosCellId != CPM::getEmptyState().cell_id) {
+        if(newPosCellId == CPM::getEmptyState().cell_id) { 
+            // cell is touching medium
+	    timeNoExtension_++;
+            setRetractingIfStuck();
+	} else {
             // cell is touching 'something' else -> do touch behavior
             switch(touchBehavior_) {
                 case TouchBehavior::NOTHING:
@@ -177,6 +199,7 @@ void Pseudopod::retractBundle() {
 }
 
 void Pseudopod::timeStep() {
+//cout << "timeStep: " << magic(state_) << endl;
     switch (state_) {
         case State::INIT:
             startNewBundle();
