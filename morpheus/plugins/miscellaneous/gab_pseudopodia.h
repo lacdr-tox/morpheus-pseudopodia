@@ -27,7 +27,7 @@ A detailed description of my example plugin that can contain mathematical formul
 */
 
 // class declaration, and inheritance of plugin interface
-class Pseudopodia : CPM_Energy, Cell_Update_Checker, InstantaneousProcessPlugin {
+class Pseudopodia : public CPM_Energy, public Cell_Update_Checker, public InstantaneousProcessPlugin {
 private:
     // parameters that are specified in XML (as values, strings or symbolic expressions)
     PluginParameter2<double, XMLValueReader, DefaultValPolicy> neighboringActinBonus;
