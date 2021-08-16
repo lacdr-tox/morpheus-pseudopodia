@@ -21,18 +21,23 @@
 \ingroup MiscellaneousPlugins InstantaneousProcessPlugins
 \brief Conditionally alters CellType of cell
 
-ChangeCelltype alters CellType of cell upon a predefined Condition.
+ChangeCelltype alters the CellType of a cell upon a condition.
 
-- \b condition: expression to evaluate to trigger Celltype change.
-- \b celltype_new_str: \ref ML_CellType to change to after condition is satisfied.
+- \b newCellType: \ref ML_CellType to change to after condition is satisfied.
+- \b time-step [optional]\b: The time step adjusts by default to 1 Monte Carlo step (MCS) of the CPM. The time step be overridden by setting the \b time-step attribute.
 
+- \b Condition: expression that triggers the celltype change.
 - \b Tiggers: (optional): a System of Rules that are triggered for both daughter cells after cell division.
 
 \section Example
 
-\verbatim
-<ChangeCelltype  condition="..." celltype_new_str="other_ct"/>
-\endverbatim
+~~~~~~~~~~~~~~.xml
+<ChangeCellType newCellType="ct_differentiated_A" time-step>
+	<Condition> 
+		cell_fate_morphogen_A >= 1
+	</Condition>
+<ChangeCellType>
+~~~~~~~~~~~~~~
 
 **/
 

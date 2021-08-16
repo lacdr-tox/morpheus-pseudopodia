@@ -2,19 +2,22 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="SurfaceConstraint"	type="SurfaceConstraint"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="SurfaceConstraint"	type="SurfaceConstraint"  	minOccurs="0"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="SurfaceConstraint">
-		<xs:annotation>
-			<xs:appinfo>Shape</xs:appinfo>
-		</xs:annotation>
-		<xs:attribute	name="mode"		type="cpmSCTargetMode"   use="required" default="aspherity" />
-		<xs:attribute	name="target"	type="cpmMathExpression" use="required" default="1" />
-		<xs:attribute	name="strength"	type="cpmMathExpression" use="required" default="1" />
-		<xs:attribute	name="name"		type="cpmString" use="optional" />
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Shape</xs:appinfo>
+				</xs:annotation>
+				<xs:attribute	name="mode"		type="cpmSCTargetMode"   use="required" default="aspherity" />
+				<xs:attribute	name="target"	type="cpmMathExpression" use="required" default="1" />
+				<xs:attribute	name="strength"	type="cpmMathExpression" use="required" default="1" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	
 	<xs:simpleType name="cpmSCTargetMode">

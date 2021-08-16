@@ -18,14 +18,13 @@
 #include "core/celltype.h"
 #include "gnuplot_i/gnuplot_i.h"
 
-/** 
- *  \defgroup HistogramLogger HistogramLogger
- * \ingroup ML_Analysis
- * \ingroup AnalysisPlugins
- *  \brief Computation of frequency distributions and visualisation of histograms.
- * 
+/**  \defgroup ML_HistogramLogger HistogramLogger
+\ingroup ML_Analysis
+\ingroup AnalysisPlugins
+\brief Computation of frequency distributions and visualisation of histograms.
+ 
 \section Description
-HistogramLogger copmputes a frequency distribution from user-specified cell properties. Optionally, plots them in a histogram.
+HistogramLogger computes a frequency distribution from user-specified cell properties. Optionally, plots them in a histogram.
 
 \section Input
 - interval(default = 0.0)
@@ -65,6 +64,7 @@ Visualization
 
 */
 
+/** This is the HistogramLogger Plugin implementation */
 class HistogramLogger : public AnalysisPlugin
 {
 private:
@@ -128,5 +128,5 @@ public:
     virtual void finish() override;
     void writelog(double time);
 };
-/// @endcond
+
 #endif // HISTROGRAMLOGGER_H

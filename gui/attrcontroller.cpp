@@ -50,10 +50,10 @@ if (event->type() == QEvent::KeyRelease || event->type() == QEvent::FocusOut || 
 			}
 			if (event->type() == QEvent::KeyRelease) {
 				if (valid) {
-				edit->setStyleSheet("");
+					edit->setPalette(palette_normal);
 				}
 				else {
-					edit->setStyleSheet("background: #FFD0D0;");
+					edit->setPalette(palette_invalid);
 				}
 			}
 			if (leaving && !valid) {
@@ -129,7 +129,7 @@ QWidget *attrController::createEditor(QWidget *parent, const QStyleOptionViewIte
 	}
 	else if (widget_type == SystemPath) {
 		QFileDialog* system_dialog = new QFileDialog(parent);
-		system_dialog->setDirectory(QDesktopServices::storageLocation(QDesktopServices::HomeLocation));
+		system_dialog->setDirectory(QStandardPaths::writableLocation(QStandardPaths::HomeLocation));
 		if (attr->getType()->name == "cpmSystemPath" )
 			system_dialog->setFileMode( QFileDialog::DirectoryOnly );
 		current_editor = system_dialog;
@@ -141,7 +141,14 @@ QWidget *attrController::createEditor(QWidget *parent, const QStyleOptionViewIte
 		// String like Type
 		current_editor = new QLineEdit(parent);
 	}
-	
+	palette_invalid = palette_normal = current_editor->palette();
+	if (widget_type == LineText || widget_type == MathText) {
+		int r,g,b;
+		palette_invalid.color(QPalette::Active, QPalette::Base).getRgb(&r, &g, &b);
+		palette_invalid.setColor(QPalette::Active, QPalette::Base, QColor::fromRgb((r*5+255)/6,(g*5)/6, (b*5)/6));
+		palette_invalid.color(QPalette::Inactive, QPalette::Base).getRgb(&r, &g, &b);
+		palette_invalid.setColor(QPalette::Inactive, QPalette::Base, QColor::fromRgb((r*5+255)/6,(g*5)/6,(b*5)/6));
+	}
 	return current_editor;
 }
 
@@ -268,8 +275,8 @@ void attrController::setModelData(QWidget *editor, QAbstractItemModel *model, co
 		
         int pos;
 		if (val.validate(value,pos) != QValidator::Acceptable) {
-			qDebug() << "AttrController[" << attr->getName() << "]:: invalid value " << value;
-			qDebug() << "AttrController[" << attr->getName() << "]:: pattern is " << pattern;
+// 			qDebug() << "AttrController[" << attr->getName() << "]:: invalid value " << value;
+// 			qDebug() << "AttrController[" << attr->getName() << "]:: pattern is " << pattern;
 			setEditorData(editor,index);
 			return;
 		}

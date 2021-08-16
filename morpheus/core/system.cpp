@@ -26,7 +26,7 @@ void SystemFunc<VDOUBLE>::initFunction() {}
 
 const string SystemSolver::noise_scaling_symbol = "_noise_scaling";
 
-System::System(SystemType type) : system_type(type) {}
+System::System(SystemType type, SystemContext context_req) : context_requirement(context_req), system_type(type) {}
 
 
 void System::loadFromXML(const XMLNode node, Scope* scope)
@@ -39,30 +39,44 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 	}
 
 // 	addLocalSymbol(SystemSolver::noise_scaling_symbol, 1 );
-	if (system_type == CONTINUOUS_SYS) {
+	if (system_type == CONTINUOUS) {
 		PluginParameter<SystemSolver::Method, XMLNamedValueReader, DefaultValPolicy> method;
 		method.setXMLPath("solver");
 		map<string,SystemSolver::Method> solver_map;
-		solver_map["euler"]            = SystemSolver::Method::Euler;
-		solver_map["fixed1"]           = SystemSolver::Method::Euler;
-		solver_map["stochastic"]       = SystemSolver::Method::Euler;
-		solver_map["heun"]             = SystemSolver::Method::Heun;
-		solver_map["fixed2"]           = SystemSolver::Method::Heun;
-		solver_map["runge-kutta"]      = SystemSolver::Method::Runge_Kutta4;
-		solver_map["fixed4"]           = SystemSolver::Method::Runge_Kutta4;
-		solver_map["dormand-prince"]   = SystemSolver::Method::AdaptiveDP;
-		solver_map["adaptive45"]       = SystemSolver::Method::AdaptiveDP;
-		solver_map["adaptive45-dp"]    = SystemSolver::Method::AdaptiveDP;
-		solver_map["runge-kutta-adaptive"] = SystemSolver::Method::AdaptiveDP;
+		solver_map["Euler [fixed, O(1)]"]   = SystemSolver::Method::Euler;
+		solver_map["euler"]                 = SystemSolver::Method::Euler;
+		solver_map["fixed1"]                = SystemSolver::Method::Euler;
+		
+		solver_map["Heun [fixed, O(2)]"]    = SystemSolver::Method::Heun;
+		solver_map["heun"]                  = SystemSolver::Method::Heun;
+		solver_map["fixed2"]                = SystemSolver::Method::Heun;
+		
+		solver_map["Runge-Kutta [fixed, O(4)]"] = SystemSolver::Method::Runge_Kutta4;
+		solver_map["runge-kutta"]           = SystemSolver::Method::Runge_Kutta4;
+		solver_map["fixed4"]                = SystemSolver::Method::Runge_Kutta4;
+		
+		solver_map["Dormand-Prince [adaptive, O(5)]"] = SystemSolver::Method::AdaptiveDP;
+		solver_map["dormand-prince"]        = SystemSolver::Method::AdaptiveDP;
+		solver_map["adaptive45"]            = SystemSolver::Method::AdaptiveDP;
+		solver_map["adaptive45-dp"]         = SystemSolver::Method::AdaptiveDP;
+		solver_map["runge-kutta-adaptive"]  = SystemSolver::Method::AdaptiveDP;
 		solver_map["runge-kutta-adaptive-DP"] = SystemSolver::Method::AdaptiveDP;
-		solver_map["cash-karp"]        = SystemSolver::Method::AdaptiveCK;
-		solver_map["adaptive45-ck"]    = SystemSolver::Method::AdaptiveCK;
+		
+		solver_map["Cash-Karp [adative, O(5)]"] = SystemSolver::Method::AdaptiveCK;
+		solver_map["cash-karp"]             = SystemSolver::Method::AdaptiveCK;
+		solver_map["adaptive45-ck"]         = SystemSolver::Method::AdaptiveCK;
 		solver_map["runge-kutta-adaptive-CK"] = SystemSolver::Method::AdaptiveCK;
-		solver_map["bogacki-shampine"] = SystemSolver::Method::AdaptiveBS;
-		solver_map["adaptive23"]       = SystemSolver::Method::AdaptiveBS;
+		
+		solver_map["Bogacki-Shampine [adaptive, O(3)]"] = SystemSolver::Method::AdaptiveBS;
+		solver_map["bogacki-shampine"]      = SystemSolver::Method::AdaptiveBS;
+		solver_map["adaptive23"]            = SystemSolver::Method::AdaptiveBS;
 		solver_map["runge-kutta-adaptive-BS"] = SystemSolver::Method::AdaptiveBS;
+
+		solver_map["Euler-Maruyama [stochastic, O(1)]"] = SystemSolver::Method::Euler;
+		solver_map["stochastic"]            = SystemSolver::Method::Euler;
+		
 		method.setValueMap(solver_map);
-		method.setDefault("adaptive45");
+		method.setDefault("Dormand-Prince [adaptive, O(5)]");
 		method.loadFromXML(node, scope);
 		solver_spec.method = method();
 	
@@ -96,6 +110,8 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 				getXMLAttribute(xNode,"value", eqn->expression);
 				getXMLAttribute(xNode,"symbol", eqn->symbol_name); 
 				vec_evals.push_back(eqn);
+			}
+			else if (xml_tag_name == "Annotation") {
 			}
 			else {
 				p = PluginFactory::CreateInstance(xml_tag_name);			
@@ -149,7 +165,7 @@ void System::loadFromXML(const XMLNode node, Scope* scope)
 					eqn->type = SystemFunc<VDOUBLE>::RULE;
 					eqn->expression = dynamic_pointer_cast<VectorEquation>(p)->getExpr();
 					eqn->symbol_name = dynamic_pointer_cast<VectorEquation>(p)->getSymbol();
-					eqn->vec_spherical = dynamic_pointer_cast<VectorEquation>(p)->isSpherical();
+					eqn->notation = dynamic_pointer_cast<VectorEquation>(p)->getNotation();
 					vec_evals.push_back(eqn);
 					vec_equations.push_back(eqn);
 				}
@@ -195,7 +211,7 @@ void System::init() {
 			eqn->type = SystemFunc<VDOUBLE>::EQN;
 			eqn->expression = static_cast<VectorEquation*>(p)->getExpr();
 			eqn->symbol_name = static_cast<VectorEquation*>(p)->getSymbol();
-			eqn->vec_spherical = static_cast<VectorEquation*>(p)->isSpherical();
+			eqn->notation = static_cast<VectorEquation*>(p)->getNotation();
 			vec_evals.push_back(eqn);
 // 			vec_equations.push_back(eqn);
 		}
@@ -327,10 +343,14 @@ void System::computeContextToBuffer()
 {
 	FocusRange range(target_granularity, target_scope);
 	if (range.size() > 50) {
+		ExceptionCatcher expression_catcher;
 #pragma omp parallel for schedule(static)
 		for (auto focus = range.begin(); focus<range.end(); ++focus) {
-			computeToBuffer(*focus);
+			expression_catcher.Run([=]{
+				computeToBuffer(*focus);
+			});
 		}
+		expression_catcher.Rethrow();
 	}
 	else {
 		for (const auto& focus :range ) {
@@ -711,6 +731,7 @@ void SystemSolver::solve(const SymbolFocus& f, bool use_buffer, vector<double>* 
 	fetchSymbols(f);
 
 	switch (spec.method) {
+		case Method::Noop: break;
 		case Method::Euler: Euler(f, spec.time_step); break;
 		case Method::Heun : Heun(f, spec.time_step); break;
 		case Method::Runge_Kutta4 : RungeKutta(f, spec.time_step); break;
@@ -873,7 +894,7 @@ void SystemSolver::EquationHooks(const SymbolFocus& f, bool write_extern) {
 
 void SystemSolver::Discrete(const SymbolFocus& f) {
 	
-	if (rules.empty() && vec_rules.empty()==0)
+	if (rules.empty() && vec_rules.empty())
 		return;
 	
 	for (uint i=0; i < rules.size(); i++){
@@ -890,7 +911,7 @@ void SystemSolver::Discrete(const SymbolFocus& f) {
 	}
 	for (uint i=0; i < vec_rules.size(); i++) {
 		auto& e = *vec_rules[i];
-		this->cache->setLocal(e.cache_idx, e.vec_spherical ?  VDOUBLE::from_radial(e.k1) : e.k1);
+		this->cache->setLocal(e.cache_idx, VDOUBLE::from(e.k1, e.notation));
 	}
 }
 
@@ -914,6 +935,14 @@ void SystemSolver::Euler(const SymbolFocus& f, double ht) {
 }
 
 void SystemSolver::Heun(const SymbolFocus& f, double ht) {
+	// constants of the butcher tableau of the classical 2nd order scheme
+// 	const double a21=1;
+// 	const double b1=0.5, b2=0.5;
+// 	const double c2=1.0;
+// 	// constants of the butcher tableau of the Heun method (Runge-Kutta 2th order scheme)
+	const double a21=2.0/3;
+	const double b1=0.25, b2=0.75;
+	const double c2=2.0/3;
 	
 	cache->setLocal(noise_scaling_idx, sqrt(1.0/ht));
 
@@ -921,18 +950,15 @@ void SystemSolver::Heun(const SymbolFocus& f, double ht) {
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
 		e.k0 = cache->getLocalD(e.cache_idx);
-	}
-	for(uint i=0; i < odes.size(); i++) {
-		SystemFunc<double> &e = *odes[i];
 		e.k1 = e.evaluator->plain_get(f); check_result(e.k1,e);
 	}
 
 	// Second Step interpolation
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
-		cache->setLocal(e.cache_idx, e.k0 + 0.5 * ht * e.k1);
+		cache->setLocal(e.cache_idx, e.k0 + ht * a21 * e.k1);
 	}
-	cache->setLocal(local_time_idx, cache->getLocalD(local_time_idx) + ht);
+	cache->setLocal(local_time_idx, cache->getLocalD(local_time_idx) + c2 * ht);
 	updateLocalVars(f);
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
@@ -942,7 +968,7 @@ void SystemSolver::Heun(const SymbolFocus& f, double ht) {
 	// Apply the step to the local cache
 	for(uint i=0; i < odes.size(); i++) {
 		SystemFunc<double> &e = *odes[i];
-		e.dy = 0.5 * (e.k1 + e.k2);
+		e.dy = b1*e.k1 + b2*e.k2;
 		cache->setLocal(e.rate_cache_idx, e.dy);
 		cache->setLocal(e.cache_idx, e.k0 + ht * e.dy );
 	}
@@ -952,13 +978,14 @@ void SystemSolver::Heun(const SymbolFocus& f, double ht) {
 
 void SystemSolver::RungeKutta(const SymbolFocus& f, double ht) {
 	// constants of the butcher tableau of the classical Runge-Kutta 4th order scheme
-	const double a21=0.5, a31=0.0, a32=0.5, a41=0.0, a42=0.0, a43=1.0;
-	const double b1=1.0/6, b2=1.0/3, b3=1.0/3, b4=1.0/6;
-	const double c2=0.5, c3=0.5, c4=1.0;
-	// constants of the butcher tableau of the 3/8 Runge-Kutta 4th order scheme
-// 	const double a21 = 1.0/3, a31=-1.0/3, a32=1.0, a41=1.0, a42=-1.0, a43=1.0;
-// 	const double b1=1.0/8, b2=3.0/8, b3=3.0/8, b4=1.0/8;
+// 	const double a21=0.5, a31=0.0, a32=0.5, a41=0.0, a42=0.0, a43=1.0;
+// 	const double b1=1.0/6, b2=1.0/3, b3=1.0/3, b4=1.0/6;
 // 	const double c2=0.5, c3=0.5, c4=1.0;
+	
+	// constants of the butcher tableau of the 3/8 Runge-Kutta 4th order scheme
+	const double a21 = 1.0/3, a31=-1.0/3, a32=1.0, a41=1.0, a42=-1.0, a43=1.0;
+	const double b1=1.0/8, b2=3.0/8, b3=3.0/8, b4=1.0/8;
+	const double c2=1.0/3, c3=2.0/3, c4=1.0;
 
 	
 	// First Step interpolation
@@ -1388,7 +1415,7 @@ void DiscreteSystem::init(const Scope* scope)
 	registerOutputSymbols(System::getOutputSymbols());
 }
 
-EventSystem::EventSystem() : System(DISCRETE_SYS), InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_OPTIONAL ) {
+EventSystem::EventSystem() : System(DISCRETE), InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_OPTIONAL ) {
 	delay.setDefault("0");
 	delay.setXMLPath("delay");
 	registerPluginParameter(delay);
@@ -1414,13 +1441,13 @@ void EventSystem::loadFromXML ( const XMLNode node, Scope* scope )
 	registerInputSymbol(SIM::findGlobalSymbol<double>(SymbolBase::Time_symbol));
 
 	// Allow manual adjustment that cannot be overridden
-	if (timeStep()>0)
+	if (InstantaneousProcessPlugin::timeStep()>0)
 		this->is_adjustable = false;
 
 	if (node.nChildNode("Condition")) {
 		string expression;
 		if (getXMLAttribute(node,"Condition/text",expression))
-			condition = make_shared<ExpressionEvaluator<double> >(expression,scope);
+			condition = make_shared<ThreadedExpressionEvaluator<double> >(expression,scope);
 
 		XMLNode xSystem = node.deepCopy();
 		XMLNode xCondition = XMLNode::createXMLTopNode("Trash");
@@ -1456,42 +1483,54 @@ void EventSystem::executeTimeStep()
 	auto time = SIM::getTime();
 	FocusRange range(target_granularity, target_scope);
 	if (trigger_on_change()) {
-		for (auto focus : range) {
+#pragma omp parallel for schedule(static)
+		for (auto focus = range.begin(); focus<range.end(); ++focus) {
 			
-			double cond = condition->get(focus);
-			auto history_val = condition_history.find(focus);
+			double cond = condition->get(*focus);
+			auto history_val = condition_history.find(*focus);
 			
 			double trigger = ( history_val != condition_history.end()? history_val->second <= 0.0 :  ! xml_condition_history()) && cond;
 			
 			if (trigger) {
-				double d = delay(focus);
-// 				cout << "Delay " << d << " at " << to_str(time) << endl;
-				if (d == 0) {
-					compute(focus);
+#pragma omp critical
+				{
+					double d = delay(*focus);
+	// 				cout << "Delay " << d << " at " << to_str(time) << endl;
+					if (d == 0) {
+						compute(*focus);
+					}
+					else if (delay_compute()) {
+						DelayedAssignment assignment {*focus,{}};
+						delayed_assignments.insert({time + d,assignment});
+					}
+					else {
+						DelayedAssignment assignment {*focus,{}};
+						computeToTarget(*focus,true, &assignment.value_cache);
+						delayed_assignments.insert({time + d,assignment});
+					}
+					if (history_val != condition_history.end()) {
+						history_val->second = cond;
+					}
+					else 
+						condition_history[*focus] = cond;
 				}
-				else if (delay_compute()) {
-					DelayedAssignment assignment {focus,{}};
-					delayed_assignments.insert({time + d,assignment});
-				}
-				else {
-					DelayedAssignment assignment {focus,{}};
-					computeToTarget(focus,true, &assignment.value_cache);
-					delayed_assignments.insert({time + d,assignment});
-				}
-				
 			}
-			if (history_val != condition_history.end()) {
-				history_val->second = cond;
-			}
-			else 
-				condition_history[focus] = cond;
 		}
 	}
 	else {
-		for (auto focus : range) {
-			if (condition->get(focus))
-				compute(focus);
-		}
+// 		if (range.size()>50) {
+#pragma omp parallel for schedule(static)
+			for (auto focus = range.begin(); focus<range.end(); ++focus) {
+				if (condition->get(*focus))
+					compute(*focus);
+			}
+// 		}
+// 		else {
+// 			for (auto focus : range) {
+// 				if (condition->get(focus))
+// 					compute(focus);
+// 			}
+// 		}
 	}
 	
 	if (!delayed_assignments.empty()) {

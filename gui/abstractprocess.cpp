@@ -31,6 +31,11 @@ abstractProcess::abstractProcess(SharedMorphModel model, int job_id, QString sub
 	localDir = config::getApplication().general_outputDir;
 	
 	QDir dir(localDir);
+	if (dir.exists(_info.sim_dir)) {
+		cout << "Output directory = " << outputDir.toStdString() << " Already exists!!" << endl;
+		emit criticalMessage("Output directory '("+QString(outputDir)+")' already exists. Not executing job.");
+		return;
+	}
 	dir.mkpath(_info.sim_dir);
 	dir.cd(_info.sim_dir);
 	outputDir = dir.absolutePath();
@@ -78,7 +83,7 @@ abstractProcess::abstractProcess(SharedMorphModel model, int job_id, QString sub
 	}
 
 // writing the model file
-	if  (! model->xml_file.save(outputDir + "/" + model_file_name) )
+	if  (! model->xml_file.save(outputDir + "/" + model_file_name, zip_models) )
 	{
 		throw QString("Can't create xml-model: '%1'!\n; Unable to start simulation!\n").arg(outputDir + "/" + model_file_name);
 	}
@@ -117,7 +122,7 @@ ProcessInfo::status abstractProcess::stateMsgToState(QString stateMsg) {
 /// Constructor used for restoring saved jobs
 abstractProcess::abstractProcess(QSqlRecord& r) : QObject(NULL) {
 	_info.job_id      = r.value( r.indexOf("id") ).toInt();
-	ID                = r.value( r.indexOf("processPid") ).toInt();
+	ID                = r.value( r.indexOf("processPid") ).toLongLong();
 	numthreads        = r.value( r.indexOf("processThreads") ).toInt();
 	_info.state       = ProcessInfo::status(r.value( r.indexOf("processState") ).toInt());
 	

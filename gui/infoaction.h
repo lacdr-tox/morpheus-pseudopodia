@@ -14,7 +14,7 @@
 
 #include <QAction>
 #include <QtGui>
-
+#include <QToolTip>
 /*!
 infoAction is a subclass of QAction. <br>
 If you move your mouse over this action a tooltip will appear and describe the object more exact. <br>

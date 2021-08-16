@@ -8,56 +8,139 @@
 #include "simulation_p.h"
 #include "cpm_p.h"
 #include "rss_stat.h"
-
-int main(int argc, char *argv[]) {
-    return SIM::main(argc,argv);
-}
+#include <boost/program_options.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 namespace SIM {
 	
+	string dep_graph_format = "dot";
+	bool generate_symbol_graph_and_exit = false;
+	bool generate_performance_stats = false;
+	int numthreads = omp_get_max_threads();
 	
-// #define NO_CORE_CATCH
+	unique_ptr<LatticePlugin> lattice_plugin = nullptr;
+	shared_ptr<Lattice> global_lattice;
+	
+	XMLNode xMorphModel, xDescription, xGlobals, xSpace, xAnalysis;
+	
+	
+	vector< shared_ptr<AnalysisPlugin> > analysers;
+	vector< shared_ptr<Plugin> > analysis_section_plugins;
+	vector< shared_ptr<Plugin> > global_section_plugins;
+
+	shared_ptr<Scope> global_scope;
+	Scope* current_scope;
+
+	string morpheus_file_version;
+	string prettyFormattingTime( double time_in_sec );
+	string prettyFormattingBytes(uint bytes);
+
+	
+	uint random_seed = time(NULL);
+	string fileTitle="SnapShot";
+	/// directory to read data from
+	string input_directory = ".";
+	/// directory to write data to
+	string output_directory = ".";
+	
+
+	void print_node(const boost::property_tree::ptree& node, string indent, double runtime_total) {
+
+	}
+	
 int main(int argc, char *argv[]) {
 	bool exception = false;
 	
 #ifndef NO_CORE_CATCH
 	try {
 #endif
-		
-    double init0 = get_wall_time();
+	
+    double init_rt0 = get_wall_time();
+	double init_cpu0  = get_cpu_time();
 	if (init(argc, argv)) {
 	
-		double init1 = get_wall_time();
+		double init_rt1 = get_wall_time();
+		double init_cpu1  = get_cpu_time();
+		
+		auto& perf_json = getPerfLogger();
+		boost::property_tree::ptree initialisation;
+		initialisation.add("name", "Initialisation");
+		initialisation.add("runtime",  to_str(init_rt1 - init_rt0));
+		initialisation.add("cputime",  to_str(init_cpu1 - init_cpu0));
+		perf_json.add_child("component",initialisation);
+		
+		TimeScheduler::compute();
+		
 		size_t initMem = getCurrentRSS();
 		
-		//  Start Timers
-		double wall0 = get_wall_time();
-		double cpu0  = get_cpu_time();
-
-		TimeScheduler::compute();
+		finalize();
 		
 		//  Stop timers
 		double wall1 = get_wall_time();
 		double cpu1  = get_cpu_time();
-
-		finalize();
-
-
-		cout << "\n=== Simulation finished ===\n";
-		string init_time = prettyFormattingTime( init1 - init0 );
-		string cpu_time = prettyFormattingTime( cpu1 - cpu0 );
-		string wall_time = prettyFormattingTime( wall1 - wall0 );
+		
+		double runtime = wall1 - init_rt0;
+		string init_time = prettyFormattingTime( init_rt1 - init_rt0 );
+		string cpu_time = prettyFormattingTime( cpu1 - init_cpu0 );
+		string wall_time = prettyFormattingTime( runtime );
 		size_t peakMem = getPeakRSS();
 		
-		cout << "Init Time   = " << init_time << "\n";
-		cout << "Wall Time   = " << wall_time << "\n";
-		cout << "CPU Time    = " << cpu_time  << " (" << numthreads << " threads)\n\n";
-		cout << "Memory peak = " << prettyFormattingBytes(peakMem) << "\n";
+		perf_json.add("runtime", wall1 - init_rt0);
+		perf_json.add("cputime", cpu1 - init_cpu0);
+// 		perf_json.add("memory", to_str(peakMem));
+		perf_json.add("ompthreads", to_str(omp_get_max_threads()));
 		
-		ofstream fout("performance.txt", ios::out);
-		fout << "Threads\tInit(s)\tCPU(s)\tWall(s)\tMem(Mb)\n";
-		fout << numthreads << "\t" << (init1-init0) << "\t" << (cpu1-cpu0) << "\t" << (wall1-wall0) << "\t" << (double(peakMem)/(1024.0*1024.0)) << "\n";
-		fout.close();
+		
+		if (generate_performance_stats) {
+			boost::property_tree::write_json("performance.json", perf_json);
+		}
+		else {
+			cout << "\n=======================================================";
+			cout << "\n    SCHEDULER PERFORMANCE STATISTICS";
+			cout << "\n=======================================================\n\n";
+			
+			string indent = "    ";
+			double runtime_total = runtime;
+			double runtime_scaling = (runtime > 2) ? 1 : 1000;
+			string runtime_unit = (runtime > 2) ? "s" : "ms";
+			int runtime_precision = 5-log10(runtime_total * runtime_scaling);
+			struct PerfEntry { string data; double runtime; };
+			vector<PerfEntry> entries;
+			for (auto child : perf_json) {
+				if (child.first == "component") {
+					auto node = child.second;
+					string name;
+					string inputs;
+					string outputs;
+					double cputime;
+					double runtime;
+					for (auto child : node) {
+						if (child.first == "name") name = child.second.data();
+						else if (child.first == "cputime") stringstream(child.second.data()) >> cputime;
+						else if (child.first == "runtime") stringstream(child.second.data()) >> runtime;
+						else if (child.first == "inputs") inputs = child.second.data();
+						else if (child.first == "outputs") outputs = child.second.data();
+					}
+					if (! name.empty()) {
+						stringstream entry;
+						entry << std::fixed << setprecision(1)<< indent << "+ " << setw(5) << round(runtime*10000/runtime_total)/100 << "% = " << setw(5) << setprecision(runtime_precision) << runtime * runtime_scaling << runtime_unit << " ("<< setw(5) << cputime * runtime_scaling << ")  | " << name << " [" << inputs << ((inputs.empty()||outputs.empty())?"":" -> ") << outputs << "]";
+						
+						entries.push_back({entry.str(), runtime});
+					}
+				}
+			}
+			sort(entries.begin(), entries.end(), [](const PerfEntry& l, const PerfEntry r) { return l.runtime > r.runtime; });
+			for ( const auto& entry : entries) {
+				std::cout << entry.data << "\n";
+			}
+			cout << "\n======================================================" << endl;
+		}
+		cout << "\n=== Simulation finished ===\n";
+// 		cout << "Init Time   = " << init_time << "\n";
+		cout << "Wall Time   = " << wall_time  << "\n";
+		cout << "CPU Time    = " << cpu_time  << " (" << numthreads << " threads)\n\n";
+// 		cout << "Memory peak = " << prettyFormattingBytes(peakMem) << "\n";
+		
 	}
 
 #ifndef NO_CORE_CATCH
@@ -78,7 +161,7 @@ int main(int argc, char *argv[]) {
 		exception = true;
 		cerr << "\n" << e.what()<< "\n";
 	}
-	catch (std::runtime_error& e) {
+	catch (std::exception& e) {
 		exception = true;
 		cerr << e.what() << endl; 
 	}
@@ -91,7 +174,16 @@ int main(int argc, char *argv[]) {
 	if (exception) {
 		cerr.flush();
 		if (SIM::generate_symbol_graph_and_exit) {
-			createDepGraph();
+			try {
+				createDepGraph();
+			}
+			catch(const string& e) {
+				cerr << "Unable to generate Model Graph.\n" << e << endl;
+			}
+			catch(...) {
+				cerr << "Unable to generate Model Graph.\n" << endl;
+			}
+
 		}
 		
 		return -1;
@@ -166,18 +258,18 @@ bool dependencyGraphMode() {
 
 
 double getNodeLength()  {
-    return node_length();
+    return lattice_plugin->getNodeLength()();
 };
 
 string getLengthScaleUnit() {
-	if (node_length.getLengthScaleUnit() == "alu")
+	if (lattice_plugin->getNodeLength().getLengthScaleUnit() == "alu")
 		return "alu";
 	else
 		return "meter";
 };
 
 double getLengthScaleValue() {
-	return node_length.getLengthScaleValue();
+	return lattice_plugin->getNodeLength().getLengthScaleValue();
 };
 
 
@@ -229,77 +321,76 @@ string centerText(string in) {
 	return out;
 }
 
-void splash(bool show_usage) {
-
-    time_t t = time(0); // get time now
-    struct tm * now = localtime( & t );
-    int current_year = now->tm_year + 1900;
-
-	cout << endl;
-	cout << centerText("<<  M O R P H E U S  >>") << endl;
-	cout << centerText("Modeling environment for multi-scale and multicellular systems biology") << endl;
-    stringstream copyright;
-    copyright << "Copyright 2009-"<< current_year <<", Technische Universität Dresden, Germany";
-    cout << centerText( copyright.str() ) << endl;
-
-	stringstream version;
-	version << "Version " << MORPHEUS_VERSION_STRING;
-	version << ", Revision " << MORPHEUS_REVISION_STRING;
-    cout << centerText( version.str() ) << endl;
-
-    if( show_usage ){
-    cout << endl << endl;
-    cout << " Usage: "<< endl;
-    cout << "  morpheus [OPTIONS] " << endl << endl;
-    cout << " Options:  " << endl;
-    cout << " -file [XML-FILE]      Run simulator with XML configuration file" << endl;
-	cout << " -outdir [PATH]        Set the output directory" << endl;
-	cout << " -[KEY]=[VALUE]        Override the value of Constant symbols from the Global section" << endl;
-    cout << " -version              Show release version" << endl;
-    cout << " -revision             Show SVN revision number" << endl;
-	cout << " -gnuplot-version      Show version of GnuPlot used" << endl;
-	cout << " -gnuplot-path [FILE]  Set the path to the GnuPlot executable" << endl;
-    cout << endl << endl;
-    }
-
-	cout << " External applications" << endl;
-	try {
-		cout << "  GnuPlot executable:   " <<  Gnuplot::get_GNUPlotPath() << endl;
-		cout << "  GnuPlot version:      " <<  Gnuplot::version() << endl;
-	}
-	catch (...) {
-		cout << "Morpheus cannot find/run GnuPlot executable" << endl;
-	}
-	cout << endl << endl;
-}
-
-
 bool init(int argc, char *argv[]) {
+	const bool allow_single_dash_long_options = true;
+	const bool allow_symbol_override_options = true;
+	namespace po = boost::program_options;
 
-	std::map<std::string, std::string> cmd_line = ParseArgv(argc,argv);
+	po::options_description desc(
+		"                         <<  M O R P H E U S  >>\n"
+		"   Modeling environment for multi-scale and multicellular systems biology\n"
+		"        Copyright 2009-2020, Technische Universität Dresden, Germany\n"
+		"                 Version " 
+		MORPHEUS_VERSION_STRING
+		", Revision "
+		MORPHEUS_REVISION_STRING
+		"\n\nOptions:                   (single dash long option names available for backward compatibility)"
+	);
 
-// 	for (map<string,string>::const_iterator it = cmd_line.begin(); it != cmd_line.end(); it++ ) {
-// 		cout << "option " << it->first << " -> " << it->second << endl;
-// 	}
-	if (cmd_line.find("revision") != cmd_line.end()) {
+	desc.add_options()
+		("version,v", "Print morpheus version.")
+		("revision,r", "Print morpheus revision.")
+		("gnuplot-path", po::value<std::string>(),"Set path to gnuplot executable.")
+		("gnuplot-version","Print gnuplot version.")
+		("no-gnuplot","Disable gnuplot support.")
+		("file,f", po::value<std::string>(),"MorpheuML model to simulate.")
+		("set,set-symbol,s", po::value<std::vector<std::string>>(), "Override initial value of global symbol. Use assignment syntax [symbol=value].")
+		("perf-stats", "Generate performance stats in json format.")
+		("outdir", po::value<std::string>(), "override output directory.")
+		("model-graph", po::value<std::string>()->implicit_value("dot"), "Generate the model graph in the given format [dot,svg,pdf,png].")
+		("help,h", "show this help page.");
+	
+	// positional option is treated as a model
+	po::positional_options_description pos_desc;
+	pos_desc.add("file",1);
+	
+	int style = po::command_line_style::unix_style;
+	if (allow_single_dash_long_options) style |=  po::command_line_style::allow_long_disguise;
+	auto cmd_line_parser = po::command_line_parser(argc, argv).options(desc).style(style).positional(pos_desc);
+	if (allow_symbol_override_options) cmd_line_parser.allow_unregistered();
+
+	po::variables_map cmd_line;
+	auto parsed_cmd_line = cmd_line_parser.run();
+	po::store(parsed_cmd_line, cmd_line);
+	po::notify(cmd_line);
+
+	if (cmd_line.count("help") ) {
+		desc.print(cout);
+		return false;
+	}
+	
+	if (cmd_line.count("revision") ) {
 		cout << "Revision: " <<  MORPHEUS_REVISION_STRING  << endl;
 		return false;
 	}
 
-	if (cmd_line.find("version") != cmd_line.end()) {
+	if (cmd_line.count("version")) {
 		cout << "Version: " << MORPHEUS_VERSION_STRING << endl;
 		return false;
 	}
-
-	if (cmd_line.find("gnuplot-path") != cmd_line.end()) {
-		Gnuplot::set_GNUPlotPath(cmd_line["gnuplot-path"]);
-		cmd_line.erase(cmd_line.find("gnuplot-path"));
+	
+	if (cmd_line.count("no-gnuplot")) {
+		Gnuplot::setEnabled(false);
 	}
 	
-	if (cmd_line.find("gnuplot-version") != cmd_line.end()) {
+	if (cmd_line.count("gnuplot-path")) {
+		Gnuplot::set_GNUPlotPath(cmd_line["gnuplot-path"].as<string>());
+	}
+	
+	if (cmd_line.count("gnuplot-version")) {
 		string version;
 		try {
-		version = Gnuplot::version();
+			version = Gnuplot::version();
 		}
 		catch (GnuplotException &e) {
 			throw string(e.what());
@@ -308,36 +399,34 @@ bool init(int argc, char *argv[]) {
 		return false;
 	}
 
-	if (cmd_line.find("symbol-graph") != cmd_line.end()) {
+	if (cmd_line.count("symbol-graph")) {
 		generate_symbol_graph_and_exit = true;
-		cmd_line.erase(cmd_line.find("symbol-graph"));
+		dep_graph_format = cmd_line["symbol-graph"].as<string>();
+	}
+	else if (cmd_line.count("model-graph")) {
+		generate_symbol_graph_and_exit = true;
+		dep_graph_format = cmd_line["model-graph"].as<string>();
 	}
 	else {
 		generate_symbol_graph_and_exit = false;
 	}
 
 	struct stat filestatus;
-	if (cmd_line.find("outdir") != cmd_line.end()) {
-		output_directory = cmd_line["outdir"];
+	if (cmd_line.count("outdir")) {
+		output_directory = cmd_line["outdir"].as<string>();
 		if ( access( output_directory.c_str(), R_OK | W_OK) != 0) {
 			throw  string("Error: output directory '") + output_directory + "' does not exist or is not writable.";
 		}
 		cout << "Setting output directory " << output_directory << endl;
-		cmd_line.erase(cmd_line.find("outdir"));
 	}
 
-	if ( argc  == 1 ) {
-        splash( true );
-        cout << "No arguments specified." << endl;
+	if ( cmd_line.count("file")  != 1 ) {
+        cout << "Error: Single morpheus model must be specified." << endl;
+		desc.print(cout);
         return false;
     }
 
-
-// TODO Handling missing file( a file parameter must be provided and the file must exist)
-
-	string filename = cmd_line["file"];
-	cmd_line.erase(cmd_line.find("file"));
-
+	string filename = cmd_line["file"].as<string>();
 	int filenotexists = stat( filename.c_str(), &filestatus );
 	if ( filenotexists > 0 || filename.empty() ) {
 		throw  string("Error: file '") + filename + "' does not exist.";
@@ -345,47 +434,102 @@ bool init(int argc, char *argv[]) {
 	else if ( filestatus.st_size == 0 ) {
 		throw  string("Error: file '") + filename + "' is empty.";
 	}
+	
+	generate_performance_stats = cmd_line.count("perf-stats");
 
-	if (filename.size() > 3 and filename.substr(filename.size()-4,3) == ".gz") {
-		throw  string("You must unzip the model file before using it");
-	} 
 	
-	XMLNode xMorpheusRoot = parseXMLFile(filename);
-	global_scope = unique_ptr<Scope>(new Scope());
 	// Attach global overrides to the global scope
-	for (map<string,string>::const_iterator it = cmd_line.begin(); it != cmd_line.end(); it++ ) {
-		if (it->first == "file") continue;
-		global_scope->value_overrides()[it->first] = it->second;
+	map<string,string> overrides;
+	if (allow_symbol_override_options) {
+		vector<string> unrecognized = collect_unrecognized(parsed_cmd_line.options, po::exclude_positional);
+		for (auto& param : unrecognized) {
+			boost::replace_all(param,"\""," ");
+			int s_idx = param.find_first_not_of("-");
+			int idx = param.find_first_of("=", s_idx);
+			if (idx == string::npos || idx <= s_idx || idx >= param.size()-1) {
+				throw string ("Invalid parameter override ") +  param;
+			}
+			overrides[boost::trim_copy(param.substr(s_idx,idx-s_idx))] = boost::replace_all_copy(param.substr(idx+1, param.size()-idx-1),"\""," ");
+		}
 	}
-	current_scope = global_scope.get();
+	if (cmd_line.count("set")) {
+		vector<string> params = cmd_line["set"].as<vector<string>>();
+		for (auto& param : params) {
+			boost::replace_all(param,"\""," ");
+			int idx=param.find_first_of("=");
+			if (idx == string::npos || idx == 0 || idx >= param.size()-1) {
+				throw string ("Invalid parameter override ") +  param;
+			}
+			overrides[boost::trim_copy(param.substr(0,idx))] = param.substr(idx+1, param.size()-idx-1);
+		}
+	}
 	
-	loadFromXML(xMorpheusRoot);
-	
+// 	cout << "registered overrides: ";
+// 	for ( const auto& o : overrides ) {
+// 		cout << o.first << " = " << o.second << "; ";
+// 	}
+// 	cout << endl;
+ 
+	try {
+		init(readFile(filename), overrides);
+	}
+	catch (const string &e) {
+		cerr << "Could not initialize model " << filename << "\n";
+		cerr << e << endl;
+		return false;
+	}
+	catch (const MorpheusException &e) {
+		cerr << "Could not initialize model " << filename << "\n";
+		cerr << e.what() << "\n";
+		cerr << "XMLPath: " << e.where() << endl;
+		return false;
+	}
 	
 	if (SIM::generate_symbol_graph_and_exit) {
 		createDepGraph();
-		cout << "Generated symbol dependency graph. Exiting." << endl;
+		cerr << "Generated symbol dependency graph. Exiting." << endl;
 		return false;
-	}
-
-	// try to match cmd line options with symbol names and adjust values accordingly
-	// check that global overrides have been used
-	for ( const auto& override: global_scope->value_overrides() ) {
-		cout << "Warning: Command line override " << override.first << "=" << override.second << " not used!" << endl;
 	}
 
 	cout.flush();
 	return true;
 };
 
+bool init(string model, map<string,string> overrides) {
+	XMLResults results;
+	xMorphModel = XMLNode::parseString(model.c_str(),"MorpheusModel", &results);
+	if (results.error!=eXMLErrorNone) {
+		stringstream s;
+		s << "Unable to read model" << std::endl; 
+		s << XMLNode::getError(results.error) <<  " at line " << results.nLine << " col " << results.nColumn << "!" << std::endl; 
+		throw s.str();
+	}
+	
+	global_scope = make_shared<Scope>();
+	// Attach global overrides to the global scope
+	for (const auto& param : overrides ) {
+// 		if (param.first == "file") continue;
+		getGlobalScope()->value_overrides()[param.first] = param.second;
+	}
+	current_scope = global_scope.get();
+	
+	loadFromXML(xMorphModel);
+	
+	// try to match cmd line options with symbol names and adjust values accordingly
+	// check that global overrides have been used
+	for ( const auto& override: global_scope->value_overrides() ) {
+		cout << "Error: Command line override " << override.first << "=" << override.second << " not used!" << endl;
+	}
+	if (! global_scope->value_overrides().empty()) {
+		return false;
+	}
+
+	return true;
+}
+
 void finalize() {
 	TimeScheduler::finish();
-	CPM::finish();
-	analysis_section_plugins.clear();
-	global_section_plugins.clear();
-	analysers.clear();
-	
-	
+	wipe();
 }
 
 void setRandomSeeds( const XMLNode xNode ){
@@ -404,19 +548,21 @@ void createDepGraph() {
 	shared_ptr<AnalysisPlugin> dep_graph_writer;
 	
 	for (uint i=0;i<analysers.size();i++) {
-		if (analysers[i]->XMLName() == "DependencyGraph") {
+		if (analysers[i]->XMLName() == "ModelGraph") {
 			dep_graph_writer = analysers.at(i);
 			dep_graph_writer->setParameter("format", dep_graph_format);
+			
 			break;
 		}
 	}
 	if (!dep_graph_writer) {
-		dep_graph_writer = dynamic_pointer_cast<AnalysisPlugin>(PluginFactory::CreateInstance("DependencyGraph"));
+		dep_graph_writer = dynamic_pointer_cast<AnalysisPlugin>(PluginFactory::CreateInstance("ModelGraph"));
 		if (!dep_graph_writer) {
-			cerr << "Unable to create instance for DependencyGraph Plugin." << endl;
+			cerr << "Unable to create instance for ModelGraph Plugin." << endl;
 			return;
 		}
 		dep_graph_writer->setParameter("format",dep_graph_format);
+		dep_graph_writer->loadFromXML(XMLNode::createXMLTopNode("ModelGraph"), SIM::getGlobalScope());
 		dep_graph_writer->init(getGlobalScope());
 	}
 	dep_graph_writer->analyse(0);
@@ -439,46 +585,24 @@ void loadFromXML(const XMLNode xNode) {
 	
 	
 	getXMLAttribute(xTime,"TimeSymbol/symbol",SymbolBase::Time_symbol);
-	global_scope->registerSymbol(make_shared<TimeSymbol>(SymbolBase::Time_symbol));
-	
-	xSpace = xNode.getChildNode("Space");
-	getXMLAttribute(xSpace,"SpaceSymbol/symbol",SymbolBase::Space_symbol);
-	global_scope->registerSymbol(make_shared<SpaceSymbol>(SymbolBase::Space_symbol));
+	auto time_symbol = make_shared<TimeSymbol>(SymbolBase::Time_symbol);
+	time_symbol->setXMLPath(getXMLPath(xTime)+"/TimeSymbol");
+	global_scope->registerSymbol(time_symbol);
 	
 	setRandomSeeds(xTime.getChildNode("RandomSeed"));
+
+	xSpace = xNode.getChildNode("Space");
+	getXMLAttribute(xSpace,"SpaceSymbol/symbol",SymbolBase::Space_symbol);
+	auto space_symbol = make_shared<LocationSymbol>(SymbolBase::Space_symbol);
+	space_symbol->setXMLPath(getXMLPath(xSpace)+"/SpaceSymbol");
+	global_scope->registerSymbol(space_symbol);
 	
 	// Loading and creating the underlying lattice
 	cout << "Creating lattice"<< endl;
 	XMLNode xLattice = xSpace.getChildNode("Lattice");
-	if (xLattice.isEmpty()) throw string("unable to read XML Lattice node");
 	
-	if (xLattice.nChildNode("NodeLength"))
-		node_length.loadFromXML(xLattice.getChildNode("NodeLength"), global_scope.get());
-	try {
-		string lattice_code="cubic";
-		getXMLAttribute(xLattice, "class", lattice_code);
-		if (lattice_code=="cubic") {
-			global_lattice =  shared_ptr<Lattice>(new Cubic_Lattice(xLattice));
-		} else if (lattice_code=="square") {
-			global_lattice =  shared_ptr<Lattice>(new Square_Lattice(xLattice));
-		} else if (lattice_code=="hexagonal") {
-			global_lattice =  shared_ptr<Lattice>(new Hex_Lattice(xLattice));
-		} else if (lattice_code=="linear") {
-			global_lattice =  shared_ptr<Lattice>(new Linear_Lattice(xLattice));
-		}
-		else throw string("unknown Lattice type " + lattice_code);
-		if (! global_lattice)
-				throw string("Error creating Lattice type " + lattice_code);
-	}
-	catch (string e) {
-		throw MorpheusException(e,xLattice);
-	}
-	
-	lattice_size_symbol="";
-	if (getXMLAttribute(xLattice,"Size/symbol",lattice_size_symbol)) {
-		auto lattice_size = SymbolAccessorBase<VDOUBLE>::createConstant(lattice_size_symbol,"Lattice Size", global_lattice->size());
-		global_scope->registerSymbol( lattice_size );
-	}
+	lattice_plugin = make_unique<LatticePlugin>();
+	lattice_plugin->loadFromXML(xLattice, global_scope.get());
 	
 	MembranePropertyPlugin::loadMembraneLattice(xSpace, global_scope.get());
 	
@@ -491,8 +615,10 @@ void loadFromXML(const XMLNode xNode) {
 			string xml_tag_name(xGlobalChild.getName());
 			shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
 			
-			if (! p.get())
+			if (! p.get()) {
+				Plugin::getFactory().printKeys();
 				throw MorpheusException(string("Unknown Global plugin ") + xml_tag_name, xGlobalChild);
+			}
 			
 			p->loadFromXML(xGlobalChild, global_scope.get());
 			global_section_plugins.push_back(p);
@@ -506,6 +632,12 @@ void loadFromXML(const XMLNode xNode) {
 	/** CREATION AND INTERLINKING of the DATA STRUCTURE **/
 	/*****************************************************/
 	
+	lattice_plugin->init(global_scope.get());
+	
+	global_lattice = lattice_plugin->getLattice();
+	
+	CPM::init();
+	
 	// all model constituents are loaded. let's initialize them (i.e. interlink)
 	global_scope->init();
 	for (auto glob : global_section_plugins) {
@@ -516,16 +648,21 @@ void loadFromXML(const XMLNode xNode) {
 			glob->init(SIM::getGlobalScope());
 		}
 		catch (string e) {
-			string s("Simulation Error in Plugin ");
+			string s("Error in Plugin ");
 			s+= glob->XMLName() + "\n" + e;
 			throw MorpheusException(s,glob->getXMLNode());
 		}
+		catch (const SymbolError& e) {
+			string s("Error in Plugin ");
+			s+= glob->XMLName() + "\n" + e.what();
+			throw MorpheusException(s,glob->getXMLNode());
+		}
+
 #endif
 	}
 
-	CPM::init();
 
-	XMLNode xAnalysis = xNode.getChildNode("Analysis");
+	xAnalysis = xNode.getChildNode("Analysis");
 	if ( ! xAnalysis.isEmpty() ) {
 		cout << "Loading Analysis tools [" << xAnalysis.nChildNode() << "]" <<endl;
 		for (int i=0; i<xAnalysis.nChildNode(); i++) {
@@ -542,9 +679,12 @@ void loadFromXML(const XMLNode xNode) {
 				if (dynamic_pointer_cast<AnalysisPlugin>(p) ) {
 					analysers.push_back( dynamic_pointer_cast<AnalysisPlugin>(p) );
 				}
+				else {
+					analysis_section_plugins.push_back(p);
+				}
 			}
 			catch (string er) {
-				cout << er << endl;
+				throw MorpheusException( er, xNode );
 			}
 		}
 	}
@@ -553,33 +693,32 @@ void loadFromXML(const XMLNode xNode) {
 	if (chdir(output_directory.c_str()) != 0) 
 		throw(string("Could not change to output directory \"") + output_directory + "\"");
 	
-	for (uint i=0;i<analysers.size();i++) {
-		analysers[i]->init(global_scope.get());
-	}
 	for (uint i=0;i<analysis_section_plugins.size();i++) {
 		analysis_section_plugins[i]->init(global_scope.get());
 	}
+	for (uint i=0;i<analysers.size();i++) {
+		analysers[i]->init(global_scope.get());
+	}
 	
-	TimeScheduler::init();
+	TimeScheduler::init(global_scope.get());
 	cout << "model is up" <<endl;
 };
 
 
 void saveToXML() {
-	XMLNode xMorpheusNode;
 	ostringstream filename("");
 	filename << fileTitle << setfill('0') << setw(6) << getTimeName() << ".xml.gz";
 	cout << "Saving " << filename.str()<< endl;
 
-	xMorpheusNode = XMLNode::createXMLTopNode("MorpheusModel");
+	xMorphModel = XMLNode::createXMLTopNode("MorpheusModel");
 	if (!morpheus_file_version.empty())
-		xMorpheusNode.addAttribute("version",morpheus_file_version.c_str());
+		xMorphModel.addAttribute("version",morpheus_file_version.c_str());
 
-	XMLNode xTimeNode = xMorpheusNode.addChild( TimeScheduler::saveToXML() );
+	XMLNode xTimeNode = xMorphModel.addChild( TimeScheduler::saveToXML() );
 
-	xMorpheusNode.addChild(xDescription);
+	xMorphModel.addChild(xDescription);
 
-	xMorpheusNode.addChild(xSpace);
+	xMorphModel.addChild(xSpace);
 	
 	// saving Field data
 	// TODO:: global_scope::saveToXML -> Field / VectorField
@@ -588,16 +727,16 @@ void saveToXML() {
 	}
 	
 	// saving global_scope
-	xMorpheusNode.addChild(xGlobals);
+	xMorphModel.addChild(xGlobals);
 
 	// saving cell types
-	xMorpheusNode.addChild(CPM::saveCellTypes());
+	xMorphModel.addChild(CPM::saveCellTypes());
 	
 	// save CPM details (interaction energy and metropolis kinetics)
-	xMorpheusNode.addChild(CPM::saveCPM());
+	xMorphModel.addChild(CPM::saveCPM());
 	
 	if ( ! (analysers.empty() && analysis_section_plugins.empty() )) {
-		XMLNode xAnalysis = xMorpheusNode.addChild("Analysis" );
+		XMLNode xAnalysis = xMorphModel.addChild("Analysis" );
 		for (uint i=0; i<analysis_section_plugins.size(); i++ ) {
 			xAnalysis.addChild(analysis_section_plugins[i]->saveToXML());
 		}
@@ -611,10 +750,10 @@ void saveToXML() {
 	/****************************/
 
 	// cell populations
-	xMorpheusNode.addChild(CPM::saveCellPopulations());
+	xMorphModel.addChild(CPM::saveCellPopulations());
 
 	int xml_size;
-	XMLSTR xml_data=xMorpheusNode.createXMLString(1,&xml_size);
+	XMLSTR xml_data=xMorphModel.createXMLString(1,&xml_size);
 
 	gzFile zfile = gzopen(filename.str().c_str(), "w9");
 	if (Z_NULL == zfile) {
@@ -630,6 +769,37 @@ void saveToXML() {
 	free(xml_data);
 }
 
+void wipe()
+{ 
+	TimeScheduler::wipe();
+	
+	analysers.clear();
+	analysis_section_plugins.clear();
+	global_section_plugins.clear();
+	CPM::wipe();
+	
+	lattice_plugin.reset();
+	global_lattice.reset();
+	global_scope.reset();
+	
+	global_scope = make_shared<Scope>();
+	current_scope = global_scope.get();
+}
+
+boost::property_tree::ptree& getPerfLogger() {
+	static boost::property_tree::ptree perf_logger;
+	return perf_logger;
+// 	static auto perf_logger =
+// 		shared_ptr<boost::property_tree::ptree>(new boost::property_tree::ptree(), [](boost::property_tree::ptree *that) {
+// 			boost::property_tree::write_json("performance.json", *that);
+// 			delete that;
+// 		});
+// 	return *perf_logger;
+}
+
+Lattice::Structure getLatticeStructure() {
+	return lattice_plugin->getStructure();
+}
 
 shared_ptr <const Lattice> getLattice() {
 	if (!global_lattice) {
@@ -638,11 +808,16 @@ shared_ptr <const Lattice> getLattice() {
 	return global_lattice;
 };
 
-const Lattice& lattice() { return *global_lattice; }
+const Lattice& lattice() {
+	if (!global_lattice) {
+		cerr << "Trying to access global lattice, while it's not defined yet!" << endl; assert(0); exit(-1);
+	}
+	return *global_lattice;
+}
 
 const Scope* getScope() { return current_scope; }
 
-const Scope* getGlobalScope() { return global_scope.get(); }
+Scope* getGlobalScope() { return global_scope.get(); }
 
 Scope* createSubScope(string name, CellType* ct) { if (! current_scope) throw string("Cannot create subscope from empty scope"); return current_scope->createSubScope(name,ct); }
 

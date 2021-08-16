@@ -1,13 +1,13 @@
+#ifndef FEEDBACK_H
+#define FEEDBACK_H
+
 #include <QtGui>
+#include <QDialog>
+#include <QLayout>
+#include <QPushButton>
 #include <QNetworkReply>
 
-#ifdef MORPHEUS_NO_QTWEBKIT
-#include <QTextBrowser>
-#warning Compiling without QtWebKit
-#else 
-#include <QtWebKit/QWebView>
-#endif
-
+#include <widgets/webviewer.h>
 
 class AnnouncementDialog : public QDialog {
 	Q_OBJECT
@@ -20,11 +20,7 @@ class AnnouncementDialog : public QDialog {
 	bool have_new_announcements = false;
 	bool show_old_announcements = false;
 	
-#ifdef MORPHEUS_NO_QTWEBKIT
-	QTextBrowser* web_view;
-#else
-	QWebView* web_view;
-#endif
+	WebViewer* web_view;
 	void setIndex(int idx);
 	void showAnnouncements(bool also_old);
 	void check();
@@ -40,6 +36,6 @@ class AnnouncementDialog : public QDialog {
 		void last();
 		void openLink(const QUrl & url);
 		void replyReceived();
-		
-		
 };
+
+#endif

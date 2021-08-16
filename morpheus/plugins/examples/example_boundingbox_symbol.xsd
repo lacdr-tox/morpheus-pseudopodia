@@ -5,36 +5,40 @@
 	
 <!-- XMLPath /MorpheusML/Global -->
 <!--	<xs:group name="GlobalPlugins">
-		<xs:choice>
-		</xs:choice>
+		<xs:all>
+		</xs:all>
 	</xs:group>-->
 	
 <!-- XMLPath /MorpheusML/CellTypes/CellType -->
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="BBox"	type="BBoxPlugin"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="BBox"	type="BBoxPlugin"	minOccurs="0"/>
+		</xs:all>
 	</xs:group>
   
 <!--  /MorpheusML/Analysis -->
 <!--	<xs:group name="AnalysisPlugins">
-        <xs:choice>
-		</xs:choice>
+        <xs:all>
+		</xs:all>
 	</xs:group>-->
 
 <!-- XMLPath  */System -->
 <!--	<xs:group name="SystemPlugins">
-		<xs:choice>
-		</xs:choice>
+		<xs:all>
+		</xs:all>
 	</xs:group>-->
 	
-	<!-- Define the description language piece of the Plugin -->
+	<!-- Define the description language piece of the Plugin as an extension of a morphPlugin base type (interfaces.xsd)-->
 	<xs:complexType name="BBoxPlugin">
-		<xs:annotation>
-			<xs:appinfo>Math</xs:appinfo>
-		</xs:annotation>
-		<xs:attribute name="min-symbol" type="cpmVectorSymbolDef" use="required" default="cell.bbmin"/>
-		<xs:attribute name="max-symbol" type="cpmVectorSymbolDef" use="required" default="cell.bbmax"/>
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Math</xs:appinfo>
+				</xs:annotation>
+				<xs:attribute name="min-symbol" type="cpmVectorSymbolDef" use="required" default="cell.bbmin"/>
+				<xs:attribute name="max-symbol" type="cpmVectorSymbolDef" use="required" default="cell.bbmax"/>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 </xs:schema>

@@ -62,6 +62,8 @@ class Gnuplot
 		static std::string       m_sGNUPlotFileName; 
 		///\brief gnuplot path
 		static std::string       m_sGNUPlotPath;
+		///\brief gnuplot enable state
+		static bool enabled;
 		
 		// ---------------------------------------------------------------------------------
 		///\brief checks if file exists
@@ -103,6 +105,9 @@ class Gnuplot
 		// ----------------------------------------------------------------------------
         static bool set_GNUPlotPath(const std::string &path);
 		static std::string get_GNUPlotPath();
+		
+		static void setEnabled(bool enable) { enabled = enable; };
+		static bool isEnabled() { return enabled; };
 		
 		// ----------------------------------------------------------------------------
 		/// \brief read all available terminals from GnuPlot

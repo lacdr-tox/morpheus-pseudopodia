@@ -15,7 +15,30 @@ JobViewModel::JobViewModel(JobQueue* jobs, QObject *parent) :
     root_item->name = "root";
     root_item->type = GROUP;
 //    qDebug() << "JobViewModel::JobViewModel";
-    updateLayout();
+	
+//     if (QIcon::hasThemeIcon("process-working")) icon_for_state[ProcessInfo::RUN] = QIcon::fromTheme("process-working");
+	// if (QIcon::hasThemeIcon("process-working-symbolic")) icon_for_state[ProcessInfo::RUN] = QIcon::fromTheme("process-working-symbolic");
+	// else 
+		icon_for_state[ProcessInfo::RUN] = QIcon(":/icons/process-working.svg");
+	
+// 	if (QIcon::hasThemeIcon("process-completed")) icon_for_state[ProcessInfo::DONE] = QIcon::fromTheme("process-completed");
+	// if (QIcon::hasThemeIcon("process-completed-symbolic")) icon_for_state[ProcessInfo::DONE] = QIcon::fromTheme("process-completed-symbolic");
+	// else 
+		icon_for_state[ProcessInfo::DONE] = QIcon(":/icons/process-completed.svg");
+	
+// 	if (QIcon::hasThemeIcon("process-stop")) icon_for_state[ProcessInfo::EXIT] = QIcon::fromTheme("process-stop");
+	// if (QIcon::hasThemeIcon("process-stopped-symbolic")) icon_for_state[ProcessInfo::EXIT] = QIcon::fromTheme("process-stopped-symbolic");
+	// else 
+		icon_for_state[ProcessInfo::EXIT] = QIcon(":/icons/process-stopped.svg");
+	
+// 	if (QIcon::hasThemeIcon("process-pending")) icon_for_state[ProcessInfo::PEND] = QIcon::fromTheme("process-pending");
+	// if (QIcon::hasThemeIcon("process-pending-symbolic")) icon_for_state[ProcessInfo::PEND] = QIcon::fromTheme("process-pending-symbolic");
+	// else 
+		icon_for_state[ProcessInfo::PEND] = QIcon(":/icons/process-pending.svg");
+
+	updateLayout();
+	
+	
 }
 
 QModelIndex JobViewModel::index( int row, int column, const QModelIndex & parent ) const {
@@ -118,7 +141,7 @@ QVariant JobViewModel::data( const QModelIndex & index, int role ) const {
 						r = QVariant(item->name);
 			}
 			if (role == Qt::DecorationRole)
-				r =  QVariant(QThemedIcon("folder",QIcon(":/folder.png")));
+				r =  QVariant(QIcon::fromTheme("folder", QIcon(":/icons/folder.png")));
 		}
 		if (index.column() == 1) {
 			if (role == Qt::DisplayRole && current_grouping == SWEEP) {
@@ -143,23 +166,7 @@ QVariant JobViewModel::data( const QModelIndex & index, int role ) const {
 					r = QVariant(item->name);
 			}
 			if (role == Qt::DecorationRole) {
-				switch (item->process->state()) {
-				case ProcessInfo::RUN:
-					r =  QVariant(QIcon(":/task-running.png"));
-					break;
-				case ProcessInfo::DONE:
-					r =  QVariant(QIcon(":/task-done.png"));
-					break;
-				case ProcessInfo::EXIT:
-					r =  QVariant(QIcon(":/task-exit.png"));
-					break;
-				case ProcessInfo::PEND:
-					r =  QVariant(QIcon(":/task-pending.png"));
-					break;
-				default:
-					r =  QVariant(QIcon(":/task-unknown.png"));
-					break;
-				}
+				r = icon_for_state[item->process->state()];
 			}
 		}
 		else if (index.column() == 1) {

@@ -2,20 +2,23 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="AnalysisPlugins">
-        <xs:choice>
-			<xs:element name="VtkPlotter" type="VtkPlotter"/>
-		</xs:choice>
+        <xs:all>
+			<xs:element name="VtkPlotter" type="VtkPlotter" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="VtkPlotter">
-		<xs:annotation>
-			<xs:appinfo>Visualization</xs:appinfo>
-		</xs:annotation>
-		<xs:all>
-			<xs:element name="Channel" type="cpmVTKChannel" minOccurs="1" maxOccurs="unbounded"/>
-		</xs:all>
-		<xs:attribute name="time-step" use="required" type="cpmMathExpression"/>
-		<xs:attribute name="mode" use="optional" type="cpmVtkMode" default="ascii"/>
+		<xs:complexContent>
+			<xs:extension base="morphAnalysisPlugin">
+				<xs:annotation>
+					<xs:appinfo>Visualization</xs:appinfo>
+				</xs:annotation>
+				<xs:all>
+					<xs:element name="Channel" type="cpmVTKChannel" minOccurs="1" maxOccurs="unbounded"/>
+				</xs:all>
+				<xs:attribute name="mode" use="optional" type="cpmVtkMode" default="binary"/>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	
 	<xs:complexType name="cpmVTKChannel">

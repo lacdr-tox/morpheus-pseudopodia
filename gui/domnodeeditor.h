@@ -12,12 +12,12 @@
 #ifndef DOMNODEEDITOR_H
 #define DOMNODEEDITOR_H
 
-#include <QtGui/QWidget>
+#include <QWidget>
 #include "config.h"
-#include "nodecontroller.h"
-#include "mathtextedit.h"
-#include "equationhighlighter.h"
-#include "attrcontroller.h"
+#include "morpheusML/morpheus_model.h"
+#include "widgets/mathtextedit.h"
+#include "widgets/equationhighlighter.h"
+
 
 class domNodeEditor : public QWidget
 {

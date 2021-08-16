@@ -25,8 +25,8 @@
 
 
 /// Some methods making consistent handling for reading and writing values and XML structure
-
-XMLNode parseXMLFile(string filename);
+string readFile(string filename);
+XMLNode parseXMLFile(string filename, XMLResults *pResults);
 XMLNode getXMLNode(const XMLNode XML_base, const string& path);
 string getXMLPath(const XMLNode node);
 

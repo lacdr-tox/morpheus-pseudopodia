@@ -13,6 +13,7 @@ namespace CPM {
 	
 // 	Time_Scale time_per_mcs("MCSDuration",1);
 	UpdateData global_update_data;
+	unique_ptr<CPM::Update> global_update;
 	
 	shared_ptr<LAYER> layer;
 	shared_ptr<CPMSampler> cpm_sampler;
@@ -153,27 +154,11 @@ uint nSurfaces(const VINT& pos) {
 
 
 void loadFromXML(XMLNode xMorph, Scope* local_scope) {
+	
 	scope = local_scope;
+	
 	if ( ! xMorph.getChildNode("CellTypes").isEmpty() ) 
 		loadCellTypes(xMorph.getChildNode("CellTypes"));
-	
-	boundary_neighborhood = SIM::lattice().getDefaultNeighborhood();
-	CPMShape::boundaryNeighborhood = boundary_neighborhood;
-	
-// 	if (SIM::lattice().getStructure() == Lattice::square)
-// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(2);
-// 	else if (SIM::lattice().getStructure() == Lattice::hexagonal)
-// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
-// 	else if (SIM::lattice().getStructure() == Lattice::cubic)
-// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(3);
-// 	else if (SIM::lattice().getStructure() == Lattice::linear)
-// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
-	
-	surface_neighborhood = SIM::lattice().getDefaultNeighborhood();
-	
-	if ( surface_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && surface_neighborhood.order()>5)) {
-		throw string("Default neighborhood is too large for estimation of cell surface nodes");
-	}
 	
 	// look for a medium type in predefined celltypes, or create one ...
 	if ( ! celltypes.empty()) {
@@ -195,12 +180,99 @@ void loadFromXML(XMLNode xMorph, Scope* local_scope) {
 				break;
 			}
 		}
-
-		EmptyState.cell_id = celltypes[EmptyCellType]->createCell(); // make sure the the medium contains the cell representing the medium
 	}
 	
 	if ( ! xMorph.getChildNode("CPM").isEmpty() ) {
 		xCPM = xMorph.getChildNode("CPM");
+		// CPM time evolution is defined by a MonteCarlo simulation based on the a Hamiltionian and the metropolis kintics
+		if ( ! xCPM.getChildNode("MonteCarloSampler").isEmpty() ) {
+			cpm_sampler =  shared_ptr<CPMSampler>(new CPMSampler());
+			cpm_sampler->loadFromXML(xCPM, scope);
+// 			time_per_mcs.set( cpm_sampler->timeStep() );
+
+		}
+		
+		enabled = true;
+		
+	}
+	
+	if ( ! xMorph.getChildNode("CellPopulations").isEmpty()) {
+		xCellPop = xMorph.getChildNode("CellPopulations");
+	}
+	
+}
+
+
+void loadCellTypes(XMLNode xCellTypesNode) {
+	xCellTypes = xCellTypesNode;
+	for (int i=0; i<xCellTypesNode.nChildNode("CellType");i++) {
+		string classname;
+		XMLNode xCTNode = xCellTypesNode.getChildNode("CellType",i);
+		try {
+			if ( ! getXMLAttribute(xCTNode,"class", classname))
+				throw string("No classname provided for celltype ")+to_str(i);
+			shared_ptr<CellType> ct = CellTypeFactory::CreateInstance( classname, celltypes.size() );
+			if (ct.get() == NULL)
+				throw string("No celltype class ")+classname+" available";
+			ct->loadFromXML( xCTNode, scope );
+			string name=ct->getName();
+			if (name.empty())
+				throw string("No name for provided for celltype ")+to_str(i);
+			if (name.find_first_of(" \t\n\r") != string::npos)
+				throw string("Celltype names may not contain whitespace characters. Invalid name \"")+name+" \"";
+			if (celltype_names.find(name) != celltype_names.end()) 
+				throw string("Redefinition of celltype ")+name;
+			
+			celltype_names[name] = celltypes.size();
+			celltypes.push_back(ct);
+			
+			auto celltype_name = SymbolAccessorBase<double>::createConstant(string("celltype.") + name+ ".id", "CellType ID", double(celltype_names[name]));
+			SIM::getGlobalScope()->registerSymbol(celltype_name);
+ 			auto celltype_size = make_shared<CellPopulationSizeSymbol>(string("celltype.") + name + ".size", celltypes.back().get());
+			celltype_size->setXMLPath(getXMLPath(xCTNode));
+			SIM::getGlobalScope()->registerSymbol(celltype_size);
+		}
+		catch (string e) {
+			throw MorpheusException(string("Unable to create CellType\n") + e, xCTNode);
+		}
+	}
+	
+	for (uint i=0; i<celltypes.size(); i++) {
+		celltypes[i]->loadPlugins();
+#ifdef HAVE_SUPERCELLS
+		if (dynamic_pointer_cast<SuperCT>(celltypes[i]) )
+			dynamic_pointer_cast<SuperCT>(celltypes[i])->bindSubCelltype();
+#endif
+	}
+	
+	if (!celltype_names.empty()) {
+		cout << "CellTypes defined: ";
+		for (map<string,uint>::iterator ct1=celltype_names.begin(); ct1 != celltype_names.end();ct1++)
+			cout << "\'" << ct1->first << "\' ";
+		cout << endl;
+	}
+}
+
+void init() {
+	boundary_neighborhood = SIM::lattice().getDefaultNeighborhood();
+	CPMShape::boundaryNeighborhood = boundary_neighborhood;
+	
+// 	if (SIM::lattice().getStructure() == Lattice::square)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(2);
+// 	else if (SIM::lattice().getStructure() == Lattice::hexagonal)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
+// 	else if (SIM::lattice().getStructure() == Lattice::cubic)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(3);
+// 	else if (SIM::lattice().getStructure() == Lattice::linear)
+// 		surface_neighborhood = SIM::lattice().getNeighborhoodByOrder(1);
+	
+	surface_neighborhood = SIM::lattice().getDefaultNeighborhood();
+	
+
+	if ( surface_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && surface_neighborhood.order()>5)) {
+		throw string("Default neighborhood is too large for estimation of cell surface nodes");
+	}
+	if ( enabled ) {
 		try {
 			// CPM Cell representation requires the definition of the CPM ShapeSurface for shape length estimations
 			boundary_neighborhood = SIM::lattice().getNeighborhood(xCPM.getChildNode("ShapeSurface").getChildNode("Neighborhood"));
@@ -227,26 +299,14 @@ void loadFromXML(XMLNode xMorph, Scope* local_scope) {
 				CPMShape::scalingMode = CPMShape::BoundaryScalingMode::Magno;
 			}
 		}
-		
-		// CPM time evolution is defined by a MonteCarlo simulation based on the a Hamiltionian and the metropolis kintics
-		if ( ! xCPM.getChildNode("MonteCarloSampler").isEmpty() ) {
-			cpm_sampler =  shared_ptr<CPMSampler>(new CPMSampler());
-			cpm_sampler->loadFromXML(xCPM, scope);
-// 			time_per_mcs.set( cpm_sampler->timeStep() );
-			update_neighborhood = cpm_sampler->getUpdateNeighborhood();
-		}
-		
-		enabled = true;
-		
-	}
-	if ( ! xMorph.getChildNode("CellPopulations").isEmpty()) {
-		xCellPop = xMorph.getChildNode("CellPopulations");
 	}
 	
 	if ( ! celltypes.empty()) {
 		cout << "Creating cell layer ";
-   
+		// make sure the the medium contains the cell representing the medium
+		EmptyState.cell_id = celltypes[EmptyCellType]->createCell(); 
 		InitialState = EmptyState;
+		
 		cout << "with initial state set to CellType \'" << celltypes[EmptyCellType]->getName() << "\'" << endl;
 
 		layer = shared_ptr<LAYER>(new LAYER(SIM::getLattice(), 3, InitialState, "cpm") );
@@ -289,60 +349,6 @@ void loadFromXML(XMLNode xMorph, Scope* local_scope) {
 		global_update_data.surface = 0;
 	}
 	
-}
-
-
-void loadCellTypes(XMLNode xCellTypesNode) {
-	xCellTypes = xCellTypesNode;
-	for (int i=0; i<xCellTypesNode.nChildNode("CellType");i++) {
-		string classname;
-		XMLNode xCTNode = xCellTypesNode.getChildNode("CellType",i);
-		try {
-			if ( ! getXMLAttribute(xCTNode,"class", classname))
-				throw string("No classname provided for celltype ")+to_str(i);
-			shared_ptr<CellType> ct = CellTypeFactory::CreateInstance( classname, celltypes.size() );
-			if (ct.get() == NULL)
-				throw string("No celltype class ")+classname+" available";
-			ct->loadFromXML( xCTNode, scope );
-			string name=ct->getName();
-			if (name.empty())
-				throw string("No name for provided for celltype ")+to_str(i);
-			if (name.find_first_of(" \t\n\r") != string::npos)
-				throw string("Celltype names may not contain whitespace characters. Invalid name \"")+name+" \"";
-			if (celltype_names.find(name) != celltype_names.end()) 
-				throw string("Redefinition of celltype ")+name;
-			
-			celltype_names[name] = celltypes.size();
-			celltypes.push_back(ct);
-			
-			auto celltype_name = SymbolAccessorBase<double>::createConstant(string("celltype.") + name+ ".id", "CellType ID", double(celltype_names[name]));
-			scope->registerSymbol(celltype_name);
- 			auto celltype_size = make_shared<CellPopulationSizeSymbol>(string("celltype.") + name + ".size", celltypes.back().get());
-			scope->registerSymbol(celltype_size);
-		}
-		catch (string e) {
-			throw MorpheusException(string("Unable to create CellType\n") + e, xCTNode);
-		}
-	}
-	
-	for (uint i=0; i<celltypes.size(); i++) {
-		celltypes[i]->loadPlugins();
-#ifdef HAVE_SUPERCELLS
-		if (dynamic_pointer_cast<SuperCT>(celltypes[i]) )
-			dynamic_pointer_cast<SuperCT>(celltypes[i])->bindSubCelltype();
-#endif
-	}
-	
-	if (!celltype_names.empty()) {
-		cout << "CellTypes defined: ";
-		for (map<string,uint>::iterator ct1=celltype_names.begin(); ct1 != celltype_names.end();ct1++)
-			cout << "\'" << ct1->first << "\' ";
-		cout << endl;
-	}
-}
-
-void init() {
-
 	loadCellPopulations();
 
 	// Init the CellTypes and their (CPM) Plugins
@@ -478,7 +484,7 @@ bool executeCPMUpdate(const CPM::Update& update) {
 	return true;
 }
 
-CPM::Update& getGlobalUpdate() { static Update global_update(&global_update_data, layer); return global_update;}
+CPM::Update& getGlobalUpdate() { if (! global_update) global_update = make_unique<Update>(&global_update_data, layer); return *global_update; }
 
 const CPM::Update& createUpdate(VINT source, VINT direction, CPM::Update::Operation opx) {
 	
@@ -590,10 +596,13 @@ void setUpdate(CPM::Update& update) {
 	
 }
 
-void finish() {
-	celltypes.clear();
-	celltype_names.clear();
+void wipe() {
 	cpm_sampler.reset();
+	celltype_names.clear();
+	celltypes.clear();
+	
+	CellType::storage.wipe();
+	global_update.reset();
 	layer.reset();
 }
 

@@ -11,10 +11,11 @@ AddonAdhesion::AddonAdhesion()
 	registerPluginParameter(strength);
 }
 
-double AddonAdhesion::interaction(CPM::STATE s1, CPM::STATE s2)
+double AddonAdhesion::interaction(const SymbolFocus& cell1, const SymbolFocus& cell2)
 {
-	SymbolFocus focus = SymbolFocus( s1.cell_id,s1.pos );
-	double dE = -adhesive( focus ) * strength( focus );
-	return dE;
+	double dE = - adhesive( cell1 ) * strength( cell1 );
+	dE += - adhesive( cell2 ) * strength( cell2 );
+	
+	return dE*0.5;
 }
 

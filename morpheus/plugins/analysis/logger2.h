@@ -72,17 +72,17 @@ Versatile interface to
 \subsection Input
 
 - \b time-step (optional): time between logging events. If unspecified adopts to the frequency of input updates. Setting \b time-step<=0 will log only the final state of the simulation.
-- \b name (optional, default=none): shows in GUI, only for user-convenience
+- \b name (optional, default=none): displayed in GUI, only for user-convenience
 - \b force-node-granularity (optional, default=false): force logging per node in a grid-like fashion.
 - \b exclude-medium (optional, default=true): when logging cell properties, only include biological cells.
 
-\subsubsection Symbol (required)
+\subsubsection Symbol Symbol (required)
 
 Specifies at one or more symbols to write to data file. Symbol can be flexibly combined, but the data format is determined by the symbol with the smallest granularity.
 
 - \b symbol-ref (required): symbol referring to e.g. a global \ref ML_Variable, a cell \ref ML_Property, a \ref ML_MembraneProperty, or a \ref ML_Field.
 
-\subsection Output (required)
+\subsection Output Output (required)
 
 Specifies the details of the output file
 
@@ -93,11 +93,11 @@ Specifies the details of the output file
 - \b file-numbering (optional, default=time): filenames are named according to simulation time or incremental numbering
 - \b file-separation (optional, default=none): writes separate files for time, cells or both (cell+time)
 
-\subsection Restriction (optional)
+\subsection Restriction Restriction (optional)
 
-Restrict the data query to a certain slice, a cell type or certain cell ids.
+Restrict the data query to a certain slice, a cell type or certain cell IDs.
 
-- \b Slice: restrict query to slice (note: require node granularity)
+- \b Slice: restrict query to slice (note: requires node granularity)
   - \b axis  (required): x,y,z axis to slice
   - \b value (required): position along axis at which to slice the space (can be expression)
 
@@ -110,14 +110,15 @@ Restrict the data query to a certain slice, a cell type or certain cell ids.
     - range of IDs with dash: "4-8", or
     - combination of list and range: "12-15, 24-28".
 
-- \b domain-only (optional, default=true): query only nodes within domain. if false, also include node outside of domain.
-- \b force-node-granularity (optional, default=false): granularity of automatically detected by default, but may be overridden if specified
+- \b condition (optional, default=1): condition used in addition to constraint the query to certain cells/nodes fulfilling the condition
+- \b domain-only (optional, default=true): if the lattice is confined to a domain, only query nodes within domain. If false, also include nodes outside of domain
+- \b force-node-granularity (optional, default=false): granularity of nodes is automatically detected by default, but may be overridden if specified
 
-\subsection Plots (optional)
+\subsection Plots Plots (optional)
 
 Specifies one or more plots, generated from the data in the written data file.
 
-\subsubsection Plot (optional)
+\subsubsection Plot Plot (optional)
 
 Symbols can be selected for X and Y dimensions + color and the range of time points can be selected.
 
@@ -167,7 +168,7 @@ Symbols can be selected for X and Y dimensions + color and the range of time poi
     - else: should be multiple of Logger/time-step
 - \b title (optional, default=none): Title caption for the Plot
 
-\subsubsection SurfacePlot (optional)
+\subsubsection SurfacePlot SurfacePlot (optional)
 
 Draws a surface plot (e.g. heatmap) from data in matrix format
 
@@ -190,7 +191,7 @@ Draws a surface plot (e.g. heatmap) from data in matrix format
     - -1  : end of simulation
     -  0  : same interval as Logger
     - else: should be multiple of Logger/time-step
-- \b name (optional, default=none): shows in GUI, only for user-convenience
+- \b name (optional, default=none): displayed in GUI, only for user-convenience
 
 
 \section Examples
@@ -204,7 +205,7 @@ Property symbol="p"
 MembraneProperty symbol="m"
 \endverbatim
 
-\subsection Two variables: time and phase plots
+\subsection Two Two variables: time and phase plots
 
 Log two global Variables (N and P) n the format below (see PredatorPrey example).
 And create a timeplot with multiple variables plotting on Y-axis.
@@ -251,7 +252,7 @@ time	N	P
 ...
 \endverbatim
 
-\subsection Cell properties: colored time and phase plots
+\subsection Cell Cell properties: colored time and phase plots
 
 Log cell properties in a population of cells (see LateralSignaling example).
 And create a time plot with points colored according to a cell property.
@@ -302,7 +303,7 @@ time	cell.id	X	Y
 ...
 \endverbatim
 
-\subsection Slicing: space-time plot and profile plot
+\subsection Slicing: Slicing: space-time plot and profile plot
 
 Log a slice of two Fields ('a' and 'i') in the following format:
 Create a space-time plot with time on X-axis, space on Y-axis and colors indicating concentration of 'a'.
@@ -363,7 +364,6 @@ class Logger : public AnalysisPlugin
 	static int instances;
 	int instance_id;
 private:
-	XMLNode stored_node;
 	vector< PluginParameter_Shared<double, XMLReadableSymbol> > inputs;
 	vector<shared_ptr<LoggerWriterBase> > writers;
 	vector<shared_ptr<LoggerPlotBase> > plots;
@@ -373,7 +373,6 @@ private:
 	FocusRange range;
 
 	// Restrictions
-	//multimap<FocusRangeAxis, int> restrictions;
 	multimap<FocusRangeAxis, int> restrictions;
 	// Celltype
 	PluginParameterCellType< OptionalPolicy > celltype;
@@ -385,6 +384,9 @@ private:
 	bool slice;
 	PluginParameter2<double, XMLEvaluator, OptionalPolicy> slice_value;
 	PluginParameter2<FocusRangeAxis, XMLNamedValueReader, OptionalPolicy> slice_axis;
+	// Conditional Restriction
+	PluginParameter<double, XMLEvaluator, OptionalPolicy> restriction_condition;
+	
 	// Domain only
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> domain_only;
 	// Node granularity
@@ -402,6 +404,7 @@ public:
 	void finish() override;
 	
 	const vector< PluginParameter_Shared<double, XMLReadableSymbol> >& getInputs() const { return inputs;};
+	const SymbolAccessor<double> getInput(const string& symbol) const;
 	string getInputsDescription(const string& s) const;
 	int addWriter(shared_ptr<LoggerWriterBase> writer);
 	const vector<shared_ptr<LoggerWriterBase> >& getWriters() const { return writers; };
@@ -411,6 +414,7 @@ public:
 
 	Granularity getGranularity() { return logger_granularity; }
 	const multimap<FocusRangeAxis, int>& getRestrictions() { return restrictions; }
+	const PluginParameter<double,XMLEvaluator,OptionalPolicy>&  getRestrictionCondition() { return restriction_condition; };
 	bool permitIncompleteSymbols() { return permit_incomplete_symbols; }
 	bool getDomainOnly() { return domain_only(); };
 };
@@ -502,7 +506,7 @@ class LoggerPlotBase {
 public:
 	enum class Palette { DEFAULT, HOT, AFMHOT, GRAY, OCEAN, RAINBOW, GRV };
 	LoggerPlotBase(Logger& logger, string xml_base_path);
-	virtual void init() =0;
+	virtual void init();
 	void checkedPlot();
 	
 protected:

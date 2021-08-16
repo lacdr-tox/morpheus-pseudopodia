@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="3">
+<MorpheusModel version="4">
     <Description>
         <Details>This model shows:
 - how to implement a simple cellular automata using a Global/Field.
@@ -8,26 +8,26 @@
         <Title>Example-Game-of-Life-Field</Title>
     </Description>
     <Global>
-        <Field symbol="s" value="if(rand_uni(0,1) > 0.75, 1, 0)">
+        <Field value="if(rand_uni(0,1) > 0.75, 1, 0)" symbol="s">
             <Diffusion rate="0"/>
         </Field>
-        <Field symbol="sum" value="0">
+        <Field value="0" symbol="sum">
             <Diffusion rate="0.0"/>
         </Field>
-        <System solver="euler" time-step="1.0" name="Rules of life">
+        <System name="Rules of life" solver="Euler [fixed, O(1)]" time-step="1.0">
             <Rule symbol-ref="s">
                 <Expression>if((s == 1 and sum >= w and sum &lt;= x ), 1,
 if((s == 0 and sum >= y and sum &lt;= z ), 1, 0))
                     </Expression>
             </Rule>
-            <Constant symbol="w" value="2"/>
-            <Constant symbol="x" value="3"/>
-            <Constant symbol="y" value="3"/>
-            <Constant symbol="z" value="3"/>
+            <Constant value="2" symbol="w"/>
+            <Constant value="3" symbol="x"/>
+            <Constant value="3" symbol="y"/>
+            <Constant value="3" symbol="z"/>
         </System>
         <NeighborhoodReporter>
             <Input value="s"/>
-            <Output symbol-ref="sum" mapping="sum"/>
+            <Output mapping="sum" symbol-ref="sum"/>
         </NeighborhoodReporter>
     </Global>
     <Space>
@@ -35,7 +35,7 @@ if((s == 0 and sum >= y and sum &lt;= z ), 1, 0))
             <Neighborhood>
                 <Order>2</Order>
             </Neighborhood>
-            <Size symbol="size" value="200,200,0"/>
+            <Size value="200,200,0" symbol="size"/>
         </Lattice>
         <SpaceSymbol symbol="space"/>
     </Space>
@@ -45,7 +45,7 @@ if((s == 0 and sum >= y and sum &lt;= z ), 1, 0))
         <TimeSymbol symbol="time"/>
     </Time>
     <Analysis>
-        <Gnuplotter time-step="1" decorate="false">
+        <Gnuplotter decorate="false" time-step="1">
             <Terminal name="png"/>
             <Plot>
                 <Field symbol-ref="s">
@@ -56,5 +56,6 @@ if((s == 0 and sum >= y and sum &lt;= z ), 1, 0))
                 </Field>
             </Plot>
         </Gnuplotter>
+        <ModelGraph format="svg" reduced="true" include-tags="#untagged"/>
     </Analysis>
 </MorpheusModel>

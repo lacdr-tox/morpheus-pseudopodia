@@ -2,21 +2,24 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="Chemotaxis"	type="Chemotaxis"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="Chemotaxis"	type="Chemotaxis"  	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
-	<xs:complexType name="Chemotaxis">		
-		<xs:annotation>
-			<xs:appinfo>Motility</xs:appinfo>
-		</xs:annotation>
-		<xs:attribute name="field" 				type="cpmMathExpression"	use="required" />
-		<xs:attribute name="strength"			type="cpmMathExpression"	use="required" default="1"/>
-		<xs:attribute name="saturation"			type="cpmMathExpression"	use="optional" default="1"/>
-		<xs:attribute name="retraction" 		type="cpmBoolean"			use="optional" default="true"/>
-		<xs:attribute name="contact-inhibition"	type="cpmBoolean"			use="optional" default="false"/>
-		<xs:attribute name="name" 				type="cpmString"			use="optional" />
+	<xs:complexType name="Chemotaxis">
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Motility</xs:appinfo>
+				</xs:annotation>
+				<xs:attribute name="field" 				type="cpmMathExpression"	use="required" />
+				<xs:attribute name="strength"			type="cpmMathExpression"	use="required" default="1"/>
+				<xs:attribute name="saturation"			type="cpmMathExpression"	use="optional" default="1"/>
+				<xs:attribute name="retraction" 		type="cpmBoolean"			use="optional" default="true"/>
+				<xs:attribute name="contact-inhibition"	type="cpmBoolean"			use="optional" default="false"/>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 </xs:schema>

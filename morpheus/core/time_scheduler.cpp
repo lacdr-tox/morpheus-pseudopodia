@@ -25,13 +25,25 @@ bool set_disjoint(const std::set<T> &set1, const std::set<T> &set2)
     return true;
 }
 
+unique_ptr<TimeScheduler> TimeScheduler::sched;
 
 TimeScheduler::TimeScheduler() : start_time("StartTime",0), save_interval("SaveInterval",-1), is_state_valid(false), stop_time("StopTime",1000) {};
 
 TimeScheduler& TimeScheduler::getInstance() {
-	static TimeScheduler sched;
-	return sched;
+	if (!sched) {
+		sched = unique_ptr<TimeScheduler>(new TimeScheduler());
+		sched->start_time.set(0);
+		sched->stop_time.set(1);
+		sched->current_time = sched->start_time();
+	}
+	return *sched;
 }
+
+void TimeScheduler::wipe()
+{
+	sched.release();
+}
+
 
 void TimeScheduler::loadFromXML(XMLNode xTime, Scope* scope)
 {
@@ -60,9 +72,11 @@ XMLNode TimeScheduler::saveToXML() {
 	return xmlTime;
 };
 
-void TimeScheduler::init()
+void TimeScheduler::init(Scope* scope)
 {
 	TimeScheduler& ts = getInstance();
+	ts.global_scope = scope;
+
 	ts.current_time = ts.start_time();
 	ts.progress_notify_interval = (ts.stop_time() - ts.current_time)/ 100;
 	
@@ -539,29 +553,46 @@ void TimeScheduler::finish()
 		ts.analysers[i]->finish();
 	}
 	
-    cout << "======================================================\n";
-	cout << " Time Schedule Performance Table\n";
-	cout << "======================================================\n";
-	cout << "\n";
 	
-	std::sort(ts.all_listeners.begin(),ts.all_listeners.end(),[](TimeStepListener* a, TimeStepListener* b) { return a->execSysTime()>b->execSysTime(); } );
+//     cout << "======================================================\n";
+// 	cout << " Time Schedule Performance Table\n";
+// 	cout << "======================================================\n";
+// 	cout << "\n";
+// 	
+// 	std::sort(ts.all_listeners.begin(),ts.all_listeners.end(),[](TimeStepListener* a, TimeStepListener* b) { return a->execSysTime()>b->execSysTime(); } );
+// 	for (uint i=0; i<ts.all_listeners.size(); i++) {
+// 
+// 		cout << "  + " << setw(6) << (ts.all_listeners[i]->execSysTime()/ts.execTime)*100.0 <<"%" << " = " << setprecision(1) << setw(8) << ts.all_listeners[i]->execSysTime() << " (" << setw(8) << ts.all_listeners[i]->execClockTime() <<") [ms] | ";
+// 		
+// 		cout << ts.all_listeners[i]->XMLName();
+// 		if ( ! ts.all_listeners[i]->getFullName().empty() )
+// 		     cout << " [" << ts.all_listeners[i]->getFullName() << "]";
+// 		set<string> dep;
+// 		for (auto it : ts.all_listeners[i]->getDependSymbols() ) dep.insert(it->name());
+// 		set<string> out;
+// 		for (auto it : ts.all_listeners[i]->getOutputSymbols() ) out.insert(it->name());
+// 		cout << " [" << join(dep,",") << "] -> [" << join(out,",") << "]"; 
+// 		cout << endl;
+// 	}	
+// 	cout << "======================================================\n";
+// 	cout << endl;
+	
+	namespace pt = boost::property_tree;
+	auto& perf_json = SIM::getPerfLogger();
+	
 	for (uint i=0; i<ts.all_listeners.size(); i++) {
-
-		cout << "  + " << setw(6) << (ts.all_listeners[i]->execSysTime()/ts.execTime)*100.0 <<"%" << " = " << setw(8) << ts.all_listeners[i]->execSysTime() << "[ms] | ";
-		
-		cout << ts.all_listeners[i]->XMLName();
-		if ( ! ts.all_listeners[i]->getFullName().empty() )
-		     cout << " [" << ts.all_listeners[i]->getFullName() << "]";
-		set<string> dep;
-		for (auto it : ts.all_listeners[i]->getDependSymbols() ) dep.insert(it->name());
-		set<string> out;
-		for (auto it : ts.all_listeners[i]->getOutputSymbols() ) out.insert(it->name());
-		cout << " [" << join(dep,",") << "] -> [" << join(out,",") << "]"; 
-		cout << endl;
-	}	
-	cout << "======================================================\n";
-	cout << endl;
-	
+		pt::ptree entry;
+		entry.add("name",ts.all_listeners[i]->XMLName());
+		entry.add("description",ts.all_listeners[i]->getFullName());
+		set<string> dep; for (auto it : ts.all_listeners[i]->getDependSymbols() ) dep.insert(it->name());
+		entry.add("inputs", join(dep,","));
+		set<string> out; for (auto it : ts.all_listeners[i]->getOutputSymbols() ) out.insert(it->name());
+		entry.add("outputs", join(out,","));
+// 		entry.add("fraction", to_str((ts.all_listeners[i]->execSysTime()/ts.execTime)*100.0) + " %" );
+		entry.add("runtime", to_str(ts.all_listeners[i]->execSysTime()/1000.0) );
+		entry.add("cputime", to_str(ts.all_listeners[i]->execClockTime()/1000.0) );
+		perf_json.push_back(make_pair("component", entry));
+	}
 	
 	if (ts.save_interval() >= 0) SIM::saveToXML();
 	

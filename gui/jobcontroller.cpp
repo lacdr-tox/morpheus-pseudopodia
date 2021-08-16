@@ -2,7 +2,7 @@
 
 JobView::JobView()
 {
-    te_output = new QTextEdit(this);
+    te_output = new QPlainTextEdit(this);
     te_output->setReadOnly(true);
    // te_output->setFont( QFont( "DejaVu Sans Mono" ) );
     QFont font("Monospace");
@@ -10,7 +10,7 @@ JobView::JobView()
     te_output->setFont( font );
 
     QPalette pal;
-    pal.setColor(QPalette::Base, QColor(239, 235, 231, 255));
+    pal.setColor(QPalette::Base, pal.color(QPalette::AlternateBase) );
     te_output->setPalette(pal);
 
     output_files = new QTreeView();
@@ -42,17 +42,18 @@ JobView::JobView()
     sim_header->addStretch();
 	QToolBar *sim_tools = new QToolBar();
 	sim_tools->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+	sim_tools->setIconSize(QSize(24,24));
 	
-	stop_action = new QAction(QThemedIcon("media-playback-stop", style()->standardIcon(QStyle::SP_MediaStop) ),"Stop",sim_tools);
+	stop_action = new QAction(QIcon::fromTheme("media-playback-stop-symbolic", QIcon::fromTheme("media-playback-stop", style()->standardIcon(QStyle::SP_MediaStop))),"Stop",sim_tools);
 	connect(stop_action,SIGNAL(triggered(bool)),this,SLOT(stopJob()));
 	sim_tools->addAction(stop_action);
 	sim_tools->addSeparator();
 	
-	open_output_action = new QAction(QThemedIcon("folder",style()->standardIcon(QStyle::SP_DirIcon)),"Output Folder",sim_tools);
+	open_output_action = new QAction(QIcon::fromTheme("folder",style()->standardIcon(QStyle::SP_DirIcon)),"Output Folder",sim_tools);
 	connect(open_output_action, SIGNAL(triggered(bool)), SLOT(openOutputFolder()));
 	sim_tools->addAction(open_output_action);
 
-    open_terminal_action = new QAction(QThemedIcon("utilities-terminal",QIcon(":/terminal.png")),"Terminal", this);
+    open_terminal_action = new QAction(QIcon::fromTheme("utilities-terminal",QIcon(":/icons/utilities-terminal.png")),"Terminal", this);
 #ifdef Q_WS_MAC
     open_terminal_action->setEnabled(false);
 #endif
@@ -60,7 +61,7 @@ JobView::JobView()
 	sim_tools->addAction(open_terminal_action);
 
     sim_tools->addSeparator();
-    make_movie_action = new QAction(QThemedIcon("movie",QIcon(":/movie.png")),"Create movie",this);
+    make_movie_action = new QAction(QIcon::fromTheme("movie",QIcon(":/icons/movie.png")),"Create movie",this);
     connect(make_movie_action, SIGNAL(triggered(bool)), SLOT(makeMovie()));
     sim_tools->addAction(make_movie_action);
 
@@ -104,23 +105,24 @@ JobView::JobView()
 // 	QMovie* movie = new QMovie(this);
 //     qDebug() << "QMOVIE: SUPPORTED FORMATS: " << movie->supportedFormats();
 
-	textPreview = new QTextEdit();
+	textPreview = new QPlainTextEdit();
 	textPreview->setBackgroundRole(QPalette::Base);
 	textPreview->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 	textPreview->setReadOnly(true );
 	textPreview->setVisible(true);
-	textPreview->setFontFamily("Courier");
+// 	textPreview->setFontFamily("Courier");
 	textPreview->setWordWrapMode(QTextOption::WordWrap);
 
 	
-	previewStack= new QStackedLayout();
+	previewStack= new QStackedWidget();
 	previewStack->addWidget(imagePreview);
 	previewStack->addWidget(textPreview);
 
-	gr_preview = new QGroupBox("Preview");
-	gr_preview->setLayout(previewStack);
-	gr_preview->setMinimumWidth(250);
-	gr_preview->hide();
+// 	gr_preview = new QGroupBox("Preview");
+// 	gr_preview->setLayout(previewStack);
+// 	gr_preview->setMinimumWidth(250);
+// 	gr_preview->hide();
+	
 
 	splitter_tree_text = new QSplitter(this);
 	splitter_tree_text->setOrientation(Qt::Vertical);
@@ -129,7 +131,7 @@ JobView::JobView()
 
 	splitter_output_preview = new QSplitter(this);
 	splitter_output_preview->addWidget( splitter_tree_text );
-	splitter_output_preview->addWidget( gr_preview );
+	splitter_output_preview->addWidget( previewStack );
 	connect(splitter_output_preview,SIGNAL(splitterMoved(int,int)), this, SLOT(resizeGraphicsPreview()));
 	
 	
@@ -198,7 +200,7 @@ void JobView::setSweep(QList<int> job_ids) {
 		}
 		view_sweep = true;
 		gr_params->show();
-		gr_preview->hide();
+		previewStack->hide();
 		par_sweep_title->setVisible(false);
 		b_restore_sweep->setEnabled(true);
 		b_make_table->setEnabled(true);
@@ -206,7 +208,7 @@ void JobView::setSweep(QList<int> job_ids) {
 	else {
 		view_sweep = false;
 		gr_params->hide();
-		gr_preview->hide();
+		previewStack->hide();
 		b_restore_sweep->setEnabled(false);
 		b_make_table->setEnabled(false);
 		
@@ -227,7 +229,7 @@ void JobView::setJob(int job_id) {
 	view_sweep = false;
 	b_restore_sweep->setEnabled(false);
 	b_make_table->setEnabled(false);
-	gr_preview->hide();
+	previewStack->hide();
 	gr_params->hide();
 	te_output->clear();
 	text_shown = 0;
@@ -308,7 +310,7 @@ void JobView::updateSweepData( QString filename ) {
         QString text_sweepsummary("");
         text_sweepsummary += in.readAll();
         sweepsummary.close();
-        te_output->setText(text_sweepsummary);
+        te_output->setPlainText(text_sweepsummary);
     }
     else{
         qDebug() << "JobView::updateSweepData: Could not open " << filename;
@@ -334,8 +336,9 @@ void JobView::updateJobData() {
 		
 		if (text_shown == 0)
 			te_output->setPlainText(output);
-		else 
-			te_output->append(output.right(output.size()-text_shown));
+		else {
+			te_output->appendPlainText(output.right(output.size()-text_shown));
+		}
 		text_shown = output.size();
 		
 		if (scroll_down)
@@ -418,7 +421,8 @@ void JobView::openTerminal() {
 	}
 #else //might be an apple?
 	if ( ! (terminal_command = config::getPathToExecutable("open")).isEmpty() ) {
-		QProcess::startDetached(terminal_command, QStringList() << "-a" << "Terminal.app", out_dir);
+		// QProcess::startDetached(terminal_command, QStringList() << "-a" << "Terminal.app" << out_dir, out_dir);
+		QProcess::startDetached(terminal_command, QStringList() << "-a" << "Terminal.app" << ".", out_dir);
 		return;
 	}
 #endif
@@ -432,7 +436,7 @@ void JobView::openTerminal() {
 
 void JobView::fileClicked(QModelIndex idx) {
     QString file_name = dir_model->fileName(idx);
-	qDebug() << "fileClicked: " << QString(file_name);
+// 	qDebug() << "fileClicked: " << QString(file_name);
     if (file_name.endsWith(".xml") || file_name.endsWith(".xml.gz")) {
         if (QMessageBox::question(this, "Open Snapshot","Do you want to open the snapshot as a new model?", QMessageBox::Yes, QMessageBox::No ) == QMessageBox::Yes){
             config::openModel(dir_model->filePath(idx));
@@ -467,11 +471,11 @@ void JobView::previewSelectedFile(const QModelIndex & selected, const QModelInde
 			QGraphicsPixmapItem* item = new QGraphicsPixmapItem(QPixmap::fromImage(image));
 			item->setTransformationMode(Qt::SmoothTransformation);
 			imagePreview->scene()->addItem(item);
-			gr_preview->show();
+			previewStack->show();
 			previewStack->setCurrentWidget(imagePreview); 
 			emit imagePreviewChanged();
 		} else {
-			gr_preview->hide();
+			previewStack->hide();
 		}
 	}
 	else
@@ -484,7 +488,7 @@ void JobView::previewSelectedFile(const QModelIndex & selected, const QModelInde
             || file_name.endsWith(".err") || file_name.endsWith(".gp")  ||  file_name.endsWith(".csv"))
 			|| file_info.size() == 0 ){
 //			file_name.endsWith(".gz") || file_name.endsWith(".zip") || file_info.isExecutable() ){
-			gr_preview->hide();
+			previewStack->hide();
 			return;
 		}
 		
@@ -492,14 +496,14 @@ void JobView::previewSelectedFile(const QModelIndex & selected, const QModelInde
 			textPreview->setPlainText("<< File too large for preview (>10 Mb). >>");
 			textPreview->setWordWrapMode(QTextOption::NoWrap);
 			previewStack->setCurrentWidget(textPreview);
-			gr_preview->show();
+			previewStack->show();
 			return;
 		}
 		else if (file.open(QFile::ReadOnly | QFile::Text)){
 			textPreview->setPlainText(file.readAll());
 			textPreview->setWordWrapMode(QTextOption::NoWrap);
 			previewStack->setCurrentWidget(textPreview);
-			gr_preview->show();
+			previewStack->show();
 		}
 	}
 

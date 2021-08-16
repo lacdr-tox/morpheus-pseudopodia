@@ -1,4 +1,5 @@
 #include "sbml_converter.h"
+#include "sbml/xml/XMLError.h"
 #include "sbml/extension/SBMLExtensionRegistry.h"
 #include "sbml/conversion/SBMLConverterRegistry.h"
 
@@ -209,55 +210,90 @@ void  SBMLImporter::replaceDelays(ASTNode* math) {
 	}
 }
 
-QSharedPointer<MorphModel> SBMLImporter::importSBML() {
-	SBMLImporter* importer = new SBMLImporter(nullptr, config::getModel());
+SharedMorphModel SBMLImporter::importSBML(QString path) {
+	QScopedPointer<SBMLImporter> importer(new SBMLImporter(nullptr, config::getModel()));
+	importer->path->setText( path );
+	int ret;
+	do {
+		ret = importer->exec();
+		if (ret==QDialog::Accepted) {
+			if (importer->import()) {
+				return importer->getMorpheusModel();
+			}
+		} 
+		else 
+			break;
+	} while (1);
 	
-	if (QDialog::Accepted == importer->exec()) {
-		if (importer->haveNewModel())
-			return importer->getMorpheusModel();
-		else
-			return QSharedPointer<MorphModel>();
-	}
-	else
-		return QSharedPointer<MorphModel>();
+	return nullptr;
 }
 
-QSharedPointer<MorphModel> SBMLImporter::importSEDMLTest(QString file) {
-	SBMLImporter* importer = new SBMLImporter(nullptr, QSharedPointer<MorphModel>::create() );
+SharedMorphModel SBMLImporter::importSBML(QByteArray data, bool global) {
+	QScopedPointer<SBMLImporter> importer(new SBMLImporter(nullptr, config::getModel()));
+	qDebug() << QString(data);
+	importer->path->setEnabled(false);
+	importer->path->setText("webdata ...");
+	importer->path_dlg->setEnabled(false);
+	int ret;
+	do {
+		ret = importer->exec();
+		if (ret==QDialog::Accepted) {
+			if (importer->import(data)) {
+				return importer->getMorpheusModel();
+			}
+		} 
+		else 
+			break;
+	} while (1);
 	
+	return nullptr;
+}
+
+SharedMorphModel SBMLImporter::importSEDMLTest(QString file) {
+	QScopedPointer<SBMLImporter> importer(new SBMLImporter(nullptr, SharedMorphModel()));
 	if (importer->readSEDML(file))
 		return importer->getMorpheusModel();
 	else
-		return QSharedPointer<MorphModel>();
+		return nullptr;
 }
 
-QSharedPointer<MorphModel> SBMLImporter::importSBMLTest(QString file) {
-	SBMLImporter* importer = new SBMLImporter(nullptr, QSharedPointer<MorphModel>::create() );
+SharedMorphModel SBMLImporter::convertSBML(QString file) {
+	QScopedPointer<SBMLImporter> importer(new SBMLImporter(nullptr, SharedMorphModel() ));
+	QFileInfo info(file);
+	if ( ! info.exists() || !info.isReadable()) {
+		std::cout << "Unable to convert " << file.toUtf8().toStdString() << ".\n" << "File " << (info.exists() ? " is not readable." : " does not exist") << std::endl;
+		return nullptr;
+	}
 	
-	if (importer->readSBMLTest(file)) 
-		return importer->getMorpheusModel();
-	else
-		return QSharedPointer<MorphModel>();
+	if (!importer->readSBMLTest(file)) 
+		return nullptr;
+	
+	return importer->getMorpheusModel();
 }
 
-SBMLImporter::SBMLImporter(QWidget* parent, QSharedPointer< MorphModel > current_model) : QDialog(parent)
+SharedMorphModel SBMLImporter::convertSBML(QByteArray data) {
+	QScopedPointer<SBMLImporter> importer(new SBMLImporter(nullptr, SharedMorphModel() ));
+	if ( data.isEmpty() ) {
+		std::cout << "Unable to convert. No data provided"<< std::endl;
+		return nullptr;
+	}
+	if (!importer->readSBML(data,"new,global") )
+		return nullptr;
+		
+	return importer->getMorpheusModel();
+}
+
+SBMLImporter::SBMLImporter(QWidget* parent, SharedMorphModel current_model) : QDialog(parent)
 {
 	this->setMaximumWidth(500);
 	this->setMinimumHeight(250);
-	QVBoxLayout* layout = new QVBoxLayout(this);
-// 	this->setLayout(layout);
-// 	auto layout = this->layout();
-	
+	auto layout = new QVBoxLayout(this);
+	auto grid_layout = new QGridLayout();
+	this->setLayout(layout);
 
-
-// 	QLabel* header = new QLabel(this);
-// 	header->setText("SBML Import");
-// 	header->setAlignment(Qt::AlignHCenter);
 	setWindowTitle("SBML Import");
 
-// 	layout->addWidget(header);
 // 	layout->addSpacing(20);
-	layout->addStretch(1);
 	QGroupBox* frame = new QGroupBox("", this);
 
 	frame->setLayout(new QHBoxLayout());
@@ -275,18 +311,20 @@ SBMLImporter::SBMLImporter(QWidget* parent, QSharedPointer< MorphModel > current
 
 	frame->layout()->addWidget(disclaimer);
 	layout->addWidget(frame);
-
 	layout->addStretch(1);
 
-	QHBoxLayout* path_layout = new QHBoxLayout();
+	layout->addLayout(grid_layout);
 	QLabel* path_label = new QLabel("SBML File ",this);
-	path_layout->addWidget(path_label);
+	grid_layout->addWidget(path_label,1,0,Qt::AlignRight);
 
 	path = new QLineEdit(this);
 	path_label->setBuddy(path);
-	path_layout->addWidget(path);
+	grid_layout->addWidget(path,1,1);
 	
-	QHBoxLayout* celltype_layout = new QHBoxLayout();
+	path_dlg = new QPushButton(this);
+	path_dlg->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
+	connect(path_dlg,SIGNAL(clicked(bool)),this,SLOT(fileDialog()));
+	grid_layout->addWidget(path_dlg,1,2);
 	
 	into_celltype  = new QComboBox(this);
 	into_celltype->addItem("Global (new model)", "new,global");
@@ -327,34 +365,28 @@ SBMLImporter::SBMLImporter(QWidget* parent, QSharedPointer< MorphModel > current
 	}
 	
 	QLabel* celltype_label = new QLabel("Import into ",this);	
-	celltype_layout->addWidget(celltype_label);
-	celltype_layout->addWidget(into_celltype);
 	celltype_label->setBuddy(into_celltype);
-	
-	celltype_layout->addStretch(1);
-	
+	grid_layout->addWidget(celltype_label,2,0,Qt::AlignRight);
+	grid_layout->addWidget(into_celltype,2,1);
 
-	QPushButton * file_dlg = new QPushButton(this);
-	file_dlg->setIcon(style()->standardIcon(QStyle::SP_DirOpenIcon));
-	connect(file_dlg,SIGNAL(clicked(bool)),this,SLOT(fileDialog()));
-	path_layout->addWidget(file_dlg);
-	layout->addLayout(path_layout);
-	layout->addLayout(celltype_layout);
-	
-	layout->addStretch(3);
+	tag = new QLineEdit(this);
+// 	tag->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
+	auto tag_label = new QLabel("Tag",this);
+	grid_layout->addWidget(tag_label,3,0,Qt::AlignRight);
+	grid_layout->addWidget(tag,3,1);
 
+	
 	QHBoxLayout *bottom = new QHBoxLayout();
-
 	bottom->addStretch(1);
-
-	QPushButton *ok, *cancel;
-	ok = new QPushButton( "Import", this );
-	connect( ok, SIGNAL(clicked()), SLOT(import()) );
+	
+	auto ok = new QPushButton( "Import", this );
+	connect( ok, SIGNAL(clicked()), SLOT(accept()) );
 	bottom->layout()->addWidget(ok);
 
-	cancel = new QPushButton( "Cancel", this );
+	auto cancel = new QPushButton( "Cancel", this );
 	connect( cancel, SIGNAL(clicked()), SLOT(reject()) );
 	bottom->addWidget(cancel);
+	layout->addStretch(2);
 	layout->addLayout(bottom);
 }
 
@@ -374,11 +406,16 @@ void SBMLImporter::fileDialog()
 }
 
 
-void SBMLImporter::import()
-{
+bool SBMLImporter::import(QByteArray data) {
 	try {
-		if (readSBML(path->text(), into_celltype->itemData(into_celltype->currentIndex()).toString()))
-			accept();
+		if (data.isEmpty()) {
+			readSBML(path->text(), into_celltype->itemData(into_celltype->currentIndex()).toString());
+		}
+		else {
+			readSBML(data, into_celltype->itemData(into_celltype->currentIndex()).toString());
+		}
+// 			accept();
+		return true;
 	}
 	catch (SBMLConverterException e) {
 		qDebug() << "Unable to import SBML due to " <<  s2q(e.type2name())<< " "<< s2q(e.what());
@@ -392,12 +429,13 @@ void SBMLImporter::import()
 		qDebug() << "Unable to import SBML due to unknown error";
 		QMessageBox::critical (this,"SBML Import Error", QString("Unable to import %1 due to an unknown error:").arg(path->text()),QMessageBox::Ok);
 	}
+	return false;
 }
 
 bool SBMLImporter::readSBMLTest(QString sbml_file)
 {	
 	try {
-	if ( ! readSBML(sbml_file,QString("current,global")) )
+	if ( ! readSBML(sbml_file,QString("new,global")) )
 		return false;
 	}
 	catch (SBMLConverterException& e ) {
@@ -412,7 +450,7 @@ bool SBMLImporter::readSBMLTest(QString sbml_file)
 	
 	if (!settings_file.exists()) {
 		cout<< "Unable to find SBML Test settings file " << settings_file_name.toStdString() << endl;
-		return false;
+		return true;
 	}
 	
 	settings_file.open(QIODevice::ReadOnly);
@@ -495,7 +533,7 @@ bool SBMLImporter::readSEDML(QString file)
 	QDomDocument sed_doc(file);
 	QString  sbml_file = sed_doc.firstChildElement("listOfModels").firstChildElement("model").attribute("source");
 	
-	readSBML(sbml_file,QString("current,global"));
+	readSBML(sbml_file,QString("new,global"));
 	
 	
 	QMap<QString,QString> outputs;
@@ -529,9 +567,45 @@ bool SBMLImporter::readSEDML(QString file)
 	return true;
 }
 
+bool SBMLImporter::readSBML(QString sbml_file, QString target_code) {
+	if ( ! QFileInfo(sbml_file).exists() ) {
+		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, sbml_file.toStdString());
+	}
+	SBMLDocument* sbml_doc = readSBMLFromFile(sbml_file.toStdString().c_str());
+	if (! sbml_doc)
+		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read file.");
+	if (sbml_doc->getNumErrors() > 0) {
+		if (sbml_doc->getError(0)->getErrorId() == XMLFileUnreadable) {
+			throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read file.");
+		}
+		else if (sbml_doc->getError(0)->getErrorId() == XMLFileOperationError) {
+		// Handle case of other file operation error here.
+		}
+	}
+	
+	return readSBML(sbml_doc, target_code);
+}
 
+bool SBMLImporter::readSBML(QByteArray sbml_data, QString target_code) {
+	qDebug() << "Reading SBML from data stream";
+	SBMLDocument* sbml_doc = nullptr;
+	sbml_doc = readSBMLFromString(QString(sbml_data).toStdString().c_str());
+	
+	if (! sbml_doc)
+		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read stream.");
+	if (sbml_doc->getNumErrors() > 0) {
+		if (sbml_doc->getError(0)->getErrorId() == XMLFileUnreadable) {
+			throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read stream.");
+		}
+		else if (sbml_doc->getError(0)->getErrorId() == XMLFileOperationError) {
+		// Handle case of other file operation error here.
+		}
+	}
+  
+	return readSBML(sbml_doc, target_code);
+}
 
-bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
+bool SBMLImporter::readSBML(SBMLDocument* sbml_doc, QString target_code)
 {
 	compartments.clear();
 	species.clear();
@@ -545,13 +619,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 	constants.insert("pi");
 	constants.insert("exponentiale");
 	
-	if ( ! QFileInfo(sbml_file).exists() ) {
-		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, sbml_file.toStdString());
-	}
-	SBMLDocument* sbml_doc =0;
-	sbml_doc = readSBMLFromFile(sbml_file.toStdString().c_str());
-	if (! sbml_doc)
-		throw SBMLConverterException(SBMLConverterException::FILE_READ_ERROR, "Cannot read file.");
+
 	
 	if (SBMLExtensionRegistry::isPackageEnabled("comp"))
 	{
@@ -582,7 +650,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 
 	// Setup target model
 	
-	QSharedPointer<MorphModel> morph_model;
+	SharedMorphModel morph_model;
 	auto target = target_code.split(",");
 	
 	if (target[0] == "new") {
@@ -631,7 +699,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 
 		QDomDocument morph_doc;
 		morph_doc.setContent(plain_morpheus_model);
-		morph_model = QSharedPointer<MorphModel>(new MorphModel(morph_doc));
+		morph_model = new MorphModel(morph_doc);
 	}
 	else {
 		morph_model = model;
@@ -639,35 +707,56 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 
 	// Setup target scope
 	
+	struct { 
+		nodeController* parent = nullptr;
+		int first = -1;
+		int last =-1;
+		bool notify=false;
+	} insertion;
+	
+	target_scope = nullptr;
+	
 	if (target[1]=="global" )  {
-		morph_model->addPart("Global");
 		target_scope = morph_model->rootNodeContr->firstActiveChild("Global");
+		if (!target_scope) {
+			morph_model->addPart("Global");
+			target_scope = morph_model->rootNodeContr->firstActiveChild("Global");
+		}
+		else {
+			insertion.notify = true;
+		}
 		if (!target_scope) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Target scope could not be created.");
+		insertion.parent = target_scope;
+		insertion.first = target_scope->activeChilds().size();
 	}
 	else /* (target[2]=="celltype") */ {
-		auto cts_part_idx = MorphModelPart::all_parts_index["CellTypes"];
-		if (!morph_model->parts[cts_part_idx].enabled) {
-			morph_model->activatePart(cts_part_idx);
-			// Reuse the default celltype created
-			target_scope = morph_model->parts[cts_part_idx].element->firstActiveChild("CellType");
-			if (target_scope) {
-				target_scope->attribute("name")->set(target[2]);
-				target_scope->attribute("class")->set("biological");
-			}
-		}
-		else { // Try to find an existing celltyoe
-			
+		auto celltypes_scope = morph_model->rootNodeContr->firstActiveChild("CellTypes");
+		// try to find existing celltype
+		if (celltypes_scope) {
 			target_scope = morph_model->rootNodeContr->find(QStringList() << "CellTypes" << QString("CellType[name=%1]").arg(target[2]));
-		}
-		if (!target_scope) { // create CellType from scratch
-			target_scope = morph_model->rootNodeContr->firstActiveChild("CellTypes")->insertChild("CellType");
-			if (!target_scope) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Target scope could not be created.");
 			
+		}
+		if (target_scope) {
+			insertion.parent = target_scope;
+			insertion.first = target_scope->activeChilds().size();
+		}
+		else {
+			if (!celltypes_scope) {
+				morph_model->addPart("CellTypes");
+				celltypes_scope = morph_model->rootNodeContr->firstActiveChild("CellTypes");
+				if (!celltypes_scope) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Target scope could not be created.");
+				target_scope = celltypes_scope->firstActiveChild("CellType");
+			}
+			else {
+				target_scope = celltypes_scope->insertChild("CellType");
+			}
+			if (!target_scope) throw SBMLConverterException(SBMLConverterException::SBML_INTERNAL_ERROR, "Target scope could not be created.");
 			target_scope->attribute("name")->set(target[2]);
 			target_scope->attribute("class")->set("biological");
-		}
-		
-		if (target[0] == "new") {
+			insertion.notify = true;
+			insertion.parent = target_scope;
+			insertion.first = target_scope->activeChilds().size();
+			// Add a corresponding cell population
 			morph_model->addPart("CellPopulations");
 			auto population = morph_model->rootNodeContr->firstActiveChild("CellPopulations")->firstActiveChild("Population");
 			population->attribute("size")->set("1");
@@ -676,9 +765,10 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 	}
 	
 	// Setup target system 
-	
 	target_system = target_scope->insertChild("System");
-	target_system->attribute("solver")->set("adaptive45");
+	target_system->attribute("solver")->set("Dormand-Prince [adaptive, O(5)]");
+	applyTags(target_system);                
+
 	auto stop_symbol_attr = morph_model->rootNodeContr->firstActiveChild("Time")->firstActiveChild("StopTime")->attribute("symbol");
 	QString stop_symbol;
 	if (stop_symbol_attr->isActive()) {
@@ -738,6 +828,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 				compartment_node -> attribute("value") -> set(comp.init_assignment);
 			else
 				compartment_node -> attribute("value") -> set(comp.init_value);
+			applyTags(compartment_node);
 			compartments[comp.name] = comp;
 			amount_map[comp.name] = comp.name;
 		}
@@ -821,11 +912,12 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 				ASTTool::renameSymbol(init_expression, var->attribute("symbol")->get(), QString("(") + var->attribute("value")->get() +")");
 			}
 			delay_property->attribute("value")->set(formulaToString(init_expression));
+			applyTags(delay_property);
 			
 			auto delay_rule = target_scope->insertChild("Equation");
 			delay_rule->attribute("symbol-ref")->set(delay.delayed_symbol);
 			delay_rule->firstActiveChild("Expression")->setText(delay.formula_string);
-			
+			applyTags(delay_rule);
 // 			delays.append(delay);
 // 		}
 	}
@@ -834,7 +926,7 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 	if (have_events) {
 		target_system->attribute("time-step")->setActive(true);
 		target_system->attribute("time-step")->set("stop/30000");
-		target_system->attribute("solver")->set("runge-kutta-adaptive-BS");
+		target_system->attribute("solver")->set("Bogacki-Shampine [adaptive, O(3)]");
 	}
 	
 	
@@ -866,22 +958,36 @@ bool SBMLImporter::readSBML(QString sbml_file, QString target_code)
 	SBMLDocument_free(sbml_doc);
 
 	morph_model->rootNodeContr->clearTrackedChanges();
+	model_created = (target[0] == "new");
 
 	// Create notifications for assumed default values
-	if (target[0] == "new") {
+	if (model_created) {
 		morph_model->rootNodeContr->trackNextChange();
 		morph_model->rootNodeContr->firstActiveChild("Time")->firstActiveChild("StopTime")->attribute("value")->set("100.0");
+		model = morph_model;
 	}
 
 	for (int i=0; i<conversion_messages.size(); i++) {
 		morph_model->rootNodeContr->trackInformation(conversion_messages[i]);
 	}
+	if (insertion.notify) {
+		insertion.last = insertion.parent->activeChilds().size()-1;
+		model->notifyNodeInsertion(insertion.parent, insertion.first, insertion.last);
+	}
 	
-	model = morph_model;
-	model_created = (target[0] == "new");
 	return true;
 	
 };
+
+void SBMLImporter::applyTags(nodeController* node) {
+	if (!tag->text().isEmpty()) {
+		auto tag_attr = node->attribute("tags");
+		if (tag_attr) {
+			tag_attr->set(tag->text());
+			tag_attr->setActive(true);
+		}
+	}
+}
 
 void SBMLImporter::addSBMLSpecies(Model* sbml_model)
 {
@@ -940,6 +1046,7 @@ void SBMLImporter::addSBMLSpecies(Model* sbml_model)
 		}
 		
 		desc.node->attribute("value")->set(init_value);
+		applyTags(desc.node);
 		
 		concentration_map[desc.name] = QString("c") + desc.name;
 		auto cFun = target_scope->insertChild("Function");
@@ -979,6 +1086,7 @@ void SBMLImporter::addSBMLSpecies(Model* sbml_model)
 			specie.node->attribute("value")->set(init_value);
 		}
 	}
+	
 };
 
 void SBMLImporter::addSBMLParameters(Model* sbml_model)
@@ -1016,6 +1124,8 @@ void SBMLImporter::addSBMLParameters(Model* sbml_model)
 		else
 			init_val = "0.0";
 		param_node->attribute("value")->set(init_val);
+		
+		applyTags(param_node);
 	}
 }
 
@@ -1034,6 +1144,8 @@ void SBMLImporter::addSBMLFunctions(Model* sbml_model)
 			param->attribute("symbol")->set(function->getArgument(i)->getName());
 		}
 		mo_function->firstActiveChild("Expression")->setText(formulaToString(function->getBody()));
+		
+		applyTags(mo_function);
 	}
 };
 
@@ -1115,6 +1227,8 @@ void SBMLImporter::addSBMLRules(Model* sbml_model)
 					rule_node->attribute("name")->set(rule->getName());
 					rule_node->attribute("name")->setActive(true);
 				}
+				applyTags(rule_node);
+				
 				break;
 				
 			}
@@ -1135,6 +1249,7 @@ void SBMLImporter::addSBMLRules(Model* sbml_model)
 					rule_node->attribute("name")->set(rule->getName());
 					rule_node->attribute("name")->setActive(true);
 				}
+				applyTags(rule_node);
 				diffeqn_map.insert(symbol, { quantity, rule_node->firstActiveChild("Expression")->textAttribute() });
 				break;
 			}
@@ -1207,6 +1322,7 @@ void SBMLImporter::addSBMLEvents(Model* sbml_model)
 			}
 			equation->firstActiveChild("Expression")->setText(formula);
 		}
+		applyTags(event);
 	}
 }
 
@@ -1283,6 +1399,7 @@ void SBMLImporter::translateSBMLReactions(Model* sbml_model)
 				param_node->attribute("name")->setActive(true);
 			}
 			param_node->attribute("value")->set(param->getValue());
+			applyTags(param_node);
 		}
 		
 		// After parsing the params, we know which symbols to rename in the kinetics

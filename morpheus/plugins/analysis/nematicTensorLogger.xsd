@@ -2,9 +2,9 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="AnalysisPlugins">
-        <xs:choice>
-			<xs:element name="NematicTensorLogger" 			type="NematicTensorLogger"/>
-		</xs:choice>
+        <xs:all>
+			<xs:element name="NematicTensorLogger" 			type="NematicTensorLogger"	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
     <xs:complexType name="NematicTensorLogger">

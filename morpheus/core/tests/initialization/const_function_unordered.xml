@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MorpheusModel version="4">
+    <Description>
+        <Details>Test the initialization of through const expressions.</Details>
+        <Title>ConstInitialization</Title>
+    </Description>
+    <Space>
+        <Lattice class="linear">
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+            <Size symbol="size" value="100, 0.0, 0.0"/>
+        </Lattice>
+        <SpaceSymbol symbol="space"/>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="0"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <Analysis>
+        <DependencyGraph reduced="false" format="svg"/>
+    </Analysis>
+    <Global>
+        <Constant symbol="result" value="one + two + dim.z"/>
+        <Constant symbol="solution" value="6.0"/>
+        <Function symbol="ini_non_param">
+            <Expression>two + dim.y + one</Expression>
+        </Function>
+        <Constant symbol="result1" value="ini_non_param"/>
+        <Constant symbol="solution1" value="5.0"/>
+        <Function symbol="ini_param">
+            <Parameter symbol="x"/>
+            <Expression>x + one</Expression>
+        </Function>
+        <Constant symbol="result2" value="ini_param(1)"/>
+        <Constant symbol="solution2" value="2.0"/>
+        <Constant symbol="one" value="1.0"/>
+        <Constant symbol="two" value="2.0"/>
+        <ConstantVector symbol="dim" value="1.0, 2.0, 3.0"/>
+    </Global>
+</MorpheusModel>

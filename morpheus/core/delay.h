@@ -2,6 +2,25 @@
 #define DELAY_H
 
 #include "property.h"
+#include <boost/circular_buffer.hpp>
+/**
+\defgroup ML_DelayVariable DelayVariable
+\ingroup ML_Global
+\ingroup Symbols
+
+Symbol with a scalar value and a \b delay time before assigned values become current. The initial value and history is given by a \ref MathExpressions.
+**/
+
+/**
+\defgroup ML_DelayProperty DelayProperty
+\ingroup ML_CellType
+\ingroup Symbols
+
+
+Symbol with a cell-bound scalar value and a \b delay time before assigned values become current. The initial value and history is given by a \ref MathExpressions
+**/
+
+
 
 struct DelayData {
 	double time;
@@ -23,6 +42,8 @@ class DelayPropertyPlugin : public Container<double>, public ContinuousProcessPl
 {
 protected:
 	DelayPropertyPlugin(Mode mode);
+	
+	// manual replacement for the DECLARE_PLUGIN macro
 	static bool type_registration;
 	static const string CellPropertyXMLName() { return "DelayProperty"; };
 	static const string VariableXMLName() { return "DelayVariable"; };
@@ -37,7 +58,7 @@ public:
 
 	void setTimeStep(double t) override;
 	double getDelay() const { return delay(SymbolFocus::global);}
-	double getInitValue(const SymbolFocus f, double time);
+	double getInitValue(const SymbolFocus& f, double time);
 	
 	void prepareTimeStep(double step_size) override {};
 	void executeTimeStep() override {};
@@ -61,7 +82,9 @@ public:
 		return get(f, SIM::getTime());
 	}
 	double get(const SymbolFocus& f, double time) const {
-		auto& history = getCellProperty(f)->value;
+		auto p = getCellProperty(f);
+		if (!p->initialized) p->init(f);
+		auto& history = p->value;
 		auto delay = parent->getDelay();
 		clearHistory(history, time);
 		if (time-delay<=SIM::getStartTime()) {
@@ -85,19 +108,16 @@ public:
 // 		cout << "Delay " << this->name() << " -> {" << time-delay << "," <<  r <<"}" << endl;
 		return r;
 	}
-	double safe_get(const SymbolFocus& f) const override {
-		auto p=getCellProperty(f); 
-		if (!p->initialized)
-			p->init(f);
-		return get(f);
-	}
-	void init() { 
+
+	/// Initialize all 
+	void init() override { 
 		DelayProperty* p = static_cast<DelayProperty*>(celltype->default_properties[property_id].get());
 		if (!p->initialized) 
 			try {
 				p->init(SymbolFocus::global);
 			} catch (...) { cout << "Warning: Could not initialize default property " << this->name() << " of CellType " << celltype->getName() << "." << endl;}
 	}
+	
 	void set(const SymbolFocus& f, double value) const override {
 		set(f, SIM::getTime(), value);
 	}

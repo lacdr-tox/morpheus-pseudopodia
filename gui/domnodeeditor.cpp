@@ -1,8 +1,10 @@
 #include "domnodeeditor.h"
+#include "attrcontroller.h"
 
 domNodeEditor::domNodeEditor(QWidget* parent) : QWidget(parent)
 {
 	QVBoxLayout *main_layout = new QVBoxLayout(this);
+	main_layout->setContentsMargins(0, 0, 0, 0);
 	value_label = new QLabel("Value:");
 	main_layout->addWidget(value_label);
 	all_edits.append(value_label);
@@ -48,7 +50,7 @@ domNodeEditor::domNodeEditor(QWidget* parent) : QWidget(parent)
     tableMenu = new QMenu();
 	sweepAttribAction = new QAction("ParamSweep",tableMenu);
 	sweepAttribAction->setCheckable(true);
-	sweepAttribAction->setIcon(QThemedIcon("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)));
+	sweepAttribAction->setIcon( QIcon::fromTheme("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)));
 	tableMenu->addAction(sweepAttribAction);
 	QObject::connect(tableMenu, SIGNAL(triggered(QAction*)), this, SLOT(doContextMenuAction(QAction*)));
 
@@ -64,7 +66,7 @@ domNodeEditor::domNodeEditor(QWidget* parent) : QWidget(parent)
 	
 	QObject::connect(attribute_editor, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(createAttributeEditContextMenu(QPoint)));
 	QObject::connect(attribute_editor, SIGNAL(itemChanged(QTableWidgetItem*)), this, SLOT(changedAttributeEditItem(QTableWidgetItem*)));
-	QObject::connect(attribute_editor, SIGNAL(itemChanged(QTableWidgetItem*)), this, SLOT(changedAttributeEditItem(QTableWidgetItem*)));
+// 	QObject::connect(attribute_editor, SIGNAL(itemChanged(QTableWidgetItem*)), this, SLOT(changedAttributeEditItem(QTableWidgetItem*)));
 	
 	this->setLayout(main_layout);
 }
@@ -132,7 +134,7 @@ void domNodeEditor::setNode(nodeController* node, SharedMorphModel model)
 			multi_line_math_editor->show();
 			current_value_edit = MathText;
 		}
-		else if ( node->textType()->name == "cpmText") {
+		else if ( node->textType()->name == "cpmText" || node->textType()->name == "morphText" ) {
 			if (node->getText().size()>500 || node->getName().endsWith("Data")) {
 				multi_line_text_editor->setText(node->getText().left(100) + " ...");
 				multi_line_text_editor->setEnabled(false);
@@ -211,12 +213,13 @@ void domNodeEditor::setAttributeEditor(nodeController* node)
 		
 		QTableWidgetItem *tmp_header = new QTableWidgetItem(attrName);
 		if (model->isSweeperAttribute(tmp_attr))
-			tmp_header->setIcon(QThemedIcon("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)));
+			tmp_header->setIcon( QIcon::fromTheme("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)));
 		map_rowToAttribute[row] = tmp_attr;
 
 		tmp_item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsEditable | Qt::ItemIsSelectable);
 
-		tmp_header->setBackgroundColor(QColor(239, 235, 231, 255));
+// 		tmp_header->setBackgroundColor(QStyle:: QColor(239, 235, 231, 255));
+		tmp_header->setBackgroundColor(attribute_editor->palette().alternateBase().color());
 		
 		if (tmp_attr->isRequired()) {
 			tmp_header->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
@@ -325,7 +328,7 @@ void domNodeEditor::doContextMenuAction(QAction* action) {
         AbstractAttribute *attr = map_rowToAttribute[table_popup_row];
         if (sweepAttribAction->isChecked()) {
             model->addSweeperAttribute(attr);
-            attribute_editor->item(table_popup_row,0)->setIcon(QThemedIcon("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)));
+            attribute_editor->item(table_popup_row,0)->setIcon( QIcon::fromTheme("media-seek-forward",style()->standardIcon(QStyle::SP_MediaSeekForward)));
         }
         else {
             model->removeSweeperAttribute(attr);

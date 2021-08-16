@@ -18,7 +18,7 @@ double CPMShape::BoundaryLengthScaling(const Neighborhood& neighborhood)
 // 	BoundaryScalingMode mode = BoundaryScalingMode::Magno;
 	switch (scalingMode) {
 		case BoundaryScalingMode::Magno : 
-			scaling = magno_scaling_by_order[neighborhood.lattice().structure][neighborhood.order()];
+			scaling = magno_scaling_by_order[neighborhood.lattice().getStructure()][neighborhood.order()];
 			break;
 		case BoundaryScalingMode::NeigborNumber :
 			scaling = neighborhood.size();

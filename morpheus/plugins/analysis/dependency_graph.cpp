@@ -1,7 +1,11 @@
 #include "dependency_graph.h"
 #include "core/cpm_sampler.h"
 
-REGISTER_PLUGIN(DependencyGraph);
+// REGISTER_PLUGIN(DependencyGraph);
+Plugin* DependencyGraph::createInstance() { return new DependencyGraph(); } \
+bool DependencyGraph::factory_registration = 
+	Plugin::getFactory().Register( DependencyGraph::FactoryName(), DependencyGraph::createInstance )
+	&& Plugin::getFactory().Register( "DependencyGraph", DependencyGraph::createInstance );
 
 DependencyGraph::DependencyGraph() : AnalysisPlugin()
 {
@@ -18,10 +22,12 @@ DependencyGraph::DependencyGraph() : AnalysisPlugin()
 	reduced.setXMLPath("reduced");
 	reduced.setDefault("false");
 	registerPluginParameter(reduced);
-	exclude_plugins_string.setXMLPath("exclude-plugins");
+// 	exclude_plugins_string.setXMLPath("exclude-plugins");
 	exclude_symbols_string.setXMLPath("exclude-symbols");
-	registerPluginParameter(exclude_plugins_string);
+	include_tags_option.setXMLPath("include-tags");
+// 	registerPluginParameter(exclude_plugins_string);
 	registerPluginParameter(exclude_symbols_string);
+	registerPluginParameter(include_tags_option);
 }
 
 void DependencyGraph::init(const Scope* scope)
@@ -42,6 +48,7 @@ void DependencyGraph::analyse(double time)
 	
 	// setting up filters
 	exclude_plugins.insert(this->XMLName());
+	exclude_plugins.insert("DependencyGraph");
 	if (exclude_plugins_string.isDefined()) {
 		vector<string> excludes = tokenize(exclude_plugins_string(),"|,");
 		for (string e : excludes) {
@@ -56,11 +63,14 @@ void DependencyGraph::analyse(double time)
 			exclude_symbols.insert(e);
 		}
 	}
+	if (include_tags_option.isDefined()) {
+		vector<string> tags = tokenize(include_tags_option(),"|, ");
+		include_tags.insert(tags.begin(), tags.end());
+	}
 	if (reduced())
 		skip_symbols_regex = join(skip_symbols,"|") + "|" + join(skip_symbols_reduced,"|");
 	else 
 		skip_symbols_regex = join(skip_symbols,"|");
-		
 	
 	stringstream dot;
 	
@@ -71,23 +81,46 @@ void DependencyGraph::analyse(double time)
 	dot << "labelloc=\"t\";";
 	dot << "label=\"Global\";";
 	dot << ""<< graphstyle.at("background") << "\n";
-	dot << "node["<< graphstyle.at("node") <<"]\n";
-	parse_scope(SIM::getGlobalScope());
-	write_scope(SIM::getGlobalScope(), dot);
+	if (SIM::getGlobalScope()) {
+		parse_scope(SIM::getGlobalScope());
+		if (scope_info[SIM::getGlobalScope()->getID()]->definitions.str().empty() 
+			&& SIM::getGlobalScope()->getSubScopes().empty())
+		{
+			dot << "empty \n";
+		}
+		else { 
+			dot << "node["<< graphstyle.at("node") <<"]\n";
+			write_scope(SIM::getGlobalScope(), dot);
+		}
+	}
+	else {
+		dot << "empty \n";
+	}
 	dot << "}" << endl;
 	for (const auto& line : links )  {
 		dot << line << "\n";
 	}
 	dot << "}" << endl;
 	
-	 if (format() ==OutFormat::DOT ){
+	string graph_name = "model_graph";
+	
+	if (format() ==OutFormat::DOT) {
 		//cout << "Rendering Dependency Graph as DOT" << endl;
-		ofstream out("dependency_graph.dot");
+	
+		ofstream out(graph_name+".dot");
 		out << dot.str();
 		out.close();
 		return;
-	 }
-	
+	}
+
+#ifndef HAVE_GRAPHVIZ
+	cout << "No support for graph rendering. Falling back to dot output." << endl;
+	ofstream out(graph_name+".dot");
+	out << dot.str();
+	out.close();
+	return;
+#else 
+
 	GVC_t *gvc = gvContext();
 	if (!gvc) {
 		cout << "DependencyGraph: Unable to create rendering context"<< endl;
@@ -101,19 +134,19 @@ void DependencyGraph::analyse(double time)
 	}
 
 	gvLayout(gvc, g, "dot");
-
+	
 	switch (format()) {
 		case OutFormat::PNG :
 			// cout << "Rendering Dependency Graph as PNG" << endl;
-			gvRenderFilename(gvc, g, "png", "dependency_graph.png");
+			gvRenderFilename(gvc, g, "png", (graph_name+".png").c_str());
 			break;
 		case OutFormat::SVG :
 			// cout << "Rendering Dependency Graph as SVG" << endl;
-			gvRenderFilename(gvc, g, "svg", "dependency_graph.svg");
+			gvRenderFilename(gvc, g, "svg", (graph_name+".svg").c_str());
 			break;
 		case OutFormat::PDF :
 			//cout << "Rendering Dependency Graph as PDF" << endl;
-			gvRenderFilename(gvc, g, "pdf", "dependency_graph.pdf");
+			gvRenderFilename(gvc, g, "pdf", (graph_name+".pdf").c_str());
 			break;
 		case OutFormat::DOT :
 			// already written
@@ -127,6 +160,7 @@ void DependencyGraph::analyse(double time)
 #endif
 	agclose(g);
 	gvFreeContext(gvc);
+#endif
 }
 
 string DependencyGraph::tslDotName(TimeStepListener* tsl)
@@ -140,7 +174,7 @@ string DependencyGraph::tslDotName(TimeStepListener* tsl)
 	std::replace( ts.begin(), ts.end(), '.', '_');
 	std::replace( ts.begin(), ts.end(), '-', '_');
 	
-	return tsl->XMLName() + "_" +  (reduced() || tsl->getFullName().empty() ? to_str(tsl->scope()->getID()) + "_" + ts :  to_str(hash<string>()(tsl->getFullName())) );
+	return tsl->XMLName() + "_" + to_str(tsl->scope()->getID()) + "_" + (reduced() || tsl->getFullName().empty() ?  "" :  to_str(hash<string>()(tsl->getFullName())) + "_" ) + ts;
 }
 
 string DependencyGraph::pluginDotName(Plugin* p) {
@@ -148,7 +182,7 @@ string DependencyGraph::pluginDotName(Plugin* p) {
 		return tslDotName(dynamic_cast<TimeStepListener*>(p));
 	}
 	else {
-		return p->XMLName() + "_" + (reduced() || p->getFullName().empty() ? to_str(p->scope()->getID()) : to_str(hash<string>()(p->getFullName())));
+		return p->XMLName() + "_" + to_str(p->scope()->getID()) + (reduced() || p->getFullName().empty() ? "" : string("_") + to_str(hash<string>()(p->getFullName())));
 	}
 }
 
@@ -170,20 +204,53 @@ string DependencyGraph::dotName(const string& a ) {
 
 void DependencyGraph::parse_scope(const Scope* scope)
 {
+	assert(scope);
+	if ( ! scope ) {
+		cout << "Missing information for null scope!" << endl;
+		return;
+	}
+	if ( ! scope_info[scope->getID()] ) {
+		cout << "Missing information for scope " << scope->getName() << endl;
+		return;
+	}
 	auto& info = *scope_info[scope->getID()];
+	
 	// Parse the TimeStepListeners, register their dependencies and collect their links
 	auto tsls = scope->getTSLs();
 	
+			
 	for (auto tsl : tsls) {
+		// Apply filters
+		if (reduced() && dynamic_cast<AnalysisPlugin*>(tsl))
+			continue;
 		if ( exclude_plugins.count( tsl->XMLName() ) )
 			continue;
-		
+		if (/*include_tags_option.isDefined() &&*/ !tsl->isTagged(include_tags) )
+			continue;
+			
 		if ( dynamic_cast<CPMSampler*>(tsl)) {
 			string cpm_name = tslDotName(tsl);
 			set<SymbolDependency> inter_dep = dynamic_cast<CPMSampler*>(tsl)->getInteractionDependencies();
 			
 			// Global CPM TSL Box
-			info.definitions << cpm_name << " [shape=record, label=\"{ "<< tsl->XMLName() << (tsl->getFullName().empty()  || reduced() ? string("") : string("\\n\\\"") + tsl->getFullName() + "\\\"")<< " | " <<  tsl->timeStep() <<" } \" ]\n" ;
+			info.definitions
+				<< cpm_name 
+				<< " ["
+				<< "shape=plaintext"
+				<< ", label=<"
+				<< "<font face=\"times\" point-size=\"15\">"
+				<< "<table cellborder=\"0\" border=\"1\" cellspacing=\"0\" cellpadding=\"3\">"
+				<< "  <tr><td>" << tsl->XMLName() << "</td></tr>";
+			if (!tsl->getFullName().empty() && !reduced()) { info.definitions
+				<< "<tr><td><i>\"" + tsl->getFullName() << "\"</i></td></tr>";
+			}
+			info.definitions
+				<< "<hr/><tr><td>" <<  tsl->timeStep() << "</td></tr>"
+				<< "</table>"
+				<< "</font>"
+				<< ">"
+				<< ", URL=\"morph://MorpheusModel/CPM\""
+				<< " ]\n" ;
 			
 			for (auto ct_scope : scope->getComponentSubScopes()) {
 				assert(ct_scope->getCellType());
@@ -191,10 +258,12 @@ void DependencyGraph::parse_scope(const Scope* scope)
 				// check existing dependecies
 				bool have_dep = false;
 				for (const auto& dep : dependencies) {
-					 if (exclude_plugins.count(dep.first->XMLName()))
-						 continue;
-					 // draw a line to the first CellType CPM plugin to linke it's CPM box
-					 if (!have_dep) {
+					if (exclude_plugins.count(dep.first->XMLName()))
+						continue;
+					if (include_tags_option.isDefined() && !dep.first->isTagged(include_tags) )
+						continue;
+					// draw a line to the first CellType CPM plugin to linke it's CPM box
+					if (!have_dep) {
 						string first_plugin = pluginDotName( dep.first );
 						stringstream link;
 						link << cpm_name << " -> " << first_plugin << " [" << graphstyle.at("arrow_connect") << ",lhead=" << string("cluster_cpm") << ct_scope->getID() << "] \n";
@@ -233,9 +302,28 @@ void DependencyGraph::parse_scope(const Scope* scope)
 		}
 		else {
 			// TSL Box
-			if (reduced() && dynamic_cast<AnalysisPlugin*>(tsl))
-				continue;
-			info.definitions << tslDotName(tsl) << " [shape=record, label=\"{ "<< tsl->XMLName() << (tsl->getFullName().empty() || reduced()  ? string("") : string("\\n\\\"") + tsl->getFullName() + "\\\"")<< " | " <<  tsl->timeStep() <<" } \" ]\n" ;
+			info.definitions
+				<< tslDotName(tsl)
+				<< "[ "
+				<< "shape=plaintext,  margin=\"0\""
+				<< ", label=<"
+				<< "<font face=\"times\" point-size=\"15\">"
+				<< "<table cellborder=\"0\" border=\"1\" cellspacing=\"0\" cellpadding=\"3\" align=\"center\">\n"
+				<< "<tr><td>" << tsl->XMLName() << "</td></tr>\n";
+			if (!tsl->getFullName().empty() && !reduced()) { info.definitions
+				<< "<tr><td><I>\"" << tsl->getFullName() << "\"</I></td></tr>\n"; 
+			}
+			info.definitions
+			    << "<hr/>\n"
+				<< "<tr><td>" <<  tsl->timeStep() << "</td></tr>"
+				<< "</table>"
+				<< "</font>"
+				<< ">";
+			if (!tsl->getXMLNode().isEmpty()) { info.definitions 
+				<< ", URL=\"morph://" << getXMLPath(tsl->getXMLNode()) << "\""  /*<< ", tooltip=\"" << getXMLPath(tsl->getXMLNode()) << "\"" */;
+			}
+			info.definitions
+				<< " ]\n" ;
 			
 			// Readers
 			auto dependencies = reduced() ? tsl->getLeafDependSymbols() : tsl->getDependSymbols();
@@ -267,10 +355,12 @@ void DependencyGraph::parse_scope(const Scope* scope)
 		auto cpm_dep = scope->ct_component->cpmDependSymbols();
 		bool found_valid_cpm_plugin = false;
 		for (auto dep : cpm_dep) {
-			if ( exclude_plugins.count( dep.first->XMLName() ) == 0) {
-				found_valid_cpm_plugin = true;
-				break;
-			}
+			if (include_tags_option.isDefined() && !dep.first->isTagged(include_tags) )
+				continue;
+			if ( exclude_plugins.count( dep.first->XMLName() ) > 0)
+				continue;
+			found_valid_cpm_plugin = true;
+			break;
 		}
 		if ( found_valid_cpm_plugin ) {
 			string cpm_blob_name = string("cluster_cpm") + to_str(scope->getID());
@@ -281,12 +371,32 @@ void DependencyGraph::parse_scope(const Scope* scope)
 			for (auto dep : cpm_dep) {
 				if ( exclude_plugins.count( dep.first->XMLName() ))
 					continue;
+				if (include_tags_option.isDefined() && !dep.first->isTagged(include_tags) )
+					continue;
 				
 				plugin_node_name = pluginDotName(dep.first);
 				if (plugin_node_name != current_plugin) {
 					current_plugin = plugin_node_name;
-					info.definitions << plugin_node_name << "[shape=record, label=\"" << dep.first->XMLName() << (dep.first->getFullName().empty() || reduced() ? string("") : string("\\n\\\"") + dep.first->getFullName() + "\\\"") << "\"];\n";
-					
+					info.definitions
+						<< plugin_node_name
+						<< "[ "
+						<< "shape=plaintext,  margin=\"0\""
+						<< ", label=<"
+						<< "<font face=\"times\" point-size=\"15\"><table cellborder=\"0\" border=\"1\" cellspacing=\"0\" cellpadding=\"3\" align=\"center\" >\n"
+						<< "  <tr><td>" << dep.first->XMLName() << "</td></tr>\n";
+					if (!dep.first->getFullName().empty() && !reduced()) {
+						info.definitions
+						<< "  <tr><td><i>\"" << dep.first->getFullName() << "\"</i></td></tr>\n";
+					}
+					info.definitions
+						<< "</table></font>"
+						<< ">";
+					if (!dep.first->getXMLNode().isEmpty()) {
+						info.definitions
+						<< ", URL=\"morph://" << getXMLPath(dep.first->getXMLNode()) << "\"";
+					}
+					info.definitions
+						<< "];\n";
 				}
 				auto symbols = parse_symbol(dep.second);
 				for (auto symbol : symbols) {
@@ -322,7 +432,13 @@ void DependencyGraph::parse_scope(const Scope* scope)
 			link_style = graphstyle.at("arrow_connect");
 		}
 		
-		info.definitions << dotName(sym.first) << "_" << scope->getID() <<"[label=" << "\""<< sym.first<<"\"," << label_style << "]\n";
+		info.definitions << dotName(sym.first) << "_" << scope->getID() 
+			<< "["
+			<< "label=" << "\""<< sym.first<<"\"" 
+			<< ", " << label_style;
+		if (!sym.second->XMLPath().empty())
+			info. definitions << ", URL=\"morph://" << sym.second->XMLPath() << "\"";
+		info. definitions << "]\n";
 
 		auto dependencies = sym.second->dependencies();
 		for (auto dep : dependencies ) {
@@ -338,8 +454,14 @@ void DependencyGraph::parse_scope(const Scope* scope)
 }
 
 vector<Symbol> DependencyGraph::parse_symbol(Symbol symbol) {
-	if (exclude_symbols.count(symbol->name()))
-		return {};
+// 	if (exclude_symbols.count(symbol->name()))
+// 		return {};
+	for (const auto& excl :exclude_symbols ) {
+		if (symbol->name().size() >= excl.size()) {
+			if (symbol->name().substr(0,excl.size()) == excl)
+				return {};
+		}
+	}
 	if (!symbol->scope())
 		return {};
 	if (symbol->scope()->ct_component && symbol->scope()->ct_component->isMedium()) {

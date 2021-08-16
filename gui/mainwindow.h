@@ -21,6 +21,7 @@
 
 // #include "xsd.h"
 #include "config.h"
+#include "uri_handler.h"
 #include "job_queue.h"
 #include "parametersweeper.h"
 
@@ -51,7 +52,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = 0); /*!< This constructor creates the whole GUI, with all widgets and objects. */
+    MainWindow(const QCommandLineParser& cmd_line); /*!< This constructor creates the whole GUI, with all widgets and objects. */
     ~MainWindow();
 
     void readSettings(); /*!< Restores the window-geometry from QSettings. */
@@ -76,12 +77,14 @@ private:
     QToolButton* interactive_stop_button;
 
     QStackedWidget *editorStack;
+	QWidget *no_model_widget;
     QDockWidget* documentsDock;
     QTreeWidget *modelList;
     QListWidget *clipBoard;
     QListWidget *fixBoard;
     QDockWidget* dwid_fixBoard;
 	DocuDock* docuDock;
+	QListWidget* pageList;
 	AnnouncementDialog* announcer;
 //     QTreeView* jobQueueView;
 // 	QListWidget* jobQueueStatusText;
@@ -100,6 +103,8 @@ private:
     XMLTextDialog *tabXMLPreview; /*!< Widget that is used to show the xml-structure of the current state of model. */
     // jobController *myJobController; /*!< Widget that is used to start, stop and remove simulation-jobs. */
     parameterSweeper *sweeper; /*!< Widget that is used to do parametersweeps. */
+    
+    uriOpenHandler *uri_handler;
 
     void initConfig();
     /*!<
@@ -124,6 +129,7 @@ private:
 protected:
 	void dragEnterEvent(QDragEnterEvent *event);
 	void dropEvent(QDropEvent *event);
+	void handleCmdLine(const QCommandLineParser& cmd_line, bool tasks_only=true);
 	
 public slots:
     void selectModel(int index, int part = -1);
@@ -134,9 +140,6 @@ public slots:
 	void handleMessage(const QString& message);
 
 private slots:
-    void menuBarTriggered(QAction *); /*!< This slot calls for any selected action from the menubar, the right function to transform the action. */
-    void toolBarTriggered(QAction *); /*!< This slot calls for any selected action from the toolbar, the right function to transform the action. */
-    void statusBarTriggered(); /*!< This slot updates the statusmessage of the opened tab. */
     void copyNodeAction(QDomNode);
 
     void setPermanentStatus(QString message); /*!< Sets the given message as permanent status. */
@@ -147,7 +150,6 @@ private slots:
 	void activatePart(QModelIndex);
 	void showCurrentModel();
     void showModelListMenu(QPoint p); /*!< Opens the menu for copying or deleting the existing tab at position 'p'. */
-	void modelActionTriggerd (QAction*); /*!< Calls the right function to transform the given Action from tabMenu. */
 
 // 	void jobQueueChanged(const QModelIndex & index);
 //     void showJobQueueMenu(QPoint p);

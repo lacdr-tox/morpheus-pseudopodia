@@ -13,15 +13,9 @@
 #define DOCUDOCK_H
 
 #include "config.h"
-#include "nodecontroller.h"
-// #include <QtNetwork/QNetworkAccessManager>
+#include "morpheusML/model_node.h"
+#include "widgets/webviewer.h"
 
-#ifdef MORPHEUS_NO_QTWEBKIT
-#include <QTextBrowser>
-#warning Compiling without QtWebKit
-#else 
-#include <QtWebKit/QWebView>
-#endif
 
 class DocuDock : public QDockWidget
 {
@@ -29,6 +23,7 @@ class DocuDock : public QDockWidget
 
 public:
     DocuDock(QWidget* parent);
+	WebViewer* getHelpView() const { return help_view; }
 
 signals :
 	void elementDoubleClicked(QString element_name);
@@ -51,17 +46,17 @@ private:
 	QAction *b_back, *b_forward;
     QHelpEngine* help_engine;
 	QSplitter* splitter;
-#ifdef MORPHEUS_NO_QTWEBKIT
-	QTextBrowser* help_view;
-#else
-	QWebView* help_view;
-#endif
+	
+	WebViewer* help_view;
+
 	QTimer *timer;
-	QTreeView* toc_widget;
+	QLineEdit* label_documentation;
+	QHelpContentWidget* toc_widget;
 	QSortFilterProxyModel* toc_model;
 	QModelIndex modules_index, MorpheusML_index;
 	QNetworkAccessManager* hnam ;
 	bool root_reset;
+	QString element_on_reset;
 	
 // 	QListWidget*  index_view;
 	

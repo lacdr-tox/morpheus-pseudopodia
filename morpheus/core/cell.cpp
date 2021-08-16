@@ -35,9 +35,7 @@ Cell::Cell(CPM::CELL_ID cell_name, CellType* ct)
 	for (uint i=0;i< celltype->default_properties.size(); i++) {
 		p_properties.push_back(celltype->default_properties[i]->clone());
 	}
-// 	for (uint i=0;i< celltype->default_membranes.size(); i++) {
-// 		p_membranes.push_back(celltype->default_membranes[i]->clone());
-// 	}
+
 	track_nodes = true;
 	track_shape = true;
 	node_sum = VINT(0,0,0);
@@ -47,12 +45,9 @@ Cell::Cell(CPM::CELL_ID cell_name, CellType* ct)
 
 void Cell::init()
 {
-// 	cout << "initializing cell " << id << endl;
+	cout << "initializing cell " << id << endl;
 	for (auto prop : p_properties) {
-// 		try {
-			prop->init(SymbolFocus(id));
-// 		}
-// 		catch (string e) { throw MorpheusException(e); }
+		prop->init(SymbolFocus(id));
 	}
 }
 
@@ -61,7 +56,6 @@ Cell::Cell( Cell& other_cell, CellType* ct  )
 		: properties(p_properties), id(other_cell.getID()), name(other_cell.name), celltype (ct),nodes(other_cell.nodes), node_sum(other_cell.node_sum),
 		centerL(other_cell.centerL), center(other_cell.center), shape_tracker(id, nodes) 
 {
-	
 	for (uint i=0;i< celltype->default_properties.size(); i++) {
 		p_properties.push_back(celltype->default_properties[i]->clone());
 	}

@@ -19,7 +19,7 @@
 
 
 /** 
- * \defgroup ML_DisplacementTracker Displacement Tracker
+ * \defgroup ML_DisplacementTracker DisplacementTracker
  * \ingroup ML_Analysis
  * \ingroup AnalysisPlugins
  * \brief Track the cell displacement of a population.

@@ -12,12 +12,12 @@
 #ifndef SBML_IMPORT_H
 #define SBML_IMPORT_H
 
-#include "morpheus_model.h"
+#include "morpheusML/morpheus_model.h"
 #ifndef HAVE_LIBSBML
 namespace SBMLImporter {
 	const bool supported = false;
-	inline QSharedPointer<MorphModel> importSBML() { return QSharedPointer<MorphModel>(); };
-	inline QSharedPointer<MorphModel> importSBMLTest(QString file) { return QSharedPointer<MorphModel>(); };
+	inline SharedMorphModel importSBML() { return SharedMorphModel(); };
+	inline SharedMorphModel importSBMLTest(QString file) { SharedMorphModel(); };
 }
 #else // HAVE_LIBSBML
 #include "sbml_converter.h"

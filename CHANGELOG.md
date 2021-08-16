@@ -1,10 +1,96 @@
 # ChangeLog
 
+## Release 2.2.4
+
+### GUI
+  * Reduce memory consumption of text preview in the job view
+  
+### Simulator
+  * Rework circular reference detection in the initialisation cycle
+  * Fix color bar limits in Logger Plots
+  * Add command line option to skip any gnuplot tasks (thus does not choke on missing gnuplot)
+  * Fix command line parameter override using "--set" option
+
+
+## Release 2.2.3
+
+### GUI
+  * Fixed model graph generator library that may have caused outdated model graphs.
+
+### Simulator
+  * Added loop dependency detection in Field initialization
+  * Fix loading 8-bit Tiff images
+  * Consistently center Tiff image data when smaller than lattice size
+  * Fixed regression: Prevent rescheduling of the CPM sampler
+  * Fix build in debug mode
+
+## Release 2.2.2
+
+### MorpheusML
+  * Merged the **MechanicalLink** component
+
+### GUI
+  * Fixed command line parsing of certain url/file references 
+  * Fixed checkbox lists on MacOS (issue #223)
+  * Preserve XML Comments in MorpheusML models
+
+### Simulator
+  * Reenable output of performance statistics, if no json stats are requested.
+  * Fixed logging MembraneProperties
+  * Fixed certain parallel **Mapper** modes
+
+## Release 2.2.1
+
+### Simulator
+  * Fix boost linking for static builds
+  * Fix writing performance statistics
+
+## Release 2.2.0
+
+### GUI
+  * Introduced an Interactive Configurable Model Graph
+  * Support Tagging, Filtering and Sorting of Model Components
+  * Switched to Qt5
+  * Support reading and writing (gz) compressed models
+  * Support for morpheus://... url scheme, that allows loading resources through url links
+
+### MorpheusML
+  * The space symbol (Space/SpaceSymbol) now always provides the location in orthogonal coordinates, also on hexagonal lattices.
+  * AddCell accepts Count instead of Condition as the number of cells to be placed.
+  * ClusterTracker can cluster cells of multiple cell types.
+  * Logger
+    * gained support for conditional logging using Logger/Restrictions/@condition
+    * learned to use discrete colors for integer data
+  * Gnuplotter
+    * allows to set a z-slice per Plot and also Arrows and Labels follow the z-slize filter.
+    * cell opacity moved to Plot/Cells/@opacity
+  * Added Populations InitVectorProperty with optional spherical notation
+  * Added VectorMapper as a counterpart to the scalar Mapper
+  * Lattice size now can also be specified through expressions
+  * Contact energies now support expressions with access to symbols of involved cells
+  * Rework of XSD specifcation
+    * XSD parser supports extension of complexTypes
+    * Plugins are extension of base types
+    * Registration of plugins as members of <xs:all> groups
+  * Added **@tags** and **Annotation** nodes to all model components
+
+### Simulator
+  * Performance improvements for Mappers and Reporters using OpenMP parallelization
+  * Support reading (gz) compressed models
+  * Provide performance statistics as json file using the --perf-stats option
+  * Added Test system for full XML models
+  * Restructured CMake build to make use of targets and boosted requrements to cmake>=3.3.0
+  * Build system now supports building on Windows MSys2 and Mac Homebrew in addition to linux systems.
+
+### Bug Fixes
+  * Fix cell property initialization override priority (InitProperty takes highest priority)
+  * Fixed diffusion scaling on hexagonal lattices (was raised by factor 0.5)
+  
 ## Release 2.1.1
 
 ### Bug fixes
   * Fix a rare crash upon ChangeCellType 
-
+  * Fix reading numeric html encoded utf8 characters
 
 ## Release 2.1
 

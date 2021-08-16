@@ -9,27 +9,69 @@
 //
 //////
 
-#include <QWidget>
-#include <QGraphicsScene>
-#include <QtSvg/QGraphicsSvgItem>
-#include "config.h"
+#ifndef ABOUTMODEL_H
+#define ABOUTMODEL_H
 
-class AboutModel : public QWidget {
+
+#include <QWidget>
+// #include <QGraphicsScene>
+// #include <QtSvg/QGraphicsSvgItem>
+#include <QListView>
+#include "config.h"
+#include "widgets/checkboxlist.h"
+#include "widgets/webviewer.h"
+#include <QFutureWatcher>
+#include <functional>
+
+class AboutModel : public QSplitter {
 	Q_OBJECT
+	
+	enum class GraphState {
+		EMPTY,
+		PENDING,
+		PENDING_EMPTY,
+		UPTODATE,
+		OUTDATED,
+		FAILED
+	} graph_state;
 	
 	SharedMorphModel model;
 	QLineEdit* title;
 	QTextEdit* description;
 	
-	QGraphicsView* dep_graph;
+	WebViewer* webGraph;
+	bool web_render;
+
+	QUrl url;
+	QFrame* webFrame;
+	CheckBoxList* includeTags;
+	CheckBoxList* excludeS;
+	QCheckBox* reduced;
+	QPushButton* save_btn;
+	QMetaObject::Connection onLoadConnect;
+	QString current_graph;
+	
+	QFutureWatcher<QString> waitForGraph;
+	void setGraphState(GraphState state, std::function<void()> ready);
+	
+	
 public:
 	AboutModel(SharedMorphModel model, QWidget* parent = NULL);
-	
 	void update();
-    virtual void resizeEvent(QResizeEvent* event);
+	WebViewer* getView() { return webGraph;}
+signals:
+	void nodeSelected(QString path);
 	
 private slots:
 	void update_graph();
+	void graphReady();
 	void assignTitle(QString title);
 	void assignDescription();
+	void openLink(const QUrl&);
+	void svgOut();
+	void update_excludes(QStringList qsl);
+	void update_include_tags(QStringList includes);
+	void update_reduced(int);
 };
+
+#endif

@@ -1,11 +1,4 @@
 #include "docu_dock.h"
-
-#ifndef MORPHEUS_NO_QTWEBKIT
-#include <QWebHistory>
-#endif
-
-#include <QtNetwork/QNetworkAccessManager>
-#include <QtNetwork/QNetworkReply>
 #include <QThread>    
 
 class Sleeper : public QThread
@@ -16,44 +9,14 @@ public:
     static void sleep(unsigned long secs){QThread::sleep(secs);}
 };
 
-class HelpBrowser : public QTextBrowser {
-public:
-	QVariant loadResource(int type, const QUrl & name) override;
-	void setNetworkAccessManager(QNetworkAccessManager* nam) { this->nam = nam; };
-private:
-	QNetworkAccessManager* nam;
-};
-
-QVariant HelpBrowser::loadResource(int type, const QUrl & name) {
-	QNetworkRequest request(name);
-// 	qDebug() << "Requesting " << name;
-	auto reply = nam->get(request);
-	return reply->readAll();
-}
 
 DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 {
 	timer = NULL;
 	help_engine = config::getHelpEngine();
-	connect(help_engine,SIGNAL(setupFinished()),this,SLOT(setRootOfHelpIndex()));
-	
-	hnam = config::getNetwork();
 
-#ifdef MORPHEUS_NO_QTWEBKIT
-	auto realViewer = new HelpBrowser();
-	realViewer->setNetworkAccessManager(hnam);
-	help_view = realViewer;
-#else
-	help_view = new QWebView();
-	
-	help_view->page()->setNetworkAccessManager(hnam);
-// 	help_view->page()->settings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
-	help_view->page()->settings()->setAttribute(QWebSettings::JavascriptEnabled, true);
-	help_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessRemoteUrls, false);
-	help_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessFileUrls, true);
-	help_view->page()->setLinkDelegationPolicy(QWebPage::DelegateExternalLinks);
+	help_view = new WebViewer(this);
 	connect(help_view, SIGNAL(linkClicked(const QUrl&)),this, SLOT(openHelpLink(const QUrl&)));
-#endif
 	
 	toc_widget = help_engine->contentWidget();
 	toc_widget->setRootIsDecorated(true);
@@ -64,14 +27,15 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	toc_widget->sortByColumn(0,Qt::AscendingOrder);
 	
 	root_reset = false;
+	element_on_reset = "MorpheusML";
 	
 	auto tb = new QToolBar();
 
-	b_back = new QAction(QThemedIcon("go-previous", style()->standardIcon(QStyle::SP_ArrowLeft)),"Back",this);
+	b_back = new QAction( QIcon::fromTheme("go-previous", style()->standardIcon(QStyle::SP_ArrowLeft)),"Back",this);
 	tb->addAction(b_back);
 	b_back->setEnabled(false);
 
-	b_forward = new QAction(QThemedIcon("go-next", style()->standardIcon(QStyle::SP_ArrowRight)),"Fwd",this);
+	b_forward = new QAction( QIcon::fromTheme("go-next", style()->standardIcon(QStyle::SP_ArrowRight)),"Fwd",this);
 	tb->addAction(b_forward);
 	b_forward->setEnabled(false);
 	
@@ -81,9 +45,9 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	auto l_icon = new QLabel();
 	l_icon->setPixmap(pm.scaled(25,25,Qt::KeepAspectRatio,Qt::SmoothTransformation));
 	tb->addWidget(l_icon);
-	auto l_doc = new QLineEdit(" Morpheus 2.1 Documentation");
-	l_doc->setEnabled(false);
-	tb->addWidget(l_doc);
+	label_documentation = new QLineEdit(" Loading Documentation ...");
+	label_documentation->setEnabled(false);
+	tb->addWidget(label_documentation);
 	
 	auto vl = new QVBoxLayout();
 	vl->setSpacing(0);
@@ -97,35 +61,30 @@ DocuDock::DocuDock(QWidget* parent) : QDockWidget("Documentation", parent)
 	splitter = new QSplitter(Qt::Horizontal, this);
 	splitter->addWidget(toc_widget);
 	splitter->addWidget(w_bottom);
+	splitter->setStretchFactor(1,4);
 	
-	help_view->show();
 
-#ifdef MORPHEUS_NO_QTWEBKIT
-	connect(b_back, SIGNAL(triggered()), help_view, SLOT(backward()));
-	connect(b_forward, SIGNAL(triggered()), help_view, SLOT(forward()));
-	connect(help_view, SIGNAL(backwardAvailable(bool)), b_back, SLOT(setEnabled(bool)) );
-	connect(help_view, SIGNAL(forwardAvailable(bool)), b_forward, SLOT(setEnabled(bool)) );
-// 	connect(help_view, SIGNAL(historyChanged(const QUrl&)), this, SLOT(resetStatus()) );
-#else
 	connect(b_back, SIGNAL(triggered()), help_view, SLOT(back()));
 	connect(b_forward, SIGNAL(triggered()), help_view, SLOT(forward()));
 	connect(help_view, SIGNAL(urlChanged(const QUrl&)), this, SLOT(resetStatus()) );
-#endif
-	connect(toc_widget, SIGNAL(clicked(const QModelIndex&)), this, SLOT(setCurrentIndex(const QModelIndex&)) );
+	
+	connect(toc_widget, SIGNAL(clicked(const QModelIndex&)), this, SLOT(setCurrentIndex(const QModelIndex&)), Qt::QueuedConnection );
 	
 	this->setWidget(splitter);
 	
-	help_engine->setupData();
+	connect(help_engine->contentModel(), SIGNAL(contentsCreated()),this,SLOT(setRootOfHelpIndex()));
+
 	resetStatus();
+	help_view->show();
+// 	if (help_engine->setupData() == false) {
+// 		qDebug() << "Help engine setup failed";
+// 	}
+	
 }
 
 void DocuDock::openHelpLink(const QUrl& url) {
 	if (url.scheme() == "qthelp") {
-#ifdef MORPHEUS_NO_QTWEBKIT
-		help_view->setSource(url);
-#else
 		help_view->setUrl(url);
-#endif
 	}
 	else 
 		QDesktopServices::openUrl(url);
@@ -163,40 +122,42 @@ void DocuDock::setCurrentElement(QStringList xPath)
 
 
 void DocuDock::setCurrentElement(QString name) {
+	if (!root_reset) {
+// 		qDebug() << "Deferring docu element selection " << name;
+		element_on_reset = name;
+		return;
+	}
 	QMap <QString, QUrl > identifiers = help_engine->linksForIdentifier(name);
-// 	qDebug() << "Searching for help for " << name;
+// 	qDebug() << "Searching help for " << name;
 	if (!identifiers.empty()) {
 		setCurrentURL(identifiers.begin().value());
+	}
+	else {
+		qDebug() << "No help for " << name;
 	}
 }
 
 void DocuDock::setCurrentIndex(const QModelIndex& idx)
 {
-	setCurrentElement(idx.data(Qt::DisplayRole).toString());
+	setCurrentURL( help_engine->contentModel()->contentItemAt(toc_model->mapToSource(idx))->url());
 }
 
 
 
 void DocuDock::setCurrentURL(const QUrl& url) {
-#ifdef MORPHEUS_NO_QTWEBKIT
-	help_view->setSource(url);
-#else
 	if (help_view->url() != url) {
 		help_view->setUrl(url);
-// 		qDebug() << url;
+// 		qDebug() << "Setting Docu"<< url;
 	}
-#endif
+// 	else 
+// 		qDebug() << "Docu"<< url << "already set";
+	
 }
 
 
 void DocuDock::resetStatus() {
-#ifdef MORPHEUS_NO_QTWEBKIT
-	b_back->setEnabled(help_view->isBackwardAvailable());
-	b_back->setEnabled(help_view->isForwardAvailable());
-#else
-	b_back->setEnabled(help_view->history()->canGoBack());
-	b_forward->setEnabled(help_view->history()->canGoForward());
-#endif
+	b_back->setEnabled(help_view->canGoBack());
+	b_forward->setEnabled(help_view->canGoForward());
 }
 
 void DocuDock::resizeEvent(QResizeEvent* event)
@@ -215,23 +176,14 @@ void DocuDock::resizeEvent(QResizeEvent* event)
 
 void DocuDock::setRootOfHelpIndex()
 {
-	auto help_model =  help_engine->contentModel();
-	if (help_model->isCreatingContents()) {
-		if ( ! timer) {
-			timer = new QTimer(this);
-			timer->setSingleShot(true);
-			connect(timer,SIGNAL(timeout()),this, SLOT(setRootOfHelpIndex()));
-		}
-		timer->start(500);
-		return;
-	}
-	
 	QModelIndex root = toc_model->index(0,0);
+	label_documentation->setText(root.data().toString() + " Documentation");
 	int rows = toc_model->rowCount(root);
-// 	qDebug() << "I am getting the Docu " <<root_rows ;
+// 	qDebug() << help_engine->error();
+// 	qDebug() << "I am getting the Docu " << rows ;
 	int modules_row = -1;
 	for (uint row=0; row<rows; row++) {
-// 		qDebug() << row <<  model->data(model->index(row,0,root),0);
+// 		qDebug() << "Checking help section " << row <<  root.child(row,0).data(Qt::DisplayRole);
 		 if ( root.child(row,0).data(Qt::DisplayRole) == "Modules" ) {
 			 modules_index =  root.child(row,0);
 			 modules_row = row;
@@ -249,6 +201,20 @@ void DocuDock::setRootOfHelpIndex()
 		toc_widget->setRootIndex(toc_model->index(modules_row,0,root));
 		toc_widget->setExpanded(toc_model->index(modules_row,0,root),true);
 		root_reset = true;
+		
+// 		qDebug() << "setting deferred docu element " << element_on_reset;
+// 		setCurrentElement(element_on_reset);
+
+		if ( ! timer) {
+			timer = new QTimer(this);
+			timer->setSingleShot(true);
+			connect(timer, &QTimer::timeout, [this]{ 
+// 				qDebug() << "setting deferred docu element " << element_on_reset;
+				this->setCurrentElement(element_on_reset); 
+			} );
+		}
+		timer->start(300);
+
 	}
 }
 

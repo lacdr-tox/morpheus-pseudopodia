@@ -24,7 +24,7 @@
 #include <QLayout>
 #include <QStyle>
 #include <QDebug>
-#include "morpheus_model.h"
+#include "morpheusML/morpheus_model.h"
 #include "config.h"
 #include <stdexcept>
 #include <cstdio>
@@ -99,19 +99,25 @@ private:
 class SBMLImporter: public QDialog {
 	Q_OBJECT
 public:
-	SBMLImporter(QWidget* parent, QSharedPointer< MorphModel > current_model);
-	QSharedPointer<MorphModel> getMorpheusModel() { return model;};
+	SBMLImporter(QWidget* parent, SharedMorphModel current_model);
+	
+	SharedMorphModel getMorpheusModel() { return model;};
 	bool haveNewModel() { return model_created; };
 // the interface for making this feature puggable
 	static const bool supported = true;
- 	static QSharedPointer<MorphModel> importSBML();
-	static QSharedPointer<MorphModel> importSEDMLTest(QString file);
-	static QSharedPointer<MorphModel> importSBMLTest(QString file);
+ 	static SharedMorphModel importSBML(QString path = "");
+	static SharedMorphModel importSBML(QByteArray data, bool global = true);
+	static SharedMorphModel importSEDMLTest(QString file);
+	static SharedMorphModel importSBMLTest(QString file);
+	static SharedMorphModel convertSBML(QString file);
+	static SharedMorphModel convertSBML(QByteArray data);
 private:
 	QLineEdit* path;
+	QPushButton *path_dlg;
 	QComboBox* into_celltype;
+	QLineEdit* tag;
 
-	QSharedPointer<MorphModel> model;
+	SharedMorphModel model;
 	bool model_created = false;
 	QList<QString> conversion_messages;
 	
@@ -166,10 +172,15 @@ private:
 	QMap<QString,QString> concentration_map, amount_map;
 	bool have_events = false;
 
+	/// Use Dialog data to import the SBML file. @p data will override the SBML model in the Dialog.
+	bool import(QByteArray data = QByteArray());
+	
 	/** Read an SBML file and convert it using the @target_code
 	 *  The @p target_code is a comma separated string: (new|current),(global|celltype){,celltype name}
 	 */
 	bool readSBML(QString sbml_file, QString target_code);
+	bool readSBML(QByteArray sbml_data, QString target_code);
+	bool readSBML(SBMLDocument* sbml_doc, QString target_code);
 	/// Read an SBML test model from the suite and use the settings file.
 	bool readSBMLTest(QString file);
 	/// Read an SBML test from the suite via a SEDML file.
@@ -185,9 +196,9 @@ private:
     void translateSBMLReactions(Model* sbml_model);
     void parseMissingFeatures(Model* sbml_model);
 	void replaceDelays(ASTNode* math);
+	void applyTags(nodeController* node);
 
 private slots:
-	void import();
 	void fileDialog();
 };
 

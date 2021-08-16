@@ -2,26 +2,17 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="MembraneProperty" 	type="MembraneProperty"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="MembraneProperty" 	type="MembraneProperty"		minOccurs="0"	maxOccurs="unbounded" />
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="MembraneProperty">
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
 		<xs:annotation>
 			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
 			<xs:appinfo>Container</xs:appinfo>
-			<xs:documentation>
-MembraneProperty defines a Layer that is mapped to the surface of a CPM cell.
-
-Resolution of MembraneProperty is set in Space/MembraneLattice.
-
-Can be used in differential equations (System/DiffEqn) to model reactions of membrane proteins.
-
-Note:
-- The cell shape is approximated as a circle (2D) or sphere (3D).
-- Causes artefacts in cells with non-convex shape.
-	</xs:documentation>
 		</xs:annotation>
 		
 		<xs:all>
@@ -34,25 +25,13 @@ Note:
 			</xs:element>-->
 			
 			<xs:element name="TIFFReader" type="TIFFReaderField" minOccurs="0" />
-		
-			<xs:element name="Data" type="MembranePropertyData" minOccurs="0">
-				<xs:annotation>
-					<xs:documentation>
-						Read initial data from file.
-						
-						If filename is specified, the initial condition is read from file instead of what is specified under "MembraneProperty/Initial".
-						
-						Note that the membraneProperty for ALL cells of the celltype will be identical. 
-						To specify a different file for each cell in the population, use "CellPopulations/Population/Cell/MembranePropertyData".
-						
-					</xs:documentation>
-				</xs:annotation>
-			</xs:element>
+			<xs:element name="Data" type="MembranePropertyData" minOccurs="0"/>
 		</xs:all>
-		<xs:attribute name="name" 	type="cpmString"		use="optional" />
 		<xs:attribute name="symbol"	type="cpmDoubleSymbolDef"		use="required" />
 		<xs:attribute name="value"	type="cpmMathExpression"		use="required" />
 		
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 

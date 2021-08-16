@@ -1,0 +1,179 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MorpheusModel version="3">
+    <Description>
+        <Details></Details>
+        <Title></Title>
+    </Description>
+    <Space>
+        <Lattice class="square">
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+            <Size symbol="size" value="1000,1000,0"/>
+        </Lattice>
+        <SpaceSymbol symbol="space"/>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="250"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <CPM>
+        <Interaction>
+            <Contact type1="cell1" type2="medium" value="5"/>
+            <Contact type1="cell2" type2="medium" value="5"/>
+            <Contact type1="cell3" type2="medium" value="5"/>
+            <Contact type1="cell4" type2="medium" value="5"/>
+            <Contact type1="static" type2="medium" value="5"/>
+        </Interaction>
+        <ShapeSurface scaling="norm">
+            <Neighborhood>
+                <Order>2</Order>
+            </Neighborhood>
+        </ShapeSurface>
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1"/>
+            <MetropolisKinetics temperature="1"/>
+            <Neighborhood>
+                <Order>2</Order>
+            </Neighborhood>
+        </MonteCarloSampler>
+    </CPM>
+    <CellTypes>
+        <CellType class="medium" name="medium"/>
+        <CellType class="biological" name="cell1">
+            <VolumeConstraint target="target_volume" strength="lambdav"/>
+            <CellDeath>
+                <Condition>time > t_death</Condition>
+                <Shrinkage remove-volume="10000" target-volume="target_volume"/>
+            </CellDeath>
+            <Property symbol="target_volume" value="32000"/>
+            <Mapper>
+                <Input value="cell.volume"/>
+                <Output symbol-ref="total_volume_cell1" mapping="sum"/>
+            </Mapper>
+        </CellType>
+        <CellType class="biological" name="cell2">
+            <VolumeConstraint target="target_volume" strength="lambdav"/>
+            <CellDeath>
+              <Condition>time > t_death</Condition>
+                <Shrinkage remove-volume="1000" target-volume="target_volume"/>
+            </CellDeath>
+            <Property symbol="target_volume" value="32000"/>
+            <Mapper>
+                <Input value="cell.volume"/>
+                <Output symbol-ref="total_volume_cell2" mapping="sum"/>
+            </Mapper>
+        </CellType>
+        <CellType class="biological" name="cell3">
+            <VolumeConstraint target="target_volume" strength="lambdav"/>
+            <CellDeath>
+              <Condition>time > t_death</Condition>
+                <Shrinkage remove-volume="100" target-volume="target_volume"/>
+            </CellDeath>
+            <Property symbol="target_volume" value="32000"/>
+            <Mapper>
+                <Input value="cell.volume"/>
+                <Output symbol-ref="total_volume_cell3" mapping="sum"/>
+            </Mapper>
+        </CellType>
+        <CellType class="biological" name="cell4">
+            <VolumeConstraint target="target_volume" strength="lambdav"/>
+            <CellDeath>
+              <Condition>time > t_death</Condition>
+                <Shrinkage remove-volume="1" target-volume="target_volume"/>
+            </CellDeath>
+            <Property symbol="target_volume" value="32000"/>
+            <Mapper>
+                <Input value="cell.volume"/>
+                <Output symbol-ref="total_volume_cell4" mapping="sum"/>
+            </Mapper>
+        </CellType>
+        <CellType class="biological" name="static">
+            <VolumeConstraint target="1" strength="1"/>
+        </CellType>
+    </CellTypes>
+    <CellPopulations>
+        <Population size="1" type="cell1">
+            <InitCellObjects mode="distance">
+                <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
+                    <Sphere radius="100.0" center="200,200,0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+        <Population size="1" type="cell2">
+            <InitCellObjects mode="distance">
+                <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
+                    <Sphere radius="100.0" center="200,700,0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+        <Population size="1" type="cell3">
+            <InitCellObjects mode="distance">
+                <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
+                    <Sphere radius="100.0" center="700,200,0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+        <Population size="1" type="cell4">
+            <InitCellObjects mode="distance">
+                <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
+                    <Sphere radius="100.0" center="700,700,0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+        <Population size="1" type="static">
+            <InitCellObjects mode="distance">
+                <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
+                    <!--    <Disabled>
+        <Sphere radius="0.0" center="0.0, 0.0, 0.0"/>
+    </Disabled>
+-->
+                    <Point center="999,999,0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+    </CellPopulations>
+    <Analysis>
+        <Gnuplotter time-step="20">
+            <Plot>
+                <Cells/>
+            </Plot>
+            <Terminal name="png"/>
+        </Gnuplotter>
+        <Logger time-step="1">
+            <Input>
+                <Symbol symbol-ref="total_volume_cell1"/>
+                <Symbol symbol-ref="total_volume_cell2"/>
+                <Symbol symbol-ref="total_volume_cell3"/>
+                <Symbol symbol-ref="total_volume_cell4"/>
+            </Input>
+            <Output>
+                <TextOutput/>
+            </Output>
+            <Plots>
+                <Plot time-step="-1">
+                    <Style style="lines"/>
+                    <Terminal terminal="png"/>
+                    <X-axis>
+                        <Symbol symbol-ref="time"/>
+                    </X-axis>
+                    <Y-axis>
+                        <Symbol symbol-ref="total_volume_cell1"/>
+                        <Symbol symbol-ref="total_volume_cell2"/>
+                        <Symbol symbol-ref="total_volume_cell3"/>
+                        <Symbol symbol-ref="total_volume_cell4"/>
+                    </Y-axis>
+                </Plot>
+            </Plots>
+        </Logger>
+    </Analysis>
+    <Global>
+        <Variable symbol="total_volume_cell1" value="0.0"/>
+        <Variable symbol="total_volume_cell2" value="0.0"/>
+        <Variable symbol="total_volume_cell3" value="0.0"/>
+        <Variable symbol="total_volume_cell4" value="0.0"/>
+        <Constant symbol="lambdav" value="0.01"/>
+        <Constant symbol="t_death" value="0.0"/>
+    </Global>
+</MorpheusModel>

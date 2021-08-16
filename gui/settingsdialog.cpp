@@ -69,7 +69,7 @@ void settingsDialog::createGeneralTab(QTabWidget *tabWid)
     QLabel *lb_outputDir = new QLabel("Output directory: ", general);
     le_general_outputDir = new QLineEdit(general);
     le_general_outputDir->setText(app.general_outputDir);
-    QPushButton *bt_outputDir = new QPushButton(QThemedIcon("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)),"", general);
+    QPushButton *bt_outputDir = new QPushButton(QIcon::fromTheme("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)),"", general);
 #ifdef MORPHEUS_FEEDBACK
 	QLabel *lb_feedback = new QLabel("Permit usage feedback: ", general);
 	cb_feedback = new QCheckBox(general);
@@ -185,7 +185,7 @@ void settingsDialog::createLocalTab(QTabWidget *tabWid)
     QLabel *lb_executable = new QLabel("Simulator executable: ", local);
     le_local_executable = new QLineEdit(local);
     le_local_executable->setText(  app.local_executable );
-	QPushButton *bt_executable = new QPushButton(QThemedIcon("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), "Browse...", local);
+	QPushButton *bt_executable = new QPushButton(QIcon::fromTheme("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), "Browse...", local);
 	bt_executable->setText("");
 	connect(bt_executable,SIGNAL(clicked(bool)),SLOT(openFileDialogExecutable()));
 
@@ -197,7 +197,7 @@ void settingsDialog::createLocalTab(QTabWidget *tabWid)
     le_local_GnuPlot_executable->setText(  (app.local_GnuPlot_executable.isEmpty()?gnuplot_exec:app.local_GnuPlot_executable) );
 	le_local_GnuPlot_executable->setEnabled(cb_local_GnuPlotExecutable->checkState() == Qt::Checked);
 	connect(cb_local_GnuPlotExecutable,SIGNAL(toggled(bool)),le_local_GnuPlot_executable, SLOT(setEnabled(bool)));
-	QPushButton *bt_GnuPlot_executable = new QPushButton(QThemedIcon("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), "Browse...", local);
+	QPushButton *bt_GnuPlot_executable = new QPushButton(QIcon::fromTheme("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), "Browse...", local);
 	bt_GnuPlot_executable->setText("");
 	connect(bt_GnuPlot_executable,SIGNAL(clicked(bool)),SLOT(openFileDialogGnuPlotExecutable()));
 	bt_GnuPlot_executable->setEnabled(cb_local_GnuPlotExecutable->checkState() == Qt::Checked);
@@ -212,7 +212,7 @@ void settingsDialog::createLocalTab(QTabWidget *tabWid)
     le_local_FFmpeg_executable->setText(  (app.local_FFmpeg_executable.isEmpty()?ffmpeg_exec:app.local_FFmpeg_executable) );
     le_local_FFmpeg_executable->setEnabled(cb_local_FFmpegExecutable->checkState() == Qt::Checked);
     connect(cb_local_FFmpegExecutable,SIGNAL(toggled(bool)),le_local_FFmpeg_executable, SLOT(setEnabled(bool)));
-    QPushButton *bt_FFmpeg_executable = new QPushButton(QThemedIcon("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), "Browse...", local);
+    QPushButton *bt_FFmpeg_executable = new QPushButton(QIcon::fromTheme("document-open", style()->standardIcon(QStyle::SP_DialogOpenButton)), "Browse...", local);
     bt_FFmpeg_executable->setText("");
     connect(bt_FFmpeg_executable,SIGNAL(clicked(bool)),SLOT(openFileDialogFFmpegExecutable()));
     bt_FFmpeg_executable->setEnabled(cb_local_FFmpegExecutable->checkState() == Qt::Checked);
@@ -221,7 +221,7 @@ void settingsDialog::createLocalTab(QTabWidget *tabWid)
 
     QLabel *lb_localSim = new QLabel("Check simulator: ", local);
     lb_localSimStatus = new QLabel(local);
-    lb_localSimStatus->setPixmap(QThemedIcon("dialog-question" ,style()->standardIcon(QStyle::SP_MessageBoxQuestion)).pixmap(24));
+    lb_localSimStatus->setPixmap(QIcon::fromTheme("dialog-question" ,style()->standardIcon(QStyle::SP_MessageBoxQuestion)).pixmap(24));
     lb_localSimRev = new QLabel("", local);
 
     QPushButton *bt_checkLocal = new QPushButton("Test", local);
@@ -344,11 +344,11 @@ void settingsDialog::createRemoteTab(QTabWidget *tabWid)
 
     QLabel *lb_remoteConnection = new QLabel("Check connection: ", remote);
     lb_remoteConnectionStatus = new QLabel(remote);
-    lb_remoteConnectionStatus->setPixmap(QThemedIcon("dialog-question" ,style()->standardIcon(QStyle::SP_MessageBoxQuestion)).pixmap(24));
+    lb_remoteConnectionStatus->setPixmap(QIcon::fromTheme("dialog-question-symbolic", QIcon::fromTheme("dialog-question" ,style()->standardIcon(QStyle::SP_MessageBoxQuestion))).pixmap(24));
 
     QLabel *lb_remoteSim = new QLabel("Check simulator: ", remote);
     lb_remoteSimStatus = new QLabel(remote);
-    lb_remoteSimStatus->setPixmap(QThemedIcon("dialog-question" ,style()->standardIcon(QStyle::SP_MessageBoxQuestion)).pixmap(24));
+    lb_remoteSimStatus->setPixmap(QIcon::fromTheme("dialog-question-symbolic", QIcon::fromTheme("dialog-question" ,style()->standardIcon(QStyle::SP_MessageBoxQuestion))).pixmap(24));
     lb_remoteSimRev = new QLabel("", remote);
 
 
@@ -439,11 +439,11 @@ void settingsDialog::saveSettings()
         app_new.preference_allow_feedback = cb_feedback->isChecked();
 #endif
 
-        qDebug() << "Preferences: "<< endl;
-        qDebug() << "\t app.preference_stdout_limit             :  " <<app_new.preference_stdout_limit << endl;
-        qDebug() << "\t app.preference_max_recent_files         :  " << app_new.preference_max_recent_files << endl;
-        qDebug() << "\t app.preference_jobqueue_interval        :  " << app_new.preference_jobqueue_interval << endl;
-        qDebug() << "\t app.preference_jobqueue_interval_remote :  " << app_new.preference_jobqueue_interval_remote << endl << endl;
+        qDebug() << "Preferences: ";
+        qDebug() << "\t app.preference_stdout_limit             :  " <<app_new.preference_stdout_limit;
+        qDebug() << "\t app.preference_max_recent_files         :  " << app_new.preference_max_recent_files;
+        qDebug() << "\t app.preference_jobqueue_interval        :  " << app_new.preference_jobqueue_interval;
+        qDebug() << "\t app.preference_jobqueue_interval_remote :  " << app_new.preference_jobqueue_interval_remote;
 
         // Local
         app_new.local_executable            = le_local_executable->text();
@@ -452,13 +452,13 @@ void settingsDialog::saveSettings()
         app_new.local_maxConcurrentJobs     = sb_local_maxConcurrentJobs->value();
         app_new.local_maxThreads            = sb_local_maxThreads->value();
         app_new.local_timeOut               = sb_local_timeout->value();
-        qDebug() << "Local : "<< endl;
-        qDebug() << "\t app.local_executable            :  " << app_new.local_executable << endl;
-        qDebug() << "\t app.local_GnuPlot_executable    :  " << QString(app_new.local_GnuPlot_executable) << endl;
-        qDebug() << "\t app.local_FFmpeg_executable     :  " << QString(app_new.local_FFmpeg_executable) << endl;
-        qDebug() << "\t app.local_maxConcurrentJobs     :  " << app_new.local_maxConcurrentJobs << endl;
-        qDebug() << "\t app.local_maxThreads            :  " << app_new.local_maxThreads<< endl;
-        qDebug() << "\t app.local_timeOut               :  " << app_new.local_timeOut     << endl << endl;
+        qDebug() << "Local : ";
+        qDebug() << "\t app.local_executable            :  " << app_new.local_executable;
+        qDebug() << "\t app.local_GnuPlot_executable    :  " << QString(app_new.local_GnuPlot_executable) ;
+        qDebug() << "\t app.local_FFmpeg_executable     :  " << QString(app_new.local_FFmpeg_executable);
+        qDebug() << "\t app.local_maxConcurrentJobs     :  " << app_new.local_maxConcurrentJobs;
+        qDebug() << "\t app.local_maxThreads            :  " << app_new.local_maxThreads;
+        qDebug() << "\t app.local_timeOut               :  " << app_new.local_timeOut;
 
         // Remote
         app_new.remote_user                 = le_remote_user->text();
@@ -470,12 +470,12 @@ void settingsDialog::saveSettings()
         app_new.remote_dataSyncType         = cb_remote_dataSyncType->currentText();
 
         qDebug() << "Remote : "<< endl;
-        qDebug() << "\t app.user            :  " << app_new.remote_user << endl;
-        qDebug() << "\t app.host            :  " << app_new.remote_host << endl;
-        qDebug() << "\t app.executableRemote:  " << app_new.remote_executable << endl;
-        qDebug() << "\t app.maxRemoteThreads:  " << app_new.remote_maxThreads << endl;
-        qDebug() << "\t app.remoteSimDir    :  " << app_new.remote_simDir << endl;
-        qDebug() << "\t app.syncing         :  " << app_new.remote_dataSyncType << endl << endl;
+        qDebug() << "\t app.user            :  " << app_new.remote_user;
+        qDebug() << "\t app.host            :  " << app_new.remote_host;
+        qDebug() << "\t app.executableRemote:  " << app_new.remote_executable;
+        qDebug() << "\t app.maxRemoteThreads:  " << app_new.remote_maxThreads;
+        qDebug() << "\t app.remoteSimDir    :  " << app_new.remote_simDir;
+        qDebug() << "\t app.syncing         :  " << app_new.remote_dataSyncType;
 
         config::setApplication(app_new);
 
@@ -579,9 +579,7 @@ void settingsDialog::checkLocal()
     QProcess p;
 	QStringList arguments;
     p.start(executable,arguments);
-    if(p.waitForFinished(60000)){
-        cout << "Executable exists..." << endl;
-    }else{
+    if( ! p.waitForFinished(60000) ) {
         QMessageBox::information((QWidget*)0, "Error", "Executable of simulator \""+ executable +"\" does not exist!\n");
         return;
     }
@@ -606,6 +604,8 @@ void settingsDialog::checkLocal()
         QMessageBox::information((QWidget*)0, "Error", "Simulator does not return revision number!\n"+p.errorString());
         return;
     }
+    
+    version_revision.append("Path: ").append(executable).append("\n");
 
 	arguments = QStringList("--gnuplot-version");
 	if (le_local_GnuPlot_executable->isEnabled() && ! le_local_GnuPlot_executable->text().isEmpty()) {
@@ -623,12 +623,12 @@ void settingsDialog::checkLocal()
 
     if(version_revision.startsWith("Version"))
     {
-        lb_localSimStatus->setPixmap(QThemedIcon("dialog-apply" ,style()->standardIcon(QStyle::SP_DialogApplyButton)).pixmap(24));
+        lb_localSimStatus->setPixmap(QIcon::fromTheme("dialog-apply" ,style()->standardIcon(QStyle::SP_DialogApplyButton)).pixmap(24));
         lb_localSimRev->setText(version_revision.trimmed());
     }
     else
     {
-        lb_localSimStatus->setPixmap(QThemedIcon("dialog-cancel" ,style()->standardIcon(QStyle::SP_DialogCancelButton)).pixmap(24));
+        lb_localSimStatus->setPixmap(QIcon::fromTheme("dialog-cancel" ,style()->standardIcon(QStyle::SP_DialogCancelButton)).pixmap(24));
         lb_localSimRev->setText("unknown version/revision");
     }
 
@@ -653,7 +653,7 @@ void settingsDialog::checkLocal()
         if(p.waitForFinished(60000)){
             FFmpeg_version += p.readAll();
             FFmpeg_version.resize(min(200,FFmpeg_version.size()));
-            qDebug() << "FFmpeg executable exists..." << endl << FFmpeg_version;
+            qDebug() << "FFmpeg executable exists...\n" << FFmpeg_version;
 
         }else{
             QMessageBox::information((QWidget*)0, "Error", "FFmpeg executable \""+ executable_ffmpeg +"\" does not exist!\n");
@@ -686,8 +686,8 @@ void settingsDialog::checkRemote()
 
     if (ssh.checkConnection(resource,username))
     {
-        lb_remoteConnectionStatus->setPixmap(QThemedIcon("dialog-apply" ,style()->standardIcon(QStyle::SP_DialogApplyButton)).pixmap(24));
-		lb_remoteSimStatus->setPixmap(QThemedIcon("dialog-apply" ,style()->standardIcon(QStyle::SP_DialogApplyButton)).pixmap(24));
+        lb_remoteConnectionStatus->setPixmap(QIcon::fromTheme("dialog-apply" ,style()->standardIcon(QStyle::SP_DialogApplyButton)).pixmap(24));
+		lb_remoteSimStatus->setPixmap(QIcon::fromTheme("dialog-apply" ,style()->standardIcon(QStyle::SP_DialogApplyButton)).pixmap(24));
 	}
 //         QString version("");
 //         cout << "COMMAND: " << "processProxy.sh -a version -e " << executable.toStdString() << endl;
@@ -728,8 +728,8 @@ void settingsDialog::checkRemote()
 //     }
     else
     {
-		lb_remoteConnectionStatus->setPixmap(QThemedIcon("dialog-cancel" ,style()->standardIcon(QStyle::SP_DialogCancelButton)).pixmap(24));
-		lb_remoteSimStatus->setPixmap(QThemedIcon("dialog-cancel" ,style()->standardIcon(QStyle::SP_DialogCancelButton)).pixmap(24));
+		lb_remoteConnectionStatus->setPixmap(QIcon::fromTheme("dialog-cancel" ,style()->standardIcon(QStyle::SP_DialogCancelButton)).pixmap(24));
+		lb_remoteSimStatus->setPixmap(QIcon::fromTheme("dialog-cancel" ,style()->standardIcon(QStyle::SP_DialogCancelButton)).pixmap(24));
 		lb_remoteSimRev->setText(ssh.getLastError());
 	}
 }

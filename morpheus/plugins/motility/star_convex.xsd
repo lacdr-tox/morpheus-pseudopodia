@@ -2,20 +2,23 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="StarConvex"	type="StarConvex"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="StarConvex"	type="StarConvex"  	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 
 	<xs:complexType name="StarConvex">
-		<xs:annotation>
-			<xs:appinfo>Motility</xs:appinfo>
-		</xs:annotation>
-		<xs:attribute name="membrane" type="cpmMathExpression" use="required" />
-		<xs:attribute name="strength" type="cpmMathExpression" use="required"  />
-		<xs:attribute name="protrusion" type="cpmBoolean" use="optional" default="true" />
-		<xs:attribute name="retraction" type="cpmBoolean" use="optional" default="true" />
-		<xs:attribute name="name" type="cpmString" use="optional" />
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Motility</xs:appinfo>
+				</xs:annotation>
+				<xs:attribute name="membrane" type="cpmMathExpression" use="required" />
+				<xs:attribute name="strength" type="cpmMathExpression" use="required"  />
+				<xs:attribute name="protrusion" type="cpmBoolean" use="optional" default="true" />
+				<xs:attribute name="retraction" type="cpmBoolean" use="optional" default="true" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 </xs:schema>

@@ -11,7 +11,12 @@
 
 #include "core/interfaces.h"
 #include "core/plugin_parameter.h"
+#ifdef HAVE_GRAPHVIZ
 #include <graphviz/gvc.h>
+#warning Building with graphviz support
+#else
+#warning Building without graphviz support
+#endif
 #include <regex>
 
 /** 
@@ -36,8 +41,10 @@ class DependencyGraph: public AnalysisPlugin {
 	PluginParameter2<bool, XMLValueReader, DefaultValPolicy> reduced;
 	PluginParameter2<string,XMLValueReader,OptionalPolicy> exclude_symbols_string;
 	PluginParameter2<string,XMLValueReader,OptionalPolicy> exclude_plugins_string;
+	PluginParameter2<string,XMLValueReader,OptionalPolicy> include_tags_option;
 	set<string> exclude_symbols;
 	set<string> exclude_plugins;
+	set<string> include_tags;
 	vector<string> skip_symbols = {"_.*"};
 	vector<string> skip_symbols_reduced = {".*\\.x", ".*\\.y",".*\\.z",".*\\.phi",".*\\.theta",".*\\.abs"};
 	regex skip_symbols_regex;
@@ -70,7 +77,7 @@ class DependencyGraph: public AnalysisPlugin {
 	string dotName(const string& a );
 
 public:
-	DECLARE_PLUGIN("DependencyGraph");
+	DECLARE_PLUGIN("ModelGraph");
 	
 	DependencyGraph();
 	void init(const Scope* scope) override;

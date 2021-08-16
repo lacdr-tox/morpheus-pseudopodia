@@ -17,7 +17,7 @@
 
 using namespace SIM;
 
-/** \defgroup VolumeConstraint
+/** \defgroup ML_VolumeConstraint VolumeConstraint
 \ingroup ML_CellType
 \ingroup CellShapePlugins
 \brief Penalizes deviations from target cell area (2D) or volume (3D)

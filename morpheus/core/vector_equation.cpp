@@ -10,9 +10,10 @@ VectorEquation::VectorEquation(): ReporterPlugin() {
 	symbol.setXMLPath("symbol-ref");
 	registerPluginParameter(symbol);
 	
-	spherical.setXMLPath("spherical");
-	spherical.setDefault("false");
-	registerPluginParameter(spherical);
+	notation.setXMLPath("notation");
+	notation.setDefault("x,y,z");
+	notation.setConversionMap(VecNotationMap());
+	registerPluginParameter(notation);
 	
 	expression.setXMLPath("Expression/text");
 	registerPluginParameter(expression);
@@ -22,15 +23,15 @@ void VectorEquation::report()
 {
 	FocusRange range(symbol.granularity(), scope());
 	
-	if (range.size()>500) {
+	if (range.size()>100) {
 #pragma omp parallel for
 		for (auto focus = range.begin(); focus < range.end(); ++focus ) {
-			symbol.set(*focus, spherical() ? VDOUBLE::from_radial(expression(*focus)) : expression(*focus) ) ;
+			symbol.set(*focus, VDOUBLE::from(expression(*focus), notation())) ;
 		}
 	}
 	else {
 		for (const auto& focus : range ) {
-			symbol.set(focus, spherical() ? VDOUBLE::from_radial(expression(focus)) : expression(focus) ) ;
+			symbol.set(focus, VDOUBLE::from(expression(focus), notation())) ;
 		}
 	}
 }

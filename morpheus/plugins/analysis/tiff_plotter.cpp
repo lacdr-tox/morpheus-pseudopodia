@@ -152,7 +152,8 @@ void TiffPlotter::init(const Scope* scope)
 	}
 
 	if( ome_header() && compression() && timelapse() )
-		throw MorpheusException("TIFFPlotter: Cannot write OME header with compressed timelapse image.\n \
+		throw MorpheusException("TIFFPlotter: Cannot write OME header with compressed timelapse image.\n\
+Please disable compression or writing the OME header!\n\
 (Reason: libTiff does not provide random access to compressed image data. \
 Therefore, cannot write OME header to first image.)", stored_node);
 

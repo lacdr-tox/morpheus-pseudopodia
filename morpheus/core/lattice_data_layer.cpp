@@ -166,6 +166,18 @@ template <class T> void Lattice_Data_Layer<T>::setDomain()
 	domain[s_ypb] = boundary_types[Boundary::py];
 	domain[s_zmb] = boundary_types[Boundary::mz];
 	domain[s_zpb] = boundary_types[Boundary::pz];
+	if (boundary_types[Boundary::mx] == Boundary::periodic) {
+		domain[s_xmb] = domain[s_xp];
+		domain[s_xpb] = domain[s_xm];
+	}
+	if (boundary_types[Boundary::my] == Boundary::periodic) {
+		domain[s_ymb] = domain[s_yp];
+		domain[s_ypb] = domain[s_ym];
+	}
+	if (boundary_types[Boundary::mz] == Boundary::periodic) {
+		domain[s_zmb] = domain[s_zp];
+		domain[s_zpb] = domain[s_zm];
+	}
 }
 
 //save lattice to XML-file
@@ -384,7 +396,7 @@ template <class T> valarray<T> Lattice_Data_Layer<T>::getData() const {
 	sizes[0] = l_size.z;
 	sizes[1] = l_size.y;
 	sizes[2] = l_size.x;
-	valarray<size_t> strides(2);
+	valarray<size_t> strides(3);
 	strides[0] = shadow_size.x * shadow_size.y;
 	strides[1] = shadow_size.x;
 	strides[2] = 1;
@@ -508,238 +520,147 @@ void Lattice_Data_Layer<T>::reset_boundaries() {
 			}
 		}
 	}
-		if (boundary_types[Boundary::mx] == Boundary::periodic) {
-			data[s_xmb] = data[s_xp];
-			data[s_xpb] = data[s_xm];
-		}
-		else {
-			if (boundary_values[Boundary::mx]->isSpaceConst())
-				data[s_xmb] = boundary_values[Boundary::mx]->get(VINT(0,0,0));
-			else {
-				if (cache_xmb.size() == 0) {
-					cache_xmb.resize(shadow_width.x*shadow_size.y*shadow_size.z);
-				}
-
-				VINT start = -shadow_width;
-				VINT stop = l_size+shadow_width;
-				stop.x = 0;
-				int idx=0; pos = start;
-				for (; pos.z<stop.z; pos.z++)
-					for (; pos.y<stop.y; pos.y++)
-						for (; pos.x<stop.x; pos.x++) {
-							cache_xmb[idx] = boundary_values[Boundary::mx]->get(pos);
-							idx++;
-						}
-				data[s_xmb] = cache_xmb;
-			}
-				
-			if (boundary_values[Boundary::px]->isSpaceConst())
-				data[s_xpb] = boundary_values[Boundary::px]->get(VINT(0,0,0));
-			else {
-				if (cache_xpb.size() == 0) {
-					cache_xpb.resize(shadow_width.x*shadow_size.y*shadow_size.z);
-				}
-
-				VINT start = -shadow_width;
-				VINT stop = l_size+shadow_width;
-				start.x = l_size.x;
-				int idx=0; pos = start;
-				for (; pos.z<stop.z; pos.z++)
-					for (; pos.y<stop.y; pos.y++)
-						for (; pos.x<stop.x; pos.x++) {
-							cache_xpb[idx] = boundary_values[Boundary::px]->get(pos);
-							idx++;
-						}
-				data[s_xpb] = cache_xpb;
-			}
-		}
-		if (dimensions>1) {
-			if (boundary_types[Boundary::my] == Boundary::periodic) {
-				data[s_ymb] = data[s_yp];
-				data[s_ypb] = data[s_ym];
-			}
-			else {
-				
-				if (boundary_values[Boundary::my]->isSpaceConst())
-					data[s_ymb] = boundary_values[Boundary::my]->get(VINT(0,0,0));
-				else {
-					if (cache_ymb.size() == 0) {
-						cache_ymb.resize(shadow_size.x*shadow_width.y*shadow_size.z);
-					}
-
-					VINT start = -shadow_width;
-					VINT stop = l_size+shadow_width;
-					stop.y = 0;
-					int idx=0; pos = start;
-					for (; pos.z<stop.z; pos.z++)
-						for (; pos.y<stop.y; pos.y++)
-							for (; pos.x<stop.x; pos.x++) {
-								cache_ymb[idx] = boundary_values[Boundary::my]->get(pos);
-								idx++;
-							}
-					data[s_ymb] = cache_ymb;
-				}
-				
-				if (boundary_values[Boundary::py]->isSpaceConst())
-					data[s_ypb] = boundary_values[Boundary::py]->get(VINT(0,0,0));
-				else {
-					if (cache_ypb.size() == 0) {
-						cache_ypb.resize(shadow_size.x*shadow_width.y*shadow_size.z);
-					}
-
-					VINT start = -shadow_width;
-					VINT stop = l_size+shadow_width;
-					start.y = l_size.y;
-					int idx=0; pos = start;
-					for (; pos.z<stop.z; pos.z++)
-						for (; pos.y<stop.y; pos.y++)
-							for (; pos.x<stop.x; pos.x++) {
-								cache_ypb[idx] = boundary_values[Boundary::py]->get(pos);
-								idx++;
-							}
-					data[s_ypb] = cache_ypb;
-				}
-			}
-		}
-		if (dimensions>2) {
-			if (boundary_types[Boundary::mz] == Boundary::periodic) {
-				data[s_zmb] = data[s_zp];
-				data[s_zpb] = data[s_zm];
-			}
-			else {
-				if (boundary_values[Boundary::mz]->isSpaceConst())
-					data[s_zpb] = boundary_values[Boundary::mz]->get(VINT(0,0,0));
-				else {
-					if (cache_zmb.size() == 0) {
-						cache_zmb.resize(shadow_size.x*shadow_size.y*shadow_width.z);
-					}
-
-					VINT start = -shadow_width;
-					VINT stop = l_size+shadow_width;
-					stop.z = 0;
-					int idx=0; pos = start;
-					for (; pos.z<stop.z; pos.z++)
-						for (; pos.y<stop.y; pos.y++)
-							for (; pos.x<stop.x; pos.x++) {
-								cache_zmb[idx] = boundary_values[Boundary::mz]->get(pos);
-								idx++;
-							}
-					data[s_zmb] = cache_zmb;
-				}
-				
-				if (boundary_values[Boundary::pz]->isSpaceConst())
-					data[s_zpb] = boundary_values[Boundary::pz]->get(VINT(0,0,0));
-				else {
-					
-					if (cache_zpb.size() == 0) {
-						cache_zpb.resize(shadow_size.x*shadow_size.y*shadow_width.z);
-					}
-
-					VINT start = -shadow_width;
-					VINT stop = l_size+shadow_width;
-					start.z = l_size.z;
-					int idx=0; pos = start;
-					for (; pos.z<stop.z; pos.z++)
-						for (; pos.y<stop.y; pos.y++)
-							for (; pos.x<stop.x; pos.x++) {
-								cache_zpb[idx] = boundary_values[Boundary::pz]->get(pos);
-								idx++;
-							}
-					data[s_zpb] = cache_zpb;
-				}
-			}
-		}
-/*		
+	if (boundary_types[Boundary::mx] == Boundary::periodic) {
+		data[s_xmb] = data[s_xp];
+		data[s_xpb] = data[s_xm];
 	}
 	else {
-		switch (boundary_types[Boundary::mx]){
-			case Boundary::periodic:
-	// 			cout << "Lattice:x:periodic" << endl;
-				data[s_xmb] = data[s_xp];
-				break;
-			case Boundary::noflux:
-	// 			cout << "Lattice:x:noflux" << endl;
-	// 			data[s_xmb] = data[s_xm];
-	// 			break;
-			case Boundary::constant: 
-	// 			cout << "Lattice:x:constant" << endl;
-				data[s_xmb] = this->boundary_values[Boundary::mx];
-				break;
-			default:
-				assert(0);
-		}
-		switch ((boundary_types[Boundary::px])) {
-			case Boundary::periodic:
-				data[s_xpb] = data[s_xm];
-				break;
-			case Boundary::noflux:
-	// 			data[s_xpb] = data[s_xp];
-	// 			break;
-			case Boundary::constant: 
-				data[s_xpb] = this->boundary_values[Boundary::px];
-				break;
-			default:
-				assert(0);
-		}
-		
-		if (dimensions>=2) {
-			switch ((boundary_types[Boundary::my])) {
-				case Boundary::periodic:
-					data[s_ymb] = data[s_yp];
-					break;
-				case Boundary::noflux:
-	// 				data[s_ymb] = data[s_ym];
-	// 				break;
-				case Boundary::constant: 
-					data[s_ymb] = this->boundary_values[Boundary::my];
-					break;
-				default:
-					assert(0);
+		if (boundary_values[Boundary::mx]->isSpaceConst())
+			data[s_xmb] = boundary_values[Boundary::mx]->get(VINT(0,0,0));
+		else {
+			if (cache_xmb.size() == 0) {
+				cache_xmb.resize(shadow_width.x*shadow_size.y*shadow_size.z);
 			}
-			switch ((boundary_types[Boundary::py])) {
-				case Boundary::periodic:
-					data[s_ypb] = data[s_ym];
-					break;
-				case Boundary::noflux:
-	// 				data[s_ypb] = data[s_yp];
-	// 				break;
-				case Boundary::constant: 
-					data[s_ypb] = this->boundary_values[Boundary::py];
-					break;
-				default:
-					assert(0);
+
+			VINT start = -shadow_width;
+			VINT stop = l_size+shadow_width;
+			stop.x = 0;
+			int idx=0; 
+			for (pos.z = start.z; pos.z<stop.z; pos.z++)
+				for (pos.y=start.y; pos.y<stop.y; pos.y++)
+					for (pos.x=start.x; pos.x<stop.x; pos.x++) {
+						cache_xmb[idx] = boundary_values[Boundary::mx]->get(pos);
+						idx++;
+					}
+			data[s_xmb] = cache_xmb;
+		}
+			
+		if (boundary_values[Boundary::px]->isSpaceConst())
+			data[s_xpb] = boundary_values[Boundary::px]->get(VINT(0,0,0));
+		else {
+			if (cache_xpb.size() == 0) {
+				cache_xpb.resize(shadow_width.x*shadow_size.y*shadow_size.z);
+			}
+
+			VINT start = -shadow_width;
+			VINT stop = l_size+shadow_width;
+			start.x = l_size.x;
+			int idx=0; pos = start;
+			for (pos.z = start.z; pos.z<stop.z; pos.z++)
+				for (pos.y=start.y; pos.y<stop.y; pos.y++)
+					for (pos.x=start.x; pos.x<stop.x; pos.x++) {
+						cache_xpb[idx] = boundary_values[Boundary::px]->get(pos);
+						idx++;
+					}
+			data[s_xpb] = cache_xpb;
+		}
+	}
+	if (dimensions>1) {
+		if (boundary_types[Boundary::my] == Boundary::periodic) {
+			data[s_ymb] = data[s_yp];
+			data[s_ypb] = data[s_ym];
+		}
+		else {
+			
+			if (boundary_values[Boundary::my]->isSpaceConst())
+				data[s_ymb] = boundary_values[Boundary::my]->get(VINT(0,0,0));
+			else {
+				if (cache_ymb.size() == 0) {
+					cache_ymb.resize(shadow_size.x*shadow_width.y*shadow_size.z);
+				}
+
+				VINT start = -shadow_width;
+				VINT stop = l_size+shadow_width;
+				stop.y = 0;
+				int idx=0;
+				for (pos.z = start.z; pos.z<stop.z; pos.z++)
+					for (pos.y=start.y; pos.y<stop.y; pos.y++)
+						for (pos.x=start.x; pos.x<stop.x; pos.x++) {
+							cache_ymb[idx] = boundary_values[Boundary::my]->get(pos);
+							idx++;
+						}
+				data[s_ymb] = cache_ymb;
+			}
+			
+			if (boundary_values[Boundary::py]->isSpaceConst())
+				data[s_ypb] = boundary_values[Boundary::py]->get(VINT(0,0,0));
+			else {
+				if (cache_ypb.size() == 0) {
+					cache_ypb.resize(shadow_size.x*shadow_width.y*shadow_size.z);
+				}
+
+				VINT start = -shadow_width;
+				VINT stop = l_size+shadow_width;
+				start.y = l_size.y;
+				int idx=0;
+				for (pos.z = start.z; pos.z<stop.z; pos.z++)
+					for (pos.y=start.y; pos.y<stop.y; pos.y++)
+						for (pos.x=start.x; pos.x<stop.x; pos.x++) {
+							cache_ypb[idx] = boundary_values[Boundary::py]->get(pos);
+							idx++;
+						}
+				data[s_ypb] = cache_ypb;
 			}
 		}
-		
-		if (dimensions==3) {
-			switch ((boundary_types[Boundary::mz])) {
-				case Boundary::periodic:
-					data[s_zmb] = data[s_zp];
-					break;
-				case Boundary::noflux:
-	// 				data[s_zmb] = data[s_zm];
-	// 				break;
-				case Boundary::constant: 
-					data[s_zmb] = this->boundary_values[Boundary::mz];
-					break;
-				default:
-					assert(0);
+	}
+	if (dimensions>2) {
+		if (boundary_types[Boundary::mz] == Boundary::periodic) {
+			data[s_zmb] = data[s_zp];
+			data[s_zpb] = data[s_zm];
+		}
+		else {
+			if (boundary_values[Boundary::mz]->isSpaceConst())
+				data[s_zpb] = boundary_values[Boundary::mz]->get(VINT(0,0,0));
+			else {
+				if (cache_zmb.size() == 0) {
+					cache_zmb.resize(shadow_size.x*shadow_size.y*shadow_width.z);
+				}
+
+				VINT start = -shadow_width;
+				VINT stop = l_size+shadow_width;
+				stop.z = 0;
+				int idx=0;
+				for (pos.z = start.z; pos.z<stop.z; pos.z++)
+					for (pos.y=start.y; pos.y<stop.y; pos.y++)
+						for (pos.x=start.x; pos.x<stop.x; pos.x++) {
+							cache_zmb[idx] = boundary_values[Boundary::mz]->get(pos);
+							idx++;
+						}
+				data[s_zmb] = cache_zmb;
 			}
-			switch ((boundary_types[Boundary::pz])) {
-				case Boundary::periodic:
-					data[s_zpb] = data[s_zm];
-					break;
-				case Boundary::noflux:
-	// 				data[s_zpb] =  data[s_zp];
-	// 				break;
-				case Boundary::constant: 
-					data[s_zpb] =  this->boundary_values[Boundary::pz];
-					break;
-				default:
-					assert(0);
+			
+			if (boundary_values[Boundary::pz]->isSpaceConst())
+				data[s_zpb] = boundary_values[Boundary::pz]->get(VINT(0,0,0));
+			else {
+				
+				if (cache_zpb.size() == 0) {
+					cache_zpb.resize(shadow_size.x*shadow_size.y*shadow_width.z);
+				}
+
+				VINT start = -shadow_width;
+				VINT stop = l_size+shadow_width;
+				start.z = l_size.z;
+				int idx=0;
+				for (pos.z = start.z; pos.z<stop.z; pos.z++)
+					for (pos.y=start.y; pos.y<stop.y; pos.y++)
+						for (pos.x=start.x; pos.x<stop.x; pos.x++) {
+							cache_zpb[idx] = boundary_values[Boundary::pz]->get(pos);
+							idx++;
+						}
+				data[s_zpb] = cache_zpb;
 			}
 		}
-	}*/
+	}
 }
 
 template <class T>

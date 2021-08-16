@@ -16,36 +16,32 @@
 #include "core/celltype.h"
 #include "core/system.h" // TriggeredSystem
 
-/** \defgroup ML_CellDivision
+/** \defgroup ML_CellDivision CellDivision
 \ingroup ML_CellType
 \ingroup MiscellaneousPlugins InstantaneousProcessPlugins
 \brief Divide cell based on condition
 
 Triggers cell division when condition is satisfied.
 
-First, a division plane is calculated, through the cell center of mass.
-- \b random: random orientation
-- \b major: longest axis in elliptic approximation of cell shape
-- \b minor: shortest axis in elliptic approximation of cell shape
-
+First, a division plane is calculated, through the cell's center of mass (see orientation options below).
 Then, the nodes of the mother cell on either side of this plane are allocated to two new daughter cells.
 
 By default, all property values are copied from the mother to the two daughter cells. 
-This can be overridden using Triggers to set or initialize the properties of daughter cells. See example below.
+This can be overridden using \b Triggers to set or initialize the properties of daughter cells. See example below.
 
 To specify daughter-specific properties (to model e.g. asymmetric cell division), you can use the daughterID option.
 This defines a symbolic handle (value 1 or 2) for the two daughters that can be used in the Triggers. See example below.
 
-- \b condition: Expression describing condition under a cell should divide
-- \b division-plane: Plane of division, through cell center of mass. 
-  - major: longest axis in ellipsoid approximation of cell shape
-  - minor: shortest axis in ellipsoid approximation of cell shape
+- \b condition: Expression defining the condition under which a cell should divide
+- \b division-plane: Plane of division, through cell's center of mass. 
+  - major: longest axis in ellipsoid approximation of cell shape gives the normal vector of the division plane
+  - minor: shortest axis in ellipsoid approximation of cell shape gives the normal vector of the division plane
   - random: randomly oriented division plane
-  - oriented: user-specified division plane (must be given as vector in 'orientation')
+  - oriented: user-specified division plane (must be given as normal vector in 'orientation')
 
 - \b write_log (default none): Create log file about cell divisions in one of the following formats: CSV (Time, mother ID, daughter IDs), NEWICK (https://en.wikipedia.org/wiki/Newick_format), or DOT (https://en.wikipedia.org/wiki/DOT_(graph_description_language)) format.
-- \b daughterID (optional): Local symbol that provides unique IDs (1 or 2) for the two daughter cells to be used in Triggers. E.g. to model asymmetric cell division
-- \b orientation (optional): Vector (or vectorexpression) giving the division plane. Only used (and required) if division-plane="oriented".
+- \b daughterID (optional): Local symbol that provides unique IDs (1 or 2) for the two daughter cells to be used in Triggers, e.g. to model asymmetric cell division.
+- \b orientation (optional): Vector (or vectorexpression) giving the normal vector of the division plane. Only used (and required) if division-plane="oriented".
 - \b Triggers (optional): a System of Rules that are triggered for both daughter cells after cell division.
 
 \section Examples
@@ -62,7 +58,7 @@ Divide every 1000 time steps along a user-specified orientation.
 				orientation="vector.x, vector.y, vector.z" />
 \endverbatim
 
-Using Triggers to specify properties after cell division (assymetric division). Symbol 'Vt' is here set to a daughter-specific value with 'daughterID', 
+Using Triggers to specify properties after cell division (asymmetric division). Symbol 'Vt' is here set to a daughter-specific value with 'daughterID', 
 \verbatim
 <CellDivision condition="V >= (2.0 * V0)" division_plane="major" daughterID="daughter">
 	<Triggers>

@@ -1,20 +1,20 @@
-<MorpheusModel version="3">
+<MorpheusModel version="4">
     <Description>
         <Title>Example-PCP</Title>
         <Details>Planar Cell Polarity (PCP)</Details>
     </Description>
     <Global>
-        <Field symbol="x" value="0">
+        <Field value="0" symbol="x">
             <Diffusion rate="0.0"/>
         </Field>
-        <Constant symbol="A" value="0.0"/>
-        <Constant symbol="C" value="0.0"/>
-        <ConstantVector symbol="polC" value="0.0, 0.0, 0.0"/>
-        <Constant symbol="orientation" value="0.25"/>
+        <Constant value="0.0" symbol="A"/>
+        <Constant value="0.0" symbol="C"/>
+        <ConstantVector value="0.0, 0.0, 0.0" symbol="polC"/>
+        <Constant value="0.25" symbol="orientation"/>
     </Global>
     <Space>
         <Lattice class="hexagonal">
-            <Size symbol="size" value="182,182,0"/>
+            <Size value="182,182,0" symbol="size"/>
             <BoundaryConditions>
                 <Condition boundary="x" type="periodic"/>
                 <Condition boundary="y" type="periodic"/>
@@ -26,7 +26,7 @@
         </Lattice>
         <SpaceSymbol symbol="l"/>
         <MembraneLattice>
-            <Resolution symbol="memsize" value="24"/>
+            <Resolution value="24" symbol="memsize"/>
             <SpaceSymbol symbol="m"/>
         </MembraneLattice>
     </Space>
@@ -38,27 +38,27 @@
     </Time>
     <CellTypes>
         <CellType class="biological" name="cells">
-            <MembraneProperty symbol="A" value="1">
+            <MembraneProperty value="1" symbol="A">
                 <!--    <Disabled>
         <Diffusion rate="200"/>
     </Disabled>
 -->
                 <Diffusion rate="0" well-mixed="true"/>
             </MembraneProperty>
-            <MembraneProperty symbol="C" value="0">
+            <MembraneProperty value="0" symbol="C">
                 <Diffusion rate="7.5"/>
                 <!--    <Disabled>
         <Diffusion rate="0" well-mixed="true"/>
     </Disabled>
 -->
             </MembraneProperty>
-            <MembraneProperty symbol="c" value="0" name="C_nb">
+            <MembraneProperty value="0" name="C_nb" symbol="c">
                 <Diffusion rate="0"/>
             </MembraneProperty>
-            <System solver="runge-kutta" time-step="1">
-                <Constant symbol="d" value="0.1" name="decay"/>
-                <Constant symbol="h" value="1" name="cell-cell coupling"/>
-                <Constant symbol="b" value="0.01" name="base activation"/>
+            <System solver="Runge-Kutta [fixed, O(4)]" time-step="1">
+                <Constant value="0.1" name="decay" symbol="d"/>
+                <Constant value="1" name="cell-cell coupling" symbol="h"/>
+                <Constant value="0.01" name="base activation" symbol="b"/>
                 <DiffEqn symbol-ref="A">
                     <Expression>-F</Expression>
                 </DiffEqn>
@@ -72,15 +72,15 @@
         </Function>
     </Disabled>
 -->
-                <Intermediate symbol="F" value="A*(((C^2/(1+C^2)) / (1+h*c^2)) + b) - d*C"/>
+                <Intermediate value="A*(((C^2/(1+C^2)) / (1+h*c^2)) + b) - d*C" symbol="F"/>
             </System>
-            <PropertyVector symbol="polC" value="0.0, 0.0, 0.0"/>
+            <PropertyVector value="0.0, 0.0, 0.0" symbol="polC"/>
             <NeighborhoodReporter>
-                <Input scaling="length" value="C"/>
+                <Input value="C" scaling="length"/>
                 <Output symbol-ref="c" mapping="average"/>
             </NeighborhoodReporter>
-            <Property symbol="orientation" value="0.2"/>
-            <Property symbol="sumC" value="0"/>
+            <Property value="0.2" symbol="orientation"/>
+            <Property value="0" symbol="sumC"/>
             <Mapper>
                 <Input value="C"/>
                 <Polarity symbol-ref="polC"/>
@@ -134,7 +134,7 @@
         <Gnuplotter time-step="100" decorate="true">
             <Terminal name="png"/>
             <Plot>
-                <Cells value="polC.phi" min="0.0" max="6.28">
+                <Cells max="6.28" value="polC.phi" min="0.0">
                     <ColorMap>
                         <Color value="5.4" color="red"/>
                         <Color value="4.5" color="magenta"/>
@@ -148,9 +148,10 @@
             </Plot>
         </Gnuplotter>
         <ContactLogger time-step="100" celltype-from="cells"/>
-        <HistogramLogger minimum="0.0" normalized="false" maximum="6.28" number-of-bins="36" time-step="250">
-            <Column symbol-ref="polC.phi" celltype="cells"/>
+        <HistogramLogger minimum="0.0" time-step="250" normalized="false" number-of-bins="36" maximum="6.28">
+            <Column celltype="cells" symbol-ref="polC.phi"/>
             <Plot minimum="0.0" terminal="png"/>
         </HistogramLogger>
+        <ModelGraph format="svg" reduced="false" include-tags="#untagged"/>
     </Analysis>
 </MorpheusModel>

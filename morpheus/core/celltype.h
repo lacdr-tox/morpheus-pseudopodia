@@ -29,6 +29,8 @@ public:
 	Cell& cell(CPM::CELL_ID  cell_id) { assert( cell_id < cell_by_id.size() ); assert( cell_by_id[cell_id] ); return *cell_by_id[cell_id]; };
 	CPM::INDEX& index(CPM::CELL_ID cell_id) { assert( cell_id < cell_index_by_id.size()); return cell_index_by_id[cell_id]; }
 	CPM::INDEX emptyIndex();
+	int size() const;
+	void wipe();
 	
 private:
 	CPM::CELL_ID free_cell_name;
@@ -180,7 +182,7 @@ protected:
 };
 
 
-typedef  CClassFactoryP1 < string, CellType, uint > CellTypeFactory;
+typedef  StaticClassFactoryP1 < string, CellType, uint > CellTypeFactory;
 #define registerCellType(CTClass) bool CTClass::factory_registration = CellTypeFactory::RegisterCreatorFunction(CTClass(0).XMLClassName(),CTClass::createInstance);
 
 
@@ -200,7 +202,7 @@ public:
 
 // and here comes some basic functionality for the celltype
 	CellType(uint ct_id);
-	virtual ~CellType() { /*for (auto cell : cell_ids) { storage.removeCell(cell); } cell_ids.clear();*/ };
+	virtual ~CellType();
 
 	virtual XMLNode saveToXML() const;
 	virtual void loadFromXML(const XMLNode Node, Scope* scope);
@@ -268,6 +270,7 @@ private:
 	string name;
 	XMLNode stored_node;
 	Scope* local_scope;
+	set<string> xml_tags;
 
 protected:
 	// Plugins sorted by interface
@@ -281,13 +284,14 @@ protected:
 
 	// Cell populations
 	vector< CPM::CELL_ID > cell_ids;
-	struct InitPropertyDesc {string symbol; string expression;  } ;
+	struct InitPropertyDesc { string symbol; string expression; VecNotation notation=VecNotation::ORTH; };
 	struct CellPopDesc {
 		int pop_size;
 		XMLNode xPopNode;
 		vector<CPM::CELL_ID> cells;
 		vector<InitPropertyDesc> property_initializers;
 		vector< shared_ptr<Population_Initializer> > pop_initializers;
+		vector< shared_ptr<Plugin> > other_plugins;
 	};
 	vector<CellPopDesc> cell_populations;
 	
@@ -310,7 +314,7 @@ public:
 	// Here we can make sure that the Medium has only one singe cell and disable node tracking
 	CPM::CELL_ID createCell(CPM::CELL_ID name) override;
 	virtual CPM::CELL_ID addCell(CPM::CELL_ID  cell_id) override;
-	virtual void removeCell(CPM::CELL_ID  cell_id) override;
+// 	virtual void removeCell(CPM::CELL_ID  cell_id) override;
 };
 
 

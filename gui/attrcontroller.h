@@ -16,9 +16,9 @@
 #include <QItemDelegate>
 #include <QSharedPointer>
 #include <QRegExpValidator>
-#include "abstractattribute.h"
+#include "morpheusML/model_attribute.h"
 #include "config.h"
-#include "mathtextedit.h"
+#include "widgets/mathtextedit.h"
 
 #include <iostream>
 using namespace std;
@@ -51,5 +51,6 @@ private:
     bool is_range;
 	QString pattern;
     void setValidator(); /*!< Sets the matching validator on the editor-object. */
+	mutable QPalette palette_invalid, palette_normal;
 };
 #endif // ATTRCONTROLLER_H

@@ -1,4 +1,5 @@
 #include "addattrdialog.h"
+#include "config.h"
 
 addNodeDialog::addNodeDialog(nodeController *nodeContr)
 {
@@ -15,11 +16,13 @@ addNodeDialog::addNodeDialog(nodeController *nodeContr)
     QLabel *label = new QLabel("Select a plugin:", lwid);
     QLabel *lb_docu = new QLabel("Description:", rwid);
 
-    edit = new QTextEdit(rwid);
-    edit->setReadOnly(true);
-    QPalette pal;
-    pal.setColor(QPalette::Base, QColor(239, 235, 231, 255));
-    edit->setPalette(pal);
+	docu_view = new WebViewer(rwid);
+	QFrame* docu_frame = new QFrame(rwid);
+	docu_frame->setLayout(new QVBoxLayout());
+	docu_frame->layout()->addWidget(docu_view);
+	docu_frame->setFrameStyle(QFrame::Plain);
+	docu_frame->setFrameShape(QFrame::StyledPanel);
+	docu_frame->setFrameShadow(QFrame::Shadow::Raised);
 
     QPushButton *bt_select = new QPushButton("Select", lwid);
     bt_select->setDefault(true);
@@ -53,12 +56,15 @@ addNodeDialog::addNodeDialog(nodeController *nodeContr)
     gl->setColumnStretch(1, 0);
 
     QVBoxLayout *vl = new QVBoxLayout(rwid);
+	lb_docu->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     vl->addWidget(lb_docu);
-    vl->addWidget(edit);
+    vl->addWidget(docu_frame);
 
     splitter = new QSplitter(this);
     splitter->addWidget(lwid);
     splitter->addWidget(rwid);
+	splitter->setStretchFactor(0,1);
+	splitter->setStretchFactor(1,4);
 
     QHBoxLayout *lay = new QHBoxLayout(this);
     lay->addWidget(splitter);
@@ -84,11 +90,11 @@ void addNodeDialog::clickedTreeItem()
     QTreeWidgetItem *item = trW->selectedItems()[0];
     nodeName = item->text(0);
 
-    QString nodeText = contr->childInformation(item->text(0)).type->documentation;
-    if ( nodeText.isEmpty() )
-        edit->setText("Not available!");
-    else
-        edit->setText(nodeText);
+	QMap <QString, QUrl > identifiers = config::getHelpEngine()->linksForIdentifier(nodeName);
+	qDebug() << "Searching for help for " << nodeName;
+	if (!identifiers.empty()) {
+		docu_view->setUrl(identifiers.begin().value());
+	}
 }
 
 //------------------------------------------------------------------------------

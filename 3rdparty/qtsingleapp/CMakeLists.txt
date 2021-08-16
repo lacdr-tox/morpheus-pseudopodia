@@ -1,17 +1,10 @@
-FIND_PACKAGE(Qt4 COMPONENTS QtCore QtGui QtNetwork REQUIRED)
+FIND_PACKAGE(Qt5 COMPONENTS Widgets Network REQUIRED)
 ### Include Qt directories  *  Add Qt standard Defines  *  Create QT_LIBRARIES variable, including all required libs 
-INCLUDE(${QT_USE_FILE})
-ADD_DEFINITIONS(${QT_DEFINITIONS})
-
+SET(CMAKE_AUTOMOC ON)
 SET(SOURCES
 	qtlocalpeer.cpp
 	qtsingleapplication.cpp
 )
-SET(HEADERS
-	qtlocalpeer.h
-        qtsingleapplication.h
-)
-
-QT4_WRAP_CPP( HEADERS_MOC ${HEADERS} )
 
 ADD_LIBRARY(qtsingleapp ${SOURCES} ${HEADERS_MOC} )
+target_link_libraries(qtsingleapp Qt5::Network Qt5::Widgets )

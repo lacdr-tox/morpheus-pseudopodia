@@ -1,8 +1,17 @@
 #include "interfaces.h"
 #include "time_scheduler.h"
 #include "plugin_parameter.h"
+#include "time.h"
 
-int Plugin::plugins_alive =0;
+
+Plugin::Plugin() : plugin_name(""), local_scope(nullptr) {}
+
+Plugin::~Plugin() {};
+
+unique_ptr<Plugin::Factory> factory;
+
+Plugin::Factory& Plugin::getFactory() { if (!factory) factory = make_unique<Factory>(); return *factory; }
+
 
 XMLNode Plugin::saveToXML() const {
 	return stored_node;
@@ -12,6 +21,12 @@ void Plugin::loadFromXML(const XMLNode xNode, Scope* scope) {
 // 	assert( string(xNode.getName()) == XMLName());
 	stored_node = xNode;
 	getXMLAttribute(xNode, "name",plugin_name,false);
+	
+	string tags_string;
+	getXMLAttribute(xNode, "tags", tags_string, false);
+	auto tags_split = tokenize(tags_string," \t,", true);
+	xml_tags.insert(tags_split.begin(), tags_split.end());
+	if (xml_tags.empty()) xml_tags.insert("#untagged");
 
 	for (uint i=0; i<plugin_parameters2.size(); i++) {
 		plugin_parameters2[i]->loadFromXML(xNode, scope);
@@ -19,6 +34,28 @@ void Plugin::loadFromXML(const XMLNode xNode, Scope* scope) {
 	// Use the current scope as default scope;
 	local_scope = scope;
 };
+
+bool Plugin::isTagged(const set< string >& tags) const
+{
+	auto it1 = tags.begin();
+	auto it2 = xml_tags.begin();
+
+	while (it1!=tags.end() && it2!=xml_tags.end()) {
+		if (*it1<*it2) {
+			it1++;
+		}
+		else if (*it2<*it1) {
+			it2++;
+		}
+		else {
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+void Plugin::setInheritedTags(const set< string >& tags) { xml_tags.insert(tags.begin(),tags.end()); } 
 
 void Plugin::registerPluginParameter(PluginParameterBase& parameter ) {
 	plugin_parameters2.push_back(&parameter);
@@ -56,7 +93,7 @@ void Plugin::registerCellPositionOutput()
 	registerOutputSymbol(local_scope->findSymbol<VDOUBLE>(SymbolBase::CellCenter_symbol));
 }
 
-bool Plugin::setParameter(string xml_path, string value)
+bool Plugin::setParameter(const string& xml_path, string value)
 {
 	for (uint i=0; i<plugin_parameters2.size(); i++) {
 		if (plugin_parameters2[i]->XMLPath() == xml_path) {
@@ -105,12 +142,17 @@ set< SymbolDependency > Plugin::getDependSymbols() const { return input_symbols;
 
 set< SymbolDependency > Plugin::getOutputSymbols() const { return output_symbols; }
 
+
+class Annotation : public Plugin  { public: DECLARE_PLUGIN("Annotation"); };
+REGISTER_PLUGIN(Annotation);
+
 TimeStepListener::TimeStepListener(TimeStepListener::XMLSpec spec) : xml_spec(spec)
 {
 	valid_time = -1;
 	time_step = -1;
 	latest_time_step = -1;
 	execute_systemtime = 0;
+	execute_clocktime = 0;
 }
 
 set<SymbolDependency> TimeStepListener::getLeafDependSymbols() {
@@ -234,6 +276,16 @@ void TimeStepListener::init(const Scope* scope)
 			setTimeStep(-1);
 		}
 	}
+	else if (xml_spec == XMLSpec::XML_OPTIONAL) {
+		if (xml_time_step.isMissing() || xml_time_step(SymbolFocus::global)<=0) {
+			is_adjustable = true;
+			setTimeStep(time_step);
+		}
+		else {
+			setTimeStep(xml_time_step(SymbolFocus::global));
+			is_adjustable = false;
+		}
+	}
 	else {
 		is_adjustable = true;
 		setTimeStep(time_step);
@@ -245,16 +297,53 @@ void TimeStepListener::init(const Scope* scope)
 void TimeStepListener::prepareTimeStep_internal(double max_time)
 {
 	auto start = highc.now();
+#ifdef _POSIX_CPUTIME
+	timespec cstart;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cstart);
+#else
+	auto cstart = std::clock();
+#endif
+	
 	prepared_time_step = min(time_step>0 ? time_step : SIM::getStopTime() - valid_time , max_time-valid_time);
 	prepareTimeStep_impl(prepared_time_step);
-	execute_systemtime += chrono::duration_cast<chrono::microseconds>(highc.now()-start).count();
+	
+#ifdef _POSIX_CPUTIME
+	timespec cstop;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cstop);
+	double dt = difftime(cstart.tv_sec, cstop.tv_sec) + (cstop.tv_nsec-cstart.tv_nsec)*1e-6;
+	if (dt > 0) { execute_clocktime += dt; }
+#else
+	auto cstop = std::clock();
+	if (cstop-cstart > 0) { execute_clocktime += (1000.0 * (cstop-cstart)) / CLOCKS_PER_SEC; }
+#endif
+	
+	execute_systemtime += chrono::duration_cast<chrono::microseconds>(highc.now()-start).count()  * 1e-3;
 }
 
 void TimeStepListener::executeTimeStep_internal()
 {
 	auto start = highc.now();
+#ifdef _POSIX_CPUTIME
+	timespec cstart;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cstart);
+#else
+	auto cstart = std::clock();
+#endif
+	
 	executeTimeStep_impl();
-	execute_systemtime += chrono::duration_cast<chrono::microseconds>(highc.now()-start).count();
+
+#ifdef _POSIX_CPUTIME
+	timespec cstop;
+	clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &cstop);
+	double dt = difftime(cstart.tv_sec, cstop.tv_sec) + (cstop.tv_nsec-cstart.tv_nsec)*1e-6;
+	if (dt > 0) { execute_clocktime += dt; }
+#else
+	auto cstop = std::clock();
+	if (cstop-cstart > 0) {
+		execute_clocktime += (1000.0 * (cstop-cstart)) / CLOCKS_PER_SEC;
+	}
+#endif
+	execute_systemtime += chrono::duration_cast<chrono::microseconds>(highc.now()-start).count() * 1e-3;
 	
 	latest_time_step = SIM::getTime();
 	if (prepared_time_step>=0) {

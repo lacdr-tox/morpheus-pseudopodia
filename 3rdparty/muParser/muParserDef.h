@@ -294,6 +294,7 @@ namespace mu
 	  value_type get(const value_type* args, void* data) { return operator ()(args,data);} 
 	  /// return the number of arguments
 	  virtual int argc() const =0; 
+	  virtual ~fun_class_generic() {};
   };
   
   /** \brief Callback type used for functions without arguments. */

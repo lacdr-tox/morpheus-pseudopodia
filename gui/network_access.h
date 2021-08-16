@@ -1,7 +1,11 @@
+#ifndef NETWORKACCESS_H
+#define NETWORKACCESS_H
+
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QFile>
 #include <QHelpEngineCore>
+
 
 /// Helper Class to gain access to the HelpEngine Data
 class HelpNetworkReply : public QNetworkReply
@@ -52,5 +56,4 @@ class ExtendedNetworkAccessManager : public QNetworkAccessManager
 		QHelpEngineCore *m_helpEngine;
 };
 
-
-
+#endif

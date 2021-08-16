@@ -2,19 +2,21 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="AnalysisPlugins">
-        <xs:choice>
-            <xs:element name="CellTracker" 			type="CellTracker"/>
-		</xs:choice>
+        <xs:all>
+            <xs:element name="CellTracker" 			type="CellTracker"		minOccurs="0"	maxOccurs="unbounded" />
+		</xs:all>
 	</xs:group>
 	
     <xs:complexType name="CellTracker">
-		<xs:annotation>
-			<xs:appinfo>Data analysis</xs:appinfo>
-		</xs:annotation>
-		<xs:attribute name="name" type="cpmString" use="optional"/>
-		<xs:attribute name="time-step" type="cpmMathExpression" use="optional"/>
-        <xs:attribute name="format" type="cpmCellTrackerFormat" use="required"/>
-        <!-- <xs:attribute name="celltype" type="cpmCellTypeRef" /> -->
+		<xs:complexContent>
+			<xs:extension base="morphAnalysisPlugin">
+				<xs:annotation>
+					<xs:appinfo>Data analysis</xs:appinfo>
+				</xs:annotation>
+				<xs:attribute name="format" type="cpmCellTrackerFormat" use="required"/>
+			<!-- <xs:attribute name="celltype" type="cpmCellTypeRef" /> -->
+			</xs:extension>
+		</xs:complexContent>
     </xs:complexType>
 
 

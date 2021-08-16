@@ -4,13 +4,12 @@
 
 
 
-
 AnnouncementDialog::AnnouncementDialog(QWidget* parent)
 {
 	QSettings settings;
 	settings.beginGroup("preferences");
 	service_url = settings.value("announcement_url", service_url).toString();
-	announcement_seen = settings.value("announcement_seen",-1).toInt();
+	announcement_seen = settings.value("announcement_seen",2).toInt();
 	uuid = settings.value("uuid", "").toString();
 	if (uuid.isEmpty()) {
 		uuid = QUuid::createUuid().toString().remove('{').remove('}');
@@ -18,31 +17,17 @@ AnnouncementDialog::AnnouncementDialog(QWidget* parent)
 	}
 	settings.endGroup();
 	
-	auto central_layout = new QVBoxLayout(this);
-	this->setMinimumWidth(425);
-	this->setMinimumHeight(300);
+	auto central_layout = new QVBoxLayout();
+	this->setLayout(central_layout);
+	this->setSizePolicy(QSizePolicy::MinimumExpanding,QSizePolicy::MinimumExpanding);
+	this->setMinimumWidth(600);
+	this->setMinimumHeight(500);
 
-	
-	auto nam = config::getNetwork();
-	
-#ifdef MORPHEUS_NO_QTWEBKIT
-	web_view = new QTextBrowser(this);
-	web_view->setOpenLinks(false);
-	connect(web_view, SIGNAL(anchorClicked(const QUrl&)), this, SLOT(openLink(const QUrl&)));
-#else
-	web_view = new QWebView(this);
-	web_view->page()->setNetworkAccessManager(nam);
-	web_view->page()->settings()->setAttribute(QWebSettings::JavascriptEnabled, false);
-	web_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessRemoteUrls, false);
-	web_view->page()->settings()->setAttribute(QWebSettings::LocalContentCanAccessFileUrls, false);
-	web_view->page()->settings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, false);
-	web_view->page()->setLinkDelegationPolicy(QWebPage::DelegateExternalLinks);
-	connect(web_view, SIGNAL(linkClicked(const QUrl&)),this, SLOT(openLink(const QUrl&)));
-#endif
+	web_view = new WebViewer(this);
+	connect(web_view, SIGNAL(linkClicked(const QUrl&)), this, SLOT(openLink(const QUrl&)));
 	central_layout->addWidget(web_view);
 	
-	
-	auto button_layout = new QHBoxLayout(this);
+	auto button_layout = new QHBoxLayout();
 	central_layout->addLayout(button_layout);
 	button_layout->addSpacing(10);
 	button_layout->addStretch(1);
@@ -86,7 +71,6 @@ void AnnouncementDialog::openLink(const QUrl& url)
 	QDesktopServices::openUrl(url);
 }
 
-
 void AnnouncementDialog::last() {
 	setIndex(announce_idx-1);
 }
@@ -96,14 +80,10 @@ void AnnouncementDialog::next() {
 }
 
 void AnnouncementDialog::setIndex(int idx) {
-	if (announcements.count(idx)) {
+	if (announcements.contains(idx)) {
 // 		qDebug() << "Setting announcement " << idx << " = " << announcements[idx];
 		announce_idx = idx;
-#ifdef MORPHEUS_NO_QTWEBKIT
-		web_view->setSource(announcements[idx]);
-#else
 		web_view->setUrl(announcements[idx]);
-#endif
 
 		if (announce_idx > announcement_seen){
 			announcement_seen = announce_idx;
@@ -113,6 +93,9 @@ void AnnouncementDialog::setIndex(int idx) {
 			settings.setValue("announcement_seen",announcement_seen);
 			settings.endGroup();
 		}
+	}
+	else {
+		 qDebug() << "AnnouncementDialog::setIndex:  There is no index " << idx;
 	}
 	forth_button->setEnabled(announcements.count(announce_idx+1));
 	back_button->setEnabled(announcements.count(announce_idx-1));
@@ -135,32 +118,35 @@ void AnnouncementDialog::replyReceived()
 		setIndex(0);
 	}
 	else {
-		// TODO QT5 use QJsonDocument
-		// For now, we know how the document looks like :-))
-		// [{"id":1,"url":"imc.zih.tu-dresden.de/morpheus/announcement0.html"}]
-		QRegExp json_match("\"id\":(\\d+),\"url\":\"(.+)\"");
-		json_match.setMinimal(true);
-		QString data = reply->readAll();
-		int pos = 0;
-		while ((pos = json_match.indexIn(data,pos)) !=-1) {
-			auto res = json_match.capturedTexts();
-			announcements[res[1].toInt()] = res[2];
-			pos += json_match.matchedLength();
-// 				qDebug() << res[1] << " -> " << res[2];
-		}
-		
+		auto json_announcements = QJsonDocument::fromJson(reply->readAll());
+#if QT_VERSION >= 0x050600
+		auto my_version = QVersionNumber::fromString(config::getVersion());
+#else
+		auto my_version = config::getVersion();
+#endif
+		for ( const auto& a : json_announcements.array() ) {
+			auto ao = a.toObject();
+			announcements[ao["id"].toInt()] = ao["url"].toString();
+			if (ao.contains("release")) {
+#if QT_VERSION >= 0x050600				
+				if (QVersionNumber::fromString(ao["release"].toString()) <= my_version) {
+#else
+				if (ao["release"].toString() == my_version) {
+#endif
+					announcement_seen = max(ao["id"].toInt(), announcement_seen );
+				}
+			}
+		};
+
 		if ( announcements.isEmpty() ) {
 			announcements[0] = "qrc:///no_announcement.html";
 			setIndex(0);
 		} else {
 			auto it = announcements.lowerBound(announcement_seen);
-			if (it == announcements.end()) {
+			if (it.key() == announcement_seen) it++;
+			if (it == announcements.end() ) {
 				have_new_announcements = false;
-				setIndex((it--).key());
-			}
-			else if (it+1 == announcements.end()) {
-				have_new_announcements = false;
-				setIndex(it.key());
+				setIndex(announcements.count()-1);
 			}
 			else {
 				have_new_announcements = true;
@@ -168,6 +154,7 @@ void AnnouncementDialog::replyReceived()
 			}
 		}
 	}
+	
 	
 	if ( ! announcements.isEmpty() && (have_new_announcements || show_old_announcements)) {
 		this->exec();

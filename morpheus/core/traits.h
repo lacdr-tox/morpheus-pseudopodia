@@ -73,7 +73,7 @@ template <>
 struct TypeInfo<double> : public TypeInfoSmallDefault<double> {
 	static string toString(Parameter val) {
 		string s(20,' ');
-		s.resize(snprintf(&s[0],20,"%.10g",val));
+		s.resize(snprintf(&s[0],20,"%.11g",val));
 		return s;
 	}
 	static const string& name() { static const string n("Double"); return n;};
@@ -132,7 +132,7 @@ struct TypeInfo<deque<double>> : public TypeInfoDefault<deque<double>> {
 			ret += TypeInfo<double>::toString(*it);
 			it++;
 			if (it==val.end()) break;
-			ret += ", ";
+			ret += ",";
 		}
 		return ret;
 	}

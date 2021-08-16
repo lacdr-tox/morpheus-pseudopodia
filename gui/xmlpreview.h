@@ -13,7 +13,11 @@
 #define XMLPREVIEW_H
 
 #include <QtGui>
-#include "xmlhighlighter.h"
+#include <QDialog>
+#include <QLayout>
+#include <QTextEdit>
+#include <QPushButton>
+#include "widgets/xmlhighlighter.h"
 
 /*!
 This class provides a widget with a QTextEdit, whose text will be highlighted like a xml for better reading.

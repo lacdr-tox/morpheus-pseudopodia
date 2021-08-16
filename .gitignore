@@ -1,7 +1,6 @@
 # build directories
-build
-build_clang
 cmake-build-*/
+build*
 
 *~
 # kdevelop files
@@ -10,3 +9,9 @@ cmake-build-*/
 
 # intellij files
 .idea/
+# miscellaneous
+*.code-workspace
+.vscode
+
+# macOS
+.DS_Store

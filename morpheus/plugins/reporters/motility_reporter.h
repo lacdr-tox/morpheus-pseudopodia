@@ -15,14 +15,14 @@
 \brief Reports statistics about cell motility.
 
 \section Description
-MotilityReporter reports statistics about the cell motility. 
+MotilityReporter reports statistics about cell motility.
 
-- \b Velocity: estimates cell velocity within time intervals determined by time-step. 
-- \b Displacement: measures the displacement of a cell relative to it's original position can be determined.
+- \b Velocity: estimates cell velocity over time intervals of length time-step [simulation time units].
+- \b Displacement: measures the displacement of a cell relative to it's original position at simulation start.
 
 \section Example
-Report every 10 [simulation time] the velocity and displacement of cells into properties A and B.
-(Assume both 'A' and 'B' refer to a VectorProperty)
+Report every 10 [simulation time units] the velocity and displacement of cells into properties A and B.
+(Assume both 'A' and 'B' refer to a VectorProperty of the cell)
 \verbatim
 <MotilityReporter time-step="10.0">
 	<Velocity symbol-ref="A" />
@@ -36,7 +36,6 @@ Report every 10 [simulation time] the velocity and displacement of cells into pr
 
 #include "core/interfaces.h"
 #include "core/celltype.h"
-#include "core/plugin_parameter.h"
 
 class MotilityReporter : public ReporterPlugin
 {
@@ -46,16 +45,15 @@ public:
     MotilityReporter();
     virtual void init (const Scope* scope) override;
     virtual void report() override;
-	
+
 private:
 	const CellType* celltype;
-	PluginParameter2<double,XMLValueReader, RequiredPolicy> interval;
 	PluginParameter2<VDOUBLE, XMLWritableSymbol, OptionalPolicy> velocity;
 	PluginParameter2<VDOUBLE, XMLWritableSymbol, OptionalPolicy> displacement;
-	
+
 	map<uint,VDOUBLE> origin;
 	map<uint,VDOUBLE> position;
-	
+
 };
 
 #endif // MOTILITYREPORTER_H

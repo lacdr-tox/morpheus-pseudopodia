@@ -56,6 +56,7 @@ private:
     };
     QSharedPointer<TreeItem> root_item;
     QMap<int, QModelIndex> job_indices;
+	QMap<ProcessInfo::status,QIcon> icon_for_state;
 
     TreeItem* indexToItem(const QModelIndex& index) const;
     Grouping current_grouping;

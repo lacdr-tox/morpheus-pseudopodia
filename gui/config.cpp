@@ -2,12 +2,12 @@
 #include "version.h"
 #include "job_queue.h"
 
+#ifdef USE_QWebEngine
+	#include "network_schemes.h"
+	#include <QWebEngineProfile>
+#endif
 
-//	#include <QtPlugin>
-	// Q_IMPORT_PLUGIN(qsqlite)
-	// Q_IMPORT_PLUGIN(qtiff)
 
-	
 config* config::instance = 0;
 
 //------------------------------------------------------------------------------
@@ -16,14 +16,14 @@ config::~config() {
 	job_queue_thread->deleteLater();
 	if (db.isOpen())
 		db.close();
-    QSqlDatabase::removeDatabase("SQLITE");
+//     QSqlDatabase::removeDatabase("MorpheusJobDB");
 }
 
 config::config() : QObject(), helpEngine(NULL) {
     /* Restore Configuration setting from QSettings file*/
     QSettings settings;
     settings.beginGroup("simulation");
-        QString oD_default = QDesktopServices::storageLocation(QDesktopServices::HomeLocation);
+        QString oD_default = QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
         oD_default +="/morpheus";
         app.general_outputDir       = settings.value("outputDir", oD_default).toString();
     settings.endGroup();
@@ -76,7 +76,7 @@ config::config() : QObject(), helpEngine(NULL) {
        Initialize a SQLite database for jobs and sweeps
 */
 	try {
-		db = QSqlDatabase::addDatabase("QSQLITE");
+		db = QSqlDatabase::addDatabase("QSQLITE"); // ,"MorpheusJobDB"); <-- DB creation fails when connection name is set.
 		if(!db.isValid() ) throw;
 		
 /*		QPluginLoader loader("qsqlite4.dll");
@@ -85,14 +85,89 @@ config::config() : QObject(), helpEngine(NULL) {
 		QSqlDriverPlugin *sqlPlugin  = qobject_cast<QSqlDriverPlugin *>(plugin);
 		if (!sqlPlugin ) throw;
 		db = QSqlDatabase::addDatabase(sqlPlugin->create("QSQLITE"));*/
+		QString data_base_file_name = "morpheus.db.sqlite";
+		// The data location has been changed between qt4 and qt5, thus we have to migrate the old data base manually
+// 		QDir job_db_path(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)+"/data/Morpheus/Morpheus");
+		QDir old_location = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)+"/data/Morpheus/Morpheus";
+		QDir old_location2 = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)+"/Morpheus/Morpheus";
+		QDir current_location = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation); // provides on Windows ~/AppData/Local/Morpheus
+		current_location.mkpath(current_location.path());
 		
-		QDir job_db_path(QDesktopServices::storageLocation(QDesktopServices::DataLocation));
-		job_db_path.mkpath(job_db_path.path());
-		db.setDatabaseName(job_db_path.filePath("morpheus.db.sqlite"));
-		qDebug() << "SQLite database path: " << db.databaseName();
+		if (! QFile::exists(current_location.filePath(data_base_file_name))) {
+			if (QFile::exists(old_location.filePath(data_base_file_name))) {
+				QFile::copy(old_location.filePath(data_base_file_name), current_location.filePath(data_base_file_name) );
+				qDebug() << "Migrating job db to " << current_location.filePath(data_base_file_name);
+			}
+			else if (QFile::exists(old_location2.filePath(data_base_file_name))) {
+				QFile::copy(old_location2.filePath(data_base_file_name), current_location.filePath(data_base_file_name) );
+				qDebug() << "Migrating job db to " << current_location.filePath(data_base_file_name);
+			}
+		}
+		
+		db.setDatabaseName(current_location.filePath("morpheus.db.sqlite"));
+		qDebug() << "SQLite database path: "<< current_location  << data_base_file_name;
 		
 		if (!db.open()) throw;
+		db.exec("PRAGMA synchronous=NORMAL");
+			
+		// Check Database Version
+		if (db.tables().contains("VersionHistory")) {
+			QSqlQuery query;
+			query.prepare("SELECT * FROM VersionHistory ORDER BY version DESC");
+			bool ok=query.exec();
+			if( !ok ){
+				qDebug() << "Retrieval of database version failed: " << query.lastError();
+				throw query.lastError().text();
+			}
+			ok = query.first();
+			if( !ok ){
+				qDebug() << "Retrieval of database version failed: " << query.lastError();
+				throw query.lastError().text();
+			}
+			int cdb_version = query.value(0).toInt();
+			if (cdb_version != data_base_version) {
+				if (cdb_version < data_base_version) {
+					qDebug() << "SQLite database has version "<< cdb_version <<". Expected version " << data_base_version << ".";
+					throw QString("Mismatching database version");
+				}
+				else {
+					qDebug() << "SQLite database has version "<< cdb_version <<". Expected version " << data_base_version << ".";
+					throw QString("Mismatching database version");
+				}
+			}
+		} 
+		else {
+			QSqlQuery query;
+			query.prepare(
+			"CREATE TABLE VersionHistory ("
+				"version INTEGER PRIMARY KEY NOT NULL,"
+				"upgraded DATE NOT NULL )"
+			);
+			bool ok = query.exec();
+			if( !ok ){
+				qDebug() << "Creating SQL table VersionHistory failed: " << query.lastError();
+				throw query.lastError().text();
+			}
+			qDebug() << "Successfully created version history database";
+			query.prepare( QString("INSERT INTO VersionHistory ( version , upgraded ) VALUES( %1 , date('now') )").arg(data_base_version) );
+			ok = query.exec();
+			if( !ok ){
+				qDebug() << "Setting current database version in table VersionHistory failed: " << query.lastError();
+				throw query.lastError().text();
+			}
+			qDebug() << "Successfully set default database version";
+			
+		}
 	}
+	catch (const QString& e) {
+		QMessageBox::critical(0,
+			"Invalid database",
+			QString("Invalid SQL database connection.\n")+e +"\nClick Cancel to exit.",
+			QMessageBox::Cancel );
+		throw("Unable to create database connection");
+		qApp->exit();
+	}
+	
 	catch (...) {
 		QMessageBox::critical(0,
 			qApp->tr("Invalid database"),
@@ -110,7 +185,6 @@ config::config() : QObject(), helpEngine(NULL) {
 		qApp->quit();
 	} */
 	
-	db.exec("PRAGMA synchronous=NORMAL");
 	if ( ! db.tables().contains("jobs")) {
 		qDebug() << "creating Job DataBase";
 		QSqlQuery query;
@@ -253,7 +327,7 @@ QString config::getPathToExecutable(QString exec_name) {
 	QFileInfo info;
 	info.setFile(exec_name);
 	if (info.exists() && info.isExecutable() && info.isFile()) {
-		qDebug() << "Found executable " << info.filePath();
+// 		qDebug() << "Found executable " << info.filePath();
 		return info.canonicalFilePath();
 	}
 	
@@ -261,7 +335,7 @@ QString config::getPathToExecutable(QString exec_name) {
 
 	info.setFile(QCoreApplication::applicationDirPath() + "/" + app_name);
 	if (info.exists() && info.isExecutable()  && info.isFile()) {
-		qDebug() << "Found executable " << info.filePath();
+// 		qDebug() << "Found executable " << info.filePath();
 		return info.canonicalFilePath();
 	}
 	
@@ -275,7 +349,7 @@ QString config::getPathToExecutable(QString exec_name) {
 	Q_FOREACH (const QString& path, env_paths) {
 		info.setFile(path + "/" + app_name);
 		if (info.exists() && info.isExecutable()  && info.isFile()) {
-			qDebug() << "Found executable " << info.filePath();
+// 			qDebug() << "Found executable " << info.filePath();
 			return info.canonicalFilePath();
 		}
 	}
@@ -327,39 +401,42 @@ int config::openModel(QString filepath) {
 		QMessageBox::critical(qApp->activeWindow(),"Error opening morpheus model","Unknown error");
 		return -1; 
 	}
-    // substitude the last model if it was created from scratch and is still unchanged
-    if ( ! conf->openModels.isEmpty() && conf->openModels.back()->isEmpty()) {
-        conf->openModels.back()->close();
-        emit conf->modelClosing(conf->openModels.size()-1);
-        conf->openModels.pop_back();
-		  conf->current_model = -1;
-    }
+
+	// substitude the last model if it was created from scratch and is still unchanged
+	if ( ! conf->openModels.isEmpty() && conf->openModels.back()->isEmpty()) {
+		closeModel(conf->openModels.size()-1,false);
+	}
+	
     conf->openModels.push_back(m);
     int new_index = conf->openModels.size()-1;
+// 	qDebug() << "Added model " << new_index;
     addRecentFile(m->xml_file.path);
     emit conf->modelAdded(new_index);
-//     switchModel(new_index);
+	
 
     return new_index;
 }
 
-int config::importModel(QSharedPointer< MorphModel > model)
+int config::importModel(SharedMorphModel model)
 {
 	config* conf = getInstance();
+	
+	int index = conf->openModels.indexOf(model);
+	if ( index >= 0) {
+		return index;
+	}
+	
 	// substitude the last model if it was created from scratch and is still unchanged
 	if ( ! conf->openModels.isEmpty() && conf->openModels.back()->isEmpty()) {
-		conf->openModels.back()->close();
-		emit conf->modelClosing(conf->openModels.size()-1);
-
-		conf->openModels.pop_back();
+		closeModel(conf->openModels.size()-1, false);
 	}
-
+	
+	model->setParent(conf);
 	conf->openModels.push_back(model);
-	int new_index = conf->openModels.size()-1;
-	emit conf->modelAdded(new_index);
-// 	switchModel(new_index);
-
-	return new_index;
+	index = conf->openModels.size()-1;
+	emit conf->modelAdded(index);
+	
+	return index;
 }
 
 
@@ -401,7 +478,6 @@ int config::createModel(QString xml_path)
     int id = conf->openModels.size();
     conf->openModels.push_back(m);
     emit conf->modelAdded(id);
-//     switchModel(id);
 
     return id;
 }
@@ -410,34 +486,41 @@ int config::createModel(QString xml_path)
 
 bool config::closeModel(int index, bool create_model)
 {
-    config* conf = getInstance();
-    if (index == -1) index = conf->current_model;
-    if (conf->openModels[index]->close()) {
-        emit conf->modelClosing(index);
-        conf->openModels.removeAt(index);
-        if (conf->current_model < conf->openModels.size())
-            conf->switchModel(conf->current_model);
-        else if (conf->current_model>0)
-            conf->switchModel(conf->current_model-1);
-        else {
-            if (create_model)
-                createModel();
-        }
-    }
-    else
-        return false;
-    return true;
+// 	qDebug() << "Closing Model" << index;
+	config* conf = getInstance();
+	if (index == -1) index = conf->current_model;
+	if (index >= conf->openModels.size()) return false;
+	if (conf->openModels[index]->close()) {
+		emit conf->modelClosing(index);
+		conf->openModels.removeAt(index);
+		
+		if (conf->openModels.size()==0) {
+			conf->switchModel(-1);
+			if (create_model)
+				conf->switchModel(createModel());
+		}
+		else if (index == conf->current_model) {
+			// pick activate alternative model
+			if (conf->current_model < conf->openModels.size())
+				conf->switchModel(conf->current_model);
+			else
+				conf->switchModel(conf->current_model-1);
+		}
+		
+	}
+	else
+		return false;
+	return true;
 }
 
 //------------------------------------------------------------------------------
 
 void config::switchModel(int index) {
-    config* conf = config::getInstance();
-    if (index == conf->current_model) return;
-	qDebug() << "Switch to model " << index;
-    conf->current_model = index;
-    if (index>=0)
-        emit conf->modelSelectionChanged(conf->current_model);
+	config* conf = config::getInstance();
+// 	qDebug() << "Switch from model" << conf->current_model << "to model " << index;
+	if (index == conf->current_model) return;
+	conf->current_model = index;
+	emit conf->modelSelectionChanged(conf->current_model);
 }
 
 
@@ -546,11 +629,11 @@ void config::ClipBoardChanged() {
 
 //------------------------------------------------------------------------------
 void config::openExamplesWebsite(){
-	QDesktopServices::openUrl(QUrl("http://morpheus.gitlab.io/#examples"));
+	QDesktopServices::openUrl(QUrl("https://morpheus.gitlab.io/#examples"));
 }
 //------------------------------------------------------------------------------
 void config::openMorpheusWebsite(){
-	QDesktopServices::openUrl(QUrl("http://morpheus.gitlab.io"));
+	QDesktopServices::openUrl(QUrl("https://morpheus.gitlab.io"));
 }
 
 //------------------------------------------------------------------------------
@@ -587,21 +670,21 @@ void config::aboutModel()
 
 void config::aboutPlatform()
 {
-//#ifndef MORPHEUS_SVN_REVISION
-//    #define MORPHEUS_SVN_REVISION "MORPHEUS_SVN_REVISION not defined"
-//#endif
 	
 	QDate date = QDate::currentDate();
 	
-	QString header = "<p align='center'>Morpheus<br>";
+	QString header = "<img style='float:left' src='qrc://logo.png'/> <h1 style='margin-right:40px' align='center'>Morpheus</h1>";
 
-
-	QString info  = "<p align='center'>Modeling and simulation environment for multi-scale and multicellular systems biology</p>"
-					"<p align='center'>Version "+QString(MORPHEUS_VERSION_STRING)+", revision " + QString(MORPHEUS_REVISION_STRING) + "<br><br>"
-					"Developed by Jörn Starruß and Walter de Back<br>"
+	QString info  = "<h3 align='center'>Modeling and simulation environment for multi-scale and multicellular systems biology</h3>"
+					"<p align='center'>Version "+QString(MORPHEUS_VERSION_STRING)+", revision " + QString(MORPHEUS_REVISION_STRING) + "<br/>"
+					"Resource identification: Morpheus (RRID:SCR_014975) <br/><br/>"
+					
+					"Developed by Jörn Starruß, Walter de Back, Lutz Brusch, Cedric Unverricht,<br/> Robert Müller and Diego Jahn<br/>"
 					"Copyright 2009-"+ QString::number( date.year() )+", Technische Universität Dresden.<br><br>"
-					"More information:<br><a href=\"http://imc.zih.tu-dresden.de/wiki/morpheus\">http://imc.zih.tu-dresden.de/wiki/morpheus</a></p><br>"
-					"<p align='center'>Disclaimer:<br><font size=\"2\">Non-commercial use: Morpheus (the Software) is distributed for academic use and cannot be used for commercial gain without explicitly written agreement by the Developers. No warranty: The Software is provided \"as is\" without warranty of any kind, either express or implied, including without limitation any implied warranties of condition, uninterrupted use, merchantability, fitness for a particular purpose, or non-infringement. No liability: The Developers do not accept any liability for any direct, indirect, incidential, special, exemplary or consequential damages arising in any way out of the use of the Software.</font></p>";
+					"More information:<br><a href=\"https://morpheus.gitlab.io\">morpheus.gitlab.io</a></p>"
+					"<p style='font-size:small'>"
+// 					"<b>Contributors</b><br/>Cedric Unverricht, Robert Müller, Diego Jahn, Gerhard Burger, Margriet Palm,  Osvaldo Chara, Martin Lunze<br/>"
+					"<b>Disclaimer</b><br/>Non-commercial use: Morpheus (the Software) is distributed for academic use and cannot be used for commercial gain without explicitly written agreement by the Developers. No warranty: The Software is provided \"as is\" without warranty of any kind, either express or implied, including without limitation any implied warranties of condition, uninterrupted use, merchantability, fitness for a particular purpose, or non-infringement. No liability: The Developers do not accept any liability for any direct, indirect, incidential, special, exemplary or consequential damages arising in any way out of the use of the Software.</p>";
 
 //     QString title = "Morpheus: Modeling environment for multiscale and multicellular systems biology";
 // 
@@ -617,17 +700,14 @@ void config::aboutPlatform()
 // 
 //     QString about = title +"\n\n" + copyright + "\n\n" + developers + "\n\n" + version + "\n\n" + version;
 
-    QMessageBox msgBox; //(QMessageBox::Information, "About Morpheus",about,QMessageBox::Ok);
-    
-    msgBox.setText(header);
-    msgBox.setInformativeText(info);
-    msgBox.setStandardButtons(QMessageBox::Ok);
-    msgBox.setDefaultButton(QMessageBox::Ok);    
-	msgBox.setTextFormat(Qt::RichText);
-	msgBox.setIconPixmap(QPixmap(":/logo.png"));
-    //msgBox.setParent(qApp->activeWindow());
-    msgBox.exec();
+	QMessageBox msgBox; //(QMessageBox::Information, "About Morpheus",about,QMessageBox::Ok);
 
+	msgBox.setText(header);
+	msgBox.setInformativeText(info);
+	msgBox.setStandardButtons(QMessageBox::Ok);
+	msgBox.setDefaultButton(QMessageBox::Ok);    
+	msgBox.setTextFormat(Qt::RichText);
+	msgBox.exec();
 }
 
 
@@ -641,28 +721,37 @@ QHelpEngine* config::getHelpEngine(bool lock)
 			QApplication::applicationDirPath();
 			
 			QStringList doc_path;
-			doc_path <<  QApplication::applicationDirPath() + "/"
-						<< QApplication::applicationDirPath() + "/doc/"
-						<< QApplication::applicationDirPath() + "/../share/morpheus/"
-						<< QApplication::applicationDirPath() + "/../../Resources/doc/"; // for Mac app bundle
-			QString path;
+			doc_path <<  QApplication::applicationDirPath()
+						<< QApplication::applicationDirPath() + "/appdoc"
+						<< QApplication::applicationDirPath() + "/../share/morpheus"
+						<< QApplication::applicationDirPath() + "/../Resources"; // for Mac app bundle
+			QString help_path;
 			for(const QString& p:  doc_path) {
 	// 			qDebug() << "Testing "  << p + "morpheus.qhc";
-				if (QFile::exists(p+"morpheus.qhc"))
-					path = p;
+				if (QFile::exists(p+"/morpheus.qch"))
+					help_path = QDir(p).canonicalPath()+"/morpheus.qch";
 			}
 			
-			if (path.isEmpty()) {
-				qDebug() << "Help engine setup failed. Unable to locate 'morpheus.qhc'.";
+			if (help_path.isEmpty()) {
+				qDebug() << "Help engine setup failed. Unable to locate 'morpheus.qch'.";
 				conf->helpEngine = new QHelpEngine("");
 			}
 			else {
-				qDebug() << "Documentation located at "  << path + "morpheus.qhc";
-				conf->helpEngine = new QHelpEngine(path+"morpheus.qhc");
-				if (conf->helpEngine->setupData() == false)
-				{
+				qDebug() << "Documentation located at "  << help_path;
+				QDir data_path(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation));
+				data_path.mkpath("data/Morpheus");
+				QString docu_collection = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)+"/data/Morpheus/morpheus.qhc";
+				conf->helpEngine = new QHelpEngine(docu_collection, conf);
+				if (conf->helpEngine->setupData() == false) {
 					qDebug() << "Help engine setup failed";
-					qDebug() << conf->helpEngine->error();
+				}
+				QString docu_name = "org.morpheus.UserDocu";
+				qDebug() << conf->helpEngine->registeredDocumentations();
+				if (!conf->helpEngine->registeredDocumentations().contains(docu_name)) {
+					if (!conf->helpEngine->registerDocumentation(help_path)) {
+						qDebug() << "Unable to register documentation";
+						qDebug() << conf->helpEngine->error();
+					}
 				}
 			}
 		}
@@ -678,6 +767,12 @@ ExtendedNetworkAccessManager* config::getNetwork() {
 		conf->change_lock.lock();
 		if (!conf->network) {
 			conf->network = new ExtendedNetworkAccessManager(conf, getHelpEngine(false));
+#ifdef USE_QWebEngine
+			auto *help_handler = new HelpNetworkScheme(conf->network, conf);
+			QWebEngineProfile::defaultProfile()->installUrlSchemeHandler(HelpNetworkScheme::scheme(), help_handler);
+// 			auto *qrc_handler = new QtRessourceScheme(conf->network, conf);
+// 			QWebEngineProfile::defaultProfile()->installUrlSchemeHandler(QtRessourceScheme::scheme(), qrc_handler);
+#endif
 		}
 		conf->change_lock.unlock();
 	}
@@ -689,7 +784,6 @@ void config::aboutHelp() {
 	QDialog* help_box = new QDialog(0,Qt::Dialog );
 
 	QHelpEngine* help = getHelpEngine();
-	qDebug() << help->linksForIdentifier ( "Chemotaxis" );
 
 	// "org.doxygen.Project"
 	help_box->setModal(true);

@@ -39,6 +39,7 @@ typedef EvaluatorCache::LocalSymbolDesc EvaluatorVariable;
  * Threadsafe -- nope
  */
 
+
 template <class T>
 class ExpressionEvaluator {
 public:
@@ -49,7 +50,6 @@ public:
 	ExpressionEvaluator(string expression, shared_ptr<EvaluatorCache> cache); 
 	
 	ExpressionEvaluator(const ExpressionEvaluator<T> & other, shared_ptr<EvaluatorCache> cache = shared_ptr<EvaluatorCache>()); //!< copy constructor
-	
 	
 	/**  \brief Set the list of local variables to be used for expression evaluation. 
 	 * 
@@ -75,17 +75,27 @@ public:
 	 */
 	void setLocals(const double* data) const { evaluator_cache->setLocals(data);/*(&symbol_values[l_sym_cache_offset], data, sizeof(double) * local_symbols.size()); */};
 	
-	/** \brief Initialize expression evaluator.
-	 * 
-	 *  In particular, all dependent symbols, functions and parameters must be declared prior
-	 *  to initalisation. Symbols are retrieved form the scope.
-	 */
-	
 	///  \brief Number of local variables in terms of doubles (VDOUBLEs count 3 doubles)
 	int getLocalsCount() { return evaluator_cache->getLocalsTable().size();  }
-	
-	/// Parse the expresion and bind to the external symbol via an \ref EvaluatorCache
+
+	/** \brief Initialize expression evaluator.
+	 * 
+	 *  Parse the expresion and bind to the external symbol via an \ref EvaluatorCache.
+	 *  In particular, all dependent symbols, functions and parameters must be declared prior
+	 *  to initalisation
+	 */
 	void init();
+	
+	/// Set the notation of the Vector expression. Non-Vector types ignore this property.
+	void setNotation(VecNotation notation) {
+		_notation = notation;
+		if (initialized && expr_is_const) {
+			delay_const_expr_init = true;
+		}
+	}
+	
+	/// In case of T=VDOUBLE assume vector is given in that notation
+	VecNotation notation() const { return this->_notation; };
 	
 	/// \brief Mmetadata of the expression
 	const SymbolBase::Flags& flags() const {
@@ -109,7 +119,7 @@ public:
 	/// get without updating the associated cache (has been updated earlier).
 	typename TypeInfo<T>::SReturn plain_get(const SymbolFocus& focus) const;
 	/// set of symbols the expression depends on
-	set<SymbolDependency> getDependSymbols() const;
+	set<SymbolDependency> getDependSymbols() const { return depend_symbols; }
 	
 private:
 	
@@ -119,15 +129,18 @@ private:
 	string expression;
 	string clean_expression;
 	bool allow_partial_spec;
+	VecNotation _notation;
 	
 	bool initialized = false;
-	bool expr_is_const;
-	T const_val;
+	mutable bool expr_is_const;
+	bool delay_const_expr_init = false;
+	mutable T const_val;
 	bool expr_is_symbol;
 	SymbolAccessor<T> symbol_val;
 	
 	unique_ptr<mu::Parser> parser;
 	SymbolBase::Flags expr_flags;
+	mutable bool is_evaluating;
 	bool expand_scalar_expr;
 	// the value cache
 	shared_ptr<EvaluatorCache> evaluator_cache;
@@ -173,40 +186,75 @@ typedef std::mutex GlobalMutex;
 template <class T>
 class ThreadedExpressionEvaluator {
 public:
-	ThreadedExpressionEvaluator(const string& expression, const Scope* scope, bool partial_spec = false) { evaluators.push_back( make_unique<ExpressionEvaluator<T> >(expression, scope, partial_spec) );};
+	ThreadedExpressionEvaluator(const string& expression, const Scope* scope, bool partial_spec = false) { 
+		base_evaluator = make_unique<ExpressionEvaluator<T>> (expression, scope, partial_spec);
+		evaluators.resize( omp_get_max_threads(), nullptr );
+	};
+	~ThreadedExpressionEvaluator() {
+		for (auto evaluator : evaluators) {
+			if (evaluator)
+				delete evaluator;
+		}
+	}
 	
-	void setLocalsTable(const vector<EvaluatorVariable>& locals) { for (auto& evaluator : evaluators) evaluator->setLocalsTable(locals); }
+	void setLocalsTable(const vector<EvaluatorVariable>& locals) { 
+		base_evaluator->setLocalsTable(locals);
+		for (auto evaluator : evaluators) 
+			if (evaluator)
+				evaluator->setLocalsTable(locals);
+	}
 
-	uint addNameSpaceScope(const string& ns_name, const Scope* scope) { uint id=0; for (auto& evaluator : evaluators) id = evaluator->addNameSpaceScope(ns_name, scope); return id; }
-	set<Symbol> getNameSpaceUsedSymbols(uint ns_id) const { return evaluators[0]->getNameSpaceUsedSymbols(ns_id); }
+	uint addNameSpaceScope(const string& ns_name, const Scope* scope) {
+		uint id=0;
+		base_evaluator->addNameSpaceScope(ns_name, scope);
+		for (auto& evaluator : evaluators)
+			if (evaluator)
+				id = evaluator->addNameSpaceScope(ns_name, scope);
+		return id;
+	}
+	set<Symbol> getNameSpaceUsedSymbols(uint ns_id) const { return base_evaluator->getNameSpaceUsedSymbols(ns_id); }
 	void setNameSpaceFocus(uint ns_id, const SymbolFocus& f) const { getEvaluator()->setNameSpaceFocus(ns_id, f); }
-	
+	void setNotation(VecNotation notation) {
+		base_evaluator->setNotation(notation);
+		for (auto e :evaluators) {
+			if (e) e->setNotation(notation);
+		}
+	};
 	void setLocals(const double* data) const { getEvaluator()->setLocals(data); }
-	int getLocalsCount() const { return evaluators[0]->getLocalsCount(); } 
+	int getLocalsCount() const { return base_evaluator->getLocalsCount(); } 
 	
-	void init() { for (auto& evaluator : evaluators) evaluator->init(); }
-	const string& getDescription() const { return evaluators[0]->getDescription(); };
-	const SymbolBase::Flags& flags() const { return evaluators[0]->flags(); }
-	Granularity getGranularity() const { return evaluators[0]->getGranularity(); };
-	const string& getExpression() const { return evaluators[0]->getExpression(); };
+	void init() { 
+		base_evaluator->init();
+		for (auto evaluator : evaluators)
+			if (evaluator)
+				evaluator->init();
+	}
+	const string& getDescription() const { return base_evaluator->getDescription(); };
+	const SymbolBase::Flags& flags() const { return base_evaluator->flags(); }
+	Granularity getGranularity() const { return base_evaluator->getGranularity(); };
+	const string& getExpression() const { return base_evaluator->getExpression(); };
 
 	typename TypeInfo<T>::SReturn get(const SymbolFocus& focus) const { return getEvaluator()->get(focus); };
 	typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& focus) const { return getEvaluator()->safe_get(focus); };
-	set<SymbolDependency> getDependSymbols() const { return evaluators[0]->getDependSymbols(); };
+	set<SymbolDependency> getDependSymbols() const { return base_evaluator->getDependSymbols(); };
 private:
 	ExpressionEvaluator<T>* getEvaluator() const {
 		uint t = omp_get_thread_num();
-		if (evaluators.size()<=t || ! evaluators[t] ) {
-			mutex.lock();
-			if (evaluators.size()<=t) {
-				evaluators.resize(t+1);
-			}
-			evaluators[t] = make_unique<ExpressionEvaluator<T> >( *evaluators[0] );
-			mutex.unlock();
+		if (/*evaluators.size()<=t || */! evaluators[t] ) {
+// 			mutex.lock();
+// 			auto n_threads = omp_get_max_threads();
+//  			if (evaluators.size()<=n_threads) {
+// 				evaluators.resize(n_threads, nullptr);
+// 			}
+			
+// 			if (!evaluators[t])
+				evaluators[t] = new ExpressionEvaluator<T>( *base_evaluator );
+// 			mutex.unlock();
 		}
-		return evaluators[t].get();
+		return evaluators[t];
 	}
-	mutable vector<unique_ptr<ExpressionEvaluator<T> > > evaluators;
+	unique_ptr<ExpressionEvaluator<T>> base_evaluator;
+	mutable vector< ExpressionEvaluator<T>* > evaluators;
 	mutable GlobalMutex mutex;
 };
 
@@ -221,6 +269,7 @@ template <class T>
 ExpressionEvaluator< T >::ExpressionEvaluator(string expression, const Scope* scope, bool partial_spec)
 {
 	this->expression = expression;
+	this->_notation = VecNotation::ORTH;
 	this->scope = scope;
 	if (expression.empty())
 		throw string("Empty expression in ExpressionEvaluator");
@@ -229,12 +278,14 @@ ExpressionEvaluator< T >::ExpressionEvaluator(string expression, const Scope* sc
 	evaluator_cache = make_shared<EvaluatorCache>(scope, partial_spec);
 	expr_is_const = false;
 	expr_is_symbol = false;
+	is_evaluating = false;
 }
 
 template <class T>
 ExpressionEvaluator< T >::ExpressionEvaluator(string expression, shared_ptr<EvaluatorCache> cache)
 {
 	this->expression = expression;
+	this->_notation = VecNotation::ORTH;
 	if (expression.empty())
 		throw string("Empty expression in ExpressionEvaluator");
 	allow_partial_spec = cache->getPartialSpec();
@@ -243,6 +294,7 @@ ExpressionEvaluator< T >::ExpressionEvaluator(string expression, shared_ptr<Eval
 	scope = cache->getScope();
 	expr_is_const = false;
 	expr_is_symbol = false;
+	is_evaluating = false;
 }
 
 // How can you duplicate a set of ExpressionEvaluators that share the same cache?? this is required by systems.
@@ -253,6 +305,7 @@ ExpressionEvaluator<T>::ExpressionEvaluator(const ExpressionEvaluator<T> & other
 	// at first, copy all configuration
 	scope = other.scope;
 	expression = other.expression;
+	_notation = other._notation;
 	clean_expression = other.clean_expression;
 	allow_partial_spec = other.allow_partial_spec;
 	
@@ -265,6 +318,7 @@ ExpressionEvaluator<T>::ExpressionEvaluator(const ExpressionEvaluator<T> & other
 	expr_flags = other.expr_flags;
 	expand_scalar_expr = other.expand_scalar_expr;
 	depend_symbols = other.depend_symbols;
+	is_evaluating = false;
 	
 	
 	// explicit copies
@@ -281,6 +335,14 @@ ExpressionEvaluator<T>::ExpressionEvaluator(const ExpressionEvaluator<T> & other
 	}
 	
 }
+
+
+// template <class T>
+// void ExpressionEvaluator<T>::setRadial(bool radial) { 
+// 	if (initialized)
+// 		throw string("ExpressionEvaluator<VDOUBLE>::setRadial called after initialization");
+// 	is_radial = radial;
+// }
 
 template <class T>
 void ExpressionEvaluator<T>::init()
@@ -319,6 +381,8 @@ void ExpressionEvaluator<T>::init()
 		if (symbol->flags().function) {
 			// DefineFun with the generic callback interface
 			auto fun_symbol = dynamic_pointer_cast<const FunctionAccessor<double> >(symbol);
+			if (!fun_symbol) 
+				throw string("Symbol ") + symbol->name() + " Flagged function but is no FunctionAccessor<double> but " + symbol->linkType() ;
 			parser->DefineFun(
 				symbol->name(),
 				fun_symbol->getCallBack(),
@@ -428,13 +492,24 @@ void ExpressionEvaluator<T>::init()
 	
 	// update and collect data
 	if (expr_is_const) {
+		bool cache_is_const = true;
 		expr_is_const = false;
-		const_val = safe_get(SymbolFocus::global);
-		expr_is_const = true;
-		if (depend_symbols.size()>0) {
-			cout << "Expression " << this->getExpression() << " is const (";
-			for (auto const& dep: depend_symbols ) { cout << dep->name() << ", " ; }
-			cout << ")" << endl;
+		for (const auto& sym : evaluator_cache->getExternalSymbols()) {
+			if (!sym->flags().space_const) {
+				cache_is_const = false;
+			}
+		}
+		if (!cache_is_const) {
+			delay_const_expr_init = true;
+		}
+		else {
+			const_val = safe_get(SymbolFocus::global);
+			expr_is_const = true;
+			if (depend_symbols.size()>0) {
+				cout << "Expression " << this->getExpression() << " is const (";
+				for (auto const& dep: depend_symbols ) { cout << dep->name() << ", " ; }
+				cout << ")" << endl;
+			}
 		}
 	}
 	
@@ -456,7 +531,7 @@ template <class T>
 const string& ExpressionEvaluator<T>::getDescription() const
 {
 	if (expr_is_symbol)
-		return symbol_val->description();
+		return symbol_val->description().empty() ? symbol_val->name() : symbol_val->description();
 	else 
 		return expression;
 }
@@ -477,13 +552,6 @@ typename TypeInfo<float>::SReturn  ExpressionEvaluator<float>::get(const SymbolF
 
 template <>
 typename TypeInfo<VDOUBLE>::SReturn  ExpressionEvaluator<VDOUBLE>::get(const SymbolFocus& focus, bool safe) const;
-
-template <class T>
-set< SymbolDependency > ExpressionEvaluator<T>::getDependSymbols() const
-{
-	return depend_symbols;
-}
-
 
 
 

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+	<xs:complexType name="Interaction">
+		<xs:all>
+			<xs:element name="Contact" minOccurs="0" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:all>
+						<xs:group ref="ContactPlugins"/>
+					</xs:all>
+					<xs:attribute name="type1" use="required" type="cpmCellTypeRef" />
+					<xs:attribute name="type2" use="required" type="cpmCellTypeRef" />
+					<xs:attribute name="value" use="required" type="cpmMathExpression" />
+				</xs:complexType>
+			</xs:element>
+		</xs:all>
+		<xs:attribute name="default" use="optional" type="cpmDouble"/>
+<!--		<xs:attribute name="collapse" use="optional" type="cpmBoolean" default="true" /> -->
+		<xs:attribute name="negative" use="optional" type="cpmBoolean" default="false">
+			<xs:annotation>
+				<xs:documentation>Use negative surface values when using SurfaceConstraint (Ouchi, 2003)</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		
+	</xs:complexType>
+
+</xs:schema>

@@ -15,7 +15,7 @@ JobQueueView::JobQueueView ( QWidget* parent) : QSplitter ( parent )
 	connect( job_view_model, SIGNAL(rowsAboutToBeRemoved(const QModelIndex&,int,int)), this, SLOT(unselectJobs(const QModelIndex&,int,int)) );
 
 	jobQueueTreeView->setModel(job_view_model);
-// 	connect(jobQueueTreeView->selectionModel(),SIGNAL(currentChanged(const QModelIndex&, const QModelIndex&)), this, SLOT(selectJob(const QModelIndex&)));
+	connect(jobQueueTreeView->selectionModel(),SIGNAL(currentChanged(const QModelIndex&, const QModelIndex&)), this, SLOT(selectJob(const QModelIndex&)));
 	connect(jobQueueTreeView,SIGNAL(clicked(const QModelIndex&)), this, SLOT(selectJob(const QModelIndex&)) );
 
 	jobQueueTreeView->setSortingEnabled(true);
@@ -26,10 +26,10 @@ JobQueueView::JobQueueView ( QWidget* parent) : QSplitter ( parent )
 	jobQueueTreeView->setColumnWidth(0,200);
 
 	jobQueueMenu = new QMenu();
-	jobQueueMenu->addAction(QThemedIcon("list-remove",QIcon(":/list-remove.png")),"Remove");
+	jobQueueMenu->addAction( QIcon::fromTheme("list-remove",QIcon(":/icons:list-remove.png")),"Remove");
 	//jobQueueMenu->addAction(QThemedIcon("media-playback-start",QIcon(":/start.png")),"Continue");
-	jobQueueMenu->addAction(QThemedIcon("media-playback-stop",QIcon(":/stop.png")),"Stop");
-	jobQueueMenu->addAction(QThemedIcon("system-run",QIcon(":/debug.png")),"Debug");
+	jobQueueMenu->addAction( QIcon::fromTheme("media-playback-stop",QIcon(":/icons/media-playback-stop.png")),"Stop");
+	jobQueueMenu->addAction( QIcon::fromTheme("system-run",QIcon(":/icons/debug.png")),"Debug");
 	jobQueueMenu->addSeparator();
 
 	jobQueueGroupingMenu = new QMenu();
@@ -72,7 +72,7 @@ JobQueueView::JobQueueView ( QWidget* parent) : QSplitter ( parent )
 
 void JobQueueView::selectStatus(QListWidgetItem * message_item) {
 	QString message = message_item->text();	
-	QRegExp xml_path("XMLPath: ([\\w\\[\\]/]+)");
+	QRegExp xml_path("XMLPath: ([\\w\\d\\[\\]/]+)");
 	if (xml_path.indexIn(message) != -1) {
 // 		qDebug() << "Matched XMLPath is " << xml_path.cap(1);
 		JobQueue* job_queue = config::getJobQueue();
@@ -86,7 +86,7 @@ void JobQueueView::selectStatus(QListWidgetItem * message_item) {
 
 void JobQueueView::addCriticalMessage ( QString message, int job_id )
 {
-	QListWidgetItem* item = new QListWidgetItem(QThemedIcon("dialog-error",QIcon(":/stop.png")),message);
+	QListWidgetItem* item = new QListWidgetItem( QIcon::fromTheme("dialog-error-symbolic",QIcon::fromTheme("dialog-error")),message);
 	item->setData(Qt::UserRole,job_id);
 	jobQueueStatusText->addItem(item);
 	if (jobQueueStatusText->count()> maxMessageItems)
@@ -216,7 +216,7 @@ void JobQueueView::unselectJobs(const QModelIndex& parent, int min_row, int max_
 						  current_idx.row() :
 						  current_idx.parent().row();
 	
-		if (min_row <= current_row && current_row <= max_row) {
+		if (min_row >= current_row && current_row <= max_row) {
 			if (job_view_model->rowCount(parent)>max_row+1) {
 				selectJob(parent.child(max_row+1,0));
 			}
@@ -231,7 +231,7 @@ void JobQueueView::unselectJobs(const QModelIndex& parent, int min_row, int max_
 	else if (parent == current_idx) { // A model section is selected
 		int current_row = 0;
 		
-		if (min_row <= current_row && current_row <= max_row) {
+		if (min_row >= current_row && current_row <= max_row) {
 			if (job_view_model->rowCount(parent)>max_row+1) {
 				selectJob(parent.child(max_row+1,0));
 			}
@@ -247,7 +247,7 @@ void JobQueueView::unselectJobs(const QModelIndex& parent, int min_row, int max_
 		
 		int current_row = current_idx.row();
 		
-		if (min_row <= current_row && current_row <= max_row) {
+		if (min_row >= current_row && current_row <= max_row) {
 			if (job_view_model->rowCount(parent)>max_row+1) {
 				selectJob(parent.child(max_row+1,0));
 			}

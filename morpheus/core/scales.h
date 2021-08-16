@@ -17,21 +17,21 @@
 class Time_Scale
 {
 	private:
-		double seconds_time;
-		double unit_factor;
-		double xml_time;
+		double seconds_time = 0;
+		double unit_factor = 1;
+		double xml_time = 0;
 		string xml_tag_name;
 		string symbol_name;
-		string unit;
+		string unit = "atu";
 	public:
-		Time_Scale(string xml_tag) : seconds_time(1), xml_time(1),xml_tag_name(xml_tag), unit("sec") {};
-		Time_Scale(string xml_tag, double a) : seconds_time(a), xml_time(a),xml_tag_name(xml_tag), unit("sec") {};
+		Time_Scale(string xml_tag) : xml_tag_name(xml_tag) {};
+		Time_Scale(string xml_tag, double a) : seconds_time(a), xml_time(a), xml_tag_name(xml_tag) {};
 		void set(double seconds) { seconds_time = seconds; };
-		double getSeconds() { return seconds_time; };
-		double operator()() { return seconds_time; };
-		string getTimeScaleUnit(){ return unit; };
-		double getTimeScaleUnitFactor() { return unit_factor; };
-		double getTimeScaleValue(){ return xml_time; };
+		double getSeconds() const { return seconds_time; };
+		double operator()() const { return seconds_time; };
+		string getTimeScaleUnit() const { return unit; };
+		double getTimeScaleUnitFactor() const { return unit_factor; };
+		double getTimeScaleValue() const { return xml_time; };
 		void loadFromXML(const XMLNode, Scope* scope);
 		XMLNode saveToXML() const;
 };
@@ -48,10 +48,10 @@ class Length_Scale
 		Length_Scale() : meter_length(1e-6), xml_length(1),xml_tag_name("NodeLength"), unit("meter") {};
 		Length_Scale(string xml_tag) : meter_length(1e-6), xml_length(1),xml_tag_name(xml_tag), unit("meter") {};
 		Length_Scale(string xml_tag, double a) : meter_length(a), xml_length(a),xml_tag_name(xml_tag), unit("meter") {};
-		double getMeters() { return meter_length; };
-		double operator()() { return meter_length; };
-		string getLengthScaleUnit(){ return unit; };
-		double getLengthScaleValue(){ return xml_length; };
+		double getMeters() const { return meter_length; };
+		double operator()() const { return meter_length; };
+		string getLengthScaleUnit() const { return unit; };
+		double getLengthScaleValue() const { return xml_length; };
 
 		void loadFromXML(const XMLNode, Scope* scope);
 		XMLNode saveToXML() const;

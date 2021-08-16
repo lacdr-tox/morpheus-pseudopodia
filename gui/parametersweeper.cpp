@@ -3,6 +3,7 @@
 
 parameterSweeper::parameterSweeper()
 {
+	model = nullptr;
 	QVBoxLayout *main_layout = new QVBoxLayout(this);
 	this->setLayout(main_layout);
 
@@ -53,9 +54,9 @@ parameterSweeper::parameterSweeper()
 "Range:\tmin:stepping:max\n"
 "\n\n"
 " Stepping\tDescription\t\tExample\n\n"
-" [width]\t\tinterval spacing\t\t0:2:10 -> 0;2;4;6;8;10\n"
-" #[count]\t\tnumber of intervals\t0:#2:10 -> 0;5;10\n"
-" #[count]log\tlogarithmic scale\t\t1:#2log:100 -> 1;10;100\n"
+" [width]\t\tinterval spacing\t\t0:2:10\t\t→ 0;2;4;6;8;10\n"
+" #[count]\tnumber of intervals\t0:#2:10\t\t→ 0;5;10\n"
+" #[count]log\tlogarithmic scale\t\t1:#2log:100\t→ 1;10;100\n"
 "\n\n"
 "Pairwise parameters:\n"
 " Grouped parameters are sweeped pairwise instead of crosswise.\n\n"
@@ -96,9 +97,14 @@ void parameterSweeper::updateJobCount()
 
 void parameterSweeper::selectModel(int index) {
     if (model) {
-		model->disconnect( SIGNAL(dataChanged(QModelIndex,QModelIndex)));
-		model->disconnect( SIGNAL(layoutChanged()));
+		model->param_sweep.disconnect( SIGNAL(dataChanged(QModelIndex,QModelIndex)));
+		model->param_sweep.disconnect( SIGNAL(layoutChanged()));
+		preset_random_seed->disconnect( SIGNAL(toggled(bool)));
     }
+    if (index<0) {
+		model = SharedMorphModel();
+		return;
+	}
     model = config::getOpenModels()[index];
 	sweep_name->setText(model->rootNodeContr->getModelDescr().title + "_sweep");
 	param_sweep_view->setModel(&model->param_sweep);
@@ -108,6 +114,9 @@ void parameterSweeper::selectModel(int index) {
 
 	connect(&model->param_sweep, SIGNAL(dataChanged(QModelIndex,QModelIndex)), this, SLOT(updateJobCount()));
 	connect(&model->param_sweep, SIGNAL(layoutChanged()), this, SLOT(updateJobCount()));
+	preset_random_seed -> setChecked(model->param_sweep.presetRandomSeeds());
+	connect(preset_random_seed, &QCheckBox::toggled, &model->param_sweep, &ParamSweepModel::setPresetRandomSeeds);
+	
 	updateJobCount();
 }
 
@@ -206,19 +215,6 @@ void parameterSweeper::submitSweep()
 		return;
 	}
 
-	if (preset_random_seed->isChecked())  {
-		 // pick the random seed attribute
-		 nodeController* seed = model->rootNodeContr->firstActiveChild("Time")->firstActiveChild("RandomSeed");
-		 if (!seed) { seed = model->rootNodeContr->firstActiveChild("Time")->insertChild("RandomSeed"); }
-		 auto seed_value = seed->attribute("value");
-		 if (seed_value) {
-			parameters.push_back(seed_value);
-			for (auto& set : parameter_sets) {
-				set.push_back(QString::number(qrand()));
-			}
-		 }
-	 }
-
 	jobSummary summary(parameters, parameter_sets, sweep_name->text());
 	summary.exec();
 	if (summary.result() == QDialog::Accepted) {
@@ -231,7 +227,7 @@ void parameterSweeper::submitSweep()
 		QString sweep_header;
 
 		QTextStream ts_header(&sweep_header);
-		ts_header << "Date\t" << QDate::currentDate().toString() << endl;
+		ts_header << "Date\t" << QDate::currentDate().toString() << "\n";
 		ts_header << "Time\t" << QTime::currentTime().toString() << endl;
 		ts_header << "Jobs\t" << parameter_sets.size() << endl;
 		ts_header << "Params\t" << parameters.size() << endl;

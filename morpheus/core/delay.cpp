@@ -11,6 +11,8 @@ istream& operator>>(istream& in, DelayData& d) {
 	return in;
 }
 
+// Silence Clang warning because Container<double> is instantiated explicitly in another translation unit.
+template <> bool Container<double>::type_registration;
 
 DelayPropertyPlugin::DelayPropertyPlugin(Mode mode): Container<double>(mode), ContinuousProcessPlugin(ContinuousProcessPlugin::DELAY, XMLSpec::XML_NONE), tsl_initialized(false) {
 	delay.setXMLPath("delay");
@@ -83,7 +85,7 @@ void DelayPropertyPlugin::assert_initialized() {
 	if (! this->initialized) init(local_scope);
 }
 
-double DelayPropertyPlugin::getInitValue(const SymbolFocus f, double time) {
+double DelayPropertyPlugin::getInitValue(const SymbolFocus& f, double time) {
 	value.setLocals(&time);
 	return value.safe_get(f);
 }

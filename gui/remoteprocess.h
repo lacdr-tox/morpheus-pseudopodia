@@ -30,7 +30,7 @@ class remoteProcess : public abstractProcess
 Q_OBJECT
 
 public:
-    remoteProcess(QSharedPointer<MorphModel> model, int pid, QString sub_dir="");
+    remoteProcess(SharedMorphModel model, int pid, QString sub_dir="");
     /*!<
       Creates a simulationprocess which will be started on an external machine.
       \param xml xml-files that describes the cpm-model which will be simulated
@@ -56,7 +56,7 @@ private:
 
     QString remoteDir; /*!< Directory on the external machine, where the simulationdata should be stored. */
     QTimer *checkTimer; /*!< Timer with whom the state of process will be checked. */
-    QTime *stopwatch;
+    QElapsedTimer *stopwatch;
     sshProxy ssh; /*!< sshProxy which is used to connect ot the external machine. */
     QMutex check_lock;
 

@@ -29,7 +29,7 @@ In the simplest case (Savill and Hogeweg, 1997):
 \f$ \Delta E_{chemotaxis} = \mu \cdot ( f_{\mathbf{x_i}} - f_{\mathbf{x_j}}) \f$
 
 where 
-- \f$ f_{\mathbf{x_i}} \f$ is the concentration of field $f$ at position \f$ \mathbf{x_i} \f$
+- \f$ f_{\mathbf{x_i}} \f$ is the concentration of field \f$f\f$ at position \f$ \mathbf{x_i} \f$
 - \f$ \mu \f$ is the chemotactic strength
 
 Chemotaxis with saturation

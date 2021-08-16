@@ -12,16 +12,16 @@
 #ifndef PARAMETERSWEEPER_H
 #define PARAMETERSWEEPER_H
 
-#include <QtGui>
-#include "abstractattribute.h"
+#include <QWidget>
+#include "morpheusML/model_attribute.h"
 #include "jobsummary.h"
 #include "attrcontroller.h"
 
 
 
-using namespace std;
+// using namespace std;
 
-typedef attrController delegate_class;
+// typedef attrController delegate_class;
 
 /*!
 This class represents a parametersweeper on form of a widget, which is used to give a xml-attribute a range or set of values,<br>

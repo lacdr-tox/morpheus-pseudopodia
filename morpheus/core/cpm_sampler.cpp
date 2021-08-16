@@ -1,6 +1,7 @@
 #include "cpm_sampler.h"
 #include "interaction_energy.h"
 
+REGISTER_PLUGIN(CPMSampler);
 
 CPMSampler::CPMSampler() :
 	ContinuousProcessPlugin(MCS,XMLSpec::XML_NONE)
@@ -22,6 +23,7 @@ CPMSampler::CPMSampler() :
 	
 	metropolis_yield.setXMLPath("MonteCarloSampler/MetropolisKinetics/yield");
 	metropolis_yield.setDefault("0");
+	metropolis_yield.setLocalsTable({{"dir",EvaluatorCache::LocalSymbolDesc::VECTOR}});
 	registerPluginParameter(metropolis_yield);
 };
 
@@ -34,33 +36,35 @@ void CPMSampler::loadFromXML(const XMLNode node, Scope* scope)
 		auto symbol = SymbolAccessorBase<double>::createConstant(mcs_duration_symbol.stringVal(),"Monte Carlo Step Duration", mcs_duration());
 		scope->registerSymbol(symbol);
 	}
+	
+	interaction_energy = shared_ptr<InteractionEnergy>(new InteractionEnergy());
+	interaction_energy->loadFromXML(node.getChildNode("Interaction"), scope);
+}
+
+void CPMSampler::init(const Scope* scope)
+{
 	// In fact, the update neighborhood should include all neighbors up to sqrt(2), aka Moore for square, 1st order for hex and 2nd order in cubic.
 	update_neighborhood = SIM::lattice().getNeighborhoodByDistance(1.5); 
-	XMLNode xNeighborhood = node.getChildNode("MonteCarloSampler").getChildNode("Neighborhood");
+	XMLNode xNeighborhood = stored_node.getChildNode("MonteCarloSampler").getChildNode("Neighborhood");
 	if (!xNeighborhood.isEmpty()) {
 		update_neighborhood = SIM::lattice().getNeighborhood(xNeighborhood);
 	}
 	else throw string("Missing required element MonteCarloSampler/Neighborhood.");
 	
-	interaction_energy = shared_ptr<InteractionEnergy>(new InteractionEnergy());
-	interaction_energy->loadFromXML(node.getChildNode("Interaction"), scope);
-	
 	if (update_neighborhood.distance() > 3 || (SIM::lattice().getStructure()==Lattice::hexagonal && update_neighborhood.order()>5) ) {
 		throw string("Update neighborhood is too large");
 	}
-
+	
+	ContinuousProcessPlugin::init(scope);
 	setTimeStep(mcs_duration.get());
 	is_adjustable = false;
-}
-
-void CPMSampler::init(const Scope* scope)
-{
-    ContinuousProcessPlugin::init(scope);
+	
 	cell_layer = CPM::getLayer();
 	registerCellPositionOutput();
 	registerOutputSymbol(scope->findSymbol<double>(SymbolBase::CellVolume_symbol,true));
 	registerOutputSymbol(scope->findSymbol<double>(SymbolBase::CellSurface_symbol,true));
 	registerOutputSymbol(scope->findSymbol<double>(SymbolBase::CellLength_symbol,true));
+	registerOutputSymbol(scope->findSymbol<double>(SymbolBase::CellType_symbol,true));
 	if (stepper_type() == StepperType::EDGELIST) {
 		CPM::enableEgdeTracking();
 	}
@@ -152,7 +156,7 @@ void CPMSampler::MonteCarloStep()
 
 bool CPMSampler::evalCPMUpdate(const CPM::Update& update)
 {
-	double dE=0, dInteraction;
+	double dE=0, dInteraction=0, dCell=0;
 	
 	// Find the proper celltype to notify
 	uint source_ct = update.source().celltype();
@@ -170,18 +174,20 @@ bool CPMSampler::evalCPMUpdate(const CPM::Update& update)
 	}
 	
 	// InteractionEnergy
-	dE += interaction_energy -> delta(update);
+	dInteraction = interaction_energy -> delta(update);
 	// CellType dependend energies
 	if ( focus_ct == source_ct ) {
-		dE += celltypes[source_ct] -> delta(update);
+		dCell += celltypes[source_ct] -> delta(update);
 	}
 	else {
-		dE += celltypes[source_ct] -> delta( update.selectOp(CPM::Update::ADD));
-		dE += celltypes[focus_ct] -> delta( update.selectOp(CPM::Update::REMOVE));
+		dCell += celltypes[source_ct] -> delta( update.selectOp(CPM::Update::ADD));
+		dCell += celltypes[focus_ct] -> delta( update.selectOp(CPM::Update::REMOVE));
 		// TODO crawl through the neighborhood for CPM::Update::Neighborhood energy changes, if any CPMEnergy requires that
 	}
 	// the magic Metropolis Kinetics with Boltzmann probability ...
-	dE += metropolis_yield(); //metropolis_yield(update.focus);
+	VDOUBLE dir = update.focus().pos() - update.source().pos();
+	metropolis_yield.setLocals(&dir.x);
+	dE = dInteraction + dCell + metropolis_yield(update.focus()); //metropolis_yield(update.focus);
 
 	if (dE <= 0)
 		return true;

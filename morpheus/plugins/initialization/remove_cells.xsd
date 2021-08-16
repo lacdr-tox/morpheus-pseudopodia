@@ -2,19 +2,23 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="PopulationInitPlugins">
-		<xs:choice>
-			<xs:element name="RemoveCells"	type="RemoveCells"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="RemoveCells"	type="RemoveCells" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="RemoveCells">
-		<xs:annotation>
-			<xs:appinfo>Population</xs:appinfo>
-		</xs:annotation>
-		<xs:all>
-			<xs:element name="Condition" type="cpmMathExpression" />
-		</xs:all>
-		<xs:attribute name="name" type="cpmString" use="optional" />
-		
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Initialization</xs:appinfo>
+				</xs:annotation>
+				<xs:all>
+					<xs:element name="Condition" type="cpmMathExpression" />
+				</xs:all>
+				<xs:attribute name="name" type="cpmString" use="optional" />
+			</xs:extension>
+		<xs:complexContent>
 	</xs:complexType>
+
 </xs:schema>

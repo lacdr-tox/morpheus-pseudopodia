@@ -13,11 +13,13 @@
 #include <set>                 // for std::set
 #include <cstdio>               // for FILE, fputs(), fflush(), popen()
 #include <cstdlib>              // for getenv()
+// #include <boost/dll/runtime_symbol_info.hpp>  // for program path
 #include "gnuplot_i.h"
 
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__) //defined for 32 and 64-bit environments
  #include <io.h>                // for _access(), _mktemp()
+ #include <windows.h>
 #elif defined(unix) || defined(__unix) || defined(__unix__) || defined(__APPLE__) //all UNIX-like OSs (Linux, *BSD, MacOSX, Solaris, ...)
  #include <unistd.h>            // for access(), mkstemp()
 #include <string.h>
@@ -38,6 +40,8 @@ std::string Gnuplot::m_sGNUPlotPath = "";
 std::string Gnuplot::m_sGNUPlotFileName = "gnuplot";
 std::string Gnuplot::m_sGNUPlotPath = "";
 #endif
+
+bool Gnuplot::enabled = true;
 
 //----------------------------------------------------------------------------------
 //
@@ -75,6 +79,8 @@ std::string Gnuplot::get_GNUPlotPath() {
 string Gnuplot::get_gnuplot_out(const string& cmd, vector<string> args ) 
 {
 	// if gnuplot not available
+	if (!enabled) return "";
+	
 	if (!Gnuplot::get_program_path())
 	{
 		throw GnuplotException("Can't find gnuplot");
@@ -111,6 +117,7 @@ string Gnuplot::get_gnuplot_out(const string& cmd, vector<string> args )
 
 std::set<std::string> Gnuplot::get_terminals() 
 {
+	if (!enabled) return {};
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__)
 	std::set<std::string> fixed_terminals = {"wxt","windows","jpeg","svg","pngcairo","postscript","pdfcairo","gif"};
 	return fixed_terminals;
@@ -135,7 +142,13 @@ std::set<std::string> Gnuplot::get_terminals()
 		// eat all the string left, if no further delimiter was found
 		if (lPos == std::string::npos) lPos = result.length();
 		// Add the token to the vector.
-		terminals.insert(result.substr(fPos, lPos - fPos));
+		auto token = result.substr(fPos, lPos - fPos);
+// 		// Manually remove all cairo terminals, for testing only
+// 		auto s = token.size();
+// 		if (s>5 and (token.substr(s-5,5) == "cairo" || token.substr(0,5) == "cairo")) {
+// 			continue;
+// 		}
+		terminals.insert(token);
 	} while (lPos != result.length());
 
 	return terminals;
@@ -143,7 +156,9 @@ std::set<std::string> Gnuplot::get_terminals()
 
 std::string Gnuplot::get_screen_terminal()
 {
-	std::vector<string> screen_terminals = {"qt","wxt","windows","aqua","x11"};
+	if (!enabled) return "";
+	
+	std::vector<string> screen_terminals = {"qt","windows","aqua","wxt","x11"};
 	auto terminals = get_terminals();
 	for (const auto& term : screen_terminals) {
 		if (terminals.find(term) != terminals.end()) {
@@ -261,6 +276,7 @@ Gnuplot::~Gnuplot()
 //
 Gnuplot& Gnuplot::cmd(const std::string &cmdstr)
 {
+	if (!enabled) return *this;
 	if (gnuplot_command_log)
 		fputs((cmdstr+"\n").c_str(), gnuplot_command_log.get());
 	if (process)
@@ -276,18 +292,19 @@ Gnuplot& Gnuplot::cmd(const std::string &cmdstr)
 //
 Gnuplot::Gnuplot()
 {
+	//
+	// open pipe
+	//
+	static int instance_counter=0;
+	instance_counter++;
+	if (!enabled) return;
+	
 	// if gnuplot not available
 	if (!Gnuplot::get_program_path())
 	{
 		cerr << "Can't find gnuplot. Please install gnuplot and adjust the PATH accordingly.";
 		throw GnuplotException("Can't find gnuplot");
 	}
-
-
-	//
-	// open pipe
-	//
-	static int instance_counter=0;
 	stringstream gnuplot_exec;
 	gnuplot_exec << "\"" << Gnuplot::m_sGNUPlotPath << "\" 2> gnuplot_error" << instance_counter << ".log";
     // std::string tmp = std::string("\"") + Gnuplot::m_sGNUPlotPath + "/" + Gnuplot::m_sGNUPlotFileName + "\" 2> gnuplot_error";
@@ -316,7 +333,6 @@ Gnuplot::Gnuplot()
         throw GnuplotException("Couldn't open connection to gnuplot");
     }
 
-	instance_counter++;
     return;
 }
 
@@ -326,6 +342,73 @@ void Gnuplot::setLogfile(string filename)
 		gnuplot_command_log = shared_ptr<FILE>(fopen(filename.c_str(),"w"), &fclose);
 	}
 }
+
+//----------------------------------------------------------------------------------
+//
+// Get Path of the executable
+//
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__)
+size_t getExecutablePathName_c(char* pathName, size_t pathNameCapacity)
+{
+	// TODO Should use GetModuleFileNameW here
+	return GetModuleFileNameA(NULL, pathName, pathNameCapacity);
+}
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+size_t getExecutablePathName_c(char* pathName, size_t pathNameCapacity)
+{
+	uint32_t pathNameSize = 0;
+	_NSGetExecutablePath(NULL, &pathNameSize);
+	if (pathNameSize > pathNameCapacity)
+// 		return 0;
+		pathNameSize = pathNameCapacity;
+
+	if (!_NSGetExecutablePath(pathName, &pathNameSize))
+	{
+		char real[PATH_MAX];
+
+		if (realpath(pathName, real) != NULL)
+		{
+			pathNameSize = strlen(real);
+			strncpy(pathName, real, pathNameSize);
+		}
+		return pathNameSize;
+	}
+	return 0;
+}
+#elif defined(unix) || defined(__unix) || defined(__unix__) || defined(__linux__) 
+#include <unistd.h>
+size_t getExecutablePathName_c(char* pathName, size_t pathNameCapacity)
+{
+	size_t pathNameSize = readlink("/proc/self/exe", pathName, pathNameCapacity - 1);
+	pathName[pathNameSize]='\0';
+	return pathNameSize;
+}
+#else
+  #error provide your own implementation
+#endif
+
+std::string getExecutablePathName()
+{
+	static int pathNameCapacity = 256;
+	const int pathNameCapacityMax = 2048;
+	size_t pathNameSize=0;
+	string pathName;
+	while(pathNameCapacity<=pathNameCapacityMax && pathNameSize==0) {
+		char pathBuffer[pathNameCapacity];
+		pathNameSize = getExecutablePathName_c(pathBuffer,pathNameCapacity);
+		if (pathNameSize) {
+			pathBuffer[pathNameSize]='\0';
+			pathName = pathBuffer;
+			break;
+		}
+		pathNameCapacity*=2;
+	}
+	return pathName;
+}
+
+
 
 //----------------------------------------------------------------------------------
 //
@@ -355,14 +438,11 @@ bool Gnuplot::get_program_path()
     // second: look in PATH for Gnuplot
     //
 
+    std::list<std::string> ls;
     char *path;
     // Retrieves a C string containing the value of the environment variable PATH
     path = getenv("PATH");
 	
-    if (path != NULL)
-    {
-        std::list<std::string> ls;
-
         //split path (one long string) into list ls of strings
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__)
         stringtok(ls,path,";");
@@ -372,11 +452,17 @@ bool Gnuplot::get_program_path()
 	string path_sep = "/";
 #endif
 
+	auto exec_path = getExecutablePathName();
+	auto last_sep = exec_path.find_last_of(path_sep);
+	if (last_sep != string::npos)  exec_path.resize(last_sep);
+
+	ls.push_front(exec_path);
+
         // scan list for Gnuplot program files
         for (std::list<std::string>::const_iterator i = ls.begin(); i != ls.end(); ++i)
         {
             tmp = (*i) + path_sep + Gnuplot::m_sGNUPlotFileName;
-            // cout << "Checking path for gnuplot " << tmp << endl;
+//             cout << "Checking path for gnuplot " << tmp << endl;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__)
             if ( Gnuplot::file_exists(tmp,0) ) // check existence
 #elif defined(unix) || defined(__unix) || defined(__unix__) || defined(__APPLE__)
@@ -387,12 +473,10 @@ bool Gnuplot::get_program_path()
                 return true;
             }
         }
-    }
 
-
-	Gnuplot::m_sGNUPlotPath = "";
-	tmp = "Can't find gnuplot neither in PATH (" + string(path) + ") nor in \"" + Gnuplot::m_sGNUPlotPath + "\"";
-	throw GnuplotException(tmp);
+    Gnuplot::m_sGNUPlotPath = "";
+    tmp = "Can't find gnuplot neither in PATH (" + string(path) + ") nor in \"" + Gnuplot::m_sGNUPlotPath + "\"";
+    throw GnuplotException(tmp);
     return false;
 }
 

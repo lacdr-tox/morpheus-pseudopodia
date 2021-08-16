@@ -2,12 +2,6 @@
 
 REGISTER_PLUGIN(Mapper);
 
-// Plugin* Mapper::createInstance() { return new CellReporter(); }
-// bool CellReporter::factory_registration =
-// 	PluginFactory::RegisterCreatorFunction("CellReporter", CellReporter::createInstance ) &&
-// 	PluginFactory::RegisterCreatorFunction("Mapping", CellReporter::createInstance );
-
-
 
 Mapper::Mapper() {
 	input->setXMLPath("Input/value");
@@ -77,7 +71,7 @@ void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 		
 		if ( input->granularity() == Granularity::MembraneNode ) {
 			FocusRange range(Granularity::SurfaceNode, scope);
-			cout << "Membrane node size " << range.size() << endl;
+// 			cout << "Membrane node size " << range.size() << endl;
 			// Just write input to the output
 			for (const auto& focus : range) {
 				output.symbol->set(focus,input(focus));
@@ -90,17 +84,22 @@ void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 			bool dimensions_lost = extends.size() < input_extends.size();
 			if (  output.symbol->granularity() ==  input->granularity() &&  dimensions_lost) {
 				auto mapper =  DataMapper::create(output.mapping());
-				for (const auto& focus : range) {
-					multimap<FocusRangeAxis,int> restrictions;
-					for (auto e : extends) {
-						restrictions.insert(make_pair(e,focus.get(e)));
+#pragma omp parallel
+				{
+					auto thread = omp_get_thread_num();
+#pragma omp for schedule(static)
+					for (auto focus=range.begin(); focus<range.end(); ++focus) {
+						multimap<FocusRangeAxis,int> restrictions;
+						for (auto e : extends) {
+							restrictions.insert(make_pair(e,focus->get(e)));
+						}
+						FocusRange inner_range(input->granularity(),restrictions);
+						mapper->reset(thread);
+						for (const auto& inner_focus : inner_range ){
+							mapper->addVal(input(inner_focus),thread);
+						}
+						output.symbol->set(*focus,mapper->get(thread));
 					}
-					FocusRange inner_range(input->granularity(),restrictions);
-					mapper->reset();
-					for (const auto& inner_focus : inner_range ){
-						mapper->addVal(input(inner_focus));
-					}
-					output.symbol->set(focus,mapper->get());
 				}
 			}
 			else {
@@ -117,46 +116,63 @@ void Mapper::report_output(const OutputSpec& output, const Scope* scope) {
 			throw string("Missing mapping implementation");
 		}
 
-		// we need to iterate over the cells and use a membrane mapper to get data from nodes to the membrane
-		MembraneMapper membrane_mapper(MembraneMapper::MAP_CONTINUOUS);
 		auto membrane_symbol = dynamic_pointer_cast<const MembranePropertySymbol>(output.symbol->accessor());
 		if (!membrane_symbol) {
 			throw string("Ooops: Bad cast in Mapper::report_output");
 		}
+#pragma omp parallel
+		{
+			// we need to iterate over the cells and use a membrane mapper to get data from nodes to the membrane
+			MembraneMapper membrane_mapper(MembraneMapper::MAP_CONTINUOUS);
+			FocusRange cell_range(Granularity::Cell, scope);
 
-		FocusRange cell_range(Granularity::Cell, scope);
-		for (auto focus : cell_range) {
-			
-			auto cell_surface = focus.cell().getSurface();
-			membrane_mapper.attachToCell(focus.cellID());
-			for (auto node : cell_surface) {
-				focus.setPosition(node);
-				membrane_mapper.map(node, input(focus));
+#pragma omp for schedule(static)
+			for (auto focus=cell_range.begin(); focus<cell_range.end(); ++focus) {
+				
+				auto cell_surface = focus->cell().getSurface();
+				membrane_mapper.attachToCell(focus->cellID());
+				SymbolFocus surface_focus = *focus;
+				for (auto node : cell_surface) {
+					surface_focus.setPosition(node);
+					membrane_mapper.map(node, input(surface_focus));
+				}
+				membrane_mapper.fillGaps();
+				membrane_mapper.copyData(membrane_symbol->getField(*focus));
 			}
-			membrane_mapper.fillGaps();
-			membrane_mapper.copyData(membrane_symbol->getField(focus));
 		}
-		
 	}
 	else {
 		auto mapper =  DataMapper::create(output.mapping());
 		if (output.symbol->granularity() == Granularity::Cell) {
-			FocusRange range(output.symbol->accessor(), scope);
-			for (auto out_focus : range) {
-				FocusRange input_range(input->granularity(),out_focus.cellID());
-				for (auto focus: input_range) {
-					mapper->addVal(input(focus));
+			FocusRange out_range(output.symbol->accessor(), scope);
+#pragma omp parallel
+			{
+				auto thread = omp_get_thread_num();
+#pragma omp for schedule(static)
+				for (auto out_focus=out_range.begin(); out_focus<out_range.end(); ++out_focus) {
+					// Optimization for single node cells
+					if (out_focus->cell().nNodes() ==1) {
+						SymbolFocus node_focus(*out_focus);
+						node_focus.setCell(node_focus.cellID(), *(node_focus.cell().getNodes().begin()));
+						output.symbol->set(*out_focus,input(node_focus));
+					}
+					else {
+						FocusRange input_range(input->granularity(),out_focus->cellID());
+						for (auto focus: input_range) {
+							mapper->addVal(input(focus),thread);
+						}
+						output.symbol->set(*out_focus,mapper->get(thread));
+						mapper->reset(thread);
+					}
 				}
-				output.symbol->set(out_focus,mapper->get());
-				mapper->reset();
 			}
 		}
 		else if (output.symbol->granularity() == Granularity::Global) {
 			FocusRange input_range(input->granularity(),scope);
 			for (auto focus: input_range) {
-				mapper->addVal(input(focus));
+				mapper->addVal(input(focus),0);
 			}
-			output.symbol->set(SymbolFocus::global, mapper->get());
+			output.symbol->set(SymbolFocus::global, mapper->get(0));
 		}
 		else {
 			throw string("Missing mapping implementation");
@@ -191,18 +207,19 @@ void Mapper::report_polarity(const Scope* scope) {
 		}
 		else if (polarity_output->granularity() == Granularity::Cell) {
 			FocusRange out_range(Granularity::Cell, scope);
-			for (auto out_focus : out_range) {
+#pragma omp parallel for
+			for (auto out_focus=out_range.begin(); out_focus<out_range.end(); ++out_focus) {
 				VDOUBLE polarisation;
 				Granularity g = input->granularity();
 				if (g == Granularity::MembraneNode ) g = Granularity::SurfaceNode;
-				FocusRange range(g,out_focus.cellID());
+				FocusRange range(g,out_focus->cellID());
 				
 				for (const auto& focus : range) {
 					VDOUBLE orientation( (lattice.to_orth(focus.pos()) - focus.cell().getCenter()).norm());
 					polarisation += input(focus) * orientation;
 				}
 				polarisation = polarisation / range.size();
-				polarity_output->set(out_focus, polarisation);
+				polarity_output->set(*out_focus, polarisation);
 			}
 		}
 		else {

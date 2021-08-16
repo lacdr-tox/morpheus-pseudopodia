@@ -47,7 +47,7 @@
 
 // draws in the memory and random header
 #include "config.h"
-
+#include <boost/property_tree/ptree.hpp>
 // due to non-linearity of the dependencies, we need forward declarations
 class PDE_Layer;
 class VectorField_Layer;
@@ -56,53 +56,8 @@ class VectorField_Layer;
 #include "scope.h"
 #include "scales.h"
 #include "cpm.h"
-// #include "cpm_layer.h"
-// #include "cell_update.h"
-
-
-
-class MorpheusException {
-public:
-	MorpheusException(string what) : _what(what) {};
-	MorpheusException(string what, XMLNode where) : _what(what),_where(getXMLPath(where)) {}
-	MorpheusException(string what, string where) : _what(what),_where(where) {}
-	string where() const { return _where; }
-	string what() const { return _what; }
-protected:
-	string _what;
-	string _where;
-};
-
-class ExpressionException : public MorpheusException {
-public:
-	enum class ErrorType {INF, NaN, DIVZERO, UNDEF };
-	ExpressionException(string expression, ErrorType error) : _error(error), MorpheusException(string("Error \"") + getErrorName(error) + ("\" in Expression \"") + expression + "\"") {} ;
-    ExpressionException(string expression, ErrorType error, XMLNode where) :  _error(error), MorpheusException(string("Error \"") + getErrorName(error) + ("\" in Expression \"") + expression + "\"",where) {} ;
-	string getExpression() { return _expression; };
-	ErrorType getError() { return _error; };
-	string getErrorName() {
-		
-		switch (_error) {
-			case ErrorType::INF: return "Infinity";
-			case ErrorType::NaN: return "Not a number";
-			case ErrorType::DIVZERO: return "Division by zero";
-			default: return "Undefined ";
-		}
-	}
-private:
-	string getErrorName(ErrorType error) {
-		
-		switch (error) {
-			case ErrorType::INF: return "Infinity";
-			case ErrorType::NaN: return "Not a number";
-			case ErrorType::DIVZERO: return "Division by zero";
-			default: return "Undefined ";
-		}
-	}
-	string _expression;
-	ErrorType _error;
-};
-
+#include <mutex>
+#include "exceptions.h"
 
 namespace SIM {
 	/// Simulation title as defined by XML
@@ -122,6 +77,7 @@ namespace SIM {
 	
 	string getLengthScaleUnit();
 	double getLengthScaleValue();
+	Lattice::Structure getLatticeStructure();
 	shared_ptr<const Lattice> getLattice();
 	const Lattice& lattice();
 	
@@ -138,8 +94,10 @@ namespace SIM {
 	void saveToXML();
 	
    /// Get the global Scope. All other scopes are direct or indirect sub-scopes of the global scope.
-	const Scope* getGlobalScope();
-
+	Scope* getGlobalScope();
+	
+	void wipe();
+	boost::property_tree::ptree& getPerfLogger();
 	
 	/// \brief Find a globally accessible Symbol (global scope)
 	template <class S>
@@ -162,18 +120,33 @@ namespace SIM {
 		const string& description() const override { static const string descr = "Time" ; return descr; }
 		string linkType() const override { return "TimeLink"; }
 	};
+	
 	/// Global symbol providing the position
-	class SpaceSymbol : public SymbolAccessorBase<VDOUBLE> {
+	class LocationSymbol : public SymbolAccessorBase<VDOUBLE> {
 	public:
-		SpaceSymbol(string symbol) : SymbolAccessorBase<VDOUBLE>(symbol) {
+		LocationSymbol(string symbol) : SymbolAccessorBase<VDOUBLE>(symbol) {
 			flags().granularity = Granularity::Node;
 			flags().time_const = true;
 		}
 		VDOUBLE get(const SymbolFocus& f) const override {
-			return f.pos();
+			return f.global_pos();
 		}
-		const string&  description() const override { static const string descr = "Space" ; return descr; }
-		string linkType() const override { return "SpaceLink"; }
+		const string&  description() const override { static const string descr = "Location" ; return descr; }
+		string linkType() const override { return "LocationLink"; }
+	};
+	
+	/// Global symbol providing the position
+	class LatticeLocationSymbol : public SymbolAccessorBase<VDOUBLE> {
+	public:
+		LatticeLocationSymbol(string symbol) : SymbolAccessorBase<VDOUBLE>(symbol) {
+			flags().granularity = Granularity::Node;
+			flags().time_const = true;
+		}
+		VDOUBLE get(const SymbolFocus& f) const override {
+			return f.lattice_pos();
+		}
+		const string&  description() const override { static const string descr = "LatticeLocation" ; return descr; }
+		string linkType() const override { return "LatticeLocationLink"; }
 	};
 	
 }

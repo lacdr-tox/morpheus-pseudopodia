@@ -15,13 +15,13 @@
 \ingroup ML_CellType
 \ingroup ReporterPlugins
 
-\brief Map data from a spatial context into another symbol, usually reducing spatial information by a mapping function.
+\brief Map data from a spatial context into another symbol, usually reducing spatial resolution by a mapping function.
 
-former CellReporter
+(formerly known as CellReporter)
 
 \section Description
 
-A \b Mapper defines how data within a spatial context, e.g. a cell, a cell population or at global scope, can be mapped to a symbol with a different spatial granularity (i.e. resolution). Note that defining a \n Mapper within a \ref ML_CellType also restricts the mapping to the spatial range occupied by the respectiv cell population.
+A \b Mapper defines how data within a spatial context, e.g. a cell, a cell population or at global scope, can be mapped to a symbol with a different spatial granularity (i.e. resolution). Note that defining a \n Mapper within a \ref ML_CellType also restricts the mapping to the spatial range occupied by the respective cell population.
 
 A single \b Input element must be specified:
 - \b value: input variable (e.g. \ref ML_Property, \ref ML_MembraneProperty or \ref ML_Field) or a respective expression.
@@ -75,7 +75,7 @@ Polarisation and variance of a membrane property
 </Mapper>
 \endverbatim
 
-Determine the binding rate of a soluble substance to a membrane bound molecule
+Compute the binding rate of a soluble substance (A) to a membrane bound molecule (C).
 (Assume 'A' to refer to a Field  and 'C' and 'C_r' to refer to MembraneProperties)
 \verbatim
 <Mapper>
@@ -100,7 +100,7 @@ private:
 	CellType* celltype;
 	const Scope* scope;
 	
-	PluginParameter_Shared<double, XMLEvaluator, RequiredPolicy> input;
+	PluginParameter_Shared<double, XMLThreadsaveEvaluator, RequiredPolicy> input;
 	
 	struct OutputSpec {
 		PluginParameter_Shared<DataMapper::Mode, XMLNamedValueReader, OptionalPolicy> mapping;

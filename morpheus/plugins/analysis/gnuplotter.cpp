@@ -1,4 +1,6 @@
 #include "gnuplotter.h"
+#include "focusrange.h"
+
 using namespace SIM;
 
 
@@ -6,7 +8,7 @@ using namespace SIM;
 const float CellPainter::transparency_value = std::numeric_limits<float>::quiet_NaN();
 
 Gnuplotter::PlotSpec::PlotSpec() : 
-field(false), cells(false), labels(false), arrows(false), vectors(false), title("") {};
+field(false), cells(false), labels(false), arrows(false), vectors(false), links(false), z_slice(0), title("") {};
 
 VDOUBLE Gnuplotter::PlotSpec::size()
 {
@@ -60,10 +62,11 @@ void ArrowPainter::loadFromXML(const XMLNode node, const Scope * scope)
 
 int ArrowPainter::getStyle() { return style; }
 
-void ArrowPainter::init(const Scope* scope)
+void ArrowPainter::init(const Scope* scope, int slice)
 {
 	arrow.init();
 	centering.init();
+	z_slice = slice;
 }
 
 set< SymbolDependency > ArrowPainter::getInputSymbols() const
@@ -89,13 +92,15 @@ void ArrowPainter::plotData(ostream& out)
 		if (ct->isMedium())
 			continue;
 		
-		vector<CPM::CELL_ID> cells = ct->getCellIDs();
+// 		vector<CPM::CELL_ID> cells = ct->getCellIDs();
 
-		for (uint c=0; c< cells.size(); c++){
-			SymbolFocus f(cells[c]);
+// 		for (uint c=0; c< cells.size(); c++){
+// 			SymbolFocus f(cells[c]);
+		FocusRange range(Granularity::Cell, {{FocusRangeAxis::Z, z_slice}, {FocusRangeAxis::CellType, ct->getID()}});
+		for (const SymbolFocus& focus : range){
 			try {
-				VDOUBLE a = arrow(f);
-				VDOUBLE center = f.cell().getCenter();
+				VDOUBLE a = arrow(focus);
+				VDOUBLE center = focus.cell().getCenter();
 				lattice.orth_resolve (center);
 				
 				if (! (a.x == 0 && a.y==0) ) {
@@ -131,11 +136,11 @@ void FieldPainter::loadFromXML(const XMLNode node, const Scope * scope)
 	surface.setXMLPath("surface");
 	surface.loadFromXML(node, scope);
 	
-	z_slice.setXMLPath("slice");
-	z_slice.setDefault("0");
-	z_slice.loadFromXML(node, scope);
-	if (z_slice()<0 || z_slice() >= SIM::lattice().size().z)
-		throw MorpheusException("Invalid z_slice.", node);
+// 	z_slice.setXMLPath("slice");
+// 	z_slice.setDefault("0");
+// 	z_slice.loadFromXML(node, scope);
+// 	if (z_slice()<0 || z_slice() >= SIM::lattice().size().z)
+// 		throw MorpheusException("Invalid z_slice.", node);
 		
 	
 // 	getXMLAttribute(xPlotChild, "data-cropping", plot.pde_data_cropping);
@@ -154,8 +159,9 @@ void FieldPainter::loadFromXML(const XMLNode node, const Scope * scope)
 	}
 }
 
-void FieldPainter::init(const Scope* scope)
+void FieldPainter::init(const Scope* scope, int slice)
 {
+	z_slice = slice;
 	field_value.init();
 	if( min_value.isDefined() )
 		min_value.init();
@@ -228,7 +234,7 @@ void FieldPainter::plotData(ostream& out)
 	string xsep(" "), ysep("\n");
 		
 	VINT out_pos;
-	VINT pos(0,0,z_slice.get());
+	VINT pos(0,0, z_slice);
 	
 	valarray<float> out_data(out_size.x), out_data2(out_size.x);
 	valarray<float> out_data_count(out_size.x);
@@ -236,7 +242,7 @@ void FieldPainter::plotData(ostream& out)
 	if (out_size.y < 2) out_size.y = 2;
 	for (out_pos.y=0; out_pos.y<out_size.y; out_pos.y+=1) {
 		
-		pos.y= out_pos.y*coarsening();
+		pos.y = min( size.y-1, out_pos.y*coarsening());
 			
 		if ( coarsening()>1) {
 			// reset the output buffer
@@ -324,16 +330,13 @@ void VectorFieldPainter::loadFromXML(const XMLNode node, const Scope* scope)
 	getXMLAttribute(node, "color", color);
 	coarsening = 1;
 	getXMLAttribute(node, "coarsening",coarsening);
-// 	scaling=1.0;
-// 	getXMLAttribute(node,"scaling",scaling);
-    slice = 0;
-    getXMLAttribute(node,"slice",slice);
 }
 
-void VectorFieldPainter::init(const Scope* scope)
+void VectorFieldPainter::init(const Scope* scope, int slice)
 {
 	value.init();
 	centering.init();
+	z_slice = slice;
 }
 
 set< SymbolDependency > VectorFieldPainter::getInputSymbols() const
@@ -345,7 +348,7 @@ set< SymbolDependency > VectorFieldPainter::getInputSymbols() const
 void VectorFieldPainter::plotData(ostream& out)
 {
 	auto& lattice = SIM::lattice();
-	VINT pos(0, 0, slice);
+	VINT pos(0, 0, z_slice);
 	VINT size = lattice.size();
 	for (pos.y=coarsening/2; pos.y<size.y; pos.y+=coarsening) {
 		for (pos.x=coarsening/2; pos.x<size.x; pos.x+=coarsening) {
@@ -380,6 +383,7 @@ LabelPainter::LabelPainter()
 {
 	_fontcolor="black";
 	_fontsize=12;
+	z_slice = -1;
 	value.setXMLPath("value");
 	value.setUndefVal("");
 }
@@ -409,9 +413,10 @@ void LabelPainter::loadFromXML(const XMLNode node, const Scope* scope)
 
 
 
-void LabelPainter::init(const Scope* scope)
+void LabelPainter::init(const Scope* scope, int slice)
 {
 	value.init();
+	this->z_slice = slice;
 }
 
 
@@ -439,11 +444,10 @@ void LabelPainter::plotData(ostream& out)
 		auto ct = celltypes[i].lock();
 		if ( ct->isMedium() ) 
 			continue;
-
-		vector<CPM::CELL_ID> cells = ct->getCellIDs();
-		for (uint c=0; c< cells.size(); c++){
-			
-			SymbolFocus focus(cells[c]);
+		
+// 		vector<CPM::CELL_ID> cells = ct->getCellIDs();
+		FocusRange range(Granularity::Cell, {{FocusRangeAxis::Z, z_slice}, {FocusRangeAxis::CellType, ct->getID()}});
+		for (const SymbolFocus& focus : range){
 			
 			string val = value.get(focus);
 			if ( ! val.empty() ) {
@@ -464,6 +468,7 @@ CellPainter::CellPainter()
 	external_range = false;
 	min_val = 1e12;
 	max_val = -1e12;
+	fill_opacity = 1.0;
 	z_level = 0;
 	symbol.setXMLPath("value");
 	symbol.setDefault("cell.type");
@@ -489,10 +494,13 @@ void CellPainter::loadFromXML(const XMLNode node, const Scope* scope)
 	if (getXMLAttribute(node,"max",range_max) )
 		external_range_max = true;
 	external_range = external_range_min && external_range_max;
+	
+	getXMLAttribute(node,"opacity", fill_opacity);
+	fill_opacity = cpp17::clamp(fill_opacity, 0.0, 1.0);
 
 	if (string(node.getName()) == "Cells") {
 		
-		getXMLAttribute(node,"slice",z_level);
+// 		getXMLAttribute(node,"slice",z_level);
 		getXMLAttribute(node,"flooding",flooding);
 		getXMLAttribute(node,"per-frame-range", reset_range_per_frame);
 		
@@ -533,12 +541,12 @@ void CellPainter::loadPalette(const XMLNode node)
 	}
 }
 
-void CellPainter::init(const Scope* scope) {
+void CellPainter::init(const Scope* scope, int slice) {
 	symbol.init();
-	
+	z_level = slice;
 	cpm_layer = CPM::getLayer();
 	
-	if(z_level > cpm_layer->size().z){
+	if(z_level > cpm_layer->size().z || z_level < 0 ){
 		throw string("CellPainter: z-slice to be plotted lies outside of lattice range = ") + to_str(cpm_layer->size()) + ".";
 	}
 
@@ -813,11 +821,12 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 	VDOUBLE view_size = Gnuplotter::PlotSpec::size();
 	view_size -= VDOUBLE(0.01,0.01,0);
 	auto lattice = SIM::getLattice();
+	bool is_linear = lattice->getStructure() == Lattice::linear;
 	
 	// we assume that the neighbors are sorted either clockwise or anti-clockwise.
 	// we could also add a sorting step after the filtering of nodes belonging to the plane
-	vector<VINT> neighbors = SIM::lattice().getNeighborhood(1).neighbors();
-	if( lattice->getStructure() == Lattice::linear ) {
+	vector<VINT> neighbors = SIM::lattice().getNeighborhoodByOrder(1).neighbors();
+	if( is_linear ) {
 		neighbors.resize(4);
 		neighbors[0] = VINT( 1, 0, 0);
 		neighbors[1] = VINT( 0, 1, 0);
@@ -854,23 +863,28 @@ vector<CellPainter::boundarySegment> CellPainter::getBoundarySnippets(const Cell
 		// get the proper position in the drawing area
 		VDOUBLE orth_pos  = cpm_layer->lattice().to_orth(pos);
 		cpm_layer->lattice().orth_resolve(orth_pos);
-		
+
 		const CPM::STATE& node = CPM::getNode(pos);
 		for (uint i = 0; i < plane_neighbors.size(); i++)
 		{
-			const CPM::STATE& neighborNode = CPM::getNode((pos + plane_neighbors[i]));
+			if ( is_linear && (pos + plane_neighbors[i]).y != 0) {
+				// virtual 1d neighbor
+			}
+			else {
+				const CPM::STATE& neighborNode = CPM::getNode((pos + plane_neighbors[i]));
 
-			if ( comp (neighborNode, node) ) {
-				VDOUBLE orth_nei = ((orth_pos + orth_neighbors[i]));
-				if ((orth_nei.x>=0) &&
-				    (orth_nei.x<=view_size.x) &&
-				    (orth_nei.y>=0 ) &&
-				    (orth_nei.y<=view_size.y) &&
-				    (orth_nei.z>=0) &&
-				    (orth_nei.z<=view_size.z))
-				{
-					// neighbor is outside of the drawing area
-					continue;
+				if ( comp (neighborNode, node) ) {
+					VDOUBLE orth_nei = ((orth_pos + orth_neighbors[i]));
+					if ((orth_nei.x>=0) &&
+						(orth_nei.x<=view_size.x) &&
+						(orth_nei.y>=0 ) &&
+						(orth_nei.y<=view_size.y) &&
+						(orth_nei.z>=0) &&
+						(orth_nei.z<=view_size.z))
+					{
+						// neighbor is outside of the drawing area
+						continue;
+					}
 				}
 			}
 			// create the edge
@@ -937,6 +951,51 @@ vector< vector<VDOUBLE> > CellPainter::polygons(vector<boundarySegment> v_snippe
 };
 
 
+CellLinkPainter::CellLinkPainter() {}
+
+void CellLinkPainter::loadFromXML(const XMLNode node, const Scope * scope) {
+	color = "black";
+	getXMLAttribute(node, "color", color);
+}
+
+void CellLinkPainter::init(const Scope* scope, int slice) {
+	try {
+		bonds = SIM::findGlobalSymbol<LinkType>("_mechanical_links",{});
+	}
+	catch (...) {
+		bonds = make_shared<PrimitiveConstantSymbol<LinkType>>("_mechanical_links","mechanical links", LinkType());
+	}
+	z_slice = slice;
+}
+
+
+void CellLinkPainter::plotData(std::ostream& out)
+{
+	const auto& cts = CPM::getCellTypes();
+	for (auto wct : cts) {
+		auto ct = wct.lock();
+		for (auto cell : ct->getCellIDs()) {
+			auto focus = SymbolFocus(cell);
+			const auto& vbonds = bonds->get(focus);
+			for (auto bond : vbonds) {
+				VDOUBLE center1 = focus.cell().getCenter();
+				VDOUBLE center2 = CPM::getCell(bond).getCenter();
+				SIM::lattice().orth_resolve (center1);
+				SIM::lattice().orth_resolve (center2);
+				VDOUBLE a = SIM::lattice().orth_distance(center2, center1);
+				out << center1.x << "\t" <<  center1.y << "\t" << a.x << "\t" << a.y << endl;
+			}
+		}
+	}
+}
+
+
+std::string CellLinkPainter::getDescription() const
+{ return "mechanical cell links";
+}
+
+
+
 int Gnuplotter::instances=0;
 
 REGISTER_PLUGIN(Gnuplotter);
@@ -957,12 +1016,14 @@ Gnuplotter::Gnuplotter(): AnalysisPlugin(), gnuplot(NULL) {
 	
 	map<string, Terminal> term_map;
 	term_map["screen"] = Terminal::SCREEN;
+	term_map["windows"] = Terminal::SCREEN;
 	term_map["wxt"] = Terminal::SCREEN;
 	term_map["aqua"] = Terminal::SCREEN;
 	term_map["qt"] = Terminal::SCREEN;
 	term_map["x11"] = Terminal::SCREEN;
 	term_map["png"] = Terminal::PNG;
 	term_map["jpg"] = Terminal::JPG;
+	term_map["jpeg"] = Terminal::JPG;
 	term_map["svg"] = Terminal::SVG;
 	term_map["pdf"] = Terminal::PDF;
 	term_map["eps"] = Terminal::EPS;
@@ -978,8 +1039,8 @@ Gnuplotter::Gnuplotter(): AnalysisPlugin(), gnuplot(NULL) {
 // 	pointsize.setDefault("0.5");
 // 	registerPluginParameter(pointsize);
 	
-	cell_opacity.setXMLPath("Terminal/opacity");
-	registerPluginParameter(cell_opacity);
+// 	cell_opacity.setXMLPath("Terminal/opacity");
+// 	registerPluginParameter(cell_opacity);
 	
 	
 	
@@ -997,6 +1058,7 @@ Gnuplotter::Gnuplotter(): AnalysisPlugin(), gnuplot(NULL) {
 	
 	term.visual = false;
 	term.extension = "png";
+	
 	term.name = "pngcairo";
 	terminal_defaults[Terminal::PNG]  = term;
 	
@@ -1011,13 +1073,13 @@ Gnuplotter::Gnuplotter(): AnalysisPlugin(), gnuplot(NULL) {
 	term.vectorized = true;
 	term.name = "svg";
 	term.extension = "svg";
-	term.font_size = 30;
+	term.font_size = 45;
 	terminal_defaults[Terminal::SVG]  = term;
 	
 	term.extension = "pdf";
 	term.name = "pdfcairo";
 	term.size = VINT(20,10,0);
-	term.font_size = 40;
+	term.font_size = 60;
 	term.line_width = 6;
 	terminal_defaults[Terminal::PDF]  = term;
 	
@@ -1050,6 +1112,10 @@ void Gnuplotter::loadFromXML(const XMLNode xNode, Scope* scope)
 		XMLNode xPlot =  xNode.getChildNode(plot_tag.c_str(),i);
 		PlotSpec plot;
 		getXMLAttribute(xPlot, "title", plot.title);
+		getXMLAttribute(xPlot, "slice", plot.z_slice);
+		if (plot.z_slice<0 || plot.z_slice >= SIM::lattice().size().z)
+			throw MorpheusException("Invalid z_slice.", xPlot);
+		
 		for (int j=0; j<xPlot.nChildNode(); j++) {
 			XMLNode xPlotChild = xPlot.getChildNode(j);
 			string node_name = xPlotChild.getName();
@@ -1078,6 +1144,11 @@ void Gnuplotter::loadFromXML(const XMLNode xNode, Scope* scope)
 				plot.field_painter = shared_ptr<FieldPainter>(new FieldPainter());
 				plot.field_painter->loadFromXML(xPlotChild, scope);
 			}
+			else if (node_name == "CellLinks") {
+				plot.links = true;
+				plot.cell_link_painter = make_shared<CellLinkPainter>();
+				plot.cell_link_painter->loadFromXML(xPlotChild, scope);
+			}
 			
 		}
 		plots.push_back(plot);
@@ -1085,44 +1156,66 @@ void Gnuplotter::loadFromXML(const XMLNode xNode, Scope* scope)
 }
 
 void Gnuplotter::init(const Scope* scope) {
+	if (!Gnuplot::isEnabled()) return;
 	AnalysisPlugin::init(scope);
-	if (terminal() == Terminal::SCREEN && terminal.stringVal() == "screen") {
-		terminal_defaults[Terminal::SCREEN].name = Gnuplot::get_screen_terminal();
+	// Check gnuplot has cairo available
+	auto gnu_terminals = Gnuplot::get_terminals();
+	if (gnu_terminals.count("pngcairo")==0 ) {
+		terminal_defaults[Terminal::PNG].name = "png";
+		cout << "Gnuplot: Falling back to plain png terminal " << endl;
 	}
-	else {
-		auto gnu_terminals = Gnuplot::get_terminals();
-		if (gnu_terminals.find(terminal.stringVal()) != gnu_terminals.end() )
-			terminal_defaults[Terminal::SCREEN].name = terminal.stringVal();
-		else {
+	if (gnu_terminals.count("pdfcairo")==0 ) {
+		terminal_defaults[Terminal::PDF].name = "pdf";
+	}
+	if (gnu_terminals.count("epscairo")==0 ) {
+		terminal_defaults[Terminal::EPS].name = "postscript";
+	}
+	
+	// Replace the screen placeholder and non-available screen terminals
+	// with the default screen terminal
+	if (terminal() == Terminal::SCREEN) {
+		if (terminal.stringVal() == "screen") {
 			terminal_defaults[Terminal::SCREEN].name = Gnuplot::get_screen_terminal();
-			cout << "Gnuplotter: Requested terminal " << terminal.stringVal() <<
-			        " is not available. Switching to " << Gnuplot::get_screen_terminal() << endl;
+		}
+		else {
+			if (gnu_terminals.count(terminal.stringVal()))
+				terminal_defaults[Terminal::SCREEN].name = terminal.stringVal();
+			else {
+				terminal_defaults[Terminal::SCREEN].name = Gnuplot::get_screen_terminal();
+				cout << "Gnuplotter: Requested terminal " << terminal.stringVal() <<
+					" is not available. Switching to " << Gnuplot::get_screen_terminal() << endl;
+			}
 		}
 	}
+	
 
 	try {
 		gnuplot = new Gnuplot();
+		auto terminals = gnuplot->get_terminals();
     
 		for (uint i=0;i<plots.size();i++) {
 			if (plots[i].cells) {
-				plots[i].cell_painter->init(scope);
+				plots[i].cell_painter->init(scope, plots[i].z_slice);
 				registerInputSymbols( plots[i].cell_painter->getInputSymbols() );
 			}
 			if (plots[i].label_painter) {
-				plots[i].label_painter->init(scope);
+				plots[i].label_painter->init(scope, plots[i].z_slice);
 				registerInputSymbols( plots[i].label_painter->getInputSymbols() );
 			}
 			if (plots[i].arrow_painter) {
-				plots[i].arrow_painter->init(scope);
+				plots[i].arrow_painter->init(scope, plots[i].z_slice);
 				registerInputSymbols( plots[i].arrow_painter->getInputSymbols() );
 			}
 			if (plots[i].vector_field_painter) {
-				plots[i].vector_field_painter->init(scope);
+				plots[i].vector_field_painter->init(scope, plots[i].z_slice);
 				registerInputSymbols( plots[i].vector_field_painter->getInputSymbols() );
 			}
 			if (plots[i].field) {
-				plots[i].field_painter->init(scope);
+				plots[i].field_painter->init(scope, plots[i].z_slice);
 				registerInputSymbols( plots[i].field_painter->getInputSymbols() );
+			}
+			if (plots[i].links) {
+				plots[i].cell_link_painter->init(scope, plots[i].z_slice);
 			}
 		}
 	}
@@ -1136,7 +1229,7 @@ void Gnuplotter::init(const Scope* scope) {
 
 void Gnuplotter::analyse(double time) {
 // 		binary=false; // override binary switch
-	if (plots.empty())
+	if (plots.empty() || !gnuplot)
 		return;
 	
 	if ( ! pipe_data ) {
@@ -1180,6 +1273,13 @@ void Gnuplotter::analyse(double time) {
 				sstr.str("");
 				sstr << "field" << plot_id << SIM::getTimeName() << ".log";
 				plots[i].field_data_file = sstr.str();
+			}
+			
+			if (plots[i].links) {
+				// write cell links
+				sstr.str("");
+				sstr << "links" << plot_id << SIM::getTimeName() << ".log";
+				plots[i].link_data_file = sstr.str();
 			}
 		}
 	}
@@ -1477,8 +1577,8 @@ void Gnuplotter::analyse(double time) {
 			command << plots[i].cell_painter->getPaletteCmd() << endl;
 			command << "unset contour;\n";
 			
-			if (cell_opacity.isDefined() && cell_opacity() < 1.0 && cell_opacity() >= 0)
-				command << "set style fill transparent solid " << cell_opacity() << " noborder;\n";
+			if (plots[i].cell_painter->getOpacity() < 1.0)
+				command << "set style fill transparent solid " << plots[i].cell_painter->getOpacity() << " noborder;\n";
 			//command << "set cbrange ["<< plots[i].cell_painter->getMinVal() << ":"<< plots[i].cell_painter->getMaxVal() << "]" << endl;
 			command << "set style line 40 lc rgb \"black\" lw " << cell_contour_width << "\n";
 			if ( ! decorate)
@@ -1497,8 +1597,8 @@ void Gnuplotter::analyse(double time) {
 				else 
 					command << "set xlabel '" << time << " " /*<< SIM::getTimeScaleUnit() */ << "' offset 0," << (using_splot ? "0.1" : "2") << ";\n";
 
-				if (plots[i].cell_painter->getSlice() > 0)
-					command << "set title '" << plot_title << " (z-slice: " << plots[i].cell_painter->getSlice() << ")' offset 0,-0.5;\n";
+				if (plots[i].z_slice > 0)
+					command << "set title '" << plot_title << " (z-slice: " << plots[i].z_slice << ")' offset 0,-0.5;\n";
 				else
 					command << "set title '" << plot_title << "' offset 0,-0.5;\n";
 			}
@@ -1544,7 +1644,7 @@ void Gnuplotter::analyse(double time) {
 					command << " matrix";
 					if (is_hexagonal) {
 						// half size pixel approximation for in hexagonal lattice data
-						command << " u (0.5*$1-0.25):(0.866025*$2):3";
+						command << " u (0.5*$1-0.25):(0.866*$2):3";
 					}
 					command << " w image pal not";
 				}
@@ -1578,6 +1678,16 @@ void Gnuplotter::analyse(double time) {
 				}
 				command << " u ($1):($2)"<< (using_splot ? "" : ":(0)") << ":3:4" <<  (using_splot ? "" : ":(0)")  << " ";
 				command << "w vectors arrowstyle " << plots[i].arrow_painter->getStyle() << " notitle";
+			}
+			
+			if (plots[i].links) {
+				if(pipe_data)
+					command << ", '-' ";
+				else{
+					command << ", '" << outputDir << "/" << plots[i].link_data_file << "' ";
+				}
+				command << " u ($1):($2)"<< (using_splot ? "" : ":(0)") << ":3:4" <<  (using_splot ? "" : ":(0)")  << " ";
+				command << "w vectors " << /*"lc rgb \"" << plots[i].cell_link_painter->getColor() << "\" " <<*/ "arrowstyle 8 notitle";
 			}
 			
 			command << "\n" << endl;
@@ -1668,6 +1778,18 @@ void Gnuplotter::analyse(double time) {
 					out_file.close();
 				}
 			}
+			if (plots[i].links) {
+				if (pipe_data) {
+					plots[i].cell_link_painter->plotData(command);
+					command << "\ne" << endl;
+				}
+				else {
+					ofstream out_file;
+					out_file.open(plots[i].link_data_file.c_str());
+					plots[i].cell_link_painter->plotData(out_file);
+					out_file.close();
+				}
+			}
 		}
 	}
 
@@ -1702,7 +1824,7 @@ Gnuplotter::plotLayout Gnuplotter::getPlotLayout( uint plot_count, bool border )
 	double y_margin = 0;
 	if (border) {
 		double view_extend =  max(lattice_size.x, lattice_size.y);
-		x_margin = 0.2 * view_extend;
+		x_margin = 0.3 * view_extend;
 		plot_size.x += x_margin;
 		
 		y_margin = 0.15 * view_extend;
@@ -1712,7 +1834,7 @@ Gnuplotter::plotLayout Gnuplotter::getPlotLayout( uint plot_count, bool border )
 	layout.plot_aspect_ratio = plot_size.y / plot_size.x;
 // 	cout << "Plot size " << plot_size.x <<"x"<<plot_size.y<< " -> " << layout.plot_aspect_ratio << endl;
 	
-	layout.rows = max(1,int(floor(sqrt(plot_count/layout.plot_aspect_ratio))));
+	layout.rows = max(1,int(floor(sqrt(plot_count/layout.plot_aspect_ratio)+0.2)));
 	layout.cols = ceil(double(plot_count) / double(layout.rows));
 	layout.layout_aspect_ratio = (layout.plot_aspect_ratio * layout.rows) / layout.cols;
 	uint x_panel = 0;

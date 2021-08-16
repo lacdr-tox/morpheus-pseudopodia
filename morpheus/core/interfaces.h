@@ -28,8 +28,9 @@ class PDE_Layer;
 
 
 
-
+/*
 enum SystemType { DISCRETE_SYS, CONTINUOUS_SYS};
+enum SystemContext { ELEMENT_CONTEXT, SCOPE_CONTEXT};*/
 
 using namespace std;
 /**
@@ -113,7 +114,7 @@ void init() {
  * system. 
  * 
  * The simplest base class is
- *  - \ref Plugin
+ *  - Plugin
  * 
  * You may pick a single one to interact with the time stepping (see \ref Scheduling)
  *  - \ref TimeStepListener
@@ -144,11 +145,13 @@ void init() {
  * 
  */
 
+/** \defgroup Plugins Plugins 
+ \defgroup PluginsByInterface by Interface
+  \ingroup Plugins
+*/
 
-
-/** \defgroup Plugins Plugins */
-
-/** \brief Abstract plugin base class
+/** 
+ * \brief Abstract plugin base class
  * 
  * This class provides basic framework integration namely the
  *   - infrastructure for plugin factory registration
@@ -161,16 +164,17 @@ void init() {
  * \remark
  *    Take care that you call the inherited methods first when overriding them in your plugin.
  *    Else, plugin integration will fail.
- * \defgroup PluginsByInterface by Interface
- * \ingroup Plugins
  */
 class Plugin {
 	private:
+		
 		vector<PluginParameterBase* > plugin_parameters2;
 		set<SymbolDependency> input_symbols;
 		// All writable symbols are solely registered as output Symbols
 		set<SymbolDependency> output_symbols;
 		set<Symbol> direct_input_symbols;
+		set<string> xml_tags;
+		
 		
 	protected:
 		string plugin_name;
@@ -178,11 +182,16 @@ class Plugin {
 		const Scope* local_scope;
 		
 	public:
-		Plugin() : plugin_name(""), local_scope(nullptr) {  Plugin::plugins_alive++; }
-		virtual  ~Plugin() { Plugin::plugins_alive--; };  // any plugin will have a virtual destructor though
+		
+		Plugin();
+		virtual  ~Plugin();  // any plugin will have a virtual destructor though
 
-// 		static multiset<string> plugins_alive;
-		static int plugins_alive;
+		typedef ClassFactory<string, Plugin> Factory;
+		static Factory& getFactory();
+		
+		// TODO: Some forwarding to accomodate the old interface should be removed one day
+		static bool RegisterCreatorFunction(string name, Factory::CreatorFunction creator) { return getFactory().Register(name, creator); }
+		static Factory::InstancePtr CreateInstance(string name) { return getFactory().CreateInstance(name); }
 		/// Get an XMLNode containing the XML specification the plugin has loaded
 		virtual XMLNode saveToXML() const;
 		
@@ -196,6 +205,10 @@ class Plugin {
 		
 		/// XML Tag the Plugin corresponds to. Gets overridden by the DECLARE_PLUGIN macro.
 		virtual string XMLName() const =0;
+		
+		/// Test if one of @p tags is set for the plugin
+		bool isTagged(const set< string >& tags) const;
+		void setInheritedTags(const set< string >& tags);
 		
 		/// \brief Register a PluginParameter for automatic treatment
 		/// Loading from XML, initialisation and dependency tracking is done automatically
@@ -220,7 +233,7 @@ class Plugin {
 		const string& getDescription() const { return plugin_name; };
 		const string& getFullName() const { return plugin_name; };
 		virtual const Scope* scope() { return local_scope; };
-		bool setParameter(string xml_path, string value);
+		bool setParameter( const string& xml_path, string value );
 		
 		/// init method is called by the framework as soon as all model containers and symbols have been set up
 		/// but before cell populations get created.
@@ -231,8 +244,10 @@ class Plugin {
 		set<SymbolDependency> getOutputSymbols() const;
 };
 
-typedef CClassFactory<string, Plugin> PluginFactory;
+// typedef StaticClassFactory<string, Plugin> PluginFactory;
+typedef Plugin PluginFactory;
 
+		
 /** This macro creates all the declaration (class header) needed for plugin system integration.
  *  The string @param xml_tag_name defines the tag used to identify the plugin.
  *  Use this macro alongside with REGISTER_PLUGIN.
@@ -242,10 +257,11 @@ static Plugin* createInstance(); \
 string XMLName() const override { return string(xml_tag_name); }; \
 static string FactoryName() { return string(xml_tag_name); };
 
+
 template <class PluginClass>
 bool registerPlugin() {
-	bool ret=PluginFactory::RegisterCreatorFunction(PluginClass::FactoryName(), PluginClass::createInstance );
-	return ret;
+	static_assert(is_convertible<PluginClass*,Plugin*>::value, "Only descendants of class Plugin can be registered");
+	return Plugin::getFactory().Register( PluginClass::FactoryName(), PluginClass::createInstance );
 }
 
 /** This macro creates all the definitions (class source) needed for plugin system integration.
@@ -253,7 +269,8 @@ bool registerPlugin() {
  *  Use this macro alongside with DECLARE_PLUGIN.
  */
 #define REGISTER_PLUGIN(PClass) Plugin* PClass::createInstance() { return new PClass(); } \
-bool PClass::factory_registration = registerPlugin<PClass>(); /* PluginFactory::RegisterCreatorFunction(PClass().XMLName(),PClass::createInstance) */
+bool PClass::factory_registration = registerPlugin<PClass>();
+
 
 
 /** \defgroup CPM_EnergyPlugins CPM Hamiltonian Plugins
@@ -358,7 +375,8 @@ class TimeStepListener : virtual public Plugin
 		/// The current time of the process
 		double currentTime() const { return valid_time;} 
 		/// System time spent processing this plugin [ms]
-		double execSysTime() { return execute_systemtime / 1000; }
+		double execSysTime() const { return execute_systemtime; }
+		double execClockTime() const { return execute_clocktime; }
 
 		/// Time step adjustable time step
 		bool isAdjustable() { return is_adjustable; }
@@ -413,6 +431,7 @@ private:
 		double time_step;
 		/// time needed for execution (measured in milliseconds)
 		double execute_systemtime;
+		double execute_clocktime;
 		set<SymbolDependency> leaf_input_symbols;
 		std::chrono::high_resolution_clock highc;
 };
@@ -455,12 +474,13 @@ private:
 
 /** \defgroup InstantaneousProcessPlugins Instantaneous Process Plugins
 \ingroup PluginsByInterface
-*/
+The following plugins represent instantaneous processes, i.e. these processes do not take time to finish. 
+**/
 
 /** \brief Interface providing basic functionality and methods to develop plugins for instantaneous processes
  * 
  *  Scheduling and integration into the TimeScheduler is automatically accomplished.
- */
+ **/
 
 class InstantaneousProcessPlugin : public TimeStepListener {
 public:
@@ -554,18 +574,18 @@ class Field_Initializer : virtual public Plugin
 /// Interface to override the interaction energies between CPM cells computed by the CPM logic
 class CPM_Interaction_Overrider : virtual public Plugin {
 	public:
-		virtual double interaction(CPM::STATE s1, CPM::STATE s2, double base_interaction) =0;
+		virtual double interaction(const SymbolFocus& cell1, const SymbolFocus& cell2, double base_interaction) =0;
 };
 
 /// Interface to provide additional interaction energies between CPM cells
 class CPM_Interaction_Addon : virtual public Plugin {
 	public:
-		/// Compute additional interaction energies between CPM cell **s1** and **s2**, that may depend on the individual cells.
-		virtual double interaction(CPM::STATE s1, CPM::STATE s2) =0;
+		/// Compute additional interaction energies between CPM cell **cell1** and **cell2**, that may depend on the state of individual cells.
+		virtual double interaction(const SymbolFocus& cell1, const SymbolFocus& cell2) =0;
 };
 
 
-/// Abstract base class for attachable Properties
+/// Interface class for attachable Properties
 class AbstractProperty {
 public:
 	virtual const string& symbol() const =0;

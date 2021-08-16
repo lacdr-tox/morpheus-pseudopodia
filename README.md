@@ -9,7 +9,7 @@ Morpheus has been developed by Jörn Starruß and Walter de Back at the Center f
 
 # Looking for latest stable release?
 
-If you are looking for the latest stable release of Morpheus (v2), and do not necessarily need the source code, please download the precompiled packages for MS Windows, Mac OSX and Linux are available on the [download page](https://morpheus.gitlab.io/#download). 
+If you are looking for the latest stable release of Morpheus (v2.2), and do not necessarily need the source code, please download the precompiled packages for MS Windows, Mac OSX and Linux are available on the [download page](https://morpheus.gitlab.io/#download). 
 
 
 # Resources
@@ -19,7 +19,7 @@ Morpheus is actively supported and provides help for users and developers:
 - [User forum](https://groups.google.com/forum/#!forum/morpheus-users): Questions and answers on modeling with Morpheus
 - [Issue tracker](https://gitlab.com/morpheus.lab/morpheus/issues): Bug reports and feature requests
 
-Documentation for users as well as plugin developers here found on the [gitlab wiki](https://gitlab.com/morpheus.lab/morpheus/wikis/home) and on the on the [old wiki](https://imc.zih.tu-dresden.de/wiki/morpheus):
+Documentation for users as well as plugin developers here found on the [gitlab wiki](https://gitlab.com/morpheus.lab/morpheus/wikis/home):
 
 - [User manual](https://gitlab.com/morpheus.lab/morpheus/wikis/user-manual) (under construction)
 - [Plugin dev guide](https://gitlab.com/morpheus.lab/morpheus/wikis/dev-guide) (under construction)
@@ -31,21 +31,22 @@ To find out more about Morpheus, please take a look at the home page:
 - [Homepage](https://morpheus.gitlab.io): Blog, events and downloads.
 
 
-# Install
+# Building
 
 build tools required:
-  - g++ (>= 4.6)
-  - cmake (>= 2.8)
+  - g++ (>= 5.0)
+  - cmake (>= 3.1)
   - cmake-curses-gui (for ccmake, optional)
   - xsltproc
   - xmllint (optional)
   - doxygen
   - git
-  - gnuplot (runtime)
 
 Libraries required (debian package notation):
-  - zlib1g-dev libtiff-dev graphviz-dev libboost-dev
-  - libqt4-dev libqt4-sql-sqlite libqt4-network libqt4-webkit libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools
+  - zlib1g-dev libtiff-dev graphviz-dev libboost-dev libboost-program-options-dev
+  - qttools5-dev libqt5sql5-sqlite libqt5svg5-dev (qtwebengine5-dev | libqt5webkit5-dev)
+  - optional: libsbml5-dev
+
  
 Runtime dependencies:
   - gnuplot
@@ -61,22 +62,16 @@ Runtime dependencies:
 
 ## Building on Debian based systems
 
-To install all dependencies on Ubuntu 16.04 and 18.04 run:
+
+To install all dependencies on Ubuntu 16.04, 18.04 and 20.04 run:
 ```  
-sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libtiff5-dev libgraphviz-dev libqt4-dev libqt4-sql-sqlite libqt4-network libqtwebkit-dev libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools libsbml5-dev libboost-dev gnuplot
-``` 
-To install all dependencies on Ubuntu 14.04 and other Debian based systems run:
-```  
-sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libtiff-dev libgraphviz-dev libqt4-dev libqt4-sql-sqlite libqt4-network libqt4-webkit libqt4-svg libqt4-xml libqt4-dev-bin qt4-dev-tools libboost-dev gnuplot
-``` 
-
-## Building/Installing on Arch/Manjaro
-
-Morpheus has been added to AUR (https://aur.archlinux.org/packages/morpheus-modeling/) so to install the dependencies and build from source simply run
-
+sudo apt-get install g++ cmake cmake-curses-gui xsltproc libxml2-utils doxygen git zlib1g-dev libboost-dev libboost-program-options-dev libtiff5-dev libsbml5-dev qttools5-dev libqt5svg5-dev qtwebengine5-dev libqt5sql5-sqlite gnuplot  
 ```
-yaourt morpheus-modeling
-```
+
+## Building/Installing on other systems
+
+On other Linux distributions package names vary slightly. Consult the respective repositories to find corresponding package names that provide the libraries and their headers. Morpheus also builds well under Mac homebrew and Windows MSys2 environments.
+
 
 # How to cite Morpheus
 
@@ -90,7 +85,7 @@ Additionaly, use the Morpheus [Research Resource Identifier (RRID)](https://scic
 Include the version number or commit hash for reproducability. Valid examples are:
 
 > Morpheus, RRID:SCR_014975  
-> Morpheus, v1.9.2, RRID:SCR_014975  
+> Morpheus, v2.2.0, RRID:SCR_014975  
 > Morpheus, e45739bc, RRID:SCR_014975
 
 # Contributors
@@ -98,26 +93,9 @@ Include the version number or commit hash for reproducability. Valid examples ar
 - Jörn Starruß, TU Dresden, Germany
 - Walter de Back, TU Dresden, Germany
 - Fabian Rost, MPI PKS, Dresden, Germany
+- Cedric Unverricht, TU-Dresden, Germany
 - Gerhard Burger, Leiden University, the Netherlands
 - Margriet Palm, Leiden University, the Netherlands
 - Emanuel Cura Costa, IFLySiB, La Plata, Argentina
 - Osvaldo Chara, IFLySiB, La Plata, Argentina
-
-
-<!--  StatCounter -->
-<script type="text/javascript">
-var sc_project=10858269; 
-var sc_invisible=1; 
-var sc_security="392b0df5"; 
-var scJsHost = (("https:" == document.location.protocol) ?
-"https://secure." : "http://www.");
-document.write("<sc"+"ript type='text/javascript' src='" +
-scJsHost+
-"statcounter.com/counter/counter.js'></"+"script>");
-</script>
-<noscript><div class="statcounter"><a title=""
-href="http://statcounter.com/shopify/" target="_blank"><img
-class="statcounter"
-src="http://c.statcounter.com/10858269/0/392b0df5/1/"
-alt=""></a></div></noscript>
-<!-- End of StatCounter Code -->
+- Martin Lunze, Germany

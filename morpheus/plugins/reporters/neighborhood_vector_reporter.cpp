@@ -24,10 +24,7 @@ NeighborhoodVectorReporter::NeighborhoodVectorReporter() : ReporterPlugin() {
 	output.setXMLPath("Output/symbol-ref");
 	registerPluginParameter(output);
 	
-	map<string, OutputMode> out_map;
-	out_map["sum"] =  NeighborhoodVectorReporter::SUM;
-	out_map["average"] = NeighborhoodVectorReporter::AVERAGE;
-	output_mode.setConversionMap(out_map);
+	output_mode.setConversionMap(VectorDataMapper::getModeNames());
 	output_mode.setXMLPath("Output/mapping");
 	registerPluginParameter(output_mode);
 }
@@ -72,6 +69,7 @@ void NeighborhoodVectorReporter::report() {
 void NeighborhoodVectorReporter::reportGlobal() {
 	FocusRange range(Granularity::Node, SIM::getGlobalScope());
 	auto neighbors = SIM::lattice().getDefaultNeighborhood().neighbors();
+	auto mapper = VectorDataMapper::create(output_mode());
 #pragma omp parallel
 	{
 #pragma omp for schedule(static)
@@ -83,32 +81,12 @@ void NeighborhoodVectorReporter::reportGlobal() {
 				input.setNameSpaceFocus(local_ns_id, node);
 			}
 			
-			double total_interface = 0; // interface-based: number all cell-cell interfaces; cell-based: number of neighboring cells
-			VDOUBLE total_signal(0.0,0.0,0.0);
-	// 	for (auto node : range) { // syntax cannot be used with openMP
-			// loop through its neighbors
 			for ( int i_nei = 0; i_nei < neighbors.size(); ++i_nei ) {
-				VINT nb_pos = node.pos() + neighbors[i_nei];
-				total_interface += 1;
-				// get value at neighbor node
-				total_signal += input(nb_pos);
+				mapper->addVal( input(node.pos() + neighbors[i_nei]) );
 			}
 			
-			// final signal stats calculation
-			VDOUBLE signal;
-			switch (output_mode()) {
-				case NeighborhoodVectorReporter::AVERAGE :
-					if ( total_interface > 0.0)
-						signal = total_signal / total_interface;
-					else
-						signal = VDOUBLE(0.0,0.0,0.0);
-					break;
-				case NeighborhoodVectorReporter::SUM:
-					signal = total_signal;
-					break;
-			}
-
-			output.set( node, signal );
+			output.set( node, mapper->get() );
+			mapper->reset();
 		}
 	}
 }
@@ -120,6 +98,7 @@ void NeighborhoodVectorReporter::reportCelltype(CellType* celltype) {
 	for (auto ct : celltypes ) { is_medium_type.push_back(ct.lock()->isMedium()); }
 	
     vector<CPM::CELL_ID> cells = celltype->getCellIDs();
+	auto mapper = VectorDataMapper::create(output_mode());
     for (auto cell_id : cells) {
 		SymbolFocus cell_focus(cell_id);
 
@@ -128,9 +107,7 @@ void NeighborhoodVectorReporter::reportCelltype(CellType* celltype) {
 			input.setNameSpaceFocus(local_ns_id, cell_focus);
 		}
 		
-		double total_interface = 0; // interface-based: number all cell-cell interfaces; cell-based: number of neighboring cells
-		VDOUBLE total_signal(0.0,0.0,0.0);
-
+		// loop through its neighbors
 		const map <CPM::CELL_ID, double >& interfaces = cell_focus.cell().getInterfaceLengths();
 		for (map<CPM::CELL_ID,double>::const_iterator nb = interfaces.begin(); nb != interfaces.end(); nb++) {
 
@@ -140,28 +117,12 @@ void NeighborhoodVectorReporter::reportCelltype(CellType* celltype) {
 				continue;
 
 			double interfacelength = (scaling() == INTERFACES) ? nb->second : 1;
-// 			numneighbors++;
+	// 			numneighbors++;
 
-			total_interface += interfacelength;
-			total_signal +=  interfacelength * input.get( neighbor );
+			mapper->addValW(input.get( neighbor ), interfacelength);
 		}
-// 		if (numberneighbors.valid())
-// 			numberneighbors.set ( cells[c], numneighbors );
-
-		VDOUBLE signal;
-		// final signal stats calculation
-		switch (output_mode()) {
-			case NeighborhoodVectorReporter::AVERAGE :
-				if ( total_interface > 0.0)
-					signal = total_signal / total_interface;
-				else
-					signal = VDOUBLE(0.0,0.0,0.0);
-				break;
-			case NeighborhoodVectorReporter::SUM:
-				signal = total_signal;
-				break;
-		}
-
-		output.set( cell_focus, signal );
-    }
+			
+		output.set( cell_focus, mapper->get() );
+		mapper->reset();
+	}
 }

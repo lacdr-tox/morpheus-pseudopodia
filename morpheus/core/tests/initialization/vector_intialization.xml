@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MorpheusModel version="4">
+    <Description>
+        <Details></Details>
+        <Title></Title>
+    </Description>
+    <Space>
+        <Lattice class="linear">
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+            <Size symbol="size" value="100,  0.0,  0.0"/>
+        </Lattice>
+        <SpaceSymbol symbol="space"/>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="0"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <Analysis>
+        <!--    <Disabled>
+        <ModelGraph include-tags="#untagged" format="dot" reduced="false"/>
+    </Disabled>
+-->
+        <!--    <Disabled>
+        <Logger time-step="1.0">
+            <Input>
+                <Symbol symbol-ref="val1.x"/>
+                <Symbol symbol-ref="val1.y"/>
+                <Symbol symbol-ref="val2.x"/>
+                <Symbol symbol-ref="val2.y"/>
+                <Symbol symbol-ref="val3.x"/>
+                <Symbol symbol-ref="val3.y"/>
+            </Input>
+            <Output>
+                <TextOutput/>
+            </Output>
+        </Logger>
+    </Disabled>
+-->
+    </Analysis>
+    <Global>
+        <ConstantVector notation="r,φ,θ" symbol="val1" value="right"/>
+        <VariableVector notation="φ,θ,r" symbol="val2" value="pi/2, 0.0, 1.0"/>
+        <ConstantVector symbol="right" value="1.0, 0.0, 0.0"/>
+        <VectorEquation symbol-ref="val2" notation="r,φ,θ">
+            <Expression>val2.abs, 0.0, 0.0</Expression>
+        </VectorEquation>
+        <ConstantVector notation="r,φ,θ" symbol="val3" value="right * 1.0"/>
+    </Global>
+</MorpheusModel>

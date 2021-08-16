@@ -124,7 +124,7 @@ void localProcess::start()
 	process->start(command,arguments);
 
     // process->start(command);
-    ID = (int)process->pid();
+    ID = process->processId();
     qDebug() << process->errorString();
 }
 
@@ -145,15 +145,10 @@ void localProcess::debug()
 {
     if(process->state() != QProcess::Running )
     {
-		
-	// set number of openMP threads for simulation
-#if QT_VERSION < 0x040600
-    process->setEnvironment( QProcess::systemEnvironment() << QString("OMP_NUM_THREADS=1");
-#else
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    env.insert("OMP_NUM_THREADS", QString::number(1));
-    process->setProcessEnvironment(env);
-#endif
+		// set number of openMP threads for simulation
+		QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+		env.insert("OMP_NUM_THREADS", QString::number(1));
+		process->setProcessEnvironment(env);
         QString filename= QDir::fromNativeSeparators(QDir::tempPath()) + "/gdb_cmd.txt";
         ofstream fout;
         fout.open( filename.toStdString().c_str() );
@@ -189,7 +184,7 @@ void localProcess::debug()
 
         // run morpheus
         process->start(command);
-        ID = (int)process->pid();
+        ID = process->processId();
         qDebug() << process->errorString();
     }
 }

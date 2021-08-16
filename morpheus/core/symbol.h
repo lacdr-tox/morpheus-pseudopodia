@@ -14,7 +14,7 @@
 
 #include "config.h"
 #include "traits.h"
-#include <stdexcept>
+#include "exceptions.h"
 #include "string_functions.h"
 #include "symbolfocus.h"
 #include "muParser/muParser.h"
@@ -48,19 +48,22 @@ Granularity& operator+=(Granularity& g, Granularity b);
 ostream& operator<<(ostream& out, Granularity g);
 
 class Scope;
+class CompositeSymbol_I;
+template <class T> class CompositeSymbol;
 class SymbolBase;
 using Symbol = std::shared_ptr<const SymbolBase> ;
 using SymbolDependency = Symbol;
 
-/// The type agnostic <b> symbol interface </b> to be stored in the factory ...
+/// The type agnostic <b> symbol interface provides meta-data and accesssors
 class SymbolBase : public std::enable_shared_from_this<SymbolBase> {
 public:
 	struct Flags;
 	virtual const std::string& name() const =0;  ///  Symbol identifier
 	virtual const std::string& description() const =0;  ///  Descriptive name
+	virtual const std::string XMLPath() const =0;  /// Path to XML declaration
 	virtual const Scope* scope() const =0; /// The scope the symbol is defined in
 	virtual Granularity granularity() const =0;
-	virtual void setScope(const Scope* scope) =0;
+	virtual void setScope(std::weak_ptr<const Scope> scope) =0;
 // 	virtual std::string baseName() const =0; ///  Identifier of the base symbol. Usually identical to name, but differs for derived symbols.
 	/** Dependencies of the symbol
 	 *  In case the symbols has implicite dependencies,
@@ -83,6 +86,8 @@ public:
 		bool partially_defined;
 		bool integer;
 		bool function;
+		bool initialized;
+		bool initializing;
 		Flags() :
 		  granularity(Granularity::Global),
 		  time_const(false),
@@ -92,7 +97,9 @@ public:
 		  writable(false),
 		  partially_defined(false),
 		  integer(false), 
-		  function(false) {};
+		  function(false),
+		  initialized(false),
+		  initializing(false) {};
 	};
 	
 	virtual ~SymbolBase() {};
@@ -113,6 +120,11 @@ public:
 		CellOrientation_symbol,
 		Temperature_symbol,
 		CellPosition_symbol;
+
+protected:
+	friend class Scope;
+	// provide an interface to create on demand a typed CompositeSymbol via interface
+	virtual shared_ptr<CompositeSymbol_I> makeComposite() const =0;
 };
 
 
@@ -128,15 +140,18 @@ public:
 template <class T>
 class SymbolAccessorBase : public SymbolBase {
 public:
-	SymbolAccessorBase(std::string name) : SymbolBase(), symbol_name(name), _scope(nullptr) {}
+	SymbolAccessorBase(const std::string& name) : SymbolBase(), symbol_name(name) {}
 	/// Unique string identifier for a the data type
 	const std::string& type() const final { return TypeInfo<T>::name(); }
 	/// Name of the symbol
 	const std::string& name() const override { return symbol_name; }
+	/// Path to XML declaration
+	const std::string XMLPath() const override { return xml_path; };
+	void setXMLPath(const string& path)  { xml_path = path; } 
 	/// Granularity of the symbol
 	Granularity granularity() const final { return flags().granularity; }
 	/// Scope the Symbol is registered in
-	const Scope* scope() const final { return _scope; };
+	const Scope* scope() const final { return _scope.expired() ? nullptr : _scope.lock().get(); };
 	/// Dependencies of implicite symbols (i.e. Functions, Mappings)
 	std::set<SymbolDependency> dependencies() const override { return std::set<SymbolDependency>(); };
 	
@@ -152,22 +167,40 @@ public:
 	 * Also take care that any dependend symbols are initialized. 
 	 * Use this method during the initialization phase.
 	 */
-	virtual typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const { return get(f); };
+	virtual typename TypeInfo<T>::SReturn safe_get(const SymbolFocus& f) const { 
+		if (!_flags.initialized) {
+			 safe_init();
+		}
+		return get(f);
+	};
 	
+	void safe_init() const {
+		if (_flags.initializing) {
+			throw MorpheusException(string("Detected circular dependencies in initalization of symbol '") + name() + "'.", XMLPath() );
+		}
+		auto m_this = const_cast<SymbolAccessorBase<T> *>(this);
+		m_this->_flags.initializing = true;
+		m_this->init();
+		m_this->_flags.initializing = false;
+		m_this->_flags.initialized = true;
+	}
+	/// Initialization method used to trigger the evaluation of the inital value. Does nothing by default.
+	virtual void init() {};
 	/// Static creator method for a constant symbol not associated with the XML, that may be registered in a scope.
-	static shared_ptr<SymbolAccessorBase<T> > createConstant(string name, string description, const T& value);
+	static shared_ptr<SymbolAccessorBase<T> > createConstant(const string& name, const string& description, const T& value);
 	/// Static creator method for a variable symbol not associated with the XML, that may be registered in a scope.
-	static shared_ptr<SymbolAccessorBase<T> > createVariable(string name, string description, const T& value);
+	static shared_ptr<SymbolAccessorBase<T> > createVariable(const string& name, const string& description, const T& value);
 
 protected:
-	/// Scope the Symbol is registered in
-	void setScope(const Scope* scope) override { _scope = scope; }
 	friend class Scope;
+	/// Scope the Symbol is registered in
+	void setScope(std::weak_ptr<const Scope> scope) override { _scope = scope; }
+	virtual shared_ptr<CompositeSymbol_I> makeComposite() const final { return make_shared<CompositeSymbol<T>>(symbol_name); };
 	
 private:
-	
+	std::string xml_path;
 	std::string symbol_name;
-	const Scope* _scope;
+	std::weak_ptr<const Scope> _scope;
 	Flags _flags;
 };
 
@@ -185,11 +218,13 @@ class FunctionAccessor {
 template <class T>
 class PrimitiveConstantSymbol : public SymbolAccessorBase<T> {
 public:
-	PrimitiveConstantSymbol(string name, string description, const T& value) : SymbolAccessorBase<T>(name),
+	PrimitiveConstantSymbol(const string& name, const string& description, const T& value) : SymbolAccessorBase<T>(name),
 		descr(description), value(value) {
 			this->flags().time_const = true;
 			this->flags().space_const = true;
 		};
+	/// Simplified interface for space-independent Symbols
+	typename TypeInfo<T>::SReturn get() const { return value; };
 	typename TypeInfo<T>::SReturn get(const SymbolFocus&) const override { return value; };
 	const string& description() const override { return descr; }
 	std::string linkType() const override { return "PrimitiveConstant"; }
@@ -200,7 +235,7 @@ protected:
 };
 
 template <class T>
-shared_ptr<SymbolAccessorBase<T> > SymbolAccessorBase<T>::createConstant(string name, string description, const T& value) {
+shared_ptr<SymbolAccessorBase<T> > SymbolAccessorBase<T>::createConstant(const string& name, const string& description, const T& value) {
 	return make_shared< PrimitiveConstantSymbol<T> >(name,description, value);
 }
 
@@ -217,22 +252,26 @@ shared_ptr<SymbolAccessorBase<T> > SymbolAccessorBase<T>::createConstant(string 
 template <class T>
 class SymbolRWAccessorBase : public SymbolAccessorBase<T> {
 public:
-	SymbolRWAccessorBase(std::string name) : SymbolAccessorBase<T>(name) {
+	SymbolRWAccessorBase(const std::string& name) : SymbolAccessorBase<T>(name) {
 		this->flags().writable = true;
 	}
 	virtual void set(const SymbolFocus& f, typename TypeInfo<T>::Parameter val) const =0;
 	virtual void setBuffer(const SymbolFocus& f, typename TypeInfo<T>::Parameter value) const =0;
 	virtual void applyBuffer() const =0;
 	virtual void applyBuffer(const SymbolFocus& f) const =0;
-	static shared_ptr<SymbolRWAccessorBase<T> > createVariable(string name, string descr, const T& value);
+	static shared_ptr<SymbolRWAccessorBase<T> > createVariable(const string& name, const string& descr, const T& value);
 };
 
 template <class T>
 class PrimitiveVariableSymbol : public SymbolRWAccessorBase<T> {
 public:
-	PrimitiveVariableSymbol(string name, string description, const T& value) : SymbolRWAccessorBase<T>(name),
+	PrimitiveVariableSymbol(const string& name, const string& description, const T& value) : SymbolRWAccessorBase<T>(name),
 		descr(description), value(value) {};
+	/// Simplified interface for space-independent Symbols
+	typename TypeInfo<T>::SReturn get() const { return value; };
 	typename TypeInfo<T>::SReturn get(const SymbolFocus&) const override { return value; };
+	/// Simplified interface for space-independent Symbols
+	void set(typename TypeInfo<T>::Parameter val) const { value = val; };
 	void set(const SymbolFocus&, typename TypeInfo<T>::Parameter val) const override { value = val; };
 	void setBuffer(const SymbolFocus& f, typename TypeInfo<T>::Parameter value) const override { buffer = value; }
 	void applyBuffer() const override { value = buffer; };
@@ -246,7 +285,7 @@ protected:
 };
 
 template <class T>
-shared_ptr<SymbolRWAccessorBase<T> > SymbolRWAccessorBase<T>::createVariable(string name, string descr, const T& value) {
+shared_ptr<SymbolRWAccessorBase<T> > SymbolRWAccessorBase<T>::createVariable(const string& name, const string& descr, const T& value) {
 	return make_shared< PrimitiveVariableSymbol<T> >(name,descr,value);
 }
 

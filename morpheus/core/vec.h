@@ -22,15 +22,20 @@
 #include <functional>
 #include "cpp_future.h"
 
-#ifndef M_PI
-  const double M_PI = 3.1415926535897932384626433832795028841971;
+#ifdef M_PI
+#undef M_PI
 #endif
-#ifndef M_SQRT3
-  const double M_SQRT3 = 1.7320508075688772935274463415059;
+const double M_PI = 3.1415926535897932384626433832795028841971;
+
+#ifdef M_SQRT3
+#undef M_SQRT3
 #endif
-#ifndef M_HALF_SQRT3
-  const double  M_HALF_SQRT3 = 0.86602540378443864676372317075294;
+const double M_SQRT3 = 1.7320508075688772935274463415059;
+
+#ifdef M_HALF_SQRT3
+#undef M_HALF_SQRT3
 #endif
+const double  M_HALF_SQRT3 = 0.86602540378443864676372317075294;
 
 
 inline int pmod(int a, int b) { a%=b; return (a<0) ? a+b : a; }
@@ -48,8 +53,28 @@ DEPRECATED inline double DIV(double a, double b) { return floor(a/b);}
 // 	int pow(int a, int b) { int r=1; for (; b>0; --b) r*=a; return r;}
 constexpr double sqr(double a){return a*a;}
 
+/** Valid notations for Vectors
+ *    - ORTH         orthogonal coordinates
+ *    - SPHERE_RPT   spherical r, phy, theta (radius, x-y-plane, elevation (-pi/2+pi/2))
+ *    - SPHERE_PTR   spherical phy, theta, r ( x-y-plane, elevation (-pi/2+pi/2), radius)
+ * */
+enum class VecNotation {
+	/// orthogonal
+	ORTH,          
+	/// spherical  r,phy (x,y-plane), theta (elevation)
+	SPHERE_RPT,
+	/// spherical phy (x,y-plane), theta (elevation), r
+	SPHERE_PTR     
+};
 
-
+inline std::map<std::string, VecNotation> VecNotationMap() { 
+	return { 
+		{"x,y,z",VecNotation::ORTH},
+		{"orthogonal",VecNotation::ORTH},
+		{"r,φ,θ",VecNotation::SPHERE_RPT},
+		{"φ,θ,r",VecNotation::SPHERE_PTR}
+	};
+}
 
 template <class T>
 class _V {
@@ -94,6 +119,10 @@ class _V {
 		/// Returns the radial representation of the vector by phi, theta, radius triplet
 		_V<double> to_radial() const;
 		static _V<T> from_radial(const _V<double>& a);
+		/// Convert to other vector notations
+		_V< double > to(VecNotation notation) const;
+		static _V<T> from(const _V<double>& a, VecNotation notation);
+		
 		// to/from std::array to allow working with iterators
 		constexpr array<T,3> to_array() const;
 		static constexpr _V<T> from_array(const array<T,3> &a);
@@ -185,6 +214,37 @@ inline _V<double> _V<double>::from_radial(const _V< double >& a) {
 		return _V<double>(cos(a.x) * a.z, sin(a.x) * a.z, 0.0);
 }
 
+template <class T> 
+_V<double> _V<T>::to(VecNotation notation) const {
+	if (notation==VecNotation::ORTH)  
+		return *this;
+	
+	double radius = this->abs();
+		return _V<double>(0,0,0);
+	double phi = angle_xy();
+	double theta = M_PI - acos( this->z / radius );
+	if (notation==VecNotation::SPHERE_PTR)
+		return _V<double>(phi,theta,radius);
+	else /*if(notation==VecNotation::SPHERE_RPT)*/
+		return _V<double>(radius,phi,theta);
+}
+
+template <>
+inline _V<double> _V<double>::from(const _V<double>& a, VecNotation notation) {
+	if (notation==VecNotation::ORTH)  
+		return a;
+	double radius = notation==VecNotation::SPHERE_RPT ? a.x : a.z;
+	double phi    = notation==VecNotation::SPHERE_RPT ? a.y : a.x;
+	double theta  = notation==VecNotation::SPHERE_RPT ? a.z : a.y;
+	
+	if (theta==0.0) {
+		return _V<double>(cos(phi) * radius, sin(phi) * radius, 0.0);
+	}
+	else {
+		return _V<double>(cos(theta) * cos(phi) * radius, cos(theta) *  sin(phi) * radius, sin(theta) * radius);
+	}
+}
+
 template <class T>
 constexpr array<T,3> _V<T>::to_array() const {
 	return {this->x, this->y, this->z};
@@ -268,6 +328,14 @@ struct VINThash {
 // struct that helps to build sorted vint container
 struct less_VINT {  // we use a struct to prevent constructors
 	bool operator() (const VINT& a, const VINT& b) const {
+		return ( a.z < b.z || (a.z==b.z  &&  (a.y<b.y || (a.y==b.y && a.x<b.x))));
+	}
+	
+};
+
+// struct that helps to build sorted vint container
+struct less_VDOUBLE {  // we use a struct to prevent constructors
+	bool operator() (const VDOUBLE& a, const VDOUBLE& b) const {
 		return ( a.z < b.z || (a.z==b.z  &&  (a.y<b.y || (a.y==b.y && a.x<b.x))));
 	}
 	

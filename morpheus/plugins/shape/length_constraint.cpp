@@ -10,6 +10,7 @@ const int PARANOID_CHECK=0;
 LengthConstraint::LengthConstraint(){
 	target.setXMLPath("target");
 	strength.setXMLPath("strength");
+
 	target_mode.setXMLPath("mode");
 	map<string,TargetMode> mapping;
 	mapping["length"] = TargetMode::TARGET_LENGTH;

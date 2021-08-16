@@ -3,7 +3,7 @@
 REGISTER_PLUGIN(ChangeCelltype);
 
 // TODO: What is the proper interface for MCSListeners?
-ChangeCelltype::ChangeCelltype() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_NONE) {
+ChangeCelltype::ChangeCelltype() : InstantaneousProcessPlugin( TimeStepListener::XMLSpec::XML_OPTIONAL) {
 
 	condition.setXMLPath("Condition/text");
 	registerPluginParameter(condition);
@@ -17,10 +17,10 @@ void ChangeCelltype::loadFromXML(const XMLNode xNode, Scope* scope)
 {
 	InstantaneousProcessPlugin::loadFromXML(xNode, scope);
 
-	triggers = shared_ptr<TriggeredSystem>(new TriggeredSystem);
 	celltype_new.init();
 
 	if (xNode.nChildNode("Triggers")) {
+		triggers = shared_ptr<TriggeredSystem>(new TriggeredSystem);
 		triggers->loadFromXML(xNode.getChildNode("Triggers"), const_cast<Scope*>(celltype_new()->getScope()));
 	}
 
@@ -28,13 +28,14 @@ void ChangeCelltype::loadFromXML(const XMLNode xNode, Scope* scope)
 
 void ChangeCelltype::init(const Scope* scope)
 {
+	if (CPM::getMCSDuration()>0)
+		setTimeStep( CPM::getMCSDuration() );
+	
 	InstantaneousProcessPlugin::init(scope);
 	celltype = scope->getCellType();
-	
-	setTimeStep( CPM::getMCSDuration() );
-	is_adjustable = false;
+	registerInputSymbols(condition.getDependSymbols());
 
-	triggers->init();
+	if (triggers) triggers->init();
 
 }
 
@@ -49,7 +50,7 @@ void ChangeCelltype::executeTimeStep() {
 			&& condition( SymbolFocus(cells[i]) ) ){
 			
 			auto changed_cell = CPM::setCellType( cells[i], celltype_new_ID);
-			triggers->trigger(SymbolFocus(changed_cell));
+			if (triggers) triggers->trigger(SymbolFocus(changed_cell));
 		
 		}
 	}

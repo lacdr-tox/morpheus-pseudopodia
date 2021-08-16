@@ -2,93 +2,70 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 
 	<xs:group name="GlobalPlugins">
-		<xs:choice>
-			<xs:element name="Event" 			type="Event"/>
-			<xs:element name="System" 				type="System"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="Event" 			type="Event"		minOccurs="0"	maxOccurs="unbounded"/>
+			<xs:element name="System" 				type="System"	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="Event" 			type="Event"/>
-			<xs:element name="System" 				type="System"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="Event" 			type="Event"		minOccurs="0"	maxOccurs="unbounded"/>
+			<xs:element name="System" 				type="System"	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 
 	<xs:group name="PDEPlugins">
-		<xs:choice>
-			<xs:element name="System" 				type="System"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="System" 				type="System"	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="System">
-		<xs:annotation>
-			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
-			<xs:appinfo>Math</xs:appinfo>
-		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="morphProcessPlugin">
+				<xs:annotation>
+					<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+					<xs:appinfo>Math</xs:appinfo>
+				</xs:annotation>
 
-		<xs:choice minOccurs="0" maxOccurs="unbounded">
-<!-- 			<xs:element name="MaxTimeStep" type="cpmTime" maxOccurs="1"/> -->
-			<xs:group ref="SystemPlugins" />
-		</xs:choice>
-		<xs:attribute name="name" type="cpmString" use="optional" />
-		<xs:attribute name="time-step" type="cpmMathExpression" use="optional" default="1.0">
-			<xs:annotation>
-				<xs:documentation>Time step ('dt') used in the numerical solver.
-Given in units of system time, i.e. simulation time scaled by the systems time-scaling, in case it is provided.
-				</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="time-scaling" type="cpmDouble" use="optional" default="1.0">
-			<xs:annotation>
-					
-				<xs:documentation>Scaling of the system time relative to the simulation time. Can be used to speed up or slow down dynamics of the System.
-
-				Defaults to 1.0.
-				
-				Note: changing the time-scaling does not affect the accuracy of the solution (since tmie-step 'dt' is scaled to the time-scaling).
-				</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="solver" type="cpmSolver" use="required" default="adaptive45"/>
-		<xs:attribute name="solver-eps" type="cpmDouble" use="optional" default="1e-4"/>
+				<xs:all>
+					<xs:group ref="SystemPlugins" />
+				</xs:all>
+				<xs:attribute name="time-scaling" type="cpmDouble" use="optional" default="1.0" />
+				<xs:attribute name="solver" type="morphSolver" use="required" default="Dormand-Prince [adaptive, O(5)]"/>
+				<xs:attribute name="solver-eps" type="cpmDouble" use="optional" default="1e-4"/>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
-	<xs:simpleType name="cpmSolver">
-		<xs:annotation>
-			<xs:documentation>
-Solver for differential equations:
-- Euler: 1st order
-- Heun (aka midpoint): 2nd order
-- Runga-Kutta: 4th order
-			</xs:documentation>
-		</xs:annotation>
+	<xs:simpleType name="morphSolver">
 		<xs:restriction base="xs:string">
-			<xs:enumeration value="adaptive45"/>
-			<xs:enumeration value="adaptive45-ck"/>
-			<xs:enumeration value="adaptive23"/>
-			<xs:enumeration value="fixed4"/>
-			<xs:enumeration value="fixed2"/>
-			<xs:enumeration value="fixed1"/>
-			<xs:enumeration value="stochastic"/>
-			<xs:enumeration value="runge-kutta"/>
-			<xs:enumeration value="heun"/>
-			<xs:enumeration value="euler"/>
+			<xs:enumeration value="Dormand-Prince [adaptive, O(5)]"/>
+			<xs:enumeration value="Cash-Karp [adaptive, O(5)]"/>
+			<xs:enumeration value="Bogacki-Shampine [adaptive, O(3)]"/>
+			<xs:enumeration value="Runge-Kutta [fixed, O(4)]"/>
+			<xs:enumeration value="Heun [fixed, O(2)]"/>
+			<xs:enumeration value="Euler [fixed, O(1)]"/>
+			<xs:enumeration value="Euler-Maruyama [stochastic, O(1)]"/>
+<!-- 			<xs:enumeration value="Cash-Karp+Rosenbrock"/> -->
 		</xs:restriction>
 	</xs:simpleType>
 	
 	<xs:complexType name="DiscreteSystem">
-		<xs:annotation>
-			<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
-			<xs:appinfo>Math</xs:appinfo>
-			<xs:documentation>System of equations that is updated synchronously.</xs:documentation>
-		</xs:annotation>
-		
-		<xs:choice minOccurs="0" maxOccurs="unbounded">
-			<xs:group ref="DiscreteSystemPlugins" />
-		</xs:choice>
-		<xs:attribute name="name" type="cpmString" use="optional" />
-		<xs:attribute name="time-step" type="cpmMathExpression" use="optional" />
+		<xs:complexContent>
+			<xs:extension base="morphProcessPlugin">
+				<xs:annotation>
+					<!--PLUGIN CLASSES: Container / Shape / Motility / Math / Reporter / Misc-->
+					<xs:appinfo>Math</xs:appinfo>
+					<xs:documentation>System of equations that is updated synchronously.</xs:documentation>
+				</xs:annotation>
+				
+				<xs:all minOccurs="0" maxOccurs="unbounded">
+					<xs:group ref="DiscreteSystemPlugins" />
+				</xs:all>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	
 	<xs:complexType name="TriggeredSystem">
@@ -98,13 +75,13 @@ Solver for differential equations:
 			<xs:documentation>System of equations that is updated synchronously when triggered.</xs:documentation>
 		</xs:annotation>
 		
-		<xs:choice minOccurs="0" maxOccurs="unbounded">
+		<xs:all>
 			<xs:group ref="DiscreteSystemPlugins" />
-		</xs:choice>
+		</xs:all>
 		<xs:attribute name="name" type="cpmString" use="optional" />
 	</xs:complexType>
 	
-	<xs:complexType name="cpmEventCondition">
+	<xs:complexType name="morphEventCondition">
 		<xs:simpleContent>
 			<xs:extension base="cpmMathExpression">
 				<xs:attribute name="history" use="optional" type="cpmBoolean" default="false" />
@@ -114,59 +91,32 @@ Solver for differential equations:
 	</xs:complexType>
 
 	<xs:complexType name="Event">
-		<xs:annotation>
-			<xs:appinfo>Math</xs:appinfo>
-			<xs:documentation>System of equations that is applied when a given condition changes to true
-				The condition is tested as often as the symbols in the condition change.
-				If a specific testing frequency is desired it can be defined by the time-step attribute.
-			</xs:documentation>
-		</xs:annotation>
-		<xs:choice minOccurs="0" maxOccurs="unbounded">
-			<xs:element name="Condition" type="cpmEventCondition" minOccurs="1" maxOccurs="1" />
-			<xs:group ref="DiscreteSystemPlugins" />
-		</xs:choice>
-		<xs:attribute name="name" type="cpmString" use="optional" />
-		<xs:attribute name="time-step" type="cpmMathExpression" use="optional">
-			<xs:annotation>
-				<xs:documentation> Frequency for testing the Event's Condition
-				The testing frequncy is adjusted according to the change of the input symbols of the condition.
-				Setting the time-step attribute overrides the automatic adjustment.
-				</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-<!-- 		<xs:attribute name="condition-history" type="cpmBoolean" use="optional" default="false" /> -->
-		<xs:attribute name="trigger" type="cpmEventTriggerMode" use="optional" default="on change" />
-		<xs:attribute name="compute-time" type="cpmEventDelayMode" use="optional" default="on-trigger" />
-		<xs:attribute name="delay" type="cpmMathExpression" use="optional" default="0" />
-		<xs:attribute name="persistent" type="cpmBoolean" use="optional" default="true" />
-		- \b delay: time by which the execution of the assignments of the event are delayed.
-- \b compute-time: time at which the values of the assignments are computes on-trigger/on-execution.
+		<xs:complexContent>
+			<xs:extension base="morphProcessPlugin">
+				<xs:annotation>
+					<xs:appinfo>Math</xs:appinfo>
+				</xs:annotation>
+				<xs:all>
+					<xs:element name="Condition" type="morphEventCondition" minOccurs="1" maxOccurs="1" />
+					<xs:group ref="DiscreteSystemPlugins" />
+				</xs:all>
+				<xs:attribute name="trigger" type="cpmEventTriggerMode" use="optional" default="on change" />
+				<xs:attribute name="compute-time" type="cpmEventDelayMode" use="optional" default="on-trigger" />
+				<xs:attribute name="delay" type="cpmMathExpression" use="optional" default="0" />
+				<xs:attribute name="persistent" type="cpmBoolean" use="optional" default="true" />
+			</xs:extension>
+		</xs:complexContent>
+
 	</xs:complexType>
 
 	<xs:simpleType name="cpmEventTriggerMode">
-		<xs:annotation>
-			<xs:documentation> Trigger of the event
-				"on change" means, that the system is triggered when the condition changes from FALSE to TRUE.
-				"when true" means, that the system is triggered always when the condition is TRUE, no matter what the previous state was.
-
-				While the first version is in line with SBML, the second one follows a more mechanistic view on triggers.
-			</xs:documentation>
-		</xs:annotation>
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="on change"/>
 			<xs:enumeration value="when true"/>
 		</xs:restriction>
 	</xs:simpleType>
 	
-		<xs:simpleType name="cpmEventDelayMode">
-		<xs:annotation>
-			<xs:documentation> Trigger of the event
-				"on change" means, that the system is triggered when the condition changes from FALSE to TRUE.
-				"when true" means, that the system is triggered always when the condition is TRUE, no matter what the previous state was.
-
-				While the first version is in line with SBML, the second one follows a more mechanistic view on triggers.
-			</xs:documentation>
-		</xs:annotation>
+	<xs:simpleType name="cpmEventDelayMode">
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="on-trigger"/>
 			<xs:enumeration value="on-execution"/>

@@ -1,0 +1,76 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<MorpheusModel version="3">
+    <Description>
+        <Details></Details>
+        <Title></Title>
+    </Description>
+    <Space>
+        <Lattice class="square">
+            <Neighborhood>
+                <Order>1</Order>
+            </Neighborhood>
+            <Size symbol="size" value="200,200,0"/>
+        </Lattice>
+        <SpaceSymbol symbol="space"/>
+    </Space>
+    <Time>
+        <StartTime value="0"/>
+        <StopTime value="250"/>
+        <TimeSymbol symbol="time"/>
+    </Time>
+    <CPM>
+        <Interaction>
+            <Contact type1="cell" type2="medium" value="5"/>
+            <Contact type1="cell" type2="static" value="5"/>
+            <Contact type1="static" type2="medium" value="5"/>
+        </Interaction>
+        <ShapeSurface scaling="norm">
+            <Neighborhood>
+                <Order>2</Order>
+            </Neighborhood>
+        </ShapeSurface>
+        <MonteCarloSampler stepper="edgelist">
+            <MCSDuration value="1"/>
+            <MetropolisKinetics temperature="1"/>
+            <Neighborhood>
+                <Order>2</Order>
+            </Neighborhood>
+        </MonteCarloSampler>
+    </CPM>
+    <CellTypes>
+        <CellType class="medium" name="medium"/>
+        <CellType class="biological" name="cell">
+            <VolumeConstraint target="target_volume" strength="lambdav"/>
+            <CellDeath>
+                <Condition>time > t_death</Condition>
+            </CellDeath>
+            <Property symbol="target_volume" value="32000"/>
+        </CellType>
+        <CellType class="biological" name="static">
+            <FreezeMotion>
+                <Condition>1</Condition>
+            </FreezeMotion>
+        </CellType>
+    </CellTypes>
+    <CellPopulations>
+        <Population size="36" type="static">
+            <InitCellObjects mode="distance">
+                <Arrangement repetitions="6,6,1" displacements="20,20,1">
+                    <Box size="10,10,0" origin="20,20,0"/>
+                </Arrangement>
+            </InitCellObjects>
+        </Population>
+    </CellPopulations>
+    <Analysis>
+        <Gnuplotter time-step="20">
+            <Plot>
+                <Cells/>
+            </Plot>
+            <Terminal name="png"/>
+        </Gnuplotter>
+    </Analysis>
+    <Global>
+        <Constant symbol="lambdav" value="0.01"/>
+        <Constant symbol="t_death" value="0.0"/>
+    </Global>
+</MorpheusModel>

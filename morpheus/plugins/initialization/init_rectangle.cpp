@@ -104,11 +104,18 @@ CPM::CELL_ID InitRectangle::createCell(VINT newPos) {
 vector<CPM::CELL_ID> InitRectangle::setRandom() {
 	vector<CPM::CELL_ID> cells;
 	for (uint i = 0; i < num_cells; i++) {
-		auto newPos = origin + VINT(getRandomUint((uint) size.x - 1),
+		VINT newPos;
+		int n_tries = 0;
+		do {
+			newPos = origin + VINT(getRandomUint((uint) size.x - 1),
 									getRandomUint((uint) size.y - 1),
 									getRandomUint((uint) size.z - 1));
-		auto new_cell = createCell(newPos);
-		if (new_cell != CPM::NO_CELL) cells.push_back(new_cell);
+			n_tries++;
+		} while (CPM::getNode(newPos)!=CPM::getEmptyState() || n_tries>1000);
+		if (n_tries<=1000) {
+			auto new_cell = createCell(newPos);
+			if (new_cell != CPM::NO_CELL) cells.push_back(new_cell);
+		}
 	}
 	return cells;
 }

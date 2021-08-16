@@ -2,15 +2,20 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 
 	<xs:group name="PopulationInitPlugins">
-		<xs:choice>
-			<xs:element name="InitPoissonDisc" 		type="InitPoissonDisc"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="InitPoissonDisc" 		type="InitPoissonDisc" 	minOccurs="0"/>
+		</xs:all>
 	</xs:group>
 
 	<xs:complexType name="InitPoissonDisc">
-		<xs:annotation>
-			<xs:appinfo>Initialization</xs:appinfo>
-		</xs:annotation>
-        <xs:attribute name="number-of-cells" use="required" type="cpmMathExpression" default="100" />
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Initialization</xs:appinfo>
+				</xs:annotation>
+				<xs:attribute name="number-of-cells" use="required" type="cpmMathExpression" default="100" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
+
 </xs:schema>

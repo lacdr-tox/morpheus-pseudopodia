@@ -12,14 +12,11 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <QtGui>
 #include <QDomDocument>
 #include <QDesktopServices>
 #include <QtHelp/QHelpContentWidget>
 #include <QtHelp/QHelpEngine>
 #include <QtHelp/QtHelp>
-// #include <QtWebKit/QWebView>
-#include <QTextBrowser>
 
 #include <QtSql/QSqlDatabase>
 #include <QSqlDriverPlugin>
@@ -29,15 +26,14 @@
 #include <QtSql/QSqlTableModel>
 
 
-#if QT_VERSION < 0x040600
-    inline QIcon QThemedIcon(QString a, QIcon b) { return b; };
-#else
-    inline QIcon QThemedIcon(QString a, QIcon b) { return QIcon::fromTheme(a,b); };
-#endif
+// #if QT_VERSION < 0x040600
+//     inline QIcon QThemedIcon(QString a, QIcon b) { return b; };
+// #else
+//     inline QIcon QThemedIcon(QString a, QIcon b) { return QIcon::fromTheme(a,b); };
+// #endif
 
-#include "morpheus_model.h"
+#include "morpheusML/morpheus_model.h"
 #include "network_access.h"
-// #include "configuration.h"
 
 
 // Enable the Morpheus Usage Feedback System
@@ -95,8 +91,8 @@ public:
     struct modelIndex {
         int model; int part;
     };
-
-
+	// Current version of the data base
+	static const int data_base_version = 1;
     //static const int MaxRecentFiles = config::app.preference_max_recent_files; /*!< Number of the maximal shown recent files in the menubar of morpheus-gui. */
     static const int MaxNodeCopies = 5; /*!< Number of the maximal copied nodes stored in config. */
 
@@ -145,7 +141,7 @@ public:
     static void switchModel(int index);
 
     static int createModel(QString path = "");
-	static int importModel(QSharedPointer<MorphModel> model);
+	static int importModel(SharedMorphModel model);
     static int openModel(QString path = "");
     ///< Open the model file @param path. Returns the index of the new model or -1
 

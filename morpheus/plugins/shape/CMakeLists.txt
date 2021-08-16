@@ -4,5 +4,6 @@ set(plugin_src
 	surface_constraint.cpp
 	length_constraint.cpp
 	connectivity_constraint.cpp
+)
 
-PARENT_SCOPE)
+target_sources_relpaths(MorpheusCore PRIVATE plugin_src)

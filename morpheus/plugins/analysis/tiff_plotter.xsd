@@ -2,26 +2,27 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="AnalysisPlugins">
-        <xs:choice>
-			<xs:element name="TiffPlotter" 			type="TiffPlotter"/>
-		</xs:choice>
+        <xs:all>
+			<xs:element name="TiffPlotter" 			type="TiffPlotter"	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="TiffPlotter">
-		<xs:annotation>
-			<xs:appinfo>Visualization</xs:appinfo>
-		</xs:annotation>
-		<xs:attribute name="time-step" use="required" type="cpmMathExpression"/>
-<!-- 		<xs:attribute name="endstate" use="optional" type="cpmBoolean"/> -->
-		<xs:attribute name="format" use="required" type="cpmTIFFFormatEnum" default="guess" />
-		<xs:attribute name="compression" use="optional" type="cpmBoolean" default="true" />
-		<xs:attribute name="timelapse" use="optional" type="cpmBoolean" default="true" />
-		<xs:attribute name="OME-header" use="optional" type="cpmBoolean" default="false" />
-		<xs:all>
-			<xs:element name="Channel" type="cpmTIFFChannel" minOccurs="1" maxOccurs="unbounded"/>
-			<xs:element name="CropToCell" type="cpmTIFFCropToCell" minOccurs="0" maxOccurs="1"/>
-		</xs:all>
-		
+		<xs:complexContent>
+			<xs:extension base="morphAnalysisPlugin">
+				<xs:annotation>
+					<xs:appinfo>Visualization</xs:appinfo>
+				</xs:annotation>
+				<xs:attribute name="format" use="required" type="cpmTIFFFormatEnum" default="guess" />
+				<xs:attribute name="compression" use="optional" type="cpmBoolean" default="true" />
+				<xs:attribute name="timelapse" use="optional" type="cpmBoolean" default="true" />
+				<xs:attribute name="OME-header" use="optional" type="cpmBoolean" default="false" />
+				<xs:all>
+					<xs:element name="Channel" type="cpmTIFFChannel" minOccurs="1" maxOccurs="unbounded"/>
+					<xs:element name="CropToCell" type="cpmTIFFCropToCell" minOccurs="0" maxOccurs="1"/>
+				</xs:all>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 	<xs:complexType name="cpmTIFFChannel">

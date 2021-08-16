@@ -8,23 +8,26 @@
 	</xs:group>
 	
 	<xs:complexType name="Fusion">
-		<xs:annotation>
-			<xs:appinfo>Misc</xs:appinfo>
-			<xs:documentation>
-				With this plugin, cells fuse when they touch.
-			</xs:documentation>
-		</xs:annotation>
-		<xs:all>
-			<xs:element name="TargetVolume"  type="cpmDoublePropertyRef">
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
 				<xs:annotation>
+					<xs:appinfo>Misc</xs:appinfo>
 					<xs:documentation>
-						Target volume of mother and daughter cells. 
-						After division, target volume will be reset by the DaughterVolume.
+						With this plugin, cells fuse when they touch.
 					</xs:documentation>
 				</xs:annotation>
-			</xs:element> 					
-		</xs:all>
-		<xs:attribute name="name" type="cpmString" use="optional" />
+				<xs:all>
+					<xs:element name="TargetVolume"  type="cpmDoublePropertyRef">
+						<xs:annotation>
+							<xs:documentation>
+								Target volume of mother and daughter cells. 
+								After division, target volume will be reset by the DaughterVolume.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:element> 
+				</xs:all>
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 
 </xs:schema>

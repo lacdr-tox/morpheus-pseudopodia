@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+<head>
+	<link href="qrc:///model_graph_viewer.css" rel="stylesheet" />
+	<link href="model_graph_viewer.css" rel="stylesheet" />
+	<script type="text/javascript"> var testing = false </script>
+</head>
+<body>
+<div class="testing">
+	<button type="button" onclick="setGenerating()">pending</button>
+	<button type="button" onclick="setFailed()">failed</button>
+	<button type="button" onclick="setOutdated()">outdated</button>
+	<button type="button" onclick="clearOverlays()">unset</button><br/>
+	<button type="button" onclick="setTestGraph();">setDotGraph</button>
+	<button type="button" onclick="setGraph('dependency_graph.svg');">setGraph</button>
+</div>
+<div id="graph">
+	<div id="generating" class="overlay info" style="display:inline-block">
+		<h1>generating graph</h1>
+		<svg version="1.1" id="loader" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+		width="120px" height="120px" viewBox="0 0 40 40" enable-background="new 0 0 40 40" xml:space="preserve">
+		<path opacity="0.2" fill="#000" d="M20.201,5.169c-8.254,0-14.946,6.692-14.946,14.946c0,8.255,6.692,14.946,14.946,14.946
+			s14.946-6.691,14.946-14.946C35.146,11.861,28.455,5.169,20.201,5.169z M20.201,31.749c-6.425,0-11.634-5.208-11.634-11.634
+			c0-6.425,5.209-11.634,11.634-11.634c6.425,0,11.633,5.209,11.633,11.634C31.834,26.541,26.626,31.749,20.201,31.749z"/>
+		<path fill="#000" d="M26.013,10.047l1.654-2.866c-2.198-1.272-4.743-2.012-7.466-2.012h0v3.312h0
+			C22.32,8.481,24.301,9.057,26.013,10.047z">
+			<animateTransform attributeType="xml"
+			attributeName="transform"
+			type="rotate"
+			from="0 20 20"
+			to="360 20 20"
+			dur="1.5s"
+			repeatCount="indefinite"/>
+			</path>
+		</svg>
+	</div>
+
+	<div id="failed" class="overlay warning">
+		<h1>graph generation failed</h1>
+		<svg version="1.1" id="loader-failed" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+		width="120px" height="120px" viewBox="0 0 40 40" enable-background="new 0 0 40 40" xml:space="preserve">
+		<path opacity="0.2" fill="#000" d="M20.201,5.169c-8.254,0-14.946,6.692-14.946,14.946c0,8.255,6.692,14.946,14.946,14.946
+			s14.946-6.691,14.946-14.946C35.146,11.861,28.455,5.169,20.201,5.169z M20.201,31.749c-6.425,0-11.634-5.208-11.634-11.634
+			c0-6.425,5.209-11.634,11.634-11.634c6.425,0,11.633,5.209,11.633,11.634C31.834,26.541,26.626,31.749,20.201,31.749z"/>
+		<path fill="#000" d="M26.013,10.047l1.654-2.866c-2.198-1.272-4.743-2.012-7.466-2.012h0v3.312h0
+			C22.32,8.481,24.301,9.057,26.013,10.047z">
+			<animateTransform id="a1" attributeType="xml"
+			attributeName="transform"
+			type="rotate"
+			from="150 20 20"
+			to="180 20 20"
+			begin="0;a2.end"
+			dur="0.8s"/>
+			<animateTransform id="a2" attributeType="xml"
+			attributeName="transform"
+			type="rotate"
+			from="180 20 20"
+			to="150 20 20"
+			begin="a1.end"
+			dur="0.8s"/>
+			</path>
+		</svg>
+	</div>
+
+	<div id="outdated" class="overlay warning">
+		<h1>graph outdated</h1>
+	</div>
+	
+	<div id="dot-graph"> </div>
+	<object id="svg-graph" type="image/svg+xml" data=""> </object>
+
+</div>
+
+
+
+
+
+
+<script type="text/javascript">
+
+	var svg_graph;
+	var dot_graph;
+	var graphviz;
+	var graph_type;
+	var current_test_graph=0;
+	
+	function unsetGenerating() {
+		document.getElementById("generating").style.display="none";
+	}
+	function unsetFailed() {
+		document.getElementById("failed").style.display="none";
+	}
+	function unsetOutdated() {
+		document.getElementById("outdated").style.display="none";
+	}
+	function setGenerating() {
+		clearOverlays();
+		document.getElementById("generating").style.display="block";
+	}
+	function setFailed() {
+		clearOverlays();
+		document.getElementById("failed").style.display="block";
+	}
+	function setOutdated() {
+		clearOverlays();
+		document.getElementById("outdated").style.display="block";
+	}
+	function clearOverlays() {
+		unsetFailed();
+		unsetGenerating();
+		unsetOutdated();
+	}
+
+	function setGraph(nextGraph)
+	{
+		if (!svg_graph) {
+			svg_graph = document.getElementById("svg-graph");
+		}
+		svg_graph.data = nextGraph;
+		graph_type = "svg";
+		document.getElementById('dot-graph').style.display='none';
+		document.getElementById('svg-graph').style.display='block';
+		clearOverlays();
+	}
+	
+	function retSVG()
+	{
+		if (graph_type == "dot") {
+			return document.getElementById("dot-graph").innerHTML;
+		}
+		else if (graph_type == "svg") {
+			return document.getElementById("svg-graph").innerHTML;
+		}
+	}
+	
+	function initGraphViz(ready_fun) {
+		var scripts= [];
+		if (testing)  scripts =  ["js/d3.v5.min.js","js/viz_1.8.2.js","js/d3-graphviz.2.6.1.js"];
+		else          scripts =  ["qrc:///d3.min.js","qrc:///viz.js","qrc:///d3-graphviz.min.js"];
+		
+		// make sure all scripts are parsed when running ready_fun
+		var script = document.createElement('script');
+		script.src = scripts[0];
+		script.onload = function() {
+			var script = document.createElement('script');
+			script.src = scripts[1];
+			script.onload = function() {
+				var script = document.createElement('script');
+				script.src = scripts[2];
+				script.onload = function() {
+					ready_fun();
+				}
+				document.head.appendChild(script);
+			}
+			document.head.appendChild(script);
+		}
+		document.head.appendChild(script);
+	}
+	
+	function setDotGraph(nextGraph)
+	{
+		if (!graphviz) {
+			initGraphViz(function(){
+				graphviz = d3.select("#dot-graph").graphviz();
+				graphviz.fit = true;
+				graphviz.zoom(false);
+				graphviz.renderDot(nextGraph);
+				graphviz.transition(function () {
+					return d3.transition("main")
+					.ease(d3.easeLinear)
+					.delay(0)
+					.duration(500);
+				});
+			});
+		}
+		else {
+			graphviz.renderDot(nextGraph);
+		}
+		document.getElementById('svg-graph').style.display='none';
+		document.getElementById('dot-graph').style.display='block';
+		graph_type = "dot";
+		clearOverlays();
+	}
+	
+	window.addEventListener('load', function () {
+		if (testing) {
+			var elements = document.querySelectorAll('.testing');
+			for(var i=0; i<elements.length; i++){
+				elements[i].style.display = "block";
+			}
+			clearOverlays();
+		}
+	});
+	
+	function setTestGraph(nextGraph){
+		if (current_test_graph!=0) {
+		setDotGraph('digraph {\
+			compound=true;\
+			subgraph cluster{\
+				labelloc="t"; label="Global"; bgcolor="#2341782f"\
+				node[style=filled,fillcolor="#fffea3"]\
+				Logger_0_0_01[ shape=record, label="{ Logger | 0.01 }", URL="morph://MorpheusModel/MorpheusModel/Analysis/Logger"]\
+				APC_0[label="APC", fillcolor="#d3d247",peripheries=2]\
+				CDK1_0[label="CDK1", fillcolor="#d3d247",peripheries=2]\
+				Plk1_0[label="Plk1", fillcolor="#d3d247",peripheries=2]\
+				subgraph cluster_1 {\
+					label="CellType[cells]";\
+					APC_1[label="APC", fillcolor="#d3d247"]\
+					CDK1_1[label="CDK1", fillcolor="#d3d247"]\
+					Plk1_1[label="Plk1", fillcolor="#d3d247"]\
+					subgraph cluster_2 {\
+						label="System";\
+						System_2_0_01[ shape=record, label="{ System | 0.01 }", URL="morph://MorpheusModel/MorpheusModel/CellTypes/CellType/System" ]\
+						K_2[label="K", fillcolor="#d3d247"]\
+						n_2[label="n", fillcolor="#d3d247"]\
+						alpha1_2[label="α1", fillcolor="#d3d247"]\
+						alpha2_2[label="α2", fillcolor="#d3d247"]\
+						alpha3_2[label="α3", fillcolor="#d3d247"]\
+						beta1_2[label="β1", fillcolor="#d3d247"]\
+						beta2_2[label="β2", fillcolor="#d3d247"]\
+						beta3_2[label="β3", fillcolor="#d3d247"]\
+					}\
+				}\
+				subgraph cluster_3 {\
+					label="CellType[Medium]";\
+				}\
+			}\
+			APC_0 -> Logger_0_0_01 [penwidth=2, color="#112c5f"]\
+			APC_1 -> APC_0 [dir=none, style="dashed", penwidth=1, color="#38568c"]\
+			CDK1_0 -> Logger_0_0_01 [penwidth=2, color="#112c5f"]\
+			CDK1_1 -> CDK1_0 [dir=none, style="dashed", penwidth=1, color="#38568c"]\
+			K_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+			Plk1_0 -> Logger_0_0_01 [penwidth=2, color="#112c5f"]\
+			Plk1_1 -> Plk1_0 [dir=none, style="dashed", penwidth=1, color="#38568c"]\
+			System_2_0_01 -> APC_1 [penwidth=3, color="#8f100d"]\
+			System_2_0_01 -> CDK1_1 [penwidth=3, color="#8f100d"]\
+			System_2_0_01 -> Plk1_1 [penwidth=3, color="#8f100d"]\
+			alpha1_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+			alpha2_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+			alpha3_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+			beta1_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+			beta2_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+			beta3_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+			n_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+		}');
+		current_test_graph=0;
+		}
+		else {
+			setDotGraph('digraph {\
+			compound=true;\
+			subgraph cluster{\
+				labelloc="t"; label="Global"; bgcolor="#2341782f"\
+				node[style=filled,fillcolor="#fffea3"]\
+				Logger_0_0_01[ shape=record, label="{ Logger | 0.01 }", URL="morph://MorpheusModel/MorpheusModel/Analysis/Logger"]\
+				APC_0[label="APC", fillcolor="#d3d247",peripheries=2]\
+				Plk1_0[label="Plk1", fillcolor="#d3d247",peripheries=2]\
+				subgraph cluster_1 {\
+					label="CellType[cells]";\
+					APC_1[label="APC", fillcolor="#d3d247"]\
+					Plk1_1[label="Plk1", fillcolor="#d3d247"]\
+					subgraph cluster_2 {\
+						label="System";\
+						System_2_0_01[ shape=record, label="{ System | 0.01 }", URL="morph://MorpheusModel/MorpheusModel/CellTypes/CellType/System" ]\
+						K_2[label="K", fillcolor="#d3d247"]\
+						n_2[label="n", fillcolor="#d3d247"]\
+						alpha1_2[label="α1", fillcolor="#d3d247"]\
+						alpha2_2[label="α2", fillcolor="#d3d247"]\
+						alpha3_2[label="α3", fillcolor="#d3d247"]\
+						beta1_2[label="β1", fillcolor="#d3d247"]\
+						beta2_2[label="β2", fillcolor="#d3d247"]\
+						beta3_2[label="β3", fillcolor="#d3d247"]\
+					}\
+				}\
+				subgraph cluster_3 {\
+					label="CellType[Medium]";\
+				}\
+			}\
+			APC_0 -> Logger_0_0_01 [penwidth=2, color="#112c5f"]\
+			APC_1 -> APC_0 [dir=none, style="dashed", penwidth=1, color="#38568c"]\
+			K_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+			Plk1_0 -> Logger_0_0_01 [penwidth=2, color="#112c5f"]\
+			Plk1_1 -> Plk1_0 [dir=none, style="dashed", penwidth=1, color="#38568c"]\
+			System_2_0_01 -> APC_1 [penwidth=3, color="#8f100d"]\
+			System_2_0_01 -> Plk1_1 [penwidth=3, color="#8f100d"]\
+			alpha1_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+			alpha2_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+			alpha3_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+			beta1_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+			beta2_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+			beta3_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+			n_2 -> System_2_0_01 [penwidth=2, color="#112c5f"]\
+		}');
+			current_test_graph=1;
+		}
+		
+		
+		
+	}
+</script>
+</body>
+</html>

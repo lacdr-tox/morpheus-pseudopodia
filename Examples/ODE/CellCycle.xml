@@ -1,13 +1,22 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="3">
+<MorpheusModel version="4">
     <Description>
         <Title>Example-CellCycle</Title>
-        <Details>James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: Why Do Certain Circuits Oscillate?, Cell 144, p874-885. http://dx.doi.org/10.1016/j.cell.2011.03.006</Details>
+        <Details>Example showing oscillatory cell cycle model by Ferrell et al. inside an individual cell.
+
+The related Example "CellCycle_Global" uses this same model uniformly just once for the whole space but here each cell (with cell-specific values) runs this model independently. Stochasticity may lead to different cellular states (if multiple cells were initialised on a large enough lattice).
+
+Reference:
+James Ferrell, Tony Yu-Chen Tsai and Qiong Yang (2011) Modeling the Cell Cycle: Why Do Certain Circuits Oscillate?, Cell 144, p874-885. http://dx.doi.org/10.1016/j.cell.2011.03.006
+
+Illustrates how to 
+- create a simple ODE model inside a cell
+- log and plot data of cell properties</Details>
     </Description>
     <Global/>
     <Space>
         <Lattice class="square">
-            <Size symbol="size" value="1,1,0"/>
+            <Size value="1,1,0" symbol="size"/>
             <Neighborhood>
                 <Order>1</Order>
             </Neighborhood>
@@ -21,18 +30,18 @@
     </Time>
     <CellTypes>
         <CellType class="biological" name="cells">
-            <Property symbol="APC" value="0"/>
-            <Property symbol="Plk1" value="0"/>
-            <Property symbol="CDK1" value="0"/>
-            <System solver="runge-kutta" time-scaling="1" time-step="1e-2">
-                <Constant symbol="n" value="8"/>
-                <Constant symbol="K" value="0.5"/>
-                <Constant symbol="α1" value="0.1"/>
-                <Constant symbol="α2" value="3.0"/>
-                <Constant symbol="α3" value="3.0"/>
-                <Constant symbol="β1" value="3.0"/>
-                <Constant symbol="β2" value="1.0"/>
-                <Constant symbol="β3" value="1.0"/>
+            <Property value="0" symbol="APC"/>
+            <Property value="0" symbol="Plk1"/>
+            <Property value="0" symbol="CDK1"/>
+            <System time-scaling="1" time-step="1e-2" solver="Runge-Kutta [fixed, O(4)]">
+                <Constant value="8" symbol="n"/>
+                <Constant value="0.5" symbol="K"/>
+                <Constant value="0.1" symbol="α1"/>
+                <Constant value="3.0" symbol="α2"/>
+                <Constant value="3.0" symbol="α3"/>
+                <Constant value="3.0" symbol="β1"/>
+                <Constant value="1.0" symbol="β2"/>
+                <Constant value="1.0" symbol="β3"/>
                 <DiffEqn symbol-ref="CDK1">
                     <Expression>α1 - β1 * CDK1 * (APC^n) / (K^n + APC^n)</Expression>
                 </DiffEqn>
@@ -91,5 +100,6 @@
                 </Plot>
             </Plots>
         </Logger>
+        <ModelGraph include-tags="#untagged" format="svg" reduced="false"/>
     </Analysis>
 </MorpheusModel>

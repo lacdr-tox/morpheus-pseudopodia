@@ -2,17 +2,21 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="PopulationInitPlugins">
-		<xs:choice>
-			<xs:element name="InitHexLattice" 		type="InitHexLattice"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="InitHexLattice" 		type="InitHexLattice" 	minOccurs="0"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="InitHexLattice">
-		<xs:annotation>
-			<xs:appinfo>Initialization</xs:appinfo>
-		</xs:annotation>
-		<xs:attribute name="mode" type="cpmInitHexLatticeMode" use="optional" default="left" />
-		<xs:attribute name="randomness" type="cpmDouble" use="optional" default="0.0" />
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Initialization</xs:appinfo>
+				</xs:annotation>
+				<xs:attribute name="mode" type="cpmInitHexLatticeMode" use="optional" default="left" />
+				<xs:attribute name="randomness" type="cpmDouble" use="optional" default="0.0" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	
 	<xs:simpleType name="cpmInitHexLatticeMode">

@@ -1,0 +1,10 @@
+#include <map>
+#include <string>
+#include "model_test.h"
+
+@RESSOURCE_INCLUDES@
+
+bool happy_include = RessourceManager::insert({
+@RESSOURCE_FILE_DESCRIPTORS@
+});
+

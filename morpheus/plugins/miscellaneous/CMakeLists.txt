@@ -9,5 +9,6 @@ set(plugin_src
 	pseudopod.cpp
 	# distance_transform.cpp
 	# example_plugin.cpp
-	
-  PARENT_SCOPE)
+)
+
+target_sources_relpaths(MorpheusCore PRIVATE plugin_src)

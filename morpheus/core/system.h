@@ -79,7 +79,7 @@ public:
 	int rate_cache_idx;
 	
 	string symbol_name, expression;
-	bool vec_spherical;
+	VecNotation notation;
 	shared_ptr< ExpressionEvaluator<T> > evaluator;
 	shared_ptr<EvaluatorCache> cache;
 	vector<double> fun_params;
@@ -91,7 +91,7 @@ public:
 
 private:
 	/// @brief Private CallBack class for registration of the internal evaluator in mu_parser as a generic lambda object
-	class CallBack : public mu::fun_class_generic {
+	class CallBack final : public mu::fun_class_generic {
 		public:
 			CallBack(shared_ptr<ExpressionEvaluator<double> > evaluator, double *data, uint size) : evaluator(evaluator), params(data), nparams(size) {};
 			
@@ -130,6 +130,7 @@ class SystemSolver{
 
 	public:
 		enum class Method {
+			Noop,
 			Discrete,
 			Euler,
 			Heun,
@@ -139,7 +140,7 @@ class SystemSolver{
 			AdaptiveDP
 		};
 		struct Spec {
-			SystemSolver::Method method;
+			SystemSolver::Method method = Method::Noop;
 			double epsilon;
 			double time_scaling;
 			double time_step;
@@ -193,10 +194,16 @@ class SystemSolver{
  *  represented by the same class with different configuration
  */
 
+
 class System
 {
 public:
-	System(SystemType type);
+	
+	enum SystemType { DISCRETE, CONTINUOUS};
+	enum SystemContext { ELEMENT_CONTEXT, SCOPE_CONTEXT};
+	
+	System(SystemType type, SystemContext context_req = SCOPE_CONTEXT);
+	
 	void loadFromXML(const XMLNode node, Scope* scope);
 	void init();
 
@@ -206,10 +213,10 @@ public:
 	set< SymbolDependency > getDependSymbols();
 	set< SymbolDependency > getOutputSymbols();
 	bool adaptive() const;
+	double timeStep() { return solver_spec.time_step / solver_spec.time_scaling; }
 	void setTimeStep(double ht);
 	void setSubStepHooks(const vector<ReporterPlugin*> hooks) { assert(sub_step_hooks.empty()); sub_step_hooks = hooks; this->init(); };
 	
-protected:
 	/// Compute Interface 
 	void computeToTarget(const SymbolFocus& f, bool use_buffer, vector<double>* buffer=nullptr);
 	void compute(const SymbolFocus& f);
@@ -221,8 +228,10 @@ protected:
 	void applyBuffer(const SymbolFocus& f);
 	void applyBuffer(const SymbolFocus& f, const vector<double>& buffer);
 	
+protected:
 	bool target_defined;
 	const Scope *target_scope;
+	SystemContext context_requirement;
 	Granularity target_granularity;
 	VINT lattice_size;
 	
@@ -251,11 +260,11 @@ protected:
 /** @brief ContinuousSystem is a Solver for time continuous ODE systems that is thightly coupled to the TimeScheduler
  */
 
-class ContinuousSystem: public System, public ContinuousProcessPlugin {
+class ContinuousSystem: protected System, public ContinuousProcessPlugin {
 public:
 	DECLARE_PLUGIN("System");
 
-    ContinuousSystem() : System(CONTINUOUS_SYS), ContinuousProcessPlugin(ContinuousProcessPlugin::CONTI,TimeStepListener::XMLSpec::XML_OPTIONAL) {};
+    ContinuousSystem() : System(CONTINUOUS), ContinuousProcessPlugin(ContinuousProcessPlugin::CONTI,TimeStepListener::XMLSpec::XML_OPTIONAL) {};
 	/// Compute and Apply the state after time step @p step_size.
 	void loadFromXML(const XMLNode node, Scope* scope) override;
 	void init(const Scope* scope) override;
@@ -263,7 +272,13 @@ public:
 	void executeTimeStep() override { System::applyContextBuffer(); };
 	void setTimeStep(double t) override { ContinuousProcessPlugin::setTimeStep(t); System::setTimeStep(t); };
 	void setSubStepHooks(const vector<ReporterPlugin*> hooks) { System::setSubStepHooks(hooks); }
-	const Scope* scope()  override{ return System::getLocalScope(); };
+	const Scope* scope()  override { return System::getLocalScope(); };
+	using System::adaptive;
+	using System::setSubStepHooks;
+	using System::getDependSymbols;
+	using System::getOutputSymbols;
+	
+	
 };
 
 /** @brief DiscreteSystem regularly applies a System on each individual in a context.
@@ -271,7 +286,7 @@ public:
 class DiscreteSystem: public System, public InstantaneousProcessPlugin {
 public:
 	DECLARE_PLUGIN("DiscreteSystem");
-    DiscreteSystem() : System(DISCRETE_SYS), InstantaneousProcessPlugin(TimeStepListener::XMLSpec::XML_REQUIRED) {};
+    DiscreteSystem() : System(DISCRETE), InstantaneousProcessPlugin(TimeStepListener::XMLSpec::XML_REQUIRED) {};
 
 	/// Compute and Apply the state after time step @p step_size.
 	void loadFromXML(const XMLNode node, Scope* scope) override {  InstantaneousProcessPlugin::loadFromXML(node, scope); System::loadFromXML(node, scope); };
@@ -281,11 +296,13 @@ public:
 };
 
 
-/** @brief TriggeredSystem can be used to apply a System to an individual in a context and applies a System if it holds.
+/** @brief TriggeredSystem can be used to apply a System to an individual element of a context.
+ * 
+ *  The scopes of the assignments do not have to be identical, but the focus @p f used in the trigger(const SymbolFocus& f)  method must define a single element in all scopes (i.e. must define the smallest granularity).
  */
 class TriggeredSystem: public System {
 public:
-	TriggeredSystem() : System(DISCRETE_SYS) {}
+	TriggeredSystem() : System(DISCRETE) {}
 	void trigger(const SymbolFocus& f) { System::compute(f); };
 };
 
@@ -306,7 +323,7 @@ public:
 protected:
 	// TODO We have to store the state of the event with respect to the context !! map<SymbolFocus, bool> old_value ?? that is a map lookup per context !!!
 	// Alternatively, we can also create a hidden cell-property --> maybe a wise way to store the state
-	shared_ptr<ExpressionEvaluator<double> > condition;
+	shared_ptr<ThreadedExpressionEvaluator<double> > condition;
 	PluginParameter<bool,XMLNamedValueReader,DefaultValPolicy> delay_compute;  /// Also delay the computation of the assignments
 	PluginParameter<double,XMLEvaluator, DefaultValPolicy> delay;  /// Duration of the delay
 	PluginParameter<bool,XMLNamedValueReader,DefaultValPolicy> trigger_on_change;

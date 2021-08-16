@@ -14,20 +14,17 @@ HomophilicAdhesion::HomophilicAdhesion()
 	registerPluginParameter(binding_ratio);
 }
 
-double HomophilicAdhesion::interaction(CPM::STATE s1, CPM::STATE s2)
+double HomophilicAdhesion::interaction(const SymbolFocus& cell1, const SymbolFocus& cell2)
 {
 	double dE;
-	SymbolFocus focus1( s1.cell_id, s1.pos );
-	SymbolFocus focus2( s2.cell_id, s2.pos );
-
 	if (binding_ratio.isDefined()) {
-		double a1 = adhesive(focus1); 
-		double a2 = adhesive(focus2);
+		double a1 = adhesive(cell1); 
+		double a2 = adhesive(cell2);
 		double p1 = 0.5 * (a1 + a2 + 1.0/binding_ratio());
 		double p2 = sqrt(p1 - (a1  * a2) );
-		dE = p1 - p2 * strength(focus1);
+		dE = p1 - p2 * strength(cell1);
 	} else {
-		dE = min( adhesive(focus1), adhesive(focus2) ) * strength(focus1);
+		dE = min( adhesive(cell1), adhesive(cell2) ) * strength(cell1);
 	}
 	return dE;
 }

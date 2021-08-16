@@ -209,7 +209,8 @@ protected:
 	
 	// External variable storage
 	map<string, SymbolDesc> externals;
-	vector< NS > externals_namespaces;
+	vector<SymbolDesc*> flat_externals;
+	vector< NS > external_namespaces;
 	
 	// infrastructure for vector symbol expansion
 	bool scalar_expansion_permitted = false;

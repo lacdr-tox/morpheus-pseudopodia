@@ -33,11 +33,11 @@ The neighorhood size is retrieved from the \ref ML_CPM definition of the ShapeSu
 \section Parameters
 
 A single \b Input element must be specified:
-- \b value: input expression (e.g. VectorProperty), which is evaluated at global scope in the  whole neighborhood. The local cell's/node's scope is available under namespace 'local', i.e. a cell's id is 'local.cell.id'.
+- \b value: input expression (e.g. VectorProperty), which is evaluated at global scope in the whole neighborhood. The local cell's/node's scope is available under namespace 'local', e.g. a cell's own id is 'local.cell.id' while the id of any of it's neighbors is 'cell.id'.
 - \b scaling: setting scaling to \b per_cell will aquire information per neighboring cell (entity), \b per_length will scale the information with the interface length, i.e. the input value is considered to
 be a rate per node length.
 
-Accessing the local cell's/node's properties in the input expression is directly possible through the symbol namespace 'local'.
+Note, accessing the local cell's/node's properties in the input expression is directly possible through the symbol namespace 'local'.
 
 
 If input variable is a scalar, use \ref NeighborhoodReporter.
@@ -65,6 +65,7 @@ Multiple \b Output elements can be specified:
 #include "core/interfaces.h"
 #include "core/celltype.h"
 #include "core/focusrange.h"
+#include "core/data_mapper.h"
 
 class NeighborhoodVectorReporter : public ReporterPlugin
 {
@@ -72,7 +73,6 @@ class NeighborhoodVectorReporter : public ReporterPlugin
 	private:
 		CellType* celltype;
 		enum InputModes{ INTERFACES, CELLS };
-		enum OutputMode{ AVERAGE, SUM };
 		
 		PluginParameter2<VDOUBLE,XMLEvaluator> input;
 		PluginParameter2<InputModes, XMLNamedValueReader,DefaultValPolicy> scaling;
@@ -84,7 +84,7 @@ class NeighborhoodVectorReporter : public ReporterPlugin
 		
 		
 		PluginParameter2<VDOUBLE,XMLWritableSymbol, RequiredPolicy> output;
-		PluginParameter2<OutputMode,XMLNamedValueReader, RequiredPolicy> output_mode;
+		PluginParameter2<VectorDataMapper::Mode, XMLNamedValueReader, RequiredPolicy> output_mode;
 
 		void reportCelltype(CellType* celltype);
 		void reportGlobal();

@@ -1,18 +1,23 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<MorpheusModel version="3">
+<MorpheusModel version="4">
     <Description>
         <Title>Example-Proliferation3D</Title>
-        <Details></Details>
+        <Details>Illustrates size-dependent cell division and plotting 2D slices of 3D configurations
+        
+        - Upon cell division, two daughters are initialised each with its half the mother's occupied volume, then CPM dynamics lets each daughter grow to the target volume are the mother had.  
+        
+        - A condition for CellDivision is used that combines (logic and) a threshold (actual cell size > threshold) with a probability to divide.
+        </Details>
     </Description>
     <Global/>
     <Space>
         <Lattice class="cubic">
-            <Size symbol="size" value="100 100 100"/>
+            <Size symbol="size" value="100, 100, 100"/>
             <BoundaryConditions>
-                <Condition boundary="x" type="periodic"/>
-                <Condition boundary="y" type="periodic"/>
-                <Condition boundary="z" type="noflux"/>
-                <Condition boundary="-z" type="noflux"/>
+                <Condition type="periodic" boundary="x"/>
+                <Condition type="periodic" boundary="y"/>
+                <Condition type="noflux" boundary="z"/>
+                <Condition type="noflux" boundary="-z"/>
             </BoundaryConditions>
             <Neighborhood>
                 <Order>2</Order>
@@ -37,7 +42,7 @@
             <Property symbol="Vt" value="500" name="Target Volume"/>
             <Property symbol="divisions" value="0"/>
             <VolumeConstraint target="Vt" strength="1.0"/>
-            <SurfaceConstraint target="1.0" mode="aspherity" strength="1.0"/>
+            <SurfaceConstraint target="1.0" strength="1.0" mode="aspherity"/>
             <CellDivision division-plane="major">
                 <Condition>rand_uni(0,1) &lt; 0.0025 and cell.volume > Vt*0.9</Condition>
                 <Triggers>
@@ -71,12 +76,10 @@
         </ShapeSurface>
     </CPM>
     <CellPopulations>
-        <Population size="0" type="cell">
+        <Population type="cell" size="0">
             <InitCellObjects mode="distance">
-                <Arrangement repetitions="1, 1, 1" displacements="1, 1, 1">
-                    <Object>
-                        <Sphere radius="5" center="50,50,50"/>
-                    </Object>
+                <Arrangement displacements="1, 1, 1" repetitions="1, 1, 1">
+                    <Sphere radius="5" center="50,50,50"/>
                 </Arrangement>
             </InitCellObjects>
         </Population>
@@ -88,13 +91,13 @@
         <BoundaryValue boundary="-z" value="matrix"/>
     </CellPopulations>
     <Analysis>
-        <TiffPlotter timelapse="true" format="8bit" OME-header="true" compression="false" time-step="100">
-            <Channel symbol-ref="cell.id" exclude-medium="true"/>
-            <Channel symbol-ref="c" exclude-medium="true" celltype="cell" outline="true"/>
+        <TiffPlotter time-step="100" format="8bit" compression="false" timelapse="true" OME-header="true">
+            <Channel exclude-medium="true" symbol-ref="cell.id"/>
+            <Channel exclude-medium="true" celltype="cell" symbol-ref="c" outline="true"/>
         </TiffPlotter>
         <Gnuplotter time-step="100" decorate="true">
-            <Plot>
-                <Cells value="cell.id" slice="50"/>
+            <Plot slice="50">
+                <Cells value="cell.id"/>
             </Plot>
             <Terminal name="png"/>
         </Gnuplotter>
@@ -118,5 +121,6 @@
                 </Plot>
             </Plots>
         </Logger>
+        <ModelGraph format="svg" include-tags="#untagged" reduced="false"/>
     </Analysis>
 </MorpheusModel>

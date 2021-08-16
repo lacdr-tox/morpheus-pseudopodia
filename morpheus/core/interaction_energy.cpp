@@ -39,22 +39,23 @@ void InteractionEnergy::loadFromXML( const XMLNode xNode, Scope* scope) {
 	// - shit, but the it's too late for symbol registration
 	// - ohh, so let's just init the as the very first in the sequence ...
 
-	auto celltypes = CPM::getCellTypes();
+	auto celltypes = CPM::getCellTypesMap();
 	// map celltype names to internal state id
-	std::map<std::string,uint> ct_names;
-	bool has_supercells = false;
-	for (uint ict=0; ict<celltypes.size(); ict++) {
-		auto ct = celltypes[ict].lock();
-		ct_names[ct->getName()]=ict;
-#ifdef HAVE_SUPERCELLS
-		if (dynamic_pointer_cast<const SuperCT>(ct) )
-			has_supercells = true;
-#endif
-	}
+// 	std::map<std::string,uint> ct_names;
+// 	bool has_supercells = false;
+// 	for (uint ict=0; ict<celltypes.size(); ict++) {
+// 		auto ct = celltypes[ict].lock();
+// 		ct_names[ct->getName()]=ict;
+// #ifdef HAVE_SUPERCELLS
+// 		if (dynamic_pointer_cast<const SuperCT>(ct) )
+// 			has_supercells = true;
+// #endif
+// 	}
 	
 	n_celltypes=celltypes.size();
 	// NOTE we should preferably have a container where the key consists of the two celltype_ids for the interaction energies, e.g. hash_map<struct {uint, uint}, double>
-	ia_energies.resize(n_celltypes*n_celltypes, default_interaction);
+// 	ia_energies.resize(n_celltypes*n_celltypes, default_interaction);
+	ia_energies2.resize(n_celltypes*n_celltypes, { make_shared<ThreadedExpressionEvaluator<double>>(to_str(default_interaction),scope), false, false });
 	ia_overrider.resize(n_celltypes*n_celltypes);
 	plugins.resize(n_celltypes*n_celltypes);
 	ia_addon.resize(n_celltypes*n_celltypes);
@@ -67,30 +68,40 @@ void InteractionEnergy::loadFromXML( const XMLNode xNode, Scope* scope) {
 		XMLNode xContact = ia_XMLNode.getChildNode("Contact",i);
 
 		// check for sufficient entries
-		double value; 
-		string ct_name1, ct_name2;
-		if ( ! getXMLAttribute(xContact,"type1",ct_name1) || ct_names.find(ct_name1) == ct_names.end() ) {
-			cerr << "Interaction/Contact (nr. " << i+1 << "): Unable to find celltype 1: " << ct_name1 << endl;
-			exit(-1);
-			continue;
+// 		double value; 
+		string ct_name1, ct_name2, value_string;
+		getXMLAttribute(xContact,"type1",ct_name1);
+		auto ct1_i = celltypes.find(ct_name1);
+		if ( ct1_i == celltypes.end() ) {
+			throw MorpheusException(string("Unable to find cell type ")+ct_name1, xContact);
 		}
-		if ( ! getXMLAttribute(xContact,"type2",ct_name2) || ct_names.find(ct_name2) == ct_names.end() ) {
-			cerr << "Interaction/Contact (nr. " << i+1 << "): Unable to find celltype 2: " << ct_name2 << endl;
-			exit(-1);
-			continue;
+		getXMLAttribute(xContact,"type2",ct_name2);
+		auto ct2_i = celltypes.find(ct_name2);
+		if ( ct2_i == celltypes.end() ) {
+			throw MorpheusException(string("Unable to find cell type ")+ct_name2, xContact);
 		}
-		if ( ! getXMLAttribute(xContact,"value",value)) {
-			cout << "unable to find interaction value: " << ct_name1 << endl;
-			continue;
+// 		if ( ! getXMLAttribute(xContact,"value", value)) {
+// 			throw MorpheusException(string("Unable to find interaction value"), xContact);
+// 		}
+		if ( ! getXMLAttribute(xContact,"value", value_string)) {
+			throw MorpheusException(string("Unable to find interaction value"), xContact);
 		}
+
+		auto ct1 = ct1_i->second.lock();
+		auto ct2 = ct2_i->second.lock();
+		uint v_id_1_2 = getInterActionID(ct1->getID(), ct2->getID());
+		uint v_id_2_1 = getInterActionID(ct2->getID(), ct1->getID());
 		
-		uint ct_id1 = ct_names[ct_name1];
-		uint ct_id2 = ct_names[ct_name2];
-		uint v_id1 = getInterActionID(ct_id1, ct_id2);
-		uint v_id2 = getInterActionID(ct_id2, ct_id1);
+// 		ia_energies[v_id_1_2] = value;
+// 		if (v_id_1_2 != v_id_2_1)
+// 			ia_energies[v_id_2_1] = value;
 		
-		ia_energies[v_id1] = value;
-		ia_energies[v_id2] = value;
+		auto evaluator = make_shared<ThreadedExpressionEvaluator<double>>(value_string, scope);
+		evaluator->addNameSpaceScope("cell1", ct1->getScope());
+		evaluator->addNameSpaceScope("cell2", ct2->getScope());
+		ia_energies2[v_id_1_2] = { evaluator, false, true };
+		if (v_id_1_2 != v_id_2_1)
+			ia_energies2[v_id_2_1] = { evaluator, true, true };
 		
 		for ( int i_plug =0; i_plug <xContact.nChildNode(); i_plug++) {
 			// try to create a suitable plugin
@@ -101,28 +112,30 @@ void InteractionEnergy::loadFromXML( const XMLNode xNode, Scope* scope) {
 				if (! p.get()) 
 					throw(string("Unknown plugin " + xml_tag_name));
 				p->loadFromXML(xNode, scope);
-				uint n_interfaces=0;
+				
 				// TODO: check symbol creation
 				if ( dynamic_pointer_cast<CPM_Interaction_Overrider>(p) ) {
-					if ( ia_overrider[v_id1])
+					if ( ia_overrider[v_id_1_2])
 						throw(string("Multiple interaction overriders for " + ct_name1 + " , " + ct_name2 + " defined!"));
-					ia_overrider[ v_id1 ] = dynamic_pointer_cast<CPM_Interaction_Overrider>(p);
-					ia_overrider[ v_id2 ] = dynamic_pointer_cast<CPM_Interaction_Overrider>(p);
+					ia_overrider[ v_id_1_2 ] = dynamic_pointer_cast<CPM_Interaction_Overrider>(p);
+					if (v_id_1_2 != v_id_2_1) 
+						ia_overrider[ v_id_2_1 ] = dynamic_pointer_cast<CPM_Interaction_Overrider>(p);
 					cout << "Registering Interaction overrider " << p->XMLName() << endl;
 					has_overriders = true;
 				}
 				if (dynamic_pointer_cast<CPM_Interaction_Addon>(p) ) {
-					ia_addon[ v_id1 ].push_back(dynamic_pointer_cast<CPM_Interaction_Addon>(p) );
+					ia_addon[ v_id_1_2 ].push_back(dynamic_pointer_cast<CPM_Interaction_Addon>(p) );
 					// IF NOT HOMOTYPIC INTERACTION
-					if (v_id1 != v_id2)  ia_addon[ v_id2 ].push_back( dynamic_pointer_cast<CPM_Interaction_Addon>(p) );
+					if (v_id_1_2 != v_id_2_1) 
+						ia_addon[ v_id_2_1 ].push_back( dynamic_pointer_cast<CPM_Interaction_Addon>(p) );
 					cout << "Registering Interaction plugin " << p->XMLName() << endl;
 					has_addons = true;
 				}
 
-				plugins[ v_id1 ].push_back( p );
+				plugins[ v_id_1_2 ].push_back( p );
 				// IF NOT HOMOTYPIC INTERACTION
-				if (v_id1 != v_id2)  
-					plugins[ v_id2 ].push_back(p);
+				if (v_id_1_2 != v_id_2_1)  
+					plugins[ v_id_2_1 ].push_back(p);
 			}
 			catch(string er) { 
 				throw MorpheusException(er, ia_XMLNode);
@@ -137,8 +150,6 @@ void InteractionEnergy::loadFromXML( const XMLNode xNode, Scope* scope) {
 	
 	if (has_addons || has_overriders)
 		interaction_details |= IA_PLUGINS;
-	if (has_supercells)
-		interaction_details |= IA_SUPERCELLS;
 
 }
 
@@ -149,12 +160,27 @@ XMLNode InteractionEnergy::saveToXML() const {
 void InteractionEnergy::init(const Scope* scope)
 {
 	layer = CPM::getLayer();
-	boundaryLenghScaling = CPMShape::BoundaryLengthScaling(CPM::getBoundaryNeighborhood());
-// 	ia_neighborhood = 
-// 	layer->optimizeNeighborhood(ia_neighborhood);
+	
+	ia_neighborhood = CPM::getBoundaryNeighborhood().neighbors();
+	boundaryLenghScaling = CPMShape::BoundaryLengthScaling( CPM::getBoundaryNeighborhood());
+	int origin_offset = layer->get_data_index(VINT(0,0,0));
+	for (auto neighbor : ia_neighborhood) {
+		ia_neighborhood_offsets.push_back(layer->get_data_index(neighbor) - origin_offset);
+	}
 	
 	auto celltypes = CPM::getCellTypes();
 	
+	for (auto& interaction : ia_energies2) {
+		interaction.value->init();
+		registerInputSymbols( interaction.value->getDependSymbols() );
+		// optimization expressions not making use of the cell namespaces
+		if (interaction.subscope_use) {
+			if (interaction.value->getNameSpaceUsedSymbols(0).size()==0 && interaction.value->getNameSpaceUsedSymbols(1).size()==0) {
+				interaction.subscope_use = false;
+			}
+		}
+	}
+		
 	for (uint i=0;i<n_celltypes; i++) {
 		if (ia_overrider[i]) {
 			ia_overrider[i]->init(celltypes[i].lock()->getScope());
@@ -180,6 +206,23 @@ void InteractionEnergy::init(const Scope* scope)
 }
 
 
+double InteractionEnergy::getBaseInteraction(const SymbolFocus& cell1, const SymbolFocus& cell2) const {
+	int ia_id = getInterActionID(cell1.celltype(), cell2.celltype());
+// 	return ia_energies[ia_id];
+	const auto& value = *ia_energies2[ia_id].value;
+	if (ia_energies2[ia_id].subscope_use) {
+		if (ia_energies2[ia_id].celltypes_swapped) {
+			value.setNameSpaceFocus(0,cell2);
+			value.setNameSpaceFocus(1,cell1);
+		}
+		else {
+			value.setNameSpaceFocus(0,cell1);
+			value.setNameSpaceFocus(1,cell2);
+		}
+	}
+	return value.get(cell1);
+}
+
 
 double InteractionEnergy::delta(const CPM::Update& update) const {
 	// get Neighborhood stats
@@ -187,14 +230,10 @@ double InteractionEnergy::delta(const CPM::Update& update) const {
 	VT_TRACER("InteractionEnergy::delta");
 #endif
 	double dH = 0;
-	const CPM::INDEX& add_index = CellType::storage.index(update.focusStateAfter().cell_id);
-	const CPM::INDEX& remove_index = CellType::storage.index(update.focusStateBefore().cell_id);
 	
 	if (interaction_details & IA_COLLAPSE) {
-		
+		// Compute Interaction energies on the basis of boundary kernel/stencil stats (relative positional information lost)
 		const vector<StatisticalLatticeStencil::STATS>& nei_cells = update.boundaryStencil()->getStatistics();
-		int focus_offset = layer->get_data_index(update.focus().pos());
-		
 #ifdef HAVE_SUPERCELLS
 		if (interaction_details & IA_SUPERCELLS) {
 			if (interaction_details & IA_PLUGINS) {
@@ -257,35 +296,29 @@ double InteractionEnergy::delta(const CPM::Update& update) const {
 		else {
 #endif // HAVE_SUPERCELLS
 			if (interaction_details & IA_PLUGINS) {
-				CPM::STATE neighbor_state;
-				neighbor_state.pos = update.focus().pos();
 				
 				for (uint i=0; i<nei_cells.size(); ++i ) {
-					neighbor_state.cell_id = nei_cells[i].cell;
-					const CPM::INDEX& neighbor_index = CPM::getCellIndex(neighbor_state.cell_id );
+					SymbolFocus neighbor_focus(nei_cells[i].cell, update.focus().pos());
 					
-					
-					if (update.focusStateBefore().cell_id != nei_cells[i].cell ) {
-						uint ia_id = getInterActionID(remove_index.celltype, neighbor_index.celltype);
-						double interaction_remove;
+					if (update.focus().cellID() != nei_cells[i].cell ) {
+						double interaction_remove = getBaseInteraction(update.focus(), neighbor_focus);
+						uint ia_id = getInterActionID(update.focus().celltype(), neighbor_focus.celltype());
 						if (ia_overrider[ia_id])
-							interaction_remove = ia_overrider[ia_id]->interaction(update.focusStateBefore(), neighbor_state,ia_energies[ia_id]);
-						else
-							interaction_remove = ia_energies[ia_id];
+							interaction_remove = ia_overrider[ia_id]->interaction(update.focus(), neighbor_focus, interaction_remove);
+
 						for (uint k=0; k<ia_addon[ia_id].size(); ++k) {
-							interaction_remove  += ia_addon[ia_id][k]->interaction(update.focusStateBefore(), neighbor_state );
+							interaction_remove  += ia_addon[ia_id][k]->interaction(update.focus(), neighbor_focus );
 						}
 						dH -= interaction_remove * nei_cells[i].count;
 					}
-					if (update.focusStateAfter().cell_id != nei_cells[i].cell) {
-						uint ia_id = getInterActionID(add_index.celltype, neighbor_index.celltype);
-						double interaction_add;
+					if (update.focusUpdated().cellID() != nei_cells[i].cell) {
+						double interaction_add = getBaseInteraction(update.focusUpdated(), neighbor_focus);
+						uint ia_id = getInterActionID(update.focusUpdated().celltype(), neighbor_focus.celltype());
 						if (ia_overrider[ia_id])
-							interaction_add = ia_overrider[ia_id]->interaction(update.focusStateAfter(), neighbor_state,ia_energies[ia_id]);
-						else
-							interaction_add = ia_energies[ia_id];
+							interaction_add = ia_overrider[ia_id]->interaction(update.focusUpdated(), neighbor_focus, interaction_add);
+
 						for (uint k=0; k<ia_addon[ia_id].size(); ++k) {
-							interaction_add += ia_addon[ia_id][k]->interaction(update.focusStateAfter(), neighbor_state );
+							interaction_add += ia_addon[ia_id][k]->interaction(update.focusUpdated(), neighbor_focus );
 						}
 						dH += interaction_add * nei_cells[i].count;
 					}
@@ -293,12 +326,12 @@ double InteractionEnergy::delta(const CPM::Update& update) const {
 			}
 			else {
 				for (uint i=0; i<nei_cells.size(); ++i ) {
-					const CPM::INDEX& neighbor_index = CPM::getCellIndex( nei_cells[i].cell );
+					SymbolFocus neighbor_focus(nei_cells[i].cell, update.focus().pos());
 					if (update.focusStateBefore().cell_id != nei_cells[i].cell ) {
-						dH -=ia_energies[getInterActionID(remove_index.celltype, neighbor_index.celltype)] * nei_cells[i].count;
+						dH -= getBaseInteraction(update.focus(), neighbor_focus) * nei_cells[i].count;
 					}
 					if (update.focusStateAfter().cell_id != nei_cells[i].cell) {
-						dH += ia_energies[getInterActionID(add_index.celltype, neighbor_index.celltype)] * nei_cells[i].count;
+						dH += getBaseInteraction(update.focusUpdated(), neighbor_focus) * nei_cells[i].count;
 					}
 				}
 			}
@@ -362,28 +395,28 @@ double InteractionEnergy::delta(const CPM::Update& update) const {
 		else {
 #endif // HAVE_SUPERCELLS
 			// no supercells
-			
+			// no collapsed neigbors ...
 			if (interaction_details & IA_PLUGINS) {
 				CPM::STATE neighbor_state;
 				neighbor_state.pos = update.focus().pos();
+				
 				CPM::setInteractionSurface(true);
 				for (uint i=0; i<ia_neighborhood_offsets.size(); i++) {
-					const CPM::STATE& neighbor_state =layer->data[ focus_offset + ia_neighborhood_offsets[i] ];
-					const CPM::INDEX& neighbor_index = CellType::storage.index( neighbor_state.cell_id );
+					SymbolFocus neighbor_focus(layer->data[ focus_offset + ia_neighborhood_offsets[i]].cell_id, update.focus().pos() + ia_neighborhood[i]);
 					
-					if (update.focusStateBefore().cell_id != neighbor_state.cell_id ) {
-						uint ia_id = getInterActionID(remove_index.celltype, neighbor_index.celltype);
-						double interaction_remove = ia_energies[ia_id];
+					if (update.focus().cellID() != neighbor_focus.cellID()) {
+						double interaction_remove = getBaseInteraction(update.focus(), neighbor_focus);
+						uint ia_id = getInterActionID(update.focus().celltype(), neighbor_focus.celltype());
 						for (uint k=0; k<ia_addon[ia_id].size(); ++k) {
-							interaction_remove  += ia_addon[ia_id][k]->interaction(update.focusStateBefore(), neighbor_state );
+							interaction_remove  += ia_addon[ia_id][k]->interaction(update.focus(), neighbor_focus );
 						}
 						dH -= interaction_remove;
 					}
-					if (update.focusStateAfter().cell_id != neighbor_state.cell_id ) {
-						uint ia_id = getInterActionID(add_index.celltype, neighbor_index.celltype);
-						double interaction_add = ia_energies[ia_id];
+					if (update.focusUpdated().cellID() != neighbor_focus.cellID() ) {
+						double interaction_add = getBaseInteraction(update.focusUpdated(), neighbor_focus);
+						uint ia_id = getInterActionID(update.focusUpdated().celltype(), neighbor_focus.celltype());
 						for (uint k=0; k<ia_addon[ia_id].size(); ++k) {
-							interaction_add += ia_addon[ia_id][k]->interaction(update.focusStateAfter(), neighbor_state );
+							interaction_add += ia_addon[ia_id][k]->interaction(update.focusUpdated(), neighbor_focus );
 						}
 						dH += interaction_add;
 					}
@@ -392,13 +425,12 @@ double InteractionEnergy::delta(const CPM::Update& update) const {
 			}
 			else {
 				for (uint i=0; i<ia_neighborhood_offsets.size(); i++) {
-					const CPM::STATE& neighbor_state =layer->data[ focus_offset + ia_neighborhood_offsets[i] ];
-					const CPM::INDEX& neighbor_index = CellType::storage.index( neighbor_state.cell_id );
-					if (update.focusStateBefore().cell_id != neighbor_state.cell_id ) {
-						dH -=ia_energies[getInterActionID(remove_index.celltype, neighbor_index.celltype)];
+					SymbolFocus neighbor_focus(layer->data[ focus_offset + ia_neighborhood_offsets[i]].cell_id, update.focus().pos() + ia_neighborhood[i]);
+					if ( update.focus().cellID() != neighbor_focus.cellID() ) {
+						dH -= getBaseInteraction(update.focus(), neighbor_focus);
 					}
-					if (update.focusStateAfter().cell_id != neighbor_state.cell_id ) {
-						dH += ia_energies[getInterActionID(add_index.celltype, neighbor_index.celltype)];
+					if ( update.focusUpdated().cellID() != neighbor_focus.cellID() ) {
+						dH += getBaseInteraction(update.focusUpdated(), neighbor_focus);
 					}
 				}
 			}

@@ -1,138 +1,133 @@
-<MorpheusModel version="1">
+<MorpheusModel version="4">
     <Description>
         <Title>Example-PCP</Title>
         <Details>Planar Cell Polarity (PCP)</Details>
     </Description>
     <Global>
-        <Field symbol="x" value="0">
+        <Field value="0" symbol="x">
             <Diffusion rate="0.0"/>
         </Field>
-        <Constant symbol="C" value="0.0"/>
-        <ConstantVector symbol="polC" value="0.0, 0.0, 0.0"/>
-        <Constant symbol="orientation" value="0.25"/>
+        <Constant value="0.0" symbol="A"/>
+        <Constant value="0.0" symbol="C"/>
+        <ConstantVector value="0.0, 0.0, 0.0" symbol="polC"/>
+        <Constant value="0.25" symbol="orientation"/>
     </Global>
     <Space>
         <Lattice class="hexagonal">
-            <Size symbol="size" value="256, 388, 0"/>
+            <Size value="182,182,0" symbol="size"/>
             <BoundaryConditions>
                 <Condition boundary="x" type="periodic"/>
                 <Condition boundary="y" type="periodic"/>
             </BoundaryConditions>
-            <NodeLength value="1.0"/>
+            <NodeLength value="5"/>
             <Neighborhood>
-                <Distance>10</Distance>
+                <Order>1</Order>
             </Neighborhood>
         </Lattice>
         <SpaceSymbol symbol="l"/>
         <MembraneLattice>
-            <Resolution symbol="memsize" value="24"/>
+            <Resolution value="24" symbol="memsize"/>
             <SpaceSymbol symbol="m"/>
         </MembraneLattice>
     </Space>
     <Time>
         <StartTime value="0"/>
-        <StopTime value="10000"/>
-        <SaveInterval value="-1"/>
-        <!--    <Disabled>
+        <StopTime value="2500"/>
         <RandomSeed value="0"/>
-    </Disabled>
--->
         <TimeSymbol symbol="t"/>
-        <!--    <Disabled>
-        <StopCondition>
-            <Condition>t > 1000 and variance &lt; 0.00233</Condition>
-        </StopCondition>
-    </Disabled>
--->
     </Time>
     <CellTypes>
-        <CellType class="biological" name="cells">
-            <MembraneProperty symbol="A" value="2">
-                <Diffusion rate="10"/>
+        <CellType name="cells" class="biological">
+            <MembraneProperty value="1" symbol="A">
+                <!--    <Disabled>
+        <Diffusion rate="200"/>
+    </Disabled>
+-->
+                <Diffusion well-mixed="true" rate="0"/>
             </MembraneProperty>
-            <MembraneProperty symbol="C" value="1.0*rand_uni(1.5,2.5)">
-                <Diffusion rate="2.5"/>
+            <MembraneProperty value="0" symbol="C">
+                <Diffusion rate="7.5"/>
+                <!--    <Disabled>
+        <Diffusion well-mixed="true" rate="0"/>
+    </Disabled>
+-->
             </MembraneProperty>
-            <MembraneProperty symbol="c" value="">
+            <MembraneProperty value="0" name="C_nb" symbol="c">
                 <Diffusion rate="0"/>
             </MembraneProperty>
-            <System solver="heun" time-step="5">
-                <Constant symbol="d" value="0.1" name="decay"/>
-                <Constant symbol="h" value="1" name="cell-cell coupling"/>
-                <Constant symbol="b" value="0.01" name="base activation"/>
+            <System solver="Dormand-Prince [adaptive, O(5)]" time-step="1">
+                <Constant value="0.1" name="decay" symbol="d"/>
+                <Constant value="1" name="cell-cell coupling" symbol="h"/>
+                <Constant value="0.01" name="base activation" symbol="b"/>
                 <DiffEqn symbol-ref="A">
                     <Expression>-F</Expression>
                 </DiffEqn>
                 <DiffEqn symbol-ref="C">
                     <Expression>F</Expression>
                 </DiffEqn>
-                <Function symbol="F">
-                    <Expression>A*((C^2/(1+C^2))/(1+h*c^2) + b) - d*C
-</Expression>
-                </Function>
-                <Constant symbol="noise" value="0.05"/>
+                <Intermediate value="A*(((C^2/(1+C^2)) / (1+h*c^2)) + b) - d*C" symbol="F"/>
             </System>
-            <PropertyVector symbol="polC" value="0.0, 0.0, 0.0"/>
+            <PropertyVector value="0.0, 0.0, 0.0" symbol="polC"/>
             <NeighborhoodReporter>
-                <Input scaling="length" value="C"/>
-                <Output symbol-ref="c" mapping="average"/>
+                <Input value="C" scaling="length"/>
+                <Output mapping="average" symbol-ref="c"/>
             </NeighborhoodReporter>
-            <CellReporter>
+            <Property value="0.2" symbol="orientation"/>
+            <Property value="0" symbol="sumC"/>
+            <Mapper>
                 <Input value="C"/>
                 <Polarity symbol-ref="polC"/>
-            </CellReporter>
-            <Property symbol="orientation" value="0.5*pi"/>
+            </Mapper>
+            <Mapper>
+                <Input value="C"/>
+                <Output mapping="sum" symbol-ref="sumC"/>
+            </Mapper>
         </CellType>
-        <CellType class="medium" name="medium"/>
+        <CellType name="medium" class="medium"/>
     </CellTypes>
     <CellPopulations>
         <Population size="0" type="cells">
             <InitProperty symbol-ref="C">
-                <Expression>if(cell.id == 33, 
-   sin(m.phi + orientation*pi)+1,
+                <!--    <Disabled>
+        <Expression>rand_norm(2,0.05)
+</Expression>
+    </Disabled>
+-->
+                <!--    <Disabled>
+        <Expression>sin(m.phi + (orientation+0.5)*pi)+1</Expression>
+    </Disabled>
+-->
+                <Expression>if(cell.id == 76, 
+   sin(m.phi + (orientation+0.5)*pi)+1,
    1)</Expression>
+                <!--    <Disabled>
+        <Expression>if( sqrt((cell.center.x-size.x/2)^2 + (cell.center.y-size.y/2)^2) > 32, 
+   sin(m.phi + (orientation+0.5)*pi)+1,
+   1)</Expression>
+    </Disabled>
+-->
             </InitProperty>
-            <InitCellObjects mode="distance">
-                <Arrangement repetitions="8,7,0" random_displacement="0" displacements="32,48,0">
-                    <Object>
-                        <Sphere radius="24" center="0,0,0"/>
-                        <!--    <Disabled>
-        <Ellipsoid axes="21.0,20,0" center="16,16,0"/>
-    </Disabled>
--->
-                    </Object>
-                </Arrangement>
-                <Arrangement repetitions="8,7,0" random_displacement="0" displacements="32,48,0">
-                    <Object>
-                        <Sphere radius="24" center="16,24,0"/>
-                        <!--    <Disabled>
-        <Ellipsoid axes="21.0,20,0" center="32,40,0"/>
-    </Disabled>
--->
-                    </Object>
-                </Arrangement>
-            </InitCellObjects>
+            <InitHexLattice/>
         </Population>
     </CellPopulations>
     <Analysis>
-        <Gnuplotter time-step="1000" decorate="false">
-            <Terminal pointsize="0.5" name="png"/>
+        <Gnuplotter decorate="false" time-step="100">
+            <Terminal name="png"/>
             <Plot>
-                <Cells value="A">
+                <Cells value="C">
                     <ColorMap>
                         <Color value="8" color="red"/>
                         <Color value="2" color="yellow"/>
                         <Color value="0.0" color="white"/>
                     </ColorMap>
                 </Cells>
-                <CellArrows orientation="-polC * 15.0"/>
-                <!--    <Disabled>
-        <CellLabels symbol-ref="cell.id"/>
-    </Disabled>
--->
+                <CellArrows orientation="polC * 3.0"/>
             </Plot>
+        </Gnuplotter>
+        <Gnuplotter decorate="true" time-step="100">
+            <Terminal name="png"/>
             <Plot>
-                <Cells value="polC.phi" min="0.0" max="6.28">
+                <Cells value="polC.phi" max="6.28" min="0.0">
                     <ColorMap>
                         <Color value="5.4" color="red"/>
                         <Color value="4.5" color="magenta"/>
@@ -145,77 +140,11 @@
                 </Cells>
             </Plot>
         </Gnuplotter>
-        <Logger time-step="100">
-            <Input>
-                <Symbol symbol-ref="polC.phi"/>
-                <Symbol symbol-ref="polC.abs"/>
-            </Input>
-            <Output>
-                <TextOutput/>
-            </Output>
-            <Plots>
-                <Plot time-step="1000">
-                    <Style grid="true" style="points"/>
-                    <Terminal terminal="png"/>
-                    <X-axis>
-                        <Symbol symbol-ref="t"/>
-                    </X-axis>
-                    <Y-axis minimum="0" maximum="2*pi">
-                        <Symbol symbol-ref="polC.phi"/>
-                    </Y-axis>
-                    <Color-bar>
-                        <Symbol symbol-ref="polC.abs"/>
-                    </Color-bar>
-                </Plot>
-                <Plot time-step="1000">
-                    <Style grid="true" style="points"/>
-                    <Terminal terminal="png"/>
-                    <X-axis>
-                        <Symbol symbol-ref="t"/>
-                    </X-axis>
-                    <Y-axis>
-                        <Symbol symbol-ref="polC.abs"/>
-                    </Y-axis>
-                </Plot>
-                <Plot time-step="1000">
-                    <Style style="points"/>
-                    <Terminal terminal="png"/>
-                    <X-axis>
-                        <Symbol symbol-ref="polC.phi"/>
-                    </X-axis>
-                    <Y-axis>
-                        <Symbol symbol-ref="polC.abs"/>
-                    </Y-axis>
-                    <Color-bar>
-                        <Symbol symbol-ref="t"/>
-                    </Color-bar>
-                    <Range>
-                        <Time mode="history" history="500"/>
-                    </Range>
-                </Plot>
-            </Plots>
-            <Restriction>
-                <Celltype celltype="cells"/>
-            </Restriction>
-        </Logger>
-        <Logger time-step="100">
-            <Input>
-                <Symbol symbol-ref="C"/>
-            </Input>
-            <Output>
-                <TextOutput/>
-            </Output>
-            <Plots>
-                <SurfacePlot time-step="1000">
-                    <Color-bar>
-                        <Symbol symbol-ref="C"/>
-                    </Color-bar>
-                    <Terminal terminal="png"/>
-                </SurfacePlot>
-            </Plots>
-            <Restriction>
-                <Cells cell-ids="5"/>
-            </Restriction>
-        </Logger>
+        <ContactLogger time-step="100" celltype-from="cells"/>
+        <HistogramLogger normalized="false" minimum="0.0" time-step="250" number-of-bins="36" maximum="6.28">
+            <Column symbol-ref="polC.phi" celltype="cells"/>
+            <Plot terminal="png" minimum="0.0"/>
+        </HistogramLogger>
+        <ModelGraph format="svg" reduced="false" include-tags="#untagged"/>
     </Analysis>
 </MorpheusModel>

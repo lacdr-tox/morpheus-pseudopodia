@@ -1,19 +1,14 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <QHelpCollectionProject version="1.0">
 	<docFiles>
-		<generate>
+<!--		<generate>
 			<file>
-				<input>html/index.qhp</input>
+				<input>html/morpheus.qhp</input>
 				<output>morpheus.qch</output>
 			</file>
-			<file>
-				<input>html/mathjax.qhp</input>
-				<output>mathjax.qch</output>
-			</file>
-		</generate>
+		</generate>-->
 		<register>
 			<file>morpheus.qch</file>
-			<file>mathjax.qch</file>
 		</register>
 	</docFiles>
 </QHelpCollectionProject>

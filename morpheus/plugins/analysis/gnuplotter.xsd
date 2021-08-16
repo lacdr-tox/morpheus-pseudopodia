@@ -2,56 +2,27 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	
 	<xs:group name="AnalysisPlugins">
-        <xs:choice>
-			<xs:element name="Gnuplotter" 			type="Gnuplotter"/>
-		</xs:choice>
+        <xs:all>
+			<xs:element name="Gnuplotter" 			type="Gnuplotter"	minOccurs="0"	maxOccurs="unbounded" />
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="Gnuplotter">
-		<xs:annotation>
-			<xs:appinfo>Visualization</xs:appinfo>
-			<xs:documentation>Gnuplotter is a versatile interface for 2D visualization of cells, properties and reaction-diffusion fields.
-
-Supports multiple output terminals for on-screen (wxt, aqua, x11) as well as file-based (png, pdf, etc.) graphics.
-
-Note: this plugin requires stand-alone installation of Gnuplot 4.4+. When not found on in PATH environment variable, the gnuplot executable can be specified in Settings/Local.
-			</xs:documentation>
-		</xs:annotation>
-	
-		<xs:all maxOccurs="unbounded">
-			<xs:element name="Terminal" 	type="cpmGnuplotTerminal" 	/>
-			<xs:element name="Plot"			type="morphGnuplotPlot"	 maxOccurs="unbounded" />
-<!-- 			<xs:element name="Membrane" 	type="cpmMembraneRef" 		minOccurs="0" /> -->
-		</xs:all>
-
-		<xs:attribute name="time-step" use="optional" type="cpmMathExpression" default="1">
-			<xs:annotation>
-				<xs:documentation>Time interval of plots.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-<!--		<xs:attribute name="endstate" use="optional" type="cpmBoolean">
-			<xs:annotation>
-				<xs:documentation>
-					Only execute analysis plugin at the end of the simulation.
-					
-					Note: This overrides the specified 'interval'.
-				</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>-->
-		<xs:attribute name="log-commands"   use="optional" type="cpmBoolean" default="false" >
-			<xs:annotation>
-				<xs:documentation> Save commands and data of each plot to disk.
-				</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>
-		<xs:attribute name="file-numbering"   use="optional" type="cpmFileNumbering" default="time" />
-		<xs:attribute name="decorate" 		type="cpmBoolean" 		use="optional" default="true" />
-<!-- 		<xs:attribute name="interpolation" type="cpmBoolean" use="optional" default="true"> -->
-<!-- 			<xs:annotation> -->
-<!-- 				<xs:documentation>Interpolation using pm3d.</xs:documentation> -->
-<!-- 			</xs:annotation> -->
-<!-- 		</xs:attribute> -->
-
+		<xs:complexContent>
+			<xs:extension base="morphAnalysisPlugin">
+				<xs:annotation>
+					<xs:appinfo>Visualization</xs:appinfo>
+				</xs:annotation>
+			
+				<xs:all maxOccurs="unbounded">
+					<xs:element name="Terminal" 	type="cpmGnuplotTerminal" 	/>
+					<xs:element name="Plot"			type="morphGnuplotPlot"	 maxOccurs="unbounded" />
+				</xs:all>
+				<xs:attribute name="log-commands"   use="optional" type="cpmBoolean" default="false" />
+				<xs:attribute name="file-numbering"   use="optional" type="cpmFileNumbering" default="time" />
+				<xs:attribute name="decorate" 		type="cpmBoolean" 		use="optional" default="true" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	
 	<xs:complexType name="morphGnuplotPlot">
@@ -59,28 +30,29 @@ Note: this plugin requires stand-alone installation of Gnuplot 4.4+. When not fo
 			<xs:documentation>
 			</xs:documentation>
 		</xs:annotation>
-		<xs:all maxOccurs="1">
+		<xs:all >
 			<xs:element name="Cells" 		type="cpmCellPlotRef"		minOccurs="0"  maxOccurs="1"/>
 			<xs:element name="CellLabels" 		type="cpmLabelPlotRef"		minOccurs="0"  maxOccurs="1"/>
 			<xs:element name="CellArrows" 		type="cpmArrowPlotRef"		minOccurs="0"  maxOccurs="1"/>
+			<xs:element name="CellLinks"		type="cpmCellLinkPlot"	minOccurs="0"  maxOccurs="1" />
 			<xs:element name="VectorField" 	type="cpmVectorPlotRef"		minOccurs="0"  maxOccurs="1"/>
 			<xs:element name="Field" 		type="cpmFieldPlotRef"		minOccurs="0"  maxOccurs="1"/>
 		</xs:all>
 		<xs:attribute name="title"   use="optional" type="cpmString" />
+		<xs:attribute name="slice"	type="cpmUnsignedInteger" use="optional">
+			<xs:annotation>
+				<xs:documentation>Z-slice of 3D lattice to plot (for z-stack plots).</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
 	</xs:complexType>
 	
+	<xs:complexType name="cpmCellLinkPlot">
+		<xs:attribute name="color" type="cpmColors" use="required" default="black"/>
+	</xs:complexType>
+		
 	<xs:complexType name="cpmCellPlotRef">
-		<xs:annotation>
-			<xs:documentation>
-				Plots cells. Color can indicate cell type, cell ID, a property or membrane property. Colors can be specified by colormap.
-				
-				(Only) when (membrane) property is selected, you must provide a symbol-ref to this (membrane) property.
-			</xs:documentation>
-		</xs:annotation>
-		
-		
-		<xs:all minOccurs="0" maxOccurs="1">
-			<xs:element name="ColorMap" type="cpmColorMap"/>
+		<xs:all>
+			<xs:element name="ColorMap" type="cpmColorMap" minOccurs="0"/>
 		</xs:all>
 		<xs:attribute name="value" type="cpmDoubleSymbolRef" use="optional" >
 			<xs:annotation>
@@ -97,13 +69,6 @@ Note: this plugin requires stand-alone installation of Gnuplot 4.4+. When not fo
 				<xs:documentation>Maximum of colorbox.</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
-		<!--<xs:attribute name="mode"	type="cpmcpmCellPlotModeEnum" use="required">
-			<xs:annotation>
-				<xs:documentation>Mode of plotting cells: cell type (default), cell id, property, membrane property.
-
-Note: when (membrane) property has been selected, you MUST provide a symbol-ref to this property.</xs:documentation>
-			</xs:annotation>
-		</xs:attribute>-->
 		<xs:attribute name="flooding" type="cpmBoolean" 		use="optional" >
 			<xs:annotation>
 				<xs:documentation>Default is True. If true the inner of the cell is flooded with a color, if False individual points of the cell are drawn with the given pointsize. Membrane properties can only be plotted with flooding set to False.</xs:documentation>
@@ -114,21 +79,25 @@ Note: when (membrane) property has been selected, you MUST provide a symbol-ref 
 				<xs:documentation>Default is False. Per frame reset of the value range of the referred symbol .</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
-		<xs:attribute name="slice"	type="cpmUnsignedInteger" use="optional">
-			<xs:annotation>
-				<xs:documentation>Z-slice of 3D lattice to plot (for z-stack plots).</xs:documentation>
+		<xs:attribute name="opacity" 		type="cpmDouble" 		use="optional" default="1.0">
+		<xs:annotation>
+			<xs:documentation>Make cells gradually transparant, useful for superimposed frames. 
+				
+((NOTE WdB)) I don't think this works at the moment. Gnuplot support transparency in filled curves, but not in points. Currently, however, cells are not not floodfilled but filled using points.
+((NOTE JS))  That feature is exclusively working with the flooding option in cell plots.
+</xs:documentation>
 			</xs:annotation>
-		</xs:attribute>
+		</xs:attribute> 
 	</xs:complexType>
 	
-		<xs:simpleType name="cpmcpmCellPlotModeEnum"> 
+<!--		<xs:simpleType name="cpmcpmCellPlotModeEnum"> 
 		<xs:restriction base="cpmString">
 			<xs:enumeration value="cell type"/>
 			<xs:enumeration value="cell id"/>
 			<xs:enumeration value="property"/>
 			<xs:enumeration value="membrane property"/>
 		</xs:restriction>
-	</xs:simpleType>
+	</xs:simpleType>-->
 	
 	<xs:complexType name="cpmGnuplotCellLabels">
 		<xs:annotation>
@@ -241,7 +210,7 @@ Note: when (membrane) property has been selected, you MUST provide a symbol-ref 
 		<xs:attribute name="min" 	type="cpmDouble" use="optional" />
 		<xs:attribute name="max" 	type="cpmDouble" use="optional" />
 		<xs:attribute name="data-cropping" 	type="cpmBoolean" use="optional" />
-		<xs:attribute name="slice"	type="cpmUnsignedInteger" use="optional"/>
+<!-- 		<xs:attribute name="slice"	type="cpmUnsignedInteger" use="optional"/> -->
 		<xs:attribute name="coarsening" type="cpmInteger" use="optional" />
 		<xs:attribute name="isolines" 	type="cpmUnsignedInteger" use="optional" />
 		<xs:attribute name="surface"	type="cpmBoolean" use="optional" />
@@ -266,15 +235,6 @@ Plot to file  : png, jpeg, gif, postscript, pdf.</xs:documentation>
 Note: This option is only applicable when plotting on-screen (using x11, wxt, or aqua terminals).</xs:documentation>
 			</xs:annotation>
 		</xs:attribute>
-		<xs:attribute name="opacity" 		type="cpmDouble" 		use="optional" default="1.0">
-			<xs:annotation>
-				<xs:documentation>Make cells gradually transparant, useful for superimposed frames. 
-				
-((NOTE WdB)) I don't think this works at the moment. Gnuplot support transparency in filled curves, but not in points. Currently, however, cells are not not floodfilled but filled using points.
-((NOTE JS))  That feature is exclusively working with the flooding option in cell plots.
-</xs:documentation>
-			</xs:annotation>
-		</xs:attribute> 
 		<xs:attribute name="size" 		type="cpmIntegerVector" 		use="optional">
 			<xs:annotation>
 				<xs:documentation>Overrides the default output size of the terminal.
@@ -294,6 +254,7 @@ Note: This option is only applicable when plotting on-screen (using x11, wxt, or
 			<xs:enumeration value="eps"/>
 			<xs:enumeration value="postscript"/>
 			<xs:enumeration value="pdf"/>
+			<xs:enumeration value="windows"/>
 			<xs:enumeration value="x11"/>
 			<xs:enumeration value="wxt"/>
 			<xs:enumeration value="aqua"/>

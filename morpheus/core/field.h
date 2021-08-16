@@ -42,14 +42,18 @@ A \b Field defines a variable scalar field, associating a scalar value to every 
 
 Spatio-temporal dynamics can be implemented explicitly by using an \ref ML_Equation, an \ref ML_Event or by using \ref ML_DiffEqn.
 In addition, homogeneous \b Diffusion can optionally be specified.
-The \ref ML_Space symbol allows the initial expression to directly depend on the spatial position. 
 
+- \b value: \b initial condition for the scalar field. May be given as \ref MathExpressions, also depending on the spatial position (see \ref ML_Space)
 
-- \b value: initial condition for the scalar field. May be given as expression.
+\b BoundaryValue defines the value of the \ref ML_Field at the respective boundary.
+- \b boundary: specifies a boundery with either constant or no-flux boundary condition (\ref ML_Lattice)
+- \b value: mathematical expression providing the value at the boundary that may vary in space
+
+\b TiffReader:  specify the initial condition of the field in terms of a float tiff image
 
 Optionally, a \b Diffusion rate may be specified.
 
-- \b rate: diffusion coefficient
+- \b rate: diffusion coefficient [(node length)² per (global time)]
 - \b well-mixed (optional): if true, homogenizes scalar field. Requires rate=0.
 
 
@@ -69,7 +73,7 @@ Spatio-temporal dynamics can be implemented explicitly by using a \ref ML_Vector
 The \ref ML_Space symbol allows the initial expression to directly depend on the spatial position. 
 
 
-- \b value: initial condition for the vector field. May be given as expression.
+- \b value: \b initial condition for the vector field. May be given as space-dependent \ref MathExpressions.
 
 **/
 
@@ -103,13 +107,15 @@ public:
 			const Scope* scope;
 	};
 
-	void loadFromXML(const XMLNode xnode, Scope* scope);
+	void loadFromXML(const XMLNode xnode, const Scope* scope);
+	const string getXMLPath();
 	XMLNode saveToXML() const;
 	
 	bool restoreData(const XMLNode xnode);
 	XMLNode storeData(string filename="") const;
 
 	void init(const SymbolFocus& focus = SymbolFocus::global);
+	void setInitializer(shared_ptr<ExpressionEvaluator<double>> init) { initializer = init; }
 
 // 	void execute_once_each_mcs(uint mcs);
 	/// Calculate the values of time + delta_t  without changing the current values of the layer.
@@ -156,6 +162,7 @@ public:
 
 private:
 	string initial_expression;
+	shared_ptr<ExpressionEvaluator<double>> initializer;
 	bool initialized;
 	const Scope* local_scope;
 	bool init_by_restore;
@@ -208,25 +215,30 @@ private:
 class Field : public Plugin {
 public:
 	DECLARE_PLUGIN("Field");
-	Field(): Plugin() { symbol_name.setXMLPath("symbol"); registerPluginParameter(symbol_name); }
+	Field(): Plugin() { symbol_name.setXMLPath("symbol"); registerPluginParameter(symbol_name); initializing=false; initialized = false;}
 	void loadFromXML(const XMLNode node, Scope * scope) override;
 	XMLNode saveToXML() const override;
 	void init(const Scope * scope) override;
 	
 	class Symbol : public SymbolRWAccessorBase<double> {
 	public:
-		Symbol(string name, string descr, shared_ptr<PDE_Layer> field): SymbolRWAccessorBase<double>(name), descr(descr), field(field) {
+		Symbol(Field* parent, string name, string descr): 
+			SymbolRWAccessorBase<double>(name), descr(descr),
+			parent(parent)
+		{
 			this->flags().granularity = Granularity::Node;
 		};
 		const string&  description() const override { return descr; }
+		const string XMLPath() const override { return field->getXMLPath(); } 
 		std::string linkType() const override { return "FieldLink"; }
 		
 		TypeInfo<double>::SReturn get(const SymbolFocus & f) const override { return field->get(f.pos()); }
-		TypeInfo<double>::SReturn safe_get(const SymbolFocus & f) const override { 
-			field->init();
-			return field->get(f.pos());
-			
-		};
+		
+		void init() override {
+			if (!field)
+				parent->init(SIM::getGlobalScope());
+		}
+		
 		shared_ptr<PDE_Layer> getField() const { return field; };
 		void set(const SymbolFocus & f, typename TypeInfo<double>::Parameter value) const override { field->set(f.pos(), value); };
 		void setBuffer(const SymbolFocus & f, TypeInfo<double>::Parameter value) const override { field->setBuffer(f.pos(), value); }
@@ -236,10 +248,12 @@ public:
 	private: 
 		string descr;
 		shared_ptr<PDE_Layer> field;
+		Field* parent;
 		friend Field;
 	};
 private:
 	shared_ptr<Symbol> accessor;
+	bool initializing, initialized;
 	PluginParameter2<string, XMLValueReader, RequiredPolicy> symbol_name;
 	shared_ptr<Diffusion> diffusion_plugin;
 };
@@ -248,7 +262,7 @@ private:
 class VectorField_Layer : public Lattice_Data_Layer<VDOUBLE> {
 public: 
 	VectorField_Layer(shared_ptr< const Lattice > lattice, double node_length);
-	void loadFromXML(XMLNode node, Scope* scope);
+	void loadFromXML(XMLNode node, const Scope* scope);
 	XMLNode saveToXML() const;
 	
 	bool restoreData(const XMLNode xnode);
@@ -282,18 +296,21 @@ public:
 	VectorField();
 	void loadFromXML(const XMLNode node, Scope * scope) override;
 	XMLNode saveToXML() const override;
-	void init(const Scope * scope) override {  if (accessor) accessor->field->init(scope);}
+	void init(const Scope * scope) override;
 	
 	class Symbol : public SymbolRWAccessorBase<VDOUBLE> {
 	public:
-		Symbol(string name, string descr, shared_ptr<VectorField_Layer> field): SymbolRWAccessorBase<VDOUBLE>(name), descr(descr), field(field) {
+		Symbol(VectorField* parent, string name, string descr): SymbolRWAccessorBase<VDOUBLE>(name), descr(descr), parent(parent)
+		{
 			this->flags().granularity = Granularity::Node;
 		};
 		const string&  description() const override { return descr; }
 		std::string linkType() const override { return "VectorFieldLink"; }
 		
 		TypeInfo<VDOUBLE>::SReturn get(const SymbolFocus & f) const override { return field->get(f.pos()); }
-		TypeInfo<VDOUBLE>::SReturn safe_get(const SymbolFocus & f) const override{  return field->get(f.pos()); };
+		void init() override {  
+			if (! field) parent->init( SIM::getGlobalScope() );
+		};
 		shared_ptr<VectorField_Layer> getField() const { return field; };
 		void set(const SymbolFocus & f, typename TypeInfo<VDOUBLE>::Parameter value) const override { field->set(f.pos(), value); }
 		void setBuffer(const SymbolFocus & f, TypeInfo<VDOUBLE>::Parameter value) const override { field->setBuffer(f.pos(), value); }
@@ -303,11 +320,13 @@ public:
 	private: 
 		string descr;
 		shared_ptr<VectorField_Layer> field;
+		VectorField* parent;
 		friend VectorField;
 	};
 	
 private: 
 	shared_ptr<Symbol> accessor;
+	bool initializing, initialized;
 	PluginParameter2<string, XMLValueReader, RequiredPolicy> symbol_name;
 };
 

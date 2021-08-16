@@ -8,6 +8,8 @@
 // Copyright 2009-2016, Technische Universität Dresden, Germany
 //
 //////
+#ifndef GNUPLOTTER_H
+#define GNUPLOTTER_H
 
 #include "core/simulation.h"
 #include "core/interfaces.h"
@@ -19,111 +21,95 @@
 #include "gnuplot_i/gnuplot_i.h"
 #include <fstream>
 #include <sstream>
-/** 
- *  \defgroup Gnuplotter Gnuplotter
- *  \ingroup ML_Analysis
- *  \ingroup AnalysisPlugins
- *  \brief Visualisation of spatial simulation states (cells, fields) using GnuPlot.
- * 
+/**
+\defgroup Gnuplotter Gnuplotter
+\ingroup ML_Analysis
+\ingroup AnalysisPlugins
+\brief Visualisation of spatial simulation states (cells, fields) using GnuPlot.
+ 
 \section Description
 
 Gnuplotter plots the Cell configurations (and optionally Fields) to screen or to file during simulation.
 Requires GNUPlot 4.2.5 or higher.
 
 
-Organised in Plots, several artistic representations can be selected :
+Organized in Plots, several artistic representations can be selected:
   - Cells can be colorized using the value attribute.
   - Spatial Fields can be superimposed under the plot.
   - Additional information can be visualized using CellLabels and CellArrows.
-  - VectorFields can be plotted by providing x and y components seperately. 
+  - VectorFields can be plotted by providing x and y components separately. 
 
 \subsection Attributes
-- \b time-step (optional): Frequency of plotting events. If unspecified adopts to the frequency of input updates. Setting \b time-step<=0 will plot only the final state of the simulation.
+- \b time-step (optional): Frequency of plotting events. If unspecified, adopts to the frequency of input updates. Setting \b time-step=0 will plot only the final state of the simulation.
 - \b decorate (optional, true): Enables axis labels and legends.
-- \b log-commands (optional, false): Enables logging of data and plot commands to disc. Allows to manually repeat and manipulate the plots.
+- \b log-commands (optional, false): Enables logging of data and plotting commands to disc. Allows to manually repeat and manipulate the plots.
 - \b file-numbering (optional, time): Set the numbering of the plot images to either be consecutive or based on simulation time.
 
 \subsection Terminal
 - \b name: Specifies the output format (e.g. wxt, x11, aqua, png, postscript). Default is Gnuplot default.
 
 \subsection Plot
+- \b title: Title of the plot.
+- \b slice: Z-slice of 3D lattice to plot.
 - \b Cells: Plot the spatial cell pattern restricted to a 2d scenario. Cell coloring is determined by the \b value attribute.
 - \b CellLabels: Put labels at the cell center according to the expression provided with the \b value attribute.
 - \b CellArrows: Put arrows at the cell center according to the expression provided with the \b value attribute.
-- \b Field: Plot a scalare field given by the expression in \b value. \b Coarsening will reduce the spatial data resolution.
+- \b CellLinks: Put a line connecting cell centers for each link created by \ref ML_MechanicalLink component.
+- \b Field: Plot a scalar field given by the expression in \b value. \b Coarsening will reduce the spatial data resolution.
 - \b VectorField: Plot a vector field given by the expression in \b value. \b Coarsening will reduce the spatial data resolution.
 
 \section Examples
 
 Plot CPM state (showing cell types) to screen using WxWidgets terminal
-\verbatim
+~~~~~~~~~~~~~~~~~~~~~{.xml}
 <Analysis>
-        <Gnuplotter interval="100">
-            <Terminal name="wxt"/>
+        <Gnuplotter time-step="100">
+            <Terminal name="png"/>
+            <Plot>
+                <Cells value="cell.id" />
+            </Plot>
         </Gnuplotter>
 <\Analysis>
-\endverbatim
+~~~~~~~~~~~~~~~~~~~~~
 
 Example: Plot CPM state showing two cell properties to PNG files
-\verbatim
+~~~~~~~~~~~~~~~~~~~~~{.xml}
 <Analysis>
-        <Gnuplotter interval="100">
+        <Gnuplotter time-step="100">
             <Terminal name="png"/>
-            <CellProperty name="target volume" type="integer"/>
-            <CellProperty name="divisions" type="integer"/>
+             <Plot>
+                <Cells value="cell.volume.target" />
+             </Plot>
+             <Plot>
+                <Cells value="cell.divisions">
+					<ColorMap>
+						<Color value="1"  name="black" />
+						<Color value="25" name="red"   />
+						<Color value="50" name="yellow"/>
+					</ColorMap>
+				</Cells>
+            </Plot>
         </Gnuplotter>
 <\Analysis>
-\endverbatim
+~~~~~~~~~~~~~~~~~~~~~
 
 
-Example: Plot CPM state showing a cell properties (no cell membrane), and with custom color map
-\verbatim
-    <Analysis>
-        <Gnuplotter interval="500">
-            <Terminal name="wxt"/>
-	    <Membrane value="false"/>
-            <CellProperty name="target volume" type="integer">
-		<ColorMap>
-			<Color value="1"  name="black" />
-			<Color value="25" name="red"   />
-			<Color value="50" name="yellow"/>
-		</ColorMap>decorate
-	    </CellProperty>
-	</Gnuplotter>
-    </Analysis>
-\endverbatim
-
-Example: Plot multiple panels to screen (CPM, PDE with surface, PDE with isolines)
-\verbatim
+Example: Plot multiple panels to screen (CPM cell outlines, PDE with surface, PDE with isolines), reducing the plot resolution for speed
+~~~~~~~~~~~~~~~~~~~~~{.xml}
 <Analysis>
         <Gnuplotter interval="500">
             <Terminal name="wxt"/>
-            <Layer name="chemoattractant" surface="false" />
-            <Layer name="chemoattractant" isolines="true"/>
+            <Plot>
+                <Cells />
+				<Field symbol-ref="chemoattractant" surface="false" coarsening="2"/>
+            </Plot
+			<Plot>
+                <Cells />
+				<Field symbol-ref="chemoattractant" isolines="true" coarsening="2"/>
+             </Plot
         </Gnuplotter>
 <\Analysis>
-\endverbatim
-
-Example: Plot multiple superimposed panels to postscript files (CPM, PDE surface and PDE isolines)
-\verbatim
-<Analysis>
-        <Gnuplotter interval="500">
-            <Terminal name="postscript"/>
-            <Layer name="chemoattractant" superimpose="true" isolines="true" surface="false" />
-        </Gnuplotter>
-<\Analysis>
-\endverbatim
-
-Example: To gain plotting speed, plot PDE layer using binary files, with a resolution smaller than the world size (gradients will be interpolated)
-\verbatim
-<Analysis>
-        <Gnuplotter interval="25">
-            <Terminal name="wxt"/>
-            <Layer name="chemoattractant" surface="true" binary="true" resolution="50" />
-        </Gnuplotter>
-<\Analysis>
-\endverbatim
-
+~~~~~~~~~~~~~~~~~~~~~
 */
 
 
@@ -131,7 +117,7 @@ class LabelPainter  {
 public:
 	LabelPainter();
 	void loadFromXML(const XMLNode node, const Scope * scope);
-	void init(const Scope* scope);
+	void init(const Scope* scope, int slice);
 	set<SymbolDependency> getInputSymbols() const;
 	const string& getDescription() const;
 	void plotData(ostream& );
@@ -143,13 +129,14 @@ private:
 	vector<shared_ptr< const CellType> > celltypes;
 	string _fontcolor;
 	uint _fontsize;
+	int z_slice;
 };
 
 class ArrowPainter  {
 public:
 	ArrowPainter();
 	void loadFromXML(const XMLNode, const Scope * scope);
-	void init(const Scope* scope);
+	void init(const Scope* scope, int slice);
 	set<SymbolDependency> getInputSymbols() const;
 	void plotData(ostream& );
 	int getStyle();
@@ -159,6 +146,7 @@ private:
 	PluginParameter2<VDOUBLE, XMLEvaluator, DefaultValPolicy > arrow;
 	PluginParameter2<bool, XMLNamedValueReader, DefaultValPolicy > centering;
 	int style;
+	int z_slice;
 	
 };
 /** @brief Visualiser for a spatial field in GnuPlot 
@@ -167,7 +155,7 @@ private:
 class FieldPainter {
 public:
     void loadFromXML(const XMLNode node, const Scope * scope);
-	void init(const Scope* scope);
+	void init(const Scope* scope, int slice);
 	set<SymbolDependency> getInputSymbols() const;
 	void plotData(ostream& out );
 	bool getSurface() { if( surface.isDefined() ) return surface.get(); else return true;}
@@ -185,8 +173,9 @@ private:
 	PluginParameter2<float,XMLEvaluator,OptionalPolicy> min_value, max_value;
 	PluginParameter2<int,XMLValueReader,OptionalPolicy> isolines;
 	PluginParameter2<bool,XMLValueReader,OptionalPolicy> surface;
-	PluginParameter2<int,XMLValueReader,DefaultValPolicy> z_slice;
+// 	PluginParameter2<int,XMLValueReader,DefaultValPolicy> z_slice;
 	map<double,string> color_map;
+	int z_slice;
 	
 
 // 	int style;
@@ -201,7 +190,7 @@ private:
 class VectorFieldPainter  {
 public:
     void loadFromXML(const XMLNode node, const Scope * scope );
-	void init(const Scope* scope);
+	void init(const Scope* scope, int slice);
 	set<SymbolDependency> getInputSymbols() const;
 	void plotData(ostream& out_ );
 	int getStyle();
@@ -216,7 +205,7 @@ private:
 	int style;
 	string color;
 	int coarsening;
-	int slice;
+	int z_slice;
 };
 
 class CellPainter  {
@@ -252,6 +241,7 @@ class CellPainter  {
 		bool external_palette;
 		bool external_range, external_range_min, external_range_max;
 		double range_min, range_max;
+		double fill_opacity;
 		void updateDataLayout();
 		void loadPalette(const XMLNode node);
 		XMLNode savePalette() const;
@@ -261,12 +251,12 @@ class CellPainter  {
 		
 		CellPainter();
 		~CellPainter();
-		virtual void loadFromXML(const XMLNode, const Scope* scope );
-		void init(const Scope* scope);
+		void loadFromXML(const XMLNode, const Scope* scope );
+		void init(const Scope* scope, int slice);
 		set<SymbolDependency> getInputSymbols() const;
 		float getMaxVal() { return max_val;}
 		float getMinVal() { return min_val;}
-		uint getSlice() { return z_level;}
+		double getOpacity() { return fill_opacity; }
 		const string& getDescription() const;
 		void writeCellLayer(ostream& out);
 		DataLayout getDataLayout();
@@ -274,6 +264,21 @@ class CellPainter  {
 		vector<CellPainter::CellBoundarySpec> getCellBoundaries();
 		string getPaletteCmd();
 		static float getTransparentValue() { return transparency_value; };
+};
+
+class CellLinkPainter {
+	typedef vector<CPM::CELL_ID> LinkType;
+	SymbolAccessor<LinkType> bonds;
+	string color;
+	int z_slice;
+	
+public: 
+	CellLinkPainter();
+	void loadFromXML(const XMLNode node, const Scope* scope);
+	void init(const Scope* scope, int slice);
+	void plotData(ostream& );
+	string getColor() { return color; }
+	string getDescription() const;
 };
 
 class Gnuplotter : public AnalysisPlugin
@@ -295,18 +300,21 @@ class Gnuplotter : public AnalysisPlugin
 			PlotSpec();
 			static VDOUBLE size();
 			static VDOUBLE view_oversize();
-			bool field, cells, labels, arrows, vectors;
+			bool field, cells, labels, arrows, vectors, links;
+			int  z_slice;
 			shared_ptr<CellPainter> cell_painter;
 			shared_ptr<LabelPainter> label_painter;
 			shared_ptr<FieldPainter> field_painter;
 			shared_ptr<ArrowPainter> arrow_painter;
 			shared_ptr<VectorFieldPainter> vector_field_painter;
+			shared_ptr<CellLinkPainter> cell_link_painter;
 			string field_data_file;
 			string cells_data_file;
 			string membranes_data_file;
 			string labels_data_file;
 			string arrow_data_file;
 			string vector_field_file;
+			string link_data_file;
 			string title;
 		};
 		
@@ -325,7 +333,7 @@ class Gnuplotter : public AnalysisPlugin
 		enum class Terminal{ PNG, PDF, JPG, GIF, SVG, EPS, SCREEN };
 		PluginParameter2<Terminal,XMLNamedValueReader,DefaultValPolicy> terminal;
 		PluginParameter2<VINT,XMLValueReader,OptionalPolicy> terminal_size;
-		PluginParameter2<double,XMLValueReader,OptionalPolicy> cell_opacity;
+// 		PluginParameter2<double,XMLValueReader,OptionalPolicy> cell_opacity;
 // 		PluginParameter2<double,XMLValueReader,DefaultValPolicy> pointsize;
 		
 		struct TerminalSpec {
@@ -368,3 +376,5 @@ class Gnuplotter : public AnalysisPlugin
 		virtual void finish() override {};
 
 };
+
+#endif

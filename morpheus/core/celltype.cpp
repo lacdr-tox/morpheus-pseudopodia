@@ -4,6 +4,8 @@
 // #include "diffusion.h"
 // #include "symbol_accessor.h"
 #include "focusrange.h"
+#include "property.h"
+#include "membrane_property.h"
 
 
 
@@ -70,6 +72,23 @@ shared_ptr<Cell> CellIndexStorage::removeCell(CPM::CELL_ID id)
 	return c;
 }
 
+int CellIndexStorage::size() const {
+	return used_cell_names.size();
+}
+
+void CellIndexStorage::wipe()
+{
+	if ( CellType::storage.size() != 0 ) {
+		cerr << string ("Warning!! Wiping cell storage although cells are present.");
+	}
+
+	cell_by_id.clear();
+	cell_index_by_id.clear();
+	used_cell_names.clear();
+	free_cell_name = 0;
+}
+
+
 
 using namespace SIM;
 // string CellType::XMLClassName() const { return string("abstract prototype"); };
@@ -83,6 +102,13 @@ CellType::CellType(uint ct_id) :  default_properties(_default_properties)
 {
 	id= ct_id;
 	name ="";
+};
+
+CellType::~CellType() {
+	for (auto cell : cell_ids) {
+		storage.removeCell(cell);
+	} 
+	cell_ids.clear(); 
 };
 
 CellType* CellType::createInstance(uint ct_id) {
@@ -110,17 +136,23 @@ void CellType::loadFromXML(const XMLNode xCTNode, Scope* scope) {
 	}
 	
 	local_scope = scope->createSubScope(string("CellType[")+name + "]",this);
-	auto cell_type_symbol =       SymbolAccessorBase<double>::createConstant("cell.type", "CellType ID", id);
-	cell_type_symbol->flags().integer = true;
-	local_scope->registerSymbol(  cell_type_symbol );
+	auto symbol =       SymbolAccessorBase<double>::createConstant("cell.type", "CellType ID", id);
+	symbol->flags().integer = true;
+	symbol->setXMLPath(getXMLPath(xCTNode));
+	local_scope->registerSymbol( symbol );
 	local_scope->registerSymbol(                   make_shared<CellIDSymbol>("cell.id") );
 	local_scope->registerSymbol(               make_shared<CellCenterSymbol>("cell.center") );
 	if (!isMedium()) {
-		local_scope->registerSymbol(            make_shared<CellVolumeSymbol>("cell.volume") );
-		local_scope->registerSymbol(            make_shared<CellLengthSymbol>("cell.length") );
-		local_scope->registerSymbol(   make_shared<CellInterfaceLengthSymbol>("cell.surface"));
-		local_scope->registerSymbol(       make_shared<CellOrientationSymbol>("cell.orientation"));
+		local_scope->registerSymbol(           make_shared<CellVolumeSymbol>("cell.volume") );
+		local_scope->registerSymbol(           make_shared<CellLengthSymbol>("cell.length") );
+		local_scope->registerSymbol(  make_shared<CellInterfaceLengthSymbol>("cell.surface"));
+		local_scope->registerSymbol(      make_shared<CellOrientationSymbol>("cell.orientation"));
 	}
+	
+	string tags_string;
+	getXMLAttribute(xCTNode, "tags", tags_string, false);
+	auto tags_split = tokenize(tags_string," \t,", true);
+	xml_tags.insert(tags_split.begin(), tags_split.end());
 }
 
 
@@ -133,10 +165,11 @@ void CellType::loadPlugins()
 		try {
 			string xml_tag_name(xNode.getName());
 // 			if (xml_tag_name=="Segment") continue; // for compatibility with the segmented celltype
-			shared_ptr<Plugin> p = PluginFactory::CreateInstance(xml_tag_name);
+			shared_ptr<Plugin> p = Plugin::CreateInstance(xml_tag_name);
 			if (! p.get()) 
 				throw(string("Unknown plugin " + xml_tag_name));
 			
+			p->setInheritedTags(xml_tags);
 			p->loadFromXML(xNode,local_scope);
 			
 			if ( dynamic_pointer_cast< CPM_Energy >(p) ) { energies.push_back(dynamic_pointer_cast< CPM_Energy >(p) );}
@@ -145,7 +178,16 @@ void CellType::loadPlugins()
 			plugins.push_back( p );
 		}
 		catch(string er) {
-			throw MorpheusException(er, stored_node);
+			string s("Error while loading Plugin ");
+			s+= string(xNode.getName()) + "\n" + er; 
+			cout << "\nAvailable Plugins: ";
+			Plugin::getFactory().printKeys();
+			throw MorpheusException(s, stored_node);
+		}
+		catch(const SymbolError& e) {
+			string s("Error while loading Plugin ");
+			s+= string(xNode.getName()) + "\n" + e.what();
+			throw MorpheusException(s, stored_node);
 		}
 	}
 }
@@ -170,10 +212,14 @@ void CellType::init() {
 			plugins[i]->init(local_scope);
 		}
 		catch (string er) {
-			throw MorpheusException(er, plugins[i]->saveToXML());
+			string s("Error while initializing Plugin ");
+			s+= plugins[i]->XMLName() + "\n" + er;
+			throw MorpheusException(s, plugins[i]->saveToXML());
 		}
 		catch (SymbolError er) {
-			throw MorpheusException(er.what(), plugins[i]->saveToXML());
+			string s("Error while initializing Plugin ");
+			s+= plugins[i]->XMLName() + "\n" + er.what();
+			throw MorpheusException(s, plugins[i]->saveToXML());
 		}
 	}
 	
@@ -241,38 +287,80 @@ void CellType::init() {
 	
 	// Initialization of Cell Properties
 	
-	// i run individual property initialisation through Cell::init()
-	for (auto cell_id : cell_ids) {
-		storage.cell(cell_id).init();
-	}
-	
-	
-	// ii Run property initialization plugins from Population initializers
-	for (auto& cp : cell_populations) {
-		for ( const auto& ip : cp.property_initializers) {
-			
-			SymbolRWAccessor<double> symbol;
-			symbol = local_scope->findRWSymbol<double>(ip.symbol);
-
-			ExpressionEvaluator<double> init_expression(ip.expression,local_scope);
-			init_expression.init();
-			
-			// Apply InitProperty expressions for all cells
-			for (auto cell : cp.cells) {
-				FocusRange range(symbol->flags().granularity,cell);
-				for ( const auto& focus : range) {
-					symbol->set(focus, init_expression.get(focus));
-				}
-			}
-		}
-	}
-	
-	// iii Override with per cell property definitions from xml
+		
+	// i Preset per cell property definitions from xml
 	for (const auto& cell : predefined_cells) {
 		XMLNode xCellNode = cell.second;
 		CPM::CELL_ID cell_id = cell.first;
 		storage.cell(cell_id).loadFromXML( xCellNode );
 	}
+	
+	// ii Bind property initialization plugins from Population initializers
+	for (auto& cp : cell_populations) {
+		for ( const auto& ip : cp.property_initializers) {
+			
+			auto asymbol = local_scope->findSymbol(ip.symbol);
+			if (asymbol->type() == TypeInfo<double>::name()) {
+				auto symbol = local_scope->findRWSymbol<double>(ip.symbol);
+				 
+				auto init_expression = make_shared<ExpressionEvaluator<double>>(ip.expression,local_scope);
+				init_expression->init();
+				auto property_symbol = dynamic_pointer_cast<const PropertySymbol<double>>(symbol);
+				auto mem_property_symbol = dynamic_pointer_cast<const MembranePropertySymbol>(symbol);
+				if (property_symbol) {
+					// Apply InitProperty expressions for all cells
+					for (auto cell : cp.cells) {
+						FocusRange range(symbol->flags().granularity,cell);
+						for ( const auto& focus : range) {
+							property_symbol->setInitializer(init_expression,focus);
+						}
+					}
+				}
+				else if (mem_property_symbol) {
+					// Apply InitProperty expressions for all cells
+					for (auto cell : cp.cells) {
+						FocusRange range(symbol->flags().granularity,cell);
+						for ( const auto& focus : range) {
+							mem_property_symbol->setInitializer(init_expression,focus);
+						}
+					}
+				}
+				else {
+					stringstream s;
+					s << "Initproperty refers to symbol '" << ip.symbol << "' of type " << symbol->linkType() << ", not Cell Property";
+					throw(MorpheusException( s.str() ,cp.xPopNode));
+				}
+			}
+			else if (asymbol->type() == TypeInfo<VDOUBLE>::name()) {
+				auto symbol = local_scope->findRWSymbol<VDOUBLE>(ip.symbol);
+				 
+				auto init_expression = make_shared<ExpressionEvaluator<VDOUBLE>> (ip.expression,local_scope);
+				init_expression->setNotation(ip.notation);
+				init_expression->init();
+				auto property_symbol = dynamic_pointer_cast<const PropertySymbol<VDOUBLE>>(symbol);
+				if (!property_symbol) {
+					stringstream s;
+					s << "Initproperty refers to symbol '" << ip.symbol << "' of type " << symbol->linkType() << ", not Cell VectorProperty";
+					throw(MorpheusException( s.str() ,cp.xPopNode));
+				}
+				// Apply InitProperty expressions for all cells
+				for (auto cell : cp.cells) {
+					FocusRange range(symbol->flags().granularity,cell);
+					for ( const auto& focus : range) {
+						property_symbol->setInitializer(init_expression,focus);
+					}
+				}
+			}
+		}
+	}
+	
+	// iii Run individual property initialisation through Cell::init()
+	for (auto cell_id : cell_ids) {
+		storage.cell(cell_id).init();
+	}
+	
+	
+
 }
 
 multimap<Plugin*, SymbolDependency > CellType::cpmDependSymbols() const
@@ -329,22 +417,39 @@ void CellType::loadPopulationFromXML(const XMLNode xNode) {
 		XMLNode xcpNode = xNode.getChildNode(i);
 		// Defer loading cells
 		if (string(xcpNode.getName()) == "Cell") continue;
-		if (string(xcpNode.getName()) =="InitProperty") {
+		if (string(xcpNode.getName()) =="InitProperty" || string(xcpNode.getName()) =="InitVectorProperty" ) {
 			InitPropertyDesc ip;
 			if ( ! getXMLAttribute(xcpNode, "symbol-ref", ip.symbol)) {
-				throw string ("Missing symbol in Population[") + this->name + "]/InitProperty";
+				throw MorpheusException ("Missing symbol-ref attribute!", xcpNode);
 			}
 			if ( ! getXMLAttribute(xcpNode,"Expression/text",ip.expression)) {
-				throw string ("Missing expression in Population[") + this->name + "]/InitProperty["+ip.symbol+"]";
+				throw MorpheusException ("Missing Expression!", xcpNode);
+			}
+			ip.notation = VecNotation::ORTH;
+			string s_notation;
+			if (getXMLAttribute(xcpNode,"notation",s_notation)) {
+				try {
+					ip.notation = VecNotationMap().at(s_notation);
+				}
+				catch(std::out_of_range) {
+					throw MorpheusException(string("Invalid notation attribute: ") + s_notation,xcpNode);
+				}
 			}
 			cp.property_initializers.push_back(ip);
 		}
 		else {
 			// assume its an initilizer
-			shared_ptr<Plugin> p = PluginFactory::CreateInstance(string(xcpNode.getName()));
+			shared_ptr<Plugin> p = Plugin::CreateInstance(string(xcpNode.getName()));
 			if ( dynamic_pointer_cast<Population_Initializer>( p ) ) {
 				cp.pop_initializers.push_back(dynamic_pointer_cast<Population_Initializer>( p ));
 				cp.pop_initializers.back()->loadFromXML(xcpNode,local_scope);
+			}
+			else if (p) {
+				cp.other_plugins.push_back(p);
+			}
+			else {
+				
+				throw MorpheusException(string("Could not create instance for plugin ") + xcpNode.getName(), xcpNode);
 			}
 		}
 	}
@@ -432,7 +537,9 @@ pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID mother_id, V
 	// redistribute the Nodes following the split plane rules.
 	Cell::Nodes mother_nodes =  mother.getNodes();
 	Cell::Nodes deferred_nodes;
-	for (Cell::Nodes::const_iterator node = mother_nodes.begin(); node != mother_nodes.end();node++) {
+	for (Cell::Nodes::const_iterator node = mother_nodes.begin(); node != mother_nodes.end();) {
+		auto next_node = node;
+		++next_node;
 		double distance = distance_plane_point( split_plane_normal, split_plane_center, lattice->to_orth(*node) );
 // 		cout << "Distance d" << distance << "\tn" << split_plane_normal << "\tc" << split_plane_center << "\tnode" << VDOUBLE(*node) << endl;
 		if ( distance > 0 ) {
@@ -445,6 +552,7 @@ pair<CPM::CELL_ID, CPM::CELL_ID> CellType::divideCell2(CPM::CELL_ID mother_id, V
 		else
 			if (! CPM::setNode(*(node), daughter2_id))
 				cerr << "unable to set Cell " << daughter2_id << " at position " << *node << endl;
+		node = next_node;
 	}
 	
 	// Distribute Nodes lying right on the split plane
@@ -656,9 +764,9 @@ CPM::CELL_ID MediumCellType::addCell(CPM::CELL_ID cell_id) {
 	return cell_ids[0];
 }
 
-void MediumCellType::removeCell(CPM::CELL_ID cell_id) {
-	// We use just one cell and never remove it ...
-}
+// void MediumCellType::removeCell(CPM::CELL_ID cell_id) {
+// 	// We use just one cell and never remove it ...
+// }
 
 // CellMembraneAccessor CellType::findMembrane(string symbol, bool required) const
 // {

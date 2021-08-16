@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	
+	<xs:group name="GlobalPlugins">
+		<xs:all>
+			<xs:element name="VectorMapper"	type="VectorMapping_t" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
+	</xs:group>
+	
+	<xs:group name="CellTypePlugins">
+		<xs:all>
+			<xs:element name="VectorMapper"	type="VectorMapping_t"  	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
+	</xs:group>
+	
+
+	<xs:complexType name="VectorMapping_t">
+		<xs:complexContent>
+			<xs:extension base="morphReporterPlugin">
+				<xs:annotation>
+					<xs:appinfo>Reporter</xs:appinfo>
+				</xs:annotation>
+				<xs:all>
+					
+					<xs:element name="Input">
+						<xs:complexType>
+							<xs:attribute name="value" type="cpmVectorMathExpression" use="required" />
+						</xs:complexType>
+					</xs:element>
+					
+					<xs:element name="Output" minOccurs="0"  maxOccurs="unbounded">
+						<xs:complexType>
+							<xs:attribute name="symbol-ref" type="cpmDoubleVectorSymbolRef" use="required"/>
+							<xs:attribute name="mapping" type="cpmVectorArrayStatistics" use="optional"/>
+						</xs:complexType>
+					</xs:element>
+				</xs:all>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+</xs:schema>
+

@@ -10,10 +10,8 @@ Process::Data::Data() noexcept : id(0), handle(NULL) {}
 
 // Simple HANDLE wrapper to close it automatically from the destructor.
 class Handle {
-private:
-  HANDLE handle;
 public:
-  Handle() : handle(INVALID_HANDLE_VALUE) { }
+  Handle() noexcept : handle(INVALID_HANDLE_VALUE) { }
   ~Handle() noexcept {
     close();
   }
@@ -27,8 +25,9 @@ public:
     return old_handle;
   }
   operator HANDLE() const noexcept { return handle; }
-  // operator PHANDLE() const noexcept { return &handle; }
   HANDLE* operator&() noexcept { return &handle; }
+private:
+  HANDLE handle;
 };
 
 //Based on the discussion thread: https://www.reddit.com/r/cpp/comments/3vpjqg/a_new_platform_independent_process_library_for_c11/cxq1wsj
@@ -107,14 +106,10 @@ Process::id_type Process::open(const string_type &command, const string_type &pa
   BOOL bSuccess = CreateProcess(nullptr, process_command.empty()?nullptr:&process_command[0], nullptr, nullptr, TRUE, 0,
                                 nullptr, path.empty()?nullptr:path.c_str(), &startup_info, &process_info);
 
-  if(!bSuccess) {
-    CloseHandle(process_info.hProcess);
-    CloseHandle(process_info.hThread);
+  if(!bSuccess)
     return 0;
-  }
-  else {
+  else
     CloseHandle(process_info.hThread);
-  }
 
   if(stdin_fd) *stdin_fd=stdin_wr_p.detach();
   if(stdout_fd) *stdout_fd=stdout_rd_p.detach();
@@ -129,6 +124,7 @@ Process::id_type Process::open(const string_type &command, const string_type &pa
 void Process::async_read() noexcept {
   if(data.id==0)
     return;
+
   if(stdout_fd) {
     stdout_thread=std::thread([this](){
       DWORD n;
@@ -158,6 +154,7 @@ void Process::async_read() noexcept {
 int Process::get_exit_status() noexcept {
   if(data.id==0)
     return -1;
+
   DWORD exit_status;
   WaitForSingleObject(data.handle, INFINITE);
   if(!GetExitCodeProcess(data.handle, &exit_status))
@@ -170,6 +167,29 @@ int Process::get_exit_status() noexcept {
   close_fds();
 
   return static_cast<int>(exit_status);
+}
+
+bool Process::try_get_exit_status(int &exit_status) noexcept {
+  if(data.id==0)
+    return false;
+
+  DWORD wait_status = WaitForSingleObject(data.handle, 0);
+
+  if (wait_status == WAIT_TIMEOUT)
+    return false;
+
+  DWORD exit_status_win;
+  if(!GetExitCodeProcess(data.handle, &exit_status_win))
+    exit_status_win=-1;
+  {
+    std::lock_guard<std::mutex> lock(close_mutex);
+    CloseHandle(data.handle);
+    closed=true;
+  }
+  close_fds();
+
+  exit_status = static_cast<int>(exit_status_win);
+  return true;
 }
 
 void Process::close_fds() noexcept {
@@ -217,7 +237,7 @@ void Process::close_stdin() noexcept {
 }
 
 //Based on http://stackoverflow.com/a/1173396
-void Process::kill(bool force) noexcept {
+void Process::kill(bool /*force*/) noexcept {
   std::lock_guard<std::mutex> lock(close_mutex);
   if(data.id>0 && !closed) {
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -243,9 +263,10 @@ void Process::kill(bool force) noexcept {
 }
 
 //Based on http://stackoverflow.com/a/1173396
-void Process::kill(id_type id, bool force) noexcept {
+void Process::kill(id_type id, bool /*force*/) noexcept {
   if(id==0)
     return;
+
   HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
   if(snapshot) {
     PROCESSENTRY32 process;

@@ -12,9 +12,8 @@ Logger::~Logger(){
 };
 
 void Logger::loadFromXML(const XMLNode xNode, Scope* scope){
-    stored_node = xNode;
-    slice = false;
-    
+	
+	slice = false;
 	// Load symbols
 	XMLNode xInput = xNode.getChildNode("Input");
 	inputs.resize(xInput.nChildNode("Symbol"));
@@ -50,6 +49,10 @@ void Logger::loadFromXML(const XMLNode xNode, Scope* scope){
 	domain_only.setDefault("false");
 	registerPluginParameter(domain_only);
 	
+	//Condition
+	restriction_condition.setXMLPath("Restriction/condition");
+	registerPluginParameter(restriction_condition);
+	
 	// Force node granularity
 	//  By default, the granularity is determined automatically by checking the symbol with the smallest granularity
 	//  This can be overridden by specifying force-node-granularity="true"
@@ -72,26 +75,37 @@ void Logger::loadFromXML(const XMLNode xNode, Scope* scope){
 	}
 
 	// plots
-	XMLNode xPlots = xNode.getChildNode("Plots");
-	for (uint i=0; i<xPlots.nChildNode("Plot"); i++) {
-// 		cout << "Logger::loadFromXML: Line " << i << endl;
-// 		cout << "Number of Y-axis Symbols = " << xPlots.getChildNode("Plot",0).getChildNode("Y-axis",0).nChildNode("Symbol") << endl;
-		shared_ptr<LoggerPlotBase> p( new LoggerLinePlot(*this, string("Plots/Plot[") + to_str(i) + "]") );
-		plots.push_back(p);
-	}
-	for (uint i=0; i<xPlots.nChildNode("SurfacePlot"); i++) {
-// 		cout << "Logger::loadFromXML: SurfacePlot " << i << endl;
-		shared_ptr<LoggerPlotBase> p( new LoggerMatrixPlot(*this, string("Plots/SurfacePlot[") + to_str(i) + "]") );
-		plots.push_back(p);
+	if (Gnuplot::isEnabled()) {
+		XMLNode xPlots = xNode.getChildNode("Plots");
+		for (uint i=0; i<xPlots.nChildNode("Plot"); i++) {
+			shared_ptr<LoggerPlotBase> p( new LoggerLinePlot(*this, string("Plots/Plot[") + to_str(i) + "]") );
+			plots.push_back(p);
+		}
+		for (uint i=0; i<xPlots.nChildNode("SurfacePlot"); i++) {
+			shared_ptr<LoggerPlotBase> p( new LoggerMatrixPlot(*this, string("Plots/SurfacePlot[") + to_str(i) + "]") );
+			plots.push_back(p);
+		}
 	}
 	
 	AnalysisPlugin::loadFromXML(xNode,scope);
+	
 }
 
 
 void Logger::init(const Scope* scope){
 // 	cout << "Logger::init" << endl;
 
+	celltype.init();
+	if ( celltype.isDefined() && celltype() ) {
+		auto logging_scope = celltype()->getScope();
+		restriction_condition.setScope(logging_scope);
+		for (auto &c : inputs) {
+			c->setScope(logging_scope);
+			permit_incomplete_symbols = false;
+			c->unsetPartialSpecDefault();
+		}
+	}
+	
    AnalysisPlugin::init(scope);
 
 	try{
@@ -205,12 +219,26 @@ void Logger::init(const Scope* scope){
     }
 };
 
+const SymbolAccessor<double> Logger::getInput(const string& symbol) const {
+	if (! writers.empty() && dynamic_pointer_cast<LoggerTextWriter>(writers.front()) ) {
+		const auto& writer = dynamic_pointer_cast<LoggerTextWriter>(writers.front());
+		for (auto& p : writer->getSymbols()) {
+			if (p->name() == symbol) 
+				return p;
+		}
+	}
+	return SymbolAccessor<double> ();
+}
+
 string  Logger::getInputsDescription(const string& s) const {
 	if (! writers.empty() && dynamic_pointer_cast<LoggerTextWriter>(writers.front()) ) {
 		const auto& writer = dynamic_pointer_cast<LoggerTextWriter>(writers.front());
 		for (const auto &i : writer->getSymbols()) {
 			if (i->name() == s) {
-				return Gnuplot::sanitize(i->description());
+				if (!i->description().empty())
+					return Gnuplot::sanitize(i->description());
+				else
+					return Gnuplot::sanitize(s);
 			}
 		}
 	}
@@ -337,6 +365,10 @@ LoggerTextWriter::LoggerTextWriter(Logger& logger, LoggerTextWriter::OutputForma
 	separator.setConversionMap(separator_convmap);
 	separator.setDefault("tab");
 	separator.read("tab");
+	
+	header_guarding.setDefault("true");
+	header_guarding.read("true");
+	
 	
 	filename.setDefault("logger");
 	filename.read("logger");
@@ -594,6 +626,7 @@ void LoggerTextWriter::writeCSV() {
 	
 	Granularity granularity = logger.getGranularity();
 	FocusRange range(granularity, logger.getRestrictions(), logger.getDomainOnly());
+	const auto& condition = logger.getRestrictionCondition();
 // 	auto& symbols = logger.getInputs();
 	
 	stringstream time;
@@ -609,17 +642,36 @@ void LoggerTextWriter::writeCSV() {
 		plain_restrictions.erase(celltype_restr.first, celltype_restr.second);
 		
 		for (auto cell : cells) {
+			try {
+				SymbolFocus cell_focus(cell);
+				if (condition.isDefined() && condition.granularity() <= Granularity::Cell) {
+					if (!condition(SymbolFocus(cell))) continue;
+				}
+			}
+			catch (const string & e) {
+				continue;
+			}
+		
 			multimap<FocusRangeAxis,int> restrictions = plain_restrictions;
 			restrictions.insert(make_pair(FocusRangeAxis::CELL, cell) );
 			FocusRange cell_range(granularity, restrictions, logger.getDomainOnly());
 			auto out = getOutFile( *(cell_range.begin()) );
-			for (const SymbolFocus& focus : cell_range) {
-				// write point of data row
-				for (uint i=0; i<output_symbols.size(); i++ ) {
-					if (i!=0) *out << separator();
-					*out << output_symbols[i]->get( focus );
+			try {
+				for (const SymbolFocus& focus : cell_range) {
+					if (condition.isDefined() && condition.granularity() > Granularity::Cell) {
+						if (!condition(focus)) continue;
+					}
+					// write point of data row
+					for (uint i=0; i<output_symbols.size(); i++ ) {
+						if (i!=0) *out << separator();
+						*out << output_symbols[i]->get( focus );
+					}
+					*out << "\n";
 				}
+			}
+			catch (const string& e) {
 				*out << "\n";
+				continue;
 			}
 		}
 		
@@ -627,10 +679,17 @@ void LoggerTextWriter::writeCSV() {
 	else {
 		auto out = getOutFile( *(range.begin()) );
 		for (const SymbolFocus& focus : range) {
-			// write point of data row header
-			for (uint i=0; i<output_symbols.size(); i++ ) {
-				if (i!=0) *out << separator();
-				*out << output_symbols[i]->get( focus );
+			try {
+				if (condition.isDefined() && !condition(focus)) continue;
+				// write point of data row header
+				for (uint i=0; i<output_symbols.size(); i++ ) {
+					if (i!=0) *out << separator();
+					*out << output_symbols[i]->get( focus );
+				}
+			}
+			catch (const string& e) {
+				*out << "\n";
+				continue;
 			}
 			*out << "\n";
 		}
@@ -674,6 +733,8 @@ void LoggerTextWriter::writeMatrix() {
 				
 #pragma omp parallel for
 				for (uint c=0; c<cells.size(); c++) {
+					const auto& cond = logger.getRestrictionCondition();
+					if (cond.isDefined() && cond.granularity() <= Granularity::Cell && ! cond(SymbolFocus(cells[c]))) continue;
 					multimap<FocusRangeAxis,int> restrictions = plain_restrictions;
 					restrictions.insert( make_pair(FocusRangeAxis::CELL,cells[c]) );
 					FocusRange range(granularity,restrictions);
@@ -961,7 +1022,7 @@ LoggerPlotBase::LoggerPlotBase(Logger& logger, string xml_base_path)
 	
 	terminal_file_extension[Terminal::PNG] = "png";
 	terminal_file_extension[Terminal::PDF] = "pdf";
-	terminal_file_extension[Terminal::JPG] = "jpeg";
+	terminal_file_extension[Terminal::JPG] = "jpg";
 	terminal_file_extension[Terminal::SVG] = "svg";
 	terminal_file_extension[Terminal::EPS] = "eps";
 	terminal_file_extension[Terminal::GIF] = "gif";
@@ -989,6 +1050,20 @@ LoggerPlotBase::LoggerPlotBase(Logger& logger, string xml_base_path)
 	
 	last_plot_time = 0.0;
 	plot_num = 0; // for sequential file numbering
+}
+
+void LoggerPlotBase::init() {
+	// Check gnuplot has cairo available
+	auto gnu_terminals = Gnuplot::get_terminals();
+	if (gnu_terminals.count("pngcairo")==0 ) {
+		terminal_name[Terminal::PNG] = "png";
+	}
+	if (gnu_terminals.count("pdfcairo")==0 ) {
+		terminal_name[Terminal::PDF] = "pdf";
+	}
+	if (gnu_terminals.count("epscairo")==0 ) {
+		terminal_name[Terminal::EPS] = "postscript";
+	}
 }
 
 void LoggerPlotBase::checkedPlot()
@@ -1134,7 +1209,7 @@ LoggerLinePlot::LoggerLinePlot(Logger& logger, string xml_base_path) : LoggerPlo
 
 void LoggerLinePlot::init() {
 // 	cout << "LoggerLinePlot::init" << endl;
-
+	LoggerPlotBase::init();
 	// Check a suitable output is present
 	const auto& writers = logger.getWriters();
 	for (auto out : writers) {
@@ -1283,6 +1358,45 @@ void LoggerLinePlot::plot()
 		ss << "set grid;\n";
 	}
 
+	string min_x = "*";
+	string max_x = "*";
+	string min_y = "*";
+	string max_y = "*";
+	string min_cb = "*";
+	string max_cb = "*";
+	
+	ostringstream oss;
+	if( axes.x.min.isDefined() ){
+		oss.clear(); oss.str("");
+		oss << axes.x.min.get(SymbolFocus());
+		min_x = oss.str();
+	}
+	if( axes.x.max.isDefined() ){
+		oss.clear(); oss.str("");
+		oss << axes.x.max.get(SymbolFocus());
+		max_x = oss.str();
+	}
+	if( axes.y.min.isDefined() ){
+		oss.clear(); oss.str("");
+		oss << axes.y.min.get(SymbolFocus());
+		min_y = oss.str();
+	}
+	if( axes.y.max.isDefined() ){
+		oss.clear(); oss.str("");
+		oss << axes.y.max.get(SymbolFocus());
+		max_y = oss.str();
+	}
+	if( axes.cb.min.isDefined() ){
+		oss.clear(); oss.str("");
+		oss << axes.cb.min.get(SymbolFocus());
+		min_cb = oss.str();
+	}
+	if( axes.cb.max.isDefined() ){
+		oss.clear(); oss.str("");
+		oss << axes.cb.max.get(SymbolFocus());
+		max_cb = oss.str();
+	}
+	
 	if( !decorate() ){
 		ss << "unset xlabel;\n";
 		ss << "unset ylabel;\n";
@@ -1323,6 +1437,43 @@ void LoggerLinePlot::plot()
 // 				replace_substring(palette, "\\ \n", " ");
 // 				ss << palette;
 			}
+			else {
+				if (logger.getInput( axes.cb.symbol() )->flags().integer ) {
+					int i = 0;
+					std::map <double, string > color_template;
+					color_template[i++]="red";
+					color_template[i++]="yellow";
+					color_template[i++]="dark-green";
+					color_template[i++]="blue";
+					color_template[i++]="orange";
+					color_template[i++]="light-coral";
+					color_template[i++]="turquoise";
+					color_template[i++]="dark-magenta";
+					color_template[i++]="spring-green";
+					color_template[i++]="light-blue";
+					
+					// make a 
+					int fsize = color_template.size();
+					int count= 20;
+					if (axes.cb.min.isDefined() && axes.cb.max.isDefined())
+						count = abs(axes.cb.max(SymbolFocus::global) - axes.cb.min(SymbolFocus::global)) +1;
+					
+					
+					ss << "set palette defined (";
+					for ( i = 0;;) {
+						ss << i << " '" << color_template[i % fsize] << "' ";
+						i++; 
+						if (i > count) break;
+						ss << ", ";
+					}
+					ss << ");\n";
+					int min = 0;
+					if (axes.cb.min.isDefined())
+						min = axes.cb.min(SymbolFocus::global);
+					min_cb = to_str(min);
+					max_cb = to_str(min+count);
+				}
+			}
 			if( axes.cb.palette_reverse() )
 				ss << "set palette negative;\n";
 		}
@@ -1343,46 +1494,8 @@ void LoggerLinePlot::plot()
 		ss << "set log y;\n";
 	if(axes.cb.logarithmic())
 		ss << "set log cb;\n";
-
-	string min_x = "*";
-	string max_x = "*";
-	string min_y = "*";
-	string max_y = "*";
-	string min_cb = "*";
-	string max_cb = "*";
 	
-	ostringstream oss;
-	if( axes.x.min.isDefined() ){
-		oss.clear(); oss.str("");
-		oss << axes.x.min.get(SymbolFocus());
-		min_x = oss.str();
-	}
-	if( axes.x.max.isDefined() ){
-		oss.clear(); oss.str("");
-		oss << axes.x.max.get(SymbolFocus());
-		max_x = oss.str();
-	}
-	if( axes.y.min.isDefined() ){
-		oss.clear(); oss.str("");
-		oss << axes.y.min.get(SymbolFocus());
-		min_y = oss.str();
-	}
-	if( axes.y.max.isDefined() ){
-		oss.clear(); oss.str("");
-		oss << axes.y.max.get(SymbolFocus());
-		max_y = oss.str();
-	}
-	if( axes.cb.min.isDefined() ){
-		oss.clear(); oss.str("");
-		oss << axes.cb.min.get(SymbolFocus());
-		min_cb = oss.str();
-	}
-	if( axes.cb.max.isDefined() ){
-		oss.clear(); oss.str("");
-		oss << axes.cb.max.get(SymbolFocus());
-		max_cb = oss.str();
-	}
-
+	ss << "set cbrange["<< min_cb << ":" << max_cb << "];\n";
 
 
     // Style
@@ -1443,27 +1556,44 @@ void LoggerLinePlot::plot()
 		
 		// set range of time points to include in plot
 		stringstream timerange_x;
-		stringstream timerange_cb;
+		
 		switch( timerange() ){
 			case(TimeRange::ALL):{
 				timerange_x << "($1 <= " << time << "?$" << (axes.x.column_num) << ":NaN)";
-				timerange_cb << "($1 <= " << time << "?$" << (axes.cb.column_num) << ":NaN)";
 				break;
 			}
 			case(TimeRange::SINCELAST):{
 				timerange_x << "($1 > " << last_plot_time << " && $1 <= " << time << "?$" << (axes.x.column_num) << ":NaN)";
-				timerange_cb << "($1 > " << last_plot_time << " && $1 <= " << time << "?$" << (axes.cb.column_num) << ":NaN)";
 				break;
 			}
 			case(TimeRange::HISTORY):{
 				timerange_x << "($1 > " << (time-history.get( SymbolFocus())) << " && $1 <= " << time << "?$" << (axes.x.column_num) << ":NaN)";
-				timerange_cb << "($1 > " << (time-history.get( SymbolFocus())) << " && $1 <= " << time << "?$" << (axes.cb.column_num) << ":NaN)";
 				break;
 			}
 			case(TimeRange::CURRENT):{
 				timerange_x << "($1 == " << time << "?$" << (axes.x.column_num) << ":NaN)";
-				timerange_cb << "($1 == " << time << "?$" << (axes.cb.column_num) << ":NaN)";
 				break;
+			}
+		}
+		stringstream timerange_cb;
+		if (axes.cb.defined) {
+				switch( timerange() ){
+				case(TimeRange::ALL):{
+					timerange_cb << "($1 <= " << time << "?$" << (axes.cb.column_num) << ":NaN)";
+					break;
+				}
+				case(TimeRange::SINCELAST):{
+					timerange_cb << "($1 > " << last_plot_time << " && $1 <= " << time << "?$" << (axes.cb.column_num) << ":NaN)";
+					break;
+				}
+				case(TimeRange::HISTORY):{
+					timerange_cb << "($1 > " << (time-history.get( SymbolFocus())) << " && $1 <= " << time << "?$" << (axes.cb.column_num) << ":NaN)";
+					break;
+				}
+				case(TimeRange::CURRENT):{
+					timerange_cb << "($1 == " << time << "?$" << (axes.cb.column_num) << ":NaN)";
+					break;
+				}
 			}
 		}
 		
@@ -1535,6 +1665,7 @@ LoggerMatrixPlot::LoggerMatrixPlot(Logger& logger, string xml_base_path): Logger
 
 void LoggerMatrixPlot::init()
 {
+	LoggerPlotBase::init();
 	// Check a suitable output is present
 	const auto& writers = logger.getWriters();
 	for (auto out : writers) {

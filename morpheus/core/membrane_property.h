@@ -28,11 +28,11 @@ Symbol with a variable scalar field, mapped to a cell membrane that associates a
 
 A MembraneProperty is a circular (2D) or spherical (3D) lattice mapped to the surface nodes of a cell using polar coordinates.
 
-- \b value: initial condition for the scalar field. May be given as symbolic expression.
+- \b value: \b initial condition for the scalar field. May be given as a \ref MathExpressions. Use the \b SpaceSymbol of the \ref ML_MembraneLattice to define spatial the distribution.
 
 Optionally, a \b Diffusion rate may be specified.
 
-- \b rate: diffusion coefficient
+- \b rate: diffusion coefficient [(node length)² per (global time)]
 - \b well-mixed (optional): if true, homogenizes scalar field. Requires rate=0.
 
 **/
@@ -71,7 +71,7 @@ private:
 	
 	static shared_ptr<const Lattice>  membrane_lattice;
 	static VINT size;
-	static string size_symbol;
+// 	static string size_symbol;
 	static uint resolution;
 	static string resolution_symbol;
 	static vector<double> node_sizes;
@@ -81,12 +81,22 @@ private:
 /// Container class holding membrane property data
 class MembraneProperty : public AbstractProperty {
 public:
-	MembraneProperty(MembranePropertyPlugin* parent, shared_ptr<PDE_Layer> membrane) : AbstractProperty(), initialized(false), parent(parent), membrane_pde(membrane) {};
+	MembraneProperty(MembranePropertyPlugin* parent, shared_ptr<PDE_Layer> membrane) : AbstractProperty(), membrane_pde(membrane), initialized(false), initializing(false), parent(parent) {};
 	const MembraneProperty& operator=(const MembraneProperty& other) { membrane_pde->data = other.membrane_pde->data; return *this; }
 	shared_ptr<AbstractProperty> clone() const override {
 		return make_shared<MembraneProperty>(parent,membrane_pde->clone());
 	};
-	void init(const SymbolFocus& f) override { if (!initialized)  { initialized = true; membrane_pde->init(f); } }
+	void init(const SymbolFocus& f) override { 
+		if (!initialized)  { 
+			if (initializing) {
+				throw string("Detected circular dependencies in intitialization of symbol '") + parent->getSymbol() + "'!";
+			}
+			initializing = true;
+			membrane_pde->init(f);
+			initializing = false;
+			initialized = true;
+		} 
+	}
 
 	const string& symbol() const override { return  parent->getSymbol(); };
 
@@ -127,7 +137,7 @@ public:
 	shared_ptr<PDE_Layer> membrane_pde;
 	
 private:
-	bool initialized;
+	bool initialized; bool initializing;
 	MembranePropertyPlugin* parent;
 	friend class MembranePropertySymbol;
 };
@@ -143,17 +153,42 @@ public:
 		this->flags().granularity = Granularity::MembraneNode;
 	}
 	const string&  description() const override { return parent->getDescription(); }
+	const string XMLPath() const override { return getXMLPath(parent->saveToXML()); } 
 	
 	typename TypeInfo<double>::SReturn get(const SymbolFocus & f) const override { return getProperty(f)->membrane_pde->get(f.membrane_pos()); };
 	
-	typename TypeInfo<double>::SReturn safe_get(const SymbolFocus & f) const override { 
-		auto p = getProperty(f);
-		if (!p->initialized) p->init(f);
+	typename TypeInfo<double>::SReturn safe_get(const SymbolFocus& f) const override {
+		if (!this->flags().initialized) {
+			this->safe_init();
+		}
+		
+		auto p=getProperty(f); 
+		if (!p->initialized)  {
+			if (p->initializing) {
+				throw string("Detected circular dependencies in evaluation of symbol '") + this->name() + "'!";
+			}
+			p->initializing = true;
+			p->init(f);
+			p->initializing = false;
+			p->initialized = true;
+		}
 		return p->membrane_pde->get(f.membrane_pos());
-	};
+	}
+	
+	void init() override {
+		for ( auto cell_id : celltype->getCellIDs() ) {
+			SymbolFocus f(cell_id);
+			getProperty(f)->init(f);
+		}
+	}
 	
 	void set(const SymbolFocus & f, double val) const override { getProperty(f)->membrane_pde->set(f.membrane_pos(),val); };
 	
+	void setInitializer(shared_ptr<ExpressionEvaluator<double>> initializer, SymbolFocus f) const {
+		auto p = getProperty(f)->membrane_pde;
+		p->setInitializer( initializer );
+	}
+		
 	void setBuffer(const SymbolFocus & f, double val) const override { getProperty(f)->membrane_pde->setBuffer(f.membrane_pos(),val); }
 	
 	void applyBuffer() const override;

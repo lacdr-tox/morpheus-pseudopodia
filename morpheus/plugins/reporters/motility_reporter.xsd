@@ -2,28 +2,33 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 		
 	<xs:group name="CellTypePlugins">
-		<xs:choice>
-			<xs:element name="MotilityReporter"	type="MotilityReporter"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="MotilityReporter"	type="MotilityReporter" 	minOccurs="0"	maxOccurs="unbounded"/>
+		</xs:all>
 	</xs:group>
 	
+	
 	<xs:complexType name="MotilityReporter">
-		<xs:annotation>
-			<xs:appinfo>Reporter</xs:appinfo>
-		</xs:annotation>
-		<xs:all minOccurs="0">
-			<xs:element name="Displacement" type="cpmVectorPropertyRef" maxOccurs="1">
+		<xs:complexContent>
+			<xs:extension base="morphReporterPlugin">
 				<xs:annotation>
-					<xs:documentation>Determine the mean square displacement of the cell in regular time intervals. </xs:documentation>
+					<xs:appinfo>Reporter</xs:appinfo>
 				</xs:annotation>
-			</xs:element>
-			<xs:element name="Velocity" type="cpmVectorPropertyRef" maxOccurs="1">
-				<xs:annotation>
-					<xs:documentation>Determine the cell velocity in regular time intervals. </xs:documentation>
-				</xs:annotation>
-			</xs:element>
-		</xs:all>
-		<xs:attribute name="name" type="cpmString" use="optional" />
-		<xs:attribute name="time-step" type="cpmMathExpression" use="required" />
+				<xs:all minOccurs="0">
+					<xs:element name="Displacement" type="cpmVectorPropertyRef" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>Determine the mean square displacement of the cell in regular time intervals. </xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="Velocity" type="cpmVectorPropertyRef" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>Determine the cell velocity in regular time intervals. </xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:all>
+				<xs:attribute name="time-step" type="cpmMathExpression" use="required" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
+	
 </xs:schema>

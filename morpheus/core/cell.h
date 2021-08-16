@@ -36,7 +36,7 @@ public:
 	
 /**
  * Reflect the changes in the cell due to an update in the cpm lattice
- * @param update provides the whole udate story
+ * @param update provides the whole update story
  */
 	virtual void setUpdate(const CPM::Update& update);
 	virtual void applyUpdate(const CPM::Update& update);  ///< apply the requested changes to the cell (either add or remove a node or a neighboring node has changed.

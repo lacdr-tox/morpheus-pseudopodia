@@ -11,10 +11,9 @@ REGISTER_PLUGIN(MembranePropertyPlugin);
 
 uint MembranePropertyPlugin::resolution = 0;
 string MembranePropertyPlugin::resolution_symbol("");
-string MembranePropertyPlugin::size_symbol = "MEMBRANE_SIZE";
 VINT MembranePropertyPlugin::size = VINT(0,0,0);
 vector<double> MembranePropertyPlugin::node_sizes;
-shared_ptr<const Lattice> MembranePropertyPlugin::membrane_lattice = shared_ptr<const Lattice>();
+shared_ptr<const Lattice> MembranePropertyPlugin::membrane_lattice;
 
 
 void MembranePropertySymbol::applyBuffer() const {
@@ -38,21 +37,27 @@ void MembranePropertyPlugin::loadMembraneLattice(const XMLNode& node, Scope* sco
 			scope->registerSymbol( SymbolAccessorBase<double>::createConstant(resolution_symbol, "Membrane Lattice Size",resolution) );
 	}
 	
-	if (getXMLAttribute(node,"MembraneLattice/SpaceSymbol/symbol",size_symbol) ) {
-		scope->registerSymbol(make_shared<MembraneSpaceSymbol>(size_symbol));
-	}
+	getXMLAttribute(node,"MembraneLattice/SpaceSymbol/symbol",SymbolBase::MembraneSpace_symbol);
+	// space symbol shall always be decalared.
+	scope->registerSymbol(make_shared<MembraneSpaceSymbol>(SymbolBase::MembraneSpace_symbol));
+
 	
 
-	if (SIM::getLattice()->getDimensions()==2) {
-		size = VINT(resolution,1,1);
-		membrane_lattice = shared_ptr<Lattice>(Linear_Lattice::create(size,true));
+	if (SIM::getLatticeStructure() == Lattice::square || SIM::getLatticeStructure() == Lattice::hexagonal ) {
+		LatticeDesc desc;
+		desc.size = VINT(resolution,1,1);
+		size = desc.size;
+		desc.boundaries[Boundary::mx] = Boundary::periodic;
+		desc.boundaries[Boundary::my] = Boundary::periodic;
+		membrane_lattice = make_shared<Linear_Lattice>(desc);
 		node_sizes.push_back(1.0);
 	}
-	else if (SIM::getLattice()->getDimensions()==3) {
-
+	else if (SIM::getLatticeStructure() == Lattice::cubic) {
+		LatticeDesc desc;
 		size.y = resolution/2;
 		size.x = 2 * size.y;
 		size.z = 1;
+		desc.size = size;
 		membrane_lattice = shared_ptr<Lattice>(Square_Lattice::create(size,true));
 		node_sizes.resize(size.y);
 		VINT pos(0,0,0);
@@ -62,7 +67,7 @@ void MembranePropertyPlugin::loadMembraneLattice(const XMLNode& node, Scope* sco
 		
 	}
 	else {
-		throw(string("cannot create membranes for 1D lattices.\nrefuse to create the membrane lattice!")  +  to_str( SIM::getLattice()->getDimensions() ) );
+		throw(string("cannot create membranes for 1D lattices.\nrefuse to create the membrane lattice!") );
 	}
 }
 

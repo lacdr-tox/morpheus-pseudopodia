@@ -2,21 +2,25 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 		
 	<xs:group name="PopulationInitPlugins">
-		<xs:choice>
-			<xs:element name="InitRectangle" 		type="InitRectangle"/>
-		</xs:choice>
+		<xs:all>
+			<xs:element name="InitRectangle" 		type="InitRectangle" 	minOccurs="0"/>
+		</xs:all>
 	</xs:group>
 	
 	<xs:complexType name="InitRectangle">
-		<xs:annotation>
-			<xs:appinfo>Initialization</xs:appinfo>
-		</xs:annotation>
-		<xs:all>
-			<xs:element name="Dimensions" 	type="cpmInitRectDimension" minOccurs="1" />
-		</xs:all>
-        <xs:attribute name="number-of-cells" use="required" type="cpmMathExpression" default="100" />
-		<xs:attribute name="random-offset" use="optional" type="cpmMathExpression" default="0" />
-		<xs:attribute name="mode" use="required" type="cpmInitRectangleMode" default="regular" />
+		<xs:complexContent>
+			<xs:extension base="morphPlugin">
+				<xs:annotation>
+					<xs:appinfo>Initialization</xs:appinfo>
+				</xs:annotation>
+				<xs:all>
+					<xs:element name="Dimensions" 	type="cpmInitRectDimension" minOccurs="1" />
+				</xs:all>
+				<xs:attribute name="number-of-cells" use="required" type="cpmMathExpression" default="100" />
+				<xs:attribute name="random-offset" use="optional" type="cpmMathExpression" default="0" />
+				<xs:attribute name="mode" use="required" type="cpmInitRectangleMode" default="regular" />
+			</xs:extension>
+		</xs:complexContent>
 	</xs:complexType>
 	
 	<xs:complexType name="cpmInitRectDimension">	
