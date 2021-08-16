@@ -2,36 +2,40 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 
     <xs:group name="CellTypePlugins">
-        <xs:choice>
-            <xs:element name="BufferedVectorReporter"	type="BufferedVectorReporter"/>
-        </xs:choice>
+        <xs:all>
+            <xs:element name="BufferedVectorReporter"	type="BufferedVectorReporter"   minOccurs="0"/>
+        </xs:all>
     </xs:group>
 
     <xs:complexType name="BufferedVectorReporter">
-        <xs:annotation>
-            <xs:appinfo>Reporter</xs:appinfo>
-        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="morphPlugin">
+                <xs:annotation>
+                    <xs:appinfo>Reporter</xs:appinfo>
+                </xs:annotation>
 
-        <xs:all>
-            <xs:element name="Input">
-                <xs:complexType>
-                    <xs:attribute name="value" type="cpmMathExpression" use="required" />
-                </xs:complexType>
+                <xs:all>
+                    <xs:element name="Input">
+                        <xs:complexType>
+                            <xs:attribute name="value" type="cpmMathExpression" use="required" />
+                        </xs:complexType>
 
-            </xs:element>
+                    </xs:element>
 
-            <xs:element name="Output">
-                <xs:complexType>
-                    <xs:attribute name="mapping" type="cpmVectorArrayStatistics" use="required" />
-                    <xs:attribute name="symbol-ref" type="cpmVectorSymbolRef" use="required" />
-                </xs:complexType>
-            </xs:element>
+                    <xs:element name="Output">
+                        <xs:complexType>
+                            <xs:attribute name="mapping" type="cpmVectorArrayStatistics" use="required" />
+                            <xs:attribute name="symbol-ref" type="cpmVectorSymbolRef" use="required" />
+                        </xs:complexType>
+                    </xs:element>
 
-        </xs:all>
+                </xs:all>
 
-        <xs:attribute name="buffer-size" type="cpmInteger" use="required" />
-        <xs:attribute name="name" type="cpmString" use="optional" />
-        <xs:attribute name="time-step" type="cpmDouble" use="required" />
+                <xs:attribute name="buffer-size" type="cpmInteger" use="required" />
+                <xs:attribute name="name" type="cpmString" use="optional" />
+                <xs:attribute name="time-step" type="cpmDouble" use="required" />
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
 
     <xs:simpleType name="cpmVectorArrayStatistics">

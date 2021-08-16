@@ -6,32 +6,37 @@
     <!-- Declaration of plugin group and name of its XML element -->
     <!-- This plugin will be merged with other CellTypePlugins -->
     <xs:group name="CellTypePlugins">
-        <xs:choice>
+        <xs:all>
             <!-- Plugin will appear as "Pseudopodia" in XML and GUI -->
-            <xs:element name="Pseudopodia" type="Pseudopodia"/>
-        </xs:choice>
+            <xs:element name="Pseudopodia" type="Pseudopodia"   minOccurs="0"   maxOccurs="unbounded"/>
+        </xs:all>
     </xs:group>
 
     <!-- Specification of XML element, its subelements and its attributes -->
     <xs:complexType name="Pseudopodia">
-        <xs:annotation>
-            <xs:appinfo>Miscellaneous</xs:appinfo>
-        </xs:annotation>
-        <!-- Attributes with their type, usage and default value -->
-        <xs:attribute name="field" type="cpmMathExpression" use="required"/>
-        <xs:attribute name="moving-direction" type="cpmDoubleSymbolRef"/>
-        <xs:attribute name="max-growth-time" type="cpmInteger" use="optional" default="20"/>
-        <xs:attribute name="max-pseudopods" type="cpmInteger" use="optional" default="1"/>
-        <xs:attribute name="time-between-extensions" type="cpmInteger" use="optional" default="100"/>
-        <xs:attribute name="tip-bonus" type="cpmDouble" use="optional" default="2e5"/>
-        <xs:attribute name="max-distance-for-tip-bonus" type="cpmDouble" use="optional" default="5"/>
-        <xs:attribute name="neighboring-actin-bonus" type="cpmDouble" use="optional" default="1e2"/>
-        <xs:attribute name="init-dir-strength" type="cpmDouble" use="optional" default="8.0"/>
-        <xs:attribute name="cont-dir-strength" type="cpmDouble" use="optional" default="16.0"/>
-        <xs:attribute name="retraction-mode" type="cpmPPRetractMode" default="backward"/>
-        <xs:attribute name="touch-behavior" type="cpmPPTouchBehavior" default="nothing"/>
-        <xs:attribute name="pull-strength" type="cpmDouble" use="optional" default="300.0"/>
-        <xs:attribute name="pull" type="cpmBoolean" default="false"/>
+        <xs:complexContent>
+            <xs:extension base="morphPlugin">
+                <xs:annotation>
+                    <xs:appinfo>Miscellaneous</xs:appinfo>
+                </xs:annotation>
+
+                <!-- Attributes with their type, usage and default value -->
+                <xs:attribute name="field" type="cpmMathExpression" use="required"/>
+                <xs:attribute name="moving-direction" type="cpmDoubleSymbolRef"/>
+                <xs:attribute name="max-growth-time" type="cpmInteger" use="optional" default="20"/>
+                <xs:attribute name="max-pseudopods" type="cpmInteger" use="optional" default="1"/>
+                <xs:attribute name="time-between-extensions" type="cpmInteger" use="optional" default="100"/>
+                <xs:attribute name="tip-bonus" type="cpmDouble" use="optional" default="2e5"/>
+                <xs:attribute name="max-distance-for-tip-bonus" type="cpmDouble" use="optional" default="5"/>
+                <xs:attribute name="neighboring-actin-bonus" type="cpmDouble" use="optional" default="1e2"/>
+                <xs:attribute name="init-dir-strength" type="cpmDouble" use="optional" default="8.0"/>
+                <xs:attribute name="cont-dir-strength" type="cpmDouble" use="optional" default="16.0"/>
+                <xs:attribute name="retraction-mode" type="cpmPPRetractMode" default="backward"/>
+                <xs:attribute name="touch-behavior" type="cpmPPTouchBehavior" default="nothing"/>
+                <xs:attribute name="pull-strength" type="cpmDouble" use="optional" default="300.0"/>
+                <xs:attribute name="pull" type="cpmBoolean" default="false"/>
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
 
     <xs:simpleType name="cpmPPTouchBehavior">
