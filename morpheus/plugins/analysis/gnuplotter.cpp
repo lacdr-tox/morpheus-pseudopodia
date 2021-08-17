@@ -1382,7 +1382,7 @@ void Gnuplotter::analyse(double time) {
 	*/
 	
 	double cell_contour_width = (plot_layout.plots[0].right - plot_layout.plots[0].left) * terminal_spec.size.x / 4 / (Gnuplotter::PlotSpec::size().x+50);
-	double cell_arrow_width = 1.6 * cell_contour_width;
+	double cell_arrow_width = 1.6 * cell_contour_width * 3;
 	double cell_node_size = 0.54 * cell_contour_width;
 	double cell_label_scaling = terminal_spec.line_width;
 	
@@ -1398,7 +1398,7 @@ void Gnuplotter::analyse(double time) {
 			<< "set style arrow 1 head   filled   size screen 0.015,15,45  lc 0 lw " << cell_arrow_width << ";\n"
 			<< "set style arrow 2 head   nofilled size screen 0.015,15,135 lc 0 lw " << cell_arrow_width << ";\n"
 			<< "set style arrow 3 head   filled   size screen 0.015,15,45  lc 0 lw " << cell_arrow_width << ";\n"
-			<< "set style arrow 4 head   filled   size screen 0.015,15,90  lc 0 lw " << cell_arrow_width << ";\n"
+			<< "set style arrow 4 head   filled   size screen 0.01,15,90  lc 0 lw " << cell_arrow_width << ";\n"
 			<< "set style arrow 5 head   nofilled size screen 0.015,15,135 lc 0 lw " << cell_arrow_width << ";\n"
 			<< "set style arrow 6 heads  filled   size screen 0.015,15,135 lc 0 lw " << cell_arrow_width << ";\n"
 			<< "set style arrow 7 heads  nofilled size screen 0.004,90,90  lc 0 lw " << cell_arrow_width << ";\n"
